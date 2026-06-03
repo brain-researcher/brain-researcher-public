@@ -3,18 +3,18 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class CanaryDeployer:
     """Manage canary deployments with simple in-memory state."""
 
-    def __init__(self, namespace: str = "default", istio_client: Optional[Any] = None):
+    def __init__(self, namespace: str = "default", istio_client: Any | None = None):
         self.namespace = namespace
         self.istio_client = istio_client
-        self.deployments: Dict[str, Dict[str, Any]] = {}
+        self.deployments: dict[str, dict[str, Any]] = {}
 
-    def initialize_canary(self, config: Dict[str, Any]) -> str:
+    def initialize_canary(self, config: dict[str, Any]) -> str:
         deployment_id = f"canary-{int(time.time() * 1000)}"
         self.deployments[deployment_id] = {
             "config": dict(config),
@@ -25,7 +25,7 @@ class CanaryDeployer:
         }
         return deployment_id
 
-    def get_deployment_status(self, deployment_id: str) -> Dict[str, Any]:
+    def get_deployment_status(self, deployment_id: str) -> dict[str, Any]:
         deployment = self.deployments.get(deployment_id)
         if not deployment:
             return {"phase": "unknown", "current_traffic": 0, "current_step": 0}
@@ -35,7 +35,7 @@ class CanaryDeployer:
             "current_step": deployment.get("current_step", 0),
         }
 
-    def collect_canary_metrics(self, deployment_id: str) -> Dict[str, Any]:
+    def collect_canary_metrics(self, deployment_id: str) -> dict[str, Any]:
         return {
             "error_rate": 0.0,
             "latency_p99": 100,
@@ -43,7 +43,7 @@ class CanaryDeployer:
             "success_rate": 1.0,
         }
 
-    def validate_canary_health(self, deployment_id: str) -> Dict[str, Any]:
+    def validate_canary_health(self, deployment_id: str) -> dict[str, Any]:
         deployment = self.deployments.get(deployment_id, {})
         config = deployment.get("config", {})
         criteria = config.get("success_criteria", {})
@@ -80,10 +80,12 @@ class CanaryDeployer:
 
         deployment["current_traffic"] = splits[current_step]
         deployment["current_step"] = current_step + 1
-        deployment["phase"] = "completed" if deployment["current_step"] >= len(splits) else "rolling_out"
+        deployment["phase"] = (
+            "completed" if deployment["current_step"] >= len(splits) else "rolling_out"
+        )
         return True
 
-    def execute_rollback(self, deployment_id: str, reason: str = "") -> Dict[str, Any]:
+    def execute_rollback(self, deployment_id: str, reason: str = "") -> dict[str, Any]:
         deployment = self.deployments.get(deployment_id)
         if deployment:
             deployment["phase"] = "rolled_back"

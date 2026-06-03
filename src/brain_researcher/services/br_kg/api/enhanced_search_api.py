@@ -101,9 +101,11 @@ class EnhancedSearchAPI:
         for node_id, node_data in nodes[:100]:  # Limit for performance
             formatted_node = {
                 "id": node_id,
-                "type": node_data.get("labels", ["Unknown"])[0]
-                if "labels" in node_data
-                else "Unknown",
+                "type": (
+                    node_data.get("labels", ["Unknown"])[0]
+                    if "labels" in node_data
+                    else "Unknown"
+                ),
                 "properties": {k: v for k, v in node_data.items() if k != "labels"},
             }
 

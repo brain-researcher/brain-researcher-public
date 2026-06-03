@@ -8,10 +8,11 @@ import hashlib
 import json
 import logging
 import time
+from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +44,9 @@ class LoaderStats:
     skipped_duplicates: int = 0
     same_as_edges_created: int = 0  # Count of SAME_AS edges created
     nodes_matched: int = 0  # Count of nodes with matches
-    errors: List[Dict[str, Any]] = field(default_factory=list)
+    errors: list[dict[str, Any]] = field(default_factory=list)
     start_time: float = field(default_factory=time.time)
-    end_time: Optional[float] = None
+    end_time: float | None = None
 
     @property
     def duration(self) -> float:
@@ -61,7 +62,7 @@ class LoaderStats:
             return self.processed_lines / self.duration
         return 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert stats to dictionary."""
         return {
             "total_lines": self.total_lines,
@@ -204,7 +205,7 @@ class EntityValidator:
     }
 
     @classmethod
-    def validate_node(cls, entity: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+    def validate_node(cls, entity: dict[str, Any]) -> tuple[bool, str | None]:
         """Validate a node entity."""
         # Check required fields
         missing = cls.REQUIRED_NODE_FIELDS - set(entity.keys())
@@ -222,7 +223,13 @@ class EntityValidator:
 
         if node_type == "Study" and not any(
             entity.get(field)
-            for field in ("title", "name", "study_id", "gwas_catalog_id", "pgc_study_id")
+            for field in (
+                "title",
+                "name",
+                "study_id",
+                "gwas_catalog_id",
+                "pgc_study_id",
+            )
         ):
             return False, "Study requires title or a study identifier"
 
@@ -239,7 +246,8 @@ class EntityValidator:
             return False, "Population requires a name or ancestry identifier"
 
         if node_type == "Gene" and not any(
-            entity.get(field) for field in ("symbol", "gene_id", "hgnc_id", "ensembl_id")
+            entity.get(field)
+            for field in ("symbol", "gene_id", "hgnc_id", "ensembl_id")
         ):
             return False, "Gene requires a symbol or gene identifier"
 
@@ -263,7 +271,10 @@ class EntityValidator:
         if node_type == "OpenRisk":
             label = str(entity.get("label") or "")
             if label not in cls.CANONICAL_OPEN_RISK_LABELS:
-                return False, f"OpenRisk label must be one of {sorted(cls.CANONICAL_OPEN_RISK_LABELS)}"
+                return (
+                    False,
+                    f"OpenRisk label must be one of {sorted(cls.CANONICAL_OPEN_RISK_LABELS)}",
+                )
             if not entity.get("text"):
                 return False, "OpenRisk requires text"
 
@@ -291,9 +302,7 @@ class EntityValidator:
         return True, None
 
     @classmethod
-    def validate_relationship(
-        cls, entity: Dict[str, Any]
-    ) -> Tuple[bool, Optional[str]]:
+    def validate_relationship(cls, entity: dict[str, Any]) -> tuple[bool, str | None]:
         """Validate a relationship entity."""
         # Check required fields
         missing = cls.REQUIRED_RELATIONSHIP_FIELDS - set(entity.keys())
@@ -383,13 +392,10 @@ class EntityValidator:
                 or source_id.startswith(disease_prefixes)
                 or source_id.startswith(concept_prefixes)
             )
-            target_ok = (
-                target_id.startswith(disease_prefixes)
-                or (
-                    ":" in target_id
-                    and not target_id.startswith(
-                        ("coord:", "map:", "nv:", "statmap:", "statsmap:")
-                    )
+            target_ok = target_id.startswith(disease_prefixes) or (
+                ":" in target_id
+                and not target_id.startswith(
+                    ("coord:", "map:", "nv:", "statmap:", "statsmap:")
                 )
             )
             if not source_ok:
@@ -409,14 +415,14 @@ class EntityValidator:
 class NDJSONBulkLoader:
     """High-performance NDJSON bulk loader."""
 
-    def __init__(self, db, config: Optional[LoaderConfig] = None):
+    def __init__(self, db, config: LoaderConfig | None = None):
         """Initialize bulk loader."""
         self.db = db
         self.config = config or LoaderConfig()
         self.stats = LoaderStats()
         self.seen_hashes = set()  # For deduplication
 
-    def _hash_entity(self, entity: Dict[str, Any]) -> str:
+    def _hash_entity(self, entity: dict[str, Any]) -> str:
         """Create hash for entity deduplication."""
         # Create deterministic hash
         if "source_id" in entity and "target_id" in entity:
@@ -428,7 +434,7 @@ class NDJSONBulkLoader:
 
         return hashlib.md5(key.encode()).hexdigest()
 
-    def _parse_line(self, line: str, line_num: int) -> Optional[Dict[str, Any]]:
+    def _parse_line(self, line: str, line_num: int) -> dict[str, Any] | None:
         """Parse a single NDJSON line."""
         try:
             entity = json.loads(line.strip())
@@ -447,7 +453,7 @@ class NDJSONBulkLoader:
             )
             return None
 
-    def _process_node_batch(self, batch: List[Dict[str, Any]]) -> int:
+    def _process_node_batch(self, batch: list[dict[str, Any]]) -> int:
         """Process a batch of nodes."""
         success_count = 0
 
@@ -470,7 +476,7 @@ class NDJSONBulkLoader:
 
         return success_count
 
-    def _process_relationship_batch(self, batch: List[Dict[str, Any]]) -> int:
+    def _process_relationship_batch(self, batch: list[dict[str, Any]]) -> int:
         """Process a batch of relationships."""
         success_count = 0
 
@@ -501,18 +507,16 @@ class NDJSONBulkLoader:
 
         return success_count
 
-    def stream_file(self, file_path: Path) -> Generator[Dict[str, Any], None, None]:
+    def stream_file(self, file_path: Path) -> Generator[dict[str, Any], None, None]:
         """Stream entities from NDJSON file."""
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             for line_num, line in enumerate(f, 1):
                 if line.strip():
                     entity = self._parse_line(line, line_num)
                     if entity:
                         yield entity
 
-    def load_file(
-        self, file_path: Path, entity_type: Optional[str] = None
-    ) -> LoaderStats:
+    def load_file(self, file_path: Path, entity_type: str | None = None) -> LoaderStats:
         """Load entities from NDJSON file."""
         self.stats = LoaderStats()
 
@@ -701,7 +705,7 @@ def main():
     print(f"  Throughput: {stats.throughput:.0f} entities/second")
 
     if stats.errors and args.verbose:
-        print(f"\nFirst 10 errors:")
+        print("\nFirst 10 errors:")
         for error in stats.errors[:10]:
             print(
                 f"  Line {error.get('line', '?')}: {error.get('error', 'Unknown error')}"

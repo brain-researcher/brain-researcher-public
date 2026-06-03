@@ -9,16 +9,23 @@ import logging
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Any
 
-from brain_researcher.services.agent.system_monitor import SystemMonitor, SystemHealth, SystemMetrics
-from brain_researcher.services.agent.adaptive_scheduler import TaskPriority, SchedulingPolicy
+from brain_researcher.services.agent.adaptive_scheduler import (
+    TaskPriority,
+)
+from brain_researcher.services.agent.system_monitor import (
+    SystemHealth,
+    SystemMetrics,
+    SystemMonitor,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class ExecutionStrategy(str, Enum):
     """Execution strategy types."""
+
     AGGRESSIVE = "aggressive"
     BALANCED = "balanced"
     CONSERVATIVE = "conservative"
@@ -28,6 +35,7 @@ class ExecutionStrategy(str, Enum):
 @dataclass
 class ResourceLimits:
     """Resource limits for execution strategies."""
+
     max_parallel: int
     cpu_limit: float  # Percentage
     memory_limit: float  # Percentage
@@ -39,14 +47,15 @@ class ResourceLimits:
 @dataclass
 class ExecutionContext:
     """Context information for strategy selection."""
+
     system_metrics: SystemMetrics
     system_health: SystemHealth
     queue_depth: int
     average_task_duration: float
     current_throughput: float
     error_rate: float
-    resource_utilization: Dict[str, float]
-    time_constraints: Optional[float] = None  # Deadline pressure
+    resource_utilization: dict[str, float]
+    time_constraints: float | None = None  # Deadline pressure
     workload_type: str = "mixed"  # compute, io, memory, mixed
     user_priority: TaskPriority = TaskPriority.NORMAL
 
@@ -54,6 +63,7 @@ class ExecutionContext:
 @dataclass
 class StrategyPerformance:
     """Performance metrics for a strategy."""
+
     strategy: ExecutionStrategy
     throughput: float
     avg_latency: float
@@ -75,22 +85,34 @@ class WorkloadAnalyzer:
 
     def __init__(self):
         """Initialize workload analyzer."""
-        self.task_history: List[Dict[str, Any]] = []
+        self.task_history: list[dict[str, Any]] = []
         self.workload_patterns = {
-            "compute_intensive": {"cpu_weight": 0.7, "memory_weight": 0.2, "io_weight": 0.1},
-            "memory_intensive": {"cpu_weight": 0.2, "memory_weight": 0.7, "io_weight": 0.1},
+            "compute_intensive": {
+                "cpu_weight": 0.7,
+                "memory_weight": 0.2,
+                "io_weight": 0.1,
+            },
+            "memory_intensive": {
+                "cpu_weight": 0.2,
+                "memory_weight": 0.7,
+                "io_weight": 0.1,
+            },
             "io_intensive": {"cpu_weight": 0.1, "memory_weight": 0.2, "io_weight": 0.7},
-            "mixed": {"cpu_weight": 0.33, "memory_weight": 0.33, "io_weight": 0.34}
+            "mixed": {"cpu_weight": 0.33, "memory_weight": 0.33, "io_weight": 0.34},
         }
 
-    def analyze_workload_type(self, recent_tasks: List[Dict[str, Any]]) -> str:
+    def analyze_workload_type(self, recent_tasks: list[dict[str, Any]]) -> str:
         """Analyze workload type based on recent tasks."""
         if not recent_tasks:
             return "mixed"
 
         # Analyze resource usage patterns
-        cpu_heavy_tasks = sum(1 for task in recent_tasks if task.get("cpu_usage", 0) > 70)
-        memory_heavy_tasks = sum(1 for task in recent_tasks if task.get("memory_usage", 0) > 70)
+        cpu_heavy_tasks = sum(
+            1 for task in recent_tasks if task.get("cpu_usage", 0) > 70
+        )
+        memory_heavy_tasks = sum(
+            1 for task in recent_tasks if task.get("memory_usage", 0) > 70
+        )
         io_heavy_tasks = sum(1 for task in recent_tasks if task.get("io_usage", 0) > 50)
 
         total_tasks = len(recent_tasks)
@@ -104,14 +126,16 @@ class WorkloadAnalyzer:
         else:
             return "mixed"
 
-    def predict_resource_requirements(self, workload_type: str) -> Dict[str, float]:
+    def predict_resource_requirements(self, workload_type: str) -> dict[str, float]:
         """Predict resource requirements for workload type."""
-        pattern = self.workload_patterns.get(workload_type, self.workload_patterns["mixed"])
+        pattern = self.workload_patterns.get(
+            workload_type, self.workload_patterns["mixed"]
+        )
 
         return {
             "cpu_intensity": pattern["cpu_weight"],
             "memory_intensity": pattern["memory_weight"],
-            "io_intensity": pattern["io_weight"]
+            "io_intensity": pattern["io_weight"],
         }
 
     def calculate_workload_complexity(self, context: ExecutionContext) -> float:
@@ -123,11 +147,15 @@ class WorkloadAnalyzer:
         complexity += queue_factor * 0.3
 
         # Resource utilization factor
-        avg_utilization = sum(context.resource_utilization.values()) / len(context.resource_utilization)
+        avg_utilization = sum(context.resource_utilization.values()) / len(
+            context.resource_utilization
+        )
         complexity += (avg_utilization / 100.0) * 0.3
 
         # Task duration factor
-        duration_factor = min(context.average_task_duration / 300.0, 1.0)  # Normalize to 5 minutes
+        duration_factor = min(
+            context.average_task_duration / 300.0, 1.0
+        )  # Normalize to 5 minutes
         complexity += duration_factor * 0.2
 
         # Error rate factor
@@ -142,8 +170,8 @@ class PerformanceTracker:
     def __init__(self, history_size: int = 100):
         """Initialize performance tracker."""
         self.history_size = history_size
-        self.strategy_metrics: Dict[ExecutionStrategy, StrategyPerformance] = {}
-        self.performance_history: List[Dict[str, Any]] = []
+        self.strategy_metrics: dict[ExecutionStrategy, StrategyPerformance] = {}
+        self.performance_history: list[dict[str, Any]] = []
 
         # Initialize strategy metrics
         for strategy in ExecutionStrategy:
@@ -155,7 +183,7 @@ class PerformanceTracker:
                 resource_efficiency=0.0,
                 last_used=0.0,
                 success_count=0,
-                failure_count=0
+                failure_count=0,
             )
 
     def record_strategy_performance(
@@ -165,7 +193,7 @@ class PerformanceTracker:
         latency: float,
         error_rate: float,
         resource_efficiency: float,
-        success: bool
+        success: bool,
     ):
         """Record performance data for a strategy."""
         metrics = self.strategy_metrics[strategy]
@@ -175,7 +203,9 @@ class PerformanceTracker:
         metrics.throughput = metrics.throughput * (1 - alpha) + throughput * alpha
         metrics.avg_latency = metrics.avg_latency * (1 - alpha) + latency * alpha
         metrics.error_rate = metrics.error_rate * (1 - alpha) + error_rate * alpha
-        metrics.resource_efficiency = metrics.resource_efficiency * (1 - alpha) + resource_efficiency * alpha
+        metrics.resource_efficiency = (
+            metrics.resource_efficiency * (1 - alpha) + resource_efficiency * alpha
+        )
         metrics.last_used = time.time()
 
         if success:
@@ -184,15 +214,17 @@ class PerformanceTracker:
             metrics.failure_count += 1
 
         # Record in history
-        self.performance_history.append({
-            "strategy": strategy.value,
-            "timestamp": time.time(),
-            "throughput": throughput,
-            "latency": latency,
-            "error_rate": error_rate,
-            "resource_efficiency": resource_efficiency,
-            "success": success
-        })
+        self.performance_history.append(
+            {
+                "strategy": strategy.value,
+                "timestamp": time.time(),
+                "throughput": throughput,
+                "latency": latency,
+                "error_rate": error_rate,
+                "resource_efficiency": resource_efficiency,
+                "success": success,
+            }
+        )
 
         # Trim history
         if len(self.performance_history) > self.history_size:
@@ -206,8 +238,12 @@ class PerformanceTracker:
             return 0.5  # Neutral score for untested strategies
 
         # Weighted composite score
-        throughput_score = min(metrics.throughput / 10.0, 1.0)  # Normalize to 10 tasks/min
-        latency_score = max(0, 1.0 - (metrics.avg_latency / 300.0))  # Penalty for >5min latency
+        throughput_score = min(
+            metrics.throughput / 10.0, 1.0
+        )  # Normalize to 10 tasks/min
+        latency_score = max(
+            0, 1.0 - (metrics.avg_latency / 300.0)
+        )  # Penalty for >5min latency
         success_score = metrics.success_rate
         efficiency_score = metrics.resource_efficiency
 
@@ -219,21 +255,24 @@ class PerformanceTracker:
                 recency_bonus = 0.1 * (1 - time_since_used / 3600.0)
 
         composite_score = (
-            throughput_score * 0.3 +
-            latency_score * 0.2 +
-            success_score * 0.3 +
-            efficiency_score * 0.2 +
-            recency_bonus
+            throughput_score * 0.3
+            + latency_score * 0.2
+            + success_score * 0.3
+            + efficiency_score * 0.2
+            + recency_bonus
         )
 
         return min(composite_score, 1.0)
 
     def get_best_strategy(self) -> ExecutionStrategy:
         """Get the best performing strategy."""
-        scores = {strategy: self.get_strategy_score(strategy) for strategy in ExecutionStrategy}
+        scores = {
+            strategy: self.get_strategy_score(strategy)
+            for strategy in ExecutionStrategy
+        }
         return max(scores.items(), key=lambda x: x[1])[0]
 
-    def get_performance_summary(self) -> Dict[str, Any]:
+    def get_performance_summary(self) -> dict[str, Any]:
         """Get performance summary for all strategies."""
         summary = {}
         for strategy, metrics in self.strategy_metrics.items():
@@ -243,7 +282,7 @@ class PerformanceTracker:
                 "avg_latency": metrics.avg_latency,
                 "success_rate": metrics.success_rate,
                 "resource_efficiency": metrics.resource_efficiency,
-                "usage_count": metrics.success_count + metrics.failure_count
+                "usage_count": metrics.success_count + metrics.failure_count,
             }
         return summary
 
@@ -274,7 +313,7 @@ class StrategySelector:
                 memory_limit=90.0,
                 io_limit=200.0,
                 preemption_enabled=True,
-                timeout_multiplier=0.8
+                timeout_multiplier=0.8,
             ),
             ExecutionStrategy.BALANCED: ResourceLimits(
                 max_parallel=4,
@@ -282,7 +321,7 @@ class StrategySelector:
                 memory_limit=80.0,
                 io_limit=150.0,
                 preemption_enabled=True,
-                timeout_multiplier=1.0
+                timeout_multiplier=1.0,
             ),
             ExecutionStrategy.CONSERVATIVE: ResourceLimits(
                 max_parallel=2,
@@ -290,7 +329,7 @@ class StrategySelector:
                 memory_limit=70.0,
                 io_limit=100.0,
                 preemption_enabled=False,
-                timeout_multiplier=1.5
+                timeout_multiplier=1.5,
             ),
             ExecutionStrategy.MINIMAL: ResourceLimits(
                 max_parallel=1,
@@ -298,8 +337,8 @@ class StrategySelector:
                 memory_limit=50.0,
                 io_limit=50.0,
                 preemption_enabled=False,
-                timeout_multiplier=2.0
-            )
+                timeout_multiplier=2.0,
+            ),
         }
 
         # Current strategy state
@@ -341,7 +380,9 @@ class StrategySelector:
 
         return selected_strategy
 
-    def _get_candidate_strategies(self, context: ExecutionContext) -> List[ExecutionStrategy]:
+    def _get_candidate_strategies(
+        self, context: ExecutionContext
+    ) -> list[ExecutionStrategy]:
         """Get candidate strategies based on system health."""
         if context.system_health == SystemHealth.CRITICAL:
             return [ExecutionStrategy.MINIMAL, ExecutionStrategy.CONSERVATIVE]
@@ -352,9 +393,11 @@ class StrategySelector:
         else:  # HEALTHY
             return list(ExecutionStrategy)
 
-    def _calculate_strategy_score(self, strategy: ExecutionStrategy, context: ExecutionContext) -> float:
+    def _calculate_strategy_score(
+        self, strategy: ExecutionStrategy, context: ExecutionContext
+    ) -> float:
         """Calculate score for a strategy given current context."""
-        config = self.strategy_configs[strategy]
+        self.strategy_configs[strategy]
 
         # Base score from historical performance
         base_score = self.performance_tracker.get_strategy_score(strategy)
@@ -370,15 +413,17 @@ class StrategySelector:
 
         # Combine scores
         final_score = (
-            base_score * 0.4 +
-            system_score * 0.3 +
-            workload_score * 0.2 +
-            urgency_score * 0.1
+            base_score * 0.4
+            + system_score * 0.3
+            + workload_score * 0.2
+            + urgency_score * 0.1
         )
 
         return final_score
 
-    def _calculate_system_compatibility(self, strategy: ExecutionStrategy, context: ExecutionContext) -> float:
+    def _calculate_system_compatibility(
+        self, strategy: ExecutionStrategy, context: ExecutionContext
+    ) -> float:
         """Calculate how well strategy fits current system state."""
         config = self.strategy_configs[strategy]
 
@@ -386,8 +431,16 @@ class StrategySelector:
         cpu_available = 100 - context.system_metrics.cpu_usage
         memory_available = 100 - context.system_metrics.memory_usage
 
-        cpu_fit = 1.0 if cpu_available >= (100 - config.cpu_limit) else cpu_available / (100 - config.cpu_limit)
-        memory_fit = 1.0 if memory_available >= (100 - config.memory_limit) else memory_available / (100 - config.memory_limit)
+        cpu_fit = (
+            1.0
+            if cpu_available >= (100 - config.cpu_limit)
+            else cpu_available / (100 - config.cpu_limit)
+        )
+        memory_fit = (
+            1.0
+            if memory_available >= (100 - config.memory_limit)
+            else memory_available / (100 - config.memory_limit)
+        )
 
         resource_score = (cpu_fit + memory_fit) / 2.0
 
@@ -397,33 +450,35 @@ class StrategySelector:
                 ExecutionStrategy.AGGRESSIVE: 1.0,
                 ExecutionStrategy.BALANCED: 0.8,
                 ExecutionStrategy.CONSERVATIVE: 0.6,
-                ExecutionStrategy.MINIMAL: 0.3
+                ExecutionStrategy.MINIMAL: 0.3,
             },
             SystemHealth.MODERATE: {
                 ExecutionStrategy.AGGRESSIVE: 0.7,
                 ExecutionStrategy.BALANCED: 1.0,
                 ExecutionStrategy.CONSERVATIVE: 0.8,
-                ExecutionStrategy.MINIMAL: 0.5
+                ExecutionStrategy.MINIMAL: 0.5,
             },
             SystemHealth.STRESSED: {
                 ExecutionStrategy.AGGRESSIVE: 0.3,
                 ExecutionStrategy.BALANCED: 0.6,
                 ExecutionStrategy.CONSERVATIVE: 1.0,
-                ExecutionStrategy.MINIMAL: 0.8
+                ExecutionStrategy.MINIMAL: 0.8,
             },
             SystemHealth.CRITICAL: {
                 ExecutionStrategy.AGGRESSIVE: 0.1,
                 ExecutionStrategy.BALANCED: 0.3,
                 ExecutionStrategy.CONSERVATIVE: 0.7,
-                ExecutionStrategy.MINIMAL: 1.0
-            }
+                ExecutionStrategy.MINIMAL: 1.0,
+            },
         }
 
         health_score = health_scores[context.system_health][strategy]
 
         return (resource_score + health_score) / 2.0
 
-    def _calculate_workload_compatibility(self, strategy: ExecutionStrategy, context: ExecutionContext) -> float:
+    def _calculate_workload_compatibility(
+        self, strategy: ExecutionStrategy, context: ExecutionContext
+    ) -> float:
         """Calculate how well strategy handles current workload."""
         config = self.strategy_configs[strategy]
 
@@ -435,21 +490,21 @@ class StrategySelector:
                 ExecutionStrategy.AGGRESSIVE: 1.0,
                 ExecutionStrategy.BALANCED: 0.8,
                 ExecutionStrategy.CONSERVATIVE: 0.5,
-                ExecutionStrategy.MINIMAL: 0.2
+                ExecutionStrategy.MINIMAL: 0.2,
             }
         elif queue_pressure > 0.5:  # Medium queue pressure
             pressure_scores = {
                 ExecutionStrategy.AGGRESSIVE: 0.9,
                 ExecutionStrategy.BALANCED: 1.0,
                 ExecutionStrategy.CONSERVATIVE: 0.7,
-                ExecutionStrategy.MINIMAL: 0.4
+                ExecutionStrategy.MINIMAL: 0.4,
             }
         else:  # Low queue pressure
             pressure_scores = {
                 ExecutionStrategy.AGGRESSIVE: 0.7,
                 ExecutionStrategy.BALANCED: 0.9,
                 ExecutionStrategy.CONSERVATIVE: 1.0,
-                ExecutionStrategy.MINIMAL: 0.8
+                ExecutionStrategy.MINIMAL: 0.8,
             }
 
         # Parallelism compatibility
@@ -458,11 +513,15 @@ class StrategySelector:
 
         return (pressure_scores[strategy] + parallel_fit) / 2.0
 
-    def _calculate_urgency_compatibility(self, strategy: ExecutionStrategy, context: ExecutionContext) -> float:
+    def _calculate_urgency_compatibility(
+        self, strategy: ExecutionStrategy, context: ExecutionContext
+    ) -> float:
         """Calculate urgency compatibility score."""
         # Time constraints
         if context.time_constraints:
-            time_pressure = max(0, 1.0 - context.time_constraints / 3600.0)  # Normalize to 1 hour
+            time_pressure = max(
+                0, 1.0 - context.time_constraints / 3600.0
+            )  # Normalize to 1 hour
         else:
             time_pressure = 0.0
 
@@ -479,12 +538,14 @@ class StrategySelector:
             ExecutionStrategy.AGGRESSIVE: urgency_factor * error_tolerance,
             ExecutionStrategy.BALANCED: 0.7 + urgency_factor * 0.3,
             ExecutionStrategy.CONSERVATIVE: 0.8 + urgency_factor * 0.2,
-            ExecutionStrategy.MINIMAL: 0.9 + urgency_factor * 0.1
+            ExecutionStrategy.MINIMAL: 0.9 + urgency_factor * 0.1,
         }
 
         return urgency_scores[strategy]
 
-    def _apply_switching_logic(self, best_strategy: ExecutionStrategy, context: ExecutionContext) -> ExecutionStrategy:
+    def _apply_switching_logic(
+        self, best_strategy: ExecutionStrategy, context: ExecutionContext
+    ) -> ExecutionStrategy:
         """Apply strategy switching logic with hysteresis."""
         current_time = time.time()
 
@@ -525,7 +586,7 @@ class StrategySelector:
         latency: float,
         error_rate: float,
         resource_efficiency: float,
-        success: bool
+        success: bool,
     ):
         """Update performance tracking for a strategy."""
         self.performance_tracker.record_strategy_performance(
@@ -542,7 +603,7 @@ class StrategySelector:
         self.last_strategy_switch = time.time()
         logger.info(f"Forced strategy to {strategy.value}")
 
-    def get_strategy_recommendations(self, context: ExecutionContext) -> Dict[str, Any]:
+    def get_strategy_recommendations(self, context: ExecutionContext) -> dict[str, Any]:
         """Get strategy recommendations with explanations."""
         recommendations = {}
 
@@ -553,19 +614,28 @@ class StrategySelector:
             # Generate explanation
             explanation = []
             if context.system_health == SystemHealth.CRITICAL:
-                if strategy in [ExecutionStrategy.MINIMAL, ExecutionStrategy.CONSERVATIVE]:
+                if strategy in [
+                    ExecutionStrategy.MINIMAL,
+                    ExecutionStrategy.CONSERVATIVE,
+                ]:
                     explanation.append("Good for critical system state")
                 else:
                     explanation.append("May overwhelm critical system")
 
             if context.queue_depth > 10:
-                if strategy in [ExecutionStrategy.AGGRESSIVE, ExecutionStrategy.BALANCED]:
+                if strategy in [
+                    ExecutionStrategy.AGGRESSIVE,
+                    ExecutionStrategy.BALANCED,
+                ]:
                     explanation.append("Handles high queue depth well")
                 else:
                     explanation.append("May not clear queue quickly")
 
             if context.error_rate > 0.1:
-                if strategy in [ExecutionStrategy.CONSERVATIVE, ExecutionStrategy.MINIMAL]:
+                if strategy in [
+                    ExecutionStrategy.CONSERVATIVE,
+                    ExecutionStrategy.MINIMAL,
+                ]:
                     explanation.append("Conservative approach for high error rate")
                 else:
                     explanation.append("May increase errors further")
@@ -576,14 +646,16 @@ class StrategySelector:
                     "max_parallel": config.max_parallel,
                     "cpu_limit": config.cpu_limit,
                     "memory_limit": config.memory_limit,
-                    "preemption_enabled": config.preemption_enabled
+                    "preemption_enabled": config.preemption_enabled,
                 },
-                "explanation": "; ".join(explanation) if explanation else "Standard operation"
+                "explanation": (
+                    "; ".join(explanation) if explanation else "Standard operation"
+                ),
             }
 
         return recommendations
 
-    def get_selection_metrics(self) -> Dict[str, Any]:
+    def get_selection_metrics(self) -> dict[str, Any]:
         """Get strategy selection metrics."""
         return {
             "current_strategy": self.current_strategy.value,
@@ -591,8 +663,9 @@ class StrategySelector:
             "performance_summary": self.performance_tracker.get_performance_summary(),
             "switch_cooldown_remaining": max(
                 0,
-                self.strategy_switch_cooldown - (time.time() - self.last_strategy_switch)
-            )
+                self.strategy_switch_cooldown
+                - (time.time() - self.last_strategy_switch),
+            ),
         }
 
 

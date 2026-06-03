@@ -138,12 +138,14 @@ def _row_summary(row: dict[str, Any]) -> AutoresearchIterationSummary:
         if isinstance(terms, list) and terms:
             fc_metric = "+".join(str(term) for term in terms if term is not None)
     return AutoresearchIterationSummary(
-        iteration=row.get("iteration")
-        if isinstance(row.get("iteration"), int)
-        else None,
-        action_type=str(row.get("action_type")).strip() or None
-        if row.get("action_type") is not None
-        else None,
+        iteration=(
+            row.get("iteration") if isinstance(row.get("iteration"), int) else None
+        ),
+        action_type=(
+            str(row.get("action_type")).strip() or None
+            if row.get("action_type") is not None
+            else None
+        ),
         aggregate_mean_r=(
             float(results["aggregate_mean_r"])
             if isinstance(results.get("aggregate_mean_r"), int | float)
@@ -472,9 +474,7 @@ def build_autoresearch_review_bundle(
     resolved_logs_dir = (
         Path(logs_dir).resolve()
         if logs_dir
-        else inferred_logs_dir.resolve()
-        if inferred_logs_dir.exists()
-        else None
+        else inferred_logs_dir.resolve() if inferred_logs_dir.exists() else None
     )
 
     ledger_path = Path(layout.experiments_path)

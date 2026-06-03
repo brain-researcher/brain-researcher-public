@@ -514,7 +514,9 @@ def _run_deterministic_prechecks(
         values = _collect_output_values(payload, output_key)
         if any(_value_is_present(value) for value in values):
             continue
-        normalized_mode = str(failure_mode).strip() or QCFailureCode.OUTPUT_MISSING.value
+        normalized_mode = (
+            str(failure_mode).strip() or QCFailureCode.OUTPUT_MISSING.value
+        )
         failure_modes.append(normalized_mode)
         evidence.append(f"missing required output:{output_key}")
 
@@ -522,7 +524,9 @@ def _run_deterministic_prechecks(
         values = _collect_artifact_values(payload, artifact_key)
         if any(_value_is_present(value) for value in values):
             continue
-        normalized_mode = str(failure_mode).strip() or QCFailureCode.OUTPUT_MISSING.value
+        normalized_mode = (
+            str(failure_mode).strip() or QCFailureCode.OUTPUT_MISSING.value
+        )
         failure_modes.append(normalized_mode)
         evidence.append(f"missing required artifact:{artifact_key}")
 
@@ -752,9 +756,11 @@ def evaluate_semantic_qc(
 
     payload_summary = {
         "status": payload.get("status"),
-        "output_keys": sorted(payload.get("outputs", {}).keys())
-        if isinstance(payload.get("outputs"), Mapping)
-        else [],
+        "output_keys": (
+            sorted(payload.get("outputs", {}).keys())
+            if isinstance(payload.get("outputs"), Mapping)
+            else []
+        ),
     }
 
     try:

@@ -15,8 +15,9 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any
 
 import requests
 
@@ -26,7 +27,7 @@ DEFAULT_CACHE_DIR = Path("data/br-kg/raw/scholarly_metadata")
 DEFAULT_HTTP_TIMEOUT = 20
 
 
-def _read_metadata_file(path: Path) -> List[Dict[str, Any]]:
+def _read_metadata_file(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         raise FileNotFoundError(f"Metadata file not found: {path}")
     text = path.read_text(encoding="utf-8")
@@ -47,9 +48,9 @@ class ScholarlyMetadataLoader:
 
     def __init__(
         self,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         http_timeout: int = DEFAULT_HTTP_TIMEOUT,
-        crossref_mailto: Optional[str] = None,
+        crossref_mailto: str | None = None,
     ) -> None:
         self.cache_dir = Path(cache_dir or DEFAULT_CACHE_DIR)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -62,13 +63,15 @@ class ScholarlyMetadataLoader:
     def load_records(
         self,
         *,
-        metadata_path: Optional[str] = None,
-        dois: Optional[Sequence[str]] = None,
-        openalex_filter: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        metadata_path: str | None = None,
+        dois: Sequence[str] | None = None,
+        openalex_filter: str | None = None,
+    ) -> list[dict[str, Any]]:
         if metadata_path:
             records = _read_metadata_file(Path(metadata_path))
-            logger.info("Loaded %d scholarly records from %s", len(records), metadata_path)
+            logger.info(
+                "Loaded %d scholarly records from %s", len(records), metadata_path
+            )
             return records
 
         if not dois and not openalex_filter:
@@ -76,7 +79,7 @@ class ScholarlyMetadataLoader:
                 "ScholarlyMetadataLoader requires either `metadata_path`, `dois`, or `openalex_filter`."
             )
 
-        harvested: List[Dict[str, Any]] = []
+        harvested: list[dict[str, Any]] = []
         if dois:
             for doi in dois:
                 try:
@@ -93,10 +96,12 @@ class ScholarlyMetadataLoader:
     def ingest(
         self,
         db,
-        records: Optional[Iterable[Dict[str, Any]]] = None,
+        records: Iterable[dict[str, Any]] | None = None,
         **load_kwargs: Any,
-    ) -> Dict[str, Any]:
-        payloads = list(records) if records is not None else self.load_records(**load_kwargs)
+    ) -> dict[str, Any]:
+        payloads = (
+            list(records) if records is not None else self.load_records(**load_kwargs)
+        )
         stats = {
             "publications_upserted": 0,
             "authors_upserted": 0,
@@ -111,27 +116,29 @@ class ScholarlyMetadataLoader:
             try:
                 self._ingest_single(db, record, stats)
             except Exception as exc:  # pragma: no cover - defensive logging
-                logger.exception("Failed to ingest scholarly record (%s)", record.get("doi"))
+                logger.exception(
+                    "Failed to ingest scholarly record (%s)", record.get("doi")
+                )
                 stats["errors"].append({"doi": record.get("doi"), "error": str(exc)})
 
         return stats
 
-    def make_adapter(self, base_kwargs: Optional[Dict[str, Any]] = None):
+    def make_adapter(self, base_kwargs: dict[str, Any] | None = None):
         """Return an on-demand adapter that fetches metadata without writes."""
         return ScholarlyMetadataAdapter(self, base_kwargs or {})
 
     # ------------------------------------------------------------------
     # Harvest helpers
     # ------------------------------------------------------------------
-    def _harvest_for_doi(self, doi: str) -> Dict[str, Any]:
+    def _harvest_for_doi(self, doi: str) -> dict[str, Any]:
         crossref_json = self._fetch_crossref_work(doi)
         openalex_json = self._fetch_openalex_for_doi(doi)
         return self._merge_crossref_openalex(crossref_json, openalex_json)
 
-    def _harvest_openalex_filter(self, filter_expr: str) -> List[Dict[str, Any]]:
+    def _harvest_openalex_filter(self, filter_expr: str) -> list[dict[str, Any]]:
         endpoint = "https://api.openalex.org/works"
         params = {"filter": filter_expr, "per-page": 200}
-        harvested: List[Dict[str, Any]] = []
+        harvested: list[dict[str, Any]] = []
         cursor = "*"
 
         while cursor:
@@ -151,7 +158,7 @@ class ScholarlyMetadataLoader:
 
         return harvested
 
-    def _fetch_crossref_work(self, doi: str) -> Optional[Dict[str, Any]]:
+    def _fetch_crossref_work(self, doi: str) -> dict[str, Any] | None:
         if not doi:
             return None
         cache_path = self.cache_dir / f"crossref_{_slugify(doi)}.json"
@@ -179,7 +186,9 @@ class ScholarlyMetadataLoader:
         message = data.get("message") if isinstance(data, dict) else None
 
         if isinstance(message, dict):
-            cache_path.write_text(json.dumps(message, ensure_ascii=False, indent=2), encoding="utf-8")
+            cache_path.write_text(
+                json.dumps(message, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
             return message
 
         if message:
@@ -189,10 +198,12 @@ class ScholarlyMetadataLoader:
         else:
             logger.warning("Crossref response for %s lacked message payload", doi)
 
-        cache_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        cache_path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         return None
 
-    def _fetch_openalex_for_doi(self, doi: str) -> Optional[Dict[str, Any]]:
+    def _fetch_openalex_for_doi(self, doi: str) -> dict[str, Any] | None:
         if not doi:
             return None
         cache_path = self.cache_dir / f"openalex_{_slugify(doi)}.json"
@@ -205,7 +216,9 @@ class ScholarlyMetadataLoader:
         results = data.get("results") or []
         if results:
             record = results[0]
-            cache_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+            cache_path.write_text(
+                json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
             return record
         return None
 
@@ -213,19 +226,21 @@ class ScholarlyMetadataLoader:
         self,
         url: str,
         *,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
-        response = requests.get(url, params=params, headers=headers, timeout=self.http_timeout)
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        response = requests.get(
+            url, params=params, headers=headers, timeout=self.http_timeout
+        )
         response.raise_for_status()
         return response.json()
 
     def _merge_crossref_openalex(
         self,
-        crossref_json: Optional[Dict[str, Any]],
-        openalex_json: Optional[Dict[str, Any]],
-    ) -> Dict[str, Any]:
-        record: Dict[str, Any] = {}
+        crossref_json: dict[str, Any] | None,
+        openalex_json: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        record: dict[str, Any] = {}
 
         if crossref_json:
             record["doi"] = (crossref_json.get("DOI") or "").lower()
@@ -239,7 +254,9 @@ class ScholarlyMetadataLoader:
             record["publication_year"] = (
                 (crossref_json.get("issued") or {}).get("date-parts") or [[None]]
             )[0][0]
-            record["publication_date"] = crossref_json.get("created", {}).get("date-time")
+            record["publication_date"] = crossref_json.get("created", {}).get(
+                "date-time"
+            )
             record["keywords"] = crossref_json.get("subject")
             record["authors"] = []
             for auth in crossref_json.get("author", []) or []:
@@ -254,13 +271,19 @@ class ScholarlyMetadataLoader:
                     )
                 record["authors"].append(
                     {
-                        "name": " ".join(filter(None, [auth.get("given"), auth.get("family")])).strip(),
+                        "name": " ".join(
+                            filter(None, [auth.get("given"), auth.get("family")])
+                        ).strip(),
                         "orcid": auth.get("ORCID"),
                         "roles": None,
                         "institutions": affiliations,
                     }
                 )
-            record["citations"] = [ref.get("DOI") for ref in crossref_json.get("reference", []) if ref.get("DOI")]
+            record["citations"] = [
+                ref.get("DOI")
+                for ref in crossref_json.get("reference", [])
+                if ref.get("DOI")
+            ]
 
         if openalex_json:
             record.setdefault("doi", openalex_json.get("doi"))
@@ -270,7 +293,13 @@ class ScholarlyMetadataLoader:
             record.setdefault("publication_year", openalex_json.get("publication_year"))
             record.setdefault("publication_date", openalex_json.get("publication_date"))
             record.setdefault("openalex_id", openalex_json.get("id"))
-            record.setdefault("keywords", [topic.get("display_name") for topic in openalex_json.get("topics", [])])
+            record.setdefault(
+                "keywords",
+                [
+                    topic.get("display_name")
+                    for topic in openalex_json.get("topics", [])
+                ],
+            )
             authorships = openalex_json.get("authorships") or []
             if authorships:
                 record["authors"] = []
@@ -304,7 +333,7 @@ class ScholarlyMetadataLoader:
     # ------------------------------------------------------------------
     # Graph ingestion helpers
     # ------------------------------------------------------------------
-    def _ingest_single(self, db, record: Dict[str, Any], stats: Dict[str, Any]) -> None:
+    def _ingest_single(self, db, record: dict[str, Any], stats: dict[str, Any]) -> None:
         doi = record.get("doi")
         if not doi:
             logger.debug("Skipping scholarly record without DOI: %s", record)
@@ -383,11 +412,13 @@ class ScholarlyMetadataLoader:
 class ScholarlyMetadataAdapter:
     """Callable adapter for on-demand metadata retrieval."""
 
-    def __init__(self, loader: ScholarlyMetadataLoader, base_kwargs: Dict[str, Any]) -> None:
+    def __init__(
+        self, loader: ScholarlyMetadataLoader, base_kwargs: dict[str, Any]
+    ) -> None:
         self.loader = loader
         self.base_kwargs = base_kwargs
 
-    def __call__(self, **kwargs: Any) -> List[Dict[str, Any]]:
+    def __call__(self, **kwargs: Any) -> list[dict[str, Any]]:
         params = {**self.base_kwargs, **kwargs}
         return self.loader.load_records(
             metadata_path=params.get("metadata_path"),

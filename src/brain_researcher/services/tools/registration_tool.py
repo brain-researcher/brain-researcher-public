@@ -3,17 +3,11 @@
 from __future__ import annotations
 
 import logging
-import numpy as np
 from pathlib import Path
-from typing import List, Optional
 
+import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
-from brain_researcher.services.tools.params import (
-    RegistrationParameters,
-    registration_from_payload,
-    run_registration,
-)
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 logger = logging.getLogger(__name__)
@@ -26,22 +20,34 @@ class RegistrationArgs(BaseModel):
 
     moving_image: str = Field(description="Moving/source image")
     fixed_image: str = Field(description="Fixed/target image")
-    output_dir: Optional[str] = Field(default=None, description="Output directory for results")
+    output_dir: str | None = Field(
+        default=None, description="Output directory for results"
+    )
 
-    registration_type: str = Field(default="affine", description="Registration strategy")
+    registration_type: str = Field(
+        default="affine", description="Registration strategy"
+    )
     transform_type: str = Field(default="Affine", description="Transform model")
     metric: str = Field(default="MI", description="Similarity metric")
-    iterations: List[int] = Field(default_factory=lambda: [100, 100, 50], description="Iterative schedule")
-    shrink_factors: List[int] = Field(default_factory=lambda: [4, 2, 1], description="Shrink factors")
-    smoothing_sigmas: List[float] = Field(default_factory=lambda: [2.0, 1.0, 0.0], description="Smoothing sigmas")
+    iterations: list[int] = Field(
+        default_factory=lambda: [100, 100, 50], description="Iterative schedule"
+    )
+    shrink_factors: list[int] = Field(
+        default_factory=lambda: [4, 2, 1], description="Shrink factors"
+    )
+    smoothing_sigmas: list[float] = Field(
+        default_factory=lambda: [2.0, 1.0, 0.0], description="Smoothing sigmas"
+    )
     interpolation: str = Field(default="Linear", description="Interpolation method")
 
     save_transform: bool = Field(default=True, description="Persist transform matrix")
     save_warped: bool = Field(default=True, description="Persist warped moving image")
     save_inverse: bool = Field(default=True, description="Persist inverse transform")
     save_field: bool = Field(default=False, description="Persist deformation field")
-    compute_similarity: bool = Field(default=True, description="Compute similarity summary")
-    seed: Optional[int] = Field(default=None, description="Random seed")
+    compute_similarity: bool = Field(
+        default=True, description="Compute similarity summary"
+    )
+    seed: int | None = Field(default=None, description="Random seed")
 
 
 class RegistrationTool(NeuroToolWrapper):
@@ -63,13 +69,17 @@ class RegistrationTool(NeuroToolWrapper):
         try:
             args = RegistrationArgs(**kwargs)
             payload = args.model_dump(exclude_none=True)
-            output_dir = payload.get("output_dir") or str(Path.cwd() / "registration_outputs")
+            output_dir = payload.get("output_dir") or str(
+                Path.cwd() / "registration_outputs"
+            )
             payload["output_dir"] = output_dir
 
             moving_path = Path(args.moving_image)
             fixed_path = Path(args.fixed_image)
             if not moving_path.exists() or not fixed_path.exists():
-                return ToolResult(status="error", error="Input image(s) not found", data={})
+                return ToolResult(
+                    status="error", error="Input image(s) not found", data={}
+                )
 
             # Generate placeholder image data for metrics.
             rng = np.random.default_rng(args.seed)
@@ -126,7 +136,9 @@ class RegistrationTool(NeuroToolWrapper):
                 outputs["visualization"] = str(viz_path)
                 if kwargs.get("checkerboard"):
                     checker_path = out_path / "registration_checkerboard.png"
-                    checker_path.write_text("placeholder checkerboard", encoding="utf-8")
+                    checker_path.write_text(
+                        "placeholder checkerboard", encoding="utf-8"
+                    )
                     outputs["checkerboard"] = str(checker_path)
 
             summary = {
@@ -175,11 +187,13 @@ class RegistrationTool(NeuroToolWrapper):
             "fwdtransforms": [field],
         }
 
-    def _compute_similarity_metrics(self, moving: np.ndarray, fixed: np.ndarray, warped: np.ndarray) -> dict:
+    def _compute_similarity_metrics(
+        self, moving: np.ndarray, fixed: np.ndarray, warped: np.ndarray
+    ) -> dict:
         eps = 1e-8
         mse_before = np.mean((moving - fixed) ** 2)
         mse_after = np.mean((warped - fixed) ** 2)
-        denom = np.mean(fixed ** 2) + eps
+        denom = np.mean(fixed**2) + eps
         mse_before = float(np.clip(mse_before / denom, 0.0, 1.0))
         mse_after = float(np.clip(mse_after / denom, 0.0, 1.0))
 
@@ -211,7 +225,7 @@ class RegistrationTools:
     """Registry helper."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         return [RegistrationTool()]
 
 

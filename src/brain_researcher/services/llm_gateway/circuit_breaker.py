@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import threading
 import time
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, TypeVar
-
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -16,7 +16,9 @@ class CircuitState(str, Enum):
 
 
 class CircuitBreaker:
-    def __init__(self, failure_threshold: int = 5, recovery_timeout_sec: int = 60) -> None:
+    def __init__(
+        self, failure_threshold: int = 5, recovery_timeout_sec: int = 60
+    ) -> None:
         self.failure_threshold = max(1, int(failure_threshold))
         self.recovery_timeout_sec = max(1, int(recovery_timeout_sec))
         self._failures = 0

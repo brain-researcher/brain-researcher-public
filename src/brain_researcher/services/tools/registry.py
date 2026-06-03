@@ -1103,9 +1103,11 @@ class UnifiedToolRegistry:
         scored_specs.sort(
             key=lambda item: (
                 -item[0],
-                0
-                if (neuroimaging_query and item[1].kind in {"analysis", "imaging"})
-                else 1,
+                (
+                    0
+                    if (neuroimaging_query and item[1].kind in {"analysis", "imaging"})
+                    else 1
+                ),
                 item[1].name,
             )
         )

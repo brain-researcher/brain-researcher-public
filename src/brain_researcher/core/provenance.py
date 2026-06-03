@@ -7,14 +7,15 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import platform
 import subprocess
 import sys
-import platform
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
 
-def _sha256_file(path: Path) -> Optional[str]:
+def _sha256_file(path: Path) -> str | None:
     try:
         h = hashlib.sha256()
         with path.open("rb") as f:
@@ -25,17 +26,21 @@ def _sha256_file(path: Path) -> Optional[str]:
         return None
 
 
-def _git_commit(repo_path: Path) -> Optional[str]:
+def _git_commit(repo_path: Path) -> str | None:
     try:
         result = subprocess.run(
-            ["git", "rev-parse", "HEAD"], cwd=repo_path, capture_output=True, text=True, check=True
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            check=True,
         )
         return result.stdout.strip()
     except Exception:
         return None
 
 
-def _env_snapshot() -> Dict[str, Any]:
+def _env_snapshot() -> dict[str, Any]:
     return {
         "python_version": sys.version,
         "platform": platform.platform(),
@@ -44,14 +49,14 @@ def _env_snapshot() -> Dict[str, Any]:
     }
 
 
-def _default_package_versions() -> Dict[str, str]:
+def _default_package_versions() -> dict[str, str]:
     try:
         from importlib import metadata
     except Exception:
         return {}
 
     packages = ["numpy", "pandas", "nibabel", "nilearn", "statsmodels", "scipy"]
-    versions: Dict[str, str] = {}
+    versions: dict[str, str] = {}
     for pkg in packages:
         try:
             versions[pkg] = metadata.version(pkg)
@@ -63,13 +68,13 @@ def _default_package_versions() -> Dict[str, str]:
 def write_provenance(
     output_dir: Path,
     spec_paths: Iterable[Path],
-    command: List[str],
-    config_snapshot: Optional[Dict[str, Any]] = None,
-    seeds: Optional[Dict[str, Any]] = None,
-    images: Optional[Dict[str, str]] = None,
-    pkg_versions: Optional[Dict[str, str]] = None,
-    extra: Optional[Dict[str, Any]] = None,
-    references: Optional[List[Dict[str, Any]]] = None,
+    command: list[str],
+    config_snapshot: dict[str, Any] | None = None,
+    seeds: dict[str, Any] | None = None,
+    images: dict[str, str] | None = None,
+    pkg_versions: dict[str, str] | None = None,
+    extra: dict[str, Any] | None = None,
+    references: list[dict[str, Any]] | None = None,
 ) -> Path:
     """
     Write a provenance.json file capturing enough information to reproduce a run.
@@ -85,12 +90,18 @@ def write_provenance(
         try:
             canon = json.dumps(references, sort_keys=True)
             ref_hash = hashlib.sha256(canon.encode("utf-8")).hexdigest()
-            ref_sources = sorted({r.get("source") for r in references if isinstance(r, dict) and r.get("source")})
+            ref_sources = sorted(
+                {
+                    r.get("source")
+                    for r in references
+                    if isinstance(r, dict) and r.get("source")
+                }
+            )
         except Exception:
             ref_hash = None
 
     packages = pkg_versions or _default_package_versions()
-    provenance: Dict[str, Any] = {
+    provenance: dict[str, Any] = {
         "brain_researcher_commit": _git_commit(repo_root),
         "openneuro_glmfitlins_commit": _git_commit(glmrepo_root),
         "command": command,

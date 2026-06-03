@@ -14,8 +14,8 @@ from pydantic import BaseModel, Field
 
 from brain_researcher.services.tools.atlas_utils import (
     allow_network_atlas_fetch,
-    atlas_reference_hints,
     atlas_family_output_root,
+    atlas_reference_hints,
     default_atlas_output_root,
     derive_local_atlas_labels,
     discover_local_schaefer_resolutions,
@@ -23,8 +23,8 @@ from brain_researcher.services.tools.atlas_utils import (
     fetch_templateflow_difumo_atlas,
     fetch_templateflow_schaefer_atlas,
     find_local_aal_atlas,
-    find_local_harvard_oxford_atlas,
     find_local_difumo_atlas,
+    find_local_harvard_oxford_atlas,
     find_local_schaefer_atlas,
     find_local_yeo_atlas,
     normalize_harvard_oxford_variant,
@@ -489,9 +489,11 @@ class FetchAtlasTool(NeuroToolWrapper):
                 atlas_file = _materialize_fetched_map(
                     atlas.maps,
                     output_root,
-                    atlas.maps.split("/")[-1]
-                    if isinstance(atlas.maps, str)
-                    else f"Yeo2011_{n_networks}Networks_MNI152_FreeSurferConformed1mm_LiberalMask.nii.gz",
+                    (
+                        atlas.maps.split("/")[-1]
+                        if isinstance(atlas.maps, str)
+                        else f"Yeo2011_{n_networks}Networks_MNI152_FreeSurferConformed1mm_LiberalMask.nii.gz"
+                    ),
                 )
                 labels_list = _normalize_labels(list(atlas.labels))
                 atlas_source = "nilearn_download"
@@ -564,9 +566,7 @@ class FetchAtlasTool(NeuroToolWrapper):
                     atlas_file = _materialize_fetched_map(
                         atlas.maps,
                         output_root,
-                        (
-                            f"DiFuMo_dimension-{dimension}_data-MNI152_2mm.nii.gz"
-                        ),
+                        (f"DiFuMo_dimension-{dimension}_data-MNI152_2mm.nii.gz"),
                     )
                     labels_list = _normalize_labels(list(atlas.labels))
                     atlas_source = "nilearn_download"

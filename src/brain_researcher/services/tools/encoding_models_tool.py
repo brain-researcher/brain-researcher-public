@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,13 +24,15 @@ class EncodingModelsArgs(BaseModel):
 
     brain_data_file: str = Field(description="Brain data matrix (time x voxels)")
     stimulus_file: str = Field(description="Stimulus/design matrix (time x features)")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    output_dir: str | None = Field(default=None, description="Output directory")
 
     model_type: str = Field(default="ridge", description="Encoding model type")
     n_folds: int = Field(default=5, description="Cross-validation folds")
     standardize: bool = Field(default=True, description="Standardize features")
-    add_derivatives: bool = Field(default=False, description="Append temporal derivatives")
-    random_state: Optional[int] = Field(default=42, description="Random seed")
+    add_derivatives: bool = Field(
+        default=False, description="Append temporal derivatives"
+    )
+    random_state: int | None = Field(default=42, description="Random seed")
     save_models: bool = Field(default=True, description="Persist model metadata")
     save_predictions: bool = Field(default=True, description="Persist predictions")
     save_weights: bool = Field(default=True, description="Persist encoding weights")

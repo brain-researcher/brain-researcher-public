@@ -73,9 +73,7 @@ def _lookup_spec_by_rule(rules: list[ReviewRule] | None) -> dict[str, Any]:
     if not rules:
         return {}
     return {
-        rule.rule_id: rule.kg_lookup
-        for rule in rules
-        if rule.kg_lookup is not None
+        rule.rule_id: rule.kg_lookup for rule in rules if rule.kg_lookup is not None
     }
 
 
@@ -158,7 +156,9 @@ def ground_parameter_findings(
     study_id = str(bundle.kg_context.get("study_id") or "").strip() or None
     design = str(bundle.kg_context.get("design_type") or "").strip() or None
     method = str(bundle.kg_context.get("statistical_method") or "").strip() or None
-    analysis_family = str(bundle.kg_context.get("analysis_family") or "").strip() or None
+    analysis_family = (
+        str(bundle.kg_context.get("analysis_family") or "").strip() or None
+    )
 
     discovery_context = build_discovery_kg_context(
         task=task,

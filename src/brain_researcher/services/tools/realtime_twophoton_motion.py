@@ -35,7 +35,9 @@ def _safe_normalize(arr: np.ndarray) -> np.ndarray:
     return centered / scale
 
 
-def _phase_correlation_shift(reference: np.ndarray, frame: np.ndarray) -> tuple[np.ndarray, float]:
+def _phase_correlation_shift(
+    reference: np.ndarray, frame: np.ndarray
+) -> tuple[np.ndarray, float]:
     ref = _safe_normalize(reference)
     img = _safe_normalize(frame)
     cross_power = np.fft.fftn(ref) * np.conj(np.fft.fftn(img))
@@ -70,10 +72,17 @@ class PhaseCorrelationMotionCorrector:
     def correct(self, frame: np.ndarray) -> tuple[np.ndarray, MotionEstimate]:
         shifts, peak_ratio = _phase_correlation_shift(self.reference, frame)
         corrected = ndi_shift(frame, shift=tuple(shifts), order=1, mode="nearest")
-        residual = float(np.mean(np.abs(_safe_normalize(self.reference) - _safe_normalize(corrected))))
+        residual = float(
+            np.mean(
+                np.abs(_safe_normalize(self.reference) - _safe_normalize(corrected))
+            )
+        )
         confidence = max(0.0, peak_ratio / 10.0)
         translation = float(np.linalg.norm(shifts))
-        valid = translation <= self.max_translation_px and confidence >= self.confidence_threshold / 10.0
+        valid = (
+            translation <= self.max_translation_px
+            and confidence >= self.confidence_threshold / 10.0
+        )
         estimate = MotionEstimate(
             dx_px=float(shifts[1]),
             dy_px=float(shifts[0]),
@@ -95,7 +104,9 @@ class CaimanMotionCorrector:
     ):
         try:
             from caiman.motion_correction import MotionCorrect  # type: ignore
-        except ImportError as exc:  # pragma: no cover - exercised only when dependency missing
+        except (
+            ImportError
+        ) as exc:  # pragma: no cover - exercised only when dependency missing
             raise ImportError(
                 "CaImAn is required for motion_backend='caiman'. Install the optical_realtime extra."
             ) from exc

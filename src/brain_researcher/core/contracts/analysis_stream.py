@@ -13,7 +13,7 @@ The canonical contract is `AnalysisStreamEventV1`, a discriminated union on
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Annotated, Literal, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -233,20 +233,18 @@ class UnknownEventV1(AnalysisStreamBaseEventV1):
 
 
 AnalysisStreamEventV1 = Annotated[
-    Union[
-        JobStartedEventV1,
-        ToolCallStartedEventV1,
-        ToolCallFinishedEventV1,
-        ArtifactWrittenEventV1,
-        LogLineEventV1,
-        ObservationAppendedEventV1,
-        StageEventV1,
-        WarningEventV1,
-        MetricEventV1,
-        AnalysisCompletedEventV1,
-        ErrorEventV1,
-        UnknownEventV1,
-    ],
+    JobStartedEventV1
+    | ToolCallStartedEventV1
+    | ToolCallFinishedEventV1
+    | ArtifactWrittenEventV1
+    | LogLineEventV1
+    | ObservationAppendedEventV1
+    | StageEventV1
+    | WarningEventV1
+    | MetricEventV1
+    | AnalysisCompletedEventV1
+    | ErrorEventV1
+    | UnknownEventV1,
     Field(discriminator="event_type"),
 ]
 

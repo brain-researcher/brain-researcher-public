@@ -5,8 +5,8 @@ Lightweight clinical / longitudinal utilities for Grandmaster.
 These are intentionally minimal to avoid heavy deps but provide real functionality.
 """
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Mapping
 
 import numpy as np
 import pandas as pd
@@ -171,7 +171,10 @@ def normalize_with_lesion_tool(
     (out_dir / "lesion_normalization_manifest.json").write_text(
         pd.io.json.dumps(manifest, indent=2), encoding="utf-8"
     )
-    return {"status": "success", "outputs": {"manifest": str(out_dir / 'lesion_normalization_manifest.json')}}
+    return {
+        "status": "success",
+        "outputs": {"manifest": str(out_dir / "lesion_normalization_manifest.json")},
+    }
 
 
 __all__ = [

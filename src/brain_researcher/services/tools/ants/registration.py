@@ -3,13 +3,14 @@
 This module provides ANTs registration conforming to the NeuroTool interface.
 It delegates to the existing agent tool implementation to avoid duplication.
 """
+
 from typing import Any
 
 from pydantic import BaseModel
 
-from brain_researcher.services.tools.base import NeuroTool, ExecutionMode
-from brain_researcher.services.tools.result import ToolResult
 from brain_researcher.services.tools.ants_tool import ANTsRegistrationTool
+from brain_researcher.services.tools.base import ExecutionMode, NeuroTool
+from brain_researcher.services.tools.result import ToolResult
 
 
 class ANTsRegistrationPipeline(NeuroTool):

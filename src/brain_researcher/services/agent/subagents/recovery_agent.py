@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, Optional, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 from .contracts import RecoveryProposal
 
@@ -16,12 +17,14 @@ class RecoveryAgent:
         taxonomy_category: str,
         policy_action: str,
         fallback_tools: Sequence[str] | None,
-        adjusted_params: Dict[str, Any] | None,
+        adjusted_params: dict[str, Any] | None,
         failed_tools: Iterable[str] | None = None,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> RecoveryProposal:
         failed = set(failed_tools or [])
-        clean_fallbacks = [tool for tool in (fallback_tools or []) if tool and tool not in failed]
+        clean_fallbacks = [
+            tool for tool in (fallback_tools or []) if tool and tool not in failed
+        ]
 
         if adjusted_params:
             return RecoveryProposal(

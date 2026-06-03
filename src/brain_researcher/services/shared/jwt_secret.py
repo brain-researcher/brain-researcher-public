@@ -58,7 +58,9 @@ def resolve_shared_jwt_secret(
     so independently launched services still agree on a single HS256 secret.
     """
 
-    normalized_env_names = tuple(dict.fromkeys(str(name).strip() for name in env_names if name))
+    normalized_env_names = tuple(
+        dict.fromkeys(str(name).strip() for name in env_names if name)
+    )
     if not normalized_env_names:
         return dev_default
 
@@ -70,14 +72,23 @@ def resolve_shared_jwt_secret(
     explicit_secret = explicit_values[0][1] if explicit_values else None
 
     is_production = os.getenv("NODE_ENV") == "production" or (
-        (os.getenv("APP_ENV") or os.getenv("ENV") or "").lower() in {"prod", "production"}
+        (os.getenv("APP_ENV") or os.getenv("ENV") or "").lower()
+        in {"prod", "production"}
     )
     if is_production:
         return explicit_secret or dev_default
 
-    repo_secret = None if _is_test_env() else next(
-        (value for name in normalized_env_names if (value := get_repo_dotenv_value(name))),
-        None,
+    repo_secret = (
+        None
+        if _is_test_env()
+        else next(
+            (
+                value
+                for name in normalized_env_names
+                if (value := get_repo_dotenv_value(name))
+            ),
+            None,
+        )
     )
 
     if (

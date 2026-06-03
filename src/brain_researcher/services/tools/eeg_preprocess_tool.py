@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from brain_researcher.core.utils import configure_mne_environment
-
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 
@@ -16,7 +15,7 @@ class EEGPreprocessArgs(BaseModel):
     montage_def: str = Field(description="Resolved montage file")
     highpass_hz: float = Field(default=1.0)
     lowpass_hz: float = Field(default=40.0)
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    output_dir: str | None = Field(default=None, description="Output directory")
     reference: str = Field(default="average", description="EEG reference")
 
 
@@ -35,7 +34,9 @@ class EEGPreprocessTool(NeuroToolWrapper):
         try:
             import mne
         except ImportError as exc:
-            return ToolResult(status="error", error=f"MNE not available: {exc}", data={})
+            return ToolResult(
+                status="error", error=f"MNE not available: {exc}", data={}
+            )
         args = EEGPreprocessArgs(
             raw_eeg=raw_eeg,
             montage_def=montage_def,
@@ -54,7 +55,9 @@ class EEGPreprocessTool(NeuroToolWrapper):
         elif raw_path.suffix in {".edf", ".bdf"}:
             raw = mne.io.read_raw_edf(raw_path, preload=True, verbose=False)
         else:
-            return ToolResult(status="error", error="Unsupported raw_eeg format", data={})
+            return ToolResult(
+                status="error", error="Unsupported raw_eeg format", data={}
+            )
 
         montage_path = Path(args.montage_def)
         if montage_path.exists():

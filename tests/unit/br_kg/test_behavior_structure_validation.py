@@ -91,9 +91,7 @@ def test_behavior_structure_validation_builds_pairwise_summary(tmp_path):
     assert summary["task_node_count"] == 3
     assert summary["pairwise_count"] == 3
     assert summary["connected_pair_count"] == 3
-    assert (
-        summary["group_stats"]["behavior_family_separation_margin"] is not None
-    )
+    assert summary["group_stats"]["behavior_family_separation_margin"] is not None
 
     rows = result["pairwise_records"]
     same_family_row = next(
@@ -109,7 +107,10 @@ def test_behavior_structure_validation_builds_pairwise_summary(tmp_path):
         output_dir=tmp_path,
     )
     assert (tmp_path / "pairwise_metrics.tsv").exists()
-    assert json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))[
-        "task_node_count"
-    ] == 3
+    assert (
+        json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))[
+            "task_node_count"
+        ]
+        == 3
+    )
     assert artifact_paths["summary_json"].endswith("summary.json")

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class EvidenceSourceType(str, Enum):
@@ -47,8 +47,8 @@ class EvidenceItem:
     source_id: str
     label: str
     relevance_score: float = 1.0
-    url: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    url: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Validate and normalize fields."""
@@ -68,7 +68,7 @@ class EvidenceItem:
             return f"[{index}]({self.url})"
         return f"[{index}]"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "source_type": self.source_type.value,
@@ -96,13 +96,13 @@ class EvidenceBundle:
     """
 
     query: str
-    items: List[EvidenceItem] = field(default_factory=list)
+    items: list[EvidenceItem] = field(default_factory=list)
     total_literature_count: int = 0
     total_dataset_count: int = 0
     total_tool_count: int = 0
     aggregate_niclip_score: float = 0.0
     confidence: float = 0.5
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_item(self, item: EvidenceItem) -> None:
         """Add an evidence item and update aggregates.
@@ -122,7 +122,9 @@ class EvidenceBundle:
         elif item.source_type == EvidenceSourceType.TOOL_CATALOG:
             self.total_tool_count += 1
 
-    def get_items_by_source(self, source_type: EvidenceSourceType) -> List[EvidenceItem]:
+    def get_items_by_source(
+        self, source_type: EvidenceSourceType
+    ) -> list[EvidenceItem]:
         """Get all items from a specific source type.
 
         Args:
@@ -133,7 +135,7 @@ class EvidenceBundle:
         """
         return [item for item in self.items if item.source_type == source_type]
 
-    def get_top_items(self, n: int = 10) -> List[EvidenceItem]:
+    def get_top_items(self, n: int = 10) -> list[EvidenceItem]:
         """Get the top N items by relevance score.
 
         Args:
@@ -160,9 +162,19 @@ class EvidenceBundle:
         import math
 
         # Base confidence from evidence counts
-        lit_score = min(1.0, self.total_literature_count / 10.0) if self.total_literature_count > 0 else 0.0
-        dataset_score = min(1.0, self.total_dataset_count / 5.0) if self.total_dataset_count > 0 else 0.0
-        tool_score = min(1.0, self.total_tool_count / 3.0) if self.total_tool_count > 0 else 0.0
+        lit_score = (
+            min(1.0, self.total_literature_count / 10.0)
+            if self.total_literature_count > 0
+            else 0.0
+        )
+        dataset_score = (
+            min(1.0, self.total_dataset_count / 5.0)
+            if self.total_dataset_count > 0
+            else 0.0
+        )
+        tool_score = (
+            min(1.0, self.total_tool_count / 3.0) if self.total_tool_count > 0 else 0.0
+        )
 
         # Weighted combination
         raw_score = (
@@ -181,7 +193,7 @@ class EvidenceBundle:
         self.confidence = max(0.05, min(0.95, confidence))
         return self.confidence
 
-    def format_citations(self, max_citations: int = 10) -> List[Dict[str, str]]:
+    def format_citations(self, max_citations: int = 10) -> list[dict[str, str]]:
         """Format evidence items as citations with links.
 
         Args:
@@ -192,15 +204,17 @@ class EvidenceBundle:
         """
         citations = []
         for i, item in enumerate(self.get_top_items(max_citations), start=1):
-            citations.append({
-                "ref": f"[{i}]",
-                "label": item.label,
-                "url": item.url or "",
-                "source": item.source_type.value,
-            })
+            citations.append(
+                {
+                    "ref": f"[{i}]",
+                    "label": item.label,
+                    "url": item.url or "",
+                    "source": item.source_type.value,
+                }
+            )
         return citations
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Return a summary of the evidence bundle.
 
         Returns:
@@ -216,7 +230,7 @@ class EvidenceBundle:
             "confidence": self.confidence,
         }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "query": self.query,
@@ -252,15 +266,15 @@ class KnowledgePlan:
     decision_type: DecisionType
     query: str
     reasoning: str = ""
-    recommended_datasets: List[str] = field(default_factory=list)
-    dataset_scores: Dict[str, float] = field(default_factory=dict)
-    recommended_tools: List[str] = field(default_factory=list)
-    tool_sequence: List[str] = field(default_factory=list)
-    explanation: Optional[str] = None
-    citations: List[Dict[str, str]] = field(default_factory=list)
+    recommended_datasets: list[str] = field(default_factory=list)
+    dataset_scores: dict[str, float] = field(default_factory=dict)
+    recommended_tools: list[str] = field(default_factory=list)
+    tool_sequence: list[str] = field(default_factory=list)
+    explanation: str | None = None
+    citations: list[dict[str, str]] = field(default_factory=list)
     confidence: float = 0.5
-    evidence_bundle: Optional[EvidenceBundle] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    evidence_bundle: EvidenceBundle | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Validate and normalize fields."""
@@ -279,7 +293,7 @@ class KnowledgePlan:
         """Check if this plan is for pipeline recommendation."""
         return self.decision_type == DecisionType.PIPELINE_RECOMMENDATION
 
-    def get_top_datasets(self, n: int = 5) -> List[str]:
+    def get_top_datasets(self, n: int = 5) -> list[str]:
         """Get top N recommended datasets by score.
 
         Args:
@@ -295,7 +309,7 @@ class KnowledgePlan:
             return [ds_id for ds_id, _ in sorted_datasets[:n]]
         return self.recommended_datasets[:n]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "decision_type": self.decision_type.value,

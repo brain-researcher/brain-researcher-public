@@ -4,14 +4,16 @@ Handles insertions, updates, and deletions based on change detection.
 """
 
 import logging
+from collections.abc import Callable
 from enum import Enum
-from typing import Dict, Any, List, Tuple, Optional, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class ChangeType(Enum):
     """Type of change detected."""
+
     INSERT = "insert"
     UPDATE = "update"
     DELETE = "delete"
@@ -21,11 +23,7 @@ class ChangeType(Enum):
 class DeltaProcessor:
     """Process delta changes efficiently."""
 
-    def __init__(
-        self,
-        merge_strategy: str = "overwrite",
-        track_deletes: bool = True
-    ):
+    def __init__(self, merge_strategy: str = "overwrite", track_deletes: bool = True):
         """Initialize delta processor.
 
         Args:
@@ -47,9 +45,9 @@ class DeltaProcessor:
 
     def categorize_changes(
         self,
-        current: List[Tuple[str, Dict[str, Any]]],
-        previous: List[Tuple[str, Dict[str, Any]]]
-    ) -> Dict[ChangeType, List[Tuple[str, Dict[str, Any]]]]:
+        current: list[tuple[str, dict[str, Any]]],
+        previous: list[tuple[str, dict[str, Any]]],
+    ) -> dict[ChangeType, list[tuple[str, dict[str, Any]]]]:
         """Categorize changes between current and previous data.
 
         Args:
@@ -59,8 +57,8 @@ class DeltaProcessor:
         Returns:
             Dictionary mapping change types to affected items
         """
-        current_dict = {item_id: content for item_id, content in current}
-        previous_dict = {item_id: content for item_id, content in previous}
+        current_dict = dict(current)
+        previous_dict = dict(previous)
 
         current_ids = set(current_dict.keys())
         previous_ids = set(previous_dict.keys())
@@ -96,10 +94,10 @@ class DeltaProcessor:
 
     def merge_updates(
         self,
-        old_content: Dict[str, Any],
-        new_content: Dict[str, Any],
-        custom_merger: Optional[Callable] = None
-    ) -> Dict[str, Any]:
+        old_content: dict[str, Any],
+        new_content: dict[str, Any],
+        custom_merger: Callable | None = None,
+    ) -> dict[str, Any]:
         """Merge old and new content based on strategy.
 
         Args:
@@ -128,11 +126,11 @@ class DeltaProcessor:
 
     def process_delta(
         self,
-        changes: Dict[ChangeType, List[Tuple[str, Dict[str, Any]]]],
-        insert_handler: Optional[Callable] = None,
-        update_handler: Optional[Callable] = None,
-        delete_handler: Optional[Callable] = None
-    ) -> Dict[str, Any]:
+        changes: dict[ChangeType, list[tuple[str, dict[str, Any]]]],
+        insert_handler: Callable | None = None,
+        update_handler: Callable | None = None,
+        delete_handler: Callable | None = None,
+    ) -> dict[str, Any]:
         """Process delta changes with appropriate handlers.
 
         Args:
@@ -195,10 +193,10 @@ class DeltaProcessor:
     def process_batch_delta(
         self,
         source: str,
-        current_items: List[Tuple[str, Dict[str, Any]]],
-        get_previous: Callable[[str], List[Tuple[str, Dict[str, Any]]]],
-        handlers: Dict[str, Callable]
-    ) -> Dict[str, Any]:
+        current_items: list[tuple[str, dict[str, Any]]],
+        get_previous: Callable[[str], list[tuple[str, dict[str, Any]]]],
+        handlers: dict[str, Callable],
+    ) -> dict[str, Any]:
         """Process a batch of items with delta detection.
 
         Args:
@@ -231,7 +229,7 @@ class DeltaProcessor:
             changes,
             handlers.get("insert"),
             handlers.get("update"),
-            handlers.get("delete")
+            handlers.get("delete"),
         )
 
         return {
@@ -248,10 +246,8 @@ class DeltaProcessor:
         }
 
     def resolve_conflicts(
-        self,
-        conflicts: List[Dict[str, Any]],
-        resolution_strategy: str = "newest"
-    ) -> List[Dict[str, Any]]:
+        self, conflicts: list[dict[str, Any]], resolution_strategy: str = "newest"
+    ) -> list[dict[str, Any]]:
         """Resolve conflicts between concurrent updates.
 
         Args:
@@ -284,7 +280,7 @@ class DeltaProcessor:
 
         return resolved
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get processing statistics.
 
         Returns:
@@ -293,15 +289,14 @@ class DeltaProcessor:
         stats = dict(self.stats)
 
         # Calculate rates
-        total = sum([
-            stats["inserts"],
-            stats["updates"],
-            stats["deletes"],
-            stats["unchanged"]
-        ])
+        total = sum(
+            [stats["inserts"], stats["updates"], stats["deletes"], stats["unchanged"]]
+        )
 
         if total > 0:
-            stats["change_rate"] = (stats["inserts"] + stats["updates"] + stats["deletes"]) / total
+            stats["change_rate"] = (
+                stats["inserts"] + stats["updates"] + stats["deletes"]
+            ) / total
         else:
             stats["change_rate"] = 0
 

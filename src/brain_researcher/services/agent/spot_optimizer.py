@@ -12,20 +12,21 @@ This module provides sophisticated spot instance optimization with support for:
 
 import asyncio
 import logging
-from typing import Dict, List, Optional, Any, Tuple, Union
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime, timedelta
-import json
 import statistics
-import numpy as np
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
 
 class CloudProvider(Enum):
     """Supported cloud providers"""
+
     AWS = "aws"
     GCP = "gcp"
     AZURE = "azure"
@@ -34,30 +35,33 @@ class CloudProvider(Enum):
 
 class InstanceType(Enum):
     """Instance types for neuroimaging workloads"""
+
     COMPUTE_OPTIMIZED = "compute_optimized"  # CPU-intensive preprocessing
-    MEMORY_OPTIMIZED = "memory_optimized"   # Large dataset analysis
-    GPU_OPTIMIZED = "gpu_optimized"         # Deep learning, GPU acceleration
-    STORAGE_OPTIMIZED = "storage_optimized" # Data-intensive operations
-    BALANCED = "balanced"                   # General purpose
+    MEMORY_OPTIMIZED = "memory_optimized"  # Large dataset analysis
+    GPU_OPTIMIZED = "gpu_optimized"  # Deep learning, GPU acceleration
+    STORAGE_OPTIMIZED = "storage_optimized"  # Data-intensive operations
+    BALANCED = "balanced"  # General purpose
 
 
 class BiddingStrategy(Enum):
     """Spot instance bidding strategies"""
+
     CONSERVATIVE = "conservative"  # Bid slightly above current price
-    AGGRESSIVE = "aggressive"      # Bid close to on-demand price
-    DYNAMIC = "dynamic"           # Adjust bid based on market conditions
-    RISK_ADJUSTED = "risk_adjusted" # Balance cost and interruption risk
+    AGGRESSIVE = "aggressive"  # Bid close to on-demand price
+    DYNAMIC = "dynamic"  # Adjust bid based on market conditions
+    RISK_ADJUSTED = "risk_adjusted"  # Balance cost and interruption risk
 
 
 @dataclass
 class ResourceRequirements:
     """Resource requirements for neuroimaging jobs"""
+
     cpu_cores: int
     memory_gb: float
     storage_gb: float
     gpu_count: int = 0
     gpu_memory_gb: float = 0
-    network_bandwidth_mbps: Optional[float] = None
+    network_bandwidth_mbps: float | None = None
 
     # Neuroimaging-specific requirements
     fsl_required: bool = False
@@ -66,13 +70,14 @@ class ResourceRequirements:
     cuda_required: bool = False
 
     # Performance requirements
-    min_cpu_performance: Optional[float] = None  # CPU benchmark score
-    max_acceptable_latency_ms: Optional[float] = None
+    min_cpu_performance: float | None = None  # CPU benchmark score
+    max_acceptable_latency_ms: float | None = None
 
 
 @dataclass
 class SpotPricePoint:
     """Historical spot price data point"""
+
     timestamp: datetime
     price: float
     availability_zone: str
@@ -83,6 +88,7 @@ class SpotPricePoint:
 @dataclass
 class SpotRecommendation:
     """Spot instance recommendation"""
+
     provider: CloudProvider
     region: str
     availability_zone: str
@@ -107,8 +113,8 @@ class SpotRecommendation:
     last_updated: datetime
 
     # Additional details
-    instance_specs: Dict[str, Any] = field(default_factory=dict)
-    estimated_performance: Optional[float] = None
+    instance_specs: dict[str, Any] = field(default_factory=dict)
+    estimated_performance: float | None = None
     suitability_score: float = 0.0
 
 
@@ -117,11 +123,17 @@ class PriceHistoryTracker:
 
     def __init__(self, max_history_days: int = 30):
         self.max_history_days = max_history_days
-        self.price_history: Dict[str, List[SpotPricePoint]] = {}
-        self.interruption_history: Dict[str, List[datetime]] = {}
+        self.price_history: dict[str, list[SpotPricePoint]] = {}
+        self.interruption_history: dict[str, list[datetime]] = {}
 
-    def add_price_point(self, provider: CloudProvider, region: str,
-                       instance_type: str, price: float, az: str) -> None:
+    def add_price_point(
+        self,
+        provider: CloudProvider,
+        region: str,
+        instance_type: str,
+        price: float,
+        az: str,
+    ) -> None:
         """Add a price point to history"""
         key = f"{provider.value}:{region}:{instance_type}:{az}"
 
@@ -132,7 +144,7 @@ class PriceHistoryTracker:
             timestamp=datetime.now(),
             price=price,
             availability_zone=az,
-            instance_type=instance_type
+            instance_type=instance_type,
         )
 
         self.price_history[key].append(price_point)
@@ -143,8 +155,9 @@ class PriceHistoryTracker:
             p for p in self.price_history[key] if p.timestamp > cutoff
         ]
 
-    def record_interruption(self, provider: CloudProvider, region: str,
-                           instance_type: str, az: str) -> None:
+    def record_interruption(
+        self, provider: CloudProvider, region: str, instance_type: str, az: str
+    ) -> None:
         """Record a spot instance interruption"""
         key = f"{provider.value}:{region}:{instance_type}:{az}"
 
@@ -161,9 +174,14 @@ class PriceHistoryTracker:
                     price_point.interruption_occurred = True
                     break
 
-    def get_price_statistics(self, provider: CloudProvider, region: str,
-                            instance_type: str, az: str,
-                            hours: int = 24) -> Dict[str, float]:
+    def get_price_statistics(
+        self,
+        provider: CloudProvider,
+        region: str,
+        instance_type: str,
+        az: str,
+        hours: int = 24,
+    ) -> dict[str, float]:
         """Get price statistics for the last N hours"""
         key = f"{provider.value}:{region}:{instance_type}:{az}"
         cutoff = datetime.now() - timedelta(hours=hours)
@@ -172,8 +190,7 @@ class PriceHistoryTracker:
             return {}
 
         recent_prices = [
-            p.price for p in self.price_history[key]
-            if p.timestamp > cutoff
+            p.price for p in self.price_history[key] if p.timestamp > cutoff
         ]
 
         if not recent_prices:
@@ -185,13 +202,20 @@ class PriceHistoryTracker:
             "median_price": statistics.median(recent_prices),
             "min_price": min(recent_prices),
             "max_price": max(recent_prices),
-            "price_volatility": statistics.stdev(recent_prices) if len(recent_prices) > 1 else 0,
-            "data_points": len(recent_prices)
+            "price_volatility": (
+                statistics.stdev(recent_prices) if len(recent_prices) > 1 else 0
+            ),
+            "data_points": len(recent_prices),
         }
 
-    def get_interruption_rate(self, provider: CloudProvider, region: str,
-                             instance_type: str, az: str,
-                             days: int = 7) -> float:
+    def get_interruption_rate(
+        self,
+        provider: CloudProvider,
+        region: str,
+        instance_type: str,
+        az: str,
+        days: int = 7,
+    ) -> float:
         """Calculate interruption rate for the last N days"""
         key = f"{provider.value}:{region}:{instance_type}:{az}"
         cutoff = datetime.now() - timedelta(days=days)
@@ -215,13 +239,18 @@ class InterruptionPredictor:
             "price_trend": 0.3,
             "historical_interruptions": 0.4,
             "market_volatility": 0.2,
-            "demand_indicators": 0.1
+            "demand_indicators": 0.1,
         }
 
-    def predict_interruption_probability(self, provider: CloudProvider, region: str,
-                                       instance_type: str, az: str,
-                                       price_tracker: PriceHistoryTracker,
-                                       duration_hours: int = 1) -> float:
+    def predict_interruption_probability(
+        self,
+        provider: CloudProvider,
+        region: str,
+        instance_type: str,
+        az: str,
+        price_tracker: PriceHistoryTracker,
+        duration_hours: int = 1,
+    ) -> float:
         """Predict probability of interruption in the next N hours"""
 
         # Get price statistics
@@ -235,7 +264,9 @@ class InterruptionPredictor:
         # Factor 1: Price trend (rising prices = lower interruption risk)
         current_price = price_stats["current_price"]
         avg_price = price_stats["average_price"]
-        price_trend_factor = min(current_price / avg_price, 2.0) if avg_price > 0 else 1.0
+        price_trend_factor = (
+            min(current_price / avg_price, 2.0) if avg_price > 0 else 1.0
+        )
 
         # Factor 2: Historical interruption rate
         interruption_rate = price_tracker.get_interruption_rate(
@@ -246,18 +277,22 @@ class InterruptionPredictor:
         # Factor 3: Market volatility (high volatility = higher risk)
         volatility = price_stats.get("price_volatility", 0)
         avg_price_val = price_stats.get("average_price", 1)
-        volatility_factor = min(volatility / avg_price_val, 1.0) if avg_price_val > 0 else 0
+        volatility_factor = (
+            min(volatility / avg_price_val, 1.0) if avg_price_val > 0 else 0
+        )
 
         # Factor 4: Demand indicators (simplified - based on price range)
         price_range = price_stats["max_price"] - price_stats["min_price"]
-        demand_factor = min(price_range / avg_price_val, 1.0) if avg_price_val > 0 else 0
+        demand_factor = (
+            min(price_range / avg_price_val, 1.0) if avg_price_val > 0 else 0
+        )
 
         # Calculate weighted probability
         probability = (
-            (1 - price_trend_factor) * self.model_weights["price_trend"] +
-            interruption_factor * self.model_weights["historical_interruptions"] +
-            volatility_factor * self.model_weights["market_volatility"] +
-            demand_factor * self.model_weights["demand_indicators"]
+            (1 - price_trend_factor) * self.model_weights["price_trend"]
+            + interruption_factor * self.model_weights["historical_interruptions"]
+            + volatility_factor * self.model_weights["market_volatility"]
+            + demand_factor * self.model_weights["demand_indicators"]
         )
 
         # Adjust for duration (longer jobs = higher cumulative risk)
@@ -270,11 +305,14 @@ class InterruptionPredictor:
 class BidStrategy:
     """Implements various bidding strategies for spot instances"""
 
-    def calculate_bid_price(self, strategy: BiddingStrategy,
-                           current_spot_price: float,
-                           on_demand_price: float,
-                           interruption_probability: float,
-                           job_duration_hours: int) -> float:
+    def calculate_bid_price(
+        self,
+        strategy: BiddingStrategy,
+        current_spot_price: float,
+        on_demand_price: float,
+        interruption_probability: float,
+        job_duration_hours: int,
+    ) -> float:
         """Calculate optimal bid price based on strategy"""
 
         if strategy == BiddingStrategy.CONSERVATIVE:
@@ -297,7 +335,9 @@ class BidStrategy:
         elif strategy == BiddingStrategy.RISK_ADJUSTED:
             # Calculate risk-adjusted bid
             base_savings = (on_demand_price - current_spot_price) / on_demand_price
-            risk_penalty = interruption_probability * 0.5  # 50% penalty for interruption risk
+            risk_penalty = (
+                interruption_probability * 0.5
+            )  # 50% penalty for interruption risk
             adjusted_savings = base_savings * (1 - risk_penalty)
 
             if adjusted_savings > 0.1:  # If still 10%+ savings after risk adjustment
@@ -312,17 +352,21 @@ class CloudPriceProvider(ABC):
     """Abstract interface for cloud price providers"""
 
     @abstractmethod
-    async def get_spot_prices(self, region: str, instance_types: List[str]) -> Dict[str, float]:
+    async def get_spot_prices(
+        self, region: str, instance_types: list[str]
+    ) -> dict[str, float]:
         """Get current spot prices"""
         pass
 
     @abstractmethod
-    async def get_on_demand_prices(self, region: str, instance_types: List[str]) -> Dict[str, float]:
+    async def get_on_demand_prices(
+        self, region: str, instance_types: list[str]
+    ) -> dict[str, float]:
         """Get on-demand prices"""
         pass
 
     @abstractmethod
-    async def get_availability_zones(self, region: str) -> List[str]:
+    async def get_availability_zones(self, region: str) -> list[str]:
         """Get available zones in region"""
         pass
 
@@ -334,14 +378,36 @@ class AWSPriceProvider(CloudPriceProvider):
         self.aws_client = aws_client
         # Instance type mapping for neuroimaging workloads
         self.instance_mapping = {
-            InstanceType.COMPUTE_OPTIMIZED: ["c5.large", "c5.xlarge", "c5.2xlarge", "c5.4xlarge"],
-            InstanceType.MEMORY_OPTIMIZED: ["r5.large", "r5.xlarge", "r5.2xlarge", "r5.4xlarge"],
-            InstanceType.GPU_OPTIMIZED: ["p3.2xlarge", "p3.8xlarge", "g4dn.xlarge", "g4dn.2xlarge"],
+            InstanceType.COMPUTE_OPTIMIZED: [
+                "c5.large",
+                "c5.xlarge",
+                "c5.2xlarge",
+                "c5.4xlarge",
+            ],
+            InstanceType.MEMORY_OPTIMIZED: [
+                "r5.large",
+                "r5.xlarge",
+                "r5.2xlarge",
+                "r5.4xlarge",
+            ],
+            InstanceType.GPU_OPTIMIZED: [
+                "p3.2xlarge",
+                "p3.8xlarge",
+                "g4dn.xlarge",
+                "g4dn.2xlarge",
+            ],
             InstanceType.STORAGE_OPTIMIZED: ["i3.large", "i3.xlarge", "i3.2xlarge"],
-            InstanceType.BALANCED: ["m5.large", "m5.xlarge", "m5.2xlarge", "m5.4xlarge"]
+            InstanceType.BALANCED: [
+                "m5.large",
+                "m5.xlarge",
+                "m5.2xlarge",
+                "m5.4xlarge",
+            ],
         }
 
-    async def get_spot_prices(self, region: str, instance_types: List[str]) -> Dict[str, float]:
+    async def get_spot_prices(
+        self, region: str, instance_types: list[str]
+    ) -> dict[str, float]:
         """Get current AWS spot prices"""
         # Simulated implementation - in practice would use boto3
         prices = {}
@@ -353,20 +419,22 @@ class AWSPriceProvider(CloudPriceProvider):
 
         return prices
 
-    async def get_on_demand_prices(self, region: str, instance_types: List[str]) -> Dict[str, float]:
+    async def get_on_demand_prices(
+        self, region: str, instance_types: list[str]
+    ) -> dict[str, float]:
         """Get AWS on-demand prices"""
         prices = {}
         for instance_type in instance_types:
             prices[instance_type] = self._get_base_price(instance_type)
         return prices
 
-    async def get_availability_zones(self, region: str) -> List[str]:
+    async def get_availability_zones(self, region: str) -> list[str]:
         """Get AWS availability zones"""
         # Simplified mapping
         zone_mapping = {
             "us-east-1": ["us-east-1a", "us-east-1b", "us-east-1c"],
             "us-west-2": ["us-west-2a", "us-west-2b", "us-west-2c"],
-            "eu-west-1": ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
+            "eu-west-1": ["eu-west-1a", "eu-west-1b", "eu-west-1c"],
         }
         return zone_mapping.get(region, [f"{region}a", f"{region}b"])
 
@@ -389,7 +457,7 @@ class AWSPriceProvider(CloudPriceProvider):
             "m5.large": 0.096,
             "m5.xlarge": 0.192,
             "m5.2xlarge": 0.384,
-            "m5.4xlarge": 0.768
+            "m5.4xlarge": 0.768,
         }
         return pricing.get(instance_type, 0.1)
 
@@ -397,7 +465,9 @@ class AWSPriceProvider(CloudPriceProvider):
 class GCPPriceProvider(CloudPriceProvider):
     """Google Cloud spot price provider"""
 
-    async def get_spot_prices(self, region: str, instance_types: List[str]) -> Dict[str, float]:
+    async def get_spot_prices(
+        self, region: str, instance_types: list[str]
+    ) -> dict[str, float]:
         """Get current GCP preemptible prices"""
         prices = {}
         for instance_type in instance_types:
@@ -406,14 +476,16 @@ class GCPPriceProvider(CloudPriceProvider):
             prices[instance_type] = base_price * 0.2
         return prices
 
-    async def get_on_demand_prices(self, region: str, instance_types: List[str]) -> Dict[str, float]:
+    async def get_on_demand_prices(
+        self, region: str, instance_types: list[str]
+    ) -> dict[str, float]:
         """Get GCP on-demand prices"""
         prices = {}
         for instance_type in instance_types:
             prices[instance_type] = self._get_base_price(instance_type)
         return prices
 
-    async def get_availability_zones(self, region: str) -> List[str]:
+    async def get_availability_zones(self, region: str) -> list[str]:
         """Get GCP zones"""
         return [f"{region}-a", f"{region}-b", f"{region}-c"]
 
@@ -426,7 +498,7 @@ class GCPPriceProvider(CloudPriceProvider):
             "n1-standard-8": 0.380,
             "n1-highmem-2": 0.118,
             "n1-highmem-4": 0.237,
-            "n1-highmem-8": 0.474
+            "n1-highmem-8": 0.474,
         }
         return pricing.get(instance_type, 0.1)
 
@@ -449,10 +521,13 @@ class SpotInstanceOptimizer:
         # Performance benchmarks for instance types
         self.performance_benchmarks = self._load_performance_benchmarks()
 
-    async def get_spot_recommendations(self, requirements: ResourceRequirements,
-                                     duration: timedelta,
-                                     budget: Optional[float] = None,
-                                     preferred_providers: List[CloudProvider] = None) -> List[SpotRecommendation]:
+    async def get_spot_recommendations(
+        self,
+        requirements: ResourceRequirements,
+        duration: timedelta,
+        budget: float | None = None,
+        preferred_providers: list[CloudProvider] = None,
+    ) -> list[SpotRecommendation]:
         """Get spot instance recommendations based on requirements"""
 
         recommendations = []
@@ -469,10 +544,13 @@ class SpotInstanceOptimizer:
 
         return recommendations[:10]  # Return top 10 recommendations
 
-    async def _get_provider_recommendations(self, provider: CloudProvider,
-                                          requirements: ResourceRequirements,
-                                          duration: timedelta,
-                                          budget: Optional[float]) -> List[SpotRecommendation]:
+    async def _get_provider_recommendations(
+        self,
+        provider: CloudProvider,
+        requirements: ResourceRequirements,
+        duration: timedelta,
+        budget: float | None,
+    ) -> list[SpotRecommendation]:
         """Get recommendations for a specific cloud provider"""
 
         recommendations = []
@@ -493,30 +571,49 @@ class SpotInstanceOptimizer:
                 zones = await price_provider.get_availability_zones(region)
 
                 # Get current prices
-                spot_prices = await price_provider.get_spot_prices(region, suitable_instances)
-                on_demand_prices = await price_provider.get_on_demand_prices(region, suitable_instances)
+                spot_prices = await price_provider.get_spot_prices(
+                    region, suitable_instances
+                )
+                on_demand_prices = await price_provider.get_on_demand_prices(
+                    region, suitable_instances
+                )
 
                 for instance_type in suitable_instances:
                     for zone in zones:
                         rec = await self._create_recommendation(
-                            provider, region, zone, instance_type,
+                            provider,
+                            region,
+                            zone,
+                            instance_type,
                             spot_prices.get(instance_type, 0),
                             on_demand_prices.get(instance_type, 0),
-                            requirements, duration, budget
+                            requirements,
+                            duration,
+                            budget,
                         )
 
                         if rec:
                             recommendations.append(rec)
 
             except Exception as e:
-                logger.warning(f"Error getting recommendations for {provider.value} {region}: {e}")
+                logger.warning(
+                    f"Error getting recommendations for {provider.value} {region}: {e}"
+                )
 
         return recommendations
 
-    async def _create_recommendation(self, provider: CloudProvider, region: str, zone: str,
-                                   instance_type: str, spot_price: float, on_demand_price: float,
-                                   requirements: ResourceRequirements, duration: timedelta,
-                                   budget: Optional[float]) -> Optional[SpotRecommendation]:
+    async def _create_recommendation(
+        self,
+        provider: CloudProvider,
+        region: str,
+        zone: str,
+        instance_type: str,
+        spot_price: float,
+        on_demand_price: float,
+        requirements: ResourceRequirements,
+        duration: timedelta,
+        budget: float | None,
+    ) -> SpotRecommendation | None:
         """Create a spot recommendation for specific instance"""
 
         if spot_price <= 0 or on_demand_price <= 0:
@@ -526,9 +623,15 @@ class SpotInstanceOptimizer:
         savings_percentage = ((on_demand_price - spot_price) / on_demand_price) * 100
 
         # Predict interruption probability
-        interruption_prob = self.interruption_predictor.predict_interruption_probability(
-            provider, region, instance_type, zone, self.price_history,
-            duration_hours=int(duration.total_seconds() / 3600)
+        interruption_prob = (
+            self.interruption_predictor.predict_interruption_probability(
+                provider,
+                region,
+                instance_type,
+                zone,
+                self.price_history,
+                duration_hours=int(duration.total_seconds() / 3600),
+            )
         )
 
         # Get price statistics for volatility
@@ -542,12 +645,16 @@ class SpotInstanceOptimizer:
         expected_cost = spot_price * duration_hours
 
         # Risk-adjusted cost (account for interruptions and restarts)
-        interruption_cost_penalty = interruption_prob * 0.3  # 30% penalty for interruption
+        interruption_cost_penalty = (
+            interruption_prob * 0.3
+        )  # 30% penalty for interruption
         risk_adjusted_cost = expected_cost * (1 + interruption_cost_penalty)
 
         # Total cost including potential re-runs
         expected_interruptions = max(interruption_prob * duration_hours / 24, 0)
-        total_cost_with_interruptions = expected_cost * (1 + expected_interruptions * 0.5)
+        total_cost_with_interruptions = expected_cost * (
+            1 + expected_interruptions * 0.5
+        )
 
         # Check budget constraint
         if budget and total_cost_with_interruptions > budget:
@@ -583,11 +690,15 @@ class SpotInstanceOptimizer:
             last_updated=datetime.now(),
             instance_specs=self._get_instance_specs(instance_type),
             estimated_performance=performance,
-            suitability_score=suitability
+            suitability_score=suitability,
         )
 
-    def calculate_savings(self, on_demand_cost: float, spot_cost: float,
-                         interruption_probability: float = 0.0) -> Dict[str, float]:
+    def calculate_savings(
+        self,
+        on_demand_cost: float,
+        spot_cost: float,
+        interruption_probability: float = 0.0,
+    ) -> dict[str, float]:
         """Calculate comprehensive savings analysis"""
 
         if on_demand_cost <= 0:
@@ -620,31 +731,34 @@ class SpotInstanceOptimizer:
                 "on_demand": on_demand_cost,
                 "spot": spot_cost,
                 "risk_adjusted_spot": spot_cost * (1 + interruption_penalty),
-                "expected_spot": expected_total_cost
-            }
+                "expected_spot": expected_total_cost,
+            },
         }
 
     def _calculate_value_score(self, recommendation: SpotRecommendation) -> float:
         """Calculate overall value score for ranking recommendations"""
 
         # Factors contributing to value score
-        savings_score = min(recommendation.savings_percentage / 80, 1.0)  # Normalize to 80% max
+        savings_score = min(
+            recommendation.savings_percentage / 80, 1.0
+        )  # Normalize to 80% max
         reliability_score = recommendation.availability_score
         performance_score = recommendation.suitability_score
         confidence_score = recommendation.recommendation_confidence
 
         # Weighted combination
         value_score = (
-            savings_score * 0.35 +
-            reliability_score * 0.30 +
-            performance_score * 0.25 +
-            confidence_score * 0.10
+            savings_score * 0.35
+            + reliability_score * 0.30
+            + performance_score * 0.25
+            + confidence_score * 0.10
         )
 
         return value_score
 
-    def _find_suitable_instances(self, provider: CloudProvider,
-                               requirements: ResourceRequirements) -> List[str]:
+    def _find_suitable_instances(
+        self, provider: CloudProvider, requirements: ResourceRequirements
+    ) -> list[str]:
         """Find instance types that meet requirements"""
 
         if provider == CloudProvider.AWS:
@@ -652,7 +766,7 @@ class SpotInstanceOptimizer:
             suitable = []
 
             # Check each instance category
-            for category, instances in aws_provider.instance_mapping.items():
+            for _category, instances in aws_provider.instance_mapping.items():
                 for instance in instances:
                     if self._meets_requirements(instance, requirements):
                         suitable.append(instance)
@@ -662,18 +776,20 @@ class SpotInstanceOptimizer:
         # Simplified for other providers
         return ["n1-standard-4", "n1-highmem-4"]  # GCP examples
 
-    def _meets_requirements(self, instance_type: str, requirements: ResourceRequirements) -> bool:
+    def _meets_requirements(
+        self, instance_type: str, requirements: ResourceRequirements
+    ) -> bool:
         """Check if instance type meets requirements"""
 
         specs = self._get_instance_specs(instance_type)
 
         return (
-            specs.get("cpu_cores", 0) >= requirements.cpu_cores and
-            specs.get("memory_gb", 0) >= requirements.memory_gb and
-            specs.get("gpu_count", 0) >= requirements.gpu_count
+            specs.get("cpu_cores", 0) >= requirements.cpu_cores
+            and specs.get("memory_gb", 0) >= requirements.memory_gb
+            and specs.get("gpu_count", 0) >= requirements.gpu_count
         )
 
-    def _get_instance_specs(self, instance_type: str) -> Dict[str, Any]:
+    def _get_instance_specs(self, instance_type: str) -> dict[str, Any]:
         """Get instance specifications"""
 
         # Simplified specs database
@@ -686,15 +802,27 @@ class SpotInstanceOptimizer:
             "r5.xlarge": {"cpu_cores": 4, "memory_gb": 32, "network": "up_to_10gb"},
             "r5.2xlarge": {"cpu_cores": 8, "memory_gb": 64, "network": "up_to_10gb"},
             "r5.4xlarge": {"cpu_cores": 16, "memory_gb": 128, "network": "up_to_10gb"},
-            "p3.2xlarge": {"cpu_cores": 8, "memory_gb": 61, "gpu_count": 1, "gpu_memory_gb": 16},
-            "g4dn.xlarge": {"cpu_cores": 4, "memory_gb": 16, "gpu_count": 1, "gpu_memory_gb": 16},
+            "p3.2xlarge": {
+                "cpu_cores": 8,
+                "memory_gb": 61,
+                "gpu_count": 1,
+                "gpu_memory_gb": 16,
+            },
+            "g4dn.xlarge": {
+                "cpu_cores": 4,
+                "memory_gb": 16,
+                "gpu_count": 1,
+                "gpu_memory_gb": 16,
+            },
             "m5.large": {"cpu_cores": 2, "memory_gb": 8, "network": "up_to_10gb"},
-            "m5.xlarge": {"cpu_cores": 4, "memory_gb": 16, "network": "up_to_10gb"}
+            "m5.xlarge": {"cpu_cores": 4, "memory_gb": 16, "network": "up_to_10gb"},
         }
 
         return specs_db.get(instance_type, {})
 
-    def _estimate_performance(self, instance_type: str, requirements: ResourceRequirements) -> float:
+    def _estimate_performance(
+        self, instance_type: str, requirements: ResourceRequirements
+    ) -> float:
         """Estimate performance for neuroimaging workloads"""
 
         benchmark = self.performance_benchmarks.get(instance_type, 1.0)
@@ -709,8 +837,9 @@ class SpotInstanceOptimizer:
 
         return benchmark
 
-    def _calculate_suitability_score(self, instance_type: str,
-                                   requirements: ResourceRequirements) -> float:
+    def _calculate_suitability_score(
+        self, instance_type: str, requirements: ResourceRequirements
+    ) -> float:
         """Calculate how suitable instance is for requirements"""
 
         specs = self._get_instance_specs(instance_type)
@@ -739,18 +868,18 @@ class SpotInstanceOptimizer:
 
         return score / factors if factors > 0 else 0.5
 
-    def _get_target_regions(self, provider: CloudProvider) -> List[str]:
+    def _get_target_regions(self, provider: CloudProvider) -> list[str]:
         """Get target regions for optimization"""
 
         region_mapping = {
             CloudProvider.AWS: ["us-east-1", "us-west-2", "eu-west-1"],
             CloudProvider.GCP: ["us-central1", "us-west1", "europe-west1"],
-            CloudProvider.AZURE: ["eastus", "westus2", "westeurope"]
+            CloudProvider.AZURE: ["eastus", "westus2", "westeurope"],
         }
 
         return region_mapping.get(provider, ["us-east-1"])
 
-    def _load_performance_benchmarks(self) -> Dict[str, float]:
+    def _load_performance_benchmarks(self) -> dict[str, float]:
         """Load performance benchmarks for instance types"""
 
         # Simplified benchmarks (relative performance for neuroimaging workloads)
@@ -766,7 +895,7 @@ class SpotInstanceOptimizer:
             "p3.2xlarge": 4.0,  # GPU acceleration
             "g4dn.xlarge": 2.5,
             "m5.large": 0.85,
-            "m5.xlarge": 1.05
+            "m5.xlarge": 1.05,
         }
 
 
@@ -783,7 +912,7 @@ if __name__ == "__main__":
             memory_gb=32,
             storage_gb=100,
             fsl_required=True,
-            freesurfer_required=True
+            freesurfer_required=True,
         )
 
         # Get recommendations for 4-hour job
@@ -799,14 +928,16 @@ if __name__ == "__main__":
         for i, rec in enumerate(recommendations[:5]):
             print(f"\n{i+1}. {rec.provider.value} {rec.instance_type} in {rec.region}")
             print(f"   Current Price: ${rec.current_price:.3f}/hour")
-            print(f"   Savings: {rec.savings_percentage:.1f}% (${rec.expected_cost:.2f} total)")
+            print(
+                f"   Savings: {rec.savings_percentage:.1f}% (${rec.expected_cost:.2f} total)"
+            )
             print(f"   Interruption Risk: {rec.interruption_probability:.1%}")
             print(f"   Suitability Score: {rec.suitability_score:.2f}")
             print(f"   Value Score: {optimizer._calculate_value_score(rec):.2f}")
 
         # Test savings calculation
         savings = optimizer.calculate_savings(10.0, 3.0, 0.15)
-        print(f"\nSavings Analysis:")
+        print("\nSavings Analysis:")
         print(f"Expected Savings: {savings['expected_percentage']:.1f}%")
         print(f"Risk-Adjusted Savings: {savings['risk_adjusted_percentage']:.1f}%")
 

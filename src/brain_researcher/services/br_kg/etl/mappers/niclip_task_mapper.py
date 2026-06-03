@@ -135,7 +135,7 @@ class NiCLIPTaskMapper:
     def _build_reverse_mappings(self):
         """Build reverse mappings for efficient lookups."""
         # Build process -> tasks mapping
-        for task, concepts in self.task_to_concepts.items():
+        for task, _concepts in self.task_to_concepts.items():
             processes = self.get_task_processes(task)
             for process in processes:
                 self.process_to_tasks[process].add(task)
@@ -208,7 +208,7 @@ class NiCLIPTaskMapper:
         """Get concepts that don't have process mappings."""
         unmapped = []
 
-        for task, concepts in self.task_to_concepts.items():
+        for _task, concepts in self.task_to_concepts.items():
             for concept in concepts:
                 if concept not in self.concept_to_process and concept not in unmapped:
                     unmapped.append(concept)
@@ -220,7 +220,7 @@ class NiCLIPTaskMapper:
         summary = {
             "total_tasks": len(self.task_to_concepts),
             "total_concepts": len(
-                set(c for concepts in self.task_to_concepts.values() for c in concepts)
+                {c for concepts in self.task_to_concepts.values() for c in concepts}
             ),
             "mapped_concepts": len(self.concept_to_process),
             "unmapped_concepts": len(self.get_unmapped_concepts()),
@@ -258,9 +258,9 @@ class NiCLIPTaskMapper:
                 }
                 for p in processes
             ],
-            "primary_category": self.get_process_name(primary_process)
-            if primary_process
-            else None,
+            "primary_category": (
+                self.get_process_name(primary_process) if primary_process else None
+            ),
         }
 
     def search_similar_tasks(

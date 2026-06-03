@@ -4,16 +4,16 @@ This module provides Git-like versioning for the knowledge graph,
 allowing tracking of changes, creating snapshots, and rollback.
 """
 
-import json
+import gzip
 import hashlib
+import json
 import logging
-from typing import Dict, List, Any, Optional, Set, Tuple
-from dataclasses import dataclass, field, asdict
+import pickle
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-import pickle
-import gzip
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +36,12 @@ class GraphChange:
     change_type: ChangeType
     entity_type: str  # "node" or "edge"
     entity_id: str
-    old_value: Optional[Dict[str, Any]] = None
-    new_value: Optional[Dict[str, Any]] = None
+    old_value: dict[str, Any] | None = None
+    new_value: dict[str, Any] | None = None
     timestamp: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "change_type": self.change_type.value,
@@ -50,7 +50,7 @@ class GraphChange:
             "old_value": self.old_value,
             "new_value": self.new_value,
             "timestamp": self.timestamp.isoformat(),
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -59,15 +59,15 @@ class GraphCommit:
     """Represents a commit in the graph history."""
 
     commit_id: str
-    parent_id: Optional[str]
-    changes: List[GraphChange]
+    parent_id: str | None
+    changes: list[GraphChange]
     message: str
     author: str
     timestamp: datetime = field(default_factory=datetime.now)
-    tags: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "commit_id": self.commit_id,
@@ -77,7 +77,7 @@ class GraphCommit:
             "author": self.author,
             "timestamp": self.timestamp.isoformat(),
             "tags": self.tags,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -87,17 +87,17 @@ class GraphSnapshot:
 
     snapshot_id: str
     commit_id: str
-    nodes: Dict[str, Dict[str, Any]]
-    edges: Dict[str, Dict[str, Any]]
+    nodes: dict[str, dict[str, Any]]
+    edges: dict[str, dict[str, Any]]
     timestamp: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def get_hash(self) -> str:
         """Calculate hash of snapshot content."""
-        content = json.dumps({
-            "nodes": sorted(self.nodes.items()),
-            "edges": sorted(self.edges.items())
-        }, sort_keys=True)
+        content = json.dumps(
+            {"nodes": sorted(self.nodes.items()), "edges": sorted(self.edges.items())},
+            sort_keys=True,
+        )
         return hashlib.sha256(content.encode()).hexdigest()
 
 
@@ -155,9 +155,9 @@ class GraphVersioning:
         change_type: ChangeType,
         entity_type: str,
         entity_id: str,
-        old_value: Optional[Dict[str, Any]] = None,
-        new_value: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        old_value: dict[str, Any] | None = None,
+        new_value: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """Track a change to the graph.
 
@@ -175,13 +175,13 @@ class GraphVersioning:
             entity_id=entity_id,
             old_value=old_value,
             new_value=new_value,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         self.uncommitted_changes.append(change)
         logger.info(f"Tracked change: {change_type.value} on {entity_type} {entity_id}")
 
-    def commit(self, message: str, author: str, tags: Optional[List[str]] = None) -> str:
+    def commit(self, message: str, author: str, tags: list[str] | None = None) -> str:
         """Commit tracked changes.
 
         Args:
@@ -197,13 +197,16 @@ class GraphVersioning:
             return None
 
         # Generate commit ID
-        commit_content = json.dumps({
-            "parent": self.current_commit,
-            "changes": [c.to_dict() for c in self.uncommitted_changes],
-            "message": message,
-            "author": author,
-            "timestamp": datetime.now().isoformat()
-        }, sort_keys=True)
+        commit_content = json.dumps(
+            {
+                "parent": self.current_commit,
+                "changes": [c.to_dict() for c in self.uncommitted_changes],
+                "message": message,
+                "author": author,
+                "timestamp": datetime.now().isoformat(),
+            },
+            sort_keys=True,
+        )
         commit_id = hashlib.sha256(commit_content.encode()).hexdigest()[:12]
 
         # Create commit
@@ -213,7 +216,7 @@ class GraphVersioning:
             changes=self.uncommitted_changes.copy(),
             message=message,
             author=author,
-            tags=tags or []
+            tags=tags or [],
         )
 
         # Save commit
@@ -231,9 +234,9 @@ class GraphVersioning:
 
     def create_snapshot(
         self,
-        nodes: Dict[str, Dict[str, Any]],
-        edges: Dict[str, Dict[str, Any]],
-        message: str = None
+        nodes: dict[str, dict[str, Any]],
+        edges: dict[str, dict[str, Any]],
+        message: str = None,
     ) -> str:
         """Create a snapshot of the current graph state.
 
@@ -256,7 +259,7 @@ class GraphVersioning:
             commit_id=self.current_commit or "initial",
             nodes=nodes.copy(),
             edges=edges.copy(),
-            metadata={"message": message} if message else {}
+            metadata={"message": message} if message else {},
         )
 
         # Compress and save
@@ -267,7 +270,7 @@ class GraphVersioning:
         logger.info(f"Created snapshot {snapshot_id}")
         return snapshot_id
 
-    def load_snapshot(self, snapshot_id: str) -> Optional[GraphSnapshot]:
+    def load_snapshot(self, snapshot_id: str) -> GraphSnapshot | None:
         """Load a snapshot.
 
         Args:
@@ -288,7 +291,7 @@ class GraphVersioning:
         logger.info(f"Loaded snapshot {snapshot_id}")
         return snapshot
 
-    def get_commit(self, commit_id: str) -> Optional[GraphCommit]:
+    def get_commit(self, commit_id: str) -> GraphCommit | None:
         """Get a specific commit.
 
         Args:
@@ -303,7 +306,7 @@ class GraphVersioning:
             logger.error(f"Commit {commit_id} not found")
             return None
 
-        with open(commit_file, "r") as f:
+        with open(commit_file) as f:
             commit_data = json.load(f)
 
         # Reconstruct commit
@@ -318,7 +321,7 @@ class GraphVersioning:
                     old_value=c["old_value"],
                     new_value=c["new_value"],
                     timestamp=datetime.fromisoformat(c["timestamp"]),
-                    metadata=c["metadata"]
+                    metadata=c["metadata"],
                 )
                 for c in commit_data["changes"]
             ],
@@ -326,12 +329,12 @@ class GraphVersioning:
             author=commit_data["author"],
             timestamp=datetime.fromisoformat(commit_data["timestamp"]),
             tags=commit_data.get("tags", []),
-            metadata=commit_data.get("metadata", {})
+            metadata=commit_data.get("metadata", {}),
         )
 
         return commit
 
-    def get_history(self, limit: int = 10) -> List[GraphCommit]:
+    def get_history(self, limit: int = 10) -> list[GraphCommit]:
         """Get commit history.
 
         Args:
@@ -353,7 +356,7 @@ class GraphVersioning:
 
         return history
 
-    def diff(self, commit_id1: str, commit_id2: str) -> List[GraphChange]:
+    def diff(self, commit_id1: str, commit_id2: str) -> list[GraphChange]:
         """Get differences between two commits.
 
         Args:
@@ -392,7 +395,7 @@ class GraphVersioning:
 
         return changes
 
-    def _get_ancestors(self, commit_id: str) -> List[str]:
+    def _get_ancestors(self, commit_id: str) -> list[str]:
         """Get all ancestors of a commit.
 
         Args:
@@ -490,7 +493,7 @@ class GraphVersioning:
         logger.info(f"Switched to branch {branch_name}")
         return True
 
-    def merge(self, source_branch: str, message: str, author: str) -> Optional[str]:
+    def merge(self, source_branch: str, message: str, author: str) -> str | None:
         """Merge another branch into current branch.
 
         Args:
@@ -527,12 +530,12 @@ class GraphVersioning:
         commit_id = self.commit(
             message=f"Merge branch '{source_branch}': {message}",
             author=author,
-            tags=["merge"]
+            tags=["merge"],
         )
 
         return commit_id
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get versioning statistics.
 
         Returns:
@@ -568,10 +571,10 @@ class GraphVersioning:
                     "message": c.message,
                     "author": c.author,
                     "timestamp": c.timestamp.isoformat(),
-                    "changes": len(c.changes)
+                    "changes": len(c.changes),
                 }
                 for c in self.get_history(5)
-            ]
+            ],
         }
 
     def export_patch(self, commit_id: str, output_file: str):
@@ -590,7 +593,7 @@ class GraphVersioning:
         patch = {
             "commit": commit.to_dict(),
             "format_version": "1.0",
-            "exported_at": datetime.now().isoformat()
+            "exported_at": datetime.now().isoformat(),
         }
 
         with open(output_file, "w") as f:
@@ -598,7 +601,7 @@ class GraphVersioning:
 
         logger.info(f"Exported commit {commit_id} to {output_file}")
 
-    def import_patch(self, patch_file: str) -> Optional[str]:
+    def import_patch(self, patch_file: str) -> str | None:
         """Import a patch file.
 
         Args:
@@ -607,7 +610,7 @@ class GraphVersioning:
         Returns:
             Imported commit ID or None
         """
-        with open(patch_file, "r") as f:
+        with open(patch_file) as f:
             patch = json.load(f)
 
         commit_data = patch["commit"]
@@ -620,14 +623,14 @@ class GraphVersioning:
                 entity_id=change_data["entity_id"],
                 old_value=change_data["old_value"],
                 new_value=change_data["new_value"],
-                metadata=change_data["metadata"]
+                metadata=change_data["metadata"],
             )
 
         # Commit with original message
         commit_id = self.commit(
             message=f"[IMPORTED] {commit_data['message']}",
             author=commit_data["author"],
-            tags=commit_data.get("tags", []) + ["imported"]
+            tags=commit_data.get("tags", []) + ["imported"],
         )
 
         logger.info(f"Imported patch as commit {commit_id}")

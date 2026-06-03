@@ -105,7 +105,10 @@ def load_hypothesis_ledger(
     *,
     root: Path | str | None = None,
 ) -> list[HypothesisEntryV1]:
-    return [HypothesisEntryV1.model_validate(row) for row in _read_jsonl(hypothesis_ledger_path(root=root))]
+    return [
+        HypothesisEntryV1.model_validate(row)
+        for row in _read_jsonl(hypothesis_ledger_path(root=root))
+    ]
 
 
 def load_kg_call_log(*, root: Path | str | None = None) -> list[dict[str, Any]]:

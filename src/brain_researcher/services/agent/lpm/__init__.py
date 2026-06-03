@@ -13,6 +13,6 @@ Example:
 """
 
 from .compiler import compile_op
-from .specs import SmoothParams, CompiledOp
+from .specs import CompiledOp, SmoothParams
 
 __all__ = ["compile_op", "SmoothParams", "CompiledOp"]

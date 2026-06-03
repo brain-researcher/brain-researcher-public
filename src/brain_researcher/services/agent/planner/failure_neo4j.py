@@ -6,9 +6,10 @@ import json
 import logging
 import os
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Any, Sequence
+from typing import Any
 
 from neo4j import GraphDatabase
 
@@ -83,8 +84,12 @@ class FailureKGRecord:
             "recovery_action": self.recovery_action,
             "is_retryable": self.is_retryable,
             "error_message": _truncate(self.error_message),
-            "error_taxonomy": json.dumps(self.error_taxonomy) if self.error_taxonomy else None,
-            "recovery_actions": json.dumps(self.recovery_actions) if self.recovery_actions else None,
+            "error_taxonomy": (
+                json.dumps(self.error_taxonomy) if self.error_taxonomy else None
+            ),
+            "recovery_actions": (
+                json.dumps(self.recovery_actions) if self.recovery_actions else None
+            ),
             "attempt": self.attempt,
             "max_attempts": self.max_attempts,
             "recovered": self.recovered,
@@ -127,10 +132,9 @@ class Neo4jFailureWriter:
                     loop_signal_sample = r
             row = r.to_row()
             row["tool_id"] = resolve_tool_key(row.get("tool_id")) or row.get("tool_id")
-            row["tool_version_id"] = (
-                resolve_version_key(row.get("tool_version_id"))
-                or row.get("tool_version_id")
-            )
+            row["tool_version_id"] = resolve_version_key(
+                row.get("tool_version_id")
+            ) or row.get("tool_version_id")
             rows.append(row)
         if not rows:
             return

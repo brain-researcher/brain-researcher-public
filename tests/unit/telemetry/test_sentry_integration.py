@@ -4,18 +4,25 @@ Tests error tracking, PII filtering, and context enrichment
 """
 
 import os
-import pytest
 from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any
+from unittest.mock import MagicMock, patch
 
-from brain_researcher.services.telemetry.sentry_integration import (
-    SentryIntegration, SentryConfig, PIIFilter, ContextEnricher,
-    initialize_sentry, get_sentry, capture_exception_with_context,
-    capture_message_with_context, track_errors, SentryContext,
-    create_sentry_config_from_env
-)
+import pytest
+
 from brain_researcher.services.telemetry.models import ServiceType
+from brain_researcher.services.telemetry.sentry_integration import (
+    ContextEnricher,
+    PIIFilter,
+    SentryConfig,
+    SentryContext,
+    SentryIntegration,
+    capture_exception_with_context,
+    capture_message_with_context,
+    create_sentry_config_from_env,
+    get_sentry,
+    initialize_sentry,
+    track_errors,
+)
 
 
 @pytest.fixture
@@ -29,14 +36,16 @@ def sentry_config():
         traces_sample_rate=0.1,
         enable_pii_filtering=True,
         enable_tracing=True,
-        debug=False
+        debug=False,
     )
 
 
 @pytest.fixture
 def mock_sentry_sdk():
     """Mock Sentry SDK functions."""
-    with patch('brain_researcher.services.telemetry.sentry_integration.sentry_sdk') as mock:
+    with patch(
+        "brain_researcher.services.telemetry.sentry_integration.sentry_sdk"
+    ) as mock:
         mock.init = MagicMock()
         mock.capture_exception = MagicMock(return_value="mock_event_id")
         mock.capture_message = MagicMock(return_value="mock_message_id")
@@ -48,7 +57,9 @@ def mock_sentry_sdk():
 @pytest.fixture
 def sentry_integration(sentry_config, mock_sentry_sdk):
     """Create SentryIntegration instance."""
-    with patch('brain_researcher.services.telemetry.sentry_integration.SENTRY_AVAILABLE', True):
+    with patch(
+        "brain_researcher.services.telemetry.sentry_integration.SENTRY_AVAILABLE", True
+    ):
         integration = SentryIntegration(sentry_config)
         integration.is_initialized = True
         return integration
@@ -114,7 +125,7 @@ class TestPIIFilter:
             "password": "secret123",
             "api_key": "sk_test_123",
             "email": "john@example.com",
-            "safe_field": "public_data"
+            "safe_field": "public_data",
         }
 
         filtered = pii_filter.filter_dict(data)
@@ -129,14 +140,9 @@ class TestPIIFilter:
         data = {
             "user": {
                 "name": "John Doe",
-                "credentials": {
-                    "password": "secret",
-                    "token": "bearer_123"
-                }
+                "credentials": {"password": "secret", "token": "bearer_123"},
             },
-            "metadata": {
-                "timestamp": "2025-01-01"
-            }
+            "metadata": {"timestamp": "2025-01-01"},
         }
 
         filtered = pii_filter.filter_dict(data)
@@ -151,7 +157,7 @@ class TestPIIFilter:
             "safe_string",
             "email@example.com",
             {"password": "secret"},
-            ["nested", "555-1234"]
+            ["nested", "555-1234"],
         ]
 
         filtered = pii_filter.filter_list(data)
@@ -166,7 +172,9 @@ class TestContextEnricher:
 
     def test_enrich_event_with_service_context(self):
         """Test enriching event with service context."""
-        from brain_researcher.services.telemetry.sentry_integration import current_service_context
+        from brain_researcher.services.telemetry.sentry_integration import (
+            current_service_context,
+        )
 
         current_service_context.set(ServiceType.ORCHESTRATOR)
 
@@ -181,12 +189,13 @@ class TestContextEnricher:
 
     def test_enrich_event_with_user_context(self):
         """Test enriching event with user context."""
-        from brain_researcher.services.telemetry.sentry_integration import current_user_context
+        from brain_researcher.services.telemetry.sentry_integration import (
+            current_user_context,
+        )
 
-        current_user_context.set({
-            "user_hash": "hashed_user_123",
-            "session_hash": "hashed_session_456"
-        })
+        current_user_context.set(
+            {"user_hash": "hashed_user_123", "session_hash": "hashed_session_456"}
+        )
 
         event = {}
         hint = {}
@@ -227,8 +236,11 @@ class TestSentryIntegration:
 
     def test_initialization_with_dsn(self, sentry_config, mock_sentry_sdk):
         """Test Sentry initialization with DSN."""
-        with patch('brain_researcher.services.telemetry.sentry_integration.SENTRY_AVAILABLE', True):
-            integration = SentryIntegration(sentry_config)
+        with patch(
+            "brain_researcher.services.telemetry.sentry_integration.SENTRY_AVAILABLE",
+            True,
+        ):
+            SentryIntegration(sentry_config)
 
             mock_sentry_sdk.init.assert_called_once()
             call_kwargs = mock_sentry_sdk.init.call_args.kwargs
@@ -238,28 +250,25 @@ class TestSentryIntegration:
             assert call_kwargs["release"] == "1.0.0"
             assert call_kwargs["sample_rate"] == 1.0
             assert call_kwargs["traces_sample_rate"] == 0.1
-            assert call_kwargs["send_default_pii"] == False
+            assert not call_kwargs["send_default_pii"]
 
     def test_initialization_without_dsn(self, mock_sentry_sdk):
         """Test Sentry initialization without DSN."""
         config = SentryConfig(dsn=None)
 
-        with patch('brain_researcher.services.telemetry.sentry_integration.SENTRY_AVAILABLE', True):
+        with patch(
+            "brain_researcher.services.telemetry.sentry_integration.SENTRY_AVAILABLE",
+            True,
+        ):
             integration = SentryIntegration(config)
 
             mock_sentry_sdk.init.assert_not_called()
-            assert integration.is_initialized == False
+            assert not integration.is_initialized
 
     def test_before_send_filter_ignored_exceptions(self, sentry_integration):
         """Test filtering of ignored exceptions."""
         event = {"logger": "test_logger"}
-        hint = {
-            "exc_info": (
-                KeyboardInterrupt,
-                KeyboardInterrupt(),
-                None
-            )
-        }
+        hint = {"exc_info": (KeyboardInterrupt, KeyboardInterrupt(), None)}
 
         result = sentry_integration._before_send_filter(event, hint)
         assert result is None  # Event should be filtered
@@ -275,28 +284,24 @@ class TestSentryIntegration:
     def test_before_send_filter_applies_pii_filtering(self, sentry_integration):
         """Test PII filtering in before_send."""
         event = {
-            "request": {
-                "data": {
-                    "email": "user@example.com",
-                    "safe_data": "public"
-                }
-            },
-            "extra": {
-                "password": "secret123"
-            }
+            "request": {"data": {"email": "user@example.com", "safe_data": "public"}},
+            "extra": {"password": "secret123"},
         }
         hint = {}
 
-        with patch.object(sentry_integration.pii_filter, 'filter_dict') as mock_filter:
-            mock_filter.side_effect = lambda x: {k: "[FILTERED]" if k == "password" else v
-                                                 for k, v in x.items()}
+        with patch.object(sentry_integration.pii_filter, "filter_dict") as mock_filter:
+            mock_filter.side_effect = lambda x: {
+                k: "[FILTERED]" if k == "password" else v for k, v in x.items()
+            }
 
-            result = sentry_integration._before_send_filter(event, hint)
+            sentry_integration._before_send_filter(event, hint)
             assert mock_filter.called
 
     def test_set_user_context(self, sentry_integration):
         """Test setting user context."""
-        with patch('brain_researcher.services.telemetry.sentry_integration.configure_scope') as mock_scope:
+        with patch(
+            "brain_researcher.services.telemetry.sentry_integration.configure_scope"
+        ) as mock_scope:
             scope_instance = MagicMock()
             mock_scope.return_value.__enter__.return_value = scope_instance
 
@@ -310,13 +315,15 @@ class TestSentryIntegration:
 
     def test_set_service_context(self, sentry_integration):
         """Test setting service context."""
-        with patch('brain_researcher.services.telemetry.sentry_integration.configure_scope') as mock_scope:
+        with patch(
+            "brain_researcher.services.telemetry.sentry_integration.configure_scope"
+        ) as mock_scope:
             scope_instance = MagicMock()
             mock_scope.return_value.__enter__.return_value = scope_instance
 
             sentry_integration.set_service_context(ServiceType.BR_KG)
 
-            scope_instance.set_tag.assert_called_with('service', ServiceType.BR_KG)
+            scope_instance.set_tag.assert_called_with("service", ServiceType.BR_KG)
             scope_instance.set_context.assert_called()
 
     def test_capture_exception(self, sentry_integration, mock_sentry_sdk):
@@ -325,14 +332,14 @@ class TestSentryIntegration:
         tags = {"component": "test"}
         extra = {"debug_info": "test_data"}
 
-        with patch('brain_researcher.services.telemetry.sentry_integration.configure_scope') as mock_scope:
+        with patch(
+            "brain_researcher.services.telemetry.sentry_integration.configure_scope"
+        ) as mock_scope:
             scope_instance = MagicMock()
             mock_scope.return_value.__enter__.return_value = scope_instance
 
             event_id = sentry_integration.capture_exception(
-                exception=exception,
-                tags=tags,
-                extra=extra
+                exception=exception, tags=tags, extra=extra
             )
 
             assert event_id == "mock_event_id"
@@ -343,7 +350,9 @@ class TestSentryIntegration:
         """Test capturing messages."""
         message = "Test message with email@example.com"
 
-        with patch('brain_researcher.services.telemetry.sentry_integration.configure_scope') as mock_scope:
+        with patch(
+            "brain_researcher.services.telemetry.sentry_integration.configure_scope"
+        ) as mock_scope:
             scope_instance = MagicMock()
             mock_scope.return_value.__enter__.return_value = scope_instance
 
@@ -361,7 +370,7 @@ class TestSentryIntegration:
             message="User clicked button",
             category="ui",
             level="info",
-            data={"button": "submit", "password": "secret"}
+            data={"button": "submit", "password": "secret"},
         )
 
         mock_sentry_sdk.add_breadcrumb.assert_called_once()
@@ -373,23 +382,22 @@ class TestSentryIntegration:
 
     def test_start_transaction(self, sentry_integration, mock_sentry_sdk):
         """Test starting performance transaction."""
-        transaction = sentry_integration.start_transaction("test_operation", "function")
+        sentry_integration.start_transaction("test_operation", "function")
 
         mock_sentry_sdk.start_transaction.assert_called_with(
-            name="test_operation",
-            op="function"
+            name="test_operation", op="function"
         )
 
     def test_get_stats(self, sentry_integration):
         """Test getting integration statistics."""
         stats = sentry_integration.get_stats()
 
-        assert stats["initialized"] == True
-        assert stats["dsn_configured"] == True
+        assert stats["initialized"]
+        assert stats["dsn_configured"]
         assert stats["environment"] == "test"
         assert stats["sample_rate"] == 1.0
-        assert stats["pii_filtering_enabled"] == True
-        assert stats["tracing_enabled"] == True
+        assert stats["pii_filtering_enabled"]
+        assert stats["tracing_enabled"]
 
 
 class TestGlobalFunctions:
@@ -397,8 +405,10 @@ class TestGlobalFunctions:
 
     def test_initialize_sentry(self, sentry_config):
         """Test global Sentry initialization."""
-        with patch('brain_researcher.services.telemetry.sentry_integration.SentryIntegration') as mock_class:
-            instance = initialize_sentry(sentry_config)
+        with patch(
+            "brain_researcher.services.telemetry.sentry_integration.SentryIntegration"
+        ) as mock_class:
+            initialize_sentry(sentry_config)
 
             mock_class.assert_called_with(sentry_config)
             assert get_sentry() is not None
@@ -407,16 +417,16 @@ class TestGlobalFunctions:
         """Test capturing exception with full context."""
         initialize_sentry(sentry_config)
 
-        with patch.object(get_sentry(), 'set_service_context') as mock_set_service:
-            with patch.object(get_sentry(), 'set_user_context') as mock_set_user:
-                with patch.object(get_sentry(), 'capture_exception') as mock_capture:
+        with patch.object(get_sentry(), "set_service_context") as mock_set_service:
+            with patch.object(get_sentry(), "set_user_context") as mock_set_user:
+                with patch.object(get_sentry(), "capture_exception") as mock_capture:
                     mock_capture.return_value = "test_event_id"
 
                     event_id = capture_exception_with_context(
                         exception=ValueError("test"),
                         service=ServiceType.AGENT,
                         user_id="user123",
-                        session_id="session456"
+                        session_id="session456",
                     )
 
                     mock_set_service.assert_called_with(ServiceType.AGENT)
@@ -428,14 +438,12 @@ class TestGlobalFunctions:
         """Test capturing message with full context."""
         initialize_sentry(sentry_config)
 
-        with patch.object(get_sentry(), 'set_service_context') as mock_set_service:
-            with patch.object(get_sentry(), 'capture_message') as mock_capture:
+        with patch.object(get_sentry(), "set_service_context") as mock_set_service:
+            with patch.object(get_sentry(), "capture_message") as mock_capture:
                 mock_capture.return_value = "test_message_id"
 
                 message_id = capture_message_with_context(
-                    message="Test message",
-                    service=ServiceType.WEB_UI,
-                    level="warning"
+                    message="Test message", service=ServiceType.WEB_UI, level="warning"
                 )
 
                 mock_set_service.assert_called_with(ServiceType.WEB_UI)
@@ -456,7 +464,7 @@ class TestDecorator:
                 raise ValueError("Division by zero")
             return y / x
 
-        with patch.object(get_sentry(), 'capture_exception') as mock_capture:
+        with patch.object(get_sentry(), "capture_exception") as mock_capture:
             # Normal execution
             result = test_function(2, 4)
             assert result == 2.0
@@ -468,8 +476,8 @@ class TestDecorator:
 
             mock_capture.assert_called_once()
             call_args = mock_capture.call_args
-            assert isinstance(call_args.kwargs['exception'], ValueError)
-            assert call_args.kwargs['tags']['function'] == 'test_function'
+            assert isinstance(call_args.kwargs["exception"], ValueError)
+            assert call_args.kwargs["tags"]["function"] == "test_function"
 
     @pytest.mark.asyncio
     async def test_track_errors_decorator_async_function(self, sentry_config):
@@ -482,7 +490,7 @@ class TestDecorator:
                 raise ValueError("Async division by zero")
             return y / x
 
-        with patch.object(get_sentry(), 'capture_exception') as mock_capture:
+        with patch.object(get_sentry(), "capture_exception") as mock_capture:
             # Normal execution
             result = await async_test_function(2, 4)
             assert result == 2.0
@@ -494,8 +502,8 @@ class TestDecorator:
 
             mock_capture.assert_called_once()
             call_args = mock_capture.call_args
-            assert isinstance(call_args.kwargs['exception'], ValueError)
-            assert 'function_args' in call_args.kwargs['extra']
+            assert isinstance(call_args.kwargs["exception"], ValueError)
+            assert "function_args" in call_args.kwargs["extra"]
 
 
 class TestSentryContext:
@@ -505,8 +513,8 @@ class TestSentryContext:
         """Test context manager with normal execution."""
         initialize_sentry(sentry_config)
 
-        with patch.object(get_sentry(), 'set_service_context') as mock_set_service:
-            with patch.object(get_sentry(), 'capture_exception') as mock_capture:
+        with patch.object(get_sentry(), "set_service_context") as mock_set_service:
+            with patch.object(get_sentry(), "capture_exception") as mock_capture:
                 with SentryContext(service=ServiceType.BR_KG):
                     # Normal execution
                     pass
@@ -518,14 +526,14 @@ class TestSentryContext:
         """Test context manager with exception."""
         initialize_sentry(sentry_config)
 
-        with patch.object(get_sentry(), 'capture_exception') as mock_capture:
+        with patch.object(get_sentry(), "capture_exception") as mock_capture:
             with pytest.raises(ValueError):
                 with SentryContext(service=ServiceType.AGENT, tags={"test": "true"}):
                     raise ValueError("Test error in context")
 
             mock_capture.assert_called_once()
             call_args = mock_capture.call_args
-            assert call_args.kwargs['tags'] == {"test": "true"}
+            assert call_args.kwargs["tags"] == {"test": "true"}
 
 
 class TestConfigFromEnvironment:
@@ -534,27 +542,27 @@ class TestConfigFromEnvironment:
     def test_create_config_from_env(self):
         """Test creating Sentry config from environment."""
         env_vars = {
-            'SENTRY_DSN': 'https://test@sentry.io/999',
-            'ENVIRONMENT': 'production',
-            'RELEASE_VERSION': 'v2.0.0',
-            'SENTRY_SAMPLE_RATE': '0.8',
-            'SENTRY_TRACES_SAMPLE_RATE': '0.2',
-            'SENTRY_DEBUG': 'true',
-            'SENTRY_PII_FILTERING': 'false',
-            'SENTRY_TRACING': 'false'
+            "SENTRY_DSN": "https://test@sentry.io/999",
+            "ENVIRONMENT": "production",
+            "RELEASE_VERSION": "v2.0.0",
+            "SENTRY_SAMPLE_RATE": "0.8",
+            "SENTRY_TRACES_SAMPLE_RATE": "0.2",
+            "SENTRY_DEBUG": "true",
+            "SENTRY_PII_FILTERING": "false",
+            "SENTRY_TRACING": "false",
         }
 
         with patch.dict(os.environ, env_vars, clear=True):
             config = create_sentry_config_from_env()
 
-            assert config.dsn == 'https://test@sentry.io/999'
-            assert config.environment == 'production'
-            assert config.release == 'v2.0.0'
+            assert config.dsn == "https://test@sentry.io/999"
+            assert config.environment == "production"
+            assert config.release == "v2.0.0"
             assert config.sample_rate == 0.8
             assert config.traces_sample_rate == 0.2
-            assert config.debug == True
-            assert config.enable_pii_filtering == False
-            assert config.enable_tracing == False
+            assert config.debug
+            assert not config.enable_pii_filtering
+            assert not config.enable_tracing
 
     def test_create_config_from_env_defaults(self):
         """Test creating Sentry config with default values."""
@@ -562,13 +570,13 @@ class TestConfigFromEnvironment:
             config = create_sentry_config_from_env()
 
             assert config.dsn is None
-            assert config.environment == 'development'
+            assert config.environment == "development"
             assert config.release is None
             assert config.sample_rate == 1.0
             assert config.traces_sample_rate == 0.1
-            assert config.debug == False
-            assert config.enable_pii_filtering == True
-            assert config.enable_tracing == True
+            assert not config.debug
+            assert config.enable_pii_filtering
+            assert config.enable_tracing
 
 
 @pytest.mark.integration
@@ -588,9 +596,7 @@ class TestSentryIntegrationE2E:
 
         # Add breadcrumb
         sentry.add_breadcrumb(
-            message="Starting operation",
-            category="operation",
-            level="info"
+            message="Starting operation", category="operation", level="info"
         )
 
         # Simulate error with PII
@@ -598,10 +604,12 @@ class TestSentryIntegrationE2E:
             "operation": "data_processing",
             "email": "user@example.com",
             "api_key": "sk_live_1234567890abcdef",
-            "safe_info": "public_data"
+            "safe_info": "public_data",
         }
 
-        with patch('brain_researcher.services.telemetry.sentry_integration.sentry_sdk.capture_exception') as mock_capture:
+        with patch(
+            "brain_researcher.services.telemetry.sentry_integration.sentry_sdk.capture_exception"
+        ) as mock_capture:
             mock_capture.return_value = "final_event_id"
 
             try:
@@ -609,9 +617,7 @@ class TestSentryIntegrationE2E:
                 raise RuntimeError(f"Processing failed for {error_data}")
             except RuntimeError as e:
                 event_id = sentry.capture_exception(
-                    exception=e,
-                    tags={"module": "processing"},
-                    extra=error_data
+                    exception=e, tags={"module": "processing"}, extra=error_data
                 )
 
             assert event_id == "final_event_id"
@@ -619,8 +625,8 @@ class TestSentryIntegrationE2E:
 
         # Verify stats
         stats = sentry.get_stats()
-        assert stats['initialized'] == True
-        assert stats['pii_filtering_enabled'] == True
+        assert stats["initialized"]
+        assert stats["pii_filtering_enabled"]
 
 
 if __name__ == "__main__":

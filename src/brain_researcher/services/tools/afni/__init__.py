@@ -3,17 +3,18 @@
 This package provides AFNI tools conforming to the NeuroTool interface.
 All tools delegate to existing agent tool implementations to avoid duplication.
 """
+
 from typing import List
 
-from brain_researcher.services.tools.base import NeuroTool
 from brain_researcher.services.tools.afni.clustsim import AFNIClustSimPipeline
+from brain_researcher.services.tools.base import NeuroTool
 
 
 class AFNITools:
     """Collection of all AFNI tools."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroTool]:
+    def get_all_tools() -> list[NeuroTool]:
         """Get all AFNI tools as NeuroTool instances.
 
         Returns:

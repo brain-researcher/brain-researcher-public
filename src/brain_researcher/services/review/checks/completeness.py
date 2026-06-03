@@ -332,8 +332,7 @@ def random_seed_pinned(bundle: CodeReviewBundle) -> bool:
         if not isinstance(params, dict):
             continue
         if any(
-            k in params
-            for k in ("random_state", "seed", "random_seed", "rng_seed")
+            k in params for k in ("random_state", "seed", "random_seed", "rng_seed")
         ):
             return True
     # If no stochastic tools, the check is N/A (vacuously True).
@@ -500,7 +499,9 @@ def null_model_declared(bundle: CodeReviewBundle) -> bool:
     review_context = _review_context(bundle)
     if _has_value(review_context, _REVIEW_CONTEXT_NULL_KEYS):
         return True
-    return _has_value(_mapping(review_context.get("null_model")), _REVIEW_CONTEXT_NULL_KEYS)
+    return _has_value(
+        _mapping(review_context.get("null_model")), _REVIEW_CONTEXT_NULL_KEYS
+    )
 
 
 def preprocessing_choices_declared(bundle: CodeReviewBundle) -> bool:

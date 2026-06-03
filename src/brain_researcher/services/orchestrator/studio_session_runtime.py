@@ -553,7 +553,8 @@ class StudioSessionRuntime:
         return conn
 
     def _ensure_schema(self, conn: sqlite3.Connection) -> None:
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS studio_sessions (
                 id TEXT PRIMARY KEY,
                 project_id TEXT NOT NULL,
@@ -568,7 +569,8 @@ class StudioSessionRuntime:
                 updated_at TEXT NOT NULL,
                 last_activity_at TEXT NOT NULL
             )
-            """)
+            """
+        )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_studio_sessions_owner_project_profile_status_updated "
             "ON studio_sessions(owner_user_id, project_id, runtime_profile_id, status, updated_at DESC)"
@@ -577,7 +579,8 @@ class StudioSessionRuntime:
             "CREATE INDEX IF NOT EXISTS idx_studio_sessions_owner_updated "
             "ON studio_sessions(owner_user_id, updated_at DESC)"
         )
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS studio_runtime_sessions (
                 id TEXT PRIMARY KEY,
                 project_id TEXT NOT NULL,
@@ -598,7 +601,8 @@ class StudioSessionRuntime:
                 updated_at TEXT NOT NULL,
                 last_activity_at TEXT NOT NULL
             )
-            """)
+            """
+        )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_studio_runtime_sessions_owner_project_profile_status_updated "
             "ON studio_runtime_sessions(owner_user_id, project_id, runtime_profile_id, status, updated_at DESC)"
@@ -984,9 +988,7 @@ class StudioSessionRuntime:
             session = self._get_session_locked(conn, br_session_id)
             if session is None:
                 return None
-            runtime = self._get_runtime_session_locked(
-                conn, session.runtime_session_id
-            )
+            runtime = self._get_runtime_session_locked(conn, session.runtime_session_id)
             if runtime is None:
                 return None
             token = runtime.metadata.get("marimo_runtime_token")
@@ -1008,9 +1010,7 @@ class StudioSessionRuntime:
             session = self._get_session_locked(conn, br_session_id)
             if session is None:
                 return None
-            runtime = self._get_runtime_session_locked(
-                conn, session.runtime_session_id
-            )
+            runtime = self._get_runtime_session_locked(conn, session.runtime_session_id)
             if runtime is None:
                 return None
             token = runtime.metadata.get("marimo_skew_token")

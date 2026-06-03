@@ -1,4 +1,6 @@
-from brain_researcher.services.br_kg.loader.tools_catalog_loader import select_primary_intent
+from brain_researcher.services.br_kg.loader.tools_catalog_loader import (
+    select_primary_intent,
+)
 
 
 def test_primary_intent_prefers_method_over_impl():

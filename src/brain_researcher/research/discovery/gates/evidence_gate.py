@@ -82,7 +82,8 @@ def support_contrasts_from_summary(
         return candidates
 
     if best_contrast and all(
-        best_contrast != variant for variant in ROUND_VARIANT_RE.findall(round_comparison)
+        best_contrast != variant
+        for variant in ROUND_VARIANT_RE.findall(round_comparison)
     ):
         return []
 
@@ -119,7 +120,9 @@ def summary_next_step_decision(what_to_do_next: str) -> tuple[str, str]:
             return "freeze_candidate", bullet
         if lower.startswith("do not continue") or lower.startswith("do not run"):
             return "freeze_candidate", bullet
-    return "continue", bullets[0] if bullets else "No explicit next-step decision extracted."
+    return "continue", (
+        bullets[0] if bullets else "No explicit next-step decision extracted."
+    )
 
 
 def _ledger_branch_failure_modes(
@@ -139,10 +142,7 @@ def _ledger_branch_failure_modes(
         failure_modes.append("weak_effect")
     if latest.decision in {"kill", "killed"}:
         failure_modes.append("weak_effect")
-    if (
-        latest.posterior_confidence is not None
-        and latest.posterior_confidence < 0.35
-    ):
+    if latest.posterior_confidence is not None and latest.posterior_confidence < 0.35:
         failure_modes.append("weak_effect")
     return list(dict.fromkeys(failure_modes))
 
@@ -244,14 +244,18 @@ def generic_failure_modes(
     ledger_failure_modes = _ledger_branch_failure_modes(branch_id, ledger_entries)
     if branch_id == "rsvp_language":
         return list(
-            dict.fromkeys(rsvp_failure_modes(nearest_rows, best_score) + ledger_failure_modes)
+            dict.fromkeys(
+                rsvp_failure_modes(nearest_rows, best_score) + ledger_failure_modes
+            )
         )
 
     failures: list[str] = []
     best_contrast = contrast_rows[0] if contrast_rows else None
     contrast_spec = None
     if best_contrast:
-        contrast_spec = contrast_map(manifest).get(str(best_contrast.get("contrast_id")))
+        contrast_spec = contrast_map(manifest).get(
+            str(best_contrast.get("contrast_id"))
+        )
 
     positive_conditions = {
         str(value) for value in (contrast_spec or {}).get("positive_conditions", [])
@@ -266,7 +270,9 @@ def generic_failure_modes(
     failures.extend(ledger_failure_modes)
 
     if branch_id == "auditory":
-        if cross_condition_confusion(nearest_rows, positive_conditions, negative_conditions):
+        if cross_condition_confusion(
+            nearest_rows, positive_conditions, negative_conditions
+        ):
             failures.extend(["overbroad_auditory_axis", "no_clean_double_dissociation"])
 
     elif branch_id == "math":
@@ -441,9 +447,7 @@ def write_seeds_json(
         except json.JSONDecodeError:
             existing = []
 
-    new_seeds = generate_child_hypotheses(
-        branch_state, n=n, frozen_claim=frozen_claim
-    )
+    new_seeds = generate_child_hypotheses(branch_state, n=n, frozen_claim=frozen_claim)
     by_id = {str(s.get("seed_id")): s for s in existing}
     for seed in new_seeds:
         sid = str(seed.get("seed_id"))

@@ -4,21 +4,17 @@ This module provides real-time data streaming capabilities using Kafka,
 with consumers, processors, and backpressure management.
 """
 
-import logging
 import asyncio
 import json
+import logging
 import os
-from typing import Dict, List, Any, Optional, Callable, Set, Tuple
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
-from enum import Enum
 import time
 from collections import defaultdict, deque
-import threading
 from concurrent.futures import ThreadPoolExecutor
-import multiprocessing
-import importlib.util
-from pathlib import Path
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,26 +22,31 @@ logger = logging.getLogger(__name__)
 # Custom Exception Classes
 class StreamingError(Exception):
     """Base exception for streaming errors."""
+
     pass
 
 
 class ConnectionError(StreamingError):
     """Connection-related streaming errors."""
+
     pass
 
 
 class ProcessingError(StreamingError):
     """Processing-related streaming errors."""
+
     pass
 
 
 class ConfigurationError(StreamingError):
     """Configuration-related streaming errors."""
+
     pass
 
 
 class BackpressureError(StreamingError):
     """Backpressure-related errors."""
+
     pass
 
 
@@ -77,10 +78,10 @@ class StreamMessage:
     topic: str
     partition: int
     offset: int
-    key: Optional[str]
-    value: Dict[str, Any]
+    key: str | None
+    value: dict[str, Any]
     timestamp: datetime
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -104,9 +105,9 @@ class ProcessingResult:
 
     message_id: str
     success: bool
-    error: Optional[str] = None
+    error: str | None = None
     processing_time_ms: float = 0
-    output_data: Optional[Dict[str, Any]] = None
+    output_data: dict[str, Any] | None = None
 
 
 class StreamProcessor:
@@ -127,11 +128,7 @@ class StreamProcessor:
 class RealTimeStreaming:
     """Real-time data streaming system."""
 
-    def __init__(
-        self,
-        kafka_config: Optional[Dict[str, Any]] = None,
-        redis_client=None
-    ):
+    def __init__(self, kafka_config: dict[str, Any] | None = None, redis_client=None):
         """Initialize streaming system.
 
         Args:
@@ -142,20 +139,20 @@ class RealTimeStreaming:
         self.redis = redis_client
 
         # Stream configurations
-        self.stream_configs: Dict[str, StreamConfig] = {}
+        self.stream_configs: dict[str, StreamConfig] = {}
 
         # Processors
-        self.processors: Dict[str, StreamProcessor] = {}
+        self.processors: dict[str, StreamProcessor] = {}
 
         # Consumers
-        self.consumers: Dict[str, Any] = {}  # Would be KafkaConsumer objects
+        self.consumers: dict[str, Any] = {}  # Would be KafkaConsumer objects
 
         # Processing state
         self.processing_state = {
             "active_streams": set(),
             "message_queue": asyncio.Queue(),
             "processing_tasks": [],
-            "shutdown_event": asyncio.Event()
+            "shutdown_event": asyncio.Event(),
         }
 
         # Metrics
@@ -165,7 +162,7 @@ class RealTimeStreaming:
             "messages_failed": defaultdict(int),
             "processing_times": defaultdict(list),
             "lag_by_topic": defaultdict(int),
-            "throughput_history": deque(maxlen=100)
+            "throughput_history": deque(maxlen=100),
         }
 
         # Backpressure management
@@ -173,7 +170,7 @@ class RealTimeStreaming:
             "enabled": True,
             "threshold": 1000,
             "current_pressure": 0,
-            "paused_topics": set()
+            "paused_topics": set(),
         }
 
         # Thread pool for blocking operations (dynamic based on CPU count)
@@ -184,7 +181,7 @@ class RealTimeStreaming:
         self.metrics_retention_size = 1000
         self.metrics_cleanup_interval = 300  # 5 minutes
 
-    def _get_default_kafka_config(self) -> Dict[str, Any]:
+    def _get_default_kafka_config(self) -> dict[str, Any]:
         """Get default Kafka configuration."""
         return {
             "bootstrap_servers": "localhost:9092",
@@ -194,15 +191,11 @@ class RealTimeStreaming:
             "enable_auto_commit": False,
             "max_poll_records": 500,
             "session_timeout_ms": 30000,
-            "heartbeat_interval_ms": 10000
+            "heartbeat_interval_ms": 10000,
         }
 
     def configure_stream(
-        self,
-        topic: str,
-        stream_type: StreamType,
-        consumer_group: str,
-        **kwargs
+        self, topic: str, stream_type: StreamType, consumer_group: str, **kwargs
     ) -> StreamConfig:
         """Configure a data stream.
 
@@ -219,7 +212,7 @@ class RealTimeStreaming:
             topic=topic,
             stream_type=stream_type,
             consumer_group=consumer_group,
-            **kwargs
+            **kwargs,
         )
 
         # Validate configuration
@@ -232,11 +225,7 @@ class RealTimeStreaming:
         logger.info(f"Configured stream for topic {topic}")
         return config
 
-    def register_processor(
-        self,
-        stream_type: StreamType,
-        processor: StreamProcessor
-    ):
+    def register_processor(self, stream_type: StreamType, processor: StreamProcessor):
         """Register a stream processor.
 
         Args:
@@ -261,7 +250,7 @@ class RealTimeStreaming:
             asyncio.create_task(self._consume_messages()),
             asyncio.create_task(self._process_messages()),
             asyncio.create_task(self._monitor_backpressure()),
-            asyncio.create_task(self._collect_metrics())
+            asyncio.create_task(self._collect_metrics()),
         ]
 
         logger.info("Streaming system started")
@@ -275,8 +264,7 @@ class RealTimeStreaming:
 
         # Wait for tasks to complete
         await asyncio.gather(
-            *self.processing_state["processing_tasks"],
-            return_exceptions=True
+            *self.processing_state["processing_tasks"], return_exceptions=True
         )
 
         # Close consumers with error handling
@@ -307,7 +295,7 @@ class RealTimeStreaming:
             "group": config.consumer_group,
             "config": config,
             "position": 0,
-            "committed": 0
+            "committed": 0,
         }
 
         logger.info(f"Created consumer for topic {config.topic}")
@@ -322,7 +310,7 @@ class RealTimeStreaming:
         try:
             # In production, would close actual KafkaConsumer
             # Handle connection cleanup
-            if hasattr(consumer, 'close'):
+            if hasattr(consumer, "close"):
                 consumer.close()
             logger.info(f"Closed consumer for topic {consumer['topic']}")
         except Exception as e:
@@ -358,7 +346,7 @@ class RealTimeStreaming:
                 logger.error(f"Error consuming messages: {e}", exc_info=True)
                 await asyncio.sleep(1)
 
-    async def _poll_messages(self, consumer: Any) -> List[StreamMessage]:
+    async def _poll_messages(self, consumer: Any) -> list[StreamMessage]:
         """Poll messages from consumer.
 
         Args:
@@ -369,10 +357,11 @@ class RealTimeStreaming:
         """
         # Simulate message polling
         # In production, would use actual Kafka consumer.poll()
-        messages: List[StreamMessage] = []
+        messages: list[StreamMessage] = []
 
         # Generate deterministic mock messages so unit tests don't flake.
         import random
+
         config = consumer["config"]
         for i in range(random.randint(1, 3)):
             message = StreamMessage(
@@ -384,9 +373,9 @@ class RealTimeStreaming:
                 key=f"key-{i}",
                 value={
                     "data": f"Message {consumer['position']}",
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 },
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
 
             messages.append(message)
@@ -401,14 +390,15 @@ class RealTimeStreaming:
                 # Get message with timeout
                 try:
                     message = await asyncio.wait_for(
-                        self.processing_state["message_queue"].get(),
-                        timeout=1.0
+                        self.processing_state["message_queue"].get(), timeout=1.0
                     )
                 except asyncio.TimeoutError:
                     continue
 
                 # Update backpressure
-                self.backpressure["current_pressure"] = self.processing_state["message_queue"].qsize()
+                self.backpressure["current_pressure"] = self.processing_state[
+                    "message_queue"
+                ].qsize()
 
                 # Process message
                 start_time = time.time()
@@ -447,7 +437,7 @@ class RealTimeStreaming:
             return ProcessingResult(
                 message_id=message.message_id,
                 success=False,
-                error=f"No processor for stream type {message.stream_type.value}"
+                error=f"No processor for stream type {message.stream_type.value}",
             )
 
         try:
@@ -462,16 +452,17 @@ class RealTimeStreaming:
         except ProcessingError as e:
             logger.error(f"Processing error for message {message.message_id}: {e}")
             return ProcessingResult(
-                message_id=message.message_id,
-                success=False,
-                error=str(e)
+                message_id=message.message_id, success=False, error=str(e)
             )
         except Exception as e:
-            logger.error(f"Unexpected error processing message {message.message_id}: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error processing message {message.message_id}: {e}",
+                exc_info=True,
+            )
             return ProcessingResult(
                 message_id=message.message_id,
                 success=False,
-                error=f"Unexpected error: {str(e)}"
+                error=f"Unexpected error: {str(e)}",
             )
 
     async def _commit_offset(self, message: StreamMessage):
@@ -504,7 +495,7 @@ class RealTimeStreaming:
             "message_id": message.message_id,
             "topic": message.topic,
             "timestamp": message.timestamp.isoformat(),
-            "result": asdict(result)
+            "result": asdict(result),
         }
 
         # Store with TTL
@@ -525,7 +516,9 @@ class RealTimeStreaming:
                         for topic in slowest_topics[:2]:  # Pause top 2 slowest
                             if topic not in self.backpressure["paused_topics"]:
                                 self.backpressure["paused_topics"].add(topic)
-                                logger.warning(f"Paused topic {topic} due to backpressure")
+                                logger.warning(
+                                    f"Paused topic {topic} due to backpressure"
+                                )
 
                     # Check if we can resume topics
                     elif queue_size < self.backpressure["threshold"] * 0.5:
@@ -539,7 +532,7 @@ class RealTimeStreaming:
                 logger.error(f"Error monitoring backpressure: {e}", exc_info=True)
                 await asyncio.sleep(5)
 
-    def _get_slowest_topics(self) -> List[str]:
+    def _get_slowest_topics(self) -> list[str]:
         """Get topics with slowest processing times.
 
         Returns:
@@ -559,14 +552,18 @@ class RealTimeStreaming:
             try:
                 # Calculate throughput
                 total_processed = sum(self.metrics["messages_processed"].values())
-                throughput = total_processed / max(1, len(self.metrics["throughput_history"]))
+                throughput = total_processed / max(
+                    1, len(self.metrics["throughput_history"])
+                )
 
-                self.metrics["throughput_history"].append({
-                    "timestamp": datetime.now().isoformat(),
-                    "throughput": throughput,
-                    "queue_size": self.processing_state["message_queue"].qsize(),
-                    "paused_topics": list(self.backpressure["paused_topics"])
-                })
+                self.metrics["throughput_history"].append(
+                    {
+                        "timestamp": datetime.now().isoformat(),
+                        "throughput": throughput,
+                        "queue_size": self.processing_state["message_queue"].qsize(),
+                        "paused_topics": list(self.backpressure["paused_topics"]),
+                    }
+                )
 
                 # Calculate lag
                 for topic, consumer in self.consumers.items():
@@ -598,7 +595,7 @@ class RealTimeStreaming:
             f"Paused: {list(self.backpressure['paused_topics'])}"
         )
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get streaming statistics.
 
         Returns:
@@ -627,8 +624,8 @@ class RealTimeStreaming:
             "backpressure": {
                 "enabled": self.backpressure["enabled"],
                 "threshold": self.backpressure["threshold"],
-                "current": self.backpressure["current_pressure"]
-            }
+                "current": self.backpressure["current_pressure"],
+            },
         }
 
     async def _cleanup_metrics(self):
@@ -642,12 +639,20 @@ class RealTimeStreaming:
                     times = self.metrics["processing_times"][topic]
                     if len(times) > self.metrics_retention_size:
                         # Keep only the most recent metrics
-                        self.metrics["processing_times"][topic] = times[-self.metrics_retention_size:]
+                        self.metrics["processing_times"][topic] = times[
+                            -self.metrics_retention_size :
+                        ]
 
                 # Clean up throughput history
-                if len(self.metrics["throughput_history"]) > self.metrics_retention_size:
+                if (
+                    len(self.metrics["throughput_history"])
+                    > self.metrics_retention_size
+                ):
                     # Remove oldest entries
-                    while len(self.metrics["throughput_history"]) > self.metrics_retention_size:
+                    while (
+                        len(self.metrics["throughput_history"])
+                        > self.metrics_retention_size
+                    ):
                         self.metrics["throughput_history"].popleft()
 
                 logger.debug("Completed metrics cleanup")
@@ -690,7 +695,7 @@ class RealTimeStreaming:
         except Exception as e:
             logger.error(f"Failed to recover from connection error: {e}", exc_info=True)
 
-    def validate_stream_config(self, config: StreamConfig) -> Tuple[bool, List[str]]:
+    def validate_stream_config(self, config: StreamConfig) -> tuple[bool, list[str]]:
         """Validate stream configuration.
 
         Args:
@@ -741,21 +746,19 @@ class NeuroimagingProcessor(StreamProcessor):
                 "subject_id": data.get("subject_id"),
                 "scan_type": data.get("scan_type"),
                 "timestamp": data.get("timestamp"),
-                "processed_at": datetime.now().isoformat()
+                "processed_at": datetime.now().isoformat(),
             }
 
             return ProcessingResult(
                 message_id=message.message_id,
                 success=True,
                 processing_time_ms=10,
-                output_data=output
+                output_data=output,
             )
 
         except Exception as e:
             return ProcessingResult(
-                message_id=message.message_id,
-                success=False,
-                error=str(e)
+                message_id=message.message_id, success=False, error=str(e)
             )
 
 
@@ -773,19 +776,17 @@ class BehavioralProcessor(StreamProcessor):
                 "task": data.get("task"),
                 "score": data.get("score"),
                 "reaction_time": data.get("reaction_time"),
-                "processed_at": datetime.now().isoformat()
+                "processed_at": datetime.now().isoformat(),
             }
 
             return ProcessingResult(
                 message_id=message.message_id,
                 success=True,
                 processing_time_ms=5,
-                output_data=output
+                output_data=output,
             )
 
         except Exception as e:
             return ProcessingResult(
-                message_id=message.message_id,
-                success=False,
-                error=str(e)
+                message_id=message.message_id, success=False, error=str(e)
             )

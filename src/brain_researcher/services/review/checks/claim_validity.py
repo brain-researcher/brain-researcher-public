@@ -195,7 +195,9 @@ _CONFOUND_FIELDS = {
     "difficulty": ("difficulty",),
     "eye_movement": ("eye_movement", "eye_tracking"),
 }
-_FALSEY_STRINGS = frozenset({"", "none", "null", "false", "no", "absent", "missing", "0"})
+_FALSEY_STRINGS = frozenset(
+    {"", "none", "null", "false", "no", "absent", "missing", "0"}
+)
 
 
 def _artifact_dict(bundle: CodeReviewBundle, key: str) -> dict[str, Any]:
@@ -277,7 +279,9 @@ def _has_value(mapping: Mapping[str, object], keys: tuple[str, ...]) -> bool:
     return any(_value_present(mapping.get(key)) for key in keys)
 
 
-def _is_predictive_context(bundle: CodeReviewBundle, context: Mapping[str, object]) -> bool:
+def _is_predictive_context(
+    bundle: CodeReviewBundle, context: Mapping[str, object]
+) -> bool:
     profile = str(
         context.get("scientific_review_profile")
         or _review_contract(bundle).get("scientific_review_profile")
@@ -293,10 +297,11 @@ def _is_predictive_context(bundle: CodeReviewBundle, context: Mapping[str, objec
 
     split_context = _mapping(context.get("split"))
     null_context = _mapping(context.get("null_model"))
-    return _has_value(context, _PREDICTIVE_SPLIT_KEYS) or _has_value(
-        split_context, _PREDICTIVE_SPLIT_KEYS
-    ) or _has_value(context, _PREDICTIVE_NULL_KEYS) or _has_value(
-        null_context, _PREDICTIVE_NULL_KEYS
+    return (
+        _has_value(context, _PREDICTIVE_SPLIT_KEYS)
+        or _has_value(split_context, _PREDICTIVE_SPLIT_KEYS)
+        or _has_value(context, _PREDICTIVE_NULL_KEYS)
+        or _has_value(null_context, _PREDICTIVE_NULL_KEYS)
     )
 
 
@@ -344,7 +349,10 @@ def _claim_entries(bundle: CodeReviewBundle) -> list[dict[str, str]]:
                 }
             )
 
-    _append_many(bundle.observed_artifacts.get("quote_grounded_claims"), source="quote_grounded_claims")
+    _append_many(
+        bundle.observed_artifacts.get("quote_grounded_claims"),
+        source="quote_grounded_claims",
+    )
 
     claim_report = _artifact_dict(bundle, "claim_report")
     _append_many(claim_report.get("claims"), source="claim_report")
@@ -402,8 +410,12 @@ def claim_inflation_check(bundle: CodeReviewBundle) -> ReviewFinding | None:
         claim_type = entry["claim_type"].lower()
         lowered = claim_text.lower()
 
-        if (_PREDICTION_RE.search(lowered) or claim_type in {"prediction", "predictive"}) and not predictive_context:
-            issues.append("prediction language without predictive evaluation provenance")
+        if (
+            _PREDICTION_RE.search(lowered) or claim_type in {"prediction", "predictive"}
+        ) and not predictive_context:
+            issues.append(
+                "prediction language without predictive evaluation provenance"
+            )
             evidence.append(f"{entry['source']}: {claim_text}")
             continue
 
@@ -490,18 +502,21 @@ def reverse_inference_risk_check(bundle: CodeReviewBundle) -> ReviewFinding | No
             "decoder / forward-inference support before treating the region pattern "
             "as evidence for a specific cognitive process."
         ),
-        kg_evidence=evidence[:5]
-        + [f"reverse_inference_support={has_reverse_support}"],
+        kg_evidence=evidence[:5] + [f"reverse_inference_support={has_reverse_support}"],
         reason_tags=["claim_inflation", "construct_validity"],
     )
 
 
-def model_fit_mechanism_overreach_check(bundle: CodeReviewBundle) -> ReviewFinding | None:
+def model_fit_mechanism_overreach_check(
+    bundle: CodeReviewBundle,
+) -> ReviewFinding | None:
     """Warn on fit/encoding evidence being framed as mechanism/equivalence."""
 
     context = _review_context(bundle)
     bundle_text = _bundle_text(bundle, context)
-    analysis_family = str(bundle.kg_context.get("analysis_family") or "").strip().lower()
+    analysis_family = (
+        str(bundle.kg_context.get("analysis_family") or "").strip().lower()
+    )
     evidence: list[str] = []
 
     for entry in _claim_entries(bundle):
@@ -509,13 +524,21 @@ def model_fit_mechanism_overreach_check(bundle: CodeReviewBundle) -> ReviewFindi
         claim_type = entry["claim_type"].lower()
         lowered = claim_text.lower()
         has_fit_language = _contains_any(lowered, _MODEL_FIT_TOKENS)
-        has_model_context = _contains_any(lowered, _MODEL_CONTEXT_TOKENS) or _contains_any(
-            bundle_text, _MODEL_CONTEXT_TOKENS
-        )
+        has_model_context = _contains_any(
+            lowered, _MODEL_CONTEXT_TOKENS
+        ) or _contains_any(bundle_text, _MODEL_CONTEXT_TOKENS)
         has_equivalence_language = _contains_any(lowered, _MODEL_EQUIVALENCE_TOKENS)
-        if claim_type in {"mechanism", "mechanistic"} and has_fit_language and has_model_context:
+        if (
+            claim_type in {"mechanism", "mechanistic"}
+            and has_fit_language
+            and has_model_context
+        ):
             has_equivalence_language = True
-        if not has_fit_language or not has_model_context or not has_equivalence_language:
+        if (
+            not has_fit_language
+            or not has_model_context
+            or not has_equivalence_language
+        ):
             continue
         evidence.append(f"{entry['source']}: {claim_text}")
 
@@ -539,9 +562,14 @@ def model_fit_mechanism_overreach_check(bundle: CodeReviewBundle) -> ReviewFindi
     )
 
 
-def _detect_controversial_choices(bundle: CodeReviewBundle, context: Mapping[str, object]) -> list[str]:
+def _detect_controversial_choices(
+    bundle: CodeReviewBundle, context: Mapping[str, object]
+) -> list[str]:
     sensitivity = _mapping(context.get("sensitivity"))
-    explicit = [choice.lower() for choice in _string_list(sensitivity.get("controversial_choices"))]
+    explicit = [
+        choice.lower()
+        for choice in _string_list(sensitivity.get("controversial_choices"))
+    ]
     detected: set[str] = set(explicit)
     text = _bundle_text(bundle, context)
     for choice, patterns in _CONTROVERSIAL_CHOICE_PATTERNS.items():
@@ -550,7 +578,9 @@ def _detect_controversial_choices(bundle: CodeReviewBundle, context: Mapping[str
     return sorted(detected)
 
 
-def controversial_choice_sensitivity_check(bundle: CodeReviewBundle) -> ReviewFinding | None:
+def controversial_choice_sensitivity_check(
+    bundle: CodeReviewBundle,
+) -> ReviewFinding | None:
     """Warn when explicit controversial choices lack recorded sensitivity checks."""
 
     context = _review_context(bundle)
@@ -560,17 +590,15 @@ def controversial_choice_sensitivity_check(bundle: CodeReviewBundle) -> ReviewFi
     if not controversial_choices:
         return None
 
-    requirements = _string_list(sensitivity.get("sensitivity_requirements")) or _string_list(
-        null_model.get("sensitivity_requirements")
-    )
+    requirements = _string_list(
+        sensitivity.get("sensitivity_requirements")
+    ) or _string_list(null_model.get("sensitivity_requirements"))
     robustness_checks = _string_list(sensitivity.get("robustness_checks"))
     if robustness_checks:
         return None
 
     if requirements:
-        message_tail = (
-            "requirements are recorded, but no robustness/sensitivity results are attached"
-        )
+        message_tail = "requirements are recorded, but no robustness/sensitivity results are attached"
     else:
         message_tail = "no sensitivity requirement or robustness record is attached"
 
@@ -624,7 +652,9 @@ def _controlled_covariates(context: Mapping[str, object]) -> set[str]:
         covariates.add(item.lower())
     for item in _string_list(preprocessing.get("confounds")):
         covariates.add(item.lower())
-    control_strategy = str(construct_validity.get("control_strategy") or "").strip().lower()
+    control_strategy = (
+        str(construct_validity.get("control_strategy") or "").strip().lower()
+    )
     if control_strategy:
         covariates.add(control_strategy)
     return covariates
@@ -641,7 +671,9 @@ def construct_validity_confound_check(bundle: CodeReviewBundle) -> ReviewFinding
     for label, tokens in _CONFOUND_FIELDS.items():
         value = imbalance_mapping.get(label)
         if value is None:
-            value = next((context.get(token) for token in tokens if token in context), None)
+            value = next(
+                (context.get(token) for token in tokens if token in context), None
+            )
         if _is_explicit_imbalance(value):
             explicit_confounds.append(label)
 
@@ -655,7 +687,9 @@ def construct_validity_confound_check(bundle: CodeReviewBundle) -> ReviewFinding
     unresolved_confounds = [
         confound
         for confound in explicit_confounds
-        if not any(token in controlled_covariates for token in _CONFOUND_FIELDS[confound])
+        if not any(
+            token in controlled_covariates for token in _CONFOUND_FIELDS[confound]
+        )
     ]
     if not unresolved_confounds and alternative_explanations and controlled_covariates:
         return None

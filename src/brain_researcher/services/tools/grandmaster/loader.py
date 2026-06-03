@@ -7,10 +7,11 @@ import logging
 import os
 import re
 import time
-from functools import lru_cache
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional, Sequence, Set
+from typing import Any, Optional
 
 import yaml
 from pydantic import BaseModel, Field, create_model
@@ -57,7 +58,7 @@ def _summarize_workflow_step_params(params: dict[str, Any] | None) -> dict[str, 
     for key, value in params.items():
         if value is None:
             continue
-        if isinstance(value, (str, int, float, bool)):
+        if isinstance(value, str | int | float | bool):
             text = str(value)
             summary[key] = text if len(text) <= 80 else text[:77] + "..."
         elif isinstance(value, list):
@@ -89,7 +90,7 @@ def _apply_grandmaster_tags(tool: NeuroToolWrapper, meta: dict[str, Any]) -> Non
     lifecycle = str(meta.get("lifecycle") or "")
     stable_pack = bool(meta.get("stable_workflow_pack"))
 
-    tags: Set[str] = set(getattr(tool, "TAGS", []) or getattr(tool, "tags", []) or [])
+    tags: set[str] = set(getattr(tool, "TAGS", []) or getattr(tool, "tags", []) or [])
     if stage:
         tags.add(f"gm.stage:{stage}")
     if layer:
@@ -212,9 +213,9 @@ def _schema_from_callable(func: Callable[..., Any]) -> type[BaseModel]:
     return model
 
 
-def _extract_input_keys(obj: Any) -> Set[str]:
+def _extract_input_keys(obj: Any) -> set[str]:
     """Find `${inputs.foo}` references in a nested params structure."""
-    keys: Set[str] = set()
+    keys: set[str] = set()
     if isinstance(obj, str):
         for match in re.findall(r"\$\{inputs\.([a-zA-Z0-9_]+)\}", obj):
             keys.add(match)
@@ -308,7 +309,7 @@ class GrandmasterAliasTool(NeuroToolWrapper):
         tool_id: str,
         target: str,
         describe: str,
-        resolve: Callable[[str], Optional[NeuroToolWrapper]],
+        resolve: Callable[[str], NeuroToolWrapper | None],
         gm_meta: dict[str, Any],
     ):
         super().__init__()
@@ -359,10 +360,10 @@ class GrandmasterDelegateTool(NeuroToolWrapper):
         tool_id: str,
         target: str,
         describe: str,
-        resolve: Callable[[str], Optional[NeuroToolWrapper]],
+        resolve: Callable[[str], NeuroToolWrapper | None],
         gm_meta: dict[str, Any],
-        arg_map: Optional[dict[str, str]] = None,
-        defaults: Optional[dict[str, Any]] = None,
+        arg_map: dict[str, str] | None = None,
+        defaults: dict[str, Any] | None = None,
     ):
         super().__init__()
         self._tool_id = tool_id
@@ -457,7 +458,7 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
         workflow_id: str,
         describe: str,
         steps: Sequence[WorkflowStepDef],
-        resolve: Callable[[str], Optional[NeuroToolWrapper]],
+        resolve: Callable[[str], NeuroToolWrapper | None],
         gm_meta: dict[str, Any],
     ):
         super().__init__()
@@ -1078,9 +1079,11 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
             if status != "success":
                 return ToolResult(
                     status="error",
-                    error=payload.get("error")
-                    if isinstance(payload, dict)
-                    else "step failed",
+                    error=(
+                        payload.get("error")
+                        if isinstance(payload, dict)
+                        else "step failed"
+                    ),
                     data={"workflow": self._workflow_id, "steps": ctx["steps"]},
                 )
             outputs = payload.get("data", payload)
@@ -1364,9 +1367,11 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
             if status != "success":
                 return ToolResult(
                     status="error",
-                    error=payload.get("error")
-                    if isinstance(payload, dict)
-                    else "step failed",
+                    error=(
+                        payload.get("error")
+                        if isinstance(payload, dict)
+                        else "step failed"
+                    ),
                     data={"workflow": self._workflow_id, "steps": ctx["steps"]},
                 )
 
@@ -1554,9 +1559,11 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
             if status != "success":
                 return ToolResult(
                     status="error",
-                    error=payload.get("error")
-                    if isinstance(payload, dict)
-                    else "step failed",
+                    error=(
+                        payload.get("error")
+                        if isinstance(payload, dict)
+                        else "step failed"
+                    ),
                     data={"workflow": self._workflow_id, "steps": ctx["steps"]},
                 )
 
@@ -1598,9 +1605,11 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
             if status != "success":
                 return ToolResult(
                     status="error",
-                    error=payload.get("error")
-                    if isinstance(payload, dict)
-                    else "step failed",
+                    error=(
+                        payload.get("error")
+                        if isinstance(payload, dict)
+                        else "step failed"
+                    ),
                     data={"workflow": self._workflow_id, "steps": ctx["steps"]},
                 )
 
@@ -1775,15 +1784,15 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
             dict(adapter_payload.run_record_updates.get("review_context"))
             if adapter_payload
             and isinstance(adapter_payload.run_record_updates, dict)
-            and isinstance(adapter_payload.run_record_updates.get("review_context"), dict)
+            and isinstance(
+                adapter_payload.run_record_updates.get("review_context"), dict
+            )
             else {}
         )
 
         participant_label_csv = str(inputs.get("participant_label_csv") or "").strip()
         participant_labels = [
-            token.strip()
-            for token in participant_label_csv.split(",")
-            if token.strip()
+            token.strip() for token in participant_label_csv.split(",") if token.strip()
         ]
         task = (
             source_summary.get("task")
@@ -2063,9 +2072,11 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
             if status != "success":
                 return ToolResult(
                     status="error",
-                    error=payload.get("error")
-                    if isinstance(payload, dict)
-                    else "step failed",
+                    error=(
+                        payload.get("error")
+                        if isinstance(payload, dict)
+                        else "step failed"
+                    ),
                     data={"workflow": self._workflow_id, "steps": ctx["steps"]},
                 )
             step_outputs = payload.get("data", payload)
@@ -2121,9 +2132,11 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
             if status != "success":
                 return ToolResult(
                     status="error",
-                    error=payload.get("error")
-                    if isinstance(payload, dict)
-                    else "step failed",
+                    error=(
+                        payload.get("error")
+                        if isinstance(payload, dict)
+                        else "step failed"
+                    ),
                     data={"workflow": self._workflow_id, "steps": ctx["steps"]},
                 )
             step_outputs = payload.get("data", payload)
@@ -2195,9 +2208,11 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
             if status != "success":
                 return ToolResult(
                     status="error",
-                    error=payload.get("error")
-                    if isinstance(payload, dict)
-                    else "step failed",
+                    error=(
+                        payload.get("error")
+                        if isinstance(payload, dict)
+                        else "step failed"
+                    ),
                     data={"workflow": self._workflow_id, "steps": ctx["steps"]},
                 )
 
@@ -2214,9 +2229,11 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
                             "validated_bids": (
                                 (ctx["steps"].get("validate") or {}).get("data") or {}
                             ),
-                            "fmriprep": payload.get("data")
-                            if step.step_id == "fmriprep"
-                            else (ctx["steps"].get("fmriprep") or {}).get("data"),
+                            "fmriprep": (
+                                payload.get("data")
+                                if step.step_id == "fmriprep"
+                                else (ctx["steps"].get("fmriprep") or {}).get("data")
+                            ),
                             "mriqc": (ctx["steps"].get("mriqc") or {}).get("data"),
                             "message": (
                                 "Previewed fMRIPrep and MRIQC commands. "
@@ -2312,9 +2329,11 @@ class GrandmasterDeclarativeWorkflowTool(NeuroToolWrapper):
                 )
                 return ToolResult(
                     status="error",
-                    error=payload.get("error")
-                    if isinstance(payload, dict)
-                    else "step failed",
+                    error=(
+                        payload.get("error")
+                        if isinstance(payload, dict)
+                        else "step failed"
+                    ),
                     data={"workflow": self._workflow_id, "steps": ctx["steps"]},
                 )
 
@@ -2375,7 +2394,7 @@ def register_grandmaster_tools(
     if not callable(resolver):
         raise TypeError("registry must provide get_runtime_tool(tool_id)")
 
-    def _resolve(tool_id: str) -> Optional[NeuroToolWrapper]:
+    def _resolve(tool_id: str) -> NeuroToolWrapper | None:
         try:
             return registry.get_runtime_tool(tool_id)
         except Exception:

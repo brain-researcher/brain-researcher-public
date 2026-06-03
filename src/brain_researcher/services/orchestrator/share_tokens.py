@@ -18,8 +18,6 @@ import json
 import os
 import time
 from dataclasses import dataclass
-from typing import Optional
-
 
 SHARE_TOKEN_PREFIX = "share_v1"
 
@@ -43,7 +41,7 @@ def share_token_enforced() -> bool:
     return env in {"prod", "production"}
 
 
-def get_share_token_secret() -> Optional[str]:
+def get_share_token_secret() -> str | None:
     secret = (
         os.getenv("BR_SHARE_TOKEN_SECRET")
         or os.getenv("SHARE_TOKEN_SECRET")
@@ -91,7 +89,7 @@ def issue_share_token(
     analysis_id: str,
     secret: str,
     ttl_seconds: int,
-    now: Optional[int] = None,
+    now: int | None = None,
 ) -> tuple[str, ShareTokenClaims]:
     issued_at = int(time.time() if now is None else now)
     exp = issued_at + max(60, int(ttl_seconds))
@@ -108,7 +106,7 @@ def verify_share_token(
     *,
     token: str,
     secret: str,
-    now: Optional[int] = None,
+    now: int | None = None,
 ) -> ShareTokenClaims:
     if not is_signed_share_token(token):
         raise ValueError("Share token is not signed (expected share_v1.*)")
@@ -149,8 +147,8 @@ def verify_share_token(
 def issue_share_token_from_env(
     *,
     analysis_id: str,
-    ttl_seconds: Optional[int] = None,
-    now: Optional[int] = None,
+    ttl_seconds: int | None = None,
+    now: int | None = None,
 ) -> tuple[str, ShareTokenClaims]:
     secret = get_share_token_secret()
     if not secret:
@@ -168,7 +166,7 @@ def issue_share_token_from_env(
 def verify_share_token_from_env(
     *,
     token: str,
-    now: Optional[int] = None,
+    now: int | None = None,
 ) -> ShareTokenClaims:
     secret = get_share_token_secret()
     if not secret:

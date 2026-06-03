@@ -10,14 +10,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from dataclasses import dataclass, field
+from collections.abc import AsyncIterator, Sequence
+from dataclasses import dataclass
 from typing import (
-    Any,
-    AsyncIterator,
-    Dict,
-    List,
-    Optional,
-    Sequence,
     TYPE_CHECKING,
 )
 
@@ -76,15 +71,15 @@ class KnowledgeAggregator:
             print(evidence.confidence, len(evidence.items))
     """
 
-    def __init__(self, config: Optional[AggregatorConfig] = None):
+    def __init__(self, config: AggregatorConfig | None = None):
         """Initialize the aggregator.
 
         Args:
             config: Optional configuration. Uses defaults if not provided.
         """
         self.config = config or AggregatorConfig()
-        self._sources: Dict[str, BaseEvidenceSource] = {}
-        self._cache: Dict[str, AggregatedEvidence] = {}  # L1 in-memory cache
+        self._sources: dict[str, BaseEvidenceSource] = {}
+        self._cache: dict[str, AggregatedEvidence] = {}  # L1 in-memory cache
         self._initialized = False
 
     def _init_sources(self) -> None:
@@ -146,7 +141,12 @@ class KnowledgeAggregator:
 
         self._initialized = True
 
-    def _get_cache_key(self, query: str, entities: Sequence[str] | None = None, intent: str | None = None) -> str:
+    def _get_cache_key(
+        self,
+        query: str,
+        entities: Sequence[str] | None = None,
+        intent: str | None = None,
+    ) -> str:
         """Generate cache key from normalized query + entities + intent."""
         norm_q = query.strip().lower()
         ent_part = "|".join(sorted(e.lower() for e in entities or []))
@@ -154,7 +154,7 @@ class KnowledgeAggregator:
         key = f"{intent_part}|{ent_part}|{norm_q}"
         return key[:200]
 
-    def _check_cache(self, cache_key: str) -> Optional[AggregatedEvidence]:
+    def _check_cache(self, cache_key: str) -> AggregatedEvidence | None:
         """Check L1 cache for cached results."""
         if not self.config.enable_cache:
             return None
@@ -164,9 +164,7 @@ class KnowledgeAggregator:
             return None
 
         # Check TTL
-        age_seconds = (
-            time.time() - cached.aggregated_at.timestamp()
-        )
+        age_seconds = time.time() - cached.aggregated_at.timestamp()
         if age_seconds > self.config.cache_ttl_seconds:
             del self._cache[cache_key]
             return None
@@ -225,7 +223,7 @@ class KnowledgeAggregator:
     async def gather(
         self,
         query: str,
-        query_understanding: Optional["QueryUnderstandingResult"] = None,
+        query_understanding: QueryUnderstandingResult | None = None,
         *,
         include_slow_sources: bool = True,
     ) -> AggregatedEvidence:
@@ -246,7 +244,10 @@ class KnowledgeAggregator:
         entities = []
         intent = None
         if query_understanding is not None:
-            entities = [getattr(e, "text", "") or str(e) for e in getattr(query_understanding, "entities", [])]
+            entities = [
+                getattr(e, "text", "") or str(e)
+                for e in getattr(query_understanding, "entities", [])
+            ]
             intent = getattr(query_understanding, "intent", None)
 
         cache_key = self._get_cache_key(query, entities, intent)
@@ -284,7 +285,9 @@ class KnowledgeAggregator:
             fast_results = await asyncio.gather(*fast_tasks, return_exceptions=True)
 
             for source_id, items in zip(
-                [s for s in fast_sources if s in self._sources], fast_results
+                [s for s in fast_sources if s in self._sources],
+                fast_results,
+                strict=False,
             ):
                 if isinstance(items, Exception):
                     result.sources_failed.append(source_id)
@@ -316,7 +319,9 @@ class KnowledgeAggregator:
                 slow_results = await asyncio.gather(*slow_tasks, return_exceptions=True)
 
                 for source_id, items in zip(
-                    [s for s in slow_sources if s in self._sources], slow_results
+                    [s for s in slow_sources if s in self._sources],
+                    slow_results,
+                    strict=False,
                 ):
                     if isinstance(items, Exception):
                         result.sources_failed.append(source_id)
@@ -355,7 +360,7 @@ class KnowledgeAggregator:
     async def gather_progressive(
         self,
         query: str,
-        query_understanding: Optional["QueryUnderstandingResult"] = None,
+        query_understanding: QueryUnderstandingResult | None = None,
     ) -> AsyncIterator[AggregatedEvidence]:
         """Gather evidence progressively, yielding fast results first.
 
@@ -396,7 +401,7 @@ class KnowledgeAggregator:
 # Convenience function
 async def gather_knowledge(
     query: str,
-    query_understanding: Optional["QueryUnderstandingResult"] = None,
+    query_understanding: QueryUnderstandingResult | None = None,
 ) -> AggregatedEvidence:
     """Convenience function to gather knowledge for a query."""
     aggregator = KnowledgeAggregator()

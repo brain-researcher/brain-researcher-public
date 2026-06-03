@@ -1,18 +1,20 @@
 """Cypher query generation for graph traversal."""
 
-from typing import List, Dict, Optional, Any
+from typing import Any
 
 
 class TraversalQueryBuilder:
     """Builder for Cypher traversal queries."""
 
     @staticmethod
-    def variable_length_path(start_id: str,
-                           end_id: str,
-                           min_hops: int = 1,
-                           max_hops: int = 5,
-                           edge_types: Optional[List[str]] = None,
-                           limit: int = 10) -> str:
+    def variable_length_path(
+        start_id: str,
+        end_id: str,
+        min_hops: int = 1,
+        max_hops: int = 5,
+        edge_types: list[str] | None = None,
+        limit: int = 10,
+    ) -> str:
         """Generate Cypher query for variable-length paths.
 
         Args:
@@ -40,10 +42,12 @@ class TraversalQueryBuilder:
         return query.strip()
 
     @staticmethod
-    def shortest_path(start_id: str,
-                     end_id: str,
-                     weighted: bool = False,
-                     weight_property: str = "weight") -> str:
+    def shortest_path(
+        start_id: str,
+        end_id: str,
+        weighted: bool = False,
+        weight_property: str = "weight",
+    ) -> str:
         """Generate Cypher query for shortest path.
 
         Args:
@@ -64,8 +68,8 @@ class TraversalQueryBuilder:
             RETURN path, weight
             """
         else:
-            query = f"""
-            MATCH (start {{id: $start_id}}), (end {{id: $end_id}})
+            query = """
+            MATCH (start {id: $start_id}), (end {id: $end_id})
             MATCH p = shortestPath((start)-[*]-(end))
             RETURN p, length(p) as path_length
             """
@@ -73,10 +77,9 @@ class TraversalQueryBuilder:
         return query.strip()
 
     @staticmethod
-    def all_paths(start_id: str,
-                 end_id: str,
-                 max_length: int = 5,
-                 limit: int = 100) -> str:
+    def all_paths(
+        start_id: str, end_id: str, max_length: int = 5, limit: int = 100
+    ) -> str:
         """Generate query for all paths up to max length.
 
         Args:
@@ -98,11 +101,13 @@ class TraversalQueryBuilder:
         return query.strip()
 
     @staticmethod
-    def path_with_filters(start_id: str,
-                         end_id: str,
-                         node_filters: Optional[Dict[str, Any]] = None,
-                         edge_filters: Optional[Dict[str, Any]] = None,
-                         max_length: int = 5) -> str:
+    def path_with_filters(
+        start_id: str,
+        end_id: str,
+        node_filters: dict[str, Any] | None = None,
+        edge_filters: dict[str, Any] | None = None,
+        max_length: int = 5,
+    ) -> str:
         """Generate query for paths with node/edge filters.
 
         Args:
@@ -121,13 +126,17 @@ class TraversalQueryBuilder:
             node_conditions = []
             for prop, value in node_filters.items():
                 node_conditions.append(f"n.{prop} = '{value}'")
-            where_clauses.append(f"all(n IN nodes(p) WHERE {' AND '.join(node_conditions)})")
+            where_clauses.append(
+                f"all(n IN nodes(p) WHERE {' AND '.join(node_conditions)})"
+            )
 
         if edge_filters:
             edge_conditions = []
             for prop, value in edge_filters.items():
                 edge_conditions.append(f"r.{prop} = '{value}'")
-            where_clauses.append(f"all(r IN relationships(p) WHERE {' AND '.join(edge_conditions)})")
+            where_clauses.append(
+                f"all(r IN relationships(p) WHERE {' AND '.join(edge_conditions)})"
+            )
 
         where_clause = ""
         if where_clauses:
@@ -164,9 +173,9 @@ class TraversalQueryBuilder:
         return query.strip()
 
     @staticmethod
-    def pagerank(iterations: int = 20,
-                damping_factor: float = 0.85,
-                limit: int = 100) -> str:
+    def pagerank(
+        iterations: int = 20, damping_factor: float = 0.85, limit: int = 100
+    ) -> str:
         """Generate query for PageRank.
 
         Args:

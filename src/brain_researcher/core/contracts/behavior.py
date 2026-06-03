@@ -23,7 +23,9 @@ class BehaviorTrial(BaseModel):
         default=None, description="Subject identifier if available"
     )
     session: str | None = Field(default=None, description="Session label if present")
-    run: str | int | None = Field(default=None, description="Run label/index if present")
+    run: str | int | None = Field(
+        default=None, description="Run label/index if present"
+    )
 
     trial_index: int = Field(
         ..., ge=0, description="Zero-based trial index in source file/order"
@@ -77,7 +79,9 @@ class BehaviorQCReport(BaseModel):
 
     schema_version: Literal["behavior-qc-report-v1"] = "behavior-qc-report-v1"
 
-    policy_id: str | None = Field(default=None, description="Applied QC/outlier policy ID")
+    policy_id: str | None = Field(
+        default=None, description="Applied QC/outlier policy ID"
+    )
     total_trials: int = Field(..., ge=0, description="Total trials ingested")
     kept_trials: int = Field(..., ge=0, description="Trials retained after exclusion")
     excluded_trials: int = Field(..., ge=0, description="Trials excluded by policy")

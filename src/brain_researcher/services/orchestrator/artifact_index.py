@@ -8,12 +8,13 @@ the wrong subject/contrast."
 This module creates a searchable index of all artifacts with extracted metadata.
 """
 
-from pathlib import Path
-from typing import Dict, List, Optional, Any
-from pydantic import BaseModel, Field, ConfigDict
-import re
 import logging
+import re
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +31,10 @@ class ArtifactMetadata(BaseModel):
     file_size_bytes: int = Field(..., description="File size in bytes")
 
     # Extracted from filename
-    subject_id: Optional[str] = Field(None, description="Subject ID (e.g., sub-01)")
-    session: Optional[str] = Field(None, description="Session (e.g., retest)")
-    contrast: Optional[str] = Field(None, description="Contrast type (finger/foot/lips)")
-    statistic: Optional[str] = Field(None, description="Stat type (z/t/p/effect/variance)")
+    subject_id: str | None = Field(None, description="Subject ID (e.g., sub-01)")
+    session: str | None = Field(None, description="Session (e.g., retest)")
+    contrast: str | None = Field(None, description="Contrast type (finger/foot/lips)")
+    statistic: str | None = Field(None, description="Stat type (z/t/p/effect/variance)")
 
     # Additional metadata
     coordinate_space: str = Field(default="MNI152", description="Coordinate space")
@@ -46,9 +47,11 @@ class ArtifactIndex:
     def __init__(self, project_root: Path):
         self.project_root = project_root
         self.data_root = project_root / "data"
-        self._indexes: Dict[str, Dict[str, ArtifactMetadata]] = {}
+        self._indexes: dict[str, dict[str, ArtifactMetadata]] = {}
 
-    def build_index(self, demo_id: str, output_path: Path) -> Dict[str, ArtifactMetadata]:
+    def build_index(
+        self, demo_id: str, output_path: Path
+    ) -> dict[str, ArtifactMetadata]:
         """
         Build searchable index for a demo's artifacts
 
@@ -71,7 +74,9 @@ class ArtifactIndex:
 
         # Find all NIfTI files recursively
         nifti_files = list(full_output_path.rglob("*.nii.gz"))
-        logger.info(f"Building index for {demo_id}: found {len(nifti_files)} NIfTI files")
+        logger.info(
+            f"Building index for {demo_id}: found {len(nifti_files)} NIfTI files"
+        )
 
         for nifti_file in nifti_files:
             # Handle git-annex symlinks - check if it's a symlink OR exists
@@ -88,9 +93,7 @@ class ArtifactIndex:
             # Extract metadata from filename
             try:
                 metadata = self._extract_metadata(
-                    demo_id=demo_id,
-                    artifact_id=artifact_id,
-                    file_path=nifti_file
+                    demo_id=demo_id, artifact_id=artifact_id, file_path=nifti_file
                 )
                 index[artifact_id] = metadata
             except Exception as e:
@@ -102,10 +105,8 @@ class ArtifactIndex:
         return index
 
     def get_artifact_metadata(
-        self,
-        demo_id: str,
-        artifact_id: str
-    ) -> Optional[ArtifactMetadata]:
+        self, demo_id: str, artifact_id: str
+    ) -> ArtifactMetadata | None:
         """
         Get metadata for a specific artifact (deterministic lookup)
 
@@ -120,11 +121,7 @@ class ArtifactIndex:
             return None
         return self._indexes[demo_id].get(artifact_id)
 
-    def get_artifact_path(
-        self,
-        demo_id: str,
-        artifact_id: str
-    ) -> Optional[Path]:
+    def get_artifact_path(self, demo_id: str, artifact_id: str) -> Path | None:
         """
         Get absolute path to artifact file (deterministic lookup)
 
@@ -145,11 +142,11 @@ class ArtifactIndex:
     def filter_artifacts(
         self,
         demo_id: str,
-        contrast: Optional[str] = None,
-        statistic: Optional[str] = None,
-        subject_id: Optional[str] = None,
-        limit: Optional[int] = None
-    ) -> List[ArtifactMetadata]:
+        contrast: str | None = None,
+        statistic: str | None = None,
+        subject_id: str | None = None,
+        limit: int | None = None,
+    ) -> list[ArtifactMetadata]:
         """
         Filter artifacts by metadata fields
 
@@ -185,32 +182,31 @@ class ArtifactIndex:
 
         return artifacts
 
-    def get_contrasts(self, demo_id: str) -> List[str]:
+    def get_contrasts(self, demo_id: str) -> list[str]:
         """Get list of unique contrasts for a demo"""
         if demo_id not in self._indexes:
             return []
         contrasts = {a.contrast for a in self._indexes[demo_id].values() if a.contrast}
-        return sorted(list(contrasts))
+        return sorted(contrasts)
 
-    def get_subjects(self, demo_id: str) -> List[str]:
+    def get_subjects(self, demo_id: str) -> list[str]:
         """Get list of unique subjects for a demo"""
         if demo_id not in self._indexes:
             return []
-        subjects = {a.subject_id for a in self._indexes[demo_id].values() if a.subject_id}
-        return sorted(list(subjects))
+        subjects = {
+            a.subject_id for a in self._indexes[demo_id].values() if a.subject_id
+        }
+        return sorted(subjects)
 
-    def get_statistics(self, demo_id: str) -> List[str]:
+    def get_statistics(self, demo_id: str) -> list[str]:
         """Get list of unique statistic types for a demo"""
         if demo_id not in self._indexes:
             return []
         stats = {a.statistic for a in self._indexes[demo_id].values() if a.statistic}
-        return sorted(list(stats))
+        return sorted(stats)
 
     def _extract_metadata(
-        self,
-        demo_id: str,
-        artifact_id: str,
-        file_path: Path
+        self, demo_id: str, artifact_id: str, file_path: Path
     ) -> ArtifactMetadata:
         """
         Extract metadata from NIfTI filename
@@ -221,19 +217,19 @@ class ArtifactIndex:
         filename = file_path.name
 
         # Extract subject ID
-        subject_match = re.search(r'sub-(\d+)', filename)
+        subject_match = re.search(r"sub-(\d+)", filename)
         subject_id = f"sub-{subject_match.group(1)}" if subject_match else None
 
         # Extract session
-        session_match = re.search(r'ses-(\w+)', filename)
+        session_match = re.search(r"ses-(\w+)", filename)
         session = session_match.group(1) if session_match else None
 
         # Extract contrast
-        contrast_match = re.search(r'contrast-([a-z]+)', filename)
+        contrast_match = re.search(r"contrast-([a-z]+)", filename)
         contrast = contrast_match.group(1) if contrast_match else None
 
         # Extract statistic type
-        stat_match = re.search(r'stat-([a-z]+)', filename)
+        stat_match = re.search(r"stat-([a-z]+)", filename)
         statistic = stat_match.group(1) if stat_match else None
 
         # Get file stats (use lstat for symlinks to avoid errors on broken links)
@@ -250,10 +246,10 @@ class ArtifactIndex:
             contrast=contrast,
             statistic=statistic,
             coordinate_space="MNI152",  # FSL FEAT default
-            modification_time=datetime.fromtimestamp(stat_info.st_mtime)
+            modification_time=datetime.fromtimestamp(stat_info.st_mtime),
         )
 
-    def get_index_stats(self, demo_id: str) -> Dict[str, Any]:
+    def get_index_stats(self, demo_id: str) -> dict[str, Any]:
         """Get statistics about the indexed artifacts"""
         if demo_id not in self._indexes:
             return {}
@@ -268,5 +264,5 @@ class ArtifactIndex:
             "total_size_bytes": sum(a.file_size_bytes for a in index.values()),
             "contrasts": self.get_contrasts(demo_id),
             "subjects": self.get_subjects(demo_id),
-            "statistics": self.get_statistics(demo_id)
+            "statistics": self.get_statistics(demo_id),
         }

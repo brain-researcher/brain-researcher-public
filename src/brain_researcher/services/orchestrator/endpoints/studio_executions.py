@@ -103,6 +103,10 @@ async def perform_studio_execution_action(
             user.id, session_id, execution_id, action, payload
         )
     except KeyError as exc:
-        raise HTTPException(status_code=404, detail="Studio execution not found") from exc
+        raise HTTPException(
+            status_code=404, detail="Studio execution not found"
+        ) from exc
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=f"Unsupported action: {action}") from exc
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported action: {action}"
+        ) from exc

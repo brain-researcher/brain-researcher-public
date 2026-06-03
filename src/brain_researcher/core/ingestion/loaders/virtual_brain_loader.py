@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +17,11 @@ class VirtualBrainLoader:
     cache_dir: Path
     topk_regions: int = 20
 
-    def iter_reports(self) -> Iterable[Dict[str, Any]]:
+    def iter_reports(self) -> Iterable[dict[str, Any]]:
         if not self.cache_dir.exists():
-            logger.debug("Virtual Brain cache directory %s does not exist", self.cache_dir)
+            logger.debug(
+                "Virtual Brain cache directory %s does not exist", self.cache_dir
+            )
             return []
 
         for report_path in sorted(self.cache_dir.glob("*/report.json")):
@@ -32,7 +35,7 @@ class VirtualBrainLoader:
             except OSError as exc:
                 logger.warning("Could not read VB report %s: %s", report_path, exc)
 
-    def ensure_virtual_brain_nodes(self, db, report: Dict[str, Any]) -> Dict[str, int]:
+    def ensure_virtual_brain_nodes(self, db, report: dict[str, Any]) -> dict[str, int]:
         stats = {
             "simulations_created": 0,
             "simulations_updated": 0,
@@ -115,7 +118,7 @@ class VirtualBrainLoader:
 
         return stats
 
-    def ingest(self, db) -> Dict[str, int]:
+    def ingest(self, db) -> dict[str, int]:
         aggregate = {
             "simulations_created": 0,
             "simulations_updated": 0,

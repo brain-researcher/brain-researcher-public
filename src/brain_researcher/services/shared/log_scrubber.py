@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, Iterable, List
+from typing import Any
 
-
-_PATTERNS: List[tuple[re.Pattern[str], str]] = [
+_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     # Common key/value secrets
     (
         re.compile(

@@ -12,21 +12,18 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from brain_researcher.config.paths import get_repo_root
 from brain_researcher.cli.utils.auth import get_token
 from brain_researcher.cli.utils.http_client import (
     format_http_error,
     get_orchestrator_url,
 )
+from brain_researcher.config.paths import get_repo_root
 
 app = typer.Typer(help="Remote session and Slack bridge helpers")
 console = Console()
 
 _MANIFEST_TEMPLATE_PATH = (
-    get_repo_root()
-    / "configs"
-    / "runtime"
-    / "slack_app_manifest.template.yaml"
+    get_repo_root() / "configs" / "runtime" / "slack_app_manifest.template.yaml"
 )
 
 
@@ -63,7 +60,9 @@ def _request_json(
         console.print(f"[red]Error:[/red] {format_http_error(exc.response)}")
         raise typer.Exit(1) from exc
     except httpx.ConnectError as exc:
-        console.print(f"[red]Error:[/red] Could not connect to orchestrator at {base_url}")
+        console.print(
+            f"[red]Error:[/red] Could not connect to orchestrator at {base_url}"
+        )
         console.print(
             "[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]"
         )
@@ -120,7 +119,9 @@ def list_sessions(
     if not items:
         console.print("[yellow]No sessions found[/yellow]")
         return
-    table = Table(title=f"Sessions ({len(items)})", show_header=True, header_style="bold magenta")
+    table = Table(
+        title=f"Sessions ({len(items)})", show_header=True, header_style="bold magenta"
+    )
     table.add_column("ID", style="cyan", no_wrap=True)
     table.add_column("Kind", style="green")
     table.add_column("Status", style="yellow")
@@ -203,7 +204,9 @@ def attach_session(
 
 @app.command("bind-slack")
 def bind_slack(
-    session_id: str = typer.Argument(..., help="Session id returned by br sessions attach"),
+    session_id: str = typer.Argument(
+        ..., help="Session id returned by br sessions attach"
+    ),
     channel_id: str = typer.Option(..., "--channel-id", help="Slack channel ID"),
     thread_ts: str | None = typer.Option(
         None, "--thread-ts", help="Existing Slack thread timestamp"

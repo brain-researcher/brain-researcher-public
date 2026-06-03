@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import nibabel as nib
 import numpy as np
@@ -26,9 +25,9 @@ from brain_researcher.services.tools.atlas_utils import (
     find_local_yeo_atlas,
     is_path_like_atlas,
     normalize_harvard_oxford_variant,
+    parse_schaefer_n_rois,
     parse_schaefer_yeo_networks,
     parse_yeo_networks,
-    parse_schaefer_n_rois,
     schaefer_output_root,
 )
 
@@ -36,17 +35,17 @@ from brain_researcher.services.tools.atlas_utils import (
 @dataclass(frozen=True)
 class NiftiMaskerParameters:
     img: str
-    output_file: Optional[str] = None
-    mask_img: Optional[str] = None
+    output_file: str | None = None
+    mask_img: str | None = None
     mask_strategy: str = "epi"
     standardize: bool = True
     detrend: bool = True
-    smoothing_fwhm: Optional[float] = None
-    low_pass: Optional[float] = None
-    high_pass: Optional[float] = None
-    t_r: Optional[float] = None
-    confounds: Optional[str] = None
-    confound_strategy: Tuple[str, ...] = ("motion", "wm_csf")
+    smoothing_fwhm: float | None = None
+    low_pass: float | None = None
+    high_pass: float | None = None
+    t_r: float | None = None
+    confounds: str | None = None
+    confound_strategy: tuple[str, ...] = ("motion", "wm_csf")
 
 
 @dataclass(frozen=True)
@@ -54,19 +53,19 @@ class ROIExtractionParameters:
     img: str
     atlas: str
     output_dir: str
-    n_parcels: Optional[int] = None
+    n_parcels: int | None = None
     extract_type: str = "mean"
-    confounds: Optional[str] = None
+    confounds: str | None = None
     standardize: bool = True
     detrend: bool = True
-    low_pass: Optional[float] = None
-    high_pass: Optional[float] = None
-    t_r: Optional[float] = None
-    output_file: Optional[str] = None
-    labels_file: Optional[str] = None
+    low_pass: float | None = None
+    high_pass: float | None = None
+    t_r: float | None = None
+    output_file: str | None = None
+    labels_file: str | None = None
 
 
-def _ensure_file(path: Optional[str]) -> Optional[str]:
+def _ensure_file(path: str | None) -> str | None:
     if path is None:
         return None
     p = Path(path)
@@ -90,8 +89,8 @@ def _sample_standardize_columns(values: np.ndarray) -> np.ndarray:
 
 
 def _load_confounds(
-    path: Optional[str], strategy: Tuple[str, ...]
-) -> tuple[Optional[np.ndarray], list[str]]:
+    path: str | None, strategy: tuple[str, ...]
+) -> tuple[np.ndarray | None, list[str]]:
     if not path:
         return None, []
     confounds_path = Path(_ensure_file(path))
@@ -124,9 +123,9 @@ def _load_confounds(
 
 def _resolve_atlas(
     atlas: str,
-    n_parcels: Optional[int],
-    reference_img: Optional[str] = None,
-) -> tuple[str, Optional[list[str]]]:
+    n_parcels: int | None,
+    reference_img: str | None = None,
+) -> tuple[str, list[str] | None]:
     atlas_path = Path(atlas)
     if atlas_path.exists():
         return str(atlas_path), None
@@ -261,7 +260,7 @@ def _resolve_atlas(
     raise FileNotFoundError(f"Atlas not found or unsupported: {atlas}")
 
 
-def nifti_masker_from_payload(payload: Dict[str, Any]) -> NiftiMaskerParameters:
+def nifti_masker_from_payload(payload: dict[str, Any]) -> NiftiMaskerParameters:
     confound_strategy = payload.get("confound_strategy", ["motion", "wm_csf"])
     return NiftiMaskerParameters(
         img=str(payload["img"]),
@@ -279,7 +278,7 @@ def nifti_masker_from_payload(payload: Dict[str, Any]) -> NiftiMaskerParameters:
     )
 
 
-def roi_extraction_from_payload(payload: Dict[str, Any]) -> ROIExtractionParameters:
+def roi_extraction_from_payload(payload: dict[str, Any]) -> ROIExtractionParameters:
     return ROIExtractionParameters(
         img=str(payload["img"]),
         atlas=str(payload["atlas"]),
@@ -297,7 +296,7 @@ def roi_extraction_from_payload(payload: Dict[str, Any]) -> ROIExtractionParamet
     )
 
 
-def run_nifti_masker(params: NiftiMaskerParameters) -> Dict[str, Any]:
+def run_nifti_masker(params: NiftiMaskerParameters) -> dict[str, Any]:
     img_path = _ensure_file(params.img)
     confounds, confound_cols = _load_confounds(
         params.confounds, params.confound_strategy
@@ -355,7 +354,7 @@ def run_nifti_masker(params: NiftiMaskerParameters) -> Dict[str, Any]:
     }
 
 
-def run_roi_extraction(params: ROIExtractionParameters) -> Dict[str, Any]:
+def run_roi_extraction(params: ROIExtractionParameters) -> dict[str, Any]:
     img_path = _ensure_file(params.img)
     confounds, confound_cols = _load_confounds(params.confounds, ())
     output_dir = Path(params.output_dir)

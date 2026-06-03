@@ -9,11 +9,10 @@ Checks for:
 - Neuroimaging service credentials
 """
 
+import argparse
 import re
 import sys
-import argparse
 from pathlib import Path
-from typing import List, Tuple, Dict
 
 
 class SecretChecker:
@@ -127,12 +126,12 @@ class SecretChecker:
 
         return False
 
-    def check_file(self, file_path: Path) -> List[Dict]:
+    def check_file(self, file_path: Path) -> list[dict]:
         """Check a single file for secrets."""
         secrets_found = []
 
         try:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(file_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
                 lines = content.split("\n")
         except Exception as e:
@@ -227,7 +226,7 @@ class SecretChecker:
         else:
             return "LOW"
 
-    def check_multiple_files(self, file_paths: List[Path]) -> Dict:
+    def check_multiple_files(self, file_paths: list[Path]) -> dict:
         """Check multiple files for secrets."""
         all_secrets = []
         files_with_secrets = 0
@@ -293,7 +292,7 @@ def main():
         print(json.dumps(results, indent=2))
     else:
         # Human-readable output
-        print(f"Secret Check Results:")
+        print("Secret Check Results:")
         print(f"Files checked: {len(file_paths)}")
         print(f"Files with secrets: {results['files_affected']}")
         print(f"Total secrets found: {results['total_secrets']}")

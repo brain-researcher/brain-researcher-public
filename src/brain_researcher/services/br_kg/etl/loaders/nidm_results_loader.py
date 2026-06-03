@@ -26,8 +26,9 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any
 
 import requests
 
@@ -37,7 +38,7 @@ DEFAULT_CACHE_DIR = Path("data/br-kg/raw/nidm")
 DEFAULT_HTTP_TIMEOUT = 30
 
 
-def _read_results(path: Path) -> List[Dict[str, Any]]:
+def _read_results(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         raise FileNotFoundError(f"NIDM results file not found: {path}")
     text = path.read_text(encoding="utf-8")
@@ -51,7 +52,7 @@ class NIDMResultsLoader:
 
     def __init__(
         self,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         http_timeout: int = DEFAULT_HTTP_TIMEOUT,
     ) -> None:
         self.cache_dir = Path(cache_dir or DEFAULT_CACHE_DIR)
@@ -61,10 +62,10 @@ class NIDMResultsLoader:
     def load_entries(
         self,
         *,
-        nidm_paths: Optional[Sequence[str]] = None,
-        nidm_urls: Optional[Sequence[str]] = None,
-    ) -> List[Dict[str, Any]]:
-        entries: List[Dict[str, Any]] = []
+        nidm_paths: Sequence[str] | None = None,
+        nidm_urls: Sequence[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        entries: list[dict[str, Any]] = []
         if nidm_paths:
             for path in nidm_paths:
                 entries.extend(_read_results(Path(path)))
@@ -85,10 +86,12 @@ class NIDMResultsLoader:
     def ingest(
         self,
         db,
-        entries: Optional[Iterable[Dict[str, Any]]] = None,
+        entries: Iterable[dict[str, Any]] | None = None,
         **load_kwargs: Any,
-    ) -> Dict[str, Any]:
-        records = list(entries) if entries is not None else self.load_entries(**load_kwargs)
+    ) -> dict[str, Any]:
+        records = (
+            list(entries) if entries is not None else self.load_entries(**load_kwargs)
+        )
         stats = {
             "stat_maps_upserted": 0,
             "derived_from_edges": 0,
@@ -101,12 +104,16 @@ class NIDMResultsLoader:
             try:
                 self._ingest_single(db, record, stats)
             except Exception as exc:  # pragma: no cover - defensive logging
-                logger.exception("Failed to ingest NIDM record %s", record.get("stat_map_id"))
-                stats["errors"].append({"stat_map_id": record.get("stat_map_id"), "error": str(exc)})
+                logger.exception(
+                    "Failed to ingest NIDM record %s", record.get("stat_map_id")
+                )
+                stats["errors"].append(
+                    {"stat_map_id": record.get("stat_map_id"), "error": str(exc)}
+                )
 
         return stats
 
-    def make_adapter(self, base_kwargs: Optional[Dict[str, Any]] = None):
+    def make_adapter(self, base_kwargs: dict[str, Any] | None = None):
         return NIDMResultsAdapter(self, base_kwargs or {})
 
     def _download_to_cache(self, url: str) -> Path:
@@ -121,7 +128,7 @@ class NIDMResultsLoader:
         logger.info("Downloaded NIDM manifest %s", cache_path)
         return cache_path
 
-    def _ingest_single(self, db, record: Dict[str, Any], stats: Dict[str, Any]) -> None:
+    def _ingest_single(self, db, record: dict[str, Any], stats: dict[str, Any]) -> None:
         stat_map_id = record.get("stat_map_id")
         if not stat_map_id:
             logger.debug("Skipping NIDM record without stat_map_id: %s", record)
@@ -145,7 +152,11 @@ class NIDMResultsLoader:
         contrast_id = derived.get("contrast_id")
 
         if derived_doi:
-            pub_props = {"id": derived_doi, "doi": derived_doi, "source": "scholarly_metadata_stub"}
+            pub_props = {
+                "id": derived_doi,
+                "doi": derived_doi,
+                "source": "scholarly_metadata_stub",
+            }
             pub_id = db.create_node("Publication", pub_props, node_id=derived_doi)
             rel_props = {"source": "nidm_results"}
             db.create_relationship(stat_map_id, pub_id, "DERIVED_FROM", rel_props)
@@ -153,9 +164,13 @@ class NIDMResultsLoader:
 
         if contrast_id:
             contrast_props = {"id": contrast_id, "source": "nidm_results_stub"}
-            contrast_node = db.create_node("Contrast", contrast_props, node_id=contrast_id)
+            contrast_node = db.create_node(
+                "Contrast", contrast_props, node_id=contrast_id
+            )
             rel_props = {"source": "nidm_results"}
-            db.create_relationship(stat_map_id, contrast_node, "DERIVED_FROM_CONTRAST", rel_props)
+            db.create_relationship(
+                stat_map_id, contrast_node, "DERIVED_FROM_CONTRAST", rel_props
+            )
 
         software = record.get("software") or {}
         software_name = software.get("name")
@@ -170,7 +185,9 @@ class NIDMResultsLoader:
             }
             db.create_node("AnalysisSoftware", software_props, node_id=software_id)
             rel_props = {"source": "nidm_results"}
-            db.create_relationship(stat_map_id, software_id, "PROCESSED_WITH", rel_props)
+            db.create_relationship(
+                stat_map_id, software_id, "PROCESSED_WITH", rel_props
+            )
             stats["software_edges"] += 1
 
         for overlap in record.get("atlas_overlaps", []) or []:
@@ -190,11 +207,11 @@ class NIDMResultsLoader:
 class NIDMResultsAdapter:
     """Callable adapter to fetch NIDM manifest entries on demand."""
 
-    def __init__(self, loader: NIDMResultsLoader, base_kwargs: Dict[str, Any]) -> None:
+    def __init__(self, loader: NIDMResultsLoader, base_kwargs: dict[str, Any]) -> None:
         self.loader = loader
         self.base_kwargs = base_kwargs
 
-    def __call__(self, **kwargs: Any) -> List[Dict[str, Any]]:
+    def __call__(self, **kwargs: Any) -> list[dict[str, Any]]:
         params = {**self.base_kwargs, **kwargs}
         return self.loader.load_entries(
             nidm_paths=params.get("nidm_paths"),

@@ -18,8 +18,9 @@ import argparse
 import json
 import logging
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, Tuple
+from typing import Any
 
 from brain_researcher.core.multiverse.confounds import (
     CONF_FAMILY_AXES,
@@ -28,6 +29,7 @@ from brain_researcher.core.multiverse.confounds import (
 from brain_researcher.services.br_kg.graph.neo4j_utils import require_neo4j_db
 
 logger = logging.getLogger(__name__)
+
 
 def _slug(text: str) -> str:
     clean = re.sub(r"[^a-z0-9_-]+", "_", (text or "").strip().lower())
@@ -61,7 +63,7 @@ def _find_run_node(model: dict) -> dict | None:
     return None
 
 
-def _extract_design_choices(model: dict) -> Tuple[str, str, str | None]:
+def _extract_design_choices(model: dict) -> tuple[str, str, str | None]:
     run_node = _find_run_node(model)
     if not run_node:
         return "canonical", "6mot", None
@@ -110,7 +112,9 @@ def _extract_model_x_terms(model: dict) -> list[str]:
     return out
 
 
-def _update_presence_counts(counts: dict[str, dict[str, int]], axis: str, present: bool) -> None:
+def _update_presence_counts(
+    counts: dict[str, dict[str, int]], axis: str, present: bool
+) -> None:
     bucket = counts.setdefault(axis, {})
     key = "present" if present else "absent"
     bucket[key] = bucket.get(key, 0) + 1
@@ -243,7 +247,7 @@ def _write_prior_node(
     support: dict[str, int],
     coverage: dict[str, float],
 ) -> str:
-    props: Dict[str, Any] = {
+    props: dict[str, Any] = {
         "id": node_id,
         "task": task,
         "dataset_id": dataset_id,
@@ -329,7 +333,9 @@ def _link_prior(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Ingest GLM design priors into BR-KG")
-    parser.add_argument("--root", action="append", help="OpenNeuro GLM root (contains statsmodel_specs)")
+    parser.add_argument(
+        "--root", action="append", help="OpenNeuro GLM root (contains statsmodel_specs)"
+    )
     parser.add_argument("--study-id", help="Dataset ID to filter (e.g., ds000114)")
     parser.add_argument("--task", help="Task label to filter (e.g., fingerfootlips)")
     parser.add_argument(
@@ -338,8 +344,12 @@ def main() -> None:
         default="dataset",
         help="Aggregation scope (default: dataset)",
     )
-    parser.add_argument("--max-results", type=int, default=20000, help="Max specs to scan")
-    parser.add_argument("--dry-run", action="store_true", help="Compute priors without writing to KG")
+    parser.add_argument(
+        "--max-results", type=int, default=20000, help="Max specs to scan"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Compute priors without writing to KG"
+    )
 
     args = parser.parse_args()
     repo_root = Path(__file__).resolve().parents[6]
@@ -373,9 +383,7 @@ def main() -> None:
                     observed_hrf = True
                     break
             observed_high_pass = (
-                run_node.get("Model", {})
-                .get("Options", {})
-                .get("HighPassFilterCutoff")
+                run_node.get("Model", {}).get("Options", {}).get("HighPassFilterCutoff")
                 is not None
             )
 
@@ -383,7 +391,7 @@ def main() -> None:
         family_flags = (
             extract_confounds_family_flags(x_terms)
             if observed_confounds
-            else {axis: False for axis in CONF_FAMILY_AXES}
+            else dict.fromkeys(CONF_FAMILY_AXES, False)
         )
 
         all_datasets.add(dataset_id)

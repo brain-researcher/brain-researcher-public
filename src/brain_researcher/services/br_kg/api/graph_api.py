@@ -12,9 +12,10 @@ This unified API combines the best features from earlier BR-KG API variants:
 import logging
 import os
 import socket
+from collections.abc import Mapping
 from pathlib import Path
 from threading import Lock
-from typing import Any, Mapping, Optional
+from typing import Any
 
 
 def str2bool(val: str) -> bool:
@@ -108,9 +109,9 @@ NICLIP_COORD_NORMALIZATION = os.environ.get(
 
 # Global database connection (singleton pattern)
 _db = None
-_decoder: Optional[NeurosynthDecoder] = None
+_decoder: NeurosynthDecoder | None = None
 _decoder_lock = Lock()
-_niclip_loader: Optional[NICLIPEmbeddingLoader] = None
+_niclip_loader: NICLIPEmbeddingLoader | None = None
 _niclip_lock = Lock()
 
 
@@ -183,7 +184,7 @@ def _normalize_study_id(study_id: str) -> str:
     return sid
 
 
-def _lookup_publication_id(study_id: str) -> Optional[str]:
+def _lookup_publication_id(study_id: str) -> str | None:
     sid = _normalize_study_id(study_id)
     candidates = [sid, f"neurosynth:{sid}"]
     try:
@@ -215,7 +216,7 @@ def _lookup_publication_id(study_id: str) -> Optional[str]:
     return None
 
 
-def _resolve_study_id_from_publication(pub_id: str) -> Optional[str]:
+def _resolve_study_id_from_publication(pub_id: str) -> str | None:
     try:
         db = get_db()
     except Exception:
@@ -234,7 +235,7 @@ def _resolve_study_id_from_publication(pub_id: str) -> Optional[str]:
 def _truthy(value: Any) -> bool:
     if isinstance(value, bool):
         return value
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return value != 0
     if isinstance(value, str):
         return value.strip().lower() in {"1", "true", "yes", "on"}
@@ -247,7 +248,7 @@ def _retrieve_niclip_embedding(
     kind: str,
     include_vector: bool,
     overrides: Mapping[str, Any] | None = None,
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     loader = get_niclip_loader()
     overrides = overrides or {}
     normalized_kind = kind.lower()
@@ -362,9 +363,10 @@ def get_subgraph():
 
         # Validate parameters
         if not node_label or not node_name:
-            return jsonify(
-                {"error": "Missing required parameters: label and name"}
-            ), 400
+            return (
+                jsonify({"error": "Missing required parameters: label and name"}),
+                400,
+            )
 
         if depth < 1 or depth > 3:
             return jsonify({"error": "Depth must be between 1 and 3"}), 400
@@ -376,9 +378,10 @@ def get_subgraph():
         nodes = db.find_nodes(labels=node_label, properties={"name": node_name})
 
         if not nodes:
-            return jsonify(
-                {"error": f"No {node_label} found with name: {node_name}"}
-            ), 404
+            return (
+                jsonify({"error": f"No {node_label} found with name: {node_name}"}),
+                404,
+            )
 
         # Get the first matching node
         start_node_id = nodes[0][0]
@@ -450,9 +453,10 @@ def get_stats():
         return jsonify(stats)
     except Exception as e:
         logger.error(f"Error getting stats: {str(e)}")
-        return jsonify(
-            {"error": "Failed to get database statistics", "message": str(e)}
-        ), 500
+        return (
+            jsonify({"error": "Failed to get database statistics", "message": str(e)}),
+            500,
+        )
 
 
 @app.route("/api/evidence_pack", methods=["GET", "POST"])
@@ -523,9 +527,7 @@ def behavior_to_fmri_retrieval_endpoint():
             max_paths=int(payload.get("max_paths", 20)),
             max_regions_per_map=int(payload.get("max_regions_per_map", 8)),
             max_behavior_neighbors=int(payload.get("max_behavior_neighbors", 4)),
-            min_behavior_similarity=float(
-                payload.get("min_behavior_similarity", 0.0)
-            ),
+            min_behavior_similarity=float(payload.get("min_behavior_similarity", 0.0)),
             db=get_db(),
         )
     except ValueError as exc:
@@ -628,9 +630,10 @@ def publication_niclip_embedding(pub_id: str):
         pub_id
     )
     if not study_id:
-        return jsonify(
-            {"error": "Publication not found or missing study identifiers"}
-        ), 404
+        return (
+            jsonify({"error": "Publication not found or missing study identifiers"}),
+            404,
+        )
 
     kind = request.args.get("kind", "text")
     include_vector = _truthy(request.args.get("include_vector", "false"))
@@ -914,12 +917,15 @@ def not_found(e):
 def internal_error(e):
     """500 error handler"""
     logger.error(f"Internal server error: {str(e)}")
-    return jsonify(
-        {
-            "error": "Internal server error",
-            "message": "An unexpected error occurred",
-        }
-    ), 500
+    return (
+        jsonify(
+            {
+                "error": "Internal server error",
+                "message": "An unexpected error occurred",
+            }
+        ),
+        500,
+    )
 
 
 def find_free_port():

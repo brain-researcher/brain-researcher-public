@@ -1,4 +1,5 @@
 """Shared chat scenario definitions for orchestrator and agent services."""
+
 from __future__ import annotations
 
 import json
@@ -6,19 +7,19 @@ import os
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 
 @dataclass(frozen=True)
 class PlannerHints:
     """Hints for downstream planners/tool selection."""
 
-    pipeline_kind: Optional[str] = None
-    runtime_kind: Optional[str] = None
-    tool_allowlist: Optional[List[str]] = None
+    pipeline_kind: str | None = None
+    runtime_kind: str | None = None
+    tool_allowlist: list[str] | None = None
 
-    def to_payload(self) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {}
+    def to_payload(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {}
         if self.pipeline_kind:
             payload["pipeline_kind"] = self.pipeline_kind
         if self.runtime_kind:
@@ -37,10 +38,10 @@ class ChatScenario:
     description: str
     system_prompt: str
     starter_user_message: str
-    planner_hints: Optional[PlannerHints] = None
+    planner_hints: PlannerHints | None = None
 
-    def to_payload(self) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {
+    def to_payload(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
             "id": self.id,
             "title": self.title,
             "description": self.description,
@@ -55,11 +56,15 @@ class ChatScenario:
 def _config_path() -> Path:
     default_root = Path(__file__).resolve().parents[3]
     repo_root = Path(os.environ.get("BRAIN_RESEARCHER_ROOT", default_root))
-    return Path(os.environ.get("CHAT_SCENARIO_CONFIG", repo_root / "configs" / "chat_scenarios.json"))
+    return Path(
+        os.environ.get(
+            "CHAT_SCENARIO_CONFIG", repo_root / "configs" / "chat_scenarios.json"
+        )
+    )
 
 
 @lru_cache(maxsize=1)
-def _load_raw_scenarios() -> Dict[str, Dict[str, Any]]:
+def _load_raw_scenarios() -> dict[str, dict[str, Any]]:
     config_file = _config_path()
     if not config_file.exists():
         return {}
@@ -70,7 +75,7 @@ def _load_raw_scenarios() -> Dict[str, Dict[str, Any]]:
     return data
 
 
-def _build_scenario(key: str, raw: Dict[str, Any]) -> ChatScenario:
+def _build_scenario(key: str, raw: dict[str, Any]) -> ChatScenario:
     planner_raw = raw.get("planner_hints") or {}
     planner = None
     if isinstance(planner_raw, dict) and any(planner_raw.values()):
@@ -91,22 +96,22 @@ def _build_scenario(key: str, raw: Dict[str, Any]) -> ChatScenario:
 
 
 @lru_cache(maxsize=1)
-def get_chat_scenarios() -> Dict[str, ChatScenario]:
+def get_chat_scenarios() -> dict[str, ChatScenario]:
     raw_map = _load_raw_scenarios()
-    scenarios: Dict[str, ChatScenario] = {}
+    scenarios: dict[str, ChatScenario] = {}
     for key, raw in raw_map.items():
         if isinstance(raw, dict):
             scenarios[key] = _build_scenario(key, raw)
     return scenarios
 
 
-def get_chat_scenario(scenario_id: Optional[str]) -> Optional[ChatScenario]:
+def get_chat_scenario(scenario_id: str | None) -> ChatScenario | None:
     if not scenario_id:
         return None
     return get_chat_scenarios().get(scenario_id)
 
 
-def get_chat_scenario_payload(scenario_id: Optional[str]) -> Optional[Dict[str, Any]]:
+def get_chat_scenario_payload(scenario_id: str | None) -> dict[str, Any] | None:
     scenario = get_chat_scenario(scenario_id)
     if not scenario:
         return None

@@ -6,64 +6,71 @@ Handles push notification subscriptions and delivery for PWA users
 import asyncio
 import json
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
-import redis.asyncio as redis
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, PublicFormat, NoEncryption
-import base64
-import struct
 import os
-from pywebpush import webpush, WebPushException
-from fastapi import HTTPException
 import sqlite3
 from contextlib import contextmanager
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta
+from typing import Any
+
+import redis.asyncio as redis
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    NoEncryption,
+    PrivateFormat,
+    PublicFormat,
+)
+from pywebpush import WebPushException, webpush
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class PushSubscription:
     """Represents a push notification subscription"""
+
     endpoint: str
     p256dh: str  # Public key for encryption
-    auth: str    # Authentication secret
-    user_id: Optional[str] = None
-    user_agent: Optional[str] = None
-    subscribed_at: Optional[datetime] = None
-    last_notification: Optional[datetime] = None
+    auth: str  # Authentication secret
+    user_id: str | None = None
+    user_agent: str | None = None
+    subscribed_at: datetime | None = None
+    last_notification: datetime | None = None
     notification_count: int = 0
     is_active: bool = True
+
 
 @dataclass
 class NotificationPayload:
     """Represents a notification to be sent"""
+
     title: str
     body: str
-    type: str = 'default'
-    data: Optional[Dict[str, Any]] = None
-    actions: Optional[List[Dict[str, str]]] = None
-    icon: str = '/icons/icon-192x192.png'
-    badge: str = '/icons/icon-192x192.png'
-    tag: Optional[str] = None
+    type: str = "default"
+    data: dict[str, Any] | None = None
+    actions: list[dict[str, str]] | None = None
+    icon: str = "/icons/icon-192x192.png"
+    badge: str = "/icons/icon-192x192.png"
+    tag: str | None = None
     require_interaction: bool = False
     ttl: int = 86400  # 24 hours
-    urgency: str = 'normal'  # low, normal, high
+    urgency: str = "normal"  # low, normal, high
+
 
 class PushNotificationService:
     """Service for managing push notifications"""
 
     def __init__(
         self,
-        vapid_private_key: Optional[str] = None,
-        vapid_public_key: Optional[str] = None,
+        vapid_private_key: str | None = None,
+        vapid_public_key: str | None = None,
         vapid_email: str = "admin@brainresearcher.com",
         redis_url: str = "redis://localhost:6379",
-        db_path: str = "push_subscriptions.db"
+        db_path: str = "push_subscriptions.db",
     ):
-        self.vapid_private_key = vapid_private_key or os.getenv('VAPID_PRIVATE_KEY')
-        self.vapid_public_key = vapid_public_key or os.getenv('VAPID_PUBLIC_KEY')
+        self.vapid_private_key = vapid_private_key or os.getenv("VAPID_PRIVATE_KEY")
+        self.vapid_public_key = vapid_public_key or os.getenv("VAPID_PUBLIC_KEY")
         self.vapid_email = vapid_email
         self.redis_url = redis_url
         self.db_path = db_path
@@ -89,9 +96,7 @@ class PushNotificationService:
         """Initialize async resources"""
         try:
             self.redis_client = redis.from_url(
-                self.redis_url,
-                encoding="utf-8",
-                decode_responses=True
+                self.redis_url, encoding="utf-8", decode_responses=True
             )
             await self.redis_client.ping()
             logger.info("Push notification service initialized")
@@ -112,17 +117,16 @@ class PushNotificationService:
         private_pem = private_key.private_bytes(
             encoding=Encoding.PEM,
             format=PrivateFormat.PKCS8,
-            encryption_algorithm=NoEncryption()
+            encryption_algorithm=NoEncryption(),
         )
-        self.vapid_private_key = private_pem.decode('utf-8')
+        self.vapid_private_key = private_pem.decode("utf-8")
 
         # Export public key
         public_key = private_key.public_key()
         public_pem = public_key.public_bytes(
-            encoding=Encoding.PEM,
-            format=PublicFormat.SubjectPublicKeyInfo
+            encoding=Encoding.PEM, format=PublicFormat.SubjectPublicKeyInfo
         )
-        self.vapid_public_key = public_pem.decode('utf-8')
+        self.vapid_public_key = public_pem.decode("utf-8")
 
         logger.info("Generated new VAPID keys")
 
@@ -133,7 +137,8 @@ class PushNotificationService:
     def _init_db(self):
         """Initialize SQLite database for subscriptions"""
         with self._get_db() as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS subscriptions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     endpoint TEXT UNIQUE NOT NULL,
@@ -146,9 +151,11 @@ class PushNotificationService:
                     notification_count INTEGER DEFAULT 0,
                     is_active BOOLEAN DEFAULT 1
                 )
-            ''')
+            """
+            )
 
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS notification_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     subscription_id INTEGER,
@@ -160,7 +167,8 @@ class PushNotificationService:
                     error_message TEXT,
                     FOREIGN KEY (subscription_id) REFERENCES subscriptions (id)
                 )
-            ''')
+            """
+            )
 
             conn.commit()
 
@@ -179,8 +187,8 @@ class PushNotificationService:
         endpoint: str,
         p256dh: str,
         auth: str,
-        user_id: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_id: str | None = None,
+        user_agent: str | None = None,
     ) -> bool:
         """Subscribe to push notifications"""
         try:
@@ -190,24 +198,27 @@ class PushNotificationService:
                 auth=auth,
                 user_id=user_id,
                 user_agent=user_agent,
-                subscribed_at=datetime.utcnow()
+                subscribed_at=datetime.utcnow(),
             )
 
             # Store in database
             with self._get_db() as conn:
-                conn.execute('''
+                conn.execute(
+                    """
                     INSERT OR REPLACE INTO subscriptions
                     (endpoint, p256dh, auth, user_id, user_agent, subscribed_at, is_active)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    subscription.endpoint,
-                    subscription.p256dh,
-                    subscription.auth,
-                    subscription.user_id,
-                    subscription.user_agent,
-                    subscription.subscribed_at,
-                    subscription.is_active
-                ))
+                """,
+                    (
+                        subscription.endpoint,
+                        subscription.p256dh,
+                        subscription.auth,
+                        subscription.user_id,
+                        subscription.user_agent,
+                        subscription.subscribed_at,
+                        subscription.is_active,
+                    ),
+                )
                 conn.commit()
 
             # Cache in Redis if available
@@ -215,7 +226,7 @@ class PushNotificationService:
                 await self.redis_client.set(
                     f"push_sub:{endpoint}",
                     json.dumps(asdict(subscription), default=str),
-                    ex=86400 * 30  # 30 days
+                    ex=86400 * 30,  # 30 days
                 )
 
             logger.info(f"New push subscription: {endpoint}")
@@ -231,8 +242,8 @@ class PushNotificationService:
             # Remove from database
             with self._get_db() as conn:
                 conn.execute(
-                    'UPDATE subscriptions SET is_active = 0 WHERE endpoint = ?',
-                    (endpoint,)
+                    "UPDATE subscriptions SET is_active = 0 WHERE endpoint = ?",
+                    (endpoint,),
                 )
                 conn.commit()
 
@@ -250,15 +261,11 @@ class PushNotificationService:
     async def send_notification(
         self,
         payload: NotificationPayload,
-        user_id: Optional[str] = None,
-        endpoints: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None,
+        endpoints: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Send push notification to subscribers"""
-        results = {
-            'sent': 0,
-            'failed': 0,
-            'errors': []
-        }
+        results = {"sent": 0, "failed": 0, "errors": []}
 
         try:
             # Get target subscriptions
@@ -270,21 +277,23 @@ class PushNotificationService:
 
             # Prepare notification data
             notification_data = {
-                'title': payload.title,
-                'body': payload.body,
-                'type': payload.type,
-                'icon': payload.icon,
-                'badge': payload.badge,
-                'data': payload.data or {},
-                'actions': payload.actions or [],
-                'tag': payload.tag,
-                'requireInteraction': payload.require_interaction
+                "title": payload.title,
+                "body": payload.body,
+                "type": payload.type,
+                "icon": payload.icon,
+                "badge": payload.badge,
+                "data": payload.data or {},
+                "actions": payload.actions or [],
+                "tag": payload.tag,
+                "requireInteraction": payload.require_interaction,
             }
 
             # Send to each subscription
             tasks = []
             for subscription in subscriptions:
-                task = self._send_to_subscription(subscription, notification_data, payload)
+                task = self._send_to_subscription(
+                    subscription, notification_data, payload
+                )
                 tasks.append(task)
 
             # Execute sends concurrently
@@ -293,27 +302,29 @@ class PushNotificationService:
             # Process results
             for i, result in enumerate(send_results):
                 if isinstance(result, Exception):
-                    results['failed'] += 1
-                    results['errors'].append(str(result))
-                    logger.error(f"Failed to send to {subscriptions[i].endpoint}: {result}")
+                    results["failed"] += 1
+                    results["errors"].append(str(result))
+                    logger.error(
+                        f"Failed to send to {subscriptions[i].endpoint}: {result}"
+                    )
                 elif result:
-                    results['sent'] += 1
+                    results["sent"] += 1
                 else:
-                    results['failed'] += 1
+                    results["failed"] += 1
 
-            logger.info(f"Notification sent: {results['sent']} successful, {results['failed']} failed")
+            logger.info(
+                f"Notification sent: {results['sent']} successful, {results['failed']} failed"
+            )
 
         except Exception as e:
             logger.error(f"Failed to send notifications: {e}")
-            results['errors'].append(str(e))
+            results["errors"].append(str(e))
 
         return results
 
     async def _get_subscriptions(
-        self,
-        user_id: Optional[str] = None,
-        endpoints: Optional[List[str]] = None
-    ) -> List[PushSubscription]:
+        self, user_id: str | None = None, endpoints: list[str] | None = None
+    ) -> list[PushSubscription]:
         """Get active subscriptions from database"""
         subscriptions = []
 
@@ -321,35 +332,43 @@ class PushNotificationService:
             with self._get_db() as conn:
                 if endpoints:
                     # Get specific endpoints
-                    placeholders = ','.join(['?'] * len(endpoints))
-                    query = f'''
+                    placeholders = ",".join(["?"] * len(endpoints))
+                    query = f"""
                         SELECT * FROM subscriptions
                         WHERE endpoint IN ({placeholders}) AND is_active = 1
-                    '''
+                    """
                     rows = conn.execute(query, endpoints).fetchall()
                 elif user_id:
                     # Get subscriptions for specific user
                     rows = conn.execute(
-                        'SELECT * FROM subscriptions WHERE user_id = ? AND is_active = 1',
-                        (user_id,)
+                        "SELECT * FROM subscriptions WHERE user_id = ? AND is_active = 1",
+                        (user_id,),
                     ).fetchall()
                 else:
                     # Get all active subscriptions
                     rows = conn.execute(
-                        'SELECT * FROM subscriptions WHERE is_active = 1'
+                        "SELECT * FROM subscriptions WHERE is_active = 1"
                     ).fetchall()
 
                 for row in rows:
                     subscription = PushSubscription(
-                        endpoint=row['endpoint'],
-                        p256dh=row['p256dh'],
-                        auth=row['auth'],
-                        user_id=row['user_id'],
-                        user_agent=row['user_agent'],
-                        subscribed_at=datetime.fromisoformat(row['subscribed_at']) if row['subscribed_at'] else None,
-                        last_notification=datetime.fromisoformat(row['last_notification']) if row['last_notification'] else None,
-                        notification_count=row['notification_count'],
-                        is_active=bool(row['is_active'])
+                        endpoint=row["endpoint"],
+                        p256dh=row["p256dh"],
+                        auth=row["auth"],
+                        user_id=row["user_id"],
+                        user_agent=row["user_agent"],
+                        subscribed_at=(
+                            datetime.fromisoformat(row["subscribed_at"])
+                            if row["subscribed_at"]
+                            else None
+                        ),
+                        last_notification=(
+                            datetime.fromisoformat(row["last_notification"])
+                            if row["last_notification"]
+                            else None
+                        ),
+                        notification_count=row["notification_count"],
+                        is_active=bool(row["is_active"]),
                     )
                     subscriptions.append(subscription)
 
@@ -361,28 +380,25 @@ class PushNotificationService:
     async def _send_to_subscription(
         self,
         subscription: PushSubscription,
-        notification_data: Dict[str, Any],
-        payload: NotificationPayload
+        notification_data: dict[str, Any],
+        payload: NotificationPayload,
     ) -> bool:
         """Send notification to a specific subscription"""
         try:
             # Prepare webpush data
             webpush_data = {
-                'endpoint': subscription.endpoint,
-                'keys': {
-                    'p256dh': subscription.p256dh,
-                    'auth': subscription.auth
-                }
+                "endpoint": subscription.endpoint,
+                "keys": {"p256dh": subscription.p256dh, "auth": subscription.auth},
             }
 
             # Send push notification
-            response = webpush(
+            webpush(
                 subscription_info=webpush_data,
                 data=json.dumps(notification_data),
                 vapid_private_key=self.vapid_private_key,
                 vapid_claims={"sub": f"mailto:{self.vapid_email}"},
                 ttl=payload.ttl,
-                headers={'Urgency': payload.urgency}
+                headers={"Urgency": payload.urgency},
             )
 
             # Update subscription stats
@@ -390,11 +406,7 @@ class PushNotificationService:
 
             # Log notification
             await self._log_notification(
-                subscription.endpoint,
-                payload.type,
-                payload.title,
-                payload.body,
-                'sent'
+                subscription.endpoint, payload.type, payload.title, payload.body, "sent"
             )
 
             return True
@@ -410,8 +422,8 @@ class PushNotificationService:
                 payload.type,
                 payload.title,
                 payload.body,
-                'failed',
-                str(e)
+                "failed",
+                str(e),
             )
 
             return False
@@ -422,8 +434,8 @@ class PushNotificationService:
                 payload.type,
                 payload.title,
                 payload.body,
-                'failed',
-                str(e)
+                "failed",
+                str(e),
             )
 
             logger.error(f"Failed to send push notification: {e}")
@@ -434,11 +446,14 @@ class PushNotificationService:
         try:
             with self._get_db() as conn:
                 if success:
-                    conn.execute('''
+                    conn.execute(
+                        """
                         UPDATE subscriptions
                         SET last_notification = ?, notification_count = notification_count + 1
                         WHERE endpoint = ?
-                    ''', (datetime.utcnow(), endpoint))
+                    """,
+                        (datetime.utcnow(), endpoint),
+                    )
                 conn.commit()
         except Exception as e:
             logger.error(f"Failed to update subscription stats: {e}")
@@ -450,20 +465,32 @@ class PushNotificationService:
         title: str,
         body: str,
         status: str,
-        error_message: Optional[str] = None
+        error_message: str | None = None,
     ):
         """Log notification send attempt"""
         try:
             with self._get_db() as conn:
                 # Get subscription ID
-                row = conn.execute('SELECT id FROM subscriptions WHERE endpoint = ?', (endpoint,)).fetchone()
-                subscription_id = row['id'] if row else None
+                row = conn.execute(
+                    "SELECT id FROM subscriptions WHERE endpoint = ?", (endpoint,)
+                ).fetchone()
+                subscription_id = row["id"] if row else None
 
-                conn.execute('''
+                conn.execute(
+                    """
                     INSERT INTO notification_log
                     (subscription_id, notification_type, title, body, status, error_message)
                     VALUES (?, ?, ?, ?, ?, ?)
-                ''', (subscription_id, notification_type, title, body, status, error_message))
+                """,
+                    (
+                        subscription_id,
+                        notification_type,
+                        title,
+                        body,
+                        status,
+                        error_message,
+                    ),
+                )
                 conn.commit()
         except Exception as e:
             logger.error(f"Failed to log notification: {e}")
@@ -472,27 +499,26 @@ class PushNotificationService:
         self,
         analysis_name: str,
         analysis_id: str,
-        user_id: Optional[str] = None,
-        has_significant_findings: bool = False
+        user_id: str | None = None,
+        has_significant_findings: bool = False,
     ):
         """Send notification when brain analysis is complete"""
         payload = NotificationPayload(
             title="Brain Analysis Complete",
-            body=f"Analysis '{analysis_name}' has finished processing." + (
-                " Significant findings detected!" if has_significant_findings else ""
-            ),
+            body=f"Analysis '{analysis_name}' has finished processing."
+            + (" Significant findings detected!" if has_significant_findings else ""),
             type="analysis-complete",
             data={
-                'analysisId': analysis_id,
-                'analysisName': analysis_name,
-                'significantFindings': has_significant_findings
+                "analysisId": analysis_id,
+                "analysisName": analysis_name,
+                "significantFindings": has_significant_findings,
             },
             actions=[
-                {'action': 'view', 'title': 'View Results'},
-                {'action': 'dismiss', 'title': 'Dismiss'}
+                {"action": "view", "title": "View Results"},
+                {"action": "dismiss", "title": "Dismiss"},
             ],
             tag=f"analysis-{analysis_id}",
-            require_interaction=has_significant_findings
+            require_interaction=has_significant_findings,
         )
 
         return await self.send_notification(payload, user_id)
@@ -500,97 +526,86 @@ class PushNotificationService:
     async def send_dataset_update(
         self,
         dataset_name: str,
-        update_type: str = 'update',
-        user_id: Optional[str] = None
+        update_type: str = "update",
+        user_id: str | None = None,
     ):
         """Send notification when dataset is updated"""
         payload = NotificationPayload(
             title="Dataset Update Available",
             body=f"New brain data available: {dataset_name}",
             type="data-update",
-            data={
-                'datasetName': dataset_name,
-                'updateType': update_type
-            },
+            data={"datasetName": dataset_name, "updateType": update_type},
             actions=[
-                {'action': 'sync', 'title': 'Sync Now'},
-                {'action': 'later', 'title': 'Later'}
+                {"action": "sync", "title": "Sync Now"},
+                {"action": "later", "title": "Later"},
             ],
             tag=f"dataset-{dataset_name}",
-            urgency='low'
+            urgency="low",
         )
 
         return await self.send_notification(payload, user_id)
 
     async def send_system_alert(
-        self,
-        message: str,
-        severity: str = 'medium',
-        user_id: Optional[str] = None
+        self, message: str, severity: str = "medium", user_id: str | None = None
     ):
         """Send system alert notification"""
         payload = NotificationPayload(
             title="Brain Researcher Alert",
             body=message,
             type="system-alert",
-            data={
-                'message': message,
-                'severity': severity
-            },
-            require_interaction=severity == 'high',
-            urgency='high' if severity == 'high' else 'normal',
-            tag='system-alert'
+            data={"message": message, "severity": severity},
+            require_interaction=severity == "high",
+            urgency="high" if severity == "high" else "normal",
+            tag="system-alert",
         )
 
         return await self.send_notification(payload, user_id)
 
     async def send_offline_sync_complete(
-        self,
-        synced_items: int,
-        user_id: Optional[str] = None
+        self, synced_items: int, user_id: str | None = None
     ):
         """Send notification when offline sync is complete"""
         payload = NotificationPayload(
             title="Offline Sync Complete",
             body=f"{synced_items} items synchronized while offline",
             type="sync-complete",
-            data={
-                'syncedItems': synced_items
-            },
-            tag='offline-sync',
-            urgency='low'
+            data={"syncedItems": synced_items},
+            tag="offline-sync",
+            urgency="low",
         )
 
         return await self.send_notification(payload, user_id)
 
-    async def get_subscription_stats(self) -> Dict[str, Any]:
+    async def get_subscription_stats(self) -> dict[str, Any]:
         """Get subscription statistics"""
         stats = {
-            'total_subscriptions': 0,
-            'active_subscriptions': 0,
-            'notifications_sent_today': 0,
-            'notifications_sent_total': 0
+            "total_subscriptions": 0,
+            "active_subscriptions": 0,
+            "notifications_sent_today": 0,
+            "notifications_sent_total": 0,
         }
 
         try:
             with self._get_db() as conn:
                 # Total subscriptions
-                stats['total_subscriptions'] = conn.execute('SELECT COUNT(*) FROM subscriptions').fetchone()[0]
+                stats["total_subscriptions"] = conn.execute(
+                    "SELECT COUNT(*) FROM subscriptions"
+                ).fetchone()[0]
 
                 # Active subscriptions
-                stats['active_subscriptions'] = conn.execute(
-                    'SELECT COUNT(*) FROM subscriptions WHERE is_active = 1'
+                stats["active_subscriptions"] = conn.execute(
+                    "SELECT COUNT(*) FROM subscriptions WHERE is_active = 1"
                 ).fetchone()[0]
 
                 # Notifications sent today
                 today = datetime.utcnow().date()
-                stats['notifications_sent_today'] = conn.execute(
+                stats["notifications_sent_today"] = conn.execute(
                     'SELECT COUNT(*) FROM notification_log WHERE date(sent_at) = ? AND status = "sent"',
-                    (today,)
+                    (today,),
                 ).fetchone()[0]
 
                 # Total notifications sent
-                stats['notifications_sent_total'] = conn.execute(
+                stats["notifications_sent_total"] = conn.execute(
                     'SELECT COUNT(*) FROM notification_log WHERE status = "sent"'
                 ).fetchone()[0]
 
@@ -606,10 +621,13 @@ class PushNotificationService:
 
             with self._get_db() as conn:
                 # Delete old inactive subscriptions
-                result = conn.execute('''
+                result = conn.execute(
+                    """
                     DELETE FROM subscriptions
                     WHERE is_active = 0 AND subscribed_at < ?
-                ''', (cutoff_date,))
+                """,
+                    (cutoff_date,),
+                )
 
                 deleted_count = result.rowcount
                 conn.commit()
@@ -621,33 +639,33 @@ class PushNotificationService:
             logger.error(f"Failed to cleanup subscriptions: {e}")
             return 0
 
+
 # Global service instance
 push_service = PushNotificationService()
+
 
 # Convenience functions
 async def send_analysis_complete_notification(
     analysis_name: str,
     analysis_id: str,
-    user_id: Optional[str] = None,
-    has_significant_findings: bool = False
+    user_id: str | None = None,
+    has_significant_findings: bool = False,
 ):
     """Send analysis complete notification"""
     return await push_service.send_brain_analysis_complete(
         analysis_name, analysis_id, user_id, has_significant_findings
     )
 
+
 async def send_dataset_update_notification(
-    dataset_name: str,
-    update_type: str = 'update',
-    user_id: Optional[str] = None
+    dataset_name: str, update_type: str = "update", user_id: str | None = None
 ):
     """Send dataset update notification"""
     return await push_service.send_dataset_update(dataset_name, update_type, user_id)
 
+
 async def send_system_alert_notification(
-    message: str,
-    severity: str = 'medium',
-    user_id: Optional[str] = None
+    message: str, severity: str = "medium", user_id: str | None = None
 ):
     """Send system alert notification"""
     return await push_service.send_system_alert(message, severity, user_id)

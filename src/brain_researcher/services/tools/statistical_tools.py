@@ -11,8 +11,9 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 import pandas as pd
-from nilearn import image, surface, masking
+from nilearn import image
 from nilearn import image as nilearn_image
+from nilearn import masking, surface
 from nilearn.reporting import get_clusters_table
 from pydantic import BaseModel, Field, field_validator
 from scipy import stats
@@ -92,7 +93,7 @@ class GLMStatisticalArgs(BaseModel):
     def validate_contrasts(cls, v):
         """Ensure contrast values are numeric."""
         for name, weights in v.items():
-            if not all(isinstance(w, (int, float)) for w in weights):
+            if not all(isinstance(w, int | float) for w in weights):
                 raise ValueError(f"Contrast '{name}' contains non-numeric values")
         return v
 
@@ -999,10 +1000,8 @@ class SurfaceStatisticsTool(BaseStatisticalTool):
 
                 if hemi == "left":
                     mesh = fsaverage.pial_left
-                    sulc = fsaverage.sulc_left
                 else:
                     mesh = fsaverage.pial_right
-                    sulc = fsaverage.sulc_right
 
                 # Project each volume to surface
                 surface_data = []

@@ -5,7 +5,6 @@ from __future__ import annotations
 from brain_researcher.services.agent.error_handling import ErrorCategory
 from brain_researcher.services.agent.error_taxonomy import ErrorTaxonomyCategory
 
-
 ERROR_CATEGORY_TO_TAXONOMY: dict[ErrorCategory, ErrorTaxonomyCategory] = {
     ErrorCategory.INVALID_INPUT: ErrorTaxonomyCategory.USER_INPUT,
     ErrorCategory.PARSING_ERROR: ErrorTaxonomyCategory.USER_INPUT,

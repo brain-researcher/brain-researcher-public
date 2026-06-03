@@ -87,9 +87,10 @@ FAMILY_TO_REGISTRY_TOOLS = {
 
 # Gemini tool schema patching: intercept function declaration formatting to fix schemas
 try:  # Import fixer and target function util lazily and safely
-    from brain_researcher.services.tools.tool_base import generate_fixed_schema
     import langchain_google_genai._function_utils as _genai_fu  # type: ignore
     from pydantic import BaseModel
+
+    from brain_researcher.services.tools.tool_base import generate_fixed_schema
 
     if hasattr(_genai_fu, "_format_base_tool_to_function_declaration"):
         _orig_format_fn = _genai_fu._format_base_tool_to_function_declaration
@@ -183,8 +184,9 @@ class NeuroAgentLLM:
         timeout_seconds: int = 300,  # 5 minutes default
         use_tool_retriever: bool = False,
         tool_choice: str | None = None,  # "auto", "required", "none", or None (default)
-        tool_retriever: Any
-        | None = None,  # Optional ToolRetriever for dynamic selection
+        tool_retriever: (
+            Any | None
+        ) = None,  # Optional ToolRetriever for dynamic selection
     ):
         """
         Initialize the LLM-integrated agent.
@@ -435,7 +437,7 @@ class NeuroAgentLLM:
 
         if safe_name in used_names:
             digest = hashlib.sha1(
-                f"{runtime_name}:{len(used_names)}".encode("utf-8")
+                f"{runtime_name}:{len(used_names)}".encode()
             ).hexdigest()[:8]
             safe_name = f"{safe_name[: max(1, 63 - len(digest) - 1)]}_{digest}"
 
@@ -735,7 +737,7 @@ class NeuroAgentLLM:
                     tool_call["name"] = _restore_name(tool_call.get("name"))
                 elif hasattr(tool_call, "name"):
                     try:
-                        setattr(tool_call, "name", _restore_name(tool_call.name))
+                        tool_call.name = _restore_name(tool_call.name)
                     except Exception:
                         pass
 
@@ -760,7 +762,7 @@ class NeuroAgentLLM:
                     invalid_call["name"] = _restore_name(invalid_call.get("name"))
                 elif hasattr(invalid_call, "name"):
                     try:
-                        setattr(invalid_call, "name", _restore_name(invalid_call.name))
+                        invalid_call.name = _restore_name(invalid_call.name)
                     except Exception:
                         pass
 
@@ -1281,5 +1283,4 @@ class NeuroAgentLLM:
         initial_state = {"messages": [HumanMessage(content=query)]}
 
         # Stream the graph execution
-        for event in self.graph.stream(initial_state, config=config):
-            yield event
+        yield from self.graph.stream(initial_state, config=config)

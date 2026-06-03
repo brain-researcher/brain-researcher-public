@@ -92,8 +92,7 @@ def _prompt_mentions_t1_visualization(prompt: str) -> bool:
         token in prompt for token in ["结构像", "解剖像", "T1像", "T1 图像"]
     )
     mentions_visualization = any(
-        token in lowered
-        for token in ["visualiz", "plot", "view", "display", "show"]
+        token in lowered for token in ["visualiz", "plot", "view", "display", "show"]
     ) or any(token in prompt for token in ["可视化", "显示", "画图", "绘图"])
     mentions_notebook = any(
         token in lowered for token in ["notebook", "generate", "create", "draft"]
@@ -109,7 +108,9 @@ def _prompt_mentions_neurodesk_module_execution(prompt: str) -> bool:
 
 
 def _extract_module_loads(prompt: str) -> list[str]:
-    matches = [match.strip() for match in _MODULE_LOAD_PATTERN.findall(prompt) if match.strip()]
+    matches = [
+        match.strip() for match in _MODULE_LOAD_PATTERN.findall(prompt) if match.strip()
+    ]
     if matches:
         return matches
     lowered = prompt.lower()
@@ -220,7 +221,7 @@ def _infer_neurodesk_code(prompt: str) -> str:
             "      source /usr/share/lmod/lmod/init/bash 2>/dev/null || true",
             f"    {module_lines}",
             "    # Replace the echo below with the actual Neurodesk command.",
-            '    echo \"Neurodesk scaffold ready. Replace this line with the real CLI command.\"',
+            '    echo "Neurodesk scaffold ready. Replace this line with the real CLI command."',
             '    """',
             ").strip()",
             "",
@@ -728,8 +729,11 @@ class StudioAssistantRuntime:
                 if normalized is not None:
                     ops.append(normalized)
         assistant_message = (
-            str(payload.get("assistant_message") or payload.get("assistantMessage") or "")
-            .strip()
+            str(
+                payload.get("assistant_message")
+                or payload.get("assistantMessage")
+                or ""
+            ).strip()
             or "Updated the notebook plan."
         )
         return StudioAssistantPlan(
@@ -778,7 +782,10 @@ class StudioAssistantRuntime:
                     "plt.show()",
                 ]
             )
-        if any(token in lowered for token in ["load", "read", "csv"]) or "读取" in prompt:
+        if (
+            any(token in lowered for token in ["load", "read", "csv"])
+            or "读取" in prompt
+        ):
             return "\n".join(
                 [
                     "from pathlib import Path",
@@ -804,7 +811,9 @@ class StudioAssistantRuntime:
         append_ops = [
             op
             for op in ops
-            if op.type == "append" and op.cell_type in {"markdown", "code"} and op.source
+            if op.type == "append"
+            and op.cell_type in {"markdown", "code"}
+            and op.source
         ]
         if len(append_ops) != len(ops) or len(notebook.cells) < len(append_ops):
             return False
@@ -1307,10 +1316,14 @@ class StudioAssistantRuntime:
                 "source": "studio_assistant",
                 "planner_source": plan.source.value,
                 "fallback_reason": (
-                    plan.fallback_reason.value if plan.fallback_reason is not None else None
+                    plan.fallback_reason.value
+                    if plan.fallback_reason is not None
+                    else None
                 ),
                 "planner_fallback_reason": (
-                    plan.fallback_reason.value if plan.fallback_reason is not None else None
+                    plan.fallback_reason.value
+                    if plan.fallback_reason is not None
+                    else None
                 ),
                 "planner_error_code": (
                     plan.planner_error.code if plan.planner_error is not None else None

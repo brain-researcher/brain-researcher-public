@@ -63,6 +63,9 @@ class AnalysisBundleFiles(BaseModel):
     user_environment_yml: str | None = None
     user_docker_compose_yml: str | None = None
     user_env_example: str | None = None
+    user_docs_index_md: str | None = None
+    user_mcp_md: str | None = None
+    user_operations_md: str | None = None
     user_quickstart_md: str | None = None
     user_installation_md: str | None = None
     reward_breakdown_json: str | None = None

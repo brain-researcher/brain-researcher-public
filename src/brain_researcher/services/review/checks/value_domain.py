@@ -76,7 +76,9 @@ def value_domain_contract_violation_check(
     claim mode); otherwise the finding is ``error``/block.
     """
 
-    violations = [entry for entry in _collect_diagnostics(bundle) if _is_violation(entry)]
+    violations = [
+        entry for entry in _collect_diagnostics(bundle) if _is_violation(entry)
+    ]
     if not violations:
         return None
 

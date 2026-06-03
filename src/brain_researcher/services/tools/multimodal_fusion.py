@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,12 +22,16 @@ class MultimodalFusionArgs(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    structural_file: Optional[str] = Field(default=None, description="Structural modality path")
-    functional_file: Optional[str] = Field(default=None, description="Functional modality path")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    structural_file: str | None = Field(
+        default=None, description="Structural modality path"
+    )
+    functional_file: str | None = Field(
+        default=None, description="Functional modality path"
+    )
+    output_dir: str | None = Field(default=None, description="Output directory")
     fusion_method: str = Field(default="intermediate", description="Fusion strategy")
     n_components: int = Field(default=10, description="Number of fused components")
-    random_state: Optional[int] = Field(default=42, description="Random seed")
+    random_state: int | None = Field(default=42, description="Random seed")
     save_fused: bool = Field(default=True, description="Persist fused features")
     save_components: bool = Field(default=True, description="Persist component weights")
 

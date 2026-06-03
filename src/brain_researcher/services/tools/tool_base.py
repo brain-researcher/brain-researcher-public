@@ -5,11 +5,11 @@ Provides a consistent interface for wrapping existing BR-KG and fMRI functionali
 as LangChain tools.
 """
 
-import logging
 import enum
+import logging
 import types
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Tuple, Type, Union, get_args, get_origin
+from typing import Any, Union, get_args, get_origin
 
 try:
     # LangChain v1+
@@ -17,6 +17,7 @@ try:
 except ImportError:  # pragma: no cover
     # LangChain <1.0
     from langchain.tools import StructuredTool
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,8 @@ logger = logging.getLogger(__name__)
 # Gemini-compliant schema generation for Pydantic models
 # ================================================================================
 
-def _primitive_schema(py_type: type) -> Dict[str, Any] | None:
+
+def _primitive_schema(py_type: type) -> dict[str, Any] | None:
     """Return primitive JSON schema for a Python builtin type."""
     if py_type is str:
         return {"type": "string"}
@@ -39,7 +41,7 @@ def _primitive_schema(py_type: type) -> Dict[str, Any] | None:
     return None
 
 
-def _unwrap_optional(tp: Any) -> Tuple[Any, bool]:
+def _unwrap_optional(tp: Any) -> tuple[Any, bool]:
     """Return (inner_type, is_nullable) for Optional/Union types."""
     origin = get_origin(tp)
     union_type = getattr(types, "UnionType", None)
@@ -52,7 +54,7 @@ def _unwrap_optional(tp: Any) -> Tuple[Any, bool]:
     return tp, False
 
 
-def _schema_for_type(tp: Any) -> Dict[str, Any]:
+def _schema_for_type(tp: Any) -> dict[str, Any]:
     """Recursively build JSON schema for a Python typing annotation."""
     # Handle Optional[T]
     inner_tp, nullable = _unwrap_optional(tp)
@@ -109,11 +111,21 @@ def _schema_for_type(tp: Any) -> Dict[str, Any]:
         return schema
 
     # Tuple[...]
-    if origin in (tuple, Tuple):
+    if origin in (tuple, tuple):
         if len(args) == 2 and all(a is int for a in args):
-            schema = {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2}
+            schema = {
+                "type": "array",
+                "items": {"type": "integer"},
+                "minItems": 2,
+                "maxItems": 2,
+            }
         elif args and all(a == args[0] for a in args):
-            schema = {"type": "array", "items": _schema_for_type(args[0]), "minItems": len(args), "maxItems": len(args)}
+            schema = {
+                "type": "array",
+                "items": _schema_for_type(args[0]),
+                "minItems": len(args),
+                "maxItems": len(args),
+            }
         else:
             schema = {"type": "array", "items": {"type": "string"}}
         if nullable:
@@ -135,7 +147,7 @@ def _schema_for_type(tp: Any) -> Dict[str, Any]:
     return schema
 
 
-def generate_fixed_schema(model: Type[BaseModel]) -> Dict[str, Any]:
+def generate_fixed_schema(model: type[BaseModel]) -> dict[str, Any]:
     """Generate a Gemini-compliant schema from a Pydantic model."""
     if not (isinstance(model, type) and issubclass(model, BaseModel)):
         raise ValueError(f"Expected a Pydantic BaseModel type, got {model}")
@@ -179,7 +191,10 @@ try:
     if _ORIG_CREATE_SUBSET_MODEL and not getattr(
         _ORIG_CREATE_SUBSET_MODEL, "_br_schema_patched", False
     ):
-        def _apply_gemini_schema_override(model_cls: type[BaseModel]) -> type[BaseModel]:
+
+        def _apply_gemini_schema_override(
+            model_cls: type[BaseModel],
+        ) -> type[BaseModel]:
             """Attach Gemini-safe schema serializers to a Pydantic model."""
             if not (isinstance(model_cls, type) and issubclass(model_cls, BaseModel)):
                 return model_cls
@@ -197,7 +212,9 @@ try:
             return model_cls
 
         def _patched_create_subset_model(*args, **kwargs):
-            return _apply_gemini_schema_override(_ORIG_CREATE_SUBSET_MODEL(*args, **kwargs))
+            return _apply_gemini_schema_override(
+                _ORIG_CREATE_SUBSET_MODEL(*args, **kwargs)
+            )
 
         _patched_create_subset_model._br_schema_patched = True
         _lc_tools_base._create_subset_model = _patched_create_subset_model
@@ -208,8 +225,8 @@ except Exception:
 
 # Patch Gemini GAPIC schema conversion to preserve nested arrays
 try:
-    from google.ai.generativelanguage_v1beta import types as _gapic_types
     import langchain_google_genai._function_utils as _genai_fu
+    from google.ai.generativelanguage_v1beta import types as _gapic_types
 
     _TYPE_LOOKUP = {
         "STRING": _gapic_types.Type.STRING,
@@ -230,9 +247,14 @@ try:
         type_value = node.get("type") or node.get("_type") or node.get("type_")
         if type_value:
             if isinstance(type_value, list):
-                type_value = next((t for t in type_value if t and t != "null"), type_value[0] if type_value else None)
+                type_value = next(
+                    (t for t in type_value if t and t != "null"),
+                    type_value[0] if type_value else None,
+                )
             if isinstance(type_value, str):
-                schema.type_ = _TYPE_LOOKUP.get(type_value.upper(), _gapic_types.Type.TYPE_UNSPECIFIED)
+                schema.type_ = _TYPE_LOOKUP.get(
+                    type_value.upper(), _gapic_types.Type.TYPE_UNSPECIFIED
+                )
 
         # Copy simple fields
         if desc := node.get("description"):
@@ -260,12 +282,16 @@ try:
         # Handle properties
         if props := node.get("properties"):
             if isinstance(props, dict):
-                schema.properties.update({k: _build_gapic_schema(v) for k, v in props.items()})
+                schema.properties.update(
+                    {k: _build_gapic_schema(v) for k, v in props.items()}
+                )
 
         # Handle additional properties
         if add_props := node.get("additionalProperties"):
             if isinstance(add_props, dict):
-                schema.properties["additionalProperties"] = _build_gapic_schema(add_props)
+                schema.properties["additionalProperties"] = _build_gapic_schema(
+                    add_props
+                )
 
         # Handle aggregations
         for agg in ("anyOf", "oneOf", "allOf"):
@@ -278,6 +304,7 @@ try:
     if hasattr(_genai_fu, "_dict_to_gapic_schema") and not getattr(
         _genai_fu._dict_to_gapic_schema, "_br_schema_patched", False
     ):
+
         def _patched_dict_to_gapic_schema(schema: dict[str, Any] | None):
             if not schema:
                 return None
@@ -349,7 +376,9 @@ class NeuroToolWrapper(ABC):
             if result.status == "success":
                 self.logger.info("Completed tool %s", tool_name)
             else:
-                self.logger.warning("Tool %s returned error: %s", tool_name, result.error)
+                self.logger.warning(
+                    "Tool %s returned error: %s", tool_name, result.error
+                )
             return result.model_dump()
         except Exception as e:
             error_type = type(e).__name__
@@ -383,7 +412,9 @@ class NeuroToolWrapper(ABC):
         if isinstance(args_schema, type) and issubclass(args_schema, BaseModel):
             fixed_schema = generate_fixed_schema(args_schema)
             if hasattr(args_schema, "model_json_schema"):
-                args_schema.model_json_schema = classmethod(lambda cls, *a, **kw: fixed_schema)
+                args_schema.model_json_schema = classmethod(
+                    lambda cls, *a, **kw: fixed_schema
+                )
             if hasattr(args_schema, "schema"):
                 args_schema.schema = classmethod(lambda cls, *a, **kw: fixed_schema)
 
@@ -426,7 +457,9 @@ class BatchToolWrapper(NeuroToolWrapper):
             return [r.model_dump() for r in results]
         except Exception as e:
             return [
-                ToolResult(status="error", error=f"Batch execution failed: {str(e)}").model_dump()
+                ToolResult(
+                    status="error", error=f"Batch execution failed: {str(e)}"
+                ).model_dump()
                 for _ in items
             ]
 

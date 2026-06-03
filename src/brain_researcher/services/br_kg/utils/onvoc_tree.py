@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 import yaml
 
@@ -20,9 +20,9 @@ class TreeNode:
     id: str
     label: str
     level: int
-    parent_id: Optional[str]
-    alt_parents: Tuple[str, ...] = ()
-    children: Tuple[str, ...] = ()
+    parent_id: str | None
+    alt_parents: tuple[str, ...] = ()
+    children: tuple[str, ...] = ()
 
 
 class OnvocTree:
@@ -31,16 +31,16 @@ class OnvocTree:
     def __init__(
         self,
         *,
-        nodes: Dict[str, TreeNode],
-        cannot_link: Dict[str, Set[str]],
-        metadata: Dict[str, object],
+        nodes: dict[str, TreeNode],
+        cannot_link: dict[str, set[str]],
+        metadata: dict[str, object],
     ) -> None:
         self.nodes = nodes
         self.cannot_link = cannot_link
         self.metadata = metadata
 
     @classmethod
-    def load(cls, path: Path) -> "OnvocTree":
+    def load(cls, path: Path) -> OnvocTree:
         if not path.exists():
             raise OnvocTreeError(f"ONVOC tree file not found: {path}")
         try:
@@ -50,7 +50,7 @@ class OnvocTree:
         if "tree" not in payload:
             raise OnvocTreeError("ONVOC tree payload missing 'tree' key.")
 
-        nodes: Dict[str, TreeNode] = {}
+        nodes: dict[str, TreeNode] = {}
         cls._collect_nodes(
             payload["tree"],
             parent_id=None,
@@ -76,8 +76,8 @@ class OnvocTree:
         cls,
         tree_nodes: Sequence[dict],
         *,
-        parent_id: Optional[str],
-        nodes: Dict[str, TreeNode],
+        parent_id: str | None,
+        nodes: dict[str, TreeNode],
     ) -> None:
         for entry in tree_nodes:
             node_id = entry.get("id")
@@ -87,7 +87,9 @@ class OnvocTree:
                 continue
             children_payload = entry.get("children") or []
             alt_parents = tuple(entry.get("alt_parents") or ())
-            child_ids = tuple(child.get("id") for child in children_payload if child.get("id"))
+            child_ids = tuple(
+                child.get("id") for child in children_payload if child.get("id")
+            )
             nodes[node_id] = TreeNode(
                 id=node_id,
                 label=str(label),
@@ -105,12 +107,14 @@ class OnvocTree:
 
     # ---------------------------------------------------------------- constraints
     @staticmethod
-    def _build_cannot_link(constraints: dict) -> Dict[str, Set[str]]:
-        pairs: Dict[str, Set[str]] = {}
-        entries = constraints.get("cannot_link", []) if isinstance(constraints, dict) else []
+    def _build_cannot_link(constraints: dict) -> dict[str, set[str]]:
+        pairs: dict[str, set[str]] = {}
+        entries = (
+            constraints.get("cannot_link", []) if isinstance(constraints, dict) else []
+        )
         for entry in entries:
             ids = entry.get("ids") if isinstance(entry, dict) else None
-            if not isinstance(ids, (list, tuple)) or len(ids) != 2:
+            if not isinstance(ids, list | tuple) or len(ids) != 2:
                 continue
             a, b = ids
             if not a or not b:
@@ -127,17 +131,17 @@ class OnvocTree:
             return False
         return any(other in forbidden for other in others)
 
-    def level(self, node_id: str) -> Optional[int]:
+    def level(self, node_id: str) -> int | None:
         node = self.nodes.get(node_id)
         if node is None:
             return None
         return node.level
 
-    def descendants(self, node_id: str) -> Set[str]:
+    def descendants(self, node_id: str) -> set[str]:
         """Return all descendant node identifiers under the given node."""
         if node_id not in self.nodes:
             return set()
-        result: Set[str] = set()
+        result: set[str] = set()
         stack = list(self.nodes[node_id].children)
         while stack:
             current = stack.pop()
@@ -149,9 +153,9 @@ class OnvocTree:
                 stack.extend(child_node.children)
         return result
 
-    def ancestors(self, node_id: str) -> List[str]:
+    def ancestors(self, node_id: str) -> list[str]:
         """Return ancestor identifiers starting from the immediate parent."""
-        chain: List[str] = []
+        chain: list[str] = []
         current = self.nodes.get(node_id)
         while current and current.parent_id:
             parent_id = current.parent_id
@@ -160,8 +164,8 @@ class OnvocTree:
         return chain
 
     def nearest_ancestor_with_level(
-        self, node_id: str, allowed_levels: Set[int]
-    ) -> Optional[str]:
+        self, node_id: str, allowed_levels: set[int]
+    ) -> str | None:
         """Return the nearest ancestor (including self) whose level is allowed."""
         node = self.nodes.get(node_id)
         if not node:

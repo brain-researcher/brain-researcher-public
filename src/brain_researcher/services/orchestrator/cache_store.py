@@ -8,13 +8,13 @@ Provides SQLite and in-memory implementations of cache storage with:
 """
 
 from __future__ import annotations
-import time
+
 import json
 import logging
+import time
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
-from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CacheEntry:
     """Represents a cache entry."""
+
     cache_key: str
     run_id: str
     run_dir: str
@@ -29,11 +30,11 @@ class CacheEntry:
     meta_json: str
     created_at: int
     last_accessed_at: int
-    tool_version: Optional[str] = None
-    git_sha: Optional[str] = None
-    size_bytes: Optional[int] = None
+    tool_version: str | None = None
+    git_sha: str | None = None
+    size_bytes: int | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dict for JSON serialization."""
         return {
             "cache_key": self.cache_key,
@@ -52,6 +53,7 @@ class CacheEntry:
 @dataclass
 class CacheStats:
     """Cache statistics."""
+
     total_entries: int
     pending_entries: int
     completed_entries: int
@@ -60,7 +62,7 @@ class CacheStats:
     hit_count: int  # Tracked separately (not in DB)
     miss_count: int  # Tracked separately (not in DB)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dict for JSON serialization."""
         hit_rate = (
             self.hit_count / (self.hit_count + self.miss_count)
@@ -88,7 +90,7 @@ class CacheStore(ABC):
         pass
 
     @abstractmethod
-    async def lookup(self, cache_key: str) -> Optional[CacheEntry]:
+    async def lookup(self, cache_key: str) -> CacheEntry | None:
         """Look up a cache entry by key.
 
         Args:
@@ -104,9 +106,9 @@ class CacheStore(ABC):
         self,
         cache_key: str,
         run_id: str,
-        meta: Dict[str, Any],
-        tool_version: Optional[str] = None,
-        git_sha: Optional[str] = None,
+        meta: dict[str, Any],
+        tool_version: str | None = None,
+        git_sha: str | None = None,
     ) -> bool:
         """Create or reset a cache entry to pending state.
 
@@ -129,7 +131,7 @@ class CacheStore(ABC):
         cache_key: str,
         run_id: str,
         run_dir: str,
-        size_bytes: Optional[int] = None,
+        size_bytes: int | None = None,
     ) -> bool:
         """Mark a pending entry as completed.
 
@@ -224,7 +226,7 @@ class MemoryCacheStore(CacheStore):
     """In-memory cache store for testing or when SQLite is unavailable."""
 
     def __init__(self):
-        self._cache: Dict[str, CacheEntry] = {}
+        self._cache: dict[str, CacheEntry] = {}
         self._hit_count = 0
         self._miss_count = 0
 
@@ -232,7 +234,7 @@ class MemoryCacheStore(CacheStore):
         """No-op for memory store."""
         pass
 
-    async def lookup(self, cache_key: str) -> Optional[CacheEntry]:
+    async def lookup(self, cache_key: str) -> CacheEntry | None:
         """Look up cache entry in memory."""
         entry = self._cache.get(cache_key)
         if entry:
@@ -247,9 +249,9 @@ class MemoryCacheStore(CacheStore):
         self,
         cache_key: str,
         run_id: str,
-        meta: Dict[str, Any],
-        tool_version: Optional[str] = None,
-        git_sha: Optional[str] = None,
+        meta: dict[str, Any],
+        tool_version: str | None = None,
+        git_sha: str | None = None,
     ) -> bool:
         """Ensure an entry exists in pending state; return True if reserved."""
         now = int(time.time())
@@ -287,7 +289,7 @@ class MemoryCacheStore(CacheStore):
         cache_key: str,
         run_id: str,
         run_dir: str,
-        size_bytes: Optional[int] = None,
+        size_bytes: int | None = None,
     ) -> bool:
         """Mark entry as completed in memory."""
         entry = self._cache.get(cache_key)
@@ -354,7 +356,8 @@ class MemoryCacheStore(CacheStore):
     async def clear_by_tool(self, tool_version: str) -> int:
         """Clear entries by tool version from memory."""
         to_delete = [
-            key for key, entry in self._cache.items()
+            key
+            for key, entry in self._cache.items()
             if entry.tool_version == tool_version
         ]
         for key in to_delete:
@@ -364,8 +367,7 @@ class MemoryCacheStore(CacheStore):
     async def clear_by_git(self, git_sha: str) -> int:
         """Clear entries by git SHA from memory."""
         to_delete = [
-            key for key, entry in self._cache.items()
-            if entry.git_sha == git_sha
+            key for key, entry in self._cache.items() if entry.git_sha == git_sha
         ]
         for key in to_delete:
             del self._cache[key]
@@ -377,20 +379,18 @@ class MemoryCacheStore(CacheStore):
             return 0
 
         # Sort by last_accessed_at (oldest first)
-        entries = sorted(
-            self._cache.items(),
-            key=lambda item: item[1].last_accessed_at
-        )
+        entries = sorted(self._cache.items(), key=lambda item: item[1].last_accessed_at)
 
         # Delete oldest until we're under limit
-        to_delete = entries[:len(entries) - max_entries]
+        to_delete = entries[: len(entries) - max_entries]
         for key, _ in to_delete:
             del self._cache[key]
 
         return len(to_delete)
 
+
 # Phase 3: Global cache store accessor
-_global_cache_store: Optional[CacheStore] = None
+_global_cache_store: CacheStore | None = None
 
 
 async def get_cache_store() -> CacheStore:

@@ -249,15 +249,11 @@ Suggested fixes:
 | Artifact | What it anchors | Current note |
 |----------|-----------------|---------------|
 | `docs/use_cases/br_kg_plot_probe_20260502/SUMMARY.md` | Production schema/plot probe | Bounded production queries through ${GCE_VM_NAME} and brain-researcher-BR-KG-0; useful but not a full data export. |
-| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_schema_inventory_data_dictionary.md` | Schema inventory file layout | Lists generated CSV/HTML inventory tables and recommended comprehensive table. |
-| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_schema_triples_comprehensive.csv` | Canonical source-label / relationship / target-label triples | 151 schema triples in the existing artifact. |
-| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_node_labels_inventory.csv` | Node-label counts and surfaces | 75 node labels; multi-label endpoints need careful interpretation. |
-| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_relationship_types_inventory.csv` | Relationship-type counts and dominant schema triples | 85 relationship types. |
-| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_schema_inventory_summary.json` | Schema inventory summary | total_edges=2,423,334, top1_share=44.4%, top3_share=77.6%, top10_share=93.4%. |
-| `docs/specs/BR-KG_structural_quality_benchmark_v1.md` | KG structural-quality framing | Evaluation should be a versioned quality card, not only node/edge counts. |
+| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_schema_inventory.html` | Searchable schema inventory | Retained public table browser for schema-level inspection. |
+| `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_schema_inventory_data_dictionary.md` | Schema inventory file layout | Documents the generated tables. Raw CSV/JSON exports are intentionally not committed in the public docs tree. |
+| `docs/specs/br-kg_structural_quality_benchmark_v1.md` | KG structural-quality framing | Evaluation should be a versioned quality card, not only node/edge counts. |
 | `docs/services/br-kg/gabriel_full_pipeline.md` | Gabriel paper-mining generation/ingest lane | Anchors LLM/heuristic extraction, review queues, candidate lanes, and KGGen evaluation. |
 | `docs/standards/BR-KG_Standards.md` | Standards skeleton | Useful for ID/provenance/merge-policy intent; verify before citing as implemented. |
-| `docs/standards/BR-KG_graph_schema.md` | Historical sparse snapshot | Explicitly historical; do not use for current live graph claims. |
 
 ### Status vocabulary
 

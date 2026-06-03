@@ -5,7 +5,7 @@ Converts token usage to USD cost estimates based on per-model pricing.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -67,7 +67,7 @@ PRICING_TABLE = {
 }
 
 
-def get_model_pricing(provider: str, model: str) -> Optional[ModelPricing]:
+def get_model_pricing(provider: str, model: str) -> ModelPricing | None:
     """
     Look up pricing for a given provider/model.
 
@@ -98,9 +98,9 @@ def get_model_pricing(provider: str, model: str) -> Optional[ModelPricing]:
 def calculate_cost(
     provider: str,
     model: str,
-    usage: Dict[str, Any],
-    bill_to: Optional[str] = None,
-) -> Dict[str, float]:
+    usage: dict[str, Any],
+    bill_to: str | None = None,
+) -> dict[str, float]:
     """
     Calculate cost for an LLM invocation.
 

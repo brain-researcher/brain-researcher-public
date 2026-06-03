@@ -122,7 +122,9 @@ def _bulk_ingest_tools_catalog(
     exposure_policy = tools_catalog_loader.load_exposure_policy() or None
 
     tool_meta = tools_catalog_loader.build_tool_meta(caps, catalog)
-    default_by_group = tools_catalog_loader.select_default_tools(tool_meta, default_versions_config)
+    default_by_group = tools_catalog_loader.select_default_tools(
+        tool_meta, default_versions_config
+    )
 
     # Allow evidence files shaped like {tools: {id: {...}}}
     if "tools" in evidence and isinstance(evidence["tools"], dict):
@@ -139,7 +141,13 @@ def _bulk_ingest_tools_catalog(
     validated_rows: list[dict[str, Any]] = []
 
     iter_items: Iterable[
-        tuple[dict[str, Any], dict[str, Any], list[tuple[str, str, str]], list[str], list[str]]
+        tuple[
+            dict[str, Any],
+            dict[str, Any],
+            list[tuple[str, str, str]],
+            list[str],
+            list[str],
+        ]
     ] = tools_catalog_loader.iter_tools(
         caps,
         catalog=catalog,
@@ -185,7 +193,10 @@ def _bulk_ingest_tools_catalog(
                     validated_rows.append({"tool_id": tool_id, "resource_id": ds_id})
 
     with db._driver.session(database=db._database) as session:  # type: ignore[attr-defined]
-        def run_batches(cypher: str, rows: list[dict[str, Any]], batch_size: int = 500) -> None:
+
+        def run_batches(
+            cypher: str, rows: list[dict[str, Any]], batch_size: int = 500
+        ) -> None:
             for chunk in _chunked(rows, batch_size):
                 session.run(cypher, {"rows": chunk}).consume()
 
@@ -330,7 +341,9 @@ def tools_catalog(
     database: str = typer.Option(
         "neo4j", envvar="NEO4J_DATABASE", help="Neo4j database name"
     ),
-    dry_run: bool = typer.Option(False, help="Parse and report counts without writing to Neo4j"),
+    dry_run: bool = typer.Option(
+        False, help="Parse and report counts without writing to Neo4j"
+    ),
 ):
     """Ingest catalog tools into Neo4j (Tool/ToolVersion + evidence)."""
 
@@ -341,8 +354,13 @@ def tools_catalog(
 
     tools = caps.get("tools", []) or []
     tool_count = len(tools)
-    resource_edges = sum(len(t.get("consumes", []) or []) + len(t.get("produces", []) or []) for t in tools)
-    modality_edges = sum(len(t.get("modality", []) or t.get("modalities", []) or []) for t in tools)
+    resource_edges = sum(
+        len(t.get("consumes", []) or []) + len(t.get("produces", []) or [])
+        for t in tools
+    )
+    modality_edges = sum(
+        len(t.get("modality", []) or t.get("modalities", []) or []) for t in tools
+    )
     family_edges = sum(len(t.get("capabilities", []) or []) for t in tools)
 
     if dry_run:
@@ -402,7 +420,9 @@ def scientific_review_rules(
     database: str = typer.Option(
         "neo4j", envvar="NEO4J_DATABASE", help="Neo4j database name"
     ),
-    dry_run: bool = typer.Option(False, help="Parse and report counts without writing to Neo4j"),
+    dry_run: bool = typer.Option(
+        False, help="Parse and report counts without writing to Neo4j"
+    ),
 ):
     """Ingest the scientific-review rule registry into Neo4j."""
 
@@ -461,7 +481,9 @@ def allen_ccfv3(
     database: str = typer.Option(
         "neo4j", envvar="NEO4J_DATABASE", help="Neo4j database name"
     ),
-    dry_run: bool = typer.Option(False, help="Parse and report counts without writing to Neo4j"),
+    dry_run: bool = typer.Option(
+        False, help="Parse and report counts without writing to Neo4j"
+    ),
 ):
     """Ingest the Allen CCFv3 atlas hierarchy into Neo4j."""
 
@@ -499,14 +521,24 @@ def allen_ccfv3(
 
 @br_kg_app.command("overlay-yeo17")
 def overlay_yeo17_command(
-    uri: str = typer.Option("bolt://localhost:7687", envvar="NEO4J_URI", help="Neo4j bolt URI"),
+    uri: str = typer.Option(
+        "bolt://localhost:7687", envvar="NEO4J_URI", help="Neo4j bolt URI"
+    ),
     user: str = typer.Option("neo4j", envvar="NEO4J_USER", help="Neo4j user"),
-    password: str = typer.Option("password", envvar="NEO4J_PASSWORD", help="Neo4j password"),
-    database: str = typer.Option("neo4j", envvar="NEO4J_DATABASE", help="Neo4j database name"),
+    password: str = typer.Option(
+        "password", envvar="NEO4J_PASSWORD", help="Neo4j password"
+    ),
+    database: str = typer.Option(
+        "neo4j", envvar="NEO4J_DATABASE", help="Neo4j database name"
+    ),
     statmap_limit: int = typer.Option(None, help="Limit number of StatMaps to process"),
     threshold: float = typer.Option(2.5, help="Voxel threshold for voxels_gt metric"),
-    atlas_id: str = typer.Option("atlas:yeo2011_17", help="Parcellation id for Yeo17 in Neo4j"),
-    resample: bool = typer.Option(True, help="Resample statmaps to atlas grid before overlay"),
+    atlas_id: str = typer.Option(
+        "atlas:yeo2011_17", help="Parcellation id for Yeo17 in Neo4j"
+    ),
+    resample: bool = typer.Option(
+        True, help="Resample statmaps to atlas grid before overlay"
+    ),
 ):
     """
     Overlay StatMaps onto Yeo17 atlas and write IN_PARCELLATION / IN_NETWORK edges.

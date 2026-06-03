@@ -61,7 +61,9 @@ def _branch_kg_context(
             payload[key] = value.strip()
 
     if kg_context:
-        payload.update({key: value for key, value in kg_context.items() if value is not None})
+        payload.update(
+            {key: value for key, value in kg_context.items() if value is not None}
+        )
 
     if not payload:
         return {}
@@ -101,17 +103,20 @@ def decision_and_rationale(
         if ledger_decision in {"freeze", "frozen"}:
             return (
                 "freeze",
-                ledger_rationale or "Latest typed hypothesis ledger entry froze this branch.",
+                ledger_rationale
+                or "Latest typed hypothesis ledger entry froze this branch.",
             )
         if ledger_decision in {"kill", "killed"}:
             return (
                 "kill",
-                ledger_rationale or "Latest typed hypothesis ledger entry retired this branch.",
+                ledger_rationale
+                or "Latest typed hypothesis ledger entry retired this branch.",
             )
         if ledger_decision in {"pivot_baseline", "pivot_stimulus_family"}:
             return (
                 ledger_decision,
-                ledger_rationale or "Latest typed hypothesis ledger entry requested a pivot.",
+                ledger_rationale
+                or "Latest typed hypothesis ledger entry requested a pivot.",
             )
 
     structured_kg_context = _branch_kg_context(
@@ -122,9 +127,10 @@ def decision_and_rationale(
     )
 
     method_compatibility = structured_kg_context.get("method_compatibility")
-    if isinstance(method_compatibility, dict) and method_compatibility.get(
-        "compatible"
-    ) is False:
+    if (
+        isinstance(method_compatibility, dict)
+        and method_compatibility.get("compatible") is False
+    ):
         design = method_compatibility.get("design", {}).get("canonical")
         method = method_compatibility.get("method", {}).get("canonical")
         return (
@@ -159,11 +165,15 @@ def decision_and_rationale(
             "pivot_stimulus_family",
             "Auditory follow-up still over-collapses human-vocal and nonhuman conditions.",
         )
-    if branch_id in {"math", "rsvp_language"} and {
-        "visual_format_confound",
-        "lexical_confound",
-        "no_clean_double_dissociation",
-    } & failures:
+    if (
+        branch_id in {"math", "rsvp_language"}
+        and {
+            "visual_format_confound",
+            "lexical_confound",
+            "no_clean_double_dissociation",
+        }
+        & failures
+    ):
         return (
             "pivot_baseline",
             "Current baselines are still too confounded to support a clean branch claim.",
@@ -226,7 +236,9 @@ def global_recommendation(
     ]
     if open_branch_ids:
         ordered = [
-            branch_id for branch_id in open_branch_priority if branch_id in open_branch_ids
+            branch_id
+            for branch_id in open_branch_priority
+            if branch_id in open_branch_ids
         ]
         return {
             "mode": "continue_open_branches",

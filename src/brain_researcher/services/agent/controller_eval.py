@@ -10,13 +10,13 @@ import pickle
 import signal
 import tempfile
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean
-from typing import Any, Callable, Sequence
+from typing import Any
 
 from brain_researcher.services.agent.hypothesis_candidate_cards import (
     build_candidate_cards_from_workflow_result,
@@ -121,7 +121,8 @@ def _compact_ordered_candidates(
         compact.append(
             {
                 "candidate_kg_id": str(row.get("candidate_kg_id") or "").strip(),
-                "candidate_label": str(row.get("candidate_label") or "").strip() or None,
+                "candidate_label": str(row.get("candidate_label") or "").strip()
+                or None,
                 "rank_before_rerank": int(row.get("rank_before_rerank") or 0),
                 "rank_after_rerank": int(row.get("rank_after_rerank") or 0),
                 "leverage_score": _coerce_float(row.get("leverage_score")),
@@ -130,13 +131,9 @@ def _compact_ordered_candidates(
                 "feasibility_score": _coerce_float(row.get("feasibility_score")),
                 "domain_overlap_score": _coerce_float(row.get("domain_overlap_score")),
                 "principle_score": _coerce_float(row.get("principle_score")),
-                "verification_reason": str(
-                    row.get("verification_reason") or ""
-                ).strip()
+                "verification_reason": str(row.get("verification_reason") or "").strip()
                 or None,
-                "verification_status": str(
-                    row.get("verification_status") or ""
-                ).strip()
+                "verification_status": str(row.get("verification_status") or "").strip()
                 or None,
             }
         )
@@ -156,12 +153,16 @@ def _compact_verify_breakdown(
     for row in rows:
         if not isinstance(row, Mapping):
             continue
-        timings = row.get("timings_s") if isinstance(row.get("timings_s"), Mapping) else {}
+        timings = (
+            row.get("timings_s") if isinstance(row.get("timings_s"), Mapping) else {}
+        )
         compact.append(
             {
                 "rank": int(row.get("rank") or 0),
-                "candidate_kg_id": str(row.get("candidate_kg_id") or "").strip() or None,
-                "candidate_label": str(row.get("candidate_label") or "").strip() or None,
+                "candidate_kg_id": str(row.get("candidate_kg_id") or "").strip()
+                or None,
+                "candidate_label": str(row.get("candidate_label") or "").strip()
+                or None,
                 "status": str(row.get("status") or "").strip() or None,
                 "verdict": str(row.get("verdict") or "").strip() or None,
                 "wall_clock_s": _coerce_float(row.get("wall_clock_s")),
@@ -331,21 +332,21 @@ def summarize_workflow_run(
         ),
         "n_returned": int(_safe_get(summary, "n_returned", len(hypothesis_rows)) or 0),
         "n_vetoed": int(_safe_get(summary, "n_vetoed", 0) or 0),
-        "candidate_diversity": round(
-            len(set(candidate_ids)) / len(candidate_ids), 6
-        )
-        if candidate_ids
-        else 0.0,
-        "relation_diversity": round(
-            len(set(relation_hints)) / len(relation_hints), 6
-        )
-        if relation_hints
-        else 0.0,
-        "candidate_type_diversity": round(
-            len(set(candidate_types)) / len(candidate_types), 6
-        )
-        if candidate_types
-        else 0.0,
+        "candidate_diversity": (
+            round(len(set(candidate_ids)) / len(candidate_ids), 6)
+            if candidate_ids
+            else 0.0
+        ),
+        "relation_diversity": (
+            round(len(set(relation_hints)) / len(relation_hints), 6)
+            if relation_hints
+            else 0.0
+        ),
+        "candidate_type_diversity": (
+            round(len(set(candidate_types)) / len(candidate_types), 6)
+            if candidate_types
+            else 0.0
+        ),
         "contradiction_yield": len(motifs),
         "topology_yield": len(proposals),
         "mean_novelty_score": _mean_field(hypothesis_rows, "novelty_score"),
@@ -383,7 +384,9 @@ def summarize_workflow_run(
     }
 
 
-def load_eval_cases(config_path: str | Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def load_eval_cases(
+    config_path: str | Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Load YAML-driven controller evaluation cases."""
     if yaml is None:
         raise RuntimeError("PyYAML is required to load controller evaluation configs")
@@ -429,7 +432,9 @@ def filter_eval_cases(
     case_ids: Sequence[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Return a config-ordered subset of cases selected by case id."""
-    selected_ids = [str(value).strip() for value in (case_ids or []) if str(value).strip()]
+    selected_ids = [
+        str(value).strip() for value in (case_ids or []) if str(value).strip()
+    ]
     if not selected_ids:
         return [dict(case) for case in cases]
 
@@ -761,7 +766,9 @@ def _execute_tool_with_timeout(
                 }
             return {
                 "status": "error",
-                "error": str(payload.get("error") or "isolated workflow execution failed"),
+                "error": str(
+                    payload.get("error") or "isolated workflow execution failed"
+                ),
             }
         finally:
             _close_eval_timeout_channel(result_channel)
@@ -919,10 +926,9 @@ def run_controller_evaluation(
         legacy_metrics = _safe_get(runs.get("legacy"), "metrics", {})
         principle_metrics = _safe_get(runs.get("principle_v0"), "metrics", {})
         if legacy_metrics and principle_metrics:
-            comparison["top_candidate_changed"] = (
-                legacy_metrics.get("top_candidate_ids")
-                != principle_metrics.get("top_candidate_ids")
-            )
+            comparison["top_candidate_changed"] = legacy_metrics.get(
+                "top_candidate_ids"
+            ) != principle_metrics.get("top_candidate_ids")
             comparison["active_principle_id"] = principle_metrics.get(
                 "active_principle_id"
             )
@@ -1093,9 +1099,7 @@ def write_controller_evaluation_report(
         mean_metrics = _safe_get(bucket, "mean_metrics", {})
         if isinstance(mean_metrics, Mapping):
             for field_name in sorted(mean_metrics):
-                markdown_lines.append(
-                    f"- {field_name}: `{mean_metrics[field_name]}`"
-                )
+                markdown_lines.append(f"- {field_name}: `{mean_metrics[field_name]}`")
         markdown_lines.append("")
 
     markdown_lines.append("## Case Details")
@@ -1209,9 +1213,7 @@ def write_controller_evaluation_report(
                             f"  {field_name}: `{metrics[field_name]}`"
                         )
             if run.get("workflow_result_path"):
-                markdown_lines.append(
-                    f"  raw result: `{run['workflow_result_path']}`"
-                )
+                markdown_lines.append(f"  raw result: `{run['workflow_result_path']}`")
         markdown_lines.append("")
 
     markdown_path = out_dir / "controller_eval_report.md"

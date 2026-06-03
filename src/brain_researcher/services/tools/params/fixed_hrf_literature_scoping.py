@@ -137,7 +137,9 @@ def bucket_fixed_hrf_hit(hit: dict[str, Any]) -> str:
     return "other"
 
 
-def summarize_fixed_hrf_hits(hits: list[dict[str, Any]], *, top_k: int = 5) -> dict[str, Any]:
+def summarize_fixed_hrf_hits(
+    hits: list[dict[str, Any]], *, top_k: int = 5
+) -> dict[str, Any]:
     """Summarize a scoping-review hit set into coarse evidence buckets."""
 
     buckets: dict[str, list[dict[str, Any]]] = {bucket: [] for bucket in _HRF_BUCKETS}

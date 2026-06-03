@@ -2,8 +2,8 @@ from __future__ import annotations
 
 
 def test_kg_verify_hypothesis_forwards_candidate_lane_mode(monkeypatch):
-    from brain_researcher.services.mcp import server as srv
     from brain_researcher.services.br_kg import query_service as query_service
+    from brain_researcher.services.mcp import server as srv
 
     captured: dict[str, object] = {}
 
@@ -69,8 +69,8 @@ def test_verify_hypothesis_alias_forwards_candidate_lane_mode(monkeypatch):
 
 
 def test_kg_sample_and_verify_hypotheses_forwards_candidate_lane_mode(monkeypatch):
-    from brain_researcher.services.mcp import server as srv
     from brain_researcher.services.br_kg import query_service as query_service
+    from brain_researcher.services.mcp import server as srv
 
     captured: dict[str, object] = {}
 
@@ -151,8 +151,8 @@ def test_kg_sample_and_verify_hypotheses_forwards_candidate_lane_mode(monkeypatc
 
 
 def test_kg_verify_sampled_hypotheses_forwards_candidate_lane_mode(monkeypatch):
-    from brain_researcher.services.mcp import server as srv
     from brain_researcher.services.br_kg import query_service as query_service
+    from brain_researcher.services.mcp import server as srv
 
     captured: dict[str, object] = {}
 

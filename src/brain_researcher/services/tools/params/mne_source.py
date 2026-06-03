@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
 from types import SimpleNamespace
+from typing import Any
 
 import numpy as np
 
@@ -18,23 +18,23 @@ class MNESourceInverseParameters:
     subjects_dir: str
     subject: str
     output_dir: str
-    raw_file: Optional[str] = None
-    epochs_file: Optional[str] = None
-    evoked_file: Optional[str] = None
-    forward_file: Optional[str] = None
-    bem_file: Optional[str] = None
-    trans_file: Optional[str] = None
-    spacing: Optional[str] = "oct6"
+    raw_file: str | None = None
+    epochs_file: str | None = None
+    evoked_file: str | None = None
+    forward_file: str | None = None
+    bem_file: str | None = None
+    trans_file: str | None = None
+    spacing: str | None = "oct6"
     surface: str = "white"
     method: str = "dSPM"
-    lambda2: Optional[float] = None
-    pick_ori: Optional[str] = "normal"
-    depth: Optional[float] = 0.8
-    noise_cov_file: Optional[str] = None
-    baseline: Optional[Tuple[Optional[float], Optional[float]]] = (None, 0.0)
+    lambda2: float | None = None
+    pick_ori: str | None = "normal"
+    depth: float | None = 0.8
+    noise_cov_file: str | None = None
+    baseline: tuple[float | None, float | None] | None = (None, 0.0)
     save_stc: bool = True
     save_inverse: bool = True
-    morphing: Optional[str] = None
+    morphing: str | None = None
 
 
 @dataclass(frozen=True)
@@ -43,16 +43,16 @@ class MNEBeamformerParameters:
     subject: str
     output_dir: str
     method: str = "lcmv"
-    raw_file: Optional[str] = None
-    epochs_file: Optional[str] = None
-    evoked_file: Optional[str] = None
-    forward_file: Optional[str] = None
-    trans_file: Optional[str] = None
-    data_cov_file: Optional[str] = None
-    noise_cov_file: Optional[str] = None
+    raw_file: str | None = None
+    epochs_file: str | None = None
+    evoked_file: str | None = None
+    forward_file: str | None = None
+    trans_file: str | None = None
+    data_cov_file: str | None = None
+    noise_cov_file: str | None = None
     reg: float = 0.05
-    weight_norm: Optional[str] = "unit-noise-gain"
-    freq_bands: Optional[Tuple[Tuple[float, float], ...]] = None
+    weight_norm: str | None = "unit-noise-gain"
+    freq_bands: tuple[tuple[float, float], ...] | None = None
     save_filters: bool = True
     save_stc: bool = True
 
@@ -63,16 +63,16 @@ class MNEDipoleParameters:
     subjects_dir: str
     subject: str
     output_dir: str
-    trans_file: Optional[str] = None
-    bem_file: Optional[str] = None
-    tmin: Optional[float] = None
-    tmax: Optional[float] = None
+    trans_file: str | None = None
+    bem_file: str | None = None
+    tmin: float | None = None
+    tmax: float | None = None
     n_dipoles: int = 1
     min_dist: float = 5.0
     save_dipoles: bool = True
 
 
-def _ensure_exists(path: Optional[str]) -> Optional[str]:
+def _ensure_exists(path: str | None) -> str | None:
     if path is None:
         return None
     p = Path(path)
@@ -81,7 +81,9 @@ def _ensure_exists(path: Optional[str]) -> Optional[str]:
     return str(p)
 
 
-def mne_source_inverse_from_payload(payload: Dict[str, Any]) -> MNESourceInverseParameters:
+def mne_source_inverse_from_payload(
+    payload: dict[str, Any],
+) -> MNESourceInverseParameters:
     baseline = payload.get("baseline", (None, 0))
     if baseline is not None:
         baseline = tuple(baseline)
@@ -109,7 +111,7 @@ def mne_source_inverse_from_payload(payload: Dict[str, Any]) -> MNESourceInverse
     )
 
 
-def mne_beamformer_from_payload(payload: Dict[str, Any]) -> MNEBeamformerParameters:
+def mne_beamformer_from_payload(payload: dict[str, Any]) -> MNEBeamformerParameters:
     freq_bands = payload.get("freq_bands")
     if freq_bands is not None:
         freq_bands = tuple(tuple(band) for band in freq_bands)
@@ -133,7 +135,7 @@ def mne_beamformer_from_payload(payload: Dict[str, Any]) -> MNEBeamformerParamet
     )
 
 
-def mne_dipole_from_payload(payload: Dict[str, Any]) -> MNEDipoleParameters:
+def mne_dipole_from_payload(payload: dict[str, Any]) -> MNEDipoleParameters:
     return MNEDipoleParameters(
         evoked_file=str(payload["evoked_file"]),
         subjects_dir=str(payload["subjects_dir"]),
@@ -155,8 +157,8 @@ def _prepare_output_dir(path: str) -> Path:
     return out
 
 
-def _collect_inputs(*items: Tuple[str, Optional[str]]) -> Dict[str, bool]:
-    status: Dict[str, bool] = {}
+def _collect_inputs(*items: tuple[str, str | None]) -> dict[str, bool]:
+    status: dict[str, bool] = {}
     for label, path in items:
         if path is None:
             continue
@@ -168,10 +170,10 @@ def _collect_inputs(*items: Tuple[str, Optional[str]]) -> Dict[str, bool]:
     return status
 
 
-def _spacing_to_pos(spacing: Optional[str]) -> float:
+def _spacing_to_pos(spacing: str | None) -> float:
     if spacing is None:
         return 10.0
-    if isinstance(spacing, (int, float)):
+    if isinstance(spacing, int | float):
         return float(spacing)
     try:
         return float(str(spacing))
@@ -194,10 +196,10 @@ def _write_stc_npz(path: Path, stc) -> None:
 def _load_evoked_data(
     *,
     mne,
-    raw_file: Optional[str],
-    epochs_file: Optional[str],
-    evoked_file: Optional[str],
-    baseline: Optional[Tuple[Optional[float], Optional[float]]],
+    raw_file: str | None,
+    epochs_file: str | None,
+    evoked_file: str | None,
+    baseline: tuple[float | None, float | None] | None,
 ):
     raw = None
     epochs = None
@@ -205,7 +207,9 @@ def _load_evoked_data(
         evoked = mne.read_evokeds(_ensure_exists(evoked_file), verbose=False)[0]
         return evoked, raw, epochs
     if epochs_file:
-        epochs = mne.read_epochs(_ensure_exists(epochs_file), preload=True, verbose=False)
+        epochs = mne.read_epochs(
+            _ensure_exists(epochs_file), preload=True, verbose=False
+        )
         evoked = epochs.average()
         return evoked, raw, epochs
     if raw_file:
@@ -229,22 +233,26 @@ def _load_evoked_data(
     raise ValueError("One of raw_file, epochs_file, or evoked_file is required")
 
 
-def _load_trans(mne, trans_file: Optional[str]):
+def _load_trans(mne, trans_file: str | None):
     if trans_file:
         return mne.read_trans(_ensure_exists(trans_file))
     return mne.transforms.Transform("head", "mri", np.eye(4))
 
 
-def _load_bem(mne, bem_file: Optional[str], info):
+def _load_bem(mne, bem_file: str | None, info):
     if bem_file:
         return mne.read_bem_solution(_ensure_exists(bem_file))
     return mne.make_sphere_model(r0=(0.0, 0.0, 0.0), head_radius=0.09, info=info)
 
 
-def run_mne_source_inverse(params: MNESourceInverseParameters) -> Dict[str, Any]:
+def run_mne_source_inverse(params: MNESourceInverseParameters) -> dict[str, Any]:
     configure_mne_environment()
     import mne
-    from mne.minimum_norm import make_inverse_operator, apply_inverse, write_inverse_operator
+    from mne.minimum_norm import (
+        apply_inverse,
+        make_inverse_operator,
+        write_inverse_operator,
+    )
 
     output_dir = _prepare_output_dir(params.output_dir)
     Path(params.subjects_dir).mkdir(parents=True, exist_ok=True)
@@ -298,7 +306,9 @@ def run_mne_source_inverse(params: MNESourceInverseParameters) -> Dict[str, Any]
         noise_cov = mne.read_cov(_ensure_exists(params.noise_cov_file))
     elif epochs is not None:
         tmin, tmax = (None, None) if params.baseline is None else params.baseline
-        noise_cov = mne.compute_covariance(epochs, tmin=tmin, tmax=tmax, method="empirical")
+        noise_cov = mne.compute_covariance(
+            epochs, tmin=tmin, tmax=tmax, method="empirical"
+        )
     elif raw is not None:
         noise_cov = mne.compute_raw_covariance(raw, verbose=False)
     else:
@@ -331,7 +341,9 @@ def run_mne_source_inverse(params: MNESourceInverseParameters) -> Dict[str, Any]
                 pick_ori = None
         except Exception:
             pick_ori = params.pick_ori
-        stc = apply_inverse(evoked, inv, lambda2, method=params.method, pick_ori=pick_ori, verbose=False)
+        stc = apply_inverse(
+            evoked, inv, lambda2, method=params.method, pick_ori=pick_ori, verbose=False
+        )
     except Exception:
         fallback_used = True
         inv = None
@@ -387,10 +399,10 @@ def run_mne_source_inverse(params: MNESourceInverseParameters) -> Dict[str, Any]
     }
 
 
-def run_mne_beamformer(params: MNEBeamformerParameters) -> Dict[str, Any]:
+def run_mne_beamformer(params: MNEBeamformerParameters) -> dict[str, Any]:
     configure_mne_environment()
     import mne
-    from mne.beamformer import make_lcmv, apply_lcmv
+    from mne.beamformer import apply_lcmv, make_lcmv
 
     output_dir = _prepare_output_dir(params.output_dir)
     Path(params.subjects_dir).mkdir(parents=True, exist_ok=True)
@@ -536,7 +548,7 @@ def run_mne_beamformer(params: MNEBeamformerParameters) -> Dict[str, Any]:
     }
 
 
-def run_mne_dipole(params: MNEDipoleParameters) -> Dict[str, Any]:
+def run_mne_dipole(params: MNEDipoleParameters) -> dict[str, Any]:
     configure_mne_environment()
     import mne
 
@@ -562,7 +574,9 @@ def run_mne_dipole(params: MNEDipoleParameters) -> Dict[str, Any]:
     min_dist_m = params.min_dist / 1000.0
     fallback_used = False
     try:
-        dip, residual = mne.fit_dipole(evoked, cov, bem, trans=trans, min_dist=min_dist_m)
+        dip, residual = mne.fit_dipole(
+            evoked, cov, bem, trans=trans, min_dist=min_dist_m
+        )
     except Exception:
         fallback_used = True
         data = evoked.data

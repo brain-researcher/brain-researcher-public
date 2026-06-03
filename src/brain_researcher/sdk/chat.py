@@ -16,7 +16,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,13 +26,13 @@ class ChatResponse:
     """Result of a ``br.chat()`` call."""
 
     message: str
-    patches: List[str]
-    files_touched: List[str]
+    patches: list[str]
+    files_touched: list[str]
     status: str  # "success" | "failed" | "error"
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
-def _extract_notebook_code(patches: List[str]) -> Optional[str]:
+def _extract_notebook_code(patches: list[str]) -> str | None:
     """Extract Python source from the first patch that looks like a complete file."""
     for patch in patches:
         # Strip leading/trailing whitespace and fencing artifacts
@@ -87,13 +87,17 @@ def _coerce_marimo_codegen_result(
     return True
 
 
-def _preferred_credential_name(model_hint: str | None, credential_name: str | None) -> str | None:
+def _preferred_credential_name(
+    model_hint: str | None, credential_name: str | None
+) -> str | None:
     if credential_name:
         return credential_name
     model_name = (model_hint or os.environ.get("DEFAULT_CODING_MODEL") or "").lower()
     if "gemini" in model_name and os.environ.get("GEMINI_API_KEY"):
         return "env_gemini"
-    if ("gpt" in model_name or "openai" in model_name) and os.environ.get("OPENAI_API_KEY"):
+    if ("gpt" in model_name or "openai" in model_name) and os.environ.get(
+        "OPENAI_API_KEY"
+    ):
         return "env_openai"
     return None
 
@@ -101,10 +105,10 @@ def _preferred_credential_name(model_hint: str | None, credential_name: str | No
 def chat(
     message: str,
     *,
-    notebook_path: Optional[str] = None,
+    notebook_path: str | None = None,
     apply: bool = True,
-    model_hint: Optional[str] = None,
-    credential_name: Optional[str] = None,
+    model_hint: str | None = None,
+    credential_name: str | None = None,
 ) -> ChatResponse:
     """Send a natural-language request to the BR coding agent.
 
@@ -124,16 +128,18 @@ def chat(
 
     agent_url = os.environ.get("BR_AGENT_URL")
     if agent_url:
-        return _chat_remote(message, notebook_path, apply, model_hint, credential_name, agent_url)
+        return _chat_remote(
+            message, notebook_path, apply, model_hint, credential_name, agent_url
+        )
     return _chat_local(message, notebook_path, apply, model_hint, credential_name)
 
 
 def _chat_local(
     message: str,
-    notebook_path: Optional[str],
+    notebook_path: str | None,
     apply: bool,
-    model_hint: Optional[str],
-    credential_name: Optional[str],
+    model_hint: str | None,
+    credential_name: str | None,
 ) -> ChatResponse:
     """In-process call to ``CodeOrchestrator``."""
     try:
@@ -150,7 +156,7 @@ def _chat_local(
             metadata={"error": str(exc)},
         )
 
-    ctx: Dict[str, Any] = {
+    ctx: dict[str, Any] = {
         "apply": apply,
         "dry_run": not apply,
         "constraints": {"output_format": "marimo"},
@@ -183,10 +189,10 @@ def _chat_local(
 
 def _chat_remote(
     message: str,
-    notebook_path: Optional[str],
+    notebook_path: str | None,
     apply: bool,
-    model_hint: Optional[str],
-    credential_name: Optional[str],
+    model_hint: str | None,
+    credential_name: str | None,
     agent_url: str,
 ) -> ChatResponse:
     """HTTP call to a remote agent service."""

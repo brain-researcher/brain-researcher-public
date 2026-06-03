@@ -18,6 +18,7 @@ try:  # pragma: no cover - optional dependency
 except Exception:
     pass
 
+
 @cache
 def _resolve_url(env_var: str, default: str) -> str:
     """Return a normalized service URL for the given environment variable."""

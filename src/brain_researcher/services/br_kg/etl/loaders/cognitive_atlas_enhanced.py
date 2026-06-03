@@ -17,7 +17,9 @@ from pathlib import Path
 # Add the parent directory to the Python path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from brain_researcher.services.br_kg.etl.loaders.cogatlas_loader import CognitiveAtlasLoader
+from brain_researcher.services.br_kg.etl.loaders.cogatlas_loader import (
+    CognitiveAtlasLoader,
+)
 from brain_researcher.services.br_kg.etl.loaders.cognitive_atlas_loader import (
     fetch_cognitive_atlas_data,
     process_cognitive_atlas_data,
@@ -66,11 +68,11 @@ def run_enhanced_import(
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Fetch data using the package
-            raw_files = fetch_cognitive_atlas_data(temp_dir, sample_size=2000)
+            fetch_cognitive_atlas_data(temp_dir, sample_size=2000)
 
             # Process the data
             processed_dir = Path(temp_dir) / "processed"
-            processed_files = process_cognitive_atlas_data(temp_dir, str(processed_dir))
+            process_cognitive_atlas_data(temp_dir, str(processed_dir))
 
             # Now load into the database using the comprehensive loader
             # This ensures we get all the relationship processing

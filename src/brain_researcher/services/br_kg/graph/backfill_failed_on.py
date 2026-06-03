@@ -87,7 +87,9 @@ def backfill(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Backfill FAILED_ON aggregates from ExecutionFailure")
+    parser = argparse.ArgumentParser(
+        description="Backfill FAILED_ON aggregates from ExecutionFailure"
+    )
     parser.add_argument("--mode", choices=sorted(__all_modes__), default="replace")
     args = parser.parse_args()
 

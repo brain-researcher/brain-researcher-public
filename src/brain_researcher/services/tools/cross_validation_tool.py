@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,16 +24,20 @@ class CrossValidationArgs(BaseModel):
 
     data_file: str = Field(description="Features array (n_samples x n_features)")
     labels_file: str = Field(description="Labels or targets")
-    output_dir: Optional[str] = Field(default=None, description="Directory for outputs")
-    groups_file: Optional[str] = Field(default=None, description="Optional group labels")
+    output_dir: str | None = Field(default=None, description="Directory for outputs")
+    groups_file: str | None = Field(default=None, description="Optional group labels")
 
     cv_type: str = Field(default="kfold", description="Cross-validation type")
     n_splits: int = Field(default=5, description="Number of folds")
     task_type: str = Field(default="classification", description="Task type")
-    metrics: List[str] = Field(default_factory=lambda: ["accuracy"], description="Metrics to compute")
-    random_state: Optional[int] = Field(default=42, description="Random seed")
+    metrics: list[str] = Field(
+        default_factory=lambda: ["accuracy"], description="Metrics to compute"
+    )
+    random_state: int | None = Field(default=42, description="Random seed")
     save_predictions: bool = Field(default=True, description="Persist fold predictions")
-    save_importance: bool = Field(default=True, description="Persist feature importance")
+    save_importance: bool = Field(
+        default=True, description="Persist feature importance"
+    )
 
 
 class CrossValidationTool(NeuroToolWrapper):
@@ -68,7 +71,7 @@ class CrossValidationTools:
     """Registry helper."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         return [CrossValidationTool()]
 
 

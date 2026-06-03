@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 from brain_researcher.services.mcp import runstore
 
 
@@ -55,9 +56,11 @@ def test_behavior_generate_psyflow_task_delegates_to_agent(monkeypatch, tmp_path
             description="stub",
             backend="python",
             python_class="json:loads",
-            required=["spec", "out_dir", "review"]
-            if tool_id == "behavior.generate_psyflow_task"
-            else [],
+            required=(
+                ["spec", "out_dir", "review"]
+                if tool_id == "behavior.generate_psyflow_task"
+                else []
+            ),
         ),
     )
 

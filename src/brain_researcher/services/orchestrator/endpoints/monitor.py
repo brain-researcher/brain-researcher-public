@@ -32,7 +32,9 @@ async def _resolve_request_user(request: Request):
 
 
 @router.post("")
-async def create_monitor(request: Request, payload: CreateMonitorRequest) -> dict[str, Any]:
+async def create_monitor(
+    request: Request, payload: CreateMonitorRequest
+) -> dict[str, Any]:
     runtime = _runtime_from_request(request)
     user, _ = await _resolve_request_user(request)
     monitor = await runtime.create_monitor(user.id, payload)

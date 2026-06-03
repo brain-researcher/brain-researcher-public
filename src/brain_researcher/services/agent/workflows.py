@@ -4,20 +4,21 @@ These leverage the existing state machine and tool registry.
 """
 
 import logging
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
-from brain_researcher.services.agent.graph import CoreStateMachine, AgentState
-from brain_researcher.services.tools.tool_registry import ToolRegistry
-from brain_researcher.services.tools.spec import spec_from_tool
+from brain_researcher.services.agent.graph import CoreStateMachine
 from brain_researcher.services.agent.monitoring import metrics_collector
+from brain_researcher.services.tools.spec import spec_from_tool
+from brain_researcher.services.tools.tool_registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
 
 class WorkflowType(Enum):
     """Pre-defined workflow types."""
+
     FMRI_STANDARD = "fmri_standard"
     CLINICAL_ASSESSMENT = "clinical_assessment"
     CONNECTIVITY_ANALYSIS = "connectivity_analysis"
@@ -31,12 +32,13 @@ class WorkflowType(Enum):
 @dataclass
 class WorkflowDefinition:
     """Definition of a neuroimaging workflow."""
+
     name: str
     description: str
-    required_tools: List[str]
-    optional_tools: List[str]
-    required_inputs: List[str]
-    expected_outputs: List[str]
+    required_tools: list[str]
+    optional_tools: list[str]
+    required_inputs: list[str]
+    expected_outputs: list[str]
     estimated_duration: str
 
 
@@ -51,7 +53,7 @@ class NeuroimagingWorkflows:
         self.registry = ToolRegistry.from_env(auto_discover=True)
         self.workflows = self._define_workflows()
 
-    def _define_workflows(self) -> Dict[WorkflowType, WorkflowDefinition]:
+    def _define_workflows(self) -> dict[WorkflowType, WorkflowDefinition]:
         """Define standard neuroimaging workflows."""
         return {
             WorkflowType.FMRI_STANDARD: WorkflowDefinition(
@@ -62,137 +64,117 @@ class NeuroimagingWorkflows:
                     "motion_quantification",
                     "glm_analysis",
                     "contrast_analysis",
-                    "multiple_comparison_correction"
+                    "multiple_comparison_correction",
                 ],
                 optional_tools=[
                     "bias_field_correction",
                     "coregistration",
-                    "functional_connectivity"
+                    "functional_connectivity",
                 ],
                 required_inputs=["fmri_file", "t1_file", "design_matrix"],
-                expected_outputs=["statistical_maps", "motion_parameters", "glm_results"],
-                estimated_duration="15-30 minutes"
+                expected_outputs=[
+                    "statistical_maps",
+                    "motion_parameters",
+                    "glm_results",
+                ],
+                estimated_duration="15-30 minutes",
             ),
-
             WorkflowType.CLINICAL_ASSESSMENT: WorkflowDefinition(
                 name="Clinical Neuroimaging Assessment",
                 description="Comprehensive clinical evaluation with automated reporting",
                 required_tools=[
                     "brain_segmentation",
                     "quality_control",
-                    "clinical_decision_support"
+                    "clinical_decision_support",
                 ],
                 optional_tools=[
                     "lesion_detection",
                     "surface_analysis",
-                    "radiomics_extraction"
+                    "radiomics_extraction",
                 ],
                 required_inputs=["t1_file"],
                 expected_outputs=["clinical_report", "segmentation", "volumetrics"],
-                estimated_duration="10-20 minutes"
+                estimated_duration="10-20 minutes",
             ),
-
             WorkflowType.CONNECTIVITY_ANALYSIS: WorkflowDefinition(
                 name="Brain Connectivity Analysis",
                 description="Functional and effective connectivity analysis",
-                required_tools=[
-                    "functional_connectivity",
-                    "graph_network_analysis"
-                ],
+                required_tools=["functional_connectivity", "graph_network_analysis"],
                 optional_tools=[
                     "dynamic_connectivity",
                     "effective_connectivity",
-                    "gnn_connectivity"
+                    "gnn_connectivity",
                 ],
                 required_inputs=["fmri_file", "atlas_file"],
-                expected_outputs=["connectivity_matrix", "graph_metrics", "network_visualization"],
-                estimated_duration="20-40 minutes"
+                expected_outputs=[
+                    "connectivity_matrix",
+                    "graph_metrics",
+                    "network_visualization",
+                ],
+                estimated_duration="20-40 minutes",
             ),
-
             WorkflowType.ML_CLASSIFICATION: WorkflowDefinition(
                 name="Machine Learning Classification",
                 description="MVPA and deep learning classification pipeline",
                 required_tools=[
                     "feature_selection",
                     "mvpa_classification",
-                    "cross_validation"
+                    "cross_validation",
                 ],
                 optional_tools=[
                     "deep_learning_fmri",
                     "permutation_testing",
-                    "searchlight_analysis"
+                    "searchlight_analysis",
                 ],
                 required_inputs=["fmri_file", "labels_file"],
-                expected_outputs=["classification_accuracy", "feature_importance", "cv_results"],
-                estimated_duration="30-60 minutes"
+                expected_outputs=[
+                    "classification_accuracy",
+                    "feature_importance",
+                    "cv_results",
+                ],
+                estimated_duration="30-60 minutes",
             ),
-
             WorkflowType.DIFFUSION_ANALYSIS: WorkflowDefinition(
                 name="Diffusion MRI Analysis",
                 description="DTI/DWI processing and tractography",
-                required_tools=[
-                    "qsiprep_preprocessing",
-                    "diffusion_tractography"
-                ],
-                optional_tools=[
-                    "graph_network_analysis",
-                    "structural_connectivity"
-                ],
+                required_tools=["qsiprep_preprocessing", "diffusion_tractography"],
+                optional_tools=["graph_network_analysis", "structural_connectivity"],
                 required_inputs=["dwi_file", "bvals_file", "bvecs_file"],
                 expected_outputs=["fa_map", "tractography", "structural_connectivity"],
-                estimated_duration="45-90 minutes"
+                estimated_duration="45-90 minutes",
             ),
-
             WorkflowType.MULTIMODAL: WorkflowDefinition(
                 name="Multimodal Integration",
                 description="Integrate multiple imaging modalities",
-                required_tools=[
-                    "coregistration",
-                    "multimodal_integration"
-                ],
-                optional_tools=[
-                    "advanced_brain_plotting",
-                    "interactive_visualization"
-                ],
+                required_tools=["coregistration", "multimodal_integration"],
+                optional_tools=["advanced_brain_plotting", "interactive_visualization"],
                 required_inputs=["t1_file", "fmri_file", "dwi_file"],
                 expected_outputs=["integrated_maps", "cross_modal_features"],
-                estimated_duration="30-45 minutes"
+                estimated_duration="30-45 minutes",
             ),
-
             WorkflowType.QUALITY_CONTROL: WorkflowDefinition(
                 name="Quality Control Pipeline",
                 description="Comprehensive QC and artifact detection",
-                required_tools=[
-                    "quality_control",
-                    "motion_quantification"
-                ],
-                optional_tools=[
-                    "mriqc_individual_report",
-                    "visual_qc_launch"
-                ],
+                required_tools=["quality_control", "motion_quantification"],
+                optional_tools=["mriqc_individual_report", "visual_qc_launch"],
                 required_inputs=["imaging_file"],
                 expected_outputs=["qc_report", "quality_metrics", "artifact_mask"],
-                estimated_duration="5-10 minutes"
+                estimated_duration="5-10 minutes",
             ),
-
             WorkflowType.META_ANALYSIS: WorkflowDefinition(
                 name="Meta-Analysis Pipeline",
                 description="Coordinate-based or image-based meta-analysis",
-                required_tools=[
-                    "meta_analysis",
-                    "literature_search"
-                ],
-                optional_tools=[
-                    "ale_meta_analysis",
-                    "sdm_meta_analysis"
-                ],
+                required_tools=["meta_analysis", "literature_search"],
+                optional_tools=["ale_meta_analysis", "sdm_meta_analysis"],
                 required_inputs=["coordinates_file"],
                 expected_outputs=["meta_map", "cluster_report", "forest_plot"],
-                estimated_duration="15-30 minutes"
-            )
+                estimated_duration="15-30 minutes",
+            ),
         }
 
-    def create_workflow_prompt(self, workflow_type: WorkflowType, inputs: Dict[str, Any]) -> str:
+    def create_workflow_prompt(
+        self, workflow_type: WorkflowType, inputs: dict[str, Any]
+    ) -> str:
         """
         Create a prompt that guides the LangGraph agent through a workflow.
 
@@ -225,7 +207,9 @@ Report any issues or unexpected findings during the analysis.
 """
         return prompt
 
-    def validate_inputs(self, workflow_type: WorkflowType, inputs: Dict[str, Any]) -> tuple[bool, List[str]]:
+    def validate_inputs(
+        self, workflow_type: WorkflowType, inputs: dict[str, Any]
+    ) -> tuple[bool, list[str]]:
         """Validate that required inputs are provided for a workflow."""
         workflow = self.workflows[workflow_type]
         missing = []
@@ -236,7 +220,7 @@ Report any issues or unexpected findings during the analysis.
 
         return len(missing) == 0, missing
 
-    def get_workflow_tools(self, workflow_type: WorkflowType) -> List[str]:
+    def get_workflow_tools(self, workflow_type: WorkflowType) -> list[str]:
         """Get all tools needed for a workflow."""
         workflow = self.workflows[workflow_type]
         resolved = self.get_workflow_candidates(workflow_type)
@@ -246,11 +230,17 @@ Report any issues or unexpected findings during the analysis.
                 return resolved[name][0]
             return name
 
-        return [pick(t) for t in workflow.required_tools] + [pick(t) for t in workflow.optional_tools]
+        return [pick(t) for t in workflow.required_tools] + [
+            pick(t) for t in workflow.optional_tools
+        ]
 
     def suggest_tools_by_metadata(
-        self, domain: str, function: str | None = None, risk: str | None = None, limit: int = 5
-    ) -> List[str]:
+        self,
+        domain: str,
+        function: str | None = None,
+        risk: str | None = None,
+        limit: int = 5,
+    ) -> list[str]:
         """Return top tool ids matching domain/function/risk using a weighted score."""
         specs = []
         for tool in self.registry.get_all_tools():
@@ -271,10 +261,14 @@ Report any issues or unexpected findings during the analysis.
                 s += 1
             return s
 
-        ranked = sorted(((score(s), s.name) for s in specs), key=lambda x: x[0], reverse=True)
+        ranked = sorted(
+            ((score(s), s.name) for s in specs), key=lambda x: x[0], reverse=True
+        )
         return [name for sc, name in ranked if sc > 0][:limit]
 
-    def get_workflow_candidates(self, workflow_type: WorkflowType) -> Dict[str, List[str]]:
+    def get_workflow_candidates(
+        self, workflow_type: WorkflowType
+    ) -> dict[str, list[str]]:
         """Suggest concrete tool ids for each required step based on domain/function tags."""
         workflow = self.workflows[workflow_type]
         # Simple mapping from step name keywords to domain/function
@@ -292,7 +286,7 @@ Report any issues or unexpected findings during the analysis.
             "quality_control": ("fmri.qc", "qc"),
             "visual": ("fmri.viz", "visualization"),
         }
-        suggestions: Dict[str, List[str]] = {}
+        suggestions: dict[str, list[str]] = {}
         for step in workflow.required_tools:
             key = step.lower()
             domain = function = None
@@ -301,14 +295,16 @@ Report any issues or unexpected findings during the analysis.
                     domain, function = d, f
                     break
             if domain:
-                suggestions[step] = self.suggest_tools_by_metadata(domain=domain, function=function, limit=5)
+                suggestions[step] = self.suggest_tools_by_metadata(
+                    domain=domain, function=function, limit=5
+                )
         return suggestions
 
     def estimate_workflow_duration(self, workflow_type: WorkflowType) -> str:
         """Get estimated duration for a workflow."""
         return self.workflows[workflow_type].estimated_duration
 
-    def _format_inputs(self, inputs: Dict[str, Any]) -> str:
+    def _format_inputs(self, inputs: dict[str, Any]) -> str:
         """Format input dictionary for prompt."""
         lines = []
         for key, value in inputs.items():
@@ -318,7 +314,7 @@ Report any issues or unexpected findings during the analysis.
                 lines.append(f"- {key}: {type(value).__name__}")
         return "\n".join(lines)
 
-    def _format_required_tools(self, tools: List[str]) -> str:
+    def _format_required_tools(self, tools: list[str]) -> str:
         """Format required tools for prompt."""
         lines = []
         for i, tool in enumerate(tools, 1):
@@ -340,7 +336,7 @@ Report any issues or unexpected findings during the analysis.
                 lines.append(f"{i}. {tool}")
         return "\n".join(lines)
 
-    def _format_optional_tools(self, tools: List[str]) -> str:
+    def _format_optional_tools(self, tools: list[str]) -> str:
         """Format optional tools for prompt."""
         lines = []
         for tool in tools:
@@ -365,10 +361,10 @@ Report any issues or unexpected findings during the analysis.
     async def execute_workflow(
         self,
         workflow_type: WorkflowType,
-        inputs: Dict[str, Any],
-        thread_id: Optional[str] = None,
-        resume_checkpoint_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        inputs: dict[str, Any],
+        thread_id: str | None = None,
+        resume_checkpoint_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Execute a workflow using the LangGraph state machine.
 
@@ -379,7 +375,7 @@ Report any issues or unexpected findings during the analysis.
         if not valid:
             return {
                 "status": "error",
-                "error": f"Missing required inputs: {', '.join(missing)}"
+                "error": f"Missing required inputs: {', '.join(missing)}",
             }
 
         # Start monitoring
@@ -416,8 +412,8 @@ Report any issues or unexpected findings during the analysis.
                 "metrics": {
                     "duration": workflow_metrics.total_time,
                     "tools_used": workflow_metrics.tools_used,
-                    "state_transitions": workflow_metrics.state_transitions
-                }
+                    "state_transitions": workflow_metrics.state_transitions,
+                },
             }
 
         except Exception as e:
@@ -427,7 +423,7 @@ Report any issues or unexpected findings during the analysis.
             return {
                 "status": "error",
                 "workflow_type": workflow_type.value,
-                "error": str(e)
+                "error": str(e),
             }
 
 
@@ -441,7 +437,7 @@ class WorkflowOrchestrator:
         self.workflows = NeuroimagingWorkflows()
         self.active_sessions = {}
 
-    def list_available_workflows(self) -> List[Dict[str, Any]]:
+    def list_available_workflows(self) -> list[dict[str, Any]]:
         """List all available workflow types with descriptions."""
         return [
             {
@@ -449,12 +445,12 @@ class WorkflowOrchestrator:
                 "name": wf_def.name,
                 "description": wf_def.description,
                 "required_inputs": wf_def.required_inputs,
-                "estimated_duration": wf_def.estimated_duration
+                "estimated_duration": wf_def.estimated_duration,
             }
             for wf_type, wf_def in self.workflows.workflows.items()
         ]
 
-    def get_workflow_requirements(self, workflow_type: str) -> Dict[str, Any]:
+    def get_workflow_requirements(self, workflow_type: str) -> dict[str, Any]:
         """Get detailed requirements for a workflow."""
         try:
             wf_type = WorkflowType(workflow_type)
@@ -467,7 +463,7 @@ class WorkflowOrchestrator:
                 "required_tools": wf_def.required_tools,
                 "optional_tools": wf_def.optional_tools,
                 "expected_outputs": wf_def.expected_outputs,
-                "estimated_duration": wf_def.estimated_duration
+                "estimated_duration": wf_def.estimated_duration,
             }
         except (ValueError, KeyError):
             return {"error": f"Unknown workflow type: {workflow_type}"}
@@ -475,10 +471,10 @@ class WorkflowOrchestrator:
     async def run_workflow(
         self,
         workflow_type: str,
-        inputs: Dict[str, Any],
-        session_id: Optional[str] = None,
-        resume_checkpoint_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        inputs: dict[str, Any],
+        session_id: str | None = None,
+        resume_checkpoint_id: str | None = None,
+    ) -> dict[str, Any]:
         """Run a specific workflow."""
         try:
             wf_type = WorkflowType(workflow_type)
@@ -492,10 +488,10 @@ class WorkflowOrchestrator:
         except ValueError:
             return {
                 "status": "error",
-                "error": f"Unknown workflow type: {workflow_type}"
+                "error": f"Unknown workflow type: {workflow_type}",
             }
 
-    def get_session_status(self, session_id: str) -> Dict[str, Any]:
+    def get_session_status(self, session_id: str) -> dict[str, Any]:
         """Get status of a workflow session."""
         if session_id in self.active_sessions:
             return self.active_sessions[session_id]

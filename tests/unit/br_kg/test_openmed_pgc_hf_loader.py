@@ -15,7 +15,9 @@ from brain_researcher.services.br_kg.spatial.disease_trait_region_materializer i
 )
 
 
-def _request_key(request: httpx.Request) -> tuple[str, str, str, tuple[tuple[str, str], ...]]:
+def _request_key(
+    request: httpx.Request,
+) -> tuple[str, str, str, tuple[tuple[str, str], ...]]:
     return (
         request.url.scheme,
         request.url.host,
@@ -24,7 +26,9 @@ def _request_key(request: httpx.Request) -> tuple[str, str, str, tuple[tuple[str
     )
 
 
-def _mock_transport(response_map: dict[tuple[str, str, str, tuple[tuple[str, str], ...]], object]) -> httpx.MockTransport:
+def _mock_transport(
+    response_map: dict[tuple[str, str, str, tuple[tuple[str, str], ...]], object],
+) -> httpx.MockTransport:
     def handler(request: httpx.Request) -> httpx.Response:
         key = _request_key(request)
         if key not in response_map:
@@ -37,7 +41,9 @@ def _mock_transport(response_map: dict[tuple[str, str, str, tuple[tuple[str, str
     return httpx.MockTransport(handler)
 
 
-def _dataset_api_url(dataset_id: str) -> tuple[str, str, str, tuple[tuple[str, str], ...]]:
+def _dataset_api_url(
+    dataset_id: str,
+) -> tuple[str, str, str, tuple[tuple[str, str], ...]]:
     return ("https", "huggingface.co", f"/api/datasets/{dataset_id}", ())
 
 
@@ -59,7 +65,9 @@ def _splits_url(dataset_id: str) -> tuple[str, str, str, tuple[tuple[str, str], 
     )
 
 
-def _info_url(dataset_id: str, config: str) -> tuple[str, str, str, tuple[tuple[str, str], ...]]:
+def _info_url(
+    dataset_id: str, config: str
+) -> tuple[str, str, str, tuple[tuple[str, str], ...]]:
     return (
         "https",
         "datasets-server.huggingface.co",
@@ -68,7 +76,9 @@ def _info_url(dataset_id: str, config: str) -> tuple[str, str, str, tuple[tuple[
     )
 
 
-def _first_rows_url(dataset_id: str, config: str) -> tuple[str, str, str, tuple[tuple[str, str], ...]]:
+def _first_rows_url(
+    dataset_id: str, config: str
+) -> tuple[str, str, str, tuple[tuple[str, str], ...]]:
     return (
         "https",
         "datasets-server.huggingface.co",
@@ -307,7 +317,8 @@ configs:
     assert len(study_rows) == 3
     assert any(
         row["properties"]["phenotype"] == "Bipolar Disorder & Schizophrenia"
-        and row["properties"]["expanded_traits"] == ["Bipolar Disorder", "Schizophrenia"]
+        and row["properties"]["expanded_traits"]
+        == ["Bipolar Disorder", "Schizophrenia"]
         for row in study_rows
     )
     assert any(row["properties"]["name"] == "Schizophrenia" for row in trait_rows)
@@ -339,8 +350,7 @@ configs:
     study_edges = [
         row
         for row in snapshot.relationship_rows
-        if row["rel_type"] == "STUDIES"
-        and row["start_id"].endswith("bip2024")
+        if row["rel_type"] == "STUDIES" and row["start_id"].endswith("bip2024")
     ]
     assert len(study_edges) == 2
     assert {edge["properties"]["trait_label"] for edge in study_edges} == {
@@ -350,8 +360,7 @@ configs:
     population_edges = [
         row
         for row in snapshot.relationship_rows
-        if row["rel_type"] == "HAS_POPULATION"
-        and row["start_id"].endswith("bip2024")
+        if row["rel_type"] == "HAS_POPULATION" and row["start_id"].endswith("bip2024")
     ]
     assert len(population_edges) == 1
     assert population_edges[0]["properties"]["ancestry_code"] == "EUR"
@@ -359,8 +368,7 @@ configs:
     assert not [
         row
         for row in snapshot.relationship_rows
-        if row["rel_type"] == "HAS_POPULATION"
-        and row["start_id"].endswith("bip2026")
+        if row["rel_type"] == "HAS_POPULATION" and row["start_id"].endswith("bip2026")
     ]
 
     db = FakeGraphDB()
@@ -443,8 +451,16 @@ configs:
             _splits_url(dataset_id): {
                 "splits": [
                     {"dataset": dataset_id, "config": "adhd2022", "split": "train"},
-                    {"dataset": dataset_id, "config": "scz2013sweden", "split": "train"},
-                    {"dataset": dataset_id, "config": "mdd2023diverse", "split": "train"},
+                    {
+                        "dataset": dataset_id,
+                        "config": "scz2013sweden",
+                        "split": "train",
+                    },
+                    {
+                        "dataset": dataset_id,
+                        "config": "mdd2023diverse",
+                        "split": "train",
+                    },
                 ]
             },
             _info_url(dataset_id, "adhd2022"): {
@@ -460,13 +476,17 @@ configs:
                 "partial": False,
             },
             _first_rows_url(dataset_id, "adhd2022"): {
-                "rows": [{"row": {"_source_file": "ADHD2022_iPSYCH_deCODE_PGC.meta.gz"}}]
+                "rows": [
+                    {"row": {"_source_file": "ADHD2022_iPSYCH_deCODE_PGC.meta.gz"}}
+                ]
             },
             _first_rows_url(dataset_id, "scz2013sweden"): {
                 "rows": [{"row": {"_source_file": "scz.swe.pgc1.results.v3.txt.gz"}}]
             },
             _first_rows_url(dataset_id, "mdd2023diverse"): {
-                "rows": [{"row": {"_source_file": "mdd2023diverse_SAS_wto_UKB_Neff.csv"}}]
+                "rows": [
+                    {"row": {"_source_file": "mdd2023diverse_SAS_wto_UKB_Neff.csv"}}
+                ]
             },
         }
     )
@@ -527,7 +547,13 @@ configs:
                 "partial": False,
             },
             _first_rows_url(dataset_id, "ptsd2018"): {
-                "rows": [{"row": {"_source_file": "SORTED_PTSD_AA7_ALL_study_specific_PCs1.txt"}}]
+                "rows": [
+                    {
+                        "row": {
+                            "_source_file": "SORTED_PTSD_AA7_ALL_study_specific_PCs1.txt"
+                        }
+                    }
+                ]
             },
         }
     )
@@ -548,7 +574,9 @@ configs:
     assert "population:afr" not in population_rows
 
 
-def test_population_normalization_prefers_specific_east_asian_over_broad_asian() -> None:
+def test_population_normalization_prefers_specific_east_asian_over_broad_asian() -> (
+    None
+):
     dataset_id = "OpenMed/pgc-schizophrenia"
     readme = """---
 license: cc-by-4.0

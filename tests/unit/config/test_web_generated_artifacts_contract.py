@@ -3,7 +3,6 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[3]
 FORBIDDEN_TRACKED_WEB_PATTERNS = (
     "apps/web-ui/.vercel/",
@@ -22,9 +21,7 @@ FORBIDDEN_TRACKED_WEB_BASENAMES = {
     "playwright-pipeline-dev.png",
     "playwright-pipeline.png",
 }
-FORBIDDEN_TRACKED_WEB_PREFIXES = (
-    "client_secret_",
-)
+FORBIDDEN_TRACKED_WEB_PREFIXES = ("client_secret_",)
 
 
 def test_tracked_web_test_results_artifact_is_absent() -> None:
@@ -48,15 +45,19 @@ def test_web_generated_artifacts_and_local_secrets_are_not_tracked() -> None:
         relpath
         for relpath in tracked
         if relpath in FORBIDDEN_TRACKED_WEB_PATHS
-        or any(relpath.startswith(pattern) for pattern in FORBIDDEN_TRACKED_WEB_PATTERNS)
+        or any(
+            relpath.startswith(pattern) for pattern in FORBIDDEN_TRACKED_WEB_PATTERNS
+        )
         or Path(relpath).name in FORBIDDEN_TRACKED_WEB_BASENAMES
-        or any(Path(relpath).name.startswith(prefix) for prefix in FORBIDDEN_TRACKED_WEB_PREFIXES)
+        or any(
+            Path(relpath).name.startswith(prefix)
+            for prefix in FORBIDDEN_TRACKED_WEB_PREFIXES
+        )
     ]
     assert not offenders, (
         "Generated web artifacts and local-secret files must not be tracked: "
         f"{offenders}"
     )
-
 
 
 def test_legacy_web_build_adapter_index_is_absent() -> None:

@@ -8,7 +8,6 @@ Resolution strategy:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,20 +19,18 @@ class ResolveBIDSArgs(BaseModel):
 
     bids_root: str = Field(description="BIDS dataset root directory")
     subject_id: str = Field(description="Subject identifier (without 'sub-' prefix)")
-    session_id: Optional[str] = Field(
+    session_id: str | None = Field(
         default=None, description="Session identifier (without 'ses-' prefix)"
     )
-    datatype: str = Field(
-        description="BIDS datatype (anat, func, dwi, ieeg, eeg, meg)"
-    )
+    datatype: str = Field(description="BIDS datatype (anat, func, dwi, ieeg, eeg, meg)")
     suffix: str = Field(description="BIDS suffix (T1w, bold, dwi, eeg, etc.)")
-    task_id: Optional[str] = Field(
+    task_id: str | None = Field(
         default=None, description="Task identifier (without 'task-' prefix)"
     )
-    space: Optional[str] = Field(
+    space: str | None = Field(
         default=None, description="Spatial reference (for derivatives)"
     )
-    desc: Optional[str] = Field(default=None, description="Description label")
+    desc: str | None = Field(default=None, description="Description label")
 
 
 class ResolveBIDSTool(NeuroToolWrapper):
@@ -43,13 +40,15 @@ class ResolveBIDSTool(NeuroToolWrapper):
         return "resolve_bids"
 
     def get_tool_description(self) -> str:
-        return "Query BIDS dataset to resolve file paths for a given subject and datatype."
+        return (
+            "Query BIDS dataset to resolve file paths for a given subject and datatype."
+        )
 
     def get_args_schema(self):
         return ResolveBIDSArgs
 
     @staticmethod
-    def _normalize_entity(value: Optional[str], prefix: str) -> str:
+    def _normalize_entity(value: str | None, prefix: str) -> str:
         label = str(value).strip() if value else ""
         prefix_label = f"{prefix}-"
         if label.startswith(prefix_label):

@@ -3,16 +3,16 @@
 This module provides FitLins tools conforming to the NeuroTool interface.
 It delegates to the existing agent tool implementation to avoid duplication.
 """
+
 from typing import Any
 
 from pydantic import BaseModel
 
-from brain_researcher.services.tools.base import NeuroTool, ExecutionMode
-from brain_researcher.services.tools.result import ToolResult
+from brain_researcher.services.tools.base import ExecutionMode, NeuroTool
 from brain_researcher.services.tools.fitlins_tool import (
     FitLinsTool,
-    FitLinsArgs,
 )
+from brain_researcher.services.tools.result import ToolResult
 
 
 class FitLinsPipeline(NeuroTool):

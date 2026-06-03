@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
 
+import nibabel as nib
 import numpy as np
 import pandas as pd
-import nibabel as nib
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.stats.multitest import multipletests
@@ -25,30 +25,30 @@ class StatsmodelsGLMParameters:
     data_file: str
     design_matrix: str
     output_dir: str
-    dependent_var: Optional[str] = None
-    mask_file: Optional[str] = None
-    formula: Optional[str] = None
+    dependent_var: str | None = None
+    mask_file: str | None = None
+    formula: str | None = None
     family: str = "gaussian"
-    link_function: Optional[str] = None
-    contrasts: Optional[Dict[str, Sequence[float]]] = None
-    contrast_names: Optional[Sequence[str]] = None
+    link_function: str | None = None
+    contrasts: dict[str, Sequence[float]] | None = None
+    contrast_names: Sequence[str] | None = None
     alpha: float = 0.05
     correction_method: str = "fdr"
     fit_intercept: bool = True
     standardize: bool = False
     robust_covariance: bool = False
-    regularization: Optional[str] = None
-    regularization_strength: Optional[float] = None
+    regularization: str | None = None
+    regularization_strength: float | None = None
     save_residuals: bool = True
     save_fitted: bool = True
     save_stats_maps: bool = True
     voxel_wise: bool = False
-    smoothing_fwhm: Optional[float] = None
+    smoothing_fwhm: float | None = None
     compute_diagnostics: bool = True
     plot_diagnostics: bool = True
 
 
-def statsmodels_glm_from_payload(payload: Dict[str, any]) -> StatsmodelsGLMParameters:
+def statsmodels_glm_from_payload(payload: dict[str, any]) -> StatsmodelsGLMParameters:
     return StatsmodelsGLMParameters(
         data_file=str(payload["data_file"]),
         design_matrix=str(payload["design_matrix"]),
@@ -75,6 +75,7 @@ def statsmodels_glm_from_payload(payload: Dict[str, any]) -> StatsmodelsGLMParam
         compute_diagnostics=bool(payload.get("compute_diagnostics", True)),
         plot_diagnostics=bool(payload.get("plot_diagnostics", True)),
     )
+
 
 def _is_nifti(path: Path) -> bool:
     suffixes = [s.lower() for s in path.suffixes]
@@ -107,7 +108,7 @@ def _numeric_df(df: pd.DataFrame) -> pd.DataFrame:
     return numeric
 
 
-def _resolve_family(name: str, link_name: Optional[str]) -> sm.families.Family:
+def _resolve_family(name: str, link_name: str | None) -> sm.families.Family:
     name = name.lower()
     family_map = {
         "gaussian": sm.families.Gaussian,
@@ -145,9 +146,15 @@ def _standardize_design(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _default_contrasts(columns: List[str], contrast_names: Optional[Sequence[str]]) -> Dict[str, np.ndarray]:
-    names = list(contrast_names) if contrast_names else [c for c in columns if c.lower() not in {"const", "intercept"}]
-    contrasts: Dict[str, np.ndarray] = {}
+def _default_contrasts(
+    columns: list[str], contrast_names: Sequence[str] | None
+) -> dict[str, np.ndarray]:
+    names = (
+        list(contrast_names)
+        if contrast_names
+        else [c for c in columns if c.lower() not in {"const", "intercept"}]
+    )
+    contrasts: dict[str, np.ndarray] = {}
     for name in names:
         if name not in columns:
             continue
@@ -157,7 +164,7 @@ def _default_contrasts(columns: List[str], contrast_names: Optional[Sequence[str
     return contrasts
 
 
-def _apply_correction(pvals: np.ndarray, method: str) -> Tuple[np.ndarray, np.ndarray]:
+def _apply_correction(pvals: np.ndarray, method: str) -> tuple[np.ndarray, np.ndarray]:
     method = method.lower()
     method_map = {
         "fdr": "fdr_bh",
@@ -179,7 +186,7 @@ def _t_to_z(tvals: np.ndarray, df: float) -> np.ndarray:
     return zvals
 
 
-def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> Dict[str, any]:
+def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> dict[str, any]:
     data_path = Path(params.data_file)
     design_path = Path(params.design_matrix)
     if params.mask_file:
@@ -191,7 +198,7 @@ def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> Dict[str, any]:
     is_nifti = _is_nifti(data_path)
     voxel_wise = params.voxel_wise or is_nifti
 
-    outputs: Dict[str, Optional[str] | List[str]] = {
+    outputs: dict[str, str | None | list[str]] = {
         "summary": str(output_dir / "glm_summary.json"),
         "residuals": None,
         "fitted": None,
@@ -232,14 +239,18 @@ def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> Dict[str, any]:
         fitted = x @ betas
         resid = y - fitted
         df_resid = max(n_time - x.shape[1], 1)
-        sigma2 = (resid ** 2).sum(axis=0) / df_resid
+        sigma2 = (resid**2).sum(axis=0) / df_resid
 
-        contrast_defs = params.contrasts or _default_contrasts(list(design_df.columns), params.contrast_names)
-        stat_maps: List[str] = []
+        contrast_defs = params.contrasts or _default_contrasts(
+            list(design_df.columns), params.contrast_names
+        )
+        stat_maps: list[str] = []
         for name, contrast in contrast_defs.items():
             c = np.asarray(contrast, dtype=float)
             if c.ndim != 1 or c.size != x.shape[1]:
-                raise ValueError(f"Contrast {name} has wrong length (expected {x.shape[1]})")
+                raise ValueError(
+                    f"Contrast {name} has wrong length (expected {x.shape[1]})"
+                )
             denom = np.sqrt(np.maximum(sigma2 * (c @ xtx_inv @ c), 1e-12))
             tvals = (c @ betas) / denom
             zvals = _t_to_z(tvals, df_resid)
@@ -337,7 +348,9 @@ def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> Dict[str, any]:
             np.save(fitted_path, fitted)
             outputs["fitted"] = str(fitted_path)
 
-        contrast_defs = params.contrasts or _default_contrasts(list(exog.columns), params.contrast_names)
+        contrast_defs = params.contrasts or _default_contrasts(
+            list(exog.columns), params.contrast_names
+        )
         contrast_results = []
         for name, contrast in contrast_defs.items():
             try:
@@ -365,7 +378,10 @@ def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> Dict[str, any]:
             params_dict = {k: float(v) for k, v in params_values.to_dict().items()}
         else:
             params_dict = {
-                col: float(val) for col, val in zip(exog.columns, np.asarray(params_values))
+                col: float(val)
+                for col, val in zip(
+                    exog.columns, np.asarray(params_values), strict=False
+                )
             }
         if pvalues_values is None:
             pvalues_dict = {}
@@ -373,7 +389,10 @@ def run_statsmodels_glm(params: StatsmodelsGLMParameters) -> Dict[str, any]:
             pvalues_dict = {k: float(v) for k, v in pvalues_values.to_dict().items()}
         else:
             pvalues_dict = {
-                col: float(val) for col, val in zip(exog.columns, np.asarray(pvalues_values))
+                col: float(val)
+                for col, val in zip(
+                    exog.columns, np.asarray(pvalues_values), strict=False
+                )
             }
 
         summary = {

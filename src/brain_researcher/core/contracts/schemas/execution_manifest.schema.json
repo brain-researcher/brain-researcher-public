@@ -1,0 +1,290 @@
+{
+  "$defs": {
+    "ExecutionEntrypointsV1": {
+      "properties": {
+        "docker_compose": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Docker Compose"
+        },
+        "environment_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Environment File"
+        },
+        "python_script": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Python Script"
+        },
+        "shell_script": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shell Script"
+        }
+      },
+      "title": "ExecutionEntrypointsV1",
+      "type": "object"
+    },
+    "ExecutionIORefV1": {
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "kind": {
+          "default": "file",
+          "enum": [
+            "file",
+            "directory",
+            "uri",
+            "value"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ExecutionIORefV1",
+      "type": "object"
+    },
+    "ExecutionModeV1": {
+      "enum": [
+        "python_script",
+        "shell_script",
+        "docker_compose",
+        "neurodesk",
+        "mixed",
+        "unknown"
+      ],
+      "title": "ExecutionModeV1",
+      "type": "string"
+    },
+    "ExecutionReproV1": {
+      "properties": {
+        "command": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Command"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "working_directory": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": ".",
+          "title": "Working Directory"
+        }
+      },
+      "title": "ExecutionReproV1",
+      "type": "object"
+    },
+    "ExecutionRuntimeV1": {
+      "properties": {
+        "docker_supported": {
+          "default": false,
+          "title": "Docker Supported",
+          "type": "boolean"
+        },
+        "neurodesk_supported": {
+          "default": false,
+          "title": "Neurodesk Supported",
+          "type": "boolean"
+        },
+        "python_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Python Version"
+        }
+      },
+      "title": "ExecutionRuntimeV1",
+      "type": "object"
+    },
+    "NeurodeskExecutionV1": {
+      "properties": {
+        "command_template": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Command Template"
+        },
+        "container_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Container Paths",
+          "type": "array"
+        },
+        "modules": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Modules",
+          "type": "array"
+        }
+      },
+      "title": "NeurodeskExecutionV1",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "entrypoints": {
+      "$ref": "#/$defs/ExecutionEntrypointsV1"
+    },
+    "execution_mode": {
+      "$ref": "#/$defs/ExecutionModeV1",
+      "default": "unknown"
+    },
+    "inputs": {
+      "items": {
+        "$ref": "#/$defs/ExecutionIORefV1"
+      },
+      "title": "Inputs",
+      "type": "array"
+    },
+    "neurodesk": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/NeurodeskExecutionV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "outputs": {
+      "items": {
+        "$ref": "#/$defs/ExecutionIORefV1"
+      },
+      "title": "Outputs",
+      "type": "array"
+    },
+    "parameters": {
+      "additionalProperties": true,
+      "title": "Parameters",
+      "type": "object"
+    },
+    "repro": {
+      "$ref": "#/$defs/ExecutionReproV1"
+    },
+    "runtime": {
+      "$ref": "#/$defs/ExecutionRuntimeV1"
+    },
+    "schema_version": {
+      "const": "execution-manifest-v1",
+      "default": "execution-manifest-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Summary"
+    }
+  },
+  "title": "ExecutionManifestV1",
+  "type": "object"
+}

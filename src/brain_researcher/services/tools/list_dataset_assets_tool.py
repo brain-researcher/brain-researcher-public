@@ -182,9 +182,11 @@ def _normalize_legacy_filter_aliases(kwargs: dict[str, Any]) -> dict[str, Any]:
     derivative_type = normalized.pop("derivative_type", None)
     derivative_kind = normalized.get("derivative_kind")
     if derivative_type not in (None, ""):
-        if derivative_kind not in (None, "") and str(derivative_kind).strip().lower() != str(
-            derivative_type
-        ).strip().lower():
+        if (
+            derivative_kind not in (None, "")
+            and str(derivative_kind).strip().lower()
+            != str(derivative_type).strip().lower()
+        ):
             raise ValueError(
                 "Conflicting derivative_kind and derivative_type values were provided."
             )
@@ -195,10 +197,11 @@ def _normalize_legacy_filter_aliases(kwargs: dict[str, Any]) -> dict[str, Any]:
     subject_id = normalized.get("subject_id")
     if subject not in (None, ""):
         alias_subject = _normalize_subject_id(subject)
-        if subject_id not in (None, "") and _normalize_subject_id(subject_id) != alias_subject:
-            raise ValueError(
-                "Conflicting subject_id and subject values were provided."
-            )
+        if (
+            subject_id not in (None, "")
+            and _normalize_subject_id(subject_id) != alias_subject
+        ):
+            raise ValueError("Conflicting subject_id and subject values were provided.")
         if subject_id in (None, ""):
             normalized["subject_id"] = alias_subject
 
@@ -206,10 +209,11 @@ def _normalize_legacy_filter_aliases(kwargs: dict[str, Any]) -> dict[str, Any]:
     session_id = normalized.get("session_id")
     if session not in (None, ""):
         alias_session = _normalize_session_id(session)
-        if session_id not in (None, "") and _normalize_session_id(session_id) != alias_session:
-            raise ValueError(
-                "Conflicting session_id and session values were provided."
-            )
+        if (
+            session_id not in (None, "")
+            and _normalize_session_id(session_id) != alias_session
+        ):
+            raise ValueError("Conflicting session_id and session values were provided.")
         if session_id in (None, ""):
             normalized["session_id"] = alias_session
 
@@ -260,7 +264,9 @@ def _matches_query(asset: dict[str, Any], query: str | None) -> bool:
     elif isinstance(manifest_fields, list | tuple):
         fields.extend(manifest_fields)
     fields.extend(metadata.values())
-    return any(token in str(value).lower() for value in fields if value not in (None, ""))
+    return any(
+        token in str(value).lower() for value in fields if value not in (None, "")
+    )
 
 
 def _common_summary(

@@ -3,9 +3,9 @@
 Test cases for the enhanced /chat endpoint with tool context awareness.
 """
 
-import json
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 from brain_researcher.services.agent import tool_context, web_service
 from brain_researcher.services.agent.router import LLMChatResult, LLMRouteMetadata
@@ -37,7 +37,7 @@ class TestToolContextHelpers:
         keywords = _extract_keywords(
             "FSL BET Tool",
             "Brain extraction tool for fMRI preprocessing",
-            "preprocessing"
+            "preprocessing",
         )
 
         expected_keywords = {"fsl", "tool", "fmri", "preprocessing"}
@@ -46,12 +46,29 @@ class TestToolContextHelpers:
     def test_build_context_for_general_query(self):
         """Test context building for general tool queries."""
         mock_tools = [
-            {"name": "FSL BET", "description": "Brain extraction", "category": "preprocessing", "keywords": ["fsl", "preprocessing"]},
-            {"name": "Nilearn GLM", "description": "Statistical analysis", "category": "analysis", "keywords": ["nilearn", "glm"]},
-            {"name": "FreeSurfer", "description": "Surface reconstruction", "category": "structural", "keywords": ["freesurfer", "structural"]},
+            {
+                "name": "FSL BET",
+                "description": "Brain extraction",
+                "category": "preprocessing",
+                "keywords": ["fsl", "preprocessing"],
+            },
+            {
+                "name": "Nilearn GLM",
+                "description": "Statistical analysis",
+                "category": "analysis",
+                "keywords": ["nilearn", "glm"],
+            },
+            {
+                "name": "FreeSurfer",
+                "description": "Surface reconstruction",
+                "category": "structural",
+                "keywords": ["freesurfer", "structural"],
+            },
         ]
 
-        context = _build_context_for_query("what tools are available?", mock_tools, max_tools=10)
+        context = _build_context_for_query(
+            "what tools are available?", mock_tools, max_tools=10
+        )
 
         assert "3 specialized tools" in context
         assert "Tool Categories:" in context
@@ -60,11 +77,23 @@ class TestToolContextHelpers:
     def test_build_context_for_specific_query(self):
         """Test context building for specific tool queries."""
         mock_tools = [
-            {"name": "FSL BET", "description": "Brain extraction tool", "category": "preprocessing", "keywords": ["fsl", "preprocessing", "brain"]},
-            {"name": "Nilearn GLM", "description": "GLM analysis", "category": "analysis", "keywords": ["nilearn", "glm", "statistical"]},
+            {
+                "name": "FSL BET",
+                "description": "Brain extraction tool",
+                "category": "preprocessing",
+                "keywords": ["fsl", "preprocessing", "brain"],
+            },
+            {
+                "name": "Nilearn GLM",
+                "description": "GLM analysis",
+                "category": "analysis",
+                "keywords": ["nilearn", "glm", "statistical"],
+            },
         ]
 
-        context = _build_context_for_query("I need brain extraction", mock_tools, max_tools=10)
+        context = _build_context_for_query(
+            "I need brain extraction", mock_tools, max_tools=10
+        )
 
         assert "neuroimaging tools available" in context
         assert "FSL BET" in context
@@ -76,7 +105,9 @@ class TestToolContextHelpers:
         # Mock agent and tools
         mock_tool = Mock()
         mock_tool.get_tool_name.return_value = "FSL BET"
-        mock_tool.get_tool_description.return_value = "Brain extraction tool for fMRI preprocessing"
+        mock_tool.get_tool_description.return_value = (
+            "Brain extraction tool for fMRI preprocessing"
+        )
         mock_tool.CATEGORY = "preprocessing"
 
         mock_agent = Mock()
@@ -108,16 +139,20 @@ class TestChatEndpoint:
     @pytest.fixture
     def client(self):
         """Create test client."""
-        app.config['TESTING'] = True
+        app.config["TESTING"] = True
         with app.test_client() as client:
             yield client
 
     @patch("brain_researcher.services.agent.web_service._get_relevant_tool_context")
     @patch("brain_researcher.services.agent.web_service._LLM_ROUTER.route_chat")
-    def test_chat_with_tool_context_enabled(self, mock_route_chat, mock_get_context, client):
+    def test_chat_with_tool_context_enabled(
+        self, mock_route_chat, mock_get_context, client
+    ):
         """Test chat endpoint with tool context enabled."""
         # Mock context retrieval
-        mock_get_context.return_value = "I have 160 neuroimaging tools including FSL BET for brain extraction."
+        mock_get_context.return_value = (
+            "I have 160 neuroimaging tools including FSL BET for brain extraction."
+        )
 
         # Mock router response
         mock_route_chat.return_value = _mock_router_result(
@@ -125,8 +160,9 @@ class TestChatEndpoint:
         )
 
         # Test request
-        response = client.post('/chat',
-                             json={"message": "what tools are available?", "tool_context": True})
+        response = client.post(
+            "/chat", json={"message": "what tools are available?", "tool_context": True}
+        )
 
         assert response.status_code == 200
         data = response.get_json()
@@ -148,7 +184,9 @@ class TestChatEndpoint:
 
     @patch("brain_researcher.services.agent.web_service._get_relevant_tool_context")
     @patch("brain_researcher.services.agent.web_service._LLM_ROUTER.route_chat")
-    def test_chat_with_tool_context_disabled(self, mock_route_chat, mock_get_context, client):
+    def test_chat_with_tool_context_disabled(
+        self, mock_route_chat, mock_get_context, client
+    ):
         """Test chat endpoint with tool context disabled."""
         # Mock router response
         mock_route_chat.return_value = _mock_router_result(
@@ -156,8 +194,10 @@ class TestChatEndpoint:
         )
 
         # Test request with tool context disabled
-        response = client.post('/chat',
-                             json={"message": "what tools are available?", "tool_context": False})
+        response = client.post(
+            "/chat",
+            json={"message": "what tools are available?", "tool_context": False},
+        )
 
         assert response.status_code == 200
         data = response.get_json()
@@ -185,8 +225,7 @@ class TestChatEndpoint:
         mock_route_chat.return_value = _mock_router_result("How can I help you?")
 
         # Test request
-        response = client.post('/chat',
-                             json={"message": "what tools are available?"})
+        response = client.post("/chat", json={"message": "what tools are available?"})
 
         assert response.status_code == 200
         data = response.get_json()
@@ -197,7 +236,7 @@ class TestChatEndpoint:
 
     def test_chat_missing_message(self, client):
         """Test chat endpoint with missing message parameter."""
-        response = client.post('/chat', json={})
+        response = client.post("/chat", json={})
 
         assert response.status_code == 400
         data = response.get_json()
@@ -210,7 +249,7 @@ class TestIntegrationScenarios:
     @pytest.fixture
     def client(self):
         """Create test client."""
-        app.config['TESTING'] = True
+        app.config["TESTING"] = True
         with app.test_client() as client:
             yield client
 
@@ -220,11 +259,19 @@ class TestIntegrationScenarios:
         """Test the specific issue: 'list available tools' query."""
         # Mock tools
         mock_tools = []
-        tool_names = ["FSL BET", "Nilearn GLM", "FreeSurfer Recon", "ANTs Registration", "fMRIPrep"]
+        tool_names = [
+            "FSL BET",
+            "Nilearn GLM",
+            "FreeSurfer Recon",
+            "ANTs Registration",
+            "fMRIPrep",
+        ]
         for name in tool_names:
             mock_tool = Mock()
             mock_tool.get_tool_name.return_value = name
-            mock_tool.get_tool_description.return_value = f"{name} for neuroimaging analysis"
+            mock_tool.get_tool_description.return_value = (
+                f"{name} for neuroimaging analysis"
+            )
             mock_tool.CATEGORY = "analysis"
             mock_tools.append(mock_tool)
 
@@ -238,7 +285,7 @@ class TestIntegrationScenarios:
         )
 
         # Test the problematic query
-        response = client.post('/chat', json={"message": "list available tools"})
+        response = client.post("/chat", json={"message": "list available tools"})
 
         assert response.status_code == 200
         data = response.get_json()
@@ -276,6 +323,7 @@ class TestAgentMetricsEndpoint:
 
     def test_metrics_endpoint_success(self, monkeypatch):
         monkeypatch.setattr(web_service, "_AGENT_METRICS_ENABLED", True)
+
         class DummyCollector:
             def export_prometheus(self):
                 return "dummy_metric 1\n"

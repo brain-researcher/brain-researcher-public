@@ -26,9 +26,10 @@ import sys
 import time
 import uuid
 from collections import defaultdict
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -39,7 +40,6 @@ from brain_researcher.core.ingestion.graph_factory import (
     GraphDatabaseProtocol,
     GraphFactory,
 )
-from brain_researcher.services.br_kg.graph.graph_factory import create_graph_client
 from brain_researcher.core.ingestion.loaders.allen_brain_unified import (
     AllenBrainUnifiedLoader,
 )
@@ -135,6 +135,7 @@ from brain_researcher.services.br_kg.etl.loaders.nidm_results_loader import (
 from brain_researcher.services.br_kg.etl.loaders.scholarly_metadata_loader import (
     ScholarlyMetadataLoader,
 )
+from brain_researcher.services.br_kg.graph.graph_factory import create_graph_client
 from brain_researcher.services.br_kg.spatial.neuromaps_assets import (
     preferred_neuromaps_root,
 )
@@ -234,7 +235,7 @@ class MasterDataLoader:
         return self.SOURCE_DEFAULT_MODES.get(source, "spine")
 
     @staticmethod
-    def _filter_fields(data: Dict[str, Any], allowed: Iterable[str]) -> Dict[str, Any]:
+    def _filter_fields(data: dict[str, Any], allowed: Iterable[str]) -> dict[str, Any]:
         return {
             key: value
             for key, value in data.items()
@@ -242,11 +243,11 @@ class MasterDataLoader:
         }
 
     @staticmethod
-    def _collect_dois(record: Dict[str, Any]) -> Set[str]:
+    def _collect_dois(record: dict[str, Any]) -> set[str]:
         """Extract DOI strings from a publication-like record."""
         return collect_dois_from_record(record)
 
-    def _get_taxonomy_linker(self) -> Optional[TaxonomyLinker]:
+    def _get_taxonomy_linker(self) -> TaxonomyLinker | None:
         linker = getattr(self, "_taxonomy_linker", None)
         if linker is False:
             return None
@@ -260,11 +261,11 @@ class MasterDataLoader:
                 return None
         return linker
 
-    def _compute_config_hash(self, config: Dict[str, Any]) -> str:
+    def _compute_config_hash(self, config: dict[str, Any]) -> str:
         payload = json.dumps(config, sort_keys=True, default=str)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
-    def _resolve_git_sha(self) -> Optional[str]:
+    def _resolve_git_sha(self) -> str | None:
         try:
             result = subprocess.run(
                 ["git", "rev-parse", "HEAD"],
@@ -277,7 +278,7 @@ class MasterDataLoader:
         except Exception:
             return None
 
-    def _get_latest_map_index(self, map_index_dir: Path) -> Optional[Path]:
+    def _get_latest_map_index(self, map_index_dir: Path) -> Path | None:
         try:
             if not map_index_dir.exists():
                 return None
@@ -292,8 +293,8 @@ class MasterDataLoader:
     def _record_ingestion_run(
         self,
         *,
-        results: Dict[str, Any],
-        config: Dict[str, Any],
+        results: dict[str, Any],
+        config: dict[str, Any],
         sources: Iterable[str],
     ) -> None:
         if not self.db or not hasattr(self.db, "create_node"):
@@ -331,8 +332,8 @@ class MasterDataLoader:
             logger.warning("Failed to record ingestion run metadata: %s", exc)
 
     def _register_on_demand_source(
-        self, source: str, cfg: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+        self, source: str, cfg: dict[str, Any]
+    ) -> dict[str, Any] | None:
         ttl = cfg.get("cache_ttl_sec")
 
         if source == "scholarly_metadata":
@@ -448,7 +449,7 @@ class MasterDataLoader:
         return cleaned or "unknown"
 
     @staticmethod
-    def _split_aliases(value: str | None) -> List[str]:
+    def _split_aliases(value: str | None) -> list[str]:
         if not value:
             return []
         text = str(value)
@@ -458,27 +459,27 @@ class MasterDataLoader:
 
     @staticmethod
     def _serialize_for_json(value: Any) -> Any:
-        if value is None or isinstance(value, (str, int, float, bool)):
+        if value is None or isinstance(value, str | int | float | bool):
             return value
         if isinstance(value, dict):
             return {
                 str(key): MasterDataLoader._serialize_for_json(val)
                 for key, val in value.items()
             }
-        if isinstance(value, (list, tuple, set)):
+        if isinstance(value, list | tuple | set):
             return [MasterDataLoader._serialize_for_json(item) for item in value]
         return str(value)
 
     @staticmethod
     def _is_primitive(value: Any) -> bool:
-        return value is None or isinstance(value, (str, int, float, bool))
+        return value is None or isinstance(value, str | int | float | bool)
 
     @classmethod
     def _flatten_value(cls, value: Any) -> Any:
         if cls._is_primitive(value):
             return value
-        if isinstance(value, (list, tuple, set)):
-            flattened: List[Any] = []
+        if isinstance(value, list | tuple | set):
+            flattened: list[Any] = []
             for item in value:
                 if cls._is_primitive(item):
                     flattened.append(item)
@@ -500,14 +501,14 @@ class MasterDataLoader:
         return str(value)
 
     @classmethod
-    def _flatten_properties(cls, properties: Dict[str, Any]) -> Dict[str, Any]:
+    def _flatten_properties(cls, properties: dict[str, Any]) -> dict[str, Any]:
         return {key: cls._flatten_value(value) for key, value in properties.items()}
 
     def _ensure_scholarly_metadata(
         self,
         dois: Iterable[str],
-        config: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+        config: dict[str, Any],
+    ) -> dict[str, Any] | None:
         dois_normalized = {
             (doi or "").strip().lower().replace("https://doi.org/", "")
             for doi in dois
@@ -517,7 +518,7 @@ class MasterDataLoader:
         if not dois_normalized:
             return None
 
-        missing: List[str] = []
+        missing: list[str] = []
         for doi in dois_normalized:
             matches = self.db.find_nodes("Publication", {"doi": doi})
             if not matches:
@@ -549,10 +550,10 @@ class MasterDataLoader:
 
     def _create_relationship_safe(
         self,
-        start: Optional[str],
-        end: Optional[str],
-        rel_type: Optional[str],
-        properties: Optional[Dict[str, Any]] = None,
+        start: str | None,
+        end: str | None,
+        rel_type: str | None,
+        properties: dict[str, Any] | None = None,
     ) -> bool:
         """Create relationship if it does not already exist."""
         if not start or not end or not rel_type:
@@ -575,7 +576,7 @@ class MasterDataLoader:
             )
             return False
 
-    def _link_neurostore_metadata(self, link_tasks: bool = True) -> Dict[str, int]:
+    def _link_neurostore_metadata(self, link_tasks: bool = True) -> dict[str, int]:
         """Link Neurostore tasks to Cognitive Atlas concepts, domains, and tasks."""
         concept_links = 0
         domain_links = 0
@@ -589,7 +590,7 @@ class MasterDataLoader:
         if not neurostore_tasks:
             return {"concept_links": 0, "domain_links": 0, "mapsto_links": 0}
 
-        concept_name_to_id: Dict[str, str] = {}
+        concept_name_to_id: dict[str, str] = {}
         for concept_id, data in self.db.find_nodes("Concept", {}):
             name = (data.get("name") or "").strip()
             if name:
@@ -603,7 +604,7 @@ class MasterDataLoader:
                 if alias:
                     concept_name_to_id.setdefault(alias.strip().lower(), concept_id)
 
-        class_lookup: Dict[str, str] = {}
+        class_lookup: dict[str, str] = {}
         for class_id, data in self.db.find_nodes("ConceptClass", {}):
             name = (data.get("name") or "").strip()
             if name:
@@ -678,8 +679,8 @@ class MasterDataLoader:
 
     def _generate_coordinate_id(
         self,
-        coord: Dict[str, Any],
-        origin_hint: Optional[str] = None,
+        coord: dict[str, Any],
+        origin_hint: str | None = None,
     ) -> str:
         try:
             x_val = float(coord.get("x"))
@@ -689,7 +690,9 @@ class MasterDataLoader:
             raise ValueError("Coordinate missing numeric x/y/z values")
 
         precision = max(1, int(self.coordinate_rounding_mm))
-        round_axis = lambda val: int(round(val / precision) * precision)
+
+        def round_axis(val):
+            return int(round(val / precision) * precision)
 
         round_x = round_axis(x_val)
         round_y = round_axis(y_val)
@@ -767,7 +770,7 @@ class MasterDataLoader:
         return 0
 
     @staticmethod
-    def _normalize_labels(node_props: Dict[str, Any]) -> List[str]:
+    def _normalize_labels(node_props: dict[str, Any]) -> list[str]:
         labels = node_props.get("labels")
         if labels is None:
             return []
@@ -782,7 +785,7 @@ class MasterDataLoader:
         *,
         source: str,
         total_coordinates: int,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         env_var: str = "BR_KG_COORDINATE_RESUME_OFFSET",
     ) -> int:
         """Determine resume offset via env/config/auto-detect."""
@@ -817,8 +820,8 @@ class MasterDataLoader:
         return 0
 
     def load_cognitive_atlas(
-        self, config: Dict[str, Any] = None, mode: str = "full"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "full"
+    ) -> dict[str, int]:
         """
         Load Cognitive Atlas data.
 
@@ -851,7 +854,7 @@ class MasterDataLoader:
             concept_count = 0
             task_count = 0
             mapping_count = 0
-            dois_for_metadata: Set[str] = set()
+            dois_for_metadata: set[str] = set()
 
             # Insert concepts (handle duplicates)
             for concept in concepts:
@@ -1127,7 +1130,7 @@ class MasterDataLoader:
 
                 if isinstance(task_values, str):
                     task_iter = [task_values]
-                elif isinstance(task_values, (list, tuple, set)):
+                elif isinstance(task_values, list | tuple | set):
                     task_iter = [str(item) for item in task_values if item]
                 else:
                     task_iter = [str(task_values)]
@@ -1183,8 +1186,8 @@ class MasterDataLoader:
             return {"error": str(e)}
 
     def load_onvoc(
-        self, config: Dict[str, Any] = None, mode: str = "full"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "full"
+    ) -> dict[str, int]:
         """Load the OpenNeuro Vocabulary (ONVOC) into the knowledge graph."""
 
         logger.info("Loading ONVOC vocabulary...")
@@ -1257,8 +1260,8 @@ class MasterDataLoader:
         return stats
 
     def load_pubmed(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, int]:
         """
         Load PubMed literature data with NICLIP embeddings.
 
@@ -1320,8 +1323,8 @@ class MasterDataLoader:
             return {"error": str(e)}
 
     def load_gabriel(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, Any]:
         """Load GABRIEL-derived paper measurements into BR-KG."""
 
         config = config or {}
@@ -1343,8 +1346,8 @@ class MasterDataLoader:
             return {"error": str(exc)}
 
     def load_neurosynth(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, int]:
         """
         Load NeuroSynth meta-analysis data with NICLIP models.
 
@@ -1360,7 +1363,7 @@ class MasterDataLoader:
 
         try:
             # Use unified NeuroSynth loader
-            niclip_mode: Optional[str] = None
+            niclip_mode: str | None = None
             use_niclip_value = config.get("use_niclip")
             if isinstance(use_niclip_value, str):
                 normalized = use_niclip_value.strip().lower()
@@ -1613,7 +1616,7 @@ class MasterDataLoader:
 
                     # Create relationships for the batch
                     batch_rel_created = 0
-                    for coord_id, item in zip(node_ids, prepared_records):
+                    for coord_id, item in zip(node_ids, prepared_records, strict=False):
                         study_id = item.get("study_id")
                         if not study_id:
                             continue
@@ -1775,7 +1778,9 @@ class MasterDataLoader:
 
                         term_pairs = [
                             (int(idx), float(weight))
-                            for idx, weight in zip(selected_indices, selected_weights)
+                            for idx, weight in zip(
+                                selected_indices, selected_weights, strict=False
+                            )
                             if int(idx) in term_node_map
                         ]
                         if not term_pairs:
@@ -1820,8 +1825,8 @@ class MasterDataLoader:
             return {"error": str(e)}
 
     def load_neurovault(
-        self, config: Dict[str, Any] = None, mode: str = "full"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "full"
+    ) -> dict[str, int]:
         """
         Load NeuroVault collections with caching and optional contrast linking.
 
@@ -1858,7 +1863,7 @@ class MasterDataLoader:
             paginate_all = config.get("paginate_all", False)
             load_images = config.get("load_images", False)
             link_contrasts = config.get("link_contrasts", True)
-            confidence_threshold = config.get("confidence_threshold", 0.5)
+            config.get("confidence_threshold", 0.5)
             write_map_index = config.get("write_map_index", False)
             paginate_images_all = config.get("paginate_images_all", False)
             collection_page_size = config.get("collection_page_size", limit)
@@ -2006,7 +2011,7 @@ class MasterDataLoader:
 
             # Phase 1: Upsert collection nodes (optional; expensive on Neo4j).
             if upsert_collections:
-                for idx, collection in enumerate(collections, start=1):
+                for _idx, collection in enumerate(collections, start=1):
                     if not collection:
                         continue
 
@@ -2477,8 +2482,8 @@ class MasterDataLoader:
                 pass
 
     def load_openneuro(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, int]:
         """
         Load OpenNeuro datasets with GraphQL API.
 
@@ -2526,7 +2531,6 @@ class MasterDataLoader:
                 "url",
                 "source",
             }
-            task_fields = {"id", "name", "synonyms", "source"}
 
             for dataset in datasets:
                 if dataset:
@@ -2635,9 +2639,9 @@ class MasterDataLoader:
 
     def load_openneuro_glmfitlins(
         self,
-        config: Dict[str, Any] | None = None,
+        config: dict[str, Any] | None = None,
         mode: str = "full",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Ingest OpenNeuro GLM FitLins statistical maps."""
 
         config = config or {}
@@ -2692,8 +2696,8 @@ class MasterDataLoader:
             return {"error": str(exc)}
 
     def load_wikidata(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, int]:
         """
         Load WikiData brain regions via SPARQL.
 
@@ -2756,8 +2760,8 @@ class MasterDataLoader:
             return {"error": str(e)}
 
     def load_neuromaps(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, Any]:
         """
         Load Neuromaps parcellations into the BR-KG database.
 
@@ -2826,8 +2830,8 @@ class MasterDataLoader:
         return result
 
     def load_niclip_embeddings(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, int]:
         """Ingest NICLIP text and activation embeddings into the graph."""
 
         logger.info("Loading NICLIP embeddings...")
@@ -2951,7 +2955,7 @@ class MasterDataLoader:
                     )
                     logger.info("Truncated NICLIP coord batch to %d rows", limit)
 
-            def _lookup_publications(study_ids: List[str]) -> dict[str, str]:
+            def _lookup_publications(study_ids: list[str]) -> dict[str, str]:
                 keys = sorted({sid for sid in study_ids if sid})
                 if not keys:
                     return {}
@@ -3070,8 +3074,8 @@ class MasterDataLoader:
                 batch: EmbeddingBatch,
                 kind: str,
                 rel_type: str,
-                rel_base: Dict[str, Any],
-            ) -> Tuple[int, int]:
+                rel_base: dict[str, Any],
+            ) -> tuple[int, int]:
                 if batch is None:
                     return 0, 0
                 publication_lookup = _lookup_publications(batch.study_ids)
@@ -3080,7 +3084,7 @@ class MasterDataLoader:
                 created_rels = 0
                 for start in range(0, total, batch_size):
                     end = min(start + batch_size, total)
-                    node_payloads: List[Tuple[str, dict[str, Any]]] = []
+                    node_payloads: list[tuple[str, dict[str, Any]]] = []
                     for idx in range(start, end):
                         meta = _prepare_embedding_meta(kind, batch, idx, store_vectors)
                         node_payloads.append(
@@ -3090,7 +3094,7 @@ class MasterDataLoader:
                         node_payloads, batch_size=batch_size
                     )
                     created_nodes += len(node_ids)
-                    for node_id, idx in zip(node_ids, range(start, end)):
+                    for node_id, idx in zip(node_ids, range(start, end), strict=False):
                         study_id = batch.study_ids[idx]
                         pub_id = publication_lookup.get(
                             study_id
@@ -3181,8 +3185,8 @@ class MasterDataLoader:
             return {"error": str(e)}
 
     def load_brainmap(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, int]:
         """
         Load BrainMap experiment database.
 
@@ -3319,8 +3323,8 @@ class MasterDataLoader:
             return {"error": str(e)}
 
     def load_neurostore(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, int]:
         """
         Load Neurostore study metadata and task annotations.
         """
@@ -3368,14 +3372,14 @@ class MasterDataLoader:
             collection_count = 0
             task_count = 0
             relationship_count = 0
-            dois_for_metadata: Set[str] = set()
+            dois_for_metadata: set[str] = set()
 
-            publication_node_map: Dict[str, str] = {}
-            collection_node_map: Dict[str, str] = {}
-            existing_publications_by_pmid: Dict[str, tuple[str, dict[str, Any]]] = {}
-            existing_publications_by_id: Dict[str, tuple[str, dict[str, Any]]] = {}
-            existing_collections_by_id: Dict[str, tuple[str, dict[str, Any]]] = {}
-            existing_tasks_by_id: Dict[str, tuple[str, dict[str, Any]]] = {}
+            publication_node_map: dict[str, str] = {}
+            collection_node_map: dict[str, str] = {}
+            existing_publications_by_pmid: dict[str, tuple[str, dict[str, Any]]] = {}
+            existing_publications_by_id: dict[str, tuple[str, dict[str, Any]]] = {}
+            existing_collections_by_id: dict[str, tuple[str, dict[str, Any]]] = {}
+            existing_tasks_by_id: dict[str, tuple[str, dict[str, Any]]] = {}
 
             for node_id, node_props in self.db.find_nodes("Publication"):
                 node_data = dict(node_props)
@@ -3434,8 +3438,8 @@ class MasterDataLoader:
                 }
 
             for publication in publications:
-                node_id: Optional[str] = None
-                node_data: Optional[dict[str, Any]] = None
+                node_id: str | None = None
+                node_data: dict[str, Any] | None = None
 
                 pmid = publication.get("pmid")
                 if pmid and str(pmid) in existing_publications_by_pmid:
@@ -3489,8 +3493,8 @@ class MasterDataLoader:
                     dois_for_metadata |= self._collect_dois(publication)
 
             for collection in collections:
-                node_id: Optional[str] = None
-                node_data: Optional[dict[str, Any]] = None
+                node_id: str | None = None
+                node_data: dict[str, Any] | None = None
                 collection_id_value = collection["id"]
                 if collection_id_value in existing_collections_by_id:
                     node_id, node_data = existing_collections_by_id[collection_id_value]
@@ -3537,7 +3541,7 @@ class MasterDataLoader:
                     )
                     collection_node_map[collection_id_value] = node_id
 
-            task_node_map: Dict[str, str] = {}
+            task_node_map: dict[str, str] = {}
             for task in task_nodes:
                 task_payload = dict(task)
                 task_payload.setdefault("source", "neurostore")
@@ -3545,8 +3549,8 @@ class MasterDataLoader:
                     task_payload = self._filter_fields(task_payload, task_fields)
                 task_payload = self._flatten_properties(task_payload)
 
-                node_id: Optional[str] = None
-                node_data: Optional[dict[str, Any]] = None
+                node_id: str | None = None
+                node_data: dict[str, Any] | None = None
                 existing_entry = existing_tasks_by_id.get(task["id"])
 
                 if existing_entry:
@@ -3623,7 +3627,7 @@ class MasterDataLoader:
 
             taxonomy_linker = self._get_taxonomy_linker()
             taxonomy_suggested = 0
-            concept_exists_cache: Dict[str, bool] = {}
+            concept_exists_cache: dict[str, bool] = {}
 
             def _concept_exists(concept_id: str) -> bool:
                 if concept_id not in concept_exists_cache:
@@ -3677,8 +3681,8 @@ class MasterDataLoader:
                 )
 
             def _persist_relationships(
-                items: List[Dict[str, Any]],
-                start_map: Dict[str, str],
+                items: list[dict[str, Any]],
+                start_map: dict[str, str],
             ) -> None:
                 nonlocal relationship_count
                 for relationship in items:
@@ -3747,8 +3751,8 @@ class MasterDataLoader:
             return {"error": str(exc)}
 
     def load_allen_hba(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, Any]:
         """Hydrate Allen Human Brain Atlas expression spine data."""
 
         logger.info("Loading Allen HBA expression metadata...")
@@ -3786,8 +3790,8 @@ class MasterDataLoader:
         return profile_stats
 
     def load_allen_ccfv3(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, Any]:
         """Hydrate the Allen CCFv3 atlas hierarchy into BR-KG."""
 
         logger.info("Loading Allen CCFv3 atlas hierarchy...")
@@ -3846,8 +3850,8 @@ class MasterDataLoader:
         return stats
 
     def load_virtual_brain(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, Any]:
         """Hydrate Virtual Brain simulation metadata."""
 
         logger.info("Loading Virtual Brain simulations...")
@@ -3876,8 +3880,8 @@ class MasterDataLoader:
         return stats
 
     def load_neurobagel(
-        self, config: Dict[str, Any] = None, mode: str = "full"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "full"
+    ) -> dict[str, Any]:
         """
         Load Neurobagel phenotype data and link subjects to phenotype records.
         """
@@ -3924,8 +3928,8 @@ class MasterDataLoader:
             return {"error": str(exc)}
 
     def load_scholarly_metadata(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, Any]:
         """
         Load Crossref/OpenAlex/ORCID/ROR style scholarly metadata.
         """
@@ -3979,8 +3983,8 @@ class MasterDataLoader:
             return {"error": str(exc)}
 
     def load_nidm_results(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, Any]:
         """
         Load NIDM-Results statistical maps and provenance.
         """
@@ -4033,23 +4037,23 @@ class MasterDataLoader:
 
     # The following loaders exist purely to support on-demand registration.
     def load_neuroquery(
-        self, config: Dict[str, Any] = None, mode: str = "on_demand"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "on_demand"
+    ) -> dict[str, Any]:
         return {"mode": mode, "warning": "neuroquery is on-demand only"}
 
     def load_nimare(
-        self, config: Dict[str, Any] = None, mode: str = "on_demand"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "on_demand"
+    ) -> dict[str, Any]:
         return {"mode": mode, "warning": "nimare is on-demand only"}
 
     def load_neuroscout(
-        self, config: Dict[str, Any] = None, mode: str = "on_demand"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "on_demand"
+    ) -> dict[str, Any]:
         return {"mode": mode, "warning": "neuroscout is on-demand only"}
 
     def load_nilearn_atlases(
-        self, config: Dict[str, Any] = None, mode: str = "full"
-    ) -> Dict[str, Any]:
+        self, config: dict[str, Any] = None, mode: str = "full"
+    ) -> dict[str, Any]:
         """
         Load common Nilearn parcellation atlases into BR-KG.
         """
@@ -4100,8 +4104,8 @@ class MasterDataLoader:
             return {"error": str(exc)}
 
     def load_bids(
-        self, config: Dict[str, Any] = None, mode: str = "spine"
-    ) -> Dict[str, int]:
+        self, config: dict[str, Any] = None, mode: str = "spine"
+    ) -> dict[str, int]:
         """
         Load and validate BIDS datasets.
 
@@ -4179,7 +4183,7 @@ class MasterDataLoader:
             self.stats["errors"].append(f"bids: {e}")
             return {"error": str(e)}
 
-    def create_cross_source_links(self) -> Dict[str, int]:
+    def create_cross_source_links(self) -> dict[str, int]:
         """
         Create links between entities from different sources.
 
@@ -4209,9 +4213,7 @@ class MasterDataLoader:
             self.stats["errors"].append(f"cross_source_links: {e}")
             return {"error": str(e)}
 
-    def load_all(
-        self, sources: Optional[List[str]] = None, config: Dict[str, Any] = None
-    ):
+    def load_all(self, sources: list[str] | None = None, config: dict[str, Any] = None):
         """Load all or a subset of data sources according to ingestion modes."""
 
         config = config or {}
@@ -4257,7 +4259,7 @@ class MasterDataLoader:
                 if name in config
             }
 
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
         sources_with_graph_ingest: set[str] = set()
 
         for source_name, loader_func in sources_to_iterate.items():

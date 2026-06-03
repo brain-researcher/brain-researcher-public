@@ -5,13 +5,12 @@ Includes: Surface-based, PET/SPECT, Multi-atlas, Radiomics, Longitudinal,
 Phantom, Motion, Harmonization, Validation, Report Generation, DICOM tools.
 """
 
-import logging
 import json
-import numpy as np
+import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
@@ -24,13 +23,18 @@ logger = logging.getLogger(__name__)
 # 1. Surface-based Analysis Tool
 class SurfaceAnalysisArgs(BaseModel):
     """Arguments for surface-based analysis."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     surface_file: str = Field(description="Surface mesh file")
-    thickness_file: Optional[str] = Field(default=None, description="Cortical thickness map")
-    curvature_file: Optional[str] = Field(default=None, description="Curvature map")
+    thickness_file: str | None = Field(
+        default=None, description="Cortical thickness map"
+    )
+    curvature_file: str | None = Field(default=None, description="Curvature map")
     output_dir: str = Field(description="Output directory")
-    measure: str = Field(default="thickness", description="Measure: thickness, area, curvature")
+    measure: str = Field(
+        default="thickness", description="Measure: thickness, area, curvature"
+    )
     smoothing_fwhm: float = Field(default=10.0, description="Smoothing FWHM in mm")
 
 
@@ -58,14 +62,14 @@ class SurfaceAnalysisTool(NeuroToolWrapper):
 
             # Simulated surface analysis
             results = {
-                'mean_thickness': 2.5,
-                'std_thickness': 0.3,
-                'surface_area': 1800,
-                'mean_curvature': 0.15
+                "mean_thickness": 2.5,
+                "std_thickness": 0.3,
+                "surface_area": 1800,
+                "mean_curvature": 0.15,
             }
 
-            results_file = output_path / 'surface_results.json'
-            with open(results_file, 'w') as f:
+            results_file = output_path / "surface_results.json"
+            with open(results_file, "w") as f:
                 json.dump(results, f, indent=2)
 
             return ToolResult(
@@ -73,8 +77,8 @@ class SurfaceAnalysisTool(NeuroToolWrapper):
                 data={
                     "outputs": {"results": str(results_file)},
                     "summary": results,
-                    "message": "Surface analysis completed"
-                }
+                    "message": "Surface analysis completed",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -83,10 +87,11 @@ class SurfaceAnalysisTool(NeuroToolWrapper):
 # 2. PET/SPECT Tool
 class PETSPECTArgs(BaseModel):
     """Arguments for PET/SPECT analysis."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     pet_file: str = Field(description="PET/SPECT image file")
-    mri_file: Optional[str] = Field(default=None, description="MRI for coregistration")
+    mri_file: str | None = Field(default=None, description="MRI for coregistration")
     tracer: str = Field(default="FDG", description="Tracer type: FDG, PIB, etc.")
     output_dir: str = Field(description="Output directory")
     compute_suvr: bool = Field(default=True, description="Compute SUVR")
@@ -115,14 +120,14 @@ class PETSPECTTool(NeuroToolWrapper):
             output_path.mkdir(parents=True, exist_ok=True)
 
             results = {
-                'tracer': kwargs.get('tracer', 'FDG'),
-                'mean_suvr': 1.2,
-                'std_suvr': 0.15,
-                'reference_region': kwargs.get('reference_region', 'cerebellum')
+                "tracer": kwargs.get("tracer", "FDG"),
+                "mean_suvr": 1.2,
+                "std_suvr": 0.15,
+                "reference_region": kwargs.get("reference_region", "cerebellum"),
             }
 
-            results_file = output_path / 'pet_results.json'
-            with open(results_file, 'w') as f:
+            results_file = output_path / "pet_results.json"
+            with open(results_file, "w") as f:
                 json.dump(results, f, indent=2)
 
             return ToolResult(
@@ -130,8 +135,8 @@ class PETSPECTTool(NeuroToolWrapper):
                 data={
                     "outputs": {"results": str(results_file)},
                     "summary": results,
-                    "message": "PET/SPECT analysis completed"
-                }
+                    "message": "PET/SPECT analysis completed",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -140,13 +145,16 @@ class PETSPECTTool(NeuroToolWrapper):
 # 3. Multi-atlas Segmentation Tool
 class MultiAtlasArgs(BaseModel):
     """Arguments for multi-atlas segmentation."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     target_image: str = Field(description="Target image to segment")
-    atlas_images: List[str] = Field(description="List of atlas images")
-    atlas_labels: List[str] = Field(description="List of atlas label files")
+    atlas_images: list[str] = Field(description="List of atlas images")
+    atlas_labels: list[str] = Field(description="List of atlas label files")
     output_dir: str = Field(description="Output directory")
-    fusion_method: str = Field(default="majority_vote", description="Label fusion method")
+    fusion_method: str = Field(
+        default="majority_vote", description="Label fusion method"
+    )
 
 
 class MultiAtlasTool(NeuroToolWrapper):
@@ -164,22 +172,28 @@ class MultiAtlasTool(NeuroToolWrapper):
     def get_args_schema(self):
         return MultiAtlasArgs
 
-    def _run(self, target_image: str, atlas_images: List[str],
-             atlas_labels: List[str], output_dir: str, **kwargs) -> ToolResult:
+    def _run(
+        self,
+        target_image: str,
+        atlas_images: list[str],
+        atlas_labels: list[str],
+        output_dir: str,
+        **kwargs,
+    ) -> ToolResult:
         """Execute multi-atlas segmentation."""
         try:
             output_path = Path(output_dir)
             output_path.mkdir(parents=True, exist_ok=True)
 
             results = {
-                'n_atlases': len(atlas_images),
-                'fusion_method': kwargs.get('fusion_method', 'majority_vote'),
-                'n_labels': 83,
-                'dice_score': 0.85
+                "n_atlases": len(atlas_images),
+                "fusion_method": kwargs.get("fusion_method", "majority_vote"),
+                "n_labels": 83,
+                "dice_score": 0.85,
             }
 
-            results_file = output_path / 'multiatlas_results.json'
-            with open(results_file, 'w') as f:
+            results_file = output_path / "multiatlas_results.json"
+            with open(results_file, "w") as f:
                 json.dump(results, f, indent=2)
 
             return ToolResult(
@@ -187,8 +201,8 @@ class MultiAtlasTool(NeuroToolWrapper):
                 data={
                     "outputs": {"results": str(results_file)},
                     "summary": results,
-                    "message": f"Multi-atlas segmentation with {len(atlas_images)} atlases"
-                }
+                    "message": f"Multi-atlas segmentation with {len(atlas_images)} atlases",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -197,14 +211,15 @@ class MultiAtlasTool(NeuroToolWrapper):
 # 4. Radiomics Tool
 class RadiomicsArgs(BaseModel):
     """Arguments for radiomics feature extraction."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     image_file: str = Field(description="Image file")
     mask_file: str = Field(description="ROI mask file")
     output_dir: str = Field(description="Output directory")
-    feature_classes: List[str] = Field(
+    feature_classes: list[str] = Field(
         default=["shape", "firstorder", "texture"],
-        description="Feature classes to extract"
+        description="Feature classes to extract",
     )
 
 
@@ -223,7 +238,9 @@ class RadiomicsTool(NeuroToolWrapper):
     def get_args_schema(self):
         return RadiomicsArgs
 
-    def _run(self, image_file: str, mask_file: str, output_dir: str, **kwargs) -> ToolResult:
+    def _run(
+        self, image_file: str, mask_file: str, output_dir: str, **kwargs
+    ) -> ToolResult:
         """Extract radiomics features."""
         try:
             output_path = Path(output_dir)
@@ -231,16 +248,16 @@ class RadiomicsTool(NeuroToolWrapper):
 
             # Simulated radiomics features
             features = {
-                'shape_volume': 125000,
-                'shape_surface_area': 8500,
-                'firstorder_mean': 450,
-                'firstorder_std': 85,
-                'texture_glcm_contrast': 0.35,
-                'texture_glrlm_SRE': 0.92
+                "shape_volume": 125000,
+                "shape_surface_area": 8500,
+                "firstorder_mean": 450,
+                "firstorder_std": 85,
+                "texture_glcm_contrast": 0.35,
+                "texture_glrlm_SRE": 0.92,
             }
 
-            results_file = output_path / 'radiomics_features.json'
-            with open(results_file, 'w') as f:
+            results_file = output_path / "radiomics_features.json"
+            with open(results_file, "w") as f:
                 json.dump(features, f, indent=2)
 
             return ToolResult(
@@ -248,8 +265,8 @@ class RadiomicsTool(NeuroToolWrapper):
                 data={
                     "outputs": {"features": str(results_file)},
                     "summary": {"n_features": len(features)},
-                    "message": f"Extracted {len(features)} radiomics features"
-                }
+                    "message": f"Extracted {len(features)} radiomics features",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -258,10 +275,11 @@ class RadiomicsTool(NeuroToolWrapper):
 # 5. Longitudinal Analysis Tool
 class LongitudinalArgs(BaseModel):
     """Arguments for longitudinal analysis."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     baseline_image: str = Field(description="Baseline image")
-    followup_images: List[str] = Field(description="Follow-up images")
+    followup_images: list[str] = Field(description="Follow-up images")
     output_dir: str = Field(description="Output directory")
     method: str = Field(default="tbm", description="Method: tbm, jacobian, bsi")
 
@@ -281,22 +299,23 @@ class LongitudinalTool(NeuroToolWrapper):
     def get_args_schema(self):
         return LongitudinalArgs
 
-    def _run(self, baseline_image: str, followup_images: List[str],
-             output_dir: str, **kwargs) -> ToolResult:
+    def _run(
+        self, baseline_image: str, followup_images: list[str], output_dir: str, **kwargs
+    ) -> ToolResult:
         """Execute longitudinal analysis."""
         try:
             output_path = Path(output_dir)
             output_path.mkdir(parents=True, exist_ok=True)
 
             results = {
-                'n_timepoints': 1 + len(followup_images),
-                'method': kwargs.get('method', 'tbm'),
-                'annual_atrophy_rate': 1.2,
-                'ventricular_expansion': 3.5
+                "n_timepoints": 1 + len(followup_images),
+                "method": kwargs.get("method", "tbm"),
+                "annual_atrophy_rate": 1.2,
+                "ventricular_expansion": 3.5,
             }
 
-            results_file = output_path / 'longitudinal_results.json'
-            with open(results_file, 'w') as f:
+            results_file = output_path / "longitudinal_results.json"
+            with open(results_file, "w") as f:
                 json.dump(results, f, indent=2)
 
             return ToolResult(
@@ -304,8 +323,8 @@ class LongitudinalTool(NeuroToolWrapper):
                 data={
                     "outputs": {"results": str(results_file)},
                     "summary": results,
-                    "message": f"Longitudinal analysis with {results['n_timepoints']} timepoints"
-                }
+                    "message": f"Longitudinal analysis with {results['n_timepoints']} timepoints",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -314,10 +333,13 @@ class LongitudinalTool(NeuroToolWrapper):
 # 6. Phantom Analysis Tool
 class PhantomArgs(BaseModel):
     """Arguments for phantom analysis."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     phantom_image: str = Field(description="Phantom image")
-    phantom_type: str = Field(default="ACR", description="Phantom type: ACR, ADNI, custom")
+    phantom_type: str = Field(
+        default="ACR", description="Phantom type: ACR, ADNI, custom"
+    )
     output_dir: str = Field(description="Output directory")
 
 
@@ -343,15 +365,15 @@ class PhantomTool(NeuroToolWrapper):
             output_path.mkdir(parents=True, exist_ok=True)
 
             results = {
-                'phantom_type': kwargs.get('phantom_type', 'ACR'),
-                'snr': 125,
-                'uniformity': 95.5,
-                'geometric_accuracy': 99.2,
-                'pass_fail': 'PASS'
+                "phantom_type": kwargs.get("phantom_type", "ACR"),
+                "snr": 125,
+                "uniformity": 95.5,
+                "geometric_accuracy": 99.2,
+                "pass_fail": "PASS",
             }
 
-            results_file = output_path / 'phantom_qa.json'
-            with open(results_file, 'w') as f:
+            results_file = output_path / "phantom_qa.json"
+            with open(results_file, "w") as f:
                 json.dump(results, f, indent=2)
 
             return ToolResult(
@@ -359,8 +381,8 @@ class PhantomTool(NeuroToolWrapper):
                 data={
                     "outputs": {"qa_results": str(results_file)},
                     "summary": results,
-                    "message": f"Phantom QA: {results['pass_fail']}"
-                }
+                    "message": f"Phantom QA: {results['pass_fail']}",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -369,6 +391,7 @@ class PhantomTool(NeuroToolWrapper):
 # 7. Motion Quantification Tool
 class MotionArgs(BaseModel):
     """Arguments for motion quantification."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     fmri_file: str = Field(description="4D fMRI file")
@@ -399,15 +422,15 @@ class MotionTool(NeuroToolWrapper):
             output_path.mkdir(parents=True, exist_ok=True)
 
             results = {
-                'mean_fd': 0.15,
-                'max_fd': 0.45,
-                'mean_dvars': 1.02,
-                'n_outliers': 5,
-                'percent_outliers': 2.5
+                "mean_fd": 0.15,
+                "max_fd": 0.45,
+                "mean_dvars": 1.02,
+                "n_outliers": 5,
+                "percent_outliers": 2.5,
             }
 
-            results_file = output_path / 'motion_metrics.json'
-            with open(results_file, 'w') as f:
+            results_file = output_path / "motion_metrics.json"
+            with open(results_file, "w") as f:
                 json.dump(results, f, indent=2)
 
             return ToolResult(
@@ -415,8 +438,8 @@ class MotionTool(NeuroToolWrapper):
                 data={
                     "outputs": {"motion": str(results_file)},
                     "summary": results,
-                    "message": f"Motion: mean FD={results['mean_fd']:.3f}mm"
-                }
+                    "message": f"Motion: mean FD={results['mean_fd']:.3f}mm",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -425,12 +448,15 @@ class MotionTool(NeuroToolWrapper):
 # 8. Harmonization Tool
 class HarmonizationArgs(BaseModel):
     """Arguments for data harmonization."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    data_files: List[str] = Field(description="Data files from different sites")
-    site_labels: List[str] = Field(description="Site labels")
+    data_files: list[str] = Field(description="Data files from different sites")
+    site_labels: list[str] = Field(description="Site labels")
     output_dir: str = Field(description="Output directory")
-    method: str = Field(default="combat", description="Method: combat, traveling_subjects")
+    method: str = Field(
+        default="combat", description="Method: combat, traveling_subjects"
+    )
 
 
 class HarmonizationTool(NeuroToolWrapper):
@@ -448,22 +474,23 @@ class HarmonizationTool(NeuroToolWrapper):
     def get_args_schema(self):
         return HarmonizationArgs
 
-    def _run(self, data_files: List[str], site_labels: List[str],
-             output_dir: str, **kwargs) -> ToolResult:
+    def _run(
+        self, data_files: list[str], site_labels: list[str], output_dir: str, **kwargs
+    ) -> ToolResult:
         """Harmonize data."""
         try:
             output_path = Path(output_dir)
             output_path.mkdir(parents=True, exist_ok=True)
 
             results = {
-                'n_sites': len(set(site_labels)),
-                'n_subjects': len(data_files),
-                'method': kwargs.get('method', 'combat'),
-                'variance_removed': 15.5
+                "n_sites": len(set(site_labels)),
+                "n_subjects": len(data_files),
+                "method": kwargs.get("method", "combat"),
+                "variance_removed": 15.5,
             }
 
-            results_file = output_path / 'harmonization_results.json'
-            with open(results_file, 'w') as f:
+            results_file = output_path / "harmonization_results.json"
+            with open(results_file, "w") as f:
                 json.dump(results, f, indent=2)
 
             return ToolResult(
@@ -471,8 +498,8 @@ class HarmonizationTool(NeuroToolWrapper):
                 data={
                     "outputs": {"results": str(results_file)},
                     "summary": results,
-                    "message": f"Harmonized {results['n_sites']} sites"
-                }
+                    "message": f"Harmonized {results['n_sites']} sites",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -481,14 +508,14 @@ class HarmonizationTool(NeuroToolWrapper):
 # 9. Validation Metrics Tool
 class ValidationArgs(BaseModel):
     """Arguments for validation metrics."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     prediction_file: str = Field(description="Prediction file")
     ground_truth_file: str = Field(description="Ground truth file")
     output_dir: str = Field(description="Output directory")
-    metric_types: List[str] = Field(
-        default=["dice", "hausdorff", "volume"],
-        description="Metrics to compute"
+    metric_types: list[str] = Field(
+        default=["dice", "hausdorff", "volume"], description="Metrics to compute"
     )
 
 
@@ -507,23 +534,24 @@ class ValidationTool(NeuroToolWrapper):
     def get_args_schema(self):
         return ValidationArgs
 
-    def _run(self, prediction_file: str, ground_truth_file: str,
-             output_dir: str, **kwargs) -> ToolResult:
+    def _run(
+        self, prediction_file: str, ground_truth_file: str, output_dir: str, **kwargs
+    ) -> ToolResult:
         """Compute validation metrics."""
         try:
             output_path = Path(output_dir)
             output_path.mkdir(parents=True, exist_ok=True)
 
             metrics = {
-                'dice_coefficient': 0.89,
-                'hausdorff_distance': 2.5,
-                'volume_similarity': 0.95,
-                'sensitivity': 0.91,
-                'specificity': 0.94
+                "dice_coefficient": 0.89,
+                "hausdorff_distance": 2.5,
+                "volume_similarity": 0.95,
+                "sensitivity": 0.91,
+                "specificity": 0.94,
             }
 
-            results_file = output_path / 'validation_metrics.json'
-            with open(results_file, 'w') as f:
+            results_file = output_path / "validation_metrics.json"
+            with open(results_file, "w") as f:
                 json.dump(metrics, f, indent=2)
 
             return ToolResult(
@@ -531,8 +559,8 @@ class ValidationTool(NeuroToolWrapper):
                 data={
                     "outputs": {"metrics": str(results_file)},
                     "summary": metrics,
-                    "message": f"Validation: Dice={metrics['dice_coefficient']:.3f}"
-                }
+                    "message": f"Validation: Dice={metrics['dice_coefficient']:.3f}",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -541,9 +569,10 @@ class ValidationTool(NeuroToolWrapper):
 # 10. Report Generation Tool
 class ReportArgs(BaseModel):
     """Arguments for report generation."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    analysis_results: Dict[str, Any] = Field(description="Analysis results to report")
+    analysis_results: dict[str, Any] = Field(description="Analysis results to report")
     template: str = Field(default="clinical", description="Report template")
     output_dir: str = Field(description="Output directory")
     format: str = Field(default="html", description="Output format: html, pdf, docx")
@@ -564,7 +593,9 @@ class ReportTool(NeuroToolWrapper):
     def get_args_schema(self):
         return ReportArgs
 
-    def _run(self, analysis_results: Dict[str, Any], output_dir: str, **kwargs) -> ToolResult:
+    def _run(
+        self, analysis_results: dict[str, Any], output_dir: str, **kwargs
+    ) -> ToolResult:
         """Generate report."""
         try:
             output_path = Path(output_dir)
@@ -583,17 +614,17 @@ class ReportTool(NeuroToolWrapper):
             </html>
             """
 
-            report_file = output_path / 'report.html'
-            with open(report_file, 'w') as f:
+            report_file = output_path / "report.html"
+            with open(report_file, "w") as f:
                 f.write(html_content)
 
             return ToolResult(
                 status="success",
                 data={
                     "outputs": {"report": str(report_file)},
-                    "summary": {"format": kwargs.get('format', 'html')},
-                    "message": "Report generated successfully"
-                }
+                    "summary": {"format": kwargs.get("format", "html")},
+                    "message": "Report generated successfully",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -602,6 +633,7 @@ class ReportTool(NeuroToolWrapper):
 # 11. DICOM Processing Tool
 class DICOMArgs(BaseModel):
     """Arguments for DICOM processing."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     dicom_dir: str = Field(description="DICOM directory")
@@ -632,15 +664,15 @@ class DICOMTool(NeuroToolWrapper):
             output_path.mkdir(parents=True, exist_ok=True)
 
             results = {
-                'n_series': 5,
-                'n_files': 250,
-                'anonymized': kwargs.get('anonymize', True),
-                'converted_to_nifti': kwargs.get('convert_to_nifti', True),
-                'series': ['T1', 'T2', 'FLAIR', 'DWI', 'fMRI']
+                "n_series": 5,
+                "n_files": 250,
+                "anonymized": kwargs.get("anonymize", True),
+                "converted_to_nifti": kwargs.get("convert_to_nifti", True),
+                "series": ["T1", "T2", "FLAIR", "DWI", "fMRI"],
             }
 
-            results_file = output_path / 'dicom_processing.json'
-            with open(results_file, 'w') as f:
+            results_file = output_path / "dicom_processing.json"
+            with open(results_file, "w") as f:
                 json.dump(results, f, indent=2)
 
             return ToolResult(
@@ -648,8 +680,8 @@ class DICOMTool(NeuroToolWrapper):
                 data={
                     "outputs": {"results": str(results_file)},
                     "summary": results,
-                    "message": f"Processed {results['n_files']} DICOM files"
-                }
+                    "message": f"Processed {results['n_files']} DICOM files",
+                },
             )
         except Exception as e:
             return ToolResult(status="error", error=str(e), data={})
@@ -659,7 +691,7 @@ class Phase2BatchTools:
     """Collection of Phase 2 batch tools."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         """Get all batch tools."""
         return [
             SurfaceAnalysisTool(),
@@ -672,5 +704,5 @@ class Phase2BatchTools:
             HarmonizationTool(),
             ValidationTool(),
             ReportTool(),
-            DICOMTool()
+            DICOMTool(),
         ]

@@ -14,18 +14,24 @@ from __future__ import annotations
 import logging
 import os
 import time
+from collections.abc import Mapping, Sequence
 from functools import lru_cache
-from typing import Mapping, Sequence, Optional
 
 from neo4j import GraphDatabase
 
-from .evidence import ToolEvidenceReader, ToolEvidenceRecord, ToolEvidenceStats, ToolEvidenceWriter
+from brain_researcher.services.agent.monitoring import metrics_collector
+
+from .evidence import (
+    ToolEvidenceReader,
+    ToolEvidenceRecord,
+    ToolEvidenceStats,
+    ToolEvidenceWriter,
+)
 from .loop_signal_neo4j import get_default_loop_signal_writer
 from .prior_config import load_prior_config
 
-from brain_researcher.services.agent.monitoring import metrics_collector
-
 logger = logging.getLogger(__name__)
+
 
 class Neo4jToolEvidenceStore(ToolEvidenceWriter, ToolEvidenceReader):
     def __init__(
@@ -71,7 +77,9 @@ class Neo4jToolEvidenceStore(ToolEvidenceWriter, ToolEvidenceReader):
                     "task_family": r.task_family,
                     "success_inc": 1 if r.outcome == "success" else 0,
                     "fail_inc": 1 if r.outcome != "success" else 0,
-                    "latency_ms": int(r.latency_ms) if isinstance(r.latency_ms, int) else None,
+                    "latency_ms": (
+                        int(r.latency_ms) if isinstance(r.latency_ms, int) else None
+                    ),
                     "failure_category": r.failure_category or None,
                     "dataset_id": r.dataset_id or None,
                     "dataset_family": r.dataset_family or None,
@@ -265,13 +273,24 @@ class Neo4jToolEvidenceStore(ToolEvidenceWriter, ToolEvidenceReader):
                     n = int(row.get("n") or 0)
                     layer = str(row.get("layer") or "none")
                     # Enforce min_samples by falling back manually if needed
-                    if n < self._min_samples and layer in {"dataset_id", "dataset_family"}:
+                    if n < self._min_samples and layer in {
+                        "dataset_id",
+                        "dataset_family",
+                    }:
                         continue  # let caller rely on global entries populated separately
                     out[tid] = ToolEvidenceStats(
                         success_count=int(row.get("success_count") or 0),
                         fail_count=int(row.get("fail_count") or 0),
-                        latency_ms_samples=tuple(int(x) for x in (row.get("latency_ms_samples") or []) if isinstance(x, int)),
-                        failure_categories=tuple(str(x) for x in (row.get("failure_categories") or []) if isinstance(x, str)),
+                        latency_ms_samples=tuple(
+                            int(x)
+                            for x in (row.get("latency_ms_samples") or [])
+                            if isinstance(x, int)
+                        ),
+                        failure_categories=tuple(
+                            str(x)
+                            for x in (row.get("failure_categories") or [])
+                            if isinstance(x, str)
+                        ),
                         samples_used=n,
                         layer_used=layer,
                     )

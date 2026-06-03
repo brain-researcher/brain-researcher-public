@@ -2,9 +2,10 @@
 
 import uuid
 from datetime import datetime
-from typing import List, Dict, Any, Optional
 from enum import Enum
-from fastapi import APIRouter, HTTPException, Query, Depends
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/curation", tags=["curation"])
@@ -12,6 +13,7 @@ router = APIRouter(prefix="/curation", tags=["curation"])
 
 class ValidationStatus(str, Enum):
     """Validation status for curated items."""
+
     PENDING = "pending"
     IN_REVIEW = "in_review"
     APPROVED = "approved"
@@ -21,6 +23,7 @@ class ValidationStatus(str, Enum):
 
 class BatchOperation(str, Enum):
     """Types of batch operations."""
+
     APPROVE = "approve"
     REJECT = "reject"
     ASSIGN = "assign"
@@ -30,38 +33,42 @@ class BatchOperation(str, Enum):
 
 class CurationItem(BaseModel):
     """Item for curation."""
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     type: str = Field(description="Item type (concept, relation, etc.)")
-    data: Dict[str, Any] = Field(description="Item data")
+    data: dict[str, Any] = Field(description="Item data")
     status: ValidationStatus = Field(default=ValidationStatus.PENDING)
     submitted_by: str = Field(description="User who submitted")
     submitted_at: datetime = Field(default_factory=datetime.utcnow)
-    reviewed_by: Optional[str] = None
-    reviewed_at: Optional[datetime] = None
-    comments: List[str] = Field(default_factory=list)
-    confidence_score: Optional[float] = Field(None, ge=0, le=1)
-    tags: List[str] = Field(default_factory=list)
+    reviewed_by: str | None = None
+    reviewed_at: datetime | None = None
+    comments: list[str] = Field(default_factory=list)
+    confidence_score: float | None = Field(None, ge=0, le=1)
+    tags: list[str] = Field(default_factory=list)
 
 
 class ValidationRequest(BaseModel):
     """Request for validation."""
+
     item_id: str
     action: ValidationStatus
-    comment: Optional[str] = None
-    confidence: Optional[float] = Field(None, ge=0, le=1)
+    comment: str | None = None
+    confidence: float | None = Field(None, ge=0, le=1)
 
 
 class BatchRequest(BaseModel):
     """Batch operation request."""
-    item_ids: List[str]
+
+    item_ids: list[str]
     operation: BatchOperation
-    params: Optional[Dict[str, Any]] = None
+    params: dict[str, Any] | None = None
 
 
 class ReviewQueue(BaseModel):
     """Review queue configuration."""
+
     name: str
-    filter_criteria: Dict[str, Any]
+    filter_criteria: dict[str, Any]
     priority: int = Field(default=0)
     auto_assign: bool = Field(default=False)
     max_items: int = Field(default=100)
@@ -72,9 +79,9 @@ class CurationWorkflow:
 
     def __init__(self):
         # In-memory storage for demo (would use database in production)
-        self.items: Dict[str, CurationItem] = {}
-        self.queues: Dict[str, ReviewQueue] = {}
-        self.history: List[Dict[str, Any]] = []
+        self.items: dict[str, CurationItem] = {}
+        self.queues: dict[str, ReviewQueue] = {}
+        self.history: list[dict[str, Any]] = []
         self._init_default_queues()
 
     def _init_default_queues(self):
@@ -83,18 +90,18 @@ class CurationWorkflow:
             "high_confidence": ReviewQueue(
                 name="High Confidence",
                 filter_criteria={"confidence_score": {"$gte": 0.8}},
-                priority=1
+                priority=1,
             ),
             "low_confidence": ReviewQueue(
                 name="Low Confidence",
                 filter_criteria={"confidence_score": {"$lt": 0.5}},
-                priority=3
+                priority=3,
             ),
             "conflicts": ReviewQueue(
                 name="Conflicts",
                 filter_criteria={"tags": {"$contains": "conflict"}},
-                priority=2
-            )
+                priority=2,
+            ),
         }
 
     def submit_for_review(self, item: CurationItem) -> str:
@@ -119,20 +126,15 @@ class CurationWorkflow:
         if request.confidence is not None:
             item.confidence_score = request.confidence
 
-        self._track_change("validated", item.id, {
-            "status": item.status.value,
-            "reviewer": reviewer
-        })
+        self._track_change(
+            "validated", item.id, {"status": item.status.value, "reviewer": reviewer}
+        )
 
         return item
 
-    def batch_operation(self, request: BatchRequest, operator: str) -> Dict[str, Any]:
+    def batch_operation(self, request: BatchRequest, operator: str) -> dict[str, Any]:
         """Perform batch operation on multiple items."""
-        results = {
-            "success": [],
-            "failed": [],
-            "skipped": []
-        }
+        results = {"success": [], "failed": [], "skipped": []}
 
         for item_id in request.item_ids:
             if item_id not in self.items:
@@ -155,11 +157,15 @@ class CurationWorkflow:
             except Exception as e:
                 results["failed"].append({"id": item_id, "error": str(e)})
 
-        self._track_change("batch_operation", None, {
-            "operation": request.operation.value,
-            "affected_items": len(results["success"]),
-            "operator": operator
-        })
+        self._track_change(
+            "batch_operation",
+            None,
+            {
+                "operation": request.operation.value,
+                "affected_items": len(results["success"]),
+                "operator": operator,
+            },
+        )
 
         return results
 
@@ -177,7 +183,7 @@ class CurationWorkflow:
         item.reviewed_by = operator
         item.reviewed_at = datetime.utcnow()
 
-    def _batch_tag(self, item_id: str, tags: List[str]):
+    def _batch_tag(self, item_id: str, tags: list[str]):
         """Add tags to item."""
         item = self.items[item_id]
         item.tags.extend(tags)
@@ -207,7 +213,7 @@ class CurationWorkflow:
         source.status = ValidationStatus.REJECTED
         source.comments.append(f"Merged into {target_id}")
 
-    def get_review_queue(self, queue_name: str, limit: int = 50) -> List[CurationItem]:
+    def get_review_queue(self, queue_name: str, limit: int = 50) -> list[CurationItem]:
         """Get items for review queue."""
         if queue_name not in self.queues:
             raise ValueError(f"Queue {queue_name} not found")
@@ -223,9 +229,9 @@ class CurationWorkflow:
 
         # Sort by priority and limit
         matched_items.sort(key=lambda x: x.submitted_at)
-        return matched_items[:min(limit, queue.max_items)]
+        return matched_items[: min(limit, queue.max_items)]
 
-    def _matches_criteria(self, item: CurationItem, criteria: Dict[str, Any]) -> bool:
+    def _matches_criteria(self, item: CurationItem, criteria: dict[str, Any]) -> bool:
         """Check if item matches filter criteria."""
         for field, condition in criteria.items():
             if isinstance(condition, dict):
@@ -243,23 +249,25 @@ class CurationWorkflow:
                     return False
         return True
 
-    def _track_change(self, action: str, item_id: Optional[str], details: Dict[str, Any]):
+    def _track_change(self, action: str, item_id: str | None, details: dict[str, Any]):
         """Track changes for audit trail."""
-        self.history.append({
-            "timestamp": datetime.utcnow().isoformat(),
-            "action": action,
-            "item_id": item_id,
-            "details": details
-        })
+        self.history.append(
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "action": action,
+                "item_id": item_id,
+                "details": details,
+            }
+        )
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get curation statistics."""
         stats = {
             "total_items": len(self.items),
             "by_status": {},
             "by_type": {},
             "average_confidence": 0,
-            "review_rate": 0
+            "review_rate": 0,
         }
 
         confidences = []
@@ -279,7 +287,9 @@ class CurationWorkflow:
         if confidences:
             stats["average_confidence"] = sum(confidences) / len(confidences)
 
-        reviewed = stats["by_status"].get("approved", 0) + stats["by_status"].get("rejected", 0)
+        reviewed = stats["by_status"].get("approved", 0) + stats["by_status"].get(
+            "rejected", 0
+        )
         if stats["total_items"] > 0:
             stats["review_rate"] = reviewed / stats["total_items"]
 
@@ -302,7 +312,11 @@ async def validate_item(request: ValidationRequest, reviewer: str = "expert"):
     """Validate a single item."""
     try:
         item = workflow.validate_item(request, reviewer)
-        return {"item_id": item.id, "status": item.status, "reviewed_by": item.reviewed_by}
+        return {
+            "item_id": item.id,
+            "status": item.status,
+            "reviewed_by": item.reviewed_by,
+        }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

@@ -88,7 +88,9 @@ def test_evaluate_kg_registry_dispatches_only_mapped_implemented_rules() -> None
     ]
     assert "TEST_SET_MODEL_SELECTION->REVIEW_NEUROAI_SELECTION_ON_TEST" in consulted
     assert all("REVIEW_NOT_IN_CONFIG" not in item for item in consulted)
-    assert any("BRKG scientific-review registry" in item for item in findings[0].kg_evidence)
+    assert any(
+        "BRKG scientific-review registry" in item for item in findings[0].kg_evidence
+    )
 
 
 def test_kg_implementation_catalog_selects_unmapped_review_gate_rules() -> None:

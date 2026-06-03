@@ -19,12 +19,6 @@ from brain_researcher.services.knowledge.evidence.base import (
     EvidenceSource,
     EvidenceSourceType,
 )
-from brain_researcher.services.knowledge.scoring.niclip_scorer import (
-    NiCLIPConfig,
-    NiCLIPEvidenceSource,
-    NiCLIPScorer,
-    ScoredConcept,
-)
 from brain_researcher.services.knowledge.planner import (
     DecisionType,
     EvidenceAggregator,
@@ -32,6 +26,12 @@ from brain_researcher.services.knowledge.planner import (
     KnowledgePlanner,
     create_aggregator,
     create_planner,
+)
+from brain_researcher.services.knowledge.scoring.niclip_scorer import (
+    NiCLIPConfig,
+    NiCLIPEvidenceSource,
+    NiCLIPScorer,
+    ScoredConcept,
 )
 
 __all__ = [

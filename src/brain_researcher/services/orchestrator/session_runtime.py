@@ -72,7 +72,11 @@ def _kind_to_source_type(kind: SessionKind) -> MonitorSourceType:
 
 
 def _source_type_to_kind(source_type: MonitorSourceType | str) -> SessionKind | None:
-    token = source_type.value if isinstance(source_type, MonitorSourceType) else str(source_type)
+    token = (
+        source_type.value
+        if isinstance(source_type, MonitorSourceType)
+        else str(source_type)
+    )
     if token == MonitorSourceType.CODING_SESSION.value:
         return SessionKind.CODING_SESSION
     if token == MonitorSourceType.MCP_RUN.value:

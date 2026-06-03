@@ -11,7 +11,8 @@ This module is pure and deterministic so it can be unit-tested.
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 
 def _clamp01(value: float) -> float:
@@ -35,8 +36,10 @@ def _geometric_mean(values: Sequence[float]) -> float:
     return float(math.exp(sum(logs) / len(logs)))
 
 
-def _index_candidates_by_tool(plan_payload: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
-    idx: Dict[str, Dict[str, Any]] = {}
+def _index_candidates_by_tool(
+    plan_payload: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    idx: dict[str, dict[str, Any]] = {}
     candidates = plan_payload.get("candidates")
     if isinstance(candidates, list):
         for cand in candidates:
@@ -62,23 +65,25 @@ def _index_candidates_by_tool(plan_payload: Dict[str, Any]) -> Dict[str, Dict[st
 def compute_step_confidence(
     *,
     tool_id: str,
-    candidate: Optional[Dict[str, Any]],
-    constraints: Optional[Dict[str, Any]] = None,
-) -> Tuple[float, Dict[str, Any]]:
+    candidate: dict[str, Any] | None,
+    constraints: dict[str, Any] | None = None,
+) -> tuple[float, dict[str, Any]]:
     """Compute step_conf for a single step/tool choice."""
 
     base_score = 0.5
     hq_score = 0.5
     latency_score = 0.5
-    preflight_passed: Optional[bool] = None
+    preflight_passed: bool | None = None
     failure_penalty = 0.0
-    failed_on_count: Optional[float] = None
+    failed_on_count: float | None = None
     failure_last_seen = None
     evidence_layer = None
-    evidence_n: Optional[int] = None
+    evidence_n: int | None = None
 
     if candidate:
-        base_score = _safe_float(candidate.get("final_score", candidate.get("score")), 0.5)
+        base_score = _safe_float(
+            candidate.get("final_score", candidate.get("score")), 0.5
+        )
         hq_score = _safe_float(candidate.get("historical_quality_score"), 0.5)
         latency_score = _safe_float(candidate.get("latency_score"), 0.5)
         preflight_passed = candidate.get("preflight_passed")
@@ -127,10 +132,10 @@ def compute_step_confidence(
 
 
 def compute_confidence_summary(
-    plan_payload: Dict[str, Any],
+    plan_payload: dict[str, Any],
     *,
-    planner_events: Optional[List[Dict[str, Any]]] = None,
-) -> Dict[str, Any]:
+    planner_events: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Compute plan/branch/step confidence summary for a plan payload."""
 
     constraints = plan_payload.get("constraints") or {}
@@ -149,10 +154,16 @@ def compute_confidence_summary(
 
     # If no explicit branches, treat current plan as single branch with DAG tools.
     if not branches:
-        steps = plan_payload.get("dag", {}).get("steps") if isinstance(plan_payload.get("dag"), dict) else None
+        steps = (
+            plan_payload.get("dag", {}).get("steps")
+            if isinstance(plan_payload.get("dag"), dict)
+            else None
+        )
         tool_ids = []
         if isinstance(steps, list):
-            tool_ids = [s.get("tool") for s in steps if isinstance(s, dict) and s.get("tool")]
+            tool_ids = [
+                s.get("tool") for s in steps if isinstance(s, dict) and s.get("tool")
+            ]
         chosen_tool = plan_payload.get("chosen_tool")
         if chosen_tool and chosen_tool not in tool_ids:
             tool_ids.insert(0, chosen_tool)
@@ -173,16 +184,18 @@ def compute_confidence_summary(
             if isinstance(e, dict) and e.get("event_type") == "recovery_triggered"
         ]
 
-    step_conf_rows: List[Dict[str, Any]] = []
-    branch_conf_rows: List[Dict[str, Any]] = []
+    step_conf_rows: list[dict[str, Any]] = []
+    branch_conf_rows: list[dict[str, Any]] = []
 
     for branch in branches:
         if not isinstance(branch, dict):
             continue
         branch_id = str(branch.get("branch_id") or "br:unknown")
-        branch_steps = branch.get("steps") if isinstance(branch.get("steps"), list) else []
+        branch_steps = (
+            branch.get("steps") if isinstance(branch.get("steps"), list) else []
+        )
 
-        conf_values: List[float] = []
+        conf_values: list[float] = []
         for idx, step in enumerate(branch_steps):
             if not isinstance(step, dict):
                 continue

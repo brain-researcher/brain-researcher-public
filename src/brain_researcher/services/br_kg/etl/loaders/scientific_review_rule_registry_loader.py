@@ -101,7 +101,9 @@ def load_registry(path: Path | str = DEFAULT_REGISTRY_PATH) -> dict[str, Any]:
     return data
 
 
-def load_review_rules_config(path: Path | str = DEFAULT_REVIEW_RULES_PATH) -> dict[str, Any]:
+def load_review_rules_config(
+    path: Path | str = DEFAULT_REVIEW_RULES_PATH,
+) -> dict[str, Any]:
     """Load and validate the implemented review-gate rule config."""
 
     rules_path = Path(path)

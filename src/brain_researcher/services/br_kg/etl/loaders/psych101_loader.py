@@ -437,13 +437,17 @@ def _extract_preserved_audit_metadata(raw: Mapping[str, Any]) -> dict[str, Any]:
             and isinstance(group_audit, Mapping)
             and group_audit.get("resolved_group_keys")
         ):
-            preserved["audit_group_keys"] = list(group_audit.get("resolved_group_keys") or [])
+            preserved["audit_group_keys"] = list(
+                group_audit.get("resolved_group_keys") or []
+            )
         if (
             "group_counts" not in preserved
             and isinstance(group_audit, Mapping)
             and group_audit.get("group_counts")
         ):
-            preserved["group_counts"] = _sanitize_metadata_value(group_audit.get("group_counts"))
+            preserved["group_counts"] = _sanitize_metadata_value(
+                group_audit.get("group_counts")
+            )
 
     cohort_metadata = preserved.get("cohort_metadata")
     if isinstance(cohort_metadata, Mapping):
@@ -453,13 +457,17 @@ def _extract_preserved_audit_metadata(raw: Mapping[str, Any]) -> dict[str, Any]:
             and isinstance(group_audit, Mapping)
             and group_audit.get("resolved_group_keys")
         ):
-            preserved["audit_group_keys"] = list(group_audit.get("resolved_group_keys") or [])
+            preserved["audit_group_keys"] = list(
+                group_audit.get("resolved_group_keys") or []
+            )
         if (
             "group_counts" not in preserved
             and isinstance(group_audit, Mapping)
             and group_audit.get("group_counts")
         ):
-            preserved["group_counts"] = _sanitize_metadata_value(group_audit.get("group_counts"))
+            preserved["group_counts"] = _sanitize_metadata_value(
+                group_audit.get("group_counts")
+            )
 
     if "site_or_cohort" not in preserved:
         site = _coerce_text(raw.get("site"))
@@ -473,7 +481,9 @@ def _extract_preserved_audit_metadata(raw: Mapping[str, Any]) -> dict[str, Any]:
         return preserved
 
 
-def _rollup_group_counts(group_counts_list: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def _rollup_group_counts(
+    group_counts_list: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
     rolled: dict[str, Any] = {}
     for group_counts in group_counts_list:
         for group_key, payload in group_counts.items():
@@ -500,9 +510,18 @@ def _rollup_group_counts(group_counts_list: Sequence[Mapping[str, Any]]) -> dict
                     )
             target["missing_participant_count"] = int(
                 target.get("missing_participant_count", 0)
-            ) + int(_coerce_int(payload.get("missing_participants") or payload.get("missing_participant_count")) or 0)
+            ) + int(
+                _coerce_int(
+                    payload.get("missing_participants")
+                    or payload.get("missing_participant_count")
+                )
+                or 0
+            )
             target["missing_row_count"] = int(target.get("missing_row_count", 0)) + int(
-                _coerce_int(payload.get("missing_rows") or payload.get("missing_row_count")) or 0
+                _coerce_int(
+                    payload.get("missing_rows") or payload.get("missing_row_count")
+                )
+                or 0
             )
             target["n_levels"] = max(
                 int(target.get("n_levels", 0)),
@@ -690,7 +709,9 @@ class Psych101IngestLoader:
         self.dataset_id = dataset_id
         self.source_name = source_name
         self.default_dataset_label = default_dataset_label
-        self.taxonomy_path = Path(taxonomy_path) if taxonomy_path else _DEFAULT_TAXONOMY_PATH
+        self.taxonomy_path = (
+            Path(taxonomy_path) if taxonomy_path else _DEFAULT_TAXONOMY_PATH
+        )
         self.alias_extensions_path = (
             Path(alias_extensions_path)
             if alias_extensions_path
@@ -715,9 +736,11 @@ class Psych101IngestLoader:
         try:
             self._task_family_matcher = TaskFamilyMatcher(
                 taxonomy_path=self.taxonomy_path,
-                alias_extensions_path=self.alias_extensions_path
-                if self.alias_extensions_path.exists()
-                else None,
+                alias_extensions_path=(
+                    self.alias_extensions_path
+                    if self.alias_extensions_path.exists()
+                    else None
+                ),
                 enable_fuzzy=True,
             )
         except Exception:
@@ -731,9 +754,9 @@ class Psych101IngestLoader:
             self._curated_registry = []
             return self._curated_registry
 
-        payload = yaml.safe_load(
-            self.curated_registry_path.read_text(encoding="utf-8")
-        ) or {}
+        payload = (
+            yaml.safe_load(self.curated_registry_path.read_text(encoding="utf-8")) or {}
+        )
         mappings = payload.get("mappings") if isinstance(payload, dict) else None
         defaults = payload.get("defaults") if isinstance(payload, dict) else None
         default_source = (
@@ -1074,16 +1097,21 @@ class Psych101IngestLoader:
             "doi": doi,
             "url": url,
             "license": _coerce_text(raw.get("license")),
-            "version": _coerce_text(raw.get("version")) or _coerce_text(raw.get("dataset_version")),
+            "version": _coerce_text(raw.get("version"))
+            or _coerce_text(raw.get("dataset_version")),
             "n_participants": _coerce_int(
                 _pick_first(raw, ("n_participants", "participants", "sample_size"))
             ),
-            "n_trials": _coerce_int(_pick_first(raw, ("n_trials", "trials", "n_samples"))),
+            "n_trials": _coerce_int(
+                _pick_first(raw, ("n_trials", "trials", "n_samples"))
+            ),
             "n_experiments": _coerce_int(
                 _pick_first(raw, ("n_experiments", "experiments", "n_tasks"))
             ),
             "task_families": task_families,
-            "tags": _dedupe([_coerce_text(tag) or "" for tag in _split_multi_value(raw.get("tags"))]),
+            "tags": _dedupe(
+                [_coerce_text(tag) or "" for tag in _split_multi_value(raw.get("tags"))]
+            ),
             **preserved_audit,
             "provenance": {
                 "source": self.source_name,
@@ -1092,7 +1120,11 @@ class Psych101IngestLoader:
                 "preserved_audit_keys": sorted(preserved_audit.keys()),
             },
         }
-        return {key: value for key, value in normalized.items() if value not in (None, [], {})}
+        return {
+            key: value
+            for key, value in normalized.items()
+            if value not in (None, [], {})
+        }
 
     def normalize_experiment_row(
         self,
@@ -1104,13 +1136,17 @@ class Psych101IngestLoader:
         """Normalize one Psych-101 experiment row."""
         raw = dict(row or {})
         preserved_audit = _extract_preserved_audit_metadata(raw)
-        dataset_id = _coerce_text(
-            _pick_first(raw, ("dataset_id", "psych101_id"))
-        ) or _coerce_text((dataset_metadata or {}).get("dataset_id")) or self.dataset_id
+        dataset_id = (
+            _coerce_text(_pick_first(raw, ("dataset_id", "psych101_id")))
+            or _coerce_text((dataset_metadata or {}).get("dataset_id"))
+            or self.dataset_id
+        )
 
         explicit_label = _pick_first(raw, _EXPERIMENT_LABEL_KEYS)
         label_text = _coerce_text(explicit_label)
-        context_candidates = _collect_text_candidates(raw, keys=_EXPERIMENT_CONTEXT_KEYS)
+        context_candidates = _collect_text_candidates(
+            raw, keys=_EXPERIMENT_CONTEXT_KEYS
+        )
         path_candidates = _collect_text_candidates(raw, keys=_EXPERIMENT_PATH_KEYS)
         context_text = " ".join(text for _, text in context_candidates[:6] if text)
         if not context_text:
@@ -1127,7 +1163,9 @@ class Psych101IngestLoader:
                 if part
             )
 
-        ontology_match = self._resolve_curated_experiment_mapping(raw) or self._resolve_task_ontology_match(
+        ontology_match = self._resolve_curated_experiment_mapping(
+            raw
+        ) or self._resolve_task_ontology_match(
             raw,
             context_text=context_text,
         )
@@ -1170,7 +1208,9 @@ class Psych101IngestLoader:
             task_labels = _dedupe([canonical_task_label, *task_labels])
 
         experiment_id = (
-            _coerce_text(_pick_first(raw, ("experiment_id", "id", "trialset_id", "run_id")))
+            _coerce_text(
+                _pick_first(raw, ("experiment_id", "id", "trialset_id", "run_id"))
+            )
             or _coerce_text(_pick_first(raw, _EXPERIMENT_LABEL_KEYS))
             or f"{dataset_id}:experiment:{index if index is not None else 0}"
         )
@@ -1196,7 +1236,9 @@ class Psych101IngestLoader:
             ]
         )
         experiment_path = _coerce_text(_pick_first(raw, _ONTOLOGY_PATH_KEYS))
-        experiment_slug = self._extract_experiment_slug(experiment_path or experiment_id)
+        experiment_slug = self._extract_experiment_slug(
+            experiment_path or experiment_id
+        )
         display_name = label_text
         if _is_generic_experiment_name(display_name):
             display_name = (
@@ -1216,8 +1258,12 @@ class Psych101IngestLoader:
             "experiment_path": experiment_path,
             "experiment_slug": experiment_slug,
             "name": display_name,
-            "description": _coerce_text(_pick_first(raw, ("description", "prompt", "notes"))),
-            "paradigm": _coerce_text(_pick_first(raw, ("paradigm", "task", "task_name"))),
+            "description": _coerce_text(
+                _pick_first(raw, ("description", "prompt", "notes"))
+            ),
+            "paradigm": _coerce_text(
+                _pick_first(raw, ("paradigm", "task", "task_name"))
+            ),
             "canonical_task_id": _coerce_text(ontology_match.get("canonical_task_id")),
             "canonical_task_label": canonical_task_label,
             "canonical_task_cogat_id": _coerce_text(
@@ -1241,14 +1287,22 @@ class Psych101IngestLoader:
             "task_ontology_match_field": ontology_match.get("match_field"),
             "task_ontology_match_text": ontology_match.get("match_text"),
             "task_ontology_evidence": ontology_match.get("evidence"),
-            "condition": _coerce_text(_pick_first(raw, ("condition", "condition_label"))),
+            "condition": _coerce_text(
+                _pick_first(raw, ("condition", "condition_label"))
+            ),
             "model": _coerce_text(_pick_first(raw, ("model", "agent", "policy"))),
-            "outcome": _coerce_text(_pick_first(raw, ("outcome", "choice", "response"))),
+            "outcome": _coerce_text(
+                _pick_first(raw, ("outcome", "choice", "response"))
+            ),
             "n_participants": _coerce_int(
                 _pick_first(raw, ("n_participants", "participants", "sample_size"))
             ),
-            "n_trials": _coerce_int(_pick_first(raw, ("n_trials", "trials", "n_samples"))),
-            "confidence": _coerce_float(_pick_first(raw, ("confidence", "score", "similarity"))),
+            "n_trials": _coerce_int(
+                _pick_first(raw, ("n_trials", "trials", "n_samples"))
+            ),
+            "confidence": _coerce_float(
+                _pick_first(raw, ("confidence", "score", "similarity"))
+            ),
             "is_open_loop": _normalize_open_loop_flag(raw),
             **preserved_audit,
             "provenance": {
@@ -1261,7 +1315,11 @@ class Psych101IngestLoader:
             },
             "raw": raw,
         }
-        return {key: value for key, value in normalized.items() if value not in (None, [], {})}
+        return {
+            key: value
+            for key, value in normalized.items()
+            if value not in (None, [], {})
+        }
 
     def extract_task_families(
         self,
@@ -1356,9 +1414,10 @@ class Psych101IngestLoader:
         )
         if text_id and text_id.startswith("psych101:task:"):
             return True
-        if isinstance(node_props, Mapping) and _coerce_text(
-            node_props.get("schema_version")
-        ) == "psych101-task-v1":
+        if (
+            isinstance(node_props, Mapping)
+            and _coerce_text(node_props.get("schema_version")) == "psych101-task-v1"
+        ):
             return True
         return False
 
@@ -1387,11 +1446,15 @@ class Psych101IngestLoader:
         """Convert normalized records into graph-ready nodes and relationships."""
         normalized_dataset = self.normalize_dataset_metadata(dataset_metadata)
         normalized_experiments = [
-            self.normalize_experiment_row(row, index=index, dataset_metadata=normalized_dataset)
+            self.normalize_experiment_row(
+                row, index=index, dataset_metadata=normalized_dataset
+            )
             for index, row in enumerate(experiment_rows)
         ]
         if "cohort_metadata" not in normalized_dataset:
-            synthesized_cohort = _synthesize_dataset_cohort_metadata(normalized_experiments)
+            synthesized_cohort = _synthesize_dataset_cohort_metadata(
+                normalized_experiments
+            )
             if synthesized_cohort is not None:
                 normalized_dataset["cohort_metadata"] = synthesized_cohort
                 normalized_dataset.setdefault(
@@ -1455,7 +1518,9 @@ class Psych101IngestLoader:
             canonical_family_id = _coerce_text(experiment.get("task_family_id"))
             canonical_family_label = _coerce_text(experiment.get("task_family_label"))
             canonical_subfamily_id = _coerce_text(experiment.get("task_subfamily_id"))
-            canonical_subfamily_label = _coerce_text(experiment.get("task_subfamily_label"))
+            canonical_subfamily_label = _coerce_text(
+                experiment.get("task_subfamily_label")
+            )
             canonical_family_description = _coerce_text(
                 ontology_match.get("family_description")
             )
@@ -1520,10 +1585,12 @@ class Psych101IngestLoader:
                             "ontology_match_score": experiment.get(
                                 "task_ontology_match_score"
                             ),
-                            "subfamily_id": canonical_subfamily_id if is_canonical else None,
-                            "subfamily_label": canonical_subfamily_label
-                            if is_canonical
-                            else None,
+                            "subfamily_id": (
+                                canonical_subfamily_id if is_canonical else None
+                            ),
+                            "subfamily_label": (
+                                canonical_subfamily_label if is_canonical else None
+                            ),
                         },
                     }
                 )
@@ -1577,14 +1644,13 @@ class Psych101IngestLoader:
                             "schema_version": "psych101-task-v1",
                         },
                     }
-                elif (
-                    task_description
-                    and not task_nodes[task_id]["properties"].get("description")
+                elif task_description and not task_nodes[task_id]["properties"].get(
+                    "description"
                 ):
                     task_nodes[task_id]["properties"]["description"] = task_description
-                    task_nodes[task_id]["properties"]["description_source"] = (
-                        "psych101_experiment_text"
-                    )
+                    task_nodes[task_id]["properties"][
+                        "description_source"
+                    ] = "psych101_experiment_text"
                 for audit_key in (
                     "target_population",
                     "sampling_frame",
@@ -1595,11 +1661,20 @@ class Psych101IngestLoader:
                     "cohort",
                     "fairness_audit",
                 ):
-                    if (
-                        experiment.get(audit_key) not in (None, "", [], {})
-                        and task_nodes[task_id]["properties"].get(audit_key) in (None, "", [], {})
+                    if experiment.get(audit_key) not in (
+                        None,
+                        "",
+                        [],
+                        {},
+                    ) and task_nodes[task_id]["properties"].get(audit_key) in (
+                        None,
+                        "",
+                        [],
+                        {},
                     ):
-                        task_nodes[task_id]["properties"][audit_key] = experiment.get(audit_key)
+                        task_nodes[task_id]["properties"][audit_key] = experiment.get(
+                            audit_key
+                        )
                 relationships.append(
                     {
                         "start_node": experiment_id,
@@ -1611,7 +1686,10 @@ class Psych101IngestLoader:
                         },
                     }
                 )
-                if canonical_family_id and (task_id, canonical_family_id) not in task_family_relationships:
+                if (
+                    canonical_family_id
+                    and (task_id, canonical_family_id) not in task_family_relationships
+                ):
                     relationships.append(
                         {
                             "start_node": task_id,

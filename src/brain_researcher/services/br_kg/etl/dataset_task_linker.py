@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 import os
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterable, Optional, List
 
 import yaml
 
@@ -61,9 +61,9 @@ class TaskMatch:
     score: float
     normalized: str
     matched_label: str
-    canonical: Optional[str] = None
+    canonical: str | None = None
     measures_count: int = 0
-    confidence_hint: Optional[float] = None
+    confidence_hint: float | None = None
 
 
 @dataclass
@@ -71,7 +71,7 @@ class TaskIndex:
     name_to_candidates: dict[str, list[TaskCandidate]]
     name_choices: list[str]
 
-    def resolve(self, normalized: str) -> Optional[TaskCandidate]:
+    def resolve(self, normalized: str) -> TaskCandidate | None:
         candidates = self.name_to_candidates.get(normalized)
         if not candidates:
             return None
@@ -98,9 +98,13 @@ def load_task_mapping_config(
     if isinstance(replacements_raw, dict):
         for pattern, repl in replacements_raw.items():
             try:
-                replacements.append((re.compile(pattern, flags=re.IGNORECASE), str(repl)))
+                replacements.append(
+                    (re.compile(pattern, flags=re.IGNORECASE), str(repl))
+                )
             except re.error:
-                logger.warning("Invalid regex pattern in task_mapping.yaml: %s", pattern)
+                logger.warning(
+                    "Invalid regex pattern in task_mapping.yaml: %s", pattern
+                )
 
     config = TaskMappingConfig(
         blacklist=set(),
@@ -121,18 +125,26 @@ def load_task_mapping_config(
                 normalized_blacklist.add(normalized)
         config.blacklist = normalized_blacklist
 
-        blacklist_terms_raw = data.get("blacklist_terms", []) if isinstance(data, dict) else []
+        blacklist_terms_raw = (
+            data.get("blacklist_terms", []) if isinstance(data, dict) else []
+        )
         for entry in blacklist_terms_raw or []:
             normalized = normalize_task(entry, config)
             if normalized:
                 config.blacklist_terms.add(normalized)
 
-        blacklist_regex_raw = data.get("blacklist_regex", []) if isinstance(data, dict) else []
+        blacklist_regex_raw = (
+            data.get("blacklist_regex", []) if isinstance(data, dict) else []
+        )
         for pattern in blacklist_regex_raw or []:
             try:
-                config.blacklist_patterns.append(re.compile(str(pattern), flags=re.IGNORECASE))
+                config.blacklist_patterns.append(
+                    re.compile(str(pattern), flags=re.IGNORECASE)
+                )
             except re.error:
-                logger.warning("Invalid blacklist_regex pattern in task_mapping.yaml: %s", pattern)
+                logger.warning(
+                    "Invalid blacklist_regex pattern in task_mapping.yaml: %s", pattern
+                )
     keyword_rules_raw = data.get("keyword_rules", []) if isinstance(data, dict) else []
     for entry in keyword_rules_raw or []:
         if not isinstance(entry, dict):
@@ -150,17 +162,23 @@ def load_task_mapping_config(
             try:
                 patterns.append(re.compile(re.escape(kw_text), flags=re.IGNORECASE))
             except re.error:
-                logger.warning("Invalid keyword entry in task_mapping.yaml: %s", kw_text)
+                logger.warning(
+                    "Invalid keyword entry in task_mapping.yaml: %s", kw_text
+                )
         for regex_entry in regexes:
             try:
                 patterns.append(re.compile(str(regex_entry), flags=re.IGNORECASE))
             except re.error:
-                logger.warning("Invalid keyword regex in task_mapping.yaml: %s", regex_entry)
+                logger.warning(
+                    "Invalid keyword regex in task_mapping.yaml: %s", regex_entry
+                )
         if not patterns:
             continue
         confidence_value = float(entry.get("confidence", 0.55))
         config.keyword_rules.append(
-            KeywordRule(canonical=canonical, patterns=patterns, confidence=confidence_value)
+            KeywordRule(
+                canonical=canonical, patterns=patterns, confidence=confidence_value
+            )
         )
     return config
 
@@ -230,8 +248,8 @@ def load_taxonomy_aliases(path: Path, config: TaskMappingConfig) -> dict[str, st
 
 def _add_alias(
     alias_to_canonical: dict[str, str],
-    alias: Optional[str],
-    canonical: Optional[str],
+    alias: str | None,
+    canonical: str | None,
     config: TaskMappingConfig,
 ) -> None:
     if not alias or not canonical:
@@ -260,7 +278,8 @@ def _load_task_matching_profile() -> object | None:
         profiles = load_matching_profiles()
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning(
-            "Task matching profile unavailable; using legacy normalization fallback (%s)", exc
+            "Task matching profile unavailable; using legacy normalization fallback (%s)",
+            exc,
         )
         return None
 
@@ -311,7 +330,8 @@ def _normalize_task_with_profile(text: str | None) -> str:
         normalized = normalize(value, {})
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning(
-            "Task matching profile normalization failed; using legacy fallback (%s)", exc
+            "Task matching profile normalization failed; using legacy fallback (%s)",
+            exc,
         )
         return ""
 
@@ -345,7 +365,9 @@ def build_task_index(
         measures_count = int(row.get("measures_count") or 0)
         if not task_id or not name:
             continue
-        candidate = TaskCandidate(task_id=str(task_id), measures_count=measures_count, name=str(name))
+        candidate = TaskCandidate(
+            task_id=str(task_id), measures_count=measures_count, name=str(name)
+        )
         for alias in iter_aliases(name, row.get("alias"), row.get("aliases")):
             normalized = normalize_task(alias, config)
             if not normalized:
@@ -359,7 +381,7 @@ def iter_aliases(*values: object) -> Iterable[str]:
     for value in values:
         if value is None:
             continue
-        if isinstance(value, (list, tuple, set)):
+        if isinstance(value, list | tuple | set):
             for entry in value:
                 if entry is None:
                     continue
@@ -382,7 +404,7 @@ def match_task(
     alias_to_canonical: dict[str, str],
     index: TaskIndex,
     config: TaskMappingConfig,
-) -> Optional[TaskMatch]:
+) -> TaskMatch | None:
     normalized = normalize_task(raw_task, config)
     if not normalized:
         return None
@@ -450,12 +472,16 @@ def match_task(
     return None
 
 
-def is_blacklisted_task(*, raw_task: str, normalized: str, config: TaskMappingConfig) -> bool:
+def is_blacklisted_task(
+    *, raw_task: str, normalized: str, config: TaskMappingConfig
+) -> bool:
     if config.ignore_blacklist:
         return False
     if normalized in config.blacklist:
         return True
-    if config.blacklist_terms and any(term in normalized for term in config.blacklist_terms):
+    if config.blacklist_terms and any(
+        term in normalized for term in config.blacklist_terms
+    ):
         return True
     raw_lower = str(raw_task).strip().lower()
     for pattern in config.blacklist_patterns:

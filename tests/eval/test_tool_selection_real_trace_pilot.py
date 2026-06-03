@@ -10,14 +10,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = ROOT / "scripts" / "eval" / "run_tool_selection_real_trace_pilot.py"
-SPEC = importlib.util.spec_from_file_location("run_tool_selection_real_trace_pilot", SCRIPT_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "run_tool_selection_real_trace_pilot", SCRIPT_PATH
+)
 assert SPEC is not None
 assert SPEC.loader is not None
 runner = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = runner
 SPEC.loader.exec_module(runner)
 
-RESCORE_SCRIPT_PATH = ROOT / "scripts" / "eval" / "rescore_tool_selection_real_trace_run.py"
+RESCORE_SCRIPT_PATH = (
+    ROOT / "scripts" / "eval" / "rescore_tool_selection_real_trace_run.py"
+)
 RESCORE_SPEC = importlib.util.spec_from_file_location(
     "rescore_tool_selection_real_trace_run", RESCORE_SCRIPT_PATH
 )
@@ -27,7 +31,9 @@ rescorer = importlib.util.module_from_spec(RESCORE_SPEC)
 sys.modules[RESCORE_SPEC.name] = rescorer
 RESCORE_SPEC.loader.exec_module(rescorer)
 
-SUMMARY_SCRIPT_PATH = ROOT / "scripts" / "eval" / "summarize_tool_selection_model_matrix.py"
+SUMMARY_SCRIPT_PATH = (
+    ROOT / "scripts" / "eval" / "summarize_tool_selection_model_matrix.py"
+)
 SUMMARY_SPEC = importlib.util.spec_from_file_location(
     "summarize_tool_selection_model_matrix", SUMMARY_SCRIPT_PATH
 )
@@ -45,9 +51,15 @@ def test_prompt_preserves_br_mode_boundary() -> None:
         "query": "Fetch and validate BIDS structure",
     }
 
-    without = runner.build_prompt(task, runner.condition_by_id()["codex_cli_gpt55_without_br"])
-    with_br = runner.build_prompt(task, runner.condition_by_id()["codex_cli_gpt55_with_br"])
-    claude_with_br = runner.build_prompt(task, runner.condition_by_id()["claude_code_opus47_with_br"])
+    without = runner.build_prompt(
+        task, runner.condition_by_id()["codex_cli_gpt55_without_br"]
+    )
+    with_br = runner.build_prompt(
+        task, runner.condition_by_id()["codex_cli_gpt55_with_br"]
+    )
+    claude_with_br = runner.build_prompt(
+        task, runner.condition_by_id()["claude_code_opus47_with_br"]
+    )
 
     assert "BR MCP/tools are disabled" in without
     assert "Do not call Brain Researcher" in without
@@ -144,7 +156,9 @@ def test_prompt_uses_task_json_route_hints() -> None:
         ],
     }
 
-    prompt = runner.build_prompt(task, runner.condition_by_id()["codex_cli_gpt55_with_br"])
+    prompt = runner.build_prompt(
+        task, runner.condition_by_id()["codex_cli_gpt55_with_br"]
+    )
 
     assert "workflow_qsiprep via get_execution_recipe" in prompt
     assert "QSIPrep command route with eddy/topup options" in prompt
@@ -175,7 +189,9 @@ def test_dry_run_materializes_episode_commands(tmp_path: Path) -> None:
     )
 
     payload = runner.run_matrix(args)
-    episode_dir = tmp_path / "dryrun" / "episodes" / "codex_cli_gpt55_without_br" / "DATA-001"
+    episode_dir = (
+        tmp_path / "dryrun" / "episodes" / "codex_cli_gpt55_without_br" / "DATA-001"
+    )
 
     assert payload["scale_readiness"]["decision"] == "materialized_only_not_scale_ready"
     assert (episode_dir / "prompt.txt").exists()
@@ -226,7 +242,12 @@ def test_runner_counts_stop_budget_by_non_neutral_actions() -> None:
         if json.loads(line)["task_id"] == "DATA-001"
     )
     actions = [
-        {"index": 1, "action_type": "mcp_tool", "target": "tool_search", "task_id": None},
+        {
+            "index": 1,
+            "action_type": "mcp_tool",
+            "target": "tool_search",
+            "task_id": None,
+        },
         {
             "index": 2,
             "action_type": "mcp_tool",
@@ -341,10 +362,14 @@ def test_skip_existing_records_reuses_and_scores_frozen_stdout(tmp_path: Path) -
 
     assert payload["records"][0]["status"] == "succeeded"
     assert payload["summary"]["codex_cli_gpt55_with_br"]["n_tasks"] == 1
-    assert payload["summary"]["codex_cli_gpt55_with_br"]["tool_selection_accuracy"] == 1.0
+    assert (
+        payload["summary"]["codex_cli_gpt55_with_br"]["tool_selection_accuracy"] == 1.0
+    )
 
 
-def test_skip_existing_records_scores_empty_action_trace_as_failure(tmp_path: Path) -> None:
+def test_skip_existing_records_scores_empty_action_trace_as_failure(
+    tmp_path: Path,
+) -> None:
     tasks_jsonl = tmp_path / "tasks.jsonl"
     tasks_jsonl.write_text(
         json.dumps(
@@ -501,7 +526,9 @@ def test_write_prod_mcp_runtime_uses_temp_remote_configs(tmp_path: Path) -> None
         http_url="https://${PUBLIC_HOSTNAME}/mcp",
     )
 
-    opencode_config = json.loads((opencode_home / "opencode" / "opencode.json").read_text())
+    opencode_config = json.loads(
+        (opencode_home / "opencode" / "opencode.json").read_text()
+    )
     claude_payload = json.loads(claude_config.read_text())
 
     assert opencode_home == tmp_path / "xdg"
@@ -510,7 +537,9 @@ def test_write_prod_mcp_runtime_uses_temp_remote_configs(tmp_path: Path) -> None
     assert prod["url"] == "https://${PUBLIC_HOSTNAME}/mcp"
     assert prod["headers"]["Authorization"] == "Bearer secret-token"
     assert (
-        claude_payload["mcpServers"]["brain-researcher-prod"]["headers"]["Authorization"]
+        claude_payload["mcpServers"]["brain-researcher-prod"]["headers"][
+            "Authorization"
+        ]
         == "Bearer secret-token"
     )
 
@@ -527,7 +556,7 @@ def test_rescore_reparses_stdout_events_before_cached_actions(tmp_path: Path) ->
                     "cmd": (
                         "python - <<'PY'\n"
                         "from brain_researcher.services.tools.execution_recipes import get_execution_recipe\n"
-                        "get_execution_recipe(tool_id=\"workflow_qsiprep\")\n"
+                        'get_execution_recipe(tool_id="workflow_qsiprep")\n'
                         "PY"
                     )
                 },
@@ -551,7 +580,8 @@ def test_rescore_reparses_stdout_events_before_cached_actions(tmp_path: Path) ->
     actions = rescorer._actions_for_episode(episode_dir)
 
     assert any(
-        action["action_type"] == "recipe_tool" and action["target"] == "workflow_qsiprep"
+        action["action_type"] == "recipe_tool"
+        and action["target"] == "workflow_qsiprep"
         for action in actions
     )
     assert all(action["target"] != "stale cached action" for action in actions)

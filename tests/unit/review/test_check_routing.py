@@ -17,14 +17,13 @@ from types import SimpleNamespace
 import pytest
 
 from brain_researcher.services.review.check_routing import (
+    _CHECK_TO_GROUP,
     ALWAYS_ON_GROUPS,
     CHECK_GROUPS,
     RoutingDecision,
-    _CHECK_TO_GROUP,
     classify_check,
     select_checks,
 )
-
 
 # A representative slice of the real distill_review correctness tuple,
 # spanning every group plus a couple of intentionally-unclassified checks.
@@ -227,7 +226,7 @@ def test_skips_are_recorded_with_reasons():
     bundle = make_bundle(analysis_family="glm", statistical_method="paired_t_test")
     decision = select_checks(bundle, SAMPLE_CHECKS)
     assert decision.skipped, "expected some skips for a narrow GLM run"
-    for name, reason in decision.skipped.items():
+    for _name, reason in decision.skipped.items():
         assert reason.startswith("group="), reason
         assert ":" in reason
 
@@ -236,7 +235,9 @@ def test_log_emitted(caplog):
     import logging
 
     bundle = make_bundle(analysis_family="glm", statistical_method="paired_t_test")
-    with caplog.at_level(logging.INFO, logger="brain_researcher.services.review.check_routing"):
+    with caplog.at_level(
+        logging.INFO, logger="brain_researcher.services.review.check_routing"
+    ):
         select_checks(bundle, SAMPLE_CHECKS)
     assert any("check_routing" in rec.message for rec in caplog.records)
 

@@ -89,8 +89,13 @@ class ParameterValidationResult(dict):
         warnings: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
     ):
-        if args and is_valid is None and not any(
-            arg is not None for arg in (value, message, suggested_value, warnings, metadata)
+        if (
+            args
+            and is_valid is None
+            and not any(
+                arg is not None
+                for arg in (value, message, suggested_value, warnings, metadata)
+            )
         ):
             dict.__init__(self, *args)
             return
@@ -124,7 +129,15 @@ class ValidationSummary(dict):
         validated_params: dict[str, Any] | None = None,
         suggestions: dict[str, Any] | None = None,
     ):
-        if args and valid is None and errors is None and warnings is None and results is None and validated_params is None and suggestions is None:
+        if (
+            args
+            and valid is None
+            and errors is None
+            and warnings is None
+            and results is None
+            and validated_params is None
+            and suggestions is None
+        ):
             dict.__init__(self, *args)
             return
         dict.__init__(
@@ -221,7 +234,7 @@ class NeuroimagingValidators:
             raise ValueError(f"File does not exist: {path}")
 
         # Check extension
-        valid_extensions = ['.nii', '.nii.gz']
+        valid_extensions = [".nii", ".nii.gz"]
         if not any(str(path).endswith(ext) for ext in valid_extensions):
             raise ValueError(
                 f"Invalid NIfTI file extension. Expected {valid_extensions}, got {path_obj.suffix}"
@@ -234,6 +247,7 @@ class NeuroimagingValidators:
         # Could add nibabel validation here if available
         try:
             import nibabel as nib
+
             nib.load(path)
         except ImportError:
             pass  # nibabel not available, skip deep validation
@@ -266,13 +280,13 @@ class NeuroimagingValidators:
             raise ValueError(f"Path is not a directory: {path}")
 
         # Check for required BIDS files
-        required_files = ['dataset_description.json']
+        required_files = ["dataset_description.json"]
         for req_file in required_files:
             if not (path_obj / req_file).exists():
                 raise ValueError(f"Missing required BIDS file: {req_file}")
 
         # Check for subject directories
-        subject_dirs = list(path_obj.glob('sub-*'))
+        subject_dirs = list(path_obj.glob("sub-*"))
         if not subject_dirs:
             raise ValueError("No subject directories found (sub-*)")
 
@@ -293,16 +307,14 @@ class NeuroimagingValidators:
             ValueError: If module not found
         """
         # Check if module exists by looking in CVMFS
-        cvmfs_base = Path('/cvmfs/neurodesk.ardc.edu.au/containers')
+        cvmfs_base = Path("/cvmfs/neurodesk.ardc.edu.au/containers")
 
         if not cvmfs_base.exists():
-            raise ValueError(
-                "CVMFS not mounted. Please check your Neurodesk setup."
-            )
+            raise ValueError("CVMFS not mounted. Please check your Neurodesk setup.")
 
         # Parse module name
-        if '/' in module_name:
-            tool, version = module_name.split('/', 1)
+        if "/" in module_name:
+            tool, version = module_name.split("/", 1)
             # Look for container directory
             container_pattern = f"{tool}_{version.replace('.', '_')}_*"
             matching_dirs = list(cvmfs_base.glob(container_pattern))
@@ -330,72 +342,75 @@ class DomainKnowledgeEngine:
     COMMON_RANGES = {
         # Spatial parameters
         "voxel_size": {
-            "min": 0.5, "max": 10.0,
+            "min": 0.5,
+            "max": 10.0,
             "typical": [1, 2, 3],
-            "advice": "Use 1mm for high-res, 2-3mm for standard fMRI"
+            "advice": "Use 1mm for high-res, 2-3mm for standard fMRI",
         },
         "smoothing_fwhm": {
-            "min": 0.0, "max": 20.0,
+            "min": 0.0,
+            "max": 20.0,
             "single_subject": [4, 6, 8],
             "group_analysis": [6, 8, 10, 12],
-            "advice": "Use 2-3x voxel size for smoothing kernel"
+            "advice": "Use 2-3x voxel size for smoothing kernel",
         },
-
         # Temporal parameters
         "repetition_time": {
-            "min": 0.5, "max": 5.0,
+            "min": 0.5,
+            "max": 5.0,
             "unit": "seconds",
             "typical_fmri": [2.0, 2.5, 3.0],
-            "advice": "Shorter TR = better temporal resolution"
+            "advice": "Shorter TR = better temporal resolution",
         },
         "high_pass": {
-            "min": 0.0, "max": 0.01,
+            "min": 0.0,
+            "max": 0.01,
             "typical": 0.008,  # 128s
-            "advice": "Use 1/128Hz for standard fMRI"
+            "advice": "Use 1/128Hz for standard fMRI",
         },
-
         # Motion parameters
         "motion_threshold": {
             "strict": 0.2,
             "standard": 0.5,
             "lenient": 1.0,
             "unit": "mm",
-            "advice": "Use 0.2mm for pediatric, 0.5mm for adults"
+            "advice": "Use 0.2mm for pediatric, 0.5mm for adults",
         },
         "fd_spike_threshold": {
-            "min": 0.0, "max": 5.0,
+            "min": 0.0,
+            "max": 5.0,
             "typical": 0.5,
-            "advice": "0.5mm is standard for framewise displacement"
+            "advice": "0.5mm is standard for framewise displacement",
         },
-
         # Statistical parameters
         "p_threshold": {
             "uncorrected": 0.001,
             "fdr": 0.05,
             "fwe": 0.05,
-            "advice": "Use FWE for final results, FDR for exploration"
+            "advice": "Use FWE for final results, FDR for exploration",
         },
         "cluster_threshold": {
             "min": 0,
             "typical": [10, 20, 50],
-            "advice": "Depends on voxel size and smoothing"
+            "advice": "Depends on voxel size and smoothing",
         },
-
         # Resource parameters
         "n_cpus": {
             "min": 1,
             "max": os.cpu_count() or 64,
-            "advice": "Use 4-8 for single subject, 2-4 per subject for parallel"
+            "advice": "Use 4-8 for single subject, 2-4 per subject for parallel",
         },
         "mem_gb": {
             "min": 1,
             "max": 256,  # Typical max system memory
             "per_cpu": 2,
-            "advice": "Allocate 2-4GB per CPU"
-        }
+            "advice": "Allocate 2-4GB per CPU",
+        },
     }
 
-    def suggest_parameters(self, tool_name: str, context: dict[str, Any]) -> dict[str, Any]:
+    def suggest_parameters(
+        self, tool_name: str, context: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Suggest parameters based on analysis context.
 
@@ -412,21 +427,27 @@ class DomainKnowledgeEngine:
         data_type = context.get("data_type", "unknown")
 
         if data_type == "T1w":
-            suggestions.update({
-                "bet_threshold": 0.5,
-                "voxel_size": 1.0,
-            })
+            suggestions.update(
+                {
+                    "bet_threshold": 0.5,
+                    "voxel_size": 1.0,
+                }
+            )
         elif data_type == "bold":
-            suggestions.update({
-                "smoothing_fwhm": 6.0,
-                "high_pass": 0.008,
-                "motion_threshold": 0.5,
-            })
+            suggestions.update(
+                {
+                    "smoothing_fwhm": 6.0,
+                    "high_pass": 0.008,
+                    "motion_threshold": 0.5,
+                }
+            )
         elif data_type == "dwi":
-            suggestions.update({
-                "b_value": 1000,
-                "n_directions": 64,
-            })
+            suggestions.update(
+                {
+                    "b_value": 1000,
+                    "n_directions": 64,
+                }
+            )
 
         # Analysis level suggestions
         analysis_level = context.get("analysis_level", "participant")
@@ -474,9 +495,9 @@ class DocumentationFetcher:
         """
         try:
             # Import the package
-            if '.' in package_name:
+            if "." in package_name:
                 # Handle submodules like nilearn.glm
-                parts = package_name.split('.')
+                parts = package_name.split(".")
                 module = __import__(parts[0])
                 for part in parts[1:]:
                     module = getattr(module, part)
@@ -493,19 +514,29 @@ class DocumentationFetcher:
                         params_info = {}
 
                         for param_name, param in sig.parameters.items():
-                            if param_name in ['self', 'cls']:
+                            if param_name in ["self", "cls"]:
                                 continue
 
                             param_info = {
-                                "type": str(param.annotation) if param.annotation != inspect.Parameter.empty else "Any",
-                                "default": param.default if param.default != inspect.Parameter.empty else None,
-                                "required": param.default == inspect.Parameter.empty
+                                "type": (
+                                    str(param.annotation)
+                                    if param.annotation != inspect.Parameter.empty
+                                    else "Any"
+                                ),
+                                "default": (
+                                    param.default
+                                    if param.default != inspect.Parameter.empty
+                                    else None
+                                ),
+                                "required": param.default == inspect.Parameter.empty,
                             }
 
                             # Try to extract from docstring
                             if obj.__doc__:
-                                param_info["description"] = self._extract_param_from_docstring(
-                                    obj.__doc__, param_name
+                                param_info["description"] = (
+                                    self._extract_param_from_docstring(
+                                        obj.__doc__, param_name
+                                    )
                                 )
 
                             params_info[param_name] = param_info
@@ -559,7 +590,7 @@ class DocumentationFetcher:
                     return json.load(f)
 
         # Try to get help from container
-        cvmfs_base = Path('/cvmfs/neurodesk.ardc.edu.au/containers')
+        cvmfs_base = Path("/cvmfs/neurodesk.ardc.edu.au/containers")
 
         if not cvmfs_base.exists():
             return None
@@ -572,7 +603,7 @@ class DocumentationFetcher:
         container_dir = matching_dirs[0]
 
         # Try common help flags
-        help_flags = ['-h', '--help', '-help', 'help']
+        help_flags = ["-h", "--help", "-help", "help"]
         parameters = {}
 
         for help_flag in help_flags:
@@ -582,7 +613,7 @@ class DocumentationFetcher:
                     [str(container_dir / tool_name), help_flag],
                     capture_output=True,
                     text=True,
-                    timeout=5
+                    timeout=5,
                 )
 
                 if result.returncode == 0 or result.stdout:
@@ -596,7 +627,7 @@ class DocumentationFetcher:
 
         # Cache the results
         if parameters:
-            with open(cache_file, 'w') as f:
+            with open(cache_file, "w") as f:
                 json.dump(parameters, f, indent=2)
 
         return parameters if parameters else None
@@ -617,22 +648,24 @@ class DocumentationFetcher:
         # For now, return None
         return None
 
-    def _extract_param_from_docstring(self, docstring: str, param_name: str) -> str | None:
+    def _extract_param_from_docstring(
+        self, docstring: str, param_name: str
+    ) -> str | None:
         """Extract parameter description from docstring."""
         # Simple extraction for NumPy/Google style docstrings
-        lines = docstring.split('\n')
+        lines = docstring.split("\n")
         in_params = False
 
         for i, line in enumerate(lines):
-            if 'Parameters' in line:
+            if "Parameters" in line:
                 in_params = True
                 continue
 
             if in_params:
                 if param_name in line:
                     # Try to get the description
-                    if ':' in line:
-                        return line.split(':', 1)[1].strip()
+                    if ":" in line:
+                        return line.split(":", 1)[1].strip()
                     elif i + 1 < len(lines):
                         return lines[i + 1].strip()
 
@@ -644,8 +677,8 @@ class DocumentationFetcher:
 
         # Common patterns in help output
         patterns = [
-            r'(-\w+|--[\w-]+)\s+<?(\w+)?>?\s+(.*?)(?:\n|$)',  # -f <value> description
-            r'(-\w+|--[\w-]+)\s+(.*?)(?:\n|$)',  # --flag description
+            r"(-\w+|--[\w-]+)\s+<?(\w+)?>?\s+(.*?)(?:\n|$)",  # -f <value> description
+            r"(-\w+|--[\w-]+)\s+(.*?)(?:\n|$)",  # --flag description
         ]
 
         for pattern in patterns:
@@ -655,7 +688,7 @@ class DocumentationFetcher:
                 description = match.group(-1) if len(match.groups()) > 1 else ""
 
                 # Clean up the flag name
-                param_name = flag.lstrip('-').replace('-', '_')
+                param_name = flag.lstrip("-").replace("-", "_")
 
                 # Try to extract type and range from description
                 param_info = {
@@ -666,21 +699,23 @@ class DocumentationFetcher:
                 }
 
                 # Look for type hints in description
-                if 'int' in description.lower():
+                if "int" in description.lower():
                     param_info["type"] = "integer"
-                elif 'float' in description.lower() or 'number' in description.lower():
+                elif "float" in description.lower() or "number" in description.lower():
                     param_info["type"] = "float"
-                elif 'bool' in description.lower() or 'flag' in description.lower():
+                elif "bool" in description.lower() or "flag" in description.lower():
                     param_info["type"] = "boolean"
 
                 # Look for ranges
-                range_match = re.search(r'\[?([\d.]+)-([\d.]+)\]?', description)
+                range_match = re.search(r"\[?([\d.]+)-([\d.]+)\]?", description)
                 if range_match:
                     param_info["min"] = float(range_match.group(1))
                     param_info["max"] = float(range_match.group(2))
 
                 # Look for defaults
-                default_match = re.search(r'default[:\s=]+([\w.]+)', description, re.IGNORECASE)
+                default_match = re.search(
+                    r"default[:\s=]+([\w.]+)", description, re.IGNORECASE
+                )
                 if default_match:
                     param_info["default"] = default_match.group(1)
 
@@ -695,6 +730,7 @@ class ParameterDatabase:
     def __init__(self, db_path: str = None):
         if db_path is None:
             from brain_researcher.config.paths import get_repo_root
+
             db_path = get_repo_root() / "data" / "parameter_db.json"
 
         self.db_path = Path(db_path)
@@ -715,7 +751,7 @@ class ParameterDatabase:
         return {
             "version": "1.0",
             "last_updated": datetime.now().isoformat(),
-            "tools": {}
+            "tools": {},
         }
 
     def save_database(self):
@@ -723,7 +759,7 @@ class ParameterDatabase:
         self.data["last_updated"] = datetime.now().isoformat()
 
         try:
-            with open(self.db_path, 'w') as f:
+            with open(self.db_path, "w") as f:
                 json.dump(self.data, f, indent=2)
         except Exception as e:
             print(f"Error saving parameter database: {e}")
@@ -732,7 +768,9 @@ class ParameterDatabase:
         """Public save alias for tests."""
         self.save_database()
 
-    def add_parameter(self, tool_name: str, param_name: str, info: dict[str, Any]) -> None:
+    def add_parameter(
+        self, tool_name: str, param_name: str, info: dict[str, Any]
+    ) -> None:
         """Add a parameter entry for a tool."""
         if "tools" not in self.data:
             self.data["tools"] = {}
@@ -753,7 +791,9 @@ class ParameterDatabase:
         tool_entry = self.data.get("tools", {}).get(tool_name, {})
         return tool_entry.get("parameters", {}) or {}
 
-    def update_parameter(self, tool_name: str, param_name: str, info: dict[str, Any]) -> None:
+    def update_parameter(
+        self, tool_name: str, param_name: str, info: dict[str, Any]
+    ) -> None:
         """Update an existing parameter while preserving fields."""
         existing = self.get_parameter(tool_name, param_name) or {}
         merged = dict(existing)
@@ -798,7 +838,7 @@ class ParameterDatabase:
         self.data["tools"][tool_name] = {
             "parameters": params,
             "last_updated": datetime.now().isoformat(),
-            "source": "auto-discovered"
+            "source": "auto-discovered",
         }
 
         self.save_database()
@@ -857,8 +897,7 @@ class ParameterValidator:
                     description="Participant ID to process",
                     default=None,
                     validation_rules=ValidationRule(
-                        required=False,
-                        pattern=r"^sub-[a-zA-Z0-9]+$"
+                        required=False, pattern=r"^sub-[a-zA-Z0-9]+$"
                     ),
                     source="fMRIPrep documentation",
                 ),
@@ -868,14 +907,12 @@ class ParameterValidator:
                     description="Number of CPUs to use",
                     default=4,
                     validation_rules=ValidationRule(
-                        required=False,
-                        min_value=1,
-                        max_value=os.cpu_count() or 64
+                        required=False, min_value=1, max_value=os.cpu_count() or 64
                     ),
                     source="fMRIPrep documentation",
                     empirical_advice="Use 4-8 CPUs for single subject, 2-4 per subject for parallel processing",
                 ),
-            ]
+            ],
         )
 
         # GLM analysis schema
@@ -895,14 +932,14 @@ class ParameterValidator:
                     description="Smoothing kernel FWHM in mm",
                     default=6.0,
                     validation_rules=ValidationRule(
-                        required=False,
-                        min_value=0.0,
-                        max_value=20.0
+                        required=False, min_value=0.0, max_value=20.0
                     ),
                     source="Nilearn documentation",
-                    empirical_advice=self.domain_expert.get_empirical_advice("smoothing_fwhm"),
+                    empirical_advice=self.domain_expert.get_empirical_advice(
+                        "smoothing_fwhm"
+                    ),
                 ),
-            ]
+            ],
         )
 
         # FSL BET schema
@@ -923,14 +960,12 @@ class ParameterValidator:
                     description="Fractional intensity threshold",
                     default=0.5,
                     validation_rules=ValidationRule(
-                        required=False,
-                        min_value=0.0,
-                        max_value=1.0
+                        required=False, min_value=0.0, max_value=1.0
                     ),
                     source="FSL documentation",
                     empirical_advice="Use 0.3-0.4 for T2, 0.5-0.6 for T1",
                 ),
-            ]
+            ],
         )
 
     def register_tool_schema(self, tool_name: str, schemas: list[ParameterSchema]):
@@ -1004,10 +1039,7 @@ class ParameterValidator:
 
             # Validate the parameter
             try:
-                validated_value = self._validate_single_parameter(
-                    param_value,
-                    schema
-                )
+                validated_value = self._validate_single_parameter(param_value, schema)
                 validated_params[param_name] = validated_value
             except ValueError as e:
                 # Add empirical advice if available
@@ -1029,10 +1061,11 @@ class ParameterValidator:
             suggestions = self._get_parameter_suggestions(tool_name, parameters, errors)
 
             raise AgentError(
-                message=f"Parameter validation failed for {tool_name}:\n" + "\n".join(errors),
+                message=f"Parameter validation failed for {tool_name}:\n"
+                + "\n".join(errors),
                 category=ErrorCategory.VALIDATION_ERROR,
                 severity=ErrorSeverity.MEDIUM,
-                suggestions=suggestions
+                suggestions=suggestions,
             )
 
         return validated_params
@@ -1064,7 +1097,9 @@ class ParameterValidator:
             "required": rules.required,
         }
 
-    def _schema_from_discovery(self, discovery: dict[str, Any], param_name: str) -> dict[str, Any] | None:
+    def _schema_from_discovery(
+        self, discovery: dict[str, Any], param_name: str
+    ) -> dict[str, Any] | None:
         """Find a schema entry from discovery results."""
         for source in discovery.values():
             if not isinstance(source, dict):
@@ -1388,7 +1423,9 @@ class ParameterValidator:
         elif self._is_neurodesk_tool(tool_name):
             help_params = self.doc_fetcher.fetch_neurodesk_help(tool_name)
             if help_params:
-                discovered_schemas = self._convert_help_to_schemas(tool_name, help_params)
+                discovered_schemas = self._convert_help_to_schemas(
+                    tool_name, help_params
+                )
                 # Save to database
                 self.param_db.update_tool_params(tool_name, help_params)
 
@@ -1396,7 +1433,9 @@ class ParameterValidator:
         else:
             online_params = self.doc_fetcher.fetch_online_docs(tool_name)
             if online_params:
-                discovered_schemas = self._convert_online_to_schemas(tool_name, online_params)
+                discovered_schemas = self._convert_online_to_schemas(
+                    tool_name, online_params
+                )
                 self.param_db.update_tool_params(tool_name, online_params)
 
         if discovered_schemas:
@@ -1406,19 +1445,21 @@ class ParameterValidator:
     def _is_python_package(self, tool_name: str) -> bool:
         """Check if tool is a Python package."""
         try:
-            __import__(tool_name.split('.')[0])
+            __import__(tool_name.split(".")[0])
             return True
         except ImportError:
             return False
 
     def _is_neurodesk_tool(self, tool_name: str) -> bool:
         """Check if tool is available in Neurodesk."""
-        cvmfs_base = Path('/cvmfs/neurodesk.ardc.edu.au/containers')
+        cvmfs_base = Path("/cvmfs/neurodesk.ardc.edu.au/containers")
         if cvmfs_base.exists():
             return len(list(cvmfs_base.glob(f"{tool_name}_*"))) > 0
         return False
 
-    def _convert_db_to_schemas(self, tool_name: str, db_params: dict) -> list[ParameterSchema]:
+    def _convert_db_to_schemas(
+        self, tool_name: str, db_params: dict
+    ) -> list[ParameterSchema]:
         """Convert database parameters to schemas."""
         schemas = []
         params = db_params.get("parameters", {})
@@ -1434,13 +1475,15 @@ class ParameterValidator:
                     min_value=param_info.get("min"),
                     max_value=param_info.get("max"),
                 ),
-                source="parameter database"
+                source="parameter database",
             )
             schemas.append(schema)
 
         return schemas
 
-    def _convert_api_to_schemas(self, tool_name: str, api_params: dict) -> list[ParameterSchema]:
+    def _convert_api_to_schemas(
+        self, tool_name: str, api_params: dict
+    ) -> list[ParameterSchema]:
         """Convert API parameters to schemas."""
         schemas = []
 
@@ -1455,14 +1498,16 @@ class ParameterValidator:
                     validation_rules=ValidationRule(
                         required=param_info.get("required", False),
                     ),
-                    source=f"Python API: {tool_name}"
+                    source=f"Python API: {tool_name}",
                 )
                 schemas.append(schema)
             break  # Just use first function for now
 
         return schemas
 
-    def _convert_help_to_schemas(self, tool_name: str, help_params: dict) -> list[ParameterSchema]:
+    def _convert_help_to_schemas(
+        self, tool_name: str, help_params: dict
+    ) -> list[ParameterSchema]:
         """Convert CLI help parameters to schemas."""
         schemas = []
 
@@ -1478,13 +1523,15 @@ class ParameterValidator:
                     max_value=param_info.get("max"),
                 ),
                 source=f"Neurodesk: {tool_name}",
-                neurodesk_module=tool_name
+                neurodesk_module=tool_name,
             )
             schemas.append(schema)
 
         return schemas
 
-    def _convert_online_to_schemas(self, tool_name: str, online_params: dict) -> list[ParameterSchema]:
+    def _convert_online_to_schemas(
+        self, tool_name: str, online_params: dict
+    ) -> list[ParameterSchema]:
         """Convert online documentation to schemas."""
         # Similar to other converters
         return []
@@ -1493,28 +1540,24 @@ class ParameterValidator:
         """Infer parameter type from string representation."""
         type_str = str(type_str).lower()
 
-        if 'int' in type_str:
+        if "int" in type_str:
             return ParameterType.INTEGER
-        elif 'float' in type_str or 'number' in type_str:
+        elif "float" in type_str or "number" in type_str:
             return ParameterType.FLOAT
-        elif 'bool' in type_str:
+        elif "bool" in type_str:
             return ParameterType.BOOLEAN
-        elif 'path' in type_str or 'file' in type_str:
+        elif "path" in type_str or "file" in type_str:
             return ParameterType.FILE
-        elif 'dir' in type_str:
+        elif "dir" in type_str:
             return ParameterType.DIRECTORY
-        elif 'list' in type_str or 'array' in type_str:
+        elif "list" in type_str or "array" in type_str:
             return ParameterType.LIST
-        elif 'dict' in type_str:
+        elif "dict" in type_str:
             return ParameterType.DICT
         else:
             return ParameterType.STRING
 
-    def _validate_single_parameter(
-        self,
-        value: Any,
-        schema: ParameterSchema
-    ) -> Any:
+    def _validate_single_parameter(self, value: Any, schema: ParameterSchema) -> Any:
         """
         Validate a single parameter.
 
@@ -1535,26 +1578,43 @@ class ParameterValidator:
 
         # Apply validation rules
         if rules.min_value is not None and validated_value < rules.min_value:
-            raise ValueError(f"Value {validated_value} is below minimum {rules.min_value}")
+            raise ValueError(
+                f"Value {validated_value} is below minimum {rules.min_value}"
+            )
 
         if rules.max_value is not None and validated_value > rules.max_value:
-            raise ValueError(f"Value {validated_value} exceeds maximum {rules.max_value}")
+            raise ValueError(
+                f"Value {validated_value} exceeds maximum {rules.max_value}"
+            )
 
         if rules.min_length is not None and len(validated_value) < rules.min_length:
-            raise ValueError(f"Length {len(validated_value)} is below minimum {rules.min_length}")
+            raise ValueError(
+                f"Length {len(validated_value)} is below minimum {rules.min_length}"
+            )
 
         if rules.max_length is not None and len(validated_value) > rules.max_length:
-            raise ValueError(f"Length {len(validated_value)} exceeds maximum {rules.max_length}")
+            raise ValueError(
+                f"Length {len(validated_value)} exceeds maximum {rules.max_length}"
+            )
 
         if rules.pattern and isinstance(validated_value, str):
             if not re.match(rules.pattern, validated_value):
-                raise ValueError(f"Value '{validated_value}' does not match pattern {rules.pattern}")
+                raise ValueError(
+                    f"Value '{validated_value}' does not match pattern {rules.pattern}"
+                )
 
         if rules.choices is not None and validated_value not in rules.choices:
-            raise ValueError(f"Value '{validated_value}' not in allowed choices: {rules.choices}")
+            raise ValueError(
+                f"Value '{validated_value}' not in allowed choices: {rules.choices}"
+            )
 
-        if rules.file_extensions and schema.param_type in [ParameterType.FILE, ParameterType.PATH]:
-            if not any(str(validated_value).endswith(ext) for ext in rules.file_extensions):
+        if rules.file_extensions and schema.param_type in [
+            ParameterType.FILE,
+            ParameterType.PATH,
+        ]:
+            if not any(
+                str(validated_value).endswith(ext) for ext in rules.file_extensions
+            ):
                 raise ValueError(f"File must have extension: {rules.file_extensions}")
 
         if rules.custom_validator:
@@ -1566,7 +1626,9 @@ class ParameterValidator:
         # Check Neurodesk module if specified
         if schema.neurodesk_module:
             try:
-                self.neuroimaging_validators.validate_neurodesk_module(schema.neurodesk_module)
+                self.neuroimaging_validators.validate_neurodesk_module(
+                    schema.neurodesk_module
+                )
             except ValueError:
                 raise ValueError(
                     f"Required Neurodesk module not available: {schema.neurodesk_module}. "
@@ -1576,10 +1638,7 @@ class ParameterValidator:
         return validated_value
 
     def _validate_type(
-        self,
-        value: Any,
-        param_type: ParameterType,
-        schema: ParameterSchema
+        self, value: Any, param_type: ParameterType, schema: ParameterSchema
     ) -> Any:
         """
         Validate and convert parameter type.
@@ -1609,7 +1668,7 @@ class ParameterValidator:
                 if isinstance(value, bool):
                     return value
                 if isinstance(value, str):
-                    return value.lower() in ['true', '1', 'yes', 'on']
+                    return value.lower() in ["true", "1", "yes", "on"]
                 return bool(value)
 
             elif param_type == ParameterType.PATH:
@@ -1644,7 +1703,7 @@ class ParameterValidator:
                             return parsed
                     except json.JSONDecodeError:
                         # Split by comma
-                        return [v.strip() for v in value.split(',')]
+                        return [v.strip() for v in value.split(",")]
                 return list(value)
 
             elif param_type == ParameterType.DICT:
@@ -1682,10 +1741,7 @@ class ParameterValidator:
             raise ValueError(f"Cannot convert to {param_type.value}: {str(e)}") from e
 
     def _get_parameter_suggestions(
-        self,
-        tool_name: str,
-        parameters: dict[str, Any],
-        errors: list[str]
+        self, tool_name: str, parameters: dict[str, Any], errors: list[str]
     ) -> list[str]:
         """Get helpful suggestions for parameter errors."""
         suggestions = [
@@ -1695,22 +1751,32 @@ class ParameterValidator:
 
         # Add tool-specific help
         if tool_name in self.schemas:
-            suggestions.append(f"Run 'br tools describe {tool_name}' for parameter details")
+            suggestions.append(
+                f"Run 'br tools describe {tool_name}' for parameter details"
+            )
 
         # Add domain-specific advice
         for error in errors:
             if "smoothing" in error.lower():
-                suggestions.append("Smoothing typically 2-3x voxel size (e.g., 6mm for 2mm voxels)")
+                suggestions.append(
+                    "Smoothing typically 2-3x voxel size (e.g., 6mm for 2mm voxels)"
+                )
             elif "threshold" in error.lower():
-                suggestions.append("Statistical thresholds: p<0.001 uncorrected, p<0.05 FWE")
+                suggestions.append(
+                    "Statistical thresholds: p<0.001 uncorrected, p<0.05 FWE"
+                )
             elif "motion" in error.lower():
-                suggestions.append("Motion thresholds: 0.2mm (strict), 0.5mm (standard)")
+                suggestions.append(
+                    "Motion thresholds: 0.2mm (strict), 0.5mm (standard)"
+                )
 
         # Check if Neurodesk module is needed
         if tool_name in self.schemas:
             for schema in self.schemas[tool_name]:
                 if schema.neurodesk_module:
-                    suggestions.append(f"Ensure Neurodesk module is loaded: module load {schema.neurodesk_module}")
+                    suggestions.append(
+                        f"Ensure Neurodesk module is loaded: module load {schema.neurodesk_module}"
+                    )
                     break
 
         return suggestions
@@ -1731,7 +1797,9 @@ class ParameterValidator:
 
         return self.schemas.get(tool_name, [])
 
-    def generate_parameter_help(self, tool_name: str, context: dict[str, Any] | None = None) -> str:
+    def generate_parameter_help(
+        self, tool_name: str, context: dict[str, Any] | None = None
+    ) -> str:
         """
         Generate help text for tool parameters with context-aware suggestions.
 
@@ -1766,7 +1834,9 @@ class ParameterValidator:
 
         for schema in schemas:
             required = "required" if schema.validation_rules.required else "optional"
-            default = f" (default: {schema.default})" if schema.default is not None else ""
+            default = (
+                f" (default: {schema.default})" if schema.default is not None else ""
+            )
 
             help_lines.append(
                 f"\n  {schema.name} ({schema.param_type.value}, {required}){default}:"
@@ -1775,7 +1845,9 @@ class ParameterValidator:
 
             rules = schema.validation_rules
             if rules.min_value is not None or rules.max_value is not None:
-                range_str = f"    Range: [{rules.min_value or '-∞'}, {rules.max_value or '∞'}]"
+                range_str = (
+                    f"    Range: [{rules.min_value or '-∞'}, {rules.max_value or '∞'}]"
+                )
                 help_lines.append(range_str)
 
             if rules.choices:
@@ -1788,14 +1860,18 @@ class ParameterValidator:
                 help_lines.append(f"    💡 Advice: {schema.empirical_advice}")
 
             if schema.neurodesk_module:
-                help_lines.append(f"    📦 Requires: module load {schema.neurodesk_module}")
+                help_lines.append(
+                    f"    📦 Requires: module load {schema.neurodesk_module}"
+                )
 
             if schema.source:
                 help_lines.append(f"    📚 Source: {schema.source}")
 
         return "\n".join(help_lines)
 
-    def get_parameter_suggestions(self, tool_name: str, failed_params: dict[str, Any]) -> list[str]:
+    def get_parameter_suggestions(
+        self, tool_name: str, failed_params: dict[str, Any]
+    ) -> list[str]:
         """
         Get parameter suggestions for failed validation.
 

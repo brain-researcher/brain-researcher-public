@@ -5,18 +5,18 @@ Implements FitLins (Fitting Linear Models to BIDS Datasets) for standardized
 first and second-level GLM analyses following BIDS conventions.
 """
 
-import logging
 import json
+import logging
 import os
-import sys
 import subprocess
-import yaml
-import numpy as np
-import pandas as pd
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Tuple
-import nibabel as nib
+import sys
 import warnings
+from pathlib import Path
+from typing import Any
+
+import nibabel as nib
+import pandas as pd
+
 try:
     import jsonschema
 except ImportError:  # pragma: no cover - optional dependency
@@ -24,24 +24,22 @@ except ImportError:  # pragma: no cover - optional dependency
 
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.tool_base import (
-    NeuroToolWrapper,
-    ToolResult,
-)
-from brain_researcher.core.multiverse.rule_engine import generate_variants
+from brain_researcher.core.literature.references import gather_references
 from brain_researcher.core.multiverse.confounds import (
     confounds_families_to_patterns,
     enforce_motion_consistency,
 )
-from brain_researcher.core.literature.references import gather_references
+from brain_researcher.core.multiverse.rule_engine import generate_variants
 from brain_researcher.services.tools.literature_tool import GLMLiteratureTool
 from brain_researcher.services.tools.pipelines import (
     FitLinsParameters,
-    build_fitlins_command,
-    build_fitlins_env,
     fitlins_from_payload,
 )
 from brain_researcher.services.tools.pipelines.helpers import run_fitlins_from_dict
+from brain_researcher.services.tools.tool_base import (
+    NeuroToolWrapper,
+    ToolResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +47,7 @@ logger = logging.getLogger(__name__)
 FitLinsConfig = FitLinsParameters
 
 # Minimal BIDS Stats Model JSON schema (structural checks only)
-_BIDS_MODEL_SCHEMA_MIN: Dict[str, Any] = {
+_BIDS_MODEL_SCHEMA_MIN: dict[str, Any] = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "required": ["Name", "BIDSModelVersion", "Input", "Nodes"],
@@ -90,7 +88,7 @@ _BIDS_MODEL_SCHEMA_MIN: Dict[str, Any] = {
 # ---------------------------------------------------------------------------
 
 
-def _find_run_node(model: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _find_run_node(model: dict[str, Any]) -> dict[str, Any] | None:
     """Return the first node with Level == 'Run' (case-insensitive)."""
     for node in model.get("Nodes", []):
         if str(node.get("Level", "")).lower() == "run":
@@ -98,7 +96,7 @@ def _find_run_node(model: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _find_convolve_idx(run_node: Dict[str, Any]) -> Optional[int]:
+def _find_convolve_idx(run_node: dict[str, Any]) -> int | None:
     instr = run_node.get("Transformations", {}).get("Instructions", [])
     for i, step in enumerate(instr):
         if step.get("Name", "").lower() == "convolve":
@@ -106,7 +104,7 @@ def _find_convolve_idx(run_node: Dict[str, Any]) -> Optional[int]:
     return None
 
 
-def _apply_hrf_variant(run_node: Dict[str, Any], convolve_idx: int, mode: str) -> None:
+def _apply_hrf_variant(run_node: dict[str, Any], convolve_idx: int, mode: str) -> None:
     """Mutate the run-level Convolve instruction according to mode."""
     instr = run_node.get("Transformations", {}).get("Instructions", [])
     if convolve_idx is None or convolve_idx >= len(instr):
@@ -192,7 +190,7 @@ def _normalize_fitlins_hrf_model(mode: str) -> str:
     return aliases.get(normalized, normalized)
 
 
-def _coerce_family_value(value: Any) -> Optional[bool]:
+def _coerce_family_value(value: Any) -> bool | None:
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
@@ -204,7 +202,7 @@ def _coerce_family_value(value: Any) -> Optional[bool]:
     return None
 
 
-def _base_confounds_families(mode: str) -> Dict[str, bool]:
+def _base_confounds_families(mode: str) -> dict[str, bool]:
     mode = mode.lower()
     with_24 = "24mot" in mode
     with_acompcor = "acompcor" in mode
@@ -221,7 +219,9 @@ def _base_confounds_families(mode: str) -> Dict[str, bool]:
     return families
 
 
-def _merge_confounds_families(mode: str, families: Optional[Dict[str, Any]]) -> Dict[str, bool]:
+def _merge_confounds_families(
+    mode: str, families: dict[str, Any] | None
+) -> dict[str, bool]:
     merged = _base_confounds_families(mode)
     if families:
         for axis, val in families.items():
@@ -233,9 +233,9 @@ def _merge_confounds_families(mode: str, families: Optional[Dict[str, Any]]) -> 
 
 
 def _apply_confounds_variant(
-    run_node: Dict[str, Any],
+    run_node: dict[str, Any],
     mode: str,
-    families: Optional[Dict[str, Any]] = None,
+    families: dict[str, Any] | None = None,
 ) -> None:
     """Mutate Model.X confound patterns according to mode/family flags."""
     model = run_node.get("Model", {})
@@ -255,16 +255,16 @@ def _apply_confounds_variant(
     model["X"] = x_base + confounds
 
 
-def _apply_highpass_variant(run_node: Dict[str, Any], cutoff: int) -> None:
+def _apply_highpass_variant(run_node: dict[str, Any], cutoff: int) -> None:
     """Set run-level high-pass filter cutoff (in seconds)."""
     model = run_node.setdefault("Model", {})
     opts = model.setdefault("Options", {})
     opts["HighPassFilterCutoff"] = cutoff
 
 
-def _extract_contrast_names(model: Dict[str, Any]) -> List[str]:
+def _extract_contrast_names(model: dict[str, Any]) -> list[str]:
     """Collect contrast names from BIDS Stats Model nodes."""
-    names: List[str] = []
+    names: list[str] = []
     for node in model.get("Nodes", []):
         if not isinstance(node, dict):
             continue
@@ -282,9 +282,9 @@ def _extract_contrast_names(model: Dict[str, Any]) -> List[str]:
     return out
 
 
-def _extract_fitlins_params(model: Dict[str, Any]) -> Dict[str, Any]:
+def _extract_fitlins_params(model: dict[str, Any]) -> dict[str, Any]:
     """Extract FitLins-relevant parameters from a Stats Model spec."""
-    params: Dict[str, Any] = {}
+    params: dict[str, Any] = {}
     run_node = _find_run_node(model)
     if run_node is None:
         return params
@@ -299,37 +299,45 @@ def _extract_fitlins_params(model: Dict[str, Any]) -> Dict[str, Any]:
             params["convolve_input"] = step.get("Input")
             break
 
-    model_block = run_node.get("Model", {}) if isinstance(run_node.get("Model"), dict) else {}
+    model_block = (
+        run_node.get("Model", {}) if isinstance(run_node.get("Model"), dict) else {}
+    )
     if model_block.get("Type"):
         params["model_type"] = model_block.get("Type")
 
-    opts = model_block.get("Options", {}) if isinstance(model_block.get("Options"), dict) else {}
+    opts = (
+        model_block.get("Options", {})
+        if isinstance(model_block.get("Options"), dict)
+        else {}
+    )
     if opts:
         params["model_options"] = opts
         if "HighPassFilterCutoff" in opts:
             params["high_pass"] = opts.get("HighPassFilterCutoff")
 
     x_terms = model_block.get("X", [])
-    confounds: List[str] = []
+    confounds: list[str] = []
     for term in x_terms if isinstance(x_terms, list) else []:
         if not isinstance(term, str):
             continue
         lowered = term.lower()
-        if lowered.startswith((
-            "trans_",
-            "rot_",
-            "cardiac_signal_",
-            "cardiac_retroicor_",
-            "respiratory_signal_",
-            "respiratory_retroicor_",
-            "cardiorespiratory_sum_",
-            "cardiorespiratory_diff_",
-            "pupil_filtered_z",
-            "pupil_derivative1_z",
-            "pupil_tonic_z",
-            "pupil_phasic_z",
-            "pupil_blink_fraction",
-        )):
+        if lowered.startswith(
+            (
+                "trans_",
+                "rot_",
+                "cardiac_signal_",
+                "cardiac_retroicor_",
+                "respiratory_signal_",
+                "respiratory_retroicor_",
+                "cardiorespiratory_sum_",
+                "cardiorespiratory_diff_",
+                "pupil_filtered_z",
+                "pupil_derivative1_z",
+                "pupil_tonic_z",
+                "pupil_phasic_z",
+                "pupil_blink_fraction",
+            )
+        ):
             confounds.append(term)
         elif "comp_cor" in lowered or "cosine" in lowered or "motion" in lowered:
             confounds.append(term)
@@ -339,18 +347,22 @@ def _extract_fitlins_params(model: Dict[str, Any]) -> Dict[str, Any]:
     return params
 
 
-def _build_evidence_panel(manifests: List[Dict[str, Any]], top_k: int = 5) -> List[Dict[str, Any]]:
+def _build_evidence_panel(
+    manifests: list[dict[str, Any]], top_k: int = 5
+) -> list[dict[str, Any]]:
     """Aggregate top literature hits into a compact evidence panel."""
-    hits: List[Dict[str, Any]] = []
+    hits: list[dict[str, Any]] = []
     for entry in manifests:
         evidence = entry.get("literature_evidence") or {}
         fs = evidence.get("file_search") or {}
         for chunk in fs.get("chunks") or []:
             hits.append(chunk)
 
-    dedup: Dict[str, Dict[str, Any]] = {}
+    dedup: dict[str, dict[str, Any]] = {}
     for hit in hits:
-        key = hit.get("pmcid") or hit.get("doi") or hit.get("title") or hit.get("snippet")
+        key = (
+            hit.get("pmcid") or hit.get("doi") or hit.get("title") or hit.get("snippet")
+        )
         if not key or key in dedup:
             continue
         dedup[key] = {
@@ -370,7 +382,7 @@ def _build_evidence_panel(manifests: List[Dict[str, Any]], top_k: int = 5) -> Li
     return ordered[:top_k]
 
 
-def _validate_model(model: Dict[str, Any]) -> tuple[bool, str]:
+def _validate_model(model: dict[str, Any]) -> tuple[bool, str]:
     """Lightweight validation: required keys + run node sanity + Transformations structure."""
     required_top = ["Name", "BIDSModelVersion", "Input", "Nodes"]
     for k in required_top:
@@ -386,7 +398,11 @@ def _validate_model(model: Dict[str, Any]) -> tuple[bool, str]:
     # ensure Transformations dict shape
     if "Transformations" in run_node:
         tx = run_node["Transformations"]
-        if not isinstance(tx, dict) or "Instructions" not in tx or not isinstance(tx["Instructions"], list):
+        if (
+            not isinstance(tx, dict)
+            or "Instructions" not in tx
+            or not isinstance(tx["Instructions"], list)
+        ):
             return False, "run-level Transformations must have Instructions list"
     # crude regressor-count sanity check
     reg_count = len(run_node.get("Model", {}).get("X", []))
@@ -400,14 +416,18 @@ def _validate_model(model: Dict[str, Any]) -> tuple[bool, str]:
         except Exception as exc:
             return False, f"jsonschema: {exc}"
     else:
-        warnings.warn("jsonschema not installed; skipping schema validation", RuntimeWarning)
+        warnings.warn(
+            "jsonschema not installed; skipping schema validation",
+            RuntimeWarning,
+            stacklevel=2,
+        )
 
     return True, "ok"
 
 
-
 class AnalysisLevel(str):
     """Analysis levels for FitLins."""
+
     RUN = "run"
     SESSION = "session"
     SUBJECT = "subject"
@@ -416,6 +436,7 @@ class AnalysisLevel(str):
 
 class EstimatorType(str):
     """Estimator types for FitLins."""
+
     NILEARN = "nilearn"
     AFNI = "afni"
     NISTATS = "nistats"
@@ -423,6 +444,7 @@ class EstimatorType(str):
 
 class SpaceType(str):
     """Standard spaces for analysis."""
+
     MNI152NLIN2009CASYM = "MNI152NLin2009cAsym"
     MNI152NLIN6ASYM = "MNI152NLin6Asym"
     MNI152LIN = "MNI152Lin"
@@ -437,147 +459,118 @@ class FitLinsArgs(BaseModel):
     """Arguments for FitLins BIDS GLM analysis."""
 
     # BIDS dataset paths
-    bids_dir: str = Field(
-        description="Path to BIDS dataset root directory"
-    )
-    output_dir: str = Field(
-        description="Output directory for FitLins results"
-    )
-    derivatives_dir: Optional[str] = Field(
-        default=None,
-        description="Path to fMRIPrep derivatives (auto-detected if None)"
+    bids_dir: str = Field(description="Path to BIDS dataset root directory")
+    output_dir: str = Field(description="Output directory for FitLins results")
+    derivatives_dir: str | None = Field(
+        default=None, description="Path to fMRIPrep derivatives (auto-detected if None)"
     )
 
     # Analysis specification
-    model: Optional[str] = Field(
-        default=None,
-        description="Path to BIDS Stats Model JSON file or model name"
+    model: str | None = Field(
+        default=None, description="Path to BIDS Stats Model JSON file or model name"
     )
     analysis_level: str = Field(
         default="subject",
-        description="Analysis level: run, session, subject, or dataset"
+        description="Analysis level: run, session, subject, or dataset",
     )
 
     # Model configuration
     hrf_model: str = Field(
         default="glover",
-        description="HRF model: glover, spm, spm_time, spm_time_dispersion, glover_time, fir (also accepts aliases canonical and derivs)"
+        description="HRF model: glover, spm, spm_time, spm_time_dispersion, glover_time, fir (also accepts aliases canonical and derivs)",
     )
     drift_model: str = Field(
-        default="cosine",
-        description="Drift model: cosine, polynomial, or None"
+        default="cosine", description="Drift model: cosine, polynomial, or None"
     )
-    drift_order: Optional[int] = Field(
-        default=None,
-        description="Order for polynomial drift model"
+    drift_order: int | None = Field(
+        default=None, description="Order for polynomial drift model"
     )
 
     # Preprocessing options
-    smoothing: Optional[float] = Field(
-        default=None,
-        description="Smoothing kernel FWHM in mm (None = no smoothing)"
+    smoothing: float | None = Field(
+        default=None, description="Smoothing kernel FWHM in mm (None = no smoothing)"
     )
-    slice_time_ref: Optional[float] = Field(
-        default=0.5,
-        description="Slice timing reference (0-1, 0.5 = middle slice)"
+    slice_time_ref: float | None = Field(
+        default=0.5, description="Slice timing reference (0-1, 0.5 = middle slice)"
     )
 
     # Space and resolution
     space: str = Field(
-        default="MNI152NLin2009cAsym",
-        description="Standard space for analysis"
+        default="MNI152NLin2009cAsym", description="Standard space for analysis"
     )
-    desc: Optional[str] = Field(
-        default="preproc",
-        description="Description label for preprocessed files"
+    desc: str | None = Field(
+        default="preproc", description="Description label for preprocessed files"
     )
 
     # Participant selection
-    participant_label: Optional[List[str]] = Field(
-        default=None,
-        description="Participant labels to analyze (None = all)"
+    participant_label: list[str] | None = Field(
+        default=None, description="Participant labels to analyze (None = all)"
     )
-    exclude_participant: Optional[List[str]] = Field(
-        default=None,
-        description="Participant labels to exclude"
+    exclude_participant: list[str] | None = Field(
+        default=None, description="Participant labels to exclude"
     )
 
     # Confounds and covariates
-    include_confounds: List[str] = Field(
+    include_confounds: list[str] = Field(
         default=["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"],
-        description="Confound regressors to include from fMRIPrep"
+        description="Confound regressors to include from fMRIPrep",
     )
-    confounds_file: Optional[str] = Field(
+    confounds_file: str | None = Field(
         default=None,
-        description="Optional merged confounds TSV. Native FitLins stages this into a derivative-compatible confounds file; Nilearn fallback reads it directly."
+        description="Optional merged confounds TSV. Native FitLins stages this into a derivative-compatible confounds file; Nilearn fallback reads it directly.",
     )
-    confounds_target_file: Optional[str] = Field(
+    confounds_target_file: str | None = Field(
         default=None,
-        description="Optional native derivative confounds TSV to augment when confounds_file is used with FitLins. Required when the target run cannot be inferred uniquely."
+        description="Optional native derivative confounds TSV to augment when confounds_file is used with FitLins. Required when the target run cannot be inferred uniquely.",
     )
-    confounds_map_file: Optional[str] = Field(
+    confounds_map_file: str | None = Field(
         default=None,
-        description="Optional JSON mapping for staging multiple external confounds TSVs into native FitLins derivative confounds targets. Use this instead of confounds_file for multi-run or multi-subject overlays."
+        description="Optional JSON mapping for staging multiple external confounds TSVs into native FitLins derivative confounds targets. Use this instead of confounds_file for multi-run or multi-subject overlays.",
     )
     confound_strategy: str = Field(
         default="motion",
-        description="Confound strategy: motion, compcor, physio, pupil, full, or custom"
+        description="Confound strategy: motion, compcor, physio, pupil, full, or custom",
     )
-    n_compcor: Optional[int] = Field(
-        default=None,
-        description="Number of CompCor components to include"
+    n_compcor: int | None = Field(
+        default=None, description="Number of CompCor components to include"
     )
 
     # Contrasts
-    contrasts: Optional[Dict[str, Any]] = Field(
+    contrasts: dict[str, Any] | None = Field(
         default=None,
-        description="Contrast specifications (can be complex nested structure)"
+        description="Contrast specifications (can be complex nested structure)",
     )
     auto_contrasts: bool = Field(
-        default=True,
-        description="Automatically generate contrasts for each condition"
+        default=True, description="Automatically generate contrasts for each condition"
     )
 
     # Statistical parameters
     use_derivs: bool = Field(
-        default=True,
-        description="Include HRF derivatives in the model"
+        default=True, description="Include HRF derivatives in the model"
     )
     estimator: str = Field(
-        default="nilearn",
-        description="Estimator backend: nilearn, afni, or nistats"
+        default="nilearn", description="Estimator backend: nilearn, afni, or nistats"
     )
-    error_ts: bool = Field(
-        default=False,
-        description="Output time series of errors"
-    )
+    error_ts: bool = Field(default=False, description="Output time series of errors")
 
     # Output options
     reports_only: bool = Field(
-        default=False,
-        description="Only generate reports without model fitting"
+        default=False, description="Only generate reports without model fitting"
     )
-    write_graph: bool = Field(
-        default=False,
-        description="Write workflow graph"
-    )
-    work_dir: Optional[str] = Field(
-        default=None,
-        description="Working directory for intermediate files"
+    write_graph: bool = Field(default=False, description="Write workflow graph")
+    work_dir: str | None = Field(
+        default=None, description="Working directory for intermediate files"
     )
 
     # Advanced options
-    ignore: Optional[List[str]] = Field(
-        default=None,
-        description="Ignore certain BIDS aspects (e.g., ['slicetiming'])"
+    ignore: list[str] | None = Field(
+        default=None, description="Ignore certain BIDS aspects (e.g., ['slicetiming'])"
     )
-    force_index: Optional[List[str]] = Field(
-        default=None,
-        description="Force indexing on these metadata fields"
+    force_index: list[str] | None = Field(
+        default=None, description="Force indexing on these metadata fields"
     )
     model_minimize_memory: bool = Field(
-        default=True,
-        description="Minimize memory usage during model fitting"
+        default=True, description="Minimize memory usage during model fitting"
     )
 
 
@@ -616,6 +609,7 @@ class FitLinsTool(NeuroToolWrapper):
 
         try:
             import fitlins
+
             self.fitlins_available = True
             self.fitlins_version = fitlins.__version__
             logger.info(f"FitLins {self.fitlins_version} available")
@@ -624,6 +618,7 @@ class FitLinsTool(NeuroToolWrapper):
 
         try:
             import nilearn
+
             self.nilearn_available = True
             logger.info("Nilearn available for fallback GLM")
         except ImportError:
@@ -649,16 +644,16 @@ class FitLinsTool(NeuroToolWrapper):
         bids_dir: str,
         hrf_model: str = "glover",
         drift_model: str = "cosine",
-        contrasts: Optional[Dict] = None,
-        include_confounds: Optional[List[str]] = None,
-    ) -> Dict:
+        contrasts: dict | None = None,
+        include_confounds: list[str] | None = None,
+    ) -> dict:
         """Create a valid BIDS Stats Model specification for native FitLins."""
         normalized_hrf_model = _normalize_fitlins_hrf_model(hrf_model)
-        run_terms: List[Any] = [1, "trial_type.*"]
+        run_terms: list[Any] = [1, "trial_type.*"]
         if include_confounds:
             run_terms.extend(list(dict.fromkeys(include_confounds)))
 
-        run_node: Dict[str, Any] = {
+        run_node: dict[str, Any] = {
             "Level": "Run",
             "Name": "run_level",
             "GroupBy": ["run", "subject"],
@@ -689,7 +684,7 @@ class FitLinsTool(NeuroToolWrapper):
         if drift_model == "cosine":
             run_node["Model"]["Options"] = {"HighPassFilterCutoff": 128}
 
-        model_spec: Dict[str, Any] = {
+        model_spec: dict[str, Any] = {
             "Name": "AutoGeneratedModel",
             "Description": "Automatically generated BIDS Stats Model",
             "BIDSModelVersion": "1.0.0",
@@ -718,60 +713,102 @@ class FitLinsTool(NeuroToolWrapper):
 
         return model_spec
 
-    def _get_confound_strategy(self, strategy: str, n_compcor: Optional[int] = None) -> List[str]:
+    def _get_confound_strategy(
+        self, strategy: str, n_compcor: int | None = None
+    ) -> list[str]:
         """Get confound regressors based on strategy."""
 
         strategies = {
-            "motion": [
-                "trans_x", "trans_y", "trans_z",
-                "rot_x", "rot_y", "rot_z"
-            ],
+            "motion": ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"],
             "motion_derivatives": [
-                "trans_x", "trans_y", "trans_z",
-                "rot_x", "rot_y", "rot_z",
-                "trans_x_derivative1", "trans_y_derivative1", "trans_z_derivative1",
-                "rot_x_derivative1", "rot_y_derivative1", "rot_z_derivative1"
+                "trans_x",
+                "trans_y",
+                "trans_z",
+                "rot_x",
+                "rot_y",
+                "rot_z",
+                "trans_x_derivative1",
+                "trans_y_derivative1",
+                "trans_z_derivative1",
+                "rot_x_derivative1",
+                "rot_y_derivative1",
+                "rot_z_derivative1",
             ],
-            "compcor": [
-                "trans_x", "trans_y", "trans_z",
-                "rot_x", "rot_y", "rot_z"
-            ],
+            "compcor": ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"],
             "physio": [
-                "trans_x", "trans_y", "trans_z",
-                "rot_x", "rot_y", "rot_z",
-                "cardiac_signal_z", "cardiac_signal_derivative1",
-                "cardiac_retroicor_sin1", "cardiac_retroicor_cos1",
-                "respiratory_signal_z", "respiratory_signal_derivative1",
-                "respiratory_retroicor_sin1", "respiratory_retroicor_cos1",
-                "cardiorespiratory_sum_sin1", "cardiorespiratory_sum_cos1",
-                "cardiorespiratory_diff_sin1", "cardiorespiratory_diff_cos1",
+                "trans_x",
+                "trans_y",
+                "trans_z",
+                "rot_x",
+                "rot_y",
+                "rot_z",
+                "cardiac_signal_z",
+                "cardiac_signal_derivative1",
+                "cardiac_retroicor_sin1",
+                "cardiac_retroicor_cos1",
+                "respiratory_signal_z",
+                "respiratory_signal_derivative1",
+                "respiratory_retroicor_sin1",
+                "respiratory_retroicor_cos1",
+                "cardiorespiratory_sum_sin1",
+                "cardiorespiratory_sum_cos1",
+                "cardiorespiratory_diff_sin1",
+                "cardiorespiratory_diff_cos1",
             ],
             "pupil": [
-                "trans_x", "trans_y", "trans_z",
-                "rot_x", "rot_y", "rot_z",
-                "pupil_filtered_z", "pupil_derivative1_z",
-                "pupil_tonic_z", "pupil_phasic_z",
+                "trans_x",
+                "trans_y",
+                "trans_z",
+                "rot_x",
+                "rot_y",
+                "rot_z",
+                "pupil_filtered_z",
+                "pupil_derivative1_z",
+                "pupil_tonic_z",
+                "pupil_phasic_z",
                 "pupil_blink_fraction",
             ],
             "full": [
-                "trans_x", "trans_y", "trans_z",
-                "rot_x", "rot_y", "rot_z",
-                "trans_x_derivative1", "trans_y_derivative1", "trans_z_derivative1",
-                "rot_x_derivative1", "rot_y_derivative1", "rot_z_derivative1",
-                "trans_x_power2", "trans_y_power2", "trans_z_power2",
-                "rot_x_power2", "rot_y_power2", "rot_z_power2",
+                "trans_x",
+                "trans_y",
+                "trans_z",
+                "rot_x",
+                "rot_y",
+                "rot_z",
+                "trans_x_derivative1",
+                "trans_y_derivative1",
+                "trans_z_derivative1",
+                "rot_x_derivative1",
+                "rot_y_derivative1",
+                "rot_z_derivative1",
+                "trans_x_power2",
+                "trans_y_power2",
+                "trans_z_power2",
+                "rot_x_power2",
+                "rot_y_power2",
+                "rot_z_power2",
                 "framewise_displacement",
-                "csf", "white_matter", "global_signal",
-                "cardiac_signal_z", "cardiac_signal_derivative1",
-                "cardiac_retroicor_sin1", "cardiac_retroicor_cos1",
-                "respiratory_signal_z", "respiratory_signal_derivative1",
-                "respiratory_retroicor_sin1", "respiratory_retroicor_cos1",
-                "cardiorespiratory_sum_sin1", "cardiorespiratory_sum_cos1",
-                "cardiorespiratory_diff_sin1", "cardiorespiratory_diff_cos1",
-                "pupil_filtered_z", "pupil_derivative1_z",
-                "pupil_tonic_z", "pupil_phasic_z",
+                "csf",
+                "white_matter",
+                "global_signal",
+                "cardiac_signal_z",
+                "cardiac_signal_derivative1",
+                "cardiac_retroicor_sin1",
+                "cardiac_retroicor_cos1",
+                "respiratory_signal_z",
+                "respiratory_signal_derivative1",
+                "respiratory_retroicor_sin1",
+                "respiratory_retroicor_cos1",
+                "cardiorespiratory_sum_sin1",
+                "cardiorespiratory_sum_cos1",
+                "cardiorespiratory_diff_sin1",
+                "cardiorespiratory_diff_cos1",
+                "pupil_filtered_z",
+                "pupil_derivative1_z",
+                "pupil_tonic_z",
+                "pupil_phasic_z",
                 "pupil_blink_fraction",
-            ]
+            ],
         }
 
         confounds = strategies.get(strategy, strategies["motion"])
@@ -789,15 +826,15 @@ class FitLinsTool(NeuroToolWrapper):
         derivatives_dir: str,
         output_dir: str,
         space: str = "MNI152NLin2009cAsym",
-        smoothing: Optional[float] = None,
-        participant_label: Optional[List[str]] = None,
-        confounds_file: Optional[str] = None,
-        **kwargs
-    ) -> Dict:
+        smoothing: float | None = None,
+        participant_label: list[str] | None = None,
+        confounds_file: str | None = None,
+        **kwargs,
+    ) -> dict:
         """Run GLM using Nilearn as fallback when FitLins is not available."""
 
-        from nilearn.glm.first_level import FirstLevelModel
         from bids import BIDSLayout
+        from nilearn.glm.first_level import FirstLevelModel
 
         logger.info("Using Nilearn fallback for GLM analysis")
 
@@ -818,10 +855,10 @@ class FitLinsTool(NeuroToolWrapper):
             # Get functional files
             func_files = layout.get(
                 subject=subject,
-                extension='nii.gz',
-                suffix='bold',
+                extension="nii.gz",
+                suffix="bold",
                 space=space,
-                return_type='file'
+                return_type="file",
             )
 
             if not func_files:
@@ -830,18 +867,15 @@ class FitLinsTool(NeuroToolWrapper):
 
             # Get events
             event_files = layout.get(
-                subject=subject,
-                extension='tsv',
-                suffix='events',
-                return_type='file'
+                subject=subject, extension="tsv", suffix="events", return_type="file"
             )
 
             # Get confounds
             confound_files = layout.get(
                 subject=subject,
-                extension='tsv',
-                suffix='regressors',
-                return_type='file'
+                extension="tsv",
+                suffix="regressors",
+                return_type="file",
             )
 
             # Get TR
@@ -855,15 +889,17 @@ class FitLinsTool(NeuroToolWrapper):
                 mask_img=None,
                 standardize="zscore_sample",
                 signal_scaling=0,
-                noise_model='ar1'
+                noise_model="ar1",
             )
 
             # Load events and confounds
-            events = pd.read_csv(event_files[0], sep='\t') if event_files else None
+            events = pd.read_csv(event_files[0], sep="\t") if event_files else None
             if confounds_file:
-                confounds = pd.read_csv(confounds_file, sep='\t')
+                confounds = pd.read_csv(confounds_file, sep="\t")
             else:
-                confounds = pd.read_csv(confound_files[0], sep='\t') if confound_files else None
+                confounds = (
+                    pd.read_csv(confound_files[0], sep="\t") if confound_files else None
+                )
 
             # Fit model
             model.fit(func_files[0], events=events, confounds=confounds)
@@ -872,17 +908,20 @@ class FitLinsTool(NeuroToolWrapper):
             subject_results = {}
 
             if events is not None:
-                conditions = events['trial_type'].unique()
+                conditions = events["trial_type"].unique()
 
                 for condition in conditions:
                     try:
-                        z_map = model.compute_contrast(condition, output_type='z_score')
+                        z_map = model.compute_contrast(condition, output_type="z_score")
 
                         # Save contrast map
                         output_path = Path(output_dir) / f"sub-{subject}"
                         output_path.mkdir(parents=True, exist_ok=True)
 
-                        contrast_file = output_path / f"sub-{subject}_contrast-{condition}_stat-z.nii.gz"
+                        contrast_file = (
+                            output_path
+                            / f"sub-{subject}_contrast-{condition}_stat-z.nii.gz"
+                        )
                         nib.save(z_map, contrast_file)
 
                         subject_results[condition] = str(contrast_file)
@@ -897,42 +936,39 @@ class FitLinsTool(NeuroToolWrapper):
         self,
         bids_dir: str,
         output_dir: str,
-        derivatives_dir: Optional[str] = None,
-        model: Optional[str] = None,
+        derivatives_dir: str | None = None,
+        model: str | None = None,
         analysis_level: str = "subject",
-        **kwargs
+        **kwargs,
     ):
         """Run FitLins analysis."""
-        from fitlins.cli.run import run_fitlins
         import sys
 
+        from fitlins.cli.run import run_fitlins
+
         # Prepare command-line arguments
-        args = [
-            bids_dir,
-            output_dir,
-            analysis_level
-        ]
+        args = [bids_dir, output_dir, analysis_level]
 
         # Add optional arguments
         if derivatives_dir:
-            args.extend(['--derivatives', derivatives_dir])
+            args.extend(["--derivatives", derivatives_dir])
 
         if model:
-            args.extend(['--model', model])
+            args.extend(["--model", model])
 
-        if kwargs.get('smoothing'):
-            args.extend(['--smoothing', str(kwargs['smoothing'])])
+        if kwargs.get("smoothing"):
+            args.extend(["--smoothing", str(kwargs["smoothing"])])
 
-        if kwargs.get('participant_label'):
-            for p in kwargs['participant_label']:
-                args.extend(['--participant-label', p])
+        if kwargs.get("participant_label"):
+            for p in kwargs["participant_label"]:
+                args.extend(["--participant-label", p])
 
-        if kwargs.get('space'):
-            args.extend(['--space', kwargs['space']])
+        if kwargs.get("space"):
+            args.extend(["--space", kwargs["space"]])
 
-        if kwargs.get('include_confounds'):
-            for c in kwargs['include_confounds']:
-                args.extend(['--include', c])
+        if kwargs.get("include_confounds"):
+            for c in kwargs["include_confounds"]:
+                args.extend(["--include", c])
 
         # Run FitLins
         logger.info(f"Running FitLins with args: {args}")
@@ -940,7 +976,7 @@ class FitLinsTool(NeuroToolWrapper):
         # Capture sys.argv
         original_argv = sys.argv
         try:
-            sys.argv = ['fitlins'] + args
+            sys.argv = ["fitlins"] + args
             run_fitlins()
         finally:
             sys.argv = original_argv
@@ -949,38 +985,47 @@ class FitLinsTool(NeuroToolWrapper):
         self,
         bids_dir: str,
         output_dir: str,
-        derivatives_dir: Optional[str] = None,
-        model: Optional[str] = None,
+        derivatives_dir: str | None = None,
+        model: str | None = None,
         analysis_level: str = "subject",
         hrf_model: str = "glover",
         drift_model: str = "cosine",
-        drift_order: Optional[int] = None,
-        smoothing: Optional[float] = None,
-        slice_time_ref: Optional[float] = 0.5,
+        drift_order: int | None = None,
+        smoothing: float | None = None,
+        slice_time_ref: float | None = 0.5,
         space: str = "MNI152NLin2009cAsym",
-        desc: Optional[str] = "preproc",
-        participant_label: Optional[List[str]] = None,
-        exclude_participant: Optional[List[str]] = None,
-        include_confounds: List[str] = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"],
+        desc: str | None = "preproc",
+        participant_label: list[str] | None = None,
+        exclude_participant: list[str] | None = None,
+        include_confounds: list[str] = None,
         confound_strategy: str = "motion",
-        confounds_file: Optional[str] = None,
-        confounds_target_file: Optional[str] = None,
-        confounds_map_file: Optional[str] = None,
-        n_compcor: Optional[int] = None,
-        contrasts: Optional[Dict[str, Any]] = None,
+        confounds_file: str | None = None,
+        confounds_target_file: str | None = None,
+        confounds_map_file: str | None = None,
+        n_compcor: int | None = None,
+        contrasts: dict[str, Any] | None = None,
         auto_contrasts: bool = True,
         use_derivs: bool = True,
         estimator: str = "nilearn",
         error_ts: bool = False,
         reports_only: bool = False,
         write_graph: bool = False,
-        work_dir: Optional[str] = None,
-        ignore: Optional[List[str]] = None,
-        force_index: Optional[List[str]] = None,
+        work_dir: str | None = None,
+        ignore: list[str] | None = None,
+        force_index: list[str] | None = None,
         model_minimize_memory: bool = True,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Execute FitLins BIDS GLM analysis."""
+        if include_confounds is None:
+            include_confounds = [
+                "trans_x",
+                "trans_y",
+                "trans_z",
+                "rot_x",
+                "rot_y",
+                "rot_z",
+            ]
         try:
             bids_path = Path(bids_dir)
             if not bids_path.exists():
@@ -1025,12 +1070,14 @@ class FitLinsTool(NeuroToolWrapper):
                 model = str(model_file)
                 logger.info(f"Created BIDS model at: {model}")
 
-            outputs: Dict[str, Any]
+            outputs: dict[str, Any]
             requested_hrf = str(hrf_model or "").strip().lower()
-            native_fitlins_requested = self.fitlins_available and requested_hrf != "flobs"
+            native_fitlins_requested = (
+                self.fitlins_available and requested_hrf != "flobs"
+            )
 
             if native_fitlins_requested:
-                payload: Dict[str, Any] = {
+                payload: dict[str, Any] = {
                     "bids_dir": bids_dir,
                     "output_dir": output_dir,
                     "derivatives_dir": derivatives_dir,
@@ -1058,17 +1105,29 @@ class FitLinsTool(NeuroToolWrapper):
                 try:
                     result = run_fitlins_from_dict(payload, runtime="wrapper")
                     if result.get("exit_code", 1) != 0:
-                        raise RuntimeError(result.get("stderr") or result.get("stdout") or "FitLins execution failed")
+                        raise RuntimeError(
+                            result.get("stderr")
+                            or result.get("stdout")
+                            or "FitLins execution failed"
+                        )
 
                     contrast_files = list(output_path.glob("**/*stat*.nii.gz"))
                     report_files = list(output_path.glob("**/*.html"))
-                    effective_model = output_path / "_fitlins_native" / "effective_model.json"
+                    effective_model = (
+                        output_path / "_fitlins_native" / "effective_model.json"
+                    )
                     native_derivatives = output_path / "_fitlins_native_derivatives"
                     outputs = {
                         "contrasts": [str(f) for f in contrast_files],
                         "reports": [str(f) for f in report_files],
-                        "model": str(effective_model if effective_model.exists() else Path(model)),
-                        "native_derivatives_dir": str(native_derivatives) if native_derivatives.exists() else None,
+                        "model": str(
+                            effective_model if effective_model.exists() else Path(model)
+                        ),
+                        "native_derivatives_dir": (
+                            str(native_derivatives)
+                            if native_derivatives.exists()
+                            else None
+                        ),
                     }
                 except Exception as exc:
                     logger.error(f"FitLins execution failed: {exc}")
@@ -1097,7 +1156,9 @@ class FitLinsTool(NeuroToolWrapper):
                         data={},
                     )
                 if self.nilearn_available and derivatives_dir:
-                    logger.info("FLOBS requested; using Nilearn path because native FitLins does not support FLOBS")
+                    logger.info(
+                        "FLOBS requested; using Nilearn path because native FitLins does not support FLOBS"
+                    )
                     outputs = self._run_nilearn_fallback(
                         bids_dir=bids_dir,
                         derivatives_dir=derivatives_dir,
@@ -1187,8 +1248,8 @@ class FitLinsTool(NeuroToolWrapper):
         output_file: str,
         name: str = "CustomModel",
         description: str = "Custom BIDS Stats Model",
-        nodes: List[Dict] = None,
-        **kwargs
+        nodes: list[dict] = None,
+        **kwargs,
     ) -> ToolResult:
         """Create a custom BIDS Stats Model specification."""
         try:
@@ -1196,10 +1257,8 @@ class FitLinsTool(NeuroToolWrapper):
                 "Name": name,
                 "Description": description,
                 "BIDSModelVersion": "1.0.0",
-                "Input": {
-                    "task": kwargs.get("task", "all")
-                },
-                "Nodes": nodes or []
+                "Input": {"task": kwargs.get("task", "all")},
+                "Nodes": nodes or [],
             }
 
             # Add default nodes if not provided
@@ -1215,48 +1274,45 @@ class FitLinsTool(NeuroToolWrapper):
                                 {
                                     "Name": "Convolve",
                                     "Input": ["trial_type"],
-                                    "Model": "spm"
+                                    "Model": "spm",
                                 }
-                            ]
+                            ],
                         },
                         "Model": {
                             "Type": "glm",
                             "X": ["trial_type.condition*"],
-                            "Formula": "1 + trial_type"
+                            "Formula": "1 + trial_type",
                         },
                         "Contrasts": [
                             {
                                 "Name": "task_vs_baseline",
                                 "ConditionList": ["trial_type.condition*"],
                                 "Weights": [1],
-                                "Test": "t"
+                                "Test": "t",
                             }
-                        ]
+                        ],
                     },
                     {
                         "Level": "Subject",
                         "Name": "subject_level",
                         "GroupBy": ["subject", "contrast"],
-                        "Model": {
-                            "Type": "meta",
-                            "X": [1]
-                        },
+                        "Model": {"Type": "meta", "X": [1]},
                         "Contrasts": [
                             {
                                 "Name": "group_mean",
                                 "ConditionList": ["intercept"],
                                 "Weights": [1],
-                                "Test": "t"
+                                "Test": "t",
                             }
-                        ]
-                    }
+                        ],
+                    },
                 ]
 
             # Save model
             output_path = Path(output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 json.dump(model, f, indent=2)
 
             return ToolResult(
@@ -1264,23 +1320,19 @@ class FitLinsTool(NeuroToolWrapper):
                 data={
                     "model_file": str(output_path),
                     "model": model,
-                    "message": f"Created BIDS Stats Model: {name}"
-                }
+                    "message": f"Created BIDS Stats Model: {name}",
+                },
             )
 
         except Exception as e:
-            return ToolResult(
-                status="error",
-                error=str(e),
-                data={}
-            )
+            return ToolResult(status="error", error=str(e), data={})
 
 
 class FitLinsTools:
     """Collection of FitLins tools."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         """Get all FitLins tools."""
         return [
             FitLinsTool(),
@@ -1299,9 +1351,9 @@ class FitLinsTools:
 class CreateSeedSpecArgs(BaseModel):
     study_id: str
     task: str
-    bids_root: Optional[str] = None
-    derivatives_root: Optional[str] = None
-    seed_spec: Optional[str] = Field(
+    bids_root: str | None = None
+    derivatives_root: str | None = None
+    seed_spec: str | None = Field(
         default=None,
         description="Optional existing seed spec path. If provided and exists, it is returned as-is.",
     )
@@ -1327,13 +1379,13 @@ class FitLinsCreateSeedSpecTool(NeuroToolWrapper):
         self,
         study_id: str,
         task: str,
-        bids_root: Optional[str] = None,
-        derivatives_root: Optional[str] = None,
-        seed_spec: Optional[str] = None,
+        bids_root: str | None = None,
+        derivatives_root: str | None = None,
+        seed_spec: str | None = None,
         allow_stub: bool = False,
     ) -> ToolResult:
         repo_root = Path(__file__).resolve().parents[4]
-        candidates: List[Path] = []
+        candidates: list[Path] = []
 
         if seed_spec:
             candidates.append(Path(seed_spec))
@@ -1372,7 +1424,13 @@ class FitLinsCreateSeedSpecTool(NeuroToolWrapper):
 
         if not allow_stub:
             # Try to auto-generate via openneuro_glmfitlins script if available
-            script = repo_root / "external" / "openneuro_glmfitlins" / "scripts" / "3_create_spec_file.sh"
+            script = (
+                repo_root
+                / "external"
+                / "openneuro_glmfitlins"
+                / "scripts"
+                / "3_create_spec_file.sh"
+            )
             if script.exists():
                 cmd = [str(script), study_id, task]
                 try:
@@ -1382,7 +1440,12 @@ class FitLinsCreateSeedSpecTool(NeuroToolWrapper):
                         if path.exists():
                             return ToolResult(
                                 status="success",
-                                data={"outputs": {"seed_spec": str(path), "source": "generated"}},
+                                data={
+                                    "outputs": {
+                                        "seed_spec": str(path),
+                                        "source": "generated",
+                                    }
+                                },
                             )
                 except subprocess.CalledProcessError as exc:
                     return ToolResult(
@@ -1424,25 +1487,30 @@ class MultiverseSpecsArgs(BaseModel):
     study_id: str
     task: str
     seed_spec: str
-    output_dir: Optional[str] = None
+    output_dir: str | None = None
     max_models: int = Field(default=5, ge=1)
     include_seed: bool = Field(
         default=False, description="Include an mv00 copy of the seed in outputs"
     )
-    seed: int = Field(default=0, description="Random seed for multiverse variant generation")
-    priors: Optional[Dict[str, Any]] = Field(
+    seed: int = Field(
+        default=0, description="Random seed for multiverse variant generation"
+    )
+    priors: dict[str, Any] | None = Field(
         default=None,
         description="Optional priors dict (e.g., from BR-KG) to prioritize axis values",
     )
-    use_priors: bool = Field(default=True, description="If false, ignore priors even when provided")
-    include_references: bool = Field(
-        default=True, description="If true, attach literature/dataset references to each variant"
+    use_priors: bool = Field(
+        default=True, description="If false, ignore priors even when provided"
     )
-    parcellations: Optional[List[str]] = Field(
+    include_references: bool = Field(
+        default=True,
+        description="If true, attach literature/dataset references to each variant",
+    )
+    parcellations: list[str] | None = Field(
         default=None,
         description="Optional parcellation names (e.g., ['Yeo2011-7']) to include atlas citations in manifest",
     )
-    axis_overrides: Optional[Dict[str, List[Any]]] = Field(
+    axis_overrides: dict[str, list[Any]] | None = Field(
         default=None,
         description=(
             "Optional explicit axis levels to override variant generation, "
@@ -1468,15 +1536,15 @@ class FitLinsGenerateMultiverseSpecsTool(NeuroToolWrapper):
         study_id: str,
         task: str,
         seed_spec: str,
-        output_dir: Optional[str] = None,
+        output_dir: str | None = None,
         max_models: int = 5,
         include_seed: bool = False,
         seed: int = 0,
-        priors: Optional[Dict[str, Any]] = None,
+        priors: dict[str, Any] | None = None,
         use_priors: bool = True,
         include_references: bool = True,
-        parcellations: Optional[List[str]] = None,
-        axis_overrides: Optional[Dict[str, List[Any]]] = None,
+        parcellations: list[str] | None = None,
+        axis_overrides: dict[str, list[Any]] | None = None,
     ) -> ToolResult:
         seed_path = Path(seed_spec)
         if not seed_path.exists():
@@ -1492,18 +1560,31 @@ class FitLinsGenerateMultiverseSpecsTool(NeuroToolWrapper):
 
         run_node = _find_run_node(seed_model)
         if run_node is None:
-            return ToolResult(status="error", error="Seed spec missing run-level node (Level=Run)")
+            return ToolResult(
+                status="error", error="Seed spec missing run-level node (Level=Run)"
+            )
 
         convolve_idx = _find_convolve_idx(run_node)
         if convolve_idx is None:
             # If missing, add a default Convolve with canonical HRF
-            tx = run_node.setdefault("Transformations", {"Transformer": "pybids-transforms-v1", "Instructions": []})
+            tx = run_node.setdefault(
+                "Transformations",
+                {"Transformer": "pybids-transforms-v1", "Instructions": []},
+            )
             instructions = tx.setdefault("Instructions", [])
-            instructions.append({"Name": "Convolve", "Model": "spm", "Derivative": False, "Dispersion": False, "Input": ["trial_type.*"]})
+            instructions.append(
+                {
+                    "Name": "Convolve",
+                    "Model": "spm",
+                    "Derivative": False,
+                    "Dispersion": False,
+                    "Input": ["trial_type.*"],
+                }
+            )
             convolve_idx = len(instructions) - 1
 
         # Generate variants via rule_engine (branch-aware + priors weighting)
-        variants: List[Dict[str, Any]] = generate_variants(
+        variants: list[dict[str, Any]] = generate_variants(
             priors or {},
             max_models,
             use_priors=use_priors,
@@ -1511,8 +1592,8 @@ class FitLinsGenerateMultiverseSpecsTool(NeuroToolWrapper):
             axis_overrides=axis_overrides,
         )
 
-        manifests: List[Dict[str, Any]] = []
-        spec_paths: List[str] = []
+        manifests: list[dict[str, Any]] = []
+        spec_paths: list[str] = []
 
         if include_seed:
             mv00 = out_dir / f"{study_id}-{task}-mv00_specs.json"
@@ -1566,8 +1647,8 @@ class FitLinsGenerateMultiverseSpecsTool(NeuroToolWrapper):
             mv_path = out_dir / f"{study_id}-{task}-{model_id}_specs.json"
             mv_path.write_text(json.dumps(model, indent=2))
             spec_paths.append(str(mv_path))
-            references: List[Dict[str, Any]] = []
-            literature_evidence: Dict[str, Any] = {}
+            references: list[dict[str, Any]] = []
+            literature_evidence: dict[str, Any] = {}
             contrast_name = None
             contrasts = _extract_contrast_names(model)
             if contrasts:
@@ -1591,7 +1672,9 @@ class FitLinsGenerateMultiverseSpecsTool(NeuroToolWrapper):
                         use_file_search=True,
                     )
                     references = lit.data.get("outputs", {}).get("references", [])
-                    literature_evidence = lit.data.get("outputs", {}).get("evidence", {})
+                    literature_evidence = lit.data.get("outputs", {}).get(
+                        "evidence", {}
+                    )
                 except Exception:
                     references = gather_references(
                         study_id,
@@ -1602,7 +1685,11 @@ class FitLinsGenerateMultiverseSpecsTool(NeuroToolWrapper):
                             "confounds_families": variant.get("confounds_families"),
                             "high_pass": variant["high_pass"],
                         },
-                        datasets_folder=Path(__file__).resolve().parents[4] / "dataset" if Path(__file__).resolve().parents[4].exists() else None,
+                        datasets_folder=(
+                            Path(__file__).resolve().parents[4] / "dataset"
+                            if Path(__file__).resolve().parents[4].exists()
+                            else None
+                        ),
                     )
             manifests.append(
                 {
@@ -1653,14 +1740,14 @@ class RunMultiverseArgs(BaseModel):
     study_id: str
     task: str
     bids_root: str
-    derivatives_root: Optional[str] = None
-    multiverse_specs: List[str]
+    derivatives_root: str | None = None
+    multiverse_specs: list[str]
     analysis_level: str = Field(default="dataset")
-    participant_label: Optional[List[str]] = Field(
+    participant_label: list[str] | None = Field(
         default=None,
         description="Optional participant labels (without 'sub-') to restrict execution",
     )
-    exclude_participant: Optional[List[str]] = Field(
+    exclude_participant: list[str] | None = Field(
         default=None,
         description="Optional participant labels to exclude from execution",
     )
@@ -1668,13 +1755,14 @@ class RunMultiverseArgs(BaseModel):
         default=False,
         description="If true, actually run FitLins; otherwise return planned commands (safe default).",
     )
-    output_root: Optional[str] = None
+    output_root: str | None = None
     runtime: str = Field(
         default="apptainer",
         description="Runtime backend for FitLins (prefer apptainer or docker; wrapper is a development fallback).",
     )
-    correction_method: Optional[str] = Field(
-        default=None, description="Threshold/correction method label to carry through results"
+    correction_method: str | None = Field(
+        default=None,
+        description="Threshold/correction method label to carry through results",
     )
 
 
@@ -1695,22 +1783,26 @@ class FitLinsRunMultiverseTool(NeuroToolWrapper):
         study_id: str,
         task: str,
         bids_root: str,
-        multiverse_specs: List[str],
-        derivatives_root: Optional[str] = None,
+        multiverse_specs: list[str],
+        derivatives_root: str | None = None,
         analysis_level: str = "dataset",
-        participant_label: Optional[List[str]] = None,
-        exclude_participant: Optional[List[str]] = None,
+        participant_label: list[str] | None = None,
+        exclude_participant: list[str] | None = None,
         execute: bool = False,
-        output_root: Optional[str] = None,
+        output_root: str | None = None,
         runtime: str = "apptainer",
-        correction_method: Optional[str] = None,
+        correction_method: str | None = None,
     ) -> ToolResult:
         repo_root = Path(__file__).resolve().parents[4]
-        out_root = Path(output_root) if output_root else repo_root / "outputs" / "fitlins_multiverse" / study_id / task
+        out_root = (
+            Path(output_root)
+            if output_root
+            else repo_root / "outputs" / "fitlins_multiverse" / study_id / task
+        )
         out_root.mkdir(parents=True, exist_ok=True)
 
-        plans: List[Dict[str, Any]] = []
-        results: List[Dict[str, Any]] = []
+        plans: list[dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
 
         for spec_path in multiverse_specs:
             spec_name = Path(spec_path).stem.replace("_specs", "")
@@ -1732,18 +1824,37 @@ class FitLinsRunMultiverseTool(NeuroToolWrapper):
 
             params = fitlins_from_payload(payload)
             cmd = params.command(include_executable=True)
-            plans.append({"spec": spec_path, "output": str(model_out), "cmd": cmd, "correction_method": correction_method})
+            plans.append(
+                {
+                    "spec": spec_path,
+                    "output": str(model_out),
+                    "cmd": cmd,
+                    "correction_method": correction_method,
+                }
+            )
 
             if execute:
                 result = run_fitlins_from_dict(payload, runtime=runtime)
-                results.append({"spec": spec_path, "correction_method": correction_method, **result})
+                results.append(
+                    {
+                        "spec": spec_path,
+                        "correction_method": correction_method,
+                        **result,
+                    }
+                )
 
-        status = "success" if not execute or all(r.get("exit_code", 1) == 0 for r in results) else "error"
+        status = (
+            "success"
+            if not execute or all(r.get("exit_code", 1) == 0 for r in results)
+            else "error"
+        )
         # Check correction consistency
-        corr_labels = {p.get("correction_method") for p in plans if p.get("correction_method")}
+        corr_labels = {
+            p.get("correction_method") for p in plans if p.get("correction_method")
+        }
         correction_mixed = len(corr_labels) > 1
 
-        outputs: Dict[str, Any] = {
+        outputs: dict[str, Any] = {
             "plans": plans,
             "multiverse_results": results,
             "correction_labels": list(corr_labels),
@@ -1758,9 +1869,9 @@ class FitLinsRunMultiverseTool(NeuroToolWrapper):
 class MultiverseSummaryArgs(BaseModel):
     study_id: str
     task: str
-    multiverse_specs: List[str]
-    multiverse_results: Optional[List[Dict[str, Any]]] = None
-    output_manifest: Optional[str] = None
+    multiverse_specs: list[str]
+    multiverse_results: list[dict[str, Any]] | None = None
+    output_manifest: str | None = None
 
 
 class FitLinsMultiverseSummaryTool(NeuroToolWrapper):
@@ -1779,34 +1890,44 @@ class FitLinsMultiverseSummaryTool(NeuroToolWrapper):
         self,
         study_id: str,
         task: str,
-        multiverse_specs: List[str],
-        multiverse_results: Optional[List[Dict[str, Any]]] = None,
-        output_manifest: Optional[str] = None,
+        multiverse_specs: list[str],
+        multiverse_results: list[dict[str, Any]] | None = None,
+        output_manifest: str | None = None,
     ) -> ToolResult:
         repo_root = Path(__file__).resolve().parents[4]
         manifest_path = (
             Path(output_manifest)
             if output_manifest
-            else repo_root / "outputs" / "fitlins_multiverse" / study_id / task / "multiverse_manifest.csv"
+            else repo_root
+            / "outputs"
+            / "fitlins_multiverse"
+            / study_id
+            / task
+            / "multiverse_manifest.csv"
         )
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
 
-        rows: List[Dict[str, Any]] = []
+        rows: list[dict[str, Any]] = []
         for spec in multiverse_specs:
             model_id = Path(spec).stem.replace("_specs", "")
             rows.append({"model_id": model_id, "spec": spec})
 
         if multiverse_results:
-            results_map = {Path(r.get("spec", "")).stem.replace("_specs", ""): r for r in multiverse_results}
+            results_map = {
+                Path(r.get("spec", "")).stem.replace("_specs", ""): r
+                for r in multiverse_results
+            }
             for row in rows:
                 rid = row["model_id"]
                 res = results_map.get(rid, {})
-                row.update({
-                    "exit_code": res.get("exit_code"),
-                    "command_host": res.get("command_host"),
-                    "stdout": res.get("stdout"),
-                    "stderr": res.get("stderr"),
-                })
+                row.update(
+                    {
+                        "exit_code": res.get("exit_code"),
+                        "command_host": res.get("command_host"),
+                        "stdout": res.get("stdout"),
+                        "stderr": res.get("stderr"),
+                    }
+                )
 
         df = pd.DataFrame(rows)
         df.to_csv(manifest_path, index=False)
@@ -1841,7 +1962,7 @@ class MultiverseConvergenceArgs(BaseModel):
         default="schaefer-200",
         description="Atlas for ROI extraction (schaefer-200, aal, harvard-oxford, destrieux)",
     )
-    contrast: Optional[str] = Field(
+    contrast: str | None = Field(
         default=None,
         description="Specific contrast to analyze. If None, uses first available.",
     )
@@ -1878,7 +1999,7 @@ class FitLinsMultiverseConvergenceTool(NeuroToolWrapper):
         output_dir: str,
         threshold: float = 3.1,
         atlas: str = "schaefer-200",
-        contrast: Optional[str] = None,
+        contrast: str | None = None,
     ) -> ToolResult:
         """Run multiverse convergence analysis."""
         try:

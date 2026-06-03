@@ -219,7 +219,9 @@ def _parse_subject_from_prompt(prompt: str) -> str | None:
     match = _SUBJECT_HINT_PATTERN.search(prompt)
     if not match:
         return None
-    return _normalize_subject_label(next((item for item in match.groups() if item), None))
+    return _normalize_subject_label(
+        next((item for item in match.groups() if item), None)
+    )
 
 
 def _parse_task_from_prompt(prompt: str) -> str | None:
@@ -264,9 +266,8 @@ def _entity_values(query_understanding: Any, entity_type: str) -> list[str]:
     for entity in entities:
         if _coerce_text(_obj_get(entity, "entity_type")) != entity_type:
             continue
-        value = (
-            _coerce_text(_obj_get(entity, "normalized_form"))
-            or _coerce_text(_obj_get(entity, "text"))
+        value = _coerce_text(_obj_get(entity, "normalized_form")) or _coerce_text(
+            _obj_get(entity, "text")
         )
         if entity_type == "task":
             value = _normalize_task_label(value)
@@ -317,7 +318,9 @@ def _derivative_hits(query_understanding: Any) -> list[Any]:
     return hits if isinstance(hits, list) else []
 
 
-def _clarification_answers(resolution_state: Mapping[str, Any] | None) -> dict[str, str]:
+def _clarification_answers(
+    resolution_state: Mapping[str, Any] | None,
+) -> dict[str, str]:
     state = dict(resolution_state or {})
     generic = state.get("generic_clarifications")
     answers = generic.get("answers") if isinstance(generic, Mapping) else []
@@ -382,7 +385,9 @@ def _default_output_root(
     root_name = tool_id or "studio"
     bids_root_text = _coerce_text(bids_root)
     if bids_root_text:
-        return str(Path(bids_root_text) / "derivatives" / "brain_researcher" / root_name)
+        return str(
+            Path(bids_root_text) / "derivatives" / "brain_researcher" / root_name
+        )
     notebook_path = _coerce_text((notebook_context or {}).get("notebook_path"))
     if notebook_path:
         return str(Path(notebook_path).resolve().parent / "outputs" / root_name)
@@ -481,9 +486,7 @@ def _resolved_paths(
     if bids_root and not events_path:
         task_patterns = []
         if task:
-            task_patterns.append(
-                f"sub-{subject_label}/**/*task-{task}*_events.tsv"
-            )
+            task_patterns.append(f"sub-{subject_label}/**/*task-{task}*_events.tsv")
         task_patterns.append(f"sub-{subject_label}/**/*_events.tsv")
         events_path = _discover_matching_path(bids_root, task_patterns)
 
@@ -518,8 +521,7 @@ def _resolved_paths(
         stem_parts.extend([f"task-{task}", f"space-{space}", "desc-preproc"])
         bold_path = str(func_dir / ("_".join(stem_parts) + "_bold.nii.gz"))
         confounds_path = str(
-            func_dir
-            / ("_".join(stem_parts[:-1]) + "_desc-confounds_timeseries.tsv")
+            func_dir / ("_".join(stem_parts[:-1]) + "_desc-confounds_timeseries.tsv")
         )
 
     if not t1w_path:
@@ -556,9 +558,8 @@ def _extract_resolved_params(
         or _coerce_text(_obj_get(resources, "display_name"))
         or _coerce_text(_obj_get(resources, "dataset_name"))
     )
-    source_repo = (
-        _coerce_text(_obj_get(dataset, "source_repo"))
-        or _coerce_text(_obj_get(resources, "source_repo"))
+    source_repo = _coerce_text(_obj_get(dataset, "source_repo")) or _coerce_text(
+        _obj_get(resources, "source_repo")
     )
     primary_url = _coerce_text(_obj_get(dataset, "primary_url"))
     bids_root = (
@@ -590,7 +591,9 @@ def _extract_resolved_params(
         or _normalize_subject_label(answers.get("subject"))
     )
     discovered_subjects = _discover_subject_labels(derivative_root, bids_root)
-    subject_label = subject_label or (discovered_subjects[0] if discovered_subjects else "01")
+    subject_label = subject_label or (
+        discovered_subjects[0] if discovered_subjects else "01"
+    )
 
     task_candidates = _task_candidates(query_understanding, dataset)
     task = _parse_task_from_prompt(prompt) or (
@@ -609,11 +612,7 @@ def _extract_resolved_params(
         or _normalize_space_label(defaults.get("space"))
         or _DEFAULT_SPACE
     )
-    t_r = (
-        _parse_tr_from_prompt(prompt)
-        or _coerce_float(defaults.get("t_r"))
-        or 2.0
-    )
+    t_r = _parse_tr_from_prompt(prompt) or _coerce_float(defaults.get("t_r")) or 2.0
     output_root = _default_output_root(bids_root, notebook_context, tool_id)
     anat_suffix = _coerce_text(defaults.get("anat_suffix")) or "T1w"
     paths = _resolved_paths(
@@ -631,7 +630,9 @@ def _extract_resolved_params(
     if path_tokens.get("task") and not task:
         task = path_tokens["task"]
 
-    available_derivatives = _string_list(_obj_get(resources, "available_derivatives", []))
+    available_derivatives = _string_list(
+        _obj_get(resources, "available_derivatives", [])
+    )
     analysis_goal = _coerce_text(_obj_get(resources, "analysis_goal")) or family_name
 
     return {
@@ -644,14 +645,16 @@ def _extract_resolved_params(
         "available_derivatives": available_derivatives,
         "derivative_root": derivative_root,
         "participant_label": subject_label,
-        "participant_labels": [f"sub-{label}" for label in discovered_subjects] or [f"sub-{subject_label}"],
+        "participant_labels": [f"sub-{label}" for label in discovered_subjects]
+        or [f"sub-{subject_label}"],
         "task": task,
         "task_candidates": task_candidates,
         "space": space,
         "t_r": t_r,
         "analysis_goal": analysis_goal,
         "output_root": output_root,
-        "atlas_path": _coerce_text(defaults.get("atlas_path")) or "data/atlas/atlas_labels.nii.gz",
+        "atlas_path": _coerce_text(defaults.get("atlas_path"))
+        or "data/atlas/atlas_labels.nii.gz",
         **paths,
     }
 
@@ -707,15 +710,18 @@ def _infer_neurodesk_code(
     module_lines = "\n".join(f"module load {item}" for item in module_loads) or (
         "# module load <replace-with-required-neurodesk-module>"
     )
-    t1w_path = _coerce_text(params.get("t1w_path")) or "data/sub-01/anat/sub-01_T1w.nii.gz"
+    t1w_path = (
+        _coerce_text(params.get("t1w_path")) or "data/sub-01/anat/sub-01_T1w.nii.gz"
+    )
     output_root = _coerce_text(params.get("output_root")) or "outputs/neurodesk"
     if tool_id == "fsl_bet":
-        output_image = str(Path(output_root) / f"sub-{params.get('participant_label', '01')}_desc-brain_T1w.nii.gz")
+        output_image = str(
+            Path(output_root)
+            / f"sub-{params.get('participant_label', '01')}_desc-brain_T1w.nii.gz"
+        )
         placeholder_command = f"bet {t1w_path} {output_image} -R"
     elif tool_id == "spm12_vbm":
-        placeholder_command = (
-            f'echo "Run CAT12/SPM12 VBM on {t1w_path} and write outputs to {output_root}"'
-        )
+        placeholder_command = f'echo "Run CAT12/SPM12 VBM on {t1w_path} and write outputs to {output_root}"'
     else:
         placeholder_command = 'echo "Replace this line with the real CLI command."'
     return "\n".join(
@@ -754,8 +760,14 @@ def _infer_fmri_qc_markdown(prompt: str, params: Mapping[str, Any]) -> str:
 
 
 def _infer_fmri_qc_code(params: Mapping[str, Any]) -> str:
-    bold_path = _coerce_text(params.get("bold_path")) or "data/sub-01/func/sub-01_task-rest_desc-preproc_bold.nii.gz"
-    confounds_path = _coerce_text(params.get("confounds_path")) or "data/sub-01/func/sub-01_task-rest_desc-confounds_timeseries.tsv"
+    bold_path = (
+        _coerce_text(params.get("bold_path"))
+        or "data/sub-01/func/sub-01_task-rest_desc-preproc_bold.nii.gz"
+    )
+    confounds_path = (
+        _coerce_text(params.get("confounds_path"))
+        or "data/sub-01/func/sub-01_task-rest_desc-confounds_timeseries.tsv"
+    )
     return "\n".join(
         [
             "from pathlib import Path",
@@ -807,9 +819,18 @@ def _infer_glm_markdown(prompt: str, params: Mapping[str, Any]) -> str:
 
 
 def _infer_glm_code(params: Mapping[str, Any]) -> str:
-    bold_path = _coerce_text(params.get("bold_path")) or "data/sub-01/func/sub-01_task-motor_desc-preproc_bold.nii.gz"
-    events_path = _coerce_text(params.get("events_path")) or "data/sub-01/func/sub-01_task-motor_events.tsv"
-    confounds_path = _coerce_text(params.get("confounds_path")) or "data/sub-01/func/sub-01_task-motor_desc-confounds_timeseries.tsv"
+    bold_path = (
+        _coerce_text(params.get("bold_path"))
+        or "data/sub-01/func/sub-01_task-motor_desc-preproc_bold.nii.gz"
+    )
+    events_path = (
+        _coerce_text(params.get("events_path"))
+        or "data/sub-01/func/sub-01_task-motor_events.tsv"
+    )
+    confounds_path = (
+        _coerce_text(params.get("confounds_path"))
+        or "data/sub-01/func/sub-01_task-motor_desc-confounds_timeseries.tsv"
+    )
     t_r = _coerce_float(params.get("t_r")) or 2.0
     return "\n".join(
         [
@@ -939,8 +960,12 @@ def _infer_bids_app_markdown(
 
 def _infer_bids_app_code(app_name: str, params: Mapping[str, Any]) -> str:
     bids_root = _coerce_text(params.get("bids_root")) or "data/bids_root"
-    output_dir = _coerce_text(params.get("output_dir")) or str(Path("outputs") / app_name)
-    participant_label = _normalize_subject_label(params.get("participant_label")) or "01"
+    output_dir = _coerce_text(params.get("output_dir")) or str(
+        Path("outputs") / app_name
+    )
+    participant_label = (
+        _normalize_subject_label(params.get("participant_label")) or "01"
+    )
     return "\n".join(
         [
             "from pathlib import Path",
@@ -975,7 +1000,11 @@ def _infer_connectivity_markdown(
         if tool_id == "workflow_rest_connectome_e2e"
         else "Connectivity matrix scaffold"
     )
-    primary_input = params.get("bold_path") or params.get("timeseries_path") or "data/timeseries.npy"
+    primary_input = (
+        params.get("bold_path")
+        or params.get("timeseries_path")
+        or "data/timeseries.npy"
+    )
     return "\n".join(
         [
             f"## {title}",
@@ -990,10 +1019,12 @@ def _infer_connectivity_markdown(
 
 def _infer_connectivity_code(tool_id: str, params: Mapping[str, Any]) -> str:
     bold_path = _coerce_text(params.get("bold_path"))
-    atlas_path = _coerce_text(params.get("atlas_path")) or "data/atlas/atlas_labels.nii.gz"
-    timeseries_path = (
-        _coerce_text(params.get("timeseries_path"))
-        or str(Path(_coerce_text(params.get("output_root")) or "outputs/connectivity") / "timeseries.npy")
+    atlas_path = (
+        _coerce_text(params.get("atlas_path")) or "data/atlas/atlas_labels.nii.gz"
+    )
+    timeseries_path = _coerce_text(params.get("timeseries_path")) or str(
+        Path(_coerce_text(params.get("output_root")) or "outputs/connectivity")
+        / "timeseries.npy"
     )
     if tool_id == "workflow_rest_connectome_e2e" and bold_path:
         return "\n".join(
@@ -1182,9 +1213,11 @@ def build_studio_plan(
         params = {
             **params,
             "app_name": app_name,
-            "output_dir": str(Path(params["bids_root"]) / "derivatives" / app_name)
-            if params.get("bids_root")
-            else str(Path(params["output_root"]) / app_name),
+            "output_dir": (
+                str(Path(params["bids_root"]) / "derivatives" / app_name)
+                if params.get("bids_root")
+                else str(Path(params["output_root"]) / app_name)
+            ),
         }
         assistant_message = (
             f"Drafted a {app_name} BIDS App scaffold grounded from "
@@ -1217,7 +1250,9 @@ def build_studio_plan(
             "from query understanding."
         )
         ops = _append_markdown_and_code(
-            markdown=_infer_fitlins_markdown(normalized_prompt, selected_tool_id, params),
+            markdown=_infer_fitlins_markdown(
+                normalized_prompt, selected_tool_id, params
+            ),
             code=_infer_fitlins_code(selected_tool_id, params),
             last_cell_id=last_cell_id,
             tool_id=selected_tool_id,
@@ -1225,11 +1260,11 @@ def build_studio_plan(
         return {"assistant_message": assistant_message, "ops": ops}
 
     if family_name == "connectivity" and selected_tool_id:
-        assistant_message = (
-            "Drafted a connectivity scaffold with grounded inputs from query understanding."
-        )
+        assistant_message = "Drafted a connectivity scaffold with grounded inputs from query understanding."
         ops = _append_markdown_and_code(
-            markdown=_infer_connectivity_markdown(normalized_prompt, selected_tool_id, params),
+            markdown=_infer_connectivity_markdown(
+                normalized_prompt, selected_tool_id, params
+            ),
             code=_infer_connectivity_code(selected_tool_id, params),
             last_cell_id=last_cell_id,
             tool_id=selected_tool_id,

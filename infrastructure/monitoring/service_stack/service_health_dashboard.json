@@ -1,0 +1,141 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Brain Researcher - Service Health Overview",
+    "tags": ["brain-researcher", "health"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Service Availability",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "brain_researcher:service_availability_5m * 100",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 95},
+                {"color": "green", "value": 99}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Request Rate (5m)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "brain_researcher:request_rate_5m",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Error Rate (5m)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "brain_researcher:error_rate_5m",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Response Time P95 (5m)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "brain_researcher:response_time_p95_5m",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Service Status",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "up",
+            "legendFormat": "",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "renameByName": {
+                "job": "Service",
+                "instance": "Instance",
+                "Value": "Status"
+              }
+            }
+          }
+        ],
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Status"},
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {"color": "red", "value": 0},
+                      {"color": "green", "value": 1}
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

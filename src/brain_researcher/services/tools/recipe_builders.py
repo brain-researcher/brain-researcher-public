@@ -24,7 +24,9 @@ from brain_researcher.services.tools.runtime_profiles import get_container_image
 from brain_researcher.services.tools.slurm_tools import (
     DEFAULT_PROFILE as SHERLOCK_DEFAULT_PROFILE,
 )
-from brain_researcher.services.tools.slurm_tools import sherlock_render_sbatch_script
+from brain_researcher.services.tools.slurm_tools import (
+    sherlock_render_sbatch_script,
+)
 from brain_researcher.services.tools.spec import ToolSpec
 
 

@@ -1,14 +1,11 @@
 """Implicit Q-Learning (IQL) optimizer for offline RL."""
 
-import numpy as np
-import logging
-from typing import Dict, List, Optional, Tuple, Any
-from datetime import datetime
 import json
-import pickle
+import logging
+
+import numpy as np
 
 from .policy_network import PolicyNetwork, QNetwork, ValueNetwork
-from .reward_model import NeuroimagingRewardModel
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +28,7 @@ class OfflineDataset:
         rewards: np.ndarray,
         next_states: np.ndarray,
         dones: np.ndarray,
-        importance_weights: Optional[np.ndarray] = None
+        importance_weights: np.ndarray | None = None,
     ) -> None:
         """Add a batch of data to the dataset."""
         if importance_weights is None:
@@ -44,7 +41,7 @@ class OfflineDataset:
         self.dones.extend(dones)
         self.importance_weights.extend(importance_weights)
 
-    def sample_batch(self, batch_size: int) -> Tuple[np.ndarray, ...]:
+    def sample_batch(self, batch_size: int) -> tuple[np.ndarray, ...]:
         """Sample a batch from the dataset."""
         if len(self.states) < batch_size:
             indices = np.arange(len(self.states))
@@ -58,12 +55,19 @@ class OfflineDataset:
         batch_dones = np.array([self.dones[i] for i in indices])
         batch_weights = np.array([self.importance_weights[i] for i in indices])
 
-        return batch_states, batch_actions, batch_rewards, batch_next_states, batch_dones, batch_weights
+        return (
+            batch_states,
+            batch_actions,
+            batch_rewards,
+            batch_next_states,
+            batch_dones,
+            batch_weights,
+        )
 
     def __len__(self) -> int:
         return len(self.states)
 
-    def get_statistics(self) -> Dict[str, float]:
+    def get_statistics(self) -> dict[str, float]:
         """Get dataset statistics."""
         if not self.states:
             return {}
@@ -77,7 +81,7 @@ class OfflineDataset:
             "action_distribution": {
                 str(action): float(np.mean(np.array(self.actions) == action))
                 for action in np.unique(self.actions)
-            }
+            },
         }
 
 
@@ -88,11 +92,11 @@ class IQLOptimizer:
         self,
         state_dim: int,
         action_dim: int,
-        hidden_dims: Optional[List[int]] = None,
+        hidden_dims: list[int] | None = None,
         expectile: float = 0.7,
         temperature: float = 3.0,
         learning_rate: float = 0.0003,
-        discount: float = 0.99
+        discount: float = 0.99,
     ):
         """Initialize IQL optimizer.
 
@@ -135,7 +139,7 @@ class IQLOptimizer:
             "policy_losses": [],
             "mean_q_values": [],
             "mean_v_values": [],
-            "episodes_trained": 0
+            "episodes_trained": 0,
         }
 
         # Target update frequency
@@ -147,8 +151,8 @@ class IQLOptimizer:
         dataset: OfflineDataset,
         epochs: int = 100,
         batch_size: int = 256,
-        validation_split: float = 0.1
-    ) -> Dict[str, List[float]]:
+        validation_split: float = 0.1,
+    ) -> dict[str, list[float]]:
         """Train IQL on offline dataset.
 
         Args:
@@ -176,12 +180,16 @@ class IQLOptimizer:
             # Number of batches per epoch
             batches_per_epoch = max(1, train_size // batch_size)
 
-            for batch_idx in range(batches_per_epoch):
+            for _batch_idx in range(batches_per_epoch):
                 # Sample batch
-                states, actions, rewards, next_states, dones, weights = dataset.sample_batch(batch_size)
+                states, actions, rewards, next_states, dones, weights = (
+                    dataset.sample_batch(batch_size)
+                )
 
                 # Train networks
-                q_loss = self._train_q_function(states, actions, rewards, next_states, dones, weights)
+                q_loss = self._train_q_function(
+                    states, actions, rewards, next_states, dones, weights
+                )
                 v_loss = self._train_value_function(states, weights)
                 policy_loss = self._train_policy(states, actions, weights)
 
@@ -211,8 +219,10 @@ class IQLOptimizer:
                 self.training_stats["mean_v_values"].append(val_stats["mean_v"])
 
             if epoch % 10 == 0:
-                logger.info(f"Epoch {epoch}: Q loss = {avg_q_loss:.4f}, "
-                           f"V loss = {avg_v_loss:.4f}, Policy loss = {avg_policy_loss:.4f}")
+                logger.info(
+                    f"Epoch {epoch}: Q loss = {avg_q_loss:.4f}, "
+                    f"V loss = {avg_v_loss:.4f}, Policy loss = {avg_policy_loss:.4f}"
+                )
 
         self.training_stats["episodes_trained"] += epochs
         logger.info(f"Completed IQL training after {epochs} epochs")
@@ -220,11 +230,8 @@ class IQLOptimizer:
         return self.training_stats
 
     def select_action(
-        self,
-        state: np.ndarray,
-        deterministic: bool = False,
-        return_info: bool = False
-    ) -> Tuple[int, Optional[Dict]]:
+        self, state: np.ndarray, deterministic: bool = False, return_info: bool = False
+    ) -> tuple[int, dict | None]:
         """Select action using trained policy.
 
         Args:
@@ -250,7 +257,7 @@ class IQLOptimizer:
                 "q_values": q_values.tolist(),
                 "state_value": value,
                 "max_q": float(np.max(q_values)),
-                "advantage": float(q_values[action] - value)
+                "advantage": float(q_values[action] - value),
             }
 
             return action, info
@@ -269,8 +276,8 @@ class IQLOptimizer:
         self,
         test_states: np.ndarray,
         test_actions: np.ndarray,
-        test_rewards: np.ndarray
-    ) -> Dict[str, float]:
+        test_rewards: np.ndarray,
+    ) -> dict[str, float]:
         """Evaluate policy performance on test data."""
         total_return = 0.0
         correct_actions = 0
@@ -285,7 +292,9 @@ class IQLOptimizer:
             total_return += test_rewards[i]
 
         accuracy = correct_actions / len(test_states) if len(test_states) > 0 else 0.0
-        average_return = total_return / len(test_states) if len(test_states) > 0 else 0.0
+        average_return = (
+            total_return / len(test_states) if len(test_states) > 0 else 0.0
+        )
 
         # Additional metrics
         mean_q_values = []
@@ -303,7 +312,7 @@ class IQLOptimizer:
             "average_return": average_return,
             "mean_q_value": float(np.mean(mean_q_values)) if mean_q_values else 0.0,
             "mean_state_value": float(np.mean(mean_values)) if mean_values else 0.0,
-            "q_value_std": float(np.std(mean_q_values)) if mean_q_values else 0.0
+            "q_value_std": float(np.std(mean_q_values)) if mean_q_values else 0.0,
         }
 
     def save(self, filepath: str) -> None:
@@ -314,7 +323,7 @@ class IQLOptimizer:
             "expectile": self.expectile,
             "temperature": self.temperature,
             "discount": self.discount,
-            "training_stats": self.training_stats
+            "training_stats": self.training_stats,
         }
 
         # Save networks
@@ -323,7 +332,7 @@ class IQLOptimizer:
         self.policy.save(f"{filepath}_policy.json")
 
         # Save metadata
-        with open(f"{filepath}_metadata.json", 'w') as f:
+        with open(f"{filepath}_metadata.json", "w") as f:
             json.dump(model_data, f, indent=2)
 
         logger.info(f"Saved IQL model to {filepath}")
@@ -331,7 +340,7 @@ class IQLOptimizer:
     def load(self, filepath: str) -> None:
         """Load trained model."""
         # Load metadata
-        with open(f"{filepath}_metadata.json", 'r') as f:
+        with open(f"{filepath}_metadata.json") as f:
             model_data = json.load(f)
 
         self.state_dim = model_data["state_dim"]
@@ -360,20 +369,24 @@ class IQLOptimizer:
         rewards: np.ndarray,
         next_states: np.ndarray,
         dones: np.ndarray,
-        weights: np.ndarray
+        weights: np.ndarray,
     ) -> float:
         """Train Q-function using target values from V-function."""
         # Get next state values from V-network
-        next_values = np.array([self.v_network.get_value(ns.reshape(1, -1)) for ns in next_states])
+        next_values = np.array(
+            [self.v_network.get_value(ns.reshape(1, -1)) for ns in next_states]
+        )
 
         # Calculate targets
         targets = rewards + self.discount * next_values * (1 - dones)
 
         # Get current Q-values for taken actions
-        current_q_values = np.array([
-            self.q_network.get_q_value(states[i].reshape(1, -1), actions[i])
-            for i in range(len(states))
-        ])
+        np.array(
+            [
+                self.q_network.get_q_value(states[i].reshape(1, -1), actions[i])
+                for i in range(len(states))
+            ]
+        )
 
         # Create target array for all actions
         q_targets = np.zeros((len(states), self.action_dim))
@@ -389,16 +402,20 @@ class IQLOptimizer:
     def _train_value_function(self, states: np.ndarray, weights: np.ndarray) -> float:
         """Train value function using expectile regression."""
         # Get Q-values from target Q-network
-        q_values_batch = np.array([
-            self.target_q_network.get_q_values(state.reshape(1, -1))[0]
-            for state in states
-        ])
+        q_values_batch = np.array(
+            [
+                self.target_q_network.get_q_values(state.reshape(1, -1))[0]
+                for state in states
+            ]
+        )
 
         # Calculate expectile targets (max Q-value)
         max_q_values = np.max(q_values_batch, axis=1)
 
         # Get current V-values
-        current_values = np.array([self.v_network.get_value(state.reshape(1, -1)) for state in states])
+        current_values = np.array(
+            [self.v_network.get_value(state.reshape(1, -1)) for state in states]
+        )
 
         # Expectile loss
         diff = max_q_values - current_values
@@ -413,7 +430,9 @@ class IQLOptimizer:
 
         return loss
 
-    def _train_policy(self, states: np.ndarray, actions: np.ndarray, weights: np.ndarray) -> float:
+    def _train_policy(
+        self, states: np.ndarray, actions: np.ndarray, weights: np.ndarray
+    ) -> float:
         """Train policy using advantage weighting."""
         # Calculate advantages
         advantages = []
@@ -431,7 +450,9 @@ class IQLOptimizer:
 
         # Create weighted targets for policy
         policy_targets = np.zeros((len(states), self.action_dim))
-        current_probs = np.array([self.policy.forward(state.reshape(1, -1))[0] for state in states])
+        current_probs = np.array(
+            [self.policy.forward(state.reshape(1, -1))[0] for state in states]
+        )
 
         for i, action in enumerate(actions):
             policy_targets[i] = current_probs[i]
@@ -448,14 +469,13 @@ class IQLOptimizer:
         return loss
 
     def _train_policy_cross_entropy(
-        self,
-        states: np.ndarray,
-        targets: np.ndarray,
-        weights: np.ndarray
+        self, states: np.ndarray, targets: np.ndarray, weights: np.ndarray
     ) -> float:
         """Train policy with weighted cross-entropy loss."""
         # Forward pass
-        probs = np.array([self.policy.forward(state.reshape(1, -1))[0] for state in states])
+        probs = np.array(
+            [self.policy.forward(state.reshape(1, -1))[0] for state in states]
+        )
 
         # Cross-entropy loss
         epsilon = 1e-8
@@ -469,7 +489,9 @@ class IQLOptimizer:
         # Update policy parameters (simplified)
         for i, state in enumerate(states):
             # Create pseudo-target based on cross-entropy gradient
-            pseudo_target = probs[i] - self.policy.learning_rate * prob_diff[i] * weights[i]
+            pseudo_target = (
+                probs[i] - self.policy.learning_rate * prob_diff[i] * weights[i]
+            )
             pseudo_target = np.clip(pseudo_target, 0, 1)
             pseudo_target = pseudo_target / np.sum(pseudo_target)
 
@@ -484,22 +506,22 @@ class IQLOptimizer:
             self.target_q_network.weights[i] = self.q_network.weights[i].copy()
             self.target_q_network.biases[i] = self.q_network.biases[i].copy()
 
-    def _validate(self, dataset: OfflineDataset, sample_size: int) -> Dict[str, float]:
+    def _validate(self, dataset: OfflineDataset, sample_size: int) -> dict[str, float]:
         """Validate model on dataset sample."""
-        states, actions, rewards, next_states, dones, _ = dataset.sample_batch(sample_size)
+        states, actions, rewards, next_states, dones, _ = dataset.sample_batch(
+            sample_size
+        )
 
         # Calculate mean Q-values and V-values
-        mean_q = np.mean([
-            np.mean(self.q_network.get_q_values(state.reshape(1, -1)))
-            for state in states
-        ])
+        mean_q = np.mean(
+            [
+                np.mean(self.q_network.get_q_values(state.reshape(1, -1)))
+                for state in states
+            ]
+        )
 
-        mean_v = np.mean([
-            self.v_network.get_value(state.reshape(1, -1))
-            for state in states
-        ])
+        mean_v = np.mean(
+            [self.v_network.get_value(state.reshape(1, -1)) for state in states]
+        )
 
-        return {
-            "mean_q": mean_q,
-            "mean_v": mean_v
-        }
+        return {"mean_q": mean_q, "mean_v": mean_v}

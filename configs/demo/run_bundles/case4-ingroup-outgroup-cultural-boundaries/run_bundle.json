@@ -28,7 +28,7 @@
   "artifacts": [
     {
       "id": "a001",
-      "path": "docs/prompts/brain_researcher_hybrid/reports/case4_report.pdf",
+      "path": "docs/use_cases/brain_researcher_hybrid/reports/case4_report.pdf",
       "mime_type": "application/pdf",
       "roles": [
         "reference_summary_source",

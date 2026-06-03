@@ -2,7 +2,6 @@
 
 import json
 from datetime import datetime, timedelta
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -47,32 +46,34 @@ def budget_status(
         return
 
     console.print("[yellow]⚠ Budget enforcement not yet implemented (Track 1)[/yellow]")
-    console.print("\nUse [bold]br budget usage[/bold] to view actual LLM usage and costs.")
+    console.print(
+        "\nUse [bold]br budget usage[/bold] to view actual LLM usage and costs."
+    )
 
 
 @app.command("usage")
 def usage_report(
-    start: Optional[str] = typer.Option(
+    start: str | None = typer.Option(
         None,
         "--start",
         help="Start date (YYYY-MM-DD). Defaults to 30 days ago.",
     ),
-    end: Optional[str] = typer.Option(
+    end: str | None = typer.Option(
         None,
         "--end",
         help="End date (YYYY-MM-DD). Defaults to today.",
     ),
-    provider: Optional[str] = typer.Option(
+    provider: str | None = typer.Option(
         None,
         "--provider",
         help="Filter by provider (e.g., google, openai)",
     ),
-    bill_to: Optional[str] = typer.Option(
+    bill_to: str | None = typer.Option(
         None,
         "--bill-to",
         help="Filter by billing target (local_oauth, byok, managed)",
     ),
-    hours: Optional[int] = typer.Option(
+    hours: int | None = typer.Option(
         None,
         "--last-hours",
         help="Show usage for last N hours (overrides start/end)",
@@ -112,7 +113,9 @@ def usage_report(
     if json_output:
         # Remove full records from JSON output (too verbose)
         summary_copy = summary.copy()
-        summary_copy["records"] = f"{len(summary['records'])} records (use --verbose for details)"
+        summary_copy["records"] = (
+            f"{len(summary['records'])} records (use --verbose for details)"
+        )
         print(json.dumps(summary_copy, indent=2))
         return
 
@@ -194,22 +197,22 @@ def usage_report(
 
 @app.command("set")
 def set_budget(
-    daily_usd: Optional[float] = typer.Option(
+    daily_usd: float | None = typer.Option(
         None,
         "--daily-usd",
         help="Daily USD budget limit",
     ),
-    monthly_usd: Optional[float] = typer.Option(
+    monthly_usd: float | None = typer.Option(
         None,
         "--monthly-usd",
         help="Monthly USD budget limit",
     ),
-    daily_tokens: Optional[int] = typer.Option(
+    daily_tokens: int | None = typer.Option(
         None,
         "--daily-tokens",
         help="Daily token budget limit",
     ),
-    monthly_tokens: Optional[int] = typer.Option(
+    monthly_tokens: int | None = typer.Option(
         None,
         "--monthly-tokens",
         help="Monthly token budget limit",
@@ -224,7 +227,9 @@ def set_budget(
     Example:
         br budget set --monthly-usd 50 --daily-usd 5
     """
-    console.print("[yellow]⚠ Budget enforcement not yet implemented (Track 1)[/yellow]\n")
+    console.print(
+        "[yellow]⚠ Budget enforcement not yet implemented (Track 1)[/yellow]\n"
+    )
     console.print("Budget limits will be saved once BudgetTracker is implemented.")
     console.print("\nRequested limits:")
     if daily_usd is not None:

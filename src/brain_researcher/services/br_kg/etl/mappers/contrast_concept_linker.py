@@ -23,9 +23,10 @@ try:
 except ImportError:
     # For running as a script from brain_researcher.services.br_kg directory
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from brain_researcher.services.br_kg.etl.loaders.ca_task_concept_loader import load_task_concept_weights
-
     from brain_researcher.core.utils.task_matcher import TaskMatcher
+    from brain_researcher.services.br_kg.etl.loaders.ca_task_concept_loader import (
+        load_task_concept_weights,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +110,7 @@ class ContrastConceptLinker:
 
         # Initialize with default structure
         def default_weights():
-            return {wt: 0.0 for wt in WEIGHT_TYPES}
+            return dict.fromkeys(WEIGHT_TYPES, 0.0)
 
         weights: dict[str, dict[str, Any]] = defaultdict(default_weights)
 
@@ -162,7 +163,7 @@ class ContrastConceptLinker:
 
         edges: list[dict[str, Any]] = []
         timestamp = datetime.now(timezone.utc).isoformat()
-        for name, vals in weights.items():
+        for _name, vals in weights.items():
             concept_id = vals.get("concept_id")
             if not contrast_id or not concept_id:
                 continue
@@ -265,15 +266,6 @@ def _run_sample():
                 "description": "Incongruent vs congruent",
             },
         ),
-    ]
-
-    sample_concepts = [
-        ("concept_001", {"name": "working memory"}),
-        ("concept_002", {"name": "attention"}),
-        ("concept_003", {"name": "emotion"}),
-        ("concept_004", {"name": "face recognition"}),
-        ("concept_005", {"name": "executive control"}),
-        ("concept_006", {"name": "response inhibition"}),
     ]
 
     logger.info("Testing ContrastConceptLinker with sample data...")

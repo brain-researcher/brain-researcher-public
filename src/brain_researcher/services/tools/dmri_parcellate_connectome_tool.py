@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from brain_researcher.services.tools.dwi_connectome_workflow import (
@@ -17,7 +17,7 @@ class DMRIParcellateConnectomeArgs(BaseModel):
 
     tractogram: str = Field(description="Path to streamline file (.trk/.tck)")
     parcellation_labels: str = Field(description="Atlas/parcellation image")
-    output_dir: Optional[str] = Field(
+    output_dir: str | None = Field(
         default=None, description="Output directory for matrices and graphs"
     )
 

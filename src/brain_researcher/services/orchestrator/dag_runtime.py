@@ -11,10 +11,11 @@ import concurrent.futures
 import queue
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from brain_researcher.services.agent.error_taxonomy import classify_failure
 from brain_researcher.services.shared.workflow_models import WorkflowStep
@@ -31,18 +32,18 @@ class WorkflowState(Enum):
 @dataclass
 class WorkflowDefinition:
     workflow_id: str
-    steps: List[WorkflowStep]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    steps: list[WorkflowStep]
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class WorkflowResult:
     state: WorkflowState
-    error: Optional[str] = None
-    run_dir: Optional[str] = None
-    step_results: List[Dict[str, Any]] = field(default_factory=list)
+    error: str | None = None
+    run_dir: str | None = None
+    step_results: list[dict[str, Any]] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "state": self.state.value,
             "error": self.error,
@@ -60,7 +61,7 @@ class DAGExecutor:
         recorder_factory: Callable[..., Any] | None = None,
         *,
         max_concurrency: int | None = None,
-        event_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+        event_callback: Callable[[str, dict[str, Any]], None] | None = None,
     ) -> None:
         self.tool_executor = tool_executor
         self.event_callback = event_callback
@@ -98,20 +99,22 @@ class _ExecutionGraph:
     def __init__(self, workflow: WorkflowDefinition, max_concurrency: int) -> None:
         self.workflow = workflow
         self.max_concurrency = max(1, int(max_concurrency or DEFAULT_MAX_CONCURRENCY))
-        self.nodes: Dict[str, WorkflowStep] = {s.step_id: s for s in workflow.steps}
-        self.in_degree: Dict[str, int] = {sid: 0 for sid in self.nodes}
-        self.children: Dict[str, List[str]] = {sid: [] for sid in self.nodes}
+        self.nodes: dict[str, WorkflowStep] = {s.step_id: s for s in workflow.steps}
+        self.in_degree: dict[str, int] = dict.fromkeys(self.nodes, 0)
+        self.children: dict[str, list[str]] = {sid: [] for sid in self.nodes}
         self._build()
 
     def _build(self) -> None:
         for step in self.nodes.values():
             for dep in step.depends_on or []:
                 if dep not in self.nodes:
-                    raise ValueError(f"Step '{step.step_id}' depends on unknown step '{dep}'")
+                    raise ValueError(
+                        f"Step '{step.step_id}' depends on unknown step '{dep}'"
+                    )
                 self.in_degree[step.step_id] += 1
                 self.children[dep].append(step.step_id)
 
-    def roots(self) -> List[str]:
+    def roots(self) -> list[str]:
         return [sid for sid, deg in self.in_degree.items() if deg == 0]
 
 
@@ -120,13 +123,13 @@ class _ExecutionRunner:
         self,
         graph: _ExecutionGraph,
         tool_executor: Any,
-        event_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+        event_callback: Callable[[str, dict[str, Any]], None] | None = None,
     ) -> None:
         self.graph = graph
         self.tool_executor = tool_executor
         self.event_callback = event_callback
-        self.ctx: Dict[str, Any] = {}
-        self.step_results: Dict[str, Dict[str, Any]] = {}
+        self.ctx: dict[str, Any] = {}
+        self.step_results: dict[str, dict[str, Any]] = {}
         self.lock = threading.Lock()
         self.todo = queue.Queue()
         # Track steps that are queued vs currently executing. Without this,
@@ -134,7 +137,7 @@ class _ExecutionRunner:
         # finishes, causing `wait(futures)` to block far longer than intended.
         self._queued: set[str] = set()
         self._in_flight: set[str] = set()
-        self.fail_error: Optional[str] = None
+        self.fail_error: str | None = None
 
     def run(self) -> WorkflowResult:
         # Seed ready nodes
@@ -142,7 +145,9 @@ class _ExecutionRunner:
             self.todo.put(sid)
             self._queued.add(sid)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.graph.max_concurrency) as pool:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.graph.max_concurrency
+        ) as pool:
             futures = []
             while not self._all_done():
                 self._enqueue_ready()
@@ -168,7 +173,9 @@ class _ExecutionRunner:
             else:
                 concurrent.futures.wait(futures)
 
-        state = WorkflowState.SUCCEEDED if self.fail_error is None else WorkflowState.FAILED
+        state = (
+            WorkflowState.SUCCEEDED if self.fail_error is None else WorkflowState.FAILED
+        )
         return WorkflowResult(
             state=state,
             error=self.fail_error,
@@ -177,7 +184,10 @@ class _ExecutionRunner:
 
     def _all_done(self) -> bool:
         with self.lock:
-            return len(self.step_results) == len(self.graph.nodes) or self.fail_error is not None
+            return (
+                len(self.step_results) == len(self.graph.nodes)
+                or self.fail_error is not None
+            )
 
     def _enqueue_ready(self) -> None:
         with self.lock:
@@ -210,13 +220,24 @@ class _ExecutionRunner:
         resolved_params = self._resolve(step.parameters)
         if step.metadata and isinstance(step.metadata.get("consumes"), dict):
             for param_name, ctx_key in step.metadata.get("consumes", {}).items():
-                if param_name not in resolved_params or resolved_params[param_name] is None:
+                if (
+                    param_name not in resolved_params
+                    or resolved_params[param_name] is None
+                ):
                     if ctx_key in self.ctx:
                         resolved_params[param_name] = self.ctx[ctx_key]
 
         # Retry loop
-        retries = int(step.metadata.get("retries", 0)) if isinstance(step.metadata, dict) else 0
-        delay = float(step.metadata.get("retry_delay", DEFAULT_RETRY_DELAY)) if isinstance(step.metadata, dict) else DEFAULT_RETRY_DELAY
+        retries = (
+            int(step.metadata.get("retries", 0))
+            if isinstance(step.metadata, dict)
+            else 0
+        )
+        delay = (
+            float(step.metadata.get("retry_delay", DEFAULT_RETRY_DELAY))
+            if isinstance(step.metadata, dict)
+            else DEFAULT_RETRY_DELAY
+        )
         attempt = 0
         status = "error"
         error = None
@@ -225,7 +246,10 @@ class _ExecutionRunner:
 
         while attempt <= retries:
             attempt += 1
-            self._emit("step_started", {"step_id": step.step_id, "tool": step.tool_name, "attempt": attempt})
+            self._emit(
+                "step_started",
+                {"step_id": step.step_id, "tool": step.tool_name, "attempt": attempt},
+            )
             try:
                 result, status, error = self._execute_tool(step, resolved_params)
             except Exception as exc:  # pragma: no cover
@@ -250,7 +274,7 @@ class _ExecutionRunner:
         duration_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
 
         # Build step result
-        step_result: Dict[str, Any] = {
+        step_result: dict[str, Any] = {
             "step_id": step.step_id,
             "tool": step.tool_name,
             "status": status,
@@ -263,7 +287,9 @@ class _ExecutionRunner:
         if status not in {"success", "succeeded"}:
             taxonomy = None
             if isinstance(result, dict):
-                taxonomy = result.get("error_taxonomy") or result.get("metadata", {}).get("error_taxonomy")
+                taxonomy = result.get("error_taxonomy") or result.get(
+                    "metadata", {}
+                ).get("error_taxonomy")
             if taxonomy is None:
                 taxonomy_obj = classify_failure(status="error", error_message=error)
                 taxonomy = taxonomy_obj.to_dict()
@@ -272,7 +298,9 @@ class _ExecutionRunner:
                 step_result["error_category"] = taxonomy.get("category")
                 step_result["is_retryable"] = taxonomy.get("is_retryable")
                 step_result["recovery_strategy"] = taxonomy.get("recovery_action")
-                step_result["recovery_suggestions"] = taxonomy.get("recovery_suggestions")
+                step_result["recovery_suggestions"] = taxonomy.get(
+                    "recovery_suggestions"
+                )
 
         # Success path: merge outputs into ctx
         if status in {"success", "succeeded"}:
@@ -280,7 +308,11 @@ class _ExecutionRunner:
             if isinstance(result, dict):
                 data = result.get("data", result)
                 if isinstance(data, dict):
-                    outputs = data.get("outputs") if isinstance(data.get("outputs"), dict) else None
+                    outputs = (
+                        data.get("outputs")
+                        if isinstance(data.get("outputs"), dict)
+                        else None
+                    )
             if outputs:
                 with self.lock:
                     self.ctx.update(outputs)
@@ -312,7 +344,7 @@ class _ExecutionRunner:
     def _resolve(self, val):
         if isinstance(val, str):
             try:
-                return val.format_map({k: v for k, v in self.ctx.items()})
+                return val.format_map(dict(self.ctx.items()))
             except Exception:
                 return val
         if isinstance(val, list):
@@ -321,16 +353,18 @@ class _ExecutionRunner:
             return {k: self._resolve(v) for k, v in val.items()}
         return val
 
-    def _execute_tool(self, step: WorkflowStep, params: Dict[str, Any]):
+    def _execute_tool(self, step: WorkflowStep, params: dict[str, Any]):
         if not self.tool_executor or not hasattr(self.tool_executor, "run_tool"):
             return None, "skipped", None
 
-        execution_context: Dict[str, Any] = {
+        execution_context: dict[str, Any] = {
             "parent_run_id": self.graph.workflow.workflow_id,
             "step_id": step.step_id,
         }
         if isinstance(step.metadata, dict):
-            execution_context["runtime_kind"] = step.metadata.get("runtime_kind", "container")
+            execution_context["runtime_kind"] = step.metadata.get(
+                "runtime_kind", "container"
+            )
             execution_context["step_metadata"] = step.metadata
         workflow_meta = (
             self.graph.workflow.metadata
@@ -373,8 +407,16 @@ class _ExecutionRunner:
                 **params,
             )
 
-        status = result.get("status", "unknown") if isinstance(result, dict) else getattr(result, "status", "unknown")
-        error = result.get("error") if isinstance(result, dict) else getattr(result, "error", None)
+        status = (
+            result.get("status", "unknown")
+            if isinstance(result, dict)
+            else getattr(result, "status", "unknown")
+        )
+        error = (
+            result.get("error")
+            if isinstance(result, dict)
+            else getattr(result, "error", None)
+        )
         return result, status, error
 
     def _overall_timeout(self) -> float | None:
@@ -401,7 +443,7 @@ class _ExecutionRunner:
             return None
         return max_budget + 0.5
 
-    def _emit(self, event: str, payload: Dict[str, Any]) -> None:
+    def _emit(self, event: str, payload: dict[str, Any]) -> None:
         if self.event_callback:
             try:
                 self.event_callback(event, payload)

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
@@ -28,9 +27,11 @@ class BrainSimulationArgs(BaseModel):
     duration: float = Field(default=10.0, description="Simulation duration (s)")
     dt: float = Field(default=0.001, description="Time step (s)")
     noise_level: float = Field(default=0.01, description="Noise amplitude")
-    connectivity_strength: float = Field(default=1.0, description="Connectivity scaling")
-    seed: Optional[int] = Field(default=None, description="Random seed")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    connectivity_strength: float = Field(
+        default=1.0, description="Connectivity scaling"
+    )
+    seed: int | None = Field(default=None, description="Random seed")
+    output_dir: str | None = Field(default=None, description="Output directory")
 
 
 class BrainSimulationTool(NeuroToolWrapper):
@@ -48,7 +49,9 @@ class BrainSimulationTool(NeuroToolWrapper):
     def get_args_schema(self):
         return BrainSimulationArgs
 
-    def _jansen_rit_model(self, state: np.ndarray, _t: float, params: dict) -> np.ndarray:
+    def _jansen_rit_model(
+        self, state: np.ndarray, _t: float, params: dict
+    ) -> np.ndarray:
         """Lightweight Jansen-Rit neural mass dynamics."""
         y0, y1, y2, y3, y4, y5 = state
         A = float(params.get("A", 3.25))
@@ -89,7 +92,9 @@ class BrainSimulationTool(NeuroToolWrapper):
         coupling_term = np.sum(coupling * np.sin(phase_diff), axis=1) / n
         return omega + coupling_term
 
-    def _wilson_cowan_model(self, state: np.ndarray, _t: float, params: dict) -> np.ndarray:
+    def _wilson_cowan_model(
+        self, state: np.ndarray, _t: float, params: dict
+    ) -> np.ndarray:
         """Simplified Wilson-Cowan population model."""
         n = int(params.get("n_nodes", 1))
         connectivity = np.array(params.get("connectivity", np.eye(n)), dtype=float)
@@ -148,8 +153,8 @@ class BrainSimulationTool(NeuroToolWrapper):
         coupling_strength: float,
         time_points: int,
         dt: float,
-        natural_frequencies: Optional[np.ndarray],
-        initial_phases: Optional[np.ndarray],
+        natural_frequencies: np.ndarray | None,
+        initial_phases: np.ndarray | None,
     ) -> dict:
         rng = np.random.default_rng()
         omega = (
@@ -163,7 +168,9 @@ class BrainSimulationTool(NeuroToolWrapper):
             if initial_phases is not None
             else rng.uniform(0.0, 2 * np.pi, size=n_oscillators)
         )
-        coupling = coupling_strength * (np.ones((n_oscillators, n_oscillators)) - np.eye(n_oscillators))
+        coupling = coupling_strength * (
+            np.ones((n_oscillators, n_oscillators)) - np.eye(n_oscillators)
+        )
 
         for t in range(1, time_points):
             dtheta = self._kuramoto_model(phases[t - 1], omega, coupling)
@@ -201,14 +208,18 @@ class BrainSimulationTool(NeuroToolWrapper):
     def _run(self, **kwargs) -> ToolResult:
         try:
             if "simulation_type" in kwargs or "simulation_time" in kwargs:
-                simulation_type = str(kwargs.get("simulation_type", "neural_mass")).lower()
+                simulation_type = str(
+                    kwargs.get("simulation_type", "neural_mass")
+                ).lower()
                 if simulation_type not in {"neural_mass", "kuramoto", "spiking"}:
                     simulation_type = "neural_mass"
 
                 output_dir = Path(kwargs.get("output_dir", Path.cwd() / "brain_sim"))
                 output_dir.mkdir(parents=True, exist_ok=True)
                 dt = float(kwargs.get("dt", 0.001))
-                simulation_time = float(kwargs.get("simulation_time", kwargs.get("duration", 1.0)))
+                simulation_time = float(
+                    kwargs.get("simulation_time", kwargs.get("duration", 1.0))
+                )
                 time_points = max(int(simulation_time / dt), 2)
                 save_results = bool(kwargs.get("save_results", False))
 
@@ -250,7 +261,10 @@ class BrainSimulationTool(NeuroToolWrapper):
                         np.save(time_path, sim["time"])
                         np.save(signals_path, sim["signals"])
                         outputs.update(
-                            {"time_file": str(time_path), "signals_file": str(signals_path)}
+                            {
+                                "time_file": str(time_path),
+                                "signals_file": str(signals_path),
+                            }
                         )
 
                 elif simulation_type == "kuramoto":
@@ -280,8 +294,12 @@ class BrainSimulationTool(NeuroToolWrapper):
 
                 elif simulation_type == "spiking":
                     n_neurons = int(kwargs.get("n_neurons", 10))
-                    n_excitatory = int(kwargs.get("n_excitatory", max(n_neurons - 1, 1)))
-                    n_inhibitory = int(kwargs.get("n_inhibitory", n_neurons - n_excitatory))
+                    n_excitatory = int(
+                        kwargs.get("n_excitatory", max(n_neurons - 1, 1))
+                    )
+                    n_inhibitory = int(
+                        kwargs.get("n_inhibitory", n_neurons - n_excitatory)
+                    )
                     time_ms = float(kwargs.get("time_ms", simulation_time * 1000.0))
                     sim = self._simulate_spiking_network(
                         n_neurons=n_neurons,
@@ -300,7 +318,11 @@ class BrainSimulationTool(NeuroToolWrapper):
 
                 return ToolResult(
                     status="success",
-                    data={"outputs": outputs, "summary": summary, "message": "Brain simulation completed."},
+                    data={
+                        "outputs": outputs,
+                        "summary": summary,
+                        "message": "Brain simulation completed.",
+                    },
                 )
 
             args = BrainSimulationArgs(**kwargs)
@@ -320,7 +342,7 @@ class BrainSimulationTools:
     """Registry helper."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         return [BrainSimulationTool()]
 
 

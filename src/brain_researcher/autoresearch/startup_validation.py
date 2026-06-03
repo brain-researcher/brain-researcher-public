@@ -203,8 +203,10 @@ def validate_predictive_startup(
     env: Mapping[str, str] | None = None,
 ) -> StartupValidationResult:
     issues = _base_validation(paths, owner_name=owner_name)
-    data_manifest = Path(manifest_path).expanduser().resolve() if manifest_path else (
-        paths.project_root / "manifests" / "lane_b_data_manifest.json"
+    data_manifest = (
+        Path(manifest_path).expanduser().resolve()
+        if manifest_path
+        else (paths.project_root / "manifests" / "lane_b_data_manifest.json")
     )
     if not data_manifest.exists():
         _issue(
@@ -274,7 +276,10 @@ def validate_discovery_startup(
                     metadata={"task_id": task.get("task_id")},
                 )
                 continue
-            if strict_biological_motion and str(task.get("task_id")) == "ibc_biological_motion":
+            if (
+                strict_biological_motion
+                and str(task.get("task_id")) == "ibc_biological_motion"
+            ):
                 manifest = _read_json(manifest_path)
                 counts = manifest.get("condition_counts") or {}
                 if not (

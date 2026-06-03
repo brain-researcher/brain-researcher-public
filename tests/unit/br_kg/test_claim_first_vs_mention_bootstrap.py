@@ -29,7 +29,9 @@ def _result_row(
     with_claim_spine: bool,
     with_top_paths: bool = True,
 ) -> dict[str, object]:
-    evidence = [_evidence_item(with_claim_spine=with_claim_spine)] if with_evidence else []
+    evidence = (
+        [_evidence_item(with_claim_spine=with_claim_spine)] if with_evidence else []
+    )
     return {
         "expected_verdict": expected_verdict,
         "result": {
@@ -46,7 +48,9 @@ def _result_row(
     }
 
 
-def test_validate_control_cleanup_accepts_claim_spine_removal_and_mention_preservation() -> None:
+def test_validate_control_cleanup_accepts_claim_spine_removal_and_mention_preservation() -> (
+    None
+):
     before = {
         "Claim": 2,
         "EvidenceSpan": 2,

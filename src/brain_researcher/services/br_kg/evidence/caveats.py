@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from brain_researcher.config.paths import get_data_root
 
 _SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
-_cached_caveats: Optional[List[Dict[str, Any]]] = None
+_cached_caveats: list[dict[str, Any]] | None = None
 
 
 def _default_path() -> Path:
@@ -19,7 +19,7 @@ def _default_path() -> Path:
     return get_data_root() / "neuro_methods_kb.yaml"
 
 
-def load_caveats(path: Optional[Path] = None, force: bool = False) -> List[Dict[str, Any]]:
+def load_caveats(path: Path | None = None, force: bool = False) -> list[dict[str, Any]]:
     global _cached_caveats
     if _cached_caveats is not None and not force:
         return _cached_caveats
@@ -46,10 +46,10 @@ def load_caveats(path: Optional[Path] = None, force: bool = False) -> List[Dict[
 def match_caveats(
     *,
     query: str,
-    node_type: Optional[str],
-    node_label: Optional[str],
+    node_type: str | None,
+    node_label: str | None,
     max_items: int = 5,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     caveats = load_caveats()
     if not caveats:
         return []
@@ -57,7 +57,7 @@ def match_caveats(
     q = (query or "").lower()
     node_type = (node_type or "").strip()
     node_label = (node_label or "").strip()
-    matched: Dict[str, Dict[str, Any]] = {}
+    matched: dict[str, dict[str, Any]] = {}
 
     for caveat in caveats:
         triggers = caveat.get("triggers", {}) or {}

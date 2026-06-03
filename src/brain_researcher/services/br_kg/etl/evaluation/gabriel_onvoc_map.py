@@ -211,7 +211,11 @@ _DISEASE_RULE_SPECS: tuple[dict[str, Any], ...] = (
     },
     {
         "onvoc_id": "ONVOC_0000144",
-        "patterns": (r"\bkidney disease\b", r"\brenal disease\b", r"\bend stage renal disease\b"),
+        "patterns": (
+            r"\bkidney disease\b",
+            r"\brenal disease\b",
+            r"\bend stage renal disease\b",
+        ),
         "score": 0.90,
         "reason": "disease_renal",
     },
@@ -241,7 +245,11 @@ _DISEASE_RULE_SPECS: tuple[dict[str, Any], ...] = (
     },
     {
         "onvoc_id": "ONVOC_0000169",
-        "patterns": (r"\bprader[- ]?willi\b", r"\btourette\b", r"\bchromosomal disorder\b"),
+        "patterns": (
+            r"\bprader[- ]?willi\b",
+            r"\btourette\b",
+            r"\bchromosomal disorder\b",
+        ),
         "score": 0.86,
         "reason": "disease_chromosomal",
     },
@@ -444,6 +452,7 @@ def _extract_embedding_vectors(response: Any, *, expected: int) -> list[list[flo
         return []
     return vectors
 
+
 def map_kggen_to_onvoc(
     *,
     kggen_input: Path | str,
@@ -494,7 +503,9 @@ def map_kggen_to_onvoc(
         must_exist=True,
     )
 
-    crosswalk_payload = yaml.safe_load(resolved_crosswalk.read_text(encoding="utf-8")) or {}
+    crosswalk_payload = (
+        yaml.safe_load(resolved_crosswalk.read_text(encoding="utf-8")) or {}
+    )
     tree_payload = yaml.safe_load(resolved_tree.read_text(encoding="utf-8")) or {}
 
     backend_name = str(embedding_backend or "gemini").strip().lower()
@@ -632,7 +643,9 @@ def map_kggen_to_onvoc(
             status_counts["below_threshold"] += 1
             row["status"] = "below_threshold"
             row["reason"] = "below_threshold"
-            review_rows.append(_review_row(row, reason="below_threshold", score=match.score))
+            review_rows.append(
+                _review_row(row, reason="below_threshold", score=match.score)
+            )
             if normalize_targets:
                 normalized_records.append(record)
             continue
@@ -686,20 +699,29 @@ def map_kggen_to_onvoc(
         },
         "summary": {
             "concept_records": sum(
-                count for status, count in status_counts.items() if status != "skipped_non_concept"
+                count
+                for status, count in status_counts.items()
+                if status != "skipped_non_concept"
             ),
             "mapped_records": int(len(maps_to_edges)),
             "maps_to_edges": int(len(maps_to_edges)),
             "same_as_edges": int(len(same_as_edges)),
             "review_items": int(len(review_rows)),
             "normalized_records": int(len(normalized_records)),
-            "skipped_non_concept_records": int(status_counts.get("skipped_non_concept", 0)),
-            "mapping_rate": _ratio(len(maps_to_edges), max(1, len(records) - status_counts.get("skipped_non_concept", 0))),
+            "skipped_non_concept_records": int(
+                status_counts.get("skipped_non_concept", 0)
+            ),
+            "mapping_rate": _ratio(
+                len(maps_to_edges),
+                max(1, len(records) - status_counts.get("skipped_non_concept", 0)),
+            ),
             "same_as_rate": _ratio(len(same_as_edges), max(1, len(maps_to_edges))),
         },
         "candidate_stats": {
             "records_with_lexical_candidates": records_with_candidates,
-            "avg_candidates_per_record": _ratio(candidate_count_total, max(1, len(records))),
+            "avg_candidates_per_record": _ratio(
+                candidate_count_total, max(1, len(records))
+            ),
             "avg_candidates_when_present": _ratio(
                 candidate_count_total,
                 max(1, records_with_candidates),
@@ -716,8 +738,16 @@ def map_kggen_to_onvoc(
                 max(
                     1,
                     (
-                        (provider.stats.get("cache_hits", 0) if provider is not None else 0)
-                        + (provider.stats.get("cache_misses", 0) if provider is not None else 0)
+                        (
+                            provider.stats.get("cache_hits", 0)
+                            if provider is not None
+                            else 0
+                        )
+                        + (
+                            provider.stats.get("cache_misses", 0)
+                            if provider is not None
+                            else 0
+                        )
                     ),
                 ),
             ),
@@ -794,7 +824,10 @@ class _OnvocMapper:
             self._compact_label_by_id[entry.onvoc_id] = compact_label
             token_set = _expanded_tokens_for_lexical(normalized_label)
             stems = {
-                stem for token in token_set for stem in (_simple_stem(token),) if len(stem) >= 3
+                stem
+                for token in token_set
+                for stem in (_simple_stem(token),)
+                if len(stem) >= 3
             }
             self._text_tokens_by_id[entry.onvoc_id] = token_set
             self._stems_by_id[entry.onvoc_id] = stems
@@ -828,7 +861,9 @@ class _OnvocMapper:
         try:
             self._provider.prewarm(payload)
         except Exception as exc:
-            logger.warning("Embedding prewarm failed; reverting to lexical-only: %s", exc)
+            logger.warning(
+                "Embedding prewarm failed; reverting to lexical-only: %s", exc
+            )
             self._provider = None
 
     def _load_crosswalk(self, payload: dict[str, Any]) -> None:
@@ -906,7 +941,9 @@ class _OnvocMapper:
                 backend_used="none",
             )
 
-        crosswalk_hits = sorted(self._crosswalk_label_index.get(normalized_label, set()))
+        crosswalk_hits = sorted(
+            self._crosswalk_label_index.get(normalized_label, set())
+        )
         if len(crosswalk_hits) == 1:
             entry = self._entry_by_id[crosswalk_hits[0]]
             return MatchDetails(
@@ -1015,7 +1052,9 @@ class _OnvocMapper:
                 margin_min=margin_min,
             )
             if reranked is not None:
-                best_candidate, top1, top2, backend_used, match_method, match_reason = reranked
+                best_candidate, top1, top2, backend_used, match_method, match_reason = (
+                    reranked
+                )
             else:
                 return MatchDetails(
                     match=None,
@@ -1057,7 +1096,12 @@ class _OnvocMapper:
                 onvoc_id=entry.onvoc_id,
                 onvoc_uri=entry.uri,
                 onvoc_label=entry.label,
-                score=max(0.0, min(1.0, top1 if top1 is not None else best_candidate.lexical_score)),
+                score=max(
+                    0.0,
+                    min(
+                        1.0, top1 if top1 is not None else best_candidate.lexical_score
+                    ),
+                ),
                 method=match_method,
                 reason=match_reason,
             ),
@@ -1085,10 +1129,15 @@ class _OnvocMapper:
             canonical_id=source.canonical_id,
         )
         query_tokens = {
-            token for variant in query_variants for token in _expanded_tokens_for_lexical(variant)
+            token
+            for variant in query_variants
+            for token in _expanded_tokens_for_lexical(variant)
         }
         query_stems = {
-            stem for token in query_tokens for stem in (_simple_stem(token),) if len(stem) >= 3
+            stem
+            for token in query_tokens
+            for stem in (_simple_stem(token),)
+            if len(stem) >= 3
         }
         query_compact = _compact_text(normalized_label)
         query_chargrams = _chargrams(query_compact, n_values=(3, 4))
@@ -1130,7 +1179,10 @@ class _OnvocMapper:
             ratio_compact = SequenceMatcher(None, query_compact, compact_entry).ratio()
 
             contains_bonus = 0.0
-            if normalized_entry in normalized_label or normalized_label in normalized_entry:
+            if (
+                normalized_entry in normalized_label
+                or normalized_label in normalized_entry
+            ):
                 contains_bonus = 0.08
 
             lexical_score = (
@@ -1185,7 +1237,10 @@ class _OnvocMapper:
             return None
 
         source_text = _normalize_for_embedding(normalized_label)
-        label_texts = [self._embedding_text_by_id.get(candidate.onvoc_id, "") for candidate in candidates]
+        label_texts = [
+            self._embedding_text_by_id.get(candidate.onvoc_id, "")
+            for candidate in candidates
+        ]
         try:
             self._provider.embed_texts([source_text, *label_texts])
         except Exception as exc:
@@ -1207,7 +1262,9 @@ class _OnvocMapper:
                 0.0,
                 min(
                     1.0,
-                    0.60 * embedding_score + 0.30 * candidate.lexical_score + 0.10 * candidate.ratio_text,
+                    0.60 * embedding_score
+                    + 0.30 * candidate.lexical_score
+                    + 0.10 * candidate.ratio_text,
                 ),
             )
             scored.append((final_score, candidate, embedding_score))
@@ -1215,7 +1272,12 @@ class _OnvocMapper:
         if not scored:
             return None
         scored.sort(
-            key=lambda item: (-item[0], -item[2], -item[1].lexical_score, item[1].onvoc_label)
+            key=lambda item: (
+                -item[0],
+                -item[2],
+                -item[1].lexical_score,
+                item[1].onvoc_label,
+            )
         )
         top1_score, best_candidate, top1_embed = scored[0]
         top2_score = scored[1][0] if len(scored) > 1 else None
@@ -1303,7 +1365,11 @@ class _OnvocMapper:
                     best_onvoc_id = onvoc_id
                     best_score = score
                     tie = False
-                elif abs(score - best_score) <= 0.01 and best_onvoc_id is not None and onvoc_id != best_onvoc_id:
+                elif (
+                    abs(score - best_score) <= 0.01
+                    and best_onvoc_id is not None
+                    and onvoc_id != best_onvoc_id
+                ):
                     tie = True
 
         if best_onvoc_id is None or tie or best_score < 0.84:
@@ -1363,7 +1429,11 @@ class _OnvocMapper:
         if candidates:
             candidates.sort(key=lambda item: item[0], reverse=True)
             top_score = candidates[0][0]
-            top_ids = {onvoc_id for score, onvoc_id, _ in candidates if abs(score - top_score) <= 0.01}
+            top_ids = {
+                onvoc_id
+                for score, onvoc_id, _ in candidates
+                if abs(score - top_score) <= 0.01
+            }
             if len(top_ids) == 1:
                 _, onvoc_id, reason = candidates[0]
                 entry = self._entry_by_id[onvoc_id]
@@ -1412,7 +1482,9 @@ class _OnvocMapper:
                 entry_text = _normalize_for_disease_matching(entry.label)
                 if not entry_text:
                     continue
-                entry_tokens = {token for token in entry_text.split() if len(token) >= 3}
+                entry_tokens = {
+                    token for token in entry_text.split() if len(token) >= 3
+                }
                 ratio = SequenceMatcher(None, text, entry_text).ratio()
                 jaccard = _token_jaccard(text_tokens, entry_tokens)
                 score = max(ratio, 0.60 * ratio + 0.40 * jaccard)
@@ -1422,7 +1494,11 @@ class _OnvocMapper:
                     best_onvoc_id = onvoc_id
                     best_score = score
                     tie = False
-                elif abs(score - best_score) <= 0.01 and best_onvoc_id is not None and onvoc_id != best_onvoc_id:
+                elif (
+                    abs(score - best_score) <= 0.01
+                    and best_onvoc_id is not None
+                    and onvoc_id != best_onvoc_id
+                ):
                     tie = True
 
         if best_onvoc_id is None or tie or best_score < 0.78:
@@ -1469,7 +1545,11 @@ class _OnvocMapper:
                 best_entry = entry
                 best_score = score
                 tie = False
-            elif abs(score - best_score) <= 0.01 and best_entry is not None and entry.onvoc_id != best_entry.onvoc_id:
+            elif (
+                abs(score - best_score) <= 0.01
+                and best_entry is not None
+                and entry.onvoc_id != best_entry.onvoc_id
+            ):
                 tie = True
 
         if best_entry is None:
@@ -1540,7 +1620,9 @@ def _extract_concept_source(record: dict[str, Any]) -> ConceptSource | None:
     canonical_id = _as_text(mapping.get("canonical_id"), target.get("id"))
     source_label = _as_text(target.get("label"), target.get("name"), canonical_id)
 
-    source_is_concept = source_id.startswith("concept:") or canonical_id.startswith("concept:")
+    source_is_concept = source_id.startswith("concept:") or canonical_id.startswith(
+        "concept:"
+    )
     if target_type and target_type != "concept" and not source_is_concept:
         return None
     if not source_is_concept and target_type != "concept":
@@ -1563,10 +1645,14 @@ def _paper_id(record: dict[str, Any]) -> str:
     paper = record.get("paper") or {}
     if not isinstance(paper, dict):
         return "paper:unknown"
-    return _as_text(paper.get("id"), paper.get("pmid"), paper.get("doi"), "paper:unknown")
+    return _as_text(
+        paper.get("id"), paper.get("pmid"), paper.get("doi"), "paper:unknown"
+    )
 
 
-def _normalize_record_onvoc(record: dict[str, Any], match: OnvocMatch) -> dict[str, Any]:
+def _normalize_record_onvoc(
+    record: dict[str, Any], match: OnvocMatch
+) -> dict[str, Any]:
     updated = json.loads(json.dumps(record))
     target = updated.setdefault("target", {})
     mapping = updated.setdefault("mapping", {})
@@ -1585,7 +1671,9 @@ def _normalize_record_onvoc(record: dict[str, Any], match: OnvocMatch) -> dict[s
 
     mapping["canonical_id"] = normalized_target_id
     mapping["mapping_type"] = _maps_to_type(match.method)
-    mapping["mapping_confidence"] = max(_to_float(mapping.get("mapping_confidence"), default=0.0), match.score)
+    mapping["mapping_confidence"] = max(
+        _to_float(mapping.get("mapping_confidence"), default=0.0), match.score
+    )
     mapping["onvoc_id"] = match.onvoc_id
     mapping["onvoc_uri"] = match.onvoc_uri
     if original_canonical_id and original_canonical_id != normalized_target_id:
@@ -1677,7 +1765,9 @@ def _build_same_as_edge(
     }
 
 
-def _review_row(row: dict[str, Any], *, reason: str, score: float | None) -> dict[str, Any]:
+def _review_row(
+    row: dict[str, Any], *, reason: str, score: float | None
+) -> dict[str, Any]:
     payload = {
         "source": "kggen_onvoc_mapper",
         "paper_id": row.get("paper_id"),
@@ -1711,7 +1801,9 @@ def _resolve_input_files(input_path: Path) -> list[Path]:
     return files
 
 
-def _read_json_records(paths: list[Path]) -> tuple[list[dict[str, Any]], int, Counter[str]]:
+def _read_json_records(
+    paths: list[Path],
+) -> tuple[list[dict[str, Any]], int, Counter[str]]:
     rows: list[dict[str, Any]] = []
     parse_errors = 0
     parse_reasons: Counter[str] = Counter()
@@ -2042,7 +2134,7 @@ def _l2_normalize(vector: list[float]) -> list[float]:
     norm_sq = sum(value * value for value in vector)
     if norm_sq <= 0:
         return vector
-    norm = norm_sq ** 0.5
+    norm = norm_sq**0.5
     return [value / norm for value in vector]
 
 

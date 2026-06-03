@@ -35,7 +35,9 @@ def _require_sklearn():
     return LogisticRegression, RidgeClassifier
 
 
-def build_causal_feature_matrix(traces: np.ndarray, decode_window_frames: int) -> np.ndarray:
+def build_causal_feature_matrix(
+    traces: np.ndarray, decode_window_frames: int
+) -> np.ndarray:
     """Flatten a causal window of traces into per-frame features."""
 
     if traces.ndim != 2:
@@ -67,7 +69,9 @@ def train_decoder_bundle(
 
     LogisticRegression, RidgeClassifier = _require_sklearn()
     labels = np.asarray(labels).astype(int)
-    features = build_causal_feature_matrix(np.asarray(traces, dtype=np.float32), decode_window_frames)
+    features = build_causal_feature_matrix(
+        np.asarray(traces, dtype=np.float32), decode_window_frames
+    )
     if decoder_type == "logistic":
         estimator = LogisticRegression(max_iter=1000, multi_class="auto")
     elif decoder_type == "ridge":
@@ -84,10 +88,14 @@ def train_decoder_bundle(
     )
 
 
-def predict_decoder_bundle(bundle: DecoderBundle, traces: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def predict_decoder_bundle(
+    bundle: DecoderBundle, traces: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """Predict discrete states and confidence scores from traces."""
 
-    features = build_causal_feature_matrix(np.asarray(traces, dtype=np.float32), bundle.decode_window_frames)
+    features = build_causal_feature_matrix(
+        np.asarray(traces, dtype=np.float32), bundle.decode_window_frames
+    )
     predictions = bundle.estimator.predict(features)
     if hasattr(bundle.estimator, "decision_function"):
         raw = bundle.estimator.decision_function(features)

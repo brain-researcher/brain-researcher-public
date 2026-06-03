@@ -5,9 +5,10 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
+
 from brain_researcher.core.utils import configure_mne_environment
 
 
@@ -15,25 +16,25 @@ from brain_researcher.core.utils import configure_mne_environment
 class MNEICAParameters:
     raw_file: str
     output_dir: str
-    n_components: Optional[Union[int, float]] = None
+    n_components: int | float | None = None
     method: str = "fastica"
-    max_iter: Union[int, str] = "auto"
-    random_state: Optional[int] = 42
-    l_freq: Optional[float] = 1.0
-    h_freq: Optional[float] = None
-    detect_artifacts: Tuple[str, ...] = field(default_factory=lambda: ("eog", "ecg"))
-    eog_channels: Tuple[str, ...] = field(default_factory=tuple)
-    ecg_channels: Tuple[str, ...] = field(default_factory=tuple)
+    max_iter: int | str = "auto"
+    random_state: int | None = 42
+    l_freq: float | None = 1.0
+    h_freq: float | None = None
+    detect_artifacts: tuple[str, ...] = field(default_factory=lambda: ("eog", "ecg"))
+    eog_channels: tuple[str, ...] = field(default_factory=tuple)
+    ecg_channels: tuple[str, ...] = field(default_factory=tuple)
     eog_threshold: float = 3.0
     ecg_threshold: float = 3.0
     muscle_threshold: float = 5.0
-    exclude_components: Tuple[int, ...] = field(default_factory=tuple)
+    exclude_components: tuple[int, ...] = field(default_factory=tuple)
     n_max_eog: int = 2
     n_max_ecg: int = 2
-    n_pca_components: Optional[int] = None
-    fit_params: Optional[Dict[str, Any]] = None
-    reject: Optional[Dict[str, float]] = None
-    picks: Tuple[str, ...] = field(default_factory=tuple)
+    n_pca_components: int | None = None
+    fit_params: dict[str, Any] | None = None
+    reject: dict[str, float] | None = None
+    picks: tuple[str, ...] = field(default_factory=tuple)
     save_ica: bool = True
     apply_ica: bool = True
     overwrite: bool = False
@@ -42,11 +43,11 @@ class MNEICAParameters:
     plot_overlay: bool = True
 
 
-def mne_ica_from_payload(payload: Dict[str, Any]) -> MNEICAParameters:
+def mne_ica_from_payload(payload: dict[str, Any]) -> MNEICAParameters:
     def _tuple(val):
         if val is None:
-            return tuple()
-        if isinstance(val, (list, tuple, set)):
+            return ()
+        if isinstance(val, list | tuple | set):
             return tuple(val)
         return (val,)
 
@@ -81,7 +82,7 @@ def mne_ica_from_payload(payload: Dict[str, Any]) -> MNEICAParameters:
     )
 
 
-def run_mne_ica(params: MNEICAParameters) -> Dict[str, Any]:
+def run_mne_ica(params: MNEICAParameters) -> dict[str, Any]:
     configure_mne_environment()
     cache_dir = Path(params.output_dir) / ".numba-cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -89,9 +90,9 @@ def run_mne_ica(params: MNEICAParameters) -> Dict[str, Any]:
     os.environ.setdefault("NUMBA_DISABLE_CACHING", "1")
     os.environ.setdefault("MNE_HOME", str(Path(params.output_dir)))
 
+    import matplotlib
     import mne
     from scipy import signal
-    import matplotlib
 
     matplotlib.use("Agg")
 
@@ -104,7 +105,9 @@ def run_mne_ica(params: MNEICAParameters) -> Dict[str, Any]:
 
     picks = mne.pick_types(raw.info, eeg=True, meg=True, exclude="bads")
     if params.picks:
-        picks = mne.pick_channels(raw.info["ch_names"], include=list(params.picks), exclude="bads")
+        picks = mne.pick_channels(
+            raw.info["ch_names"], include=list(params.picks), exclude="bads"
+        )
 
     ica = mne.preprocessing.ICA(
         n_components=params.n_components,
@@ -114,10 +117,10 @@ def run_mne_ica(params: MNEICAParameters) -> Dict[str, Any]:
     )
     ica.fit(raw, picks=picks, reject=params.reject)
 
-    exclude: List[int] = list(params.exclude_components)
+    exclude: list[int] = list(params.exclude_components)
     detect = {name.lower() for name in params.detect_artifacts}
 
-    detection: Dict[str, List[int]] = {"eog": [], "ecg": [], "muscle": []}
+    detection: dict[str, list[int]] = {"eog": [], "ecg": [], "muscle": []}
 
     if "eog" in detect:
         try:
@@ -149,7 +152,7 @@ def run_mne_ica(params: MNEICAParameters) -> Dict[str, Any]:
 
     if "muscle" in detect:
         sources = ica.get_sources(raw).get_data()
-        muscle_indices: List[int] = []
+        muscle_indices: list[int] = []
         for idx in range(ica.n_components_):
             comp = sources[idx, :]
             freqs, psd = signal.welch(comp, raw.info["sfreq"], nperseg=1024)
@@ -164,7 +167,7 @@ def run_mne_ica(params: MNEICAParameters) -> Dict[str, Any]:
     exclude = sorted(set(exclude))
     ica.exclude = exclude
 
-    plots: Dict[str, str] = {}
+    plots: dict[str, str] = {}
     if params.plot_components and ica.n_components_ > 0:
         try:
             fig = ica.plot_components(show=False)

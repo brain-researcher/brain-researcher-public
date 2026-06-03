@@ -2,24 +2,28 @@
 
 import asyncio
 import logging
-import tempfile
-import os
 import re
 from datetime import datetime
-from typing import Dict, Any, Optional, List
-from pathlib import Path
+from typing import Any
 
 try:
     import paramiko
+
     PARAMIKO_AVAILABLE = True
 except ImportError:
     PARAMIKO_AVAILABLE = False
 
 from .base_backend import (
-    BaseBackend, JobSpecification, JobStatus, JobState,
-    BackendCapacity, ResourceRequirements,
-    BackendSubmissionError, JobNotFoundError, BackendUnavailableError,
-    BackendConfigError
+    BackendCapacity,
+    BackendConfigError,
+    BackendSubmissionError,
+    BackendUnavailableError,
+    BaseBackend,
+    JobNotFoundError,
+    JobSpecification,
+    JobState,
+    JobStatus,
+    ResourceRequirements,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,7 +32,7 @@ logger = logging.getLogger(__name__)
 class SLURMBackend(BaseBackend):
     """SLURM backend for executing jobs via SLURM batch system."""
 
-    def __init__(self, name: str, config: Dict[str, Any]):
+    def __init__(self, name: str, config: dict[str, Any]):
         """Initialize SLURM backend.
 
         Args:
@@ -50,28 +54,28 @@ class SLURMBackend(BaseBackend):
         if not PARAMIKO_AVAILABLE:
             raise BackendConfigError("paramiko library not available")
 
-        self.host = config.get('host')
+        self.host = config.get("host")
         if not self.host:
             raise BackendConfigError("SLURM host not specified")
 
-        self.username = config.get('username')
+        self.username = config.get("username")
         if not self.username:
             raise BackendConfigError("SLURM username not specified")
 
-        self.key_file = config.get('key_file')
-        self.password = config.get('password')
-        self.partition = config.get('partition')
-        self.account = config.get('account')
-        self.qos = config.get('qos')
-        self.modules = config.get('modules', [])
-        self.container_runtime = config.get('container_runtime', 'singularity')
-        self.scratch_dir = config.get('scratch_dir', '/tmp')
+        self.key_file = config.get("key_file")
+        self.password = config.get("password")
+        self.partition = config.get("partition")
+        self.account = config.get("account")
+        self.qos = config.get("qos")
+        self.modules = config.get("modules", [])
+        self.container_runtime = config.get("container_runtime", "singularity")
+        self.scratch_dir = config.get("scratch_dir", "/tmp")
 
         if not self.key_file and not self.password:
             raise BackendConfigError("Either key_file or password must be specified")
 
         self.ssh_client = None
-        self._job_ids: Dict[str, str] = {}  # Map our job IDs to SLURM job IDs
+        self._job_ids: dict[str, str] = {}  # Map our job IDs to SLURM job IDs
 
     async def _get_ssh_client(self):
         """Get or create SSH client connection."""
@@ -80,6 +84,7 @@ class SLURMBackend(BaseBackend):
 
         if self.ssh_client is None or not self.ssh_client.get_transport():
             import paramiko
+
             self.ssh_client = paramiko.SSHClient()
             self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
@@ -89,14 +94,14 @@ class SLURMBackend(BaseBackend):
                         hostname=self.host,
                         username=self.username,
                         key_filename=self.key_file,
-                        timeout=30
+                        timeout=30,
                     )
                 else:
                     self.ssh_client.connect(
                         hostname=self.host,
                         username=self.username,
                         password=self.password,
-                        timeout=30
+                        timeout=30,
                     )
             except Exception as e:
                 raise BackendUnavailableError(f"Failed to connect to SLURM host: {e}")
@@ -110,8 +115,8 @@ class SLURMBackend(BaseBackend):
         try:
             stdin, stdout, stderr = ssh.exec_command(command, timeout=60)
             exit_code = stdout.channel.recv_exit_status()
-            stdout_text = stdout.read().decode('utf-8')
-            stderr_text = stderr.read().decode('utf-8')
+            stdout_text = stdout.read().decode("utf-8")
+            stderr_text = stderr.read().decode("utf-8")
 
             return stdout_text, stderr_text, exit_code
         except Exception as e:
@@ -145,15 +150,17 @@ class SLURMBackend(BaseBackend):
 
         # Output and error files
         job_dir = f"{self.scratch_dir}/brain_researcher_{job_spec.name}"
-        script_lines.extend([
-            f"#SBATCH --output={job_dir}/output.log",
-            f"#SBATCH --error={job_dir}/error.log",
-            "",
-            "# Setup job environment",
-            f"mkdir -p {job_dir}",
-            f"cd {job_dir}",
-            "",
-        ])
+        script_lines.extend(
+            [
+                f"#SBATCH --output={job_dir}/output.log",
+                f"#SBATCH --error={job_dir}/error.log",
+                "",
+                "# Setup job environment",
+                f"mkdir -p {job_dir}",
+                f"cd {job_dir}",
+                "",
+            ]
+        )
 
         # Load modules
         if self.modules:
@@ -168,64 +175,74 @@ class SLURMBackend(BaseBackend):
             script_lines.append("")
 
         # Container execution
-        if self.container_runtime == 'singularity':
-            script_lines.extend([
-                "# Execute job in container",
-                f"singularity exec \\",
-                f"  --bind {job_dir}:{job_spec.working_dir} \\",
-                f"  --bind {job_dir}:{job_spec.output_path} \\",
-                f"  --workdir {job_spec.working_dir} \\",
-            ])
+        if self.container_runtime == "singularity":
+            script_lines.extend(
+                [
+                    "# Execute job in container",
+                    "singularity exec \\",
+                    f"  --bind {job_dir}:{job_spec.working_dir} \\",
+                    f"  --bind {job_dir}:{job_spec.output_path} \\",
+                    f"  --workdir {job_spec.working_dir} \\",
+                ]
+            )
 
             # Add environment variables to singularity
             if job_spec.environment:
                 for key, value in job_spec.environment.items():
                     script_lines.append(f"  --env {key}={value} \\")
 
-            script_lines.extend([
-                f"  {job_spec.image} \\",
-                f"  /bin/bash -c '{job_spec.command}'",
-                "",
-                "# Capture exit code",
-                "exit_code=$?",
-                f"echo \"Job completed with exit code: $exit_code\" >> {job_dir}/status.log",
-                "exit $exit_code"
-            ])
+            script_lines.extend(
+                [
+                    f"  {job_spec.image} \\",
+                    f"  /bin/bash -c '{job_spec.command}'",
+                    "",
+                    "# Capture exit code",
+                    "exit_code=$?",
+                    f'echo "Job completed with exit code: $exit_code" >> {job_dir}/status.log',
+                    "exit $exit_code",
+                ]
+            )
 
-        elif self.container_runtime == 'podman':
-            script_lines.extend([
-                "# Execute job in container",
-                "podman run --rm \\",
-                f"  -v {job_dir}:{job_spec.working_dir} \\",
-                f"  -v {job_dir}:{job_spec.output_path} \\",
-                f"  -w {job_spec.working_dir} \\",
-            ])
+        elif self.container_runtime == "podman":
+            script_lines.extend(
+                [
+                    "# Execute job in container",
+                    "podman run --rm \\",
+                    f"  -v {job_dir}:{job_spec.working_dir} \\",
+                    f"  -v {job_dir}:{job_spec.output_path} \\",
+                    f"  -w {job_spec.working_dir} \\",
+                ]
+            )
 
             # Add environment variables to podman
             if job_spec.environment:
                 for key, value in job_spec.environment.items():
                     script_lines.append(f"  -e {key}={value} \\")
 
-            script_lines.extend([
-                f"  {job_spec.image} \\",
-                f"  /bin/bash -c '{job_spec.command}'",
-                "",
-                "exit_code=$?",
-                f"echo \"Job completed with exit code: $exit_code\" >> {job_dir}/status.log",
-                "exit $exit_code"
-            ])
+            script_lines.extend(
+                [
+                    f"  {job_spec.image} \\",
+                    f"  /bin/bash -c '{job_spec.command}'",
+                    "",
+                    "exit_code=$?",
+                    f'echo "Job completed with exit code: $exit_code" >> {job_dir}/status.log',
+                    "exit $exit_code",
+                ]
+            )
 
         else:
             # Direct execution (no container)
-            script_lines.extend([
-                "# Execute job directly",
-                f"cd {job_spec.working_dir}",
-                job_spec.command,
-                "",
-                "exit_code=$?",
-                f"echo \"Job completed with exit code: $exit_code\" >> {job_dir}/status.log",
-                "exit $exit_code"
-            ])
+            script_lines.extend(
+                [
+                    "# Execute job directly",
+                    f"cd {job_spec.working_dir}",
+                    job_spec.command,
+                    "",
+                    "exit_code=$?",
+                    f'echo "Job completed with exit code: $exit_code" >> {job_dir}/status.log',
+                    "exit $exit_code",
+                ]
+            )
 
         return "\n".join(script_lines)
 
@@ -243,7 +260,7 @@ class SLURMBackend(BaseBackend):
             sftp = ssh.open_sftp()
 
             try:
-                with sftp.file(script_path, 'w') as f:
+                with sftp.file(script_path, "w") as f:
                     f.write(script_content)
                 sftp.chmod(script_path, 0o755)
             finally:
@@ -258,7 +275,7 @@ class SLURMBackend(BaseBackend):
 
             # Parse SLURM job ID from output
             # Typical output: "Submitted batch job 12345"
-            match = re.search(r'Submitted batch job (\d+)', stdout)
+            match = re.search(r"Submitted batch job (\d+)", stdout)
             if not match:
                 raise BackendSubmissionError(f"Could not parse job ID from: {stdout}")
 
@@ -273,7 +290,7 @@ class SLURMBackend(BaseBackend):
                 job_id=job_id,
                 backend=self.name,
                 state=JobState.PENDING,
-                submitted_at=datetime.utcnow()
+                submitted_at=datetime.utcnow(),
             )
 
             logger.info(f"Submitted SLURM job {job_id} (SLURM ID: {slurm_job_id})")
@@ -305,26 +322,35 @@ class SLURMBackend(BaseBackend):
 
             if exit_code == 0 and stdout.strip():
                 # Job is currently in queue
-                parts = stdout.strip().split(',')
+                parts = stdout.strip().split(",")
                 if len(parts) >= 2:
                     slurm_state = parts[1].strip()
 
-                    if slurm_state in ['PENDING', 'PD']:
+                    if slurm_state in ["PENDING", "PD"]:
                         state = JobState.PENDING
-                    elif slurm_state in ['RUNNING', 'R']:
+                    elif slurm_state in ["RUNNING", "R"]:
                         state = JobState.RUNNING
                         # Parse start time if available
                         if len(parts) >= 3 and parts[2].strip():
                             try:
-                                started_at = datetime.strptime(parts[2].strip(), '%Y-%m-%dT%H:%M:%S')
+                                started_at = datetime.strptime(
+                                    parts[2].strip(), "%Y-%m-%dT%H:%M:%S"
+                                )
                             except ValueError:
                                 pass
-                    elif slurm_state in ['COMPLETING', 'CG']:
+                    elif slurm_state in ["COMPLETING", "CG"]:
                         state = JobState.RUNNING
-                    elif slurm_state in ['COMPLETED', 'CD']:
+                    elif slurm_state in ["COMPLETED", "CD"]:
                         state = JobState.COMPLETED
                         exit_code_val = 0
-                    elif slurm_state in ['FAILED', 'F', 'TIMEOUT', 'TO', 'CANCELLED', 'CA']:
+                    elif slurm_state in [
+                        "FAILED",
+                        "F",
+                        "TIMEOUT",
+                        "TO",
+                        "CANCELLED",
+                        "CA",
+                    ]:
                         state = JobState.FAILED
                         exit_code_val = 1
             else:
@@ -333,34 +359,38 @@ class SLURMBackend(BaseBackend):
                 stdout, stderr, exit_code = await self._execute_command(sacct_cmd)
 
                 if exit_code == 0 and stdout.strip():
-                    for line in stdout.strip().split('\n'):
-                        parts = line.split('|')
+                    for line in stdout.strip().split("\n"):
+                        parts = line.split("|")
                         if len(parts) >= 5 and parts[0] == slurm_job_id:
                             slurm_state = parts[1].strip()
                             start_time = parts[2].strip()
                             end_time = parts[3].strip()
                             exit_code_str = parts[4].strip()
 
-                            if slurm_state == 'COMPLETED':
+                            if slurm_state == "COMPLETED":
                                 state = JobState.COMPLETED
                                 exit_code_val = 0
-                            elif slurm_state in ['FAILED', 'TIMEOUT', 'CANCELLED']:
+                            elif slurm_state in ["FAILED", "TIMEOUT", "CANCELLED"]:
                                 state = JobState.FAILED
                                 exit_code_val = 1
 
                             # Parse timestamps
                             try:
-                                if start_time and start_time != 'Unknown':
-                                    started_at = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S')
-                                if end_time and end_time != 'Unknown':
-                                    completed_at = datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S')
+                                if start_time and start_time != "Unknown":
+                                    started_at = datetime.strptime(
+                                        start_time, "%Y-%m-%dT%H:%M:%S"
+                                    )
+                                if end_time and end_time != "Unknown":
+                                    completed_at = datetime.strptime(
+                                        end_time, "%Y-%m-%dT%H:%M:%S"
+                                    )
                             except ValueError:
                                 pass
 
                             # Parse exit code
-                            if exit_code_str and ':' in exit_code_str:
+                            if exit_code_str and ":" in exit_code_str:
                                 try:
-                                    exit_code_val = int(exit_code_str.split(':')[0])
+                                    exit_code_val = int(exit_code_str.split(":")[0])
                                 except ValueError:
                                     pass
 
@@ -371,12 +401,18 @@ class SLURMBackend(BaseBackend):
                 job_id=job_id,
                 backend=self.name,
                 state=state,
-                submitted_at=self._jobs.get(job_id, JobStatus(
-                    job_id=job_id, backend=self.name, state=state, submitted_at=datetime.utcnow()
-                )).submitted_at,
+                submitted_at=self._jobs.get(
+                    job_id,
+                    JobStatus(
+                        job_id=job_id,
+                        backend=self.name,
+                        state=state,
+                        submitted_at=datetime.utcnow(),
+                    ),
+                ).submitted_at,
                 started_at=started_at,
                 completed_at=completed_at,
-                exit_code=exit_code_val
+                exit_code=exit_code_val,
             )
 
             self._jobs[job_id] = job_status
@@ -437,17 +473,22 @@ class SLURMBackend(BaseBackend):
                 output_file = None
                 error_file = None
 
-                for line in stdout.split('\n'):
-                    if 'StdOut=' in line:
-                        output_file = line.split('StdOut=')[1].split()[0]
-                    elif 'StdErr=' in line:
-                        error_file = line.split('StdErr=')[1].split()[0]
+                for line in stdout.split("\n"):
+                    if "StdOut=" in line:
+                        output_file = line.split("StdOut=")[1].split()[0]
+                    elif "StdErr=" in line:
+                        error_file = line.split("StdErr=")[1].split()[0]
 
                 # Read log files
-                for log_file, log_type in [(output_file, 'STDOUT'), (error_file, 'STDERR')]:
-                    if log_file and log_file != '/dev/null':
+                for log_file, log_type in [
+                    (output_file, "STDOUT"),
+                    (error_file, "STDERR"),
+                ]:
+                    if log_file and log_file != "/dev/null":
                         cat_cmd = f"cat {log_file} 2>/dev/null || echo 'Log file not found: {log_file}'"
-                        log_stdout, log_stderr, log_exit = await self._execute_command(cat_cmd)
+                        log_stdout, log_stderr, log_exit = await self._execute_command(
+                            cat_cmd
+                        )
 
                         if log_stdout.strip():
                             log_content.append(f"=== {log_type} ===")
@@ -493,18 +534,18 @@ class SLURMBackend(BaseBackend):
             available_gpu = 0
 
             if exit_code == 0:
-                for line in stdout.strip().split('\n'):
+                for line in stdout.strip().split("\n"):
                     if not line.strip():
                         continue
 
-                    parts = line.split(',')
+                    parts = line.split(",")
                     if len(parts) >= 3:
                         # Parse CPU info (format: allocated/idle/other/total)
                         cpu_info = parts[1].strip()
-                        if '/' in cpu_info:
-                            cpu_parts = cpu_info.split('/')
+                        if "/" in cpu_info:
+                            cpu_parts = cpu_info.split("/")
                             if len(cpu_parts) >= 4:
-                                allocated = int(cpu_parts[0])
+                                int(cpu_parts[0])
                                 idle = int(cpu_parts[1])
                                 total = int(cpu_parts[3])
                                 total_cpu += total
@@ -512,21 +553,23 @@ class SLURMBackend(BaseBackend):
 
                         # Parse memory info
                         memory_info = parts[2].strip()
-                        if memory_info and memory_info != 'N/A':
+                        if memory_info and memory_info != "N/A":
                             # Memory is typically in MB
                             try:
                                 memory_mb = float(memory_info)
                                 total_memory_gb += memory_mb / 1024
-                                available_memory_gb += memory_mb / 1024 * 0.8  # Estimate
+                                available_memory_gb += (
+                                    memory_mb / 1024 * 0.8
+                                )  # Estimate
                             except ValueError:
                                 pass
 
                         # Parse GPU info if available
                         if len(parts) >= 4:
                             gpu_info = parts[3].strip()
-                            if gpu_info and gpu_info != 'N/A':
+                            if gpu_info and gpu_info != "N/A":
                                 # Parse GPU format (varies by SLURM version)
-                                gpu_match = re.search(r'gpu:(\d+)', gpu_info)
+                                gpu_match = re.search(r"gpu:(\d+)", gpu_info)
                                 if gpu_match:
                                     gpu_count = int(gpu_match.group(1))
                                     total_gpu += gpu_count
@@ -549,24 +592,29 @@ class SLURMBackend(BaseBackend):
                 available_memory_gb=available_memory_gb,
                 total_gpu=total_gpu,
                 available_gpu=available_gpu,
-                queue_depth=queue_depth
+                queue_depth=queue_depth,
             )
 
         except Exception as e:
             logger.error(f"Failed to get SLURM capacity: {e}")
             return BackendCapacity(
-                total_cpu=0, available_cpu=0,
-                total_memory_gb=0, available_memory_gb=0,
-                total_gpu=0, available_gpu=0,
-                queue_depth=0
+                total_cpu=0,
+                available_cpu=0,
+                total_memory_gb=0,
+                available_memory_gb=0,
+                total_gpu=0,
+                available_gpu=0,
+                queue_depth=0,
             )
 
     def supports_requirements(self, requirements: ResourceRequirements) -> bool:
         """Check if SLURM can satisfy requirements."""
         # Basic validation - could be enhanced with actual cluster limits
-        return (requirements.cpu <= 128 and
-                requirements.memory_gb <= 1024 and
-                requirements.walltime_minutes <= 7 * 24 * 60)  # 7 days max
+        return (
+            requirements.cpu <= 128
+            and requirements.memory_gb <= 1024
+            and requirements.walltime_minutes <= 7 * 24 * 60
+        )  # 7 days max
 
     def estimate_queue_time(self, requirements: ResourceRequirements) -> int:
         """Estimate queue time based on SLURM queue."""

@@ -1,0 +1,260 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "apply": "Apply",
+    "reset": "Reset",
+    "refresh": "Refresh",
+    "download": "Download",
+    "upload": "Upload",
+    "export": "Export",
+    "import": "Import",
+    "settings": "Settings",
+    "help": "Help",
+    "documentation": "Documentation",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "chat": "Chat",
+    "datasets": "Datasets",
+    "finder": "Finder",
+    "knowledgeGraph": "Knowledge Graph",
+    "workflow": "Workflow",
+    "settings": "Settings",
+    "login": "Login",
+    "logout": "Logout",
+    "signup": "Sign Up",
+    "profile": "Profile"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Welcome to Brain Researcher",
+    "customizeWidgets": "Customize Widgets",
+    "addWidget": "Add Widget",
+    "removeWidget": "Remove Widget",
+    "widgets": {
+      "analysisQueue": {
+        "title": "Analysis Queue",
+        "description": "View running and queued analyses",
+        "empty": "No analyses in queue",
+        "running": "Running",
+        "queued": "Queued",
+        "completed": "Completed"
+      },
+      "recentResults": {
+        "title": "Recent Results",
+        "description": "Your latest analysis results",
+        "empty": "No recent results",
+        "viewAll": "View All Results"
+      },
+      "datasetStats": {
+        "title": "Dataset Statistics",
+        "description": "Overview of available datasets",
+        "totalDatasets": "Total Datasets",
+        "totalSubjects": "Total Subjects",
+        "totalSessions": "Total Sessions"
+      },
+      "resourceUsage": {
+        "title": "Resource Usage",
+        "description": "System resource utilization",
+        "cpu": "CPU Usage",
+        "memory": "Memory Usage",
+        "storage": "Storage Usage"
+      },
+      "quickActions": {
+        "title": "Quick Actions",
+        "description": "Common tasks and shortcuts",
+        "newAnalysis": "New Analysis",
+        "uploadData": "Upload Data",
+        "viewResults": "View Results"
+      },
+      "teamActivity": {
+        "title": "Team Activity",
+        "description": "Recent team activities",
+        "empty": "No recent activity"
+      }
+    }
+  },
+  "chat": {
+    "title": "Chat",
+    "subtitle": "Ask a neuro question. Get a figure in 90 seconds.",
+    "placeholder": "Ask me about neuroimaging analysis...",
+    "send": "Send",
+    "thinking": "Thinking...",
+    "executing": "Executing...",
+    "newChat": "New Chat",
+    "chatHistory": "Chat History",
+    "clearHistory": "Clear History",
+    "exportChat": "Export Chat",
+    "examples": {
+      "glm": "Run a GLM analysis on task fMRI data",
+      "connectivity": "Analyze functional connectivity",
+      "preprocessing": "Preprocess structural MRI data"
+    },
+    "evidence": {
+      "title": "Evidence",
+      "sources": "Sources",
+      "datasets": "Datasets",
+      "papers": "Papers",
+      "empty": "No evidence found"
+    }
+  },
+  "datasets": {
+    "title": "Datasets",
+    "subtitle": "Explore neuroimaging datasets",
+    "search": "Search datasets...",
+    "filters": {
+      "modality": "Modality",
+      "taskType": "Task Type",
+      "subjects": "Subjects",
+      "sessions": "Sessions",
+      "demographics": "Demographics"
+    },
+    "card": {
+      "subjects": "{count} subjects",
+      "sessions": "{count} sessions",
+      "tasks": "{count} tasks",
+      "modalities": "Modalities",
+      "viewDetails": "View Details",
+      "download": "Download",
+      "analyze": "Analyze"
+    },
+    "modalities": {
+      "fmri": "fMRI",
+      "smri": "sMRI",
+      "dmri": "dMRI",
+      "pet": "PET",
+      "eeg": "EEG",
+      "meg": "MEG"
+    }
+  },
+  "finder": {
+    "title": "Dataset Finder",
+    "subtitle": "Find datasets matching your research needs",
+    "searchPlaceholder": "Search by keywords, tasks, or conditions...",
+    "facets": {
+      "modality": "Modality",
+      "taskDomain": "Task Domain",
+      "ageRange": "Age Range",
+      "sampleSize": "Sample Size",
+      "studyType": "Study Type"
+    },
+    "results": {
+      "found": "Found {count} datasets",
+      "noResults": "No datasets found",
+      "refineSearch": "Try refining your search criteria"
+    }
+  },
+  "knowledgeGraph": {
+    "title": "Knowledge Graph",
+    "subtitle": "Explore neuroscience knowledge connections",
+    "search": "Search concepts...",
+    "filters": {
+      "nodeType": "Node Type",
+      "relationship": "Relationship",
+      "confidence": "Confidence"
+    },
+    "nodeTypes": {
+      "concept": "Concept",
+      "region": "Brain Region",
+      "task": "Task",
+      "disorder": "Disorder",
+      "gene": "Gene"
+    },
+    "relationships": {
+      "activates": "Activates",
+      "inhibits": "Inhibits",
+      "connects": "Connects",
+      "associated": "Associated"
+    }
+  },
+  "workflow": {
+    "title": "Workflow Designer",
+    "subtitle": "Build custom analysis pipelines",
+    "newWorkflow": "New Workflow",
+    "saveWorkflow": "Save Workflow",
+    "runWorkflow": "Run Workflow",
+    "toolPalette": "Tool Palette",
+    "properties": "Properties",
+    "execution": "Execution",
+    "categories": {
+      "preprocessing": "Preprocessing",
+      "analysis": "Analysis",
+      "visualization": "Visualization",
+      "statistics": "Statistics"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Sign In",
+      "subtitle": "Access your Brain Researcher account",
+      "email": "Email",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "signIn": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "signup": {
+      "title": "Create Account",
+      "subtitle": "Join the Brain Researcher community",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "agreeTerms": "I agree to the Terms of Service",
+      "createAccount": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email to reset password",
+      "email": "Email",
+      "sendReset": "Send Reset Link",
+      "backToLogin": "Back to login"
+    }
+  },
+  "errors": {
+    "general": "An error occurred",
+    "network": "Network error",
+    "timeout": "Request timeout",
+    "unauthorized": "Unauthorized access",
+    "forbidden": "Access forbidden",
+    "notFound": "Resource not found",
+    "serverError": "Server error",
+    "validationError": "Validation error",
+    "fileUpload": "File upload failed",
+    "analysisError": "Analysis failed"
+  },
+  "meta": {
+    "title": "Brain Researcher - Ask a neuro question. Get a figure in 90 seconds.",
+    "description": "Conversational workflows for fMRI/dMRI — GLM, connectivity, and reproducible outputs.",
+    "keywords": "neuroimaging, fMRI, dMRI, GLM, connectivity, reproducible, workflows"
+  },
+  "footer": {
+    "copyright": "© 2024 Brain Researcher. All rights reserved.",
+    "documentation": "Documentation",
+    "api": "API",
+    "privacy": "Privacy"
+  }
+}

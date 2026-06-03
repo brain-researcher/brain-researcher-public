@@ -44,17 +44,15 @@ _ENV_CONFIG_KEYS = {
 }
 
 
-def _merge(defaults: dict[str, Any], overrides: dict[str, Any] | None) -> dict[str, Any]:
+def _merge(
+    defaults: dict[str, Any], overrides: dict[str, Any] | None
+) -> dict[str, Any]:
     """Deep-merge ``overrides`` on top of ``defaults`` (non-destructive)."""
     out = deepcopy(defaults)
     if not overrides:
         return out
     for k, v in overrides.items():
-        if (
-            k in out
-            and isinstance(out[k], dict)
-            and isinstance(v, dict)
-        ):
+        if k in out and isinstance(out[k], dict) and isinstance(v, dict):
             out[k] = _merge(out[k], v)
         else:
             out[k] = deepcopy(v)

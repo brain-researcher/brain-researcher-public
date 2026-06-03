@@ -2,8 +2,6 @@
 Simplified GraphQL schema for BR-KG that works with newer Strawberry.
 """
 
-from typing import List, Optional
-
 import strawberry
 
 from brain_researcher.services.br_kg.db.bootstrap import get_db
@@ -18,33 +16,34 @@ def _db():
 @strawberry.type
 class RegionRef:
     """Lightweight reference to a region (avoids recursive nesting)."""
-    id: Optional[str]
-    name: Optional[str]
-    abbreviation: Optional[str]
+
+    id: str | None
+    name: str | None
+    abbreviation: str | None
 
 
 @strawberry.type
 class Coordinate:
-    x: Optional[float]
-    y: Optional[float]
-    z: Optional[float]
-    space: Optional[str]
-    region: Optional[RegionRef] = None
+    x: float | None
+    y: float | None
+    z: float | None
+    space: str | None
+    region: RegionRef | None = None
 
 
 @strawberry.type
 class Concept:
     id: str
-    name: Optional[str]
+    name: str | None
 
 
 @strawberry.type
 class Task:
     id: str
-    name: Optional[str]
+    name: str | None
 
     @strawberry.field
-    def regions(self) -> List["Region"]:
+    def regions(self) -> list["Region"]:
         """Regions linked to this task via statmaps/regions."""
         db = _db()
         regions: list[Region] = []
@@ -59,11 +58,13 @@ class Task:
             RETURN r.id AS id, r.name AS name, r.abbreviation AS abbreviation
             """
             for row in db.execute_query(cypher, {"id": self.id}):
-                regions.append(Region(
-                    id=str(row.get("id")),
-                    name=row.get("name"),
-                    abbreviation=row.get("abbreviation")
-                ))
+                regions.append(
+                    Region(
+                        id=str(row.get("id")),
+                        name=row.get("name"),
+                        abbreviation=row.get("abbreviation"),
+                    )
+                )
             # Fallback: if no task-specific regions, return top global regions by coordinate count
             if not regions:
                 fallback = """
@@ -73,18 +74,20 @@ class Task:
                 LIMIT 10
                 """
                 for row in db.execute_query(fallback, {}):
-                    regions.append(Region(
-                        id=str(row.get("id")),
-                        name=row.get("name"),
-                        abbreviation=row.get("abbreviation")
-                    ))
+                    regions.append(
+                        Region(
+                            id=str(row.get("id")),
+                            name=row.get("name"),
+                            abbreviation=row.get("abbreviation"),
+                        )
+                    )
         except Exception:
             # Best-effort; return empty on errors to avoid breaking persisted queries
             pass
         return regions
 
     @strawberry.field
-    def networks(self) -> List["Network"]:
+    def networks(self) -> list["Network"]:
         """Networks linked to this task via statmaps' IN_NETWORK edges."""
         db = _db()
         nets: list[Network] = []
@@ -94,10 +97,11 @@ class Task:
             RETURN DISTINCT n.name AS name, n.id AS id
             """
             for row in db.execute_query(cypher, {"id": self.id}):
-                nets.append(Network(
-                    id=str(row.get("id", row.get("name"))),
-                    name=row.get("name")
-                ))
+                nets.append(
+                    Network(
+                        id=str(row.get("id", row.get("name"))), name=row.get("name")
+                    )
+                )
         except Exception:
             pass
         return nets
@@ -106,11 +110,11 @@ class Task:
 @strawberry.type
 class Region:
     id: str
-    name: Optional[str]
-    abbreviation: Optional[str]
+    name: str | None
+    abbreviation: str | None
 
     @strawberry.field
-    def coordinates(self) -> List[Coordinate]:
+    def coordinates(self) -> list[Coordinate]:
         """Best-effort coordinates associated with this region."""
         db = _db()
         coords: list[Coordinate] = []
@@ -142,26 +146,26 @@ class Region:
 @strawberry.type
 class Dataset:
     id: str
-    name: Optional[str]
-    accession: Optional[str]
+    name: str | None
+    accession: str | None
 
 
 @strawberry.type
 class Publication:
     id: str
-    pmid: Optional[str]
-    title: Optional[str]
-    abstract: Optional[str] = None
-    concepts: Optional[List[str]] = None
+    pmid: str | None
+    title: str | None
+    abstract: str | None = None
+    concepts: list[str] | None = None
 
 
 @strawberry.type
 class Network:
-    id: Optional[str]
-    name: Optional[str]
+    id: str | None
+    name: str | None
 
     @strawberry.field
-    def coordinates(self) -> List[Coordinate]:
+    def coordinates(self) -> list[Coordinate]:
         """
         Best-effort coordinates linked to this publication.
         Currently returns an empty list if no links are present.
@@ -198,7 +202,7 @@ class Network:
 @strawberry.type
 class Query:
     @strawberry.field
-    def concepts(self, name: Optional[str] = None) -> List[Concept]:
+    def concepts(self, name: str | None = None) -> list[Concept]:
         db = _db()
         props = {"name": name} if name else None
         nodes = []
@@ -207,7 +211,7 @@ class Query:
         return nodes
 
     @strawberry.field
-    def tasks(self, name: Optional[str] = None) -> List[Task]:
+    def tasks(self, name: str | None = None) -> list[Task]:
         db = _db()
         props = {"name": name} if name else None
         nodes = []
@@ -216,37 +220,39 @@ class Query:
         return nodes
 
     @strawberry.field
-    def regions(self, name: Optional[str] = None) -> List[Region]:
+    def regions(self, name: str | None = None) -> list[Region]:
         db = _db()
         props = {"name": name} if name else None
         nodes = []
         for nid, p in db.find_nodes("Region", props):
-            nodes.append(Region(
-                id=str(nid),
-                name=p.get("name"),
-                abbreviation=p.get("abbreviation")
-            ))
+            nodes.append(
+                Region(
+                    id=str(nid), name=p.get("name"), abbreviation=p.get("abbreviation")
+                )
+            )
         return nodes
 
     @strawberry.field
-    def publications(self, pmid: Optional[str] = None) -> List[Publication]:
+    def publications(self, pmid: str | None = None) -> list[Publication]:
         db = _db()
         props = {"pmid": pmid} if pmid else None
         nodes = []
         for nid, p in db.find_nodes("Publication", props):
-            nodes.append(Publication(
-                id=str(nid),
-                pmid=p.get("pmid"),
-                title=p.get("title"),
-                abstract=p.get("abstract"),
-                concepts=p.get("concepts"),
-            ))
+            nodes.append(
+                Publication(
+                    id=str(nid),
+                    pmid=p.get("pmid"),
+                    title=p.get("title"),
+                    abstract=p.get("abstract"),
+                    concepts=p.get("concepts"),
+                )
+            )
         return nodes
 
     @strawberry.field
-    def publications_by_pmids(self, pmids: List[str]) -> List[Publication]:
+    def publications_by_pmids(self, pmids: list[str]) -> list[Publication]:
         db = _db()
-        out: List[Publication] = []
+        out: list[Publication] = []
         for pmid in pmids:
             for nid, p in db.find_nodes("Publication", {"pmid": pmid}):
                 out.append(
@@ -264,12 +270,13 @@ class Query:
 @strawberry.type
 class RelationshipInfo:
     """Information about a relationship with provenance."""
+
     type: str
     source_id: str
     target_id: str
-    confidence: Optional[float]
-    source: Optional[str]
-    timestamp: Optional[str]
+    confidence: float | None
+    source: str | None
+    timestamp: str | None
 
 
 @strawberry.type
@@ -287,15 +294,17 @@ class Mutation:
         return Task(id=id, name=name)
 
     @strawberry.mutation
-    def create_publication(self, pmid: str, title: Optional[str] = None) -> Publication:
+    def create_publication(self, pmid: str, title: str | None = None) -> Publication:
         db = _db()
         nid = db.create_node("Publication", {"pmid": pmid, "title": title or ""})
         return Publication(id=str(nid), pmid=pmid, title=title)
 
     @strawberry.mutation
-    def create_region(self, name: str, abbreviation: Optional[str] = None) -> Region:
+    def create_region(self, name: str, abbreviation: str | None = None) -> Region:
         db = _db()
-        nid = db.create_node("Region", {"name": name, "abbreviation": abbreviation or ""})
+        nid = db.create_node(
+            "Region", {"name": name, "abbreviation": abbreviation or ""}
+        )
         return Region(id=str(nid), name=name, abbreviation=abbreviation)
 
     @strawberry.mutation
@@ -304,8 +313,8 @@ class Mutation:
         source_id: str,
         target_id: str,
         rel_type: str,
-        confidence: Optional[float] = None,
-        source: Optional[str] = None
+        confidence: float | None = None,
+        source: str | None = None,
     ) -> RelationshipInfo:
         """Create a relationship with provenance tracking."""
         from datetime import datetime
@@ -316,7 +325,7 @@ class Mutation:
         props = {
             "confidence": confidence,
             "source": source or "GraphQL API",
-            "timestamp": timestamp
+            "timestamp": timestamp,
         }
 
         # Remove None values
@@ -330,7 +339,7 @@ class Mutation:
             target_id=target_id,
             confidence=confidence,
             source=source or "GraphQL API",
-            timestamp=timestamp
+            timestamp=timestamp,
         )
 
 

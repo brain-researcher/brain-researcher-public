@@ -12,7 +12,7 @@ import os
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage
@@ -21,12 +21,15 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 
+from brain_researcher.services.agent.cot_reasoning import (
+    ReasoningTrace,
+    get_cot_reasoner,
+)
 from brain_researcher.services.agent.dataset_browse_policy import (
     dataset_browse_instruction,
     is_exploratory_dataset_asset_request,
     reorder_tool_ids_for_dataset_browse,
 )
-from brain_researcher.services.agent.cot_reasoning import ReasoningTrace, get_cot_reasoner
 from brain_researcher.services.agent.domain_knowledge import get_domain_knowledge
 from brain_researcher.services.agent.kg_resolution import QueryUnderstandingResult
 from brain_researcher.services.agent.pipeline_catalog import search_pipelines
@@ -70,14 +73,14 @@ class WorkflowStep:
     step_number: int
     description: str
     tool_name: str
-    tool_args: Dict[str, Any]
-    dependencies: List[str] = field(default_factory=list)
+    tool_args: dict[str, Any]
+    dependencies: list[str] = field(default_factory=list)
     expected_output: str = ""
     estimated_time_seconds: float = 0.0
-    resource_requirements: Dict[ResourceType, float] = field(default_factory=dict)
+    resource_requirements: dict[ResourceType, float] = field(default_factory=dict)
     status: StepStatus = StepStatus.PENDING
-    result: Optional[Any] = None
-    error: Optional[str] = None
+    result: Any | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -88,8 +91,8 @@ class PlanCheckpoint:
     step_id: str
     step_number: int
     status: StepStatus
-    outputs: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
+    outputs: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
     created_at: float = field(default_factory=time.time)
 
 
@@ -99,15 +102,15 @@ class ExecutionPlan:
 
     plan_id: str
     query: str
-    objectives: List[str]
-    steps: List[WorkflowStep]
-    success_criteria: List[str]
+    objectives: list[str]
+    steps: list[WorkflowStep]
+    success_criteria: list[str]
     total_estimated_time: float
-    total_resource_requirements: Dict[ResourceType, float]
+    total_resource_requirements: dict[ResourceType, float]
     confidence_score: float = 0.0
     created_at: float = field(default_factory=time.time)
-    reasoning_trace: Optional[ReasoningTrace] = None  # CoT integration
-    checkpoints: List[PlanCheckpoint] = field(default_factory=list)
+    reasoning_trace: ReasoningTrace | None = None  # CoT integration
+    checkpoints: list[PlanCheckpoint] = field(default_factory=list)
 
 
 class QueryIntent(BaseModel):
@@ -115,9 +118,13 @@ class QueryIntent(BaseModel):
 
     primary_intent: str = Field(description="Main goal of the query")
     domain: str = Field(description="Domain (fMRI, connectivity, meta-analysis, etc.)")
-    entities: Dict[str, Any] = Field(default_factory=dict, description="Extracted entities")
-    constraints: List[str] = Field(default_factory=list, description="Query constraints")
-    output_format: Optional[str] = Field(None, description="Desired output format")
+    entities: dict[str, Any] = Field(
+        default_factory=dict, description="Extracted entities"
+    )
+    constraints: list[str] = Field(
+        default_factory=list, description="Query constraints"
+    )
+    output_format: str | None = Field(None, description="Desired output format")
 
 
 class PlanningEngine:
@@ -133,8 +140,13 @@ class PlanningEngine:
     - Plan optimization integration (AGENT-013)
     """
 
-    def __init__(self, llm: Optional[BaseChatModel] = None, use_cot_reasoning: bool = True,
-                 use_advanced_parsing: bool = True, enable_optimization: bool = True):
+    def __init__(
+        self,
+        llm: BaseChatModel | None = None,
+        use_cot_reasoning: bool = True,
+        use_advanced_parsing: bool = True,
+        enable_optimization: bool = True,
+    ):
         """
         Initialize the planning engine.
 
@@ -154,6 +166,7 @@ class PlanningEngine:
         else:
             try:
                 from brain_researcher.services.agent.llm import get_llm
+
                 self.llm = get_llm()
             except Exception as e:
                 logger.error(f"Failed to initialize LLM: {e}")
@@ -165,7 +178,9 @@ class PlanningEngine:
                 self.cot_reasoner = get_cot_reasoner(self.llm)
                 logger.info("Chain-of-Thought reasoner initialized")
             except Exception as e:
-                logger.warning(f"Failed to initialize CoT reasoner: {e}, proceeding without it")
+                logger.warning(
+                    f"Failed to initialize CoT reasoner: {e}, proceeding without it"
+                )
                 self.cot_reasoner = None
                 self.use_cot_reasoning = False
         else:
@@ -176,12 +191,13 @@ class PlanningEngine:
             try:
                 domain_knowledge = get_domain_knowledge()
                 self.advanced_parser = create_advanced_parser(
-                    domain_knowledge=domain_knowledge,
-                    llm=self.llm
+                    domain_knowledge=domain_knowledge, llm=self.llm
                 )
                 logger.info("Advanced query parser initialized")
             except Exception as e:
-                logger.warning(f"Failed to initialize advanced parser: {e}, proceeding without it")
+                logger.warning(
+                    f"Failed to initialize advanced parser: {e}, proceeding without it"
+                )
                 self.advanced_parser = None
                 self.use_advanced_parsing = False
         else:
@@ -195,10 +211,14 @@ class PlanningEngine:
                     create_plan_optimizer,
                 )
 
-                self.plan_optimizer = create_plan_optimizer(cloud_provider=CloudProvider.AWS)
+                self.plan_optimizer = create_plan_optimizer(
+                    cloud_provider=CloudProvider.AWS
+                )
                 logger.info("Plan optimizer initialized")
             except Exception as e:
-                logger.warning(f"Failed to initialize plan optimizer: {e}, proceeding without optimization")
+                logger.warning(
+                    f"Failed to initialize plan optimizer: {e}, proceeding without optimization"
+                )
                 self.plan_optimizer = None
                 self.enable_optimization = False
         else:
@@ -219,13 +239,13 @@ class PlanningEngine:
     async def _run_prompt(
         self,
         prompt: ChatPromptTemplate,
-        values: Dict[str, Any],
+        values: dict[str, Any],
     ) -> Any:
         """Format prompt and dispatch to the underlying LLM."""
 
         prompt_value = prompt.invoke(values)
         if isinstance(prompt_value, ChatPromptValue):
-            input_data: Union[List[BaseMessage], str] = prompt_value.to_messages()
+            input_data: list[BaseMessage] | str = prompt_value.to_messages()
         else:
             input_data = prompt_value
 
@@ -248,7 +268,7 @@ class PlanningEngine:
             return result
         raise TypeError("LLM must implement invoke or ainvoke")
 
-    def _build_tool_capabilities(self) -> Dict[str, Dict[str, Any]]:
+    def _build_tool_capabilities(self) -> dict[str, dict[str, Any]]:
         """Build a capabilities index for all available tools."""
         capabilities = {}
 
@@ -260,7 +280,7 @@ class PlanningEngine:
                 "input_types": self._extract_input_types(tool),
                 "output_types": self._extract_output_types(tool),
                 "estimated_time": self._estimate_tool_time(tool),
-                "resource_requirements": self._estimate_tool_resources(tool)
+                "resource_requirements": self._estimate_tool_resources(tool),
             }
 
         return capabilities
@@ -288,7 +308,7 @@ class PlanningEngine:
 
         return self._tool_retriever
 
-    def _extract_tool_domains(self, tool: BaseTool) -> List[str]:
+    def _extract_tool_domains(self, tool: BaseTool) -> list[str]:
         """Extract domain categories for a tool."""
         desc = tool.get_tool_description().lower()
         domains = []
@@ -301,7 +321,7 @@ class PlanningEngine:
             "statistics": ["glm", "statistics", "contrast", "model"],
             "knowledge": ["knowledge", "concept", "literature", "br_kg"],
             "preprocessing": ["preprocessing", "motion", "registration"],
-            "visualization": ["plot", "visualiz", "display", "render"]
+            "visualization": ["plot", "visualiz", "display", "render"],
         }
 
         for domain, keywords in domain_keywords.items():
@@ -310,12 +330,12 @@ class PlanningEngine:
 
         return domains if domains else ["general"]
 
-    def _extract_input_types(self, tool: BaseTool) -> List[str]:
+    def _extract_input_types(self, tool: BaseTool) -> list[str]:
         """Extract expected input types for a tool."""
         # This would ideally use tool schema, but for now use heuristics
         return ["dataset_id", "parameters"]
 
-    def _extract_output_types(self, tool: BaseTool) -> List[str]:
+    def _extract_output_types(self, tool: BaseTool) -> list[str]:
         """Extract output types produced by a tool."""
         return ["results", "statistics", "visualizations"]
 
@@ -335,13 +355,13 @@ class PlanningEngine:
         else:
             return 60.0  # 1 minute default
 
-    def _estimate_tool_resources(self, tool: BaseTool) -> Dict[ResourceType, float]:
+    def _estimate_tool_resources(self, tool: BaseTool) -> dict[ResourceType, float]:
         """Estimate resource requirements for a tool."""
         tool_name = tool.get_tool_name().lower()
 
         hints = get_resource_hints(tool.get_tool_name())
         if hints:
-            resource_map: Dict[ResourceType, float] = {}
+            resource_map: dict[ResourceType, float] = {}
             cpu = hints.get("cpu")
             if cpu is not None:
                 resource_map[ResourceType.CPU] = float(cpu)
@@ -360,19 +380,19 @@ class PlanningEngine:
             return {
                 ResourceType.CPU: 4.0,
                 ResourceType.MEMORY: 16.0,  # GB
-                ResourceType.STORAGE: 50.0  # GB
+                ResourceType.STORAGE: 50.0,  # GB
             }
         elif "glm" in tool_name:
             return {
                 ResourceType.CPU: 2.0,
                 ResourceType.MEMORY: 8.0,
-                ResourceType.STORAGE: 10.0
+                ResourceType.STORAGE: 10.0,
             }
         else:
             return {
                 ResourceType.CPU: 1.0,
                 ResourceType.MEMORY: 4.0,
-                ResourceType.STORAGE: 1.0
+                ResourceType.STORAGE: 1.0,
             }
 
     async def parse_query(self, query: str, use_reasoning: bool = True) -> QueryIntent:
@@ -402,10 +422,10 @@ class PlanningEngine:
 
         # Fall back to CoT reasoning for complex queries
         should_use_cot = (
-            self.use_cot_reasoning and
-            self.cot_reasoner and
-            use_reasoning and
-            is_complex
+            self.use_cot_reasoning
+            and self.cot_reasoner
+            and use_reasoning
+            and is_complex
         )
 
         if should_use_cot:
@@ -420,7 +440,16 @@ class PlanningEngine:
             len(query.split()) > 15,  # Long query
             " and " in query.lower() or " or " in query.lower(),  # Multiple conditions
             "?" in query and query.count("?") > 1,  # Multiple questions
-            any(word in query.lower() for word in ["compare", "contrast", "analyze", "evaluate", "relationship"]),
+            any(
+                word in query.lower()
+                for word in [
+                    "compare",
+                    "contrast",
+                    "analyze",
+                    "evaluate",
+                    "relationship",
+                ]
+            ),
             "because" in query.lower() or "why" in query.lower(),  # Causal reasoning
         ]
         return sum(complexity_indicators) >= 2
@@ -448,13 +477,20 @@ class PlanningEngine:
                 "methods": entities_dict.get("statistical_method", []),
                 "modalities": entities_dict.get("modality", []),
                 "coordinates": entities_dict.get("coordinate", []),
-                "other": {}
+                "other": {},
             }
 
             # Add any other entities
             for entity_type, values in entities_dict.items():
-                if entity_type not in ["dataset", "brain_region", "task", "contrast",
-                                      "statistical_method", "modality", "coordinate"]:
+                if entity_type not in [
+                    "dataset",
+                    "brain_region",
+                    "task",
+                    "contrast",
+                    "statistical_method",
+                    "modality",
+                    "coordinate",
+                ]:
                     standard_entities["other"][entity_type] = values
 
             # Determine constraints from advanced parsing
@@ -462,7 +498,9 @@ class PlanningEngine:
             if parsed_query.expansion:
                 for term, synonyms in parsed_query.expansion.expanded_terms.items():
                     if synonyms:
-                        constraints.append(f"Term '{term}' expanded to include: {', '.join(synonyms[:3])}")
+                        constraints.append(
+                            f"Term '{term}' expanded to include: {', '.join(synonyms[:3])}"
+                        )
 
             # Create QueryIntent object
             intent = QueryIntent(
@@ -470,7 +508,7 @@ class PlanningEngine:
                 domain=self._map_intent_to_domain(parsed_query.primary_intent),
                 entities=standard_entities,
                 constraints=constraints,
-                output_format=None  # Could be inferred from intent
+                output_format=None,  # Could be inferred from intent
             )
 
             elapsed = time.time() - start_time
@@ -489,7 +527,9 @@ class PlanningEngine:
     def _map_intent_to_domain(self, intent) -> str:
         """Map advanced parser intent to domain string."""
         # Import to avoid circular import
-        from brain_researcher.services.agent.query_understanding import QueryIntent as AdvancedIntent
+        from brain_researcher.services.agent.query_understanding import (
+            QueryIntent as AdvancedIntent,
+        )
 
         intent_domain_map = {
             AdvancedIntent.ANALYSIS: "fmri",
@@ -501,7 +541,7 @@ class PlanningEngine:
             AdvancedIntent.PREPROCESSING: "preprocessing",
             AdvancedIntent.META_ANALYSIS: "meta-analysis",
             AdvancedIntent.QUALITY_CONTROL: "preprocessing",
-            AdvancedIntent.DATA_EXTRACTION: "general"
+            AdvancedIntent.DATA_EXTRACTION: "general",
         }
 
         return intent_domain_map.get(intent, "general")
@@ -513,12 +553,15 @@ class PlanningEngine:
             reasoning_trace = await self.cot_reasoner.reason(
                 query,
                 context={"task": "query_parsing", "domain": "neuroscience"},
-                max_steps=5
+                max_steps=5,
             )
 
             # Extract intent from reasoning trace
-            parsing_prompt = ChatPromptTemplate.from_messages([
-                ("system", """You are a neuroscience query parser enhanced with reasoning analysis.
+            parsing_prompt = ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        """You are a neuroscience query parser enhanced with reasoning analysis.
 
                 Based on the reasoning trace below, extract query components:
                 1. Primary intent (what the user wants to do)
@@ -543,14 +586,19 @@ class PlanningEngine:
                     "constraints": [...],
                     "output_format": "..."
                 }}
-                """),
-                ("human", """Query: {query}
+                """,
+                    ),
+                    (
+                        "human",
+                        """Query: {query}
 
                 Reasoning Analysis:
                 {reasoning_trace}
 
-                Based on this reasoning, extract the query components.""")
-            ])
+                Based on this reasoning, extract the query components.""",
+                    ),
+                ]
+            )
 
             response = await self._run_prompt(
                 parsing_prompt,
@@ -564,18 +612,25 @@ class PlanningEngine:
             intent = self._parse_intent_response(response.content, query)
 
             elapsed = time.time() - start_time
-            logger.info(f"Query parsed with CoT reasoning in {elapsed:.3f}s (confidence: {reasoning_trace.overall_confidence:.2f})")
+            logger.info(
+                f"Query parsed with CoT reasoning in {elapsed:.3f}s (confidence: {reasoning_trace.overall_confidence:.2f})"
+            )
 
             return intent
 
         except Exception as e:
-            logger.warning(f"CoT reasoning failed during parsing: {e}, falling back to standard parsing")
+            logger.warning(
+                f"CoT reasoning failed during parsing: {e}, falling back to standard parsing"
+            )
             return await self._parse_query_standard(query, start_time)
 
     async def _parse_query_standard(self, query: str, start_time: float) -> QueryIntent:
         """Standard query parsing without CoT reasoning."""
-        parsing_prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a neuroscience query parser.
+        parsing_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """You are a neuroscience query parser.
 
             Analyze the query and extract:
             1. Primary intent (what the user wants to do)
@@ -598,9 +653,11 @@ class PlanningEngine:
                 "constraints": [...],
                 "output_format": "..."
             }}
-            """),
-            ("human", "{query}")
-        ])
+            """,
+                ),
+                ("human", "{query}"),
+            ]
+        )
 
         response = await self._run_prompt(parsing_prompt, {"query": query})
 
@@ -625,9 +682,7 @@ class PlanningEngine:
         except Exception as e:
             logger.warning(f"Failed to parse intent: {e}, using defaults")
             intent = QueryIntent(
-                primary_intent="analyze",
-                domain="general",
-                entities={"query": query}
+                primary_intent="analyze", domain="general", entities={"query": query}
             )
 
         return intent
@@ -635,9 +690,9 @@ class PlanningEngine:
     async def generate_plan(
         self,
         query: str,
-        intent: Optional[QueryIntent] = None,
-        context: Optional[Dict[str, Any]] = None,
-        query_understanding: Optional[QueryUnderstandingResult] = None,
+        intent: QueryIntent | None = None,
+        context: dict[str, Any] | None = None,
+        query_understanding: QueryUnderstandingResult | None = None,
     ) -> ExecutionPlan:
         """
         Generate an execution plan for a query.
@@ -658,17 +713,24 @@ class PlanningEngine:
             intent = await self.parse_query(query)
 
             # Generate reasoning trace for complex plans if CoT is enabled
-            if (self.use_cot_reasoning and self.cot_reasoner and
-                self._is_complex_query(query)):
+            if (
+                self.use_cot_reasoning
+                and self.cot_reasoner
+                and self._is_complex_query(query)
+            ):
                 try:
                     reasoning_trace = await self.cot_reasoner.reason(
                         query,
                         context={"task": "planning", "domain": intent.domain},
-                        max_steps=7
+                        max_steps=7,
                     )
-                    logger.info(f"Generated reasoning trace for planning (confidence: {reasoning_trace.overall_confidence:.2f})")
+                    logger.info(
+                        f"Generated reasoning trace for planning (confidence: {reasoning_trace.overall_confidence:.2f})"
+                    )
                 except Exception as e:
-                    logger.warning(f"Failed to generate reasoning trace for planning: {e}")
+                    logger.warning(
+                        f"Failed to generate reasoning trace for planning: {e}"
+                    )
 
         # Attach query understanding into context for downstream use
         ctx = dict(context or {})
@@ -718,7 +780,7 @@ class PlanningEngine:
             total_estimated_time=total_time,
             total_resource_requirements=total_resources,
             confidence_score=adjusted_confidence,
-            reasoning_trace=reasoning_trace  # Include CoT reasoning trace
+            reasoning_trace=reasoning_trace,  # Include CoT reasoning trace
         )
 
         elapsed = time.time() - start_time
@@ -734,9 +796,9 @@ class PlanningEngine:
         self,
         query: str,
         intent: QueryIntent,
-        context: Optional[Dict[str, Any]],
-        reasoning_trace: Optional[ReasoningTrace] = None
-    ) -> List[WorkflowStep]:
+        context: dict[str, Any] | None,
+        reasoning_trace: ReasoningTrace | None = None,
+    ) -> list[WorkflowStep]:
         """Generate workflow steps based on intent, optionally enhanced with reasoning trace."""
 
         # ------------------------------------------------------------------
@@ -747,7 +809,9 @@ class PlanningEngine:
             if context:
                 stat_map = context.get("stat_map") or context.get("stat_map_path")
             if stat_map:
-                display_mode = context.get("display_mode", "ortho") if context else "ortho"
+                display_mode = (
+                    context.get("display_mode", "ortho") if context else "ortho"
+                )
                 return [
                     WorkflowStep(
                         step_id="step_1",
@@ -766,7 +830,11 @@ class PlanningEngine:
         # ------------------------------------------------------------------
         if self._should_use_pipeline(intent, query):
             try:
-                modalities = intent.entities.get("modalities") if intent and intent.entities else None
+                modalities = (
+                    intent.entities.get("modalities")
+                    if intent and intent.entities
+                    else None
+                )
                 pipelines = search_pipelines(
                     task=query,
                     modalities=modalities,
@@ -778,10 +846,14 @@ class PlanningEngine:
                     )
                     return self._build_steps_from_pipeline(pipelines[0], context)
             except Exception as e:
-                logger.warning(f"Pipeline search failed, falling back to LLM planning: {e}")
+                logger.warning(
+                    f"Pipeline search failed, falling back to LLM planning: {e}"
+                )
 
         # Get relevant tools for the domain
-        relevant_tools = self._select_relevant_tools(intent.domain, context=context, query=query)
+        relevant_tools = self._select_relevant_tools(
+            intent.domain, context=context, query=query
+        )
 
         # Build system prompt with optional reasoning context
         tools_json = self._escape_prompt_json(json.dumps(relevant_tools, indent=2))
@@ -829,16 +901,25 @@ dependencies, expected_output)."""
         intent_json = self._escape_prompt_json(intent.model_dump_json())
 
         structured_context = ""
-        qur: Optional[QueryUnderstandingResult] = None
+        qur: QueryUnderstandingResult | None = None
         if context:
-            qur = context.get("query_understanding") if isinstance(context, dict) else None
+            qur = (
+                context.get("query_understanding")
+                if isinstance(context, dict)
+                else None
+            )
         if qur:
             structured_context = self._format_query_understanding(qur)
 
-        generation_prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("human", f"Query: {query}\nIntent: {intent_json}\n{structured_context}")
-        ])
+        generation_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                (
+                    "human",
+                    f"Query: {query}\nIntent: {intent_json}\n{structured_context}",
+                ),
+            ]
+        )
 
         response = await self._run_prompt(generation_prompt, {})
 
@@ -863,14 +944,14 @@ dependencies, expected_output)."""
 
             step = WorkflowStep(
                 step_id=f"step_{i+1}",
-                step_number=step_data.get("step_number", i+1),
+                step_number=step_data.get("step_number", i + 1),
                 description=step_data.get("description", ""),
                 tool_name=tool_name,
                 tool_args=step_data.get("tool_args", {}),
                 dependencies=step_data.get("dependencies", []),
                 expected_output=step_data.get("expected_output", ""),
                 estimated_time_seconds=tool_info.get("estimated_time", 60.0),
-                resource_requirements=tool_info.get("resource_requirements", {})
+                resource_requirements=tool_info.get("resource_requirements", {}),
             )
             steps.append(step)
 
@@ -910,7 +991,7 @@ dependencies, expected_output)."""
 
         return keyword_hit or domain_hit
 
-    def _fill_params(self, params: Any, context: Optional[Dict[str, Any]] = None) -> Any:
+    def _fill_params(self, params: Any, context: dict[str, Any] | None = None) -> Any:
         """Recursively fill parameter templates using the provided context.
 
         Supports str.format(**context) for strings and walks nested lists/dicts.
@@ -934,9 +1015,11 @@ dependencies, expected_output)."""
 
         return _resolve(params)
 
-    def _build_steps_from_pipeline(self, pipeline: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> List[WorkflowStep]:
+    def _build_steps_from_pipeline(
+        self, pipeline: dict[str, Any], context: dict[str, Any] | None = None
+    ) -> list[WorkflowStep]:
         """Convert a pipeline definition (id, steps list) into WorkflowSteps."""
-        steps: List[WorkflowStep] = []
+        steps: list[WorkflowStep] = []
         step_defs = pipeline.get("steps", []) or []
 
         for idx, step_def in enumerate(step_defs):
@@ -953,7 +1036,9 @@ dependencies, expected_output)."""
                 params = step_def.get("params", {}) or {}
             else:
                 tool_id = str(step_def)
-                description = pipeline.get("description", f"Pipeline step {step_number}")
+                description = pipeline.get(
+                    "description", f"Pipeline step {step_number}"
+                )
                 params = {}
 
             # Fill template params using context (e.g., t1w_image, work_dir)
@@ -974,7 +1059,7 @@ dependencies, expected_output)."""
 
         return steps
 
-    def _get_reasoning_context(self, reasoning_trace: Optional[ReasoningTrace]) -> str:
+    def _get_reasoning_context(self, reasoning_trace: ReasoningTrace | None) -> str:
         """Get reasoning context for step generation prompt."""
         if not reasoning_trace:
             return ""
@@ -990,7 +1075,9 @@ Reasoning Summary:
 Key Reasoning Steps:
 """
         for i, step in enumerate(reasoning_trace.steps[:3]):  # Show top 3 steps
-            context += f"- Step {i+1}: {step.conclusion} (confidence: {step.confidence:.2f})\n"
+            context += (
+                f"- Step {i+1}: {step.conclusion} (confidence: {step.confidence:.2f})\n"
+            )
 
         if len(reasoning_trace.steps) > 3:
             context += f"- ... and {len(reasoning_trace.steps) - 3} more steps\n"
@@ -1011,7 +1098,9 @@ Key Reasoning Steps:
                 if ds.bids_path:
                     lines.append(f"  bids_path: {ds.bids_path}")
                 if ds.resources:
-                    lines.append(f"  is_bids_available: {ds.resources.is_bids_available}")
+                    lines.append(
+                        f"  is_bids_available: {ds.resources.is_bids_available}"
+                    )
                     if ds.resources.derivatives:
                         lines.append("  derivatives:")
                         for kind, path in ds.resources.derivatives.items():
@@ -1031,7 +1120,9 @@ Key Reasoning Steps:
         if qur.existing_derivatives:
             lines.append("Existing Derivatives:")
             for hit in qur.existing_derivatives:
-                lines.append(f"- dataset: {hit.dataset_id} kind: {hit.kind} path: {hit.path}")
+                lines.append(
+                    f"- dataset: {hit.dataset_id} kind: {hit.kind} path: {hit.path}"
+                )
         lines.append(
             "Instruction: Prefer reuse of existing derivatives/paths above; avoid re-running steps already available. "
             "If ambiguities are present, add a clarification step before proceeding."
@@ -1043,19 +1134,19 @@ Key Reasoning Steps:
         self,
         domain: str,
         *,
-        context: Optional[Dict[str, Any]] = None,
-        query: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        context: dict[str, Any] | None = None,
+        query: str | None = None,
+    ) -> dict[str, Any]:
         """Select tools relevant to a domain, preferring KG candidates when present."""
-        relevant: Dict[str, Any] = {}
+        relevant: dict[str, Any] = {}
 
         tool_candidates = None
         if isinstance(context, dict):
             tool_candidates = context.get("tool_candidates")
 
         if tool_candidates:
-            meta_by_id: Dict[str, Dict[str, Any]] = {}
-            ordered_ids: List[str] = []
+            meta_by_id: dict[str, dict[str, Any]] = {}
+            ordered_ids: list[str] = []
             for cand in tool_candidates:
                 tool_id = None
                 if isinstance(cand, dict):
@@ -1080,7 +1171,9 @@ Key Reasoning Steps:
                     meta_by_id[tid] = cand
 
             query_understanding = (
-                context.get("query_understanding") if isinstance(context, dict) else None
+                context.get("query_understanding")
+                if isinstance(context, dict)
+                else None
             )
             if is_exploratory_dataset_asset_request(
                 query or "",
@@ -1106,7 +1199,10 @@ Key Reasoning Steps:
                 return relevant
 
         for tool_name, capabilities in self._tool_capabilities.items():
-            if domain in capabilities["domains"] or "general" in capabilities["domains"]:
+            if (
+                domain in capabilities["domains"]
+                or "general" in capabilities["domains"]
+            ):
                 relevant[tool_name] = {
                     "description": capabilities["description"],
                     "domains": capabilities["domains"],
@@ -1114,7 +1210,7 @@ Key Reasoning Steps:
 
         return relevant
 
-    def _resolve_dependencies(self, steps: List[WorkflowStep]) -> List[WorkflowStep]:
+    def _resolve_dependencies(self, steps: list[WorkflowStep]) -> list[WorkflowStep]:
         """Resolve and validate step dependencies."""
         step_ids = {step.step_id for step in steps}
 
@@ -1134,14 +1230,16 @@ Key Reasoning Steps:
 
         # Check for cycles
         if self._has_cycle(steps):
-            logger.warning("Dependency cycle detected, removing problematic dependencies")
+            logger.warning(
+                "Dependency cycle detected, removing problematic dependencies"
+            )
             # Simple fix: remove all dependencies (makes sequential)
             for step in steps:
                 step.dependencies = []
 
         return steps
 
-    def _has_cycle(self, steps: List[WorkflowStep]) -> bool:
+    def _has_cycle(self, steps: list[WorkflowStep]) -> bool:
         """Check if the dependency graph has cycles."""
         # Build adjacency list
         graph = {step.step_id: step.dependencies for step in steps}
@@ -1173,10 +1271,10 @@ Key Reasoning Steps:
 
     async def _infer_parameters(
         self,
-        steps: List[WorkflowStep],
+        steps: list[WorkflowStep],
         intent: QueryIntent,
-        context: Optional[Dict[str, Any]]
-    ) -> List[WorkflowStep]:
+        context: dict[str, Any] | None,
+    ) -> list[WorkflowStep]:
         """Infer missing parameters from context."""
 
         for step in steps:
@@ -1207,9 +1305,8 @@ Key Reasoning Steps:
         return steps
 
     def _calculate_costs(
-        self,
-        steps: List[WorkflowStep]
-    ) -> Tuple[float, Dict[ResourceType, float]]:
+        self, steps: list[WorkflowStep]
+    ) -> tuple[float, dict[ResourceType, float]]:
         """Calculate total time and resource requirements."""
         total_time = 0.0
         total_resources = {}
@@ -1222,13 +1319,12 @@ Key Reasoning Steps:
                 if resource not in total_resources:
                     total_resources[resource] = 0.0
                 total_resources[resource] = max(
-                    total_resources[resource],
-                    amount  # Take max for parallel execution
+                    total_resources[resource], amount  # Take max for parallel execution
                 )
 
         return total_time, total_resources
 
-    def _extract_objectives(self, intent: QueryIntent) -> List[str]:
+    def _extract_objectives(self, intent: QueryIntent) -> list[str]:
         """Extract objectives from intent."""
         objectives = [intent.primary_intent]
 
@@ -1242,16 +1338,19 @@ Key Reasoning Steps:
 
         return objectives
 
-    def _generate_success_criteria(self, intent: QueryIntent) -> List[str]:
+    def _generate_success_criteria(self, intent: QueryIntent) -> list[str]:
         """Generate success criteria for the plan."""
         criteria = []
 
         # Domain-specific criteria
         domain_criteria = {
             "fmri": ["Statistical maps generated", "Contrasts computed"],
-            "connectivity": ["Connectivity matrix computed", "Network metrics calculated"],
+            "connectivity": [
+                "Connectivity matrix computed",
+                "Network metrics calculated",
+            ],
             "statistics": ["Statistical tests completed", "P-values reported"],
-            "knowledge": ["Relevant concepts identified", "Literature retrieved"]
+            "knowledge": ["Relevant concepts identified", "Literature retrieved"],
         }
 
         if intent.domain in domain_criteria:
@@ -1267,7 +1366,7 @@ Key Reasoning Steps:
 
         return criteria
 
-    def _calculate_confidence(self, steps: List[WorkflowStep]) -> float:
+    def _calculate_confidence(self, steps: list[WorkflowStep]) -> float:
         """Calculate confidence score for the plan."""
         if not steps:
             return 0.0
@@ -1298,8 +1397,8 @@ Key Reasoning Steps:
         plan: ExecutionPlan,
         step: WorkflowStep,
         status: StepStatus,
-        outputs: Optional[Dict[str, Any]] = None,
-        error: Optional[str] = None,
+        outputs: dict[str, Any] | None = None,
+        error: str | None = None,
     ) -> PlanCheckpoint:
         """Record a checkpoint after executing a step."""
 
@@ -1316,7 +1415,7 @@ Key Reasoning Steps:
 
     def resume_from_checkpoint(
         self, plan: ExecutionPlan, checkpoint_id: str
-    ) -> List[WorkflowStep]:
+    ) -> list[WorkflowStep]:
         """Mark steps as completed up to a checkpoint and return remaining steps."""
 
         completed: set[str] = set()
@@ -1326,7 +1425,7 @@ Key Reasoning Steps:
                 break
             completed.add(ckpt.step_id)
 
-        remaining: List[WorkflowStep] = []
+        remaining: list[WorkflowStep] = []
         for step in plan.steps:
             if step.step_id in completed:
                 step.status = StepStatus.COMPLETED
@@ -1334,7 +1433,7 @@ Key Reasoning Steps:
                 remaining.append(step)
         return remaining
 
-    def validate_plan(self, plan: ExecutionPlan) -> List[str]:
+    def validate_plan(self, plan: ExecutionPlan) -> list[str]:
         """
         Validate an execution plan.
 
@@ -1419,9 +1518,8 @@ Key Reasoning Steps:
         return any(k in q for k in keywords)
 
     def _identify_parallel_groups(
-        self,
-        steps: List[WorkflowStep]
-    ) -> List[List[WorkflowStep]]:
+        self, steps: list[WorkflowStep]
+    ) -> list[list[WorkflowStep]]:
         """Identify groups of steps that can run in parallel."""
         groups = []
         processed = set()
@@ -1437,8 +1535,7 @@ Key Reasoning Steps:
                 processed.add(step.step_id)
 
                 for other in steps:
-                    if (other.step_id not in processed and
-                        not other.dependencies):
+                    if other.step_id not in processed and not other.dependencies:
                         group.append(other)
                         processed.add(other.step_id)
 
@@ -1452,7 +1549,7 @@ Key Reasoning Steps:
 
 
 # Factory function
-def get_planning_engine(llm: Optional[BaseChatModel] = None) -> PlanningEngine:
+def get_planning_engine(llm: BaseChatModel | None = None) -> PlanningEngine:
     """
     Get or create a planning engine instance.
 

@@ -57,14 +57,14 @@ class RunCardV1(BaseModel):
     reproducibility_score: float | None = None
 
     @model_validator(mode="after")
-    def _backfill_ids(self) -> "RunCardV1":
+    def _backfill_ids(self) -> RunCardV1:
         # Legacy producers use `id` as job_id.
         if self.ids.job_id is None and self.id:
             self.ids.job_id = self.id
         return self
 
     @model_validator(mode="after")
-    def _normalize_reproducibility_score(self) -> "RunCardV1":
+    def _normalize_reproducibility_score(self) -> RunCardV1:
         """Normalize reproducibility scores to 0..1 and keep fields consistent."""
 
         def _to_float(value: Any) -> float | None:
@@ -90,13 +90,18 @@ class RunCardV1(BaseModel):
         repro_score = _to_float(repro.get("score")) if repro else None
         legacy_score = _to_float(self.reproducibility_score)
 
-        normalized = _normalize_01(repro_score if repro_score is not None else legacy_score)
+        normalized = _normalize_01(
+            repro_score if repro_score is not None else legacy_score
+        )
         if normalized is None:
             return self
 
         self.reproducibility_score = normalized
         if repro is None:
-            self.reproducibility = {"score": normalized, "is_reproducible": normalized >= 0.8}
+            self.reproducibility = {
+                "score": normalized,
+                "is_reproducible": normalized >= 0.8,
+            }
         else:
             repro["score"] = normalized
             repro.setdefault("is_reproducible", normalized >= 0.8)
@@ -105,7 +110,7 @@ class RunCardV1(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _normalize_loop_contracts(self) -> "RunCardV1":
+    def _normalize_loop_contracts(self) -> RunCardV1:
         """Forward-compatible adapter for legacy RunCard payloads."""
         context = coerce_cross_stage_context(self.cross_stage_context)
         self.cross_stage_context = context.model_dump() if context else None

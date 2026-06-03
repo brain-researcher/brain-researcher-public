@@ -8,7 +8,7 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
@@ -113,7 +113,9 @@ STRUCTURAL_QUALITY_PROFILES: dict[str, dict[str, Any]] = {
         "edge_types": ["BELONGS_TO_FAMILY"],
         "feature_source": "encoder_text_v1",
         "source_node_property_filters": {
-            "BELONGS_TO_FAMILY": {"source": ["task_families", "taxonomy_surface_rules"]},
+            "BELONGS_TO_FAMILY": {
+                "source": ["task_families", "taxonomy_surface_rules"]
+            },
         },
         "target_node_property_filters": {},
         "edge_sampling": {
@@ -148,6 +150,7 @@ _NODE_TYPE_PRIORITY = [
     "Publication",
 ]
 
+
 @dataclass
 class StructuralQualitySliceExportConfig:
     """Configuration for exporting a fixed graph slice."""
@@ -157,13 +160,13 @@ class StructuralQualitySliceExportConfig:
     include_closure: bool = True
     feature_dim: int = 64
     feature_source: str = "auto"
-    profile_name: Optional[str] = None
-    relation_signatures: Optional[dict[str, dict[str, list[str]]]] = None
-    source_node_property_filters: Optional[dict[str, dict[str, list[str]]]] = None
-    target_node_property_filters: Optional[dict[str, dict[str, list[str]]]] = None
-    edge_property_filters: Optional[dict[str, dict[str, list[str]]]] = None
-    exclude_target_node_ids: Optional[dict[str, list[str]]] = None
-    edge_sampling: Optional[dict[str, str]] = None
+    profile_name: str | None = None
+    relation_signatures: dict[str, dict[str, list[str]]] | None = None
+    source_node_property_filters: dict[str, dict[str, list[str]]] | None = None
+    target_node_property_filters: dict[str, dict[str, list[str]]] | None = None
+    edge_property_filters: dict[str, dict[str, list[str]]] | None = None
+    exclude_target_node_ids: dict[str, list[str]] | None = None
+    edge_sampling: dict[str, str] | None = None
 
 
 def _json_ready(value: Any) -> Any:
@@ -173,7 +176,7 @@ def _json_ready(value: Any) -> Any:
         return [_json_ready(v) for v in value]
     if isinstance(value, tuple):
         return [_json_ready(v) for v in value]
-    if isinstance(value, (np.integer, np.floating)):
+    if isinstance(value, np.integer | np.floating):
         return value.item()
     if isinstance(value, np.ndarray):
         return value.tolist()
@@ -187,7 +190,7 @@ def _json_ready(value: Any) -> Any:
             return value.iso_format()
         except Exception:
             pass
-    if not isinstance(value, (str, int, float, bool)) and value is not None:
+    if not isinstance(value, str | int | float | bool) and value is not None:
         return str(value)
     return value
 
@@ -204,7 +207,9 @@ def _validate_edge_types(edge_types: list[str]) -> list[str]:
 def _validate_feature_source(feature_source: str) -> str:
     if feature_source not in _VALID_FEATURE_SOURCES:
         allowed = ", ".join(sorted(_VALID_FEATURE_SOURCES))
-        raise ValueError(f"Unsupported feature_source={feature_source!r}; expected one of {allowed}")
+        raise ValueError(
+            f"Unsupported feature_source={feature_source!r}; expected one of {allowed}"
+        )
     return feature_source
 
 
@@ -213,20 +218,22 @@ def get_structural_quality_profile(profile_name: str) -> dict[str, Any]:
         return STRUCTURAL_QUALITY_PROFILES[profile_name]
     except KeyError as exc:
         allowed = ", ".join(sorted(STRUCTURAL_QUALITY_PROFILES))
-        raise ValueError(f"Unknown structural quality profile {profile_name!r}; expected one of {allowed}") from exc
+        raise ValueError(
+            f"Unknown structural quality profile {profile_name!r}; expected one of {allowed}"
+        ) from exc
 
 
 def _node_external_id(node: Any) -> str:
     if isinstance(node, dict):
         return str(node.get("id") or node.get("node_id") or node.get("name"))
     props = dict(node)
-    return str(props.get("id") or getattr(node, "element_id"))
+    return str(props.get("id") or node.element_id)
 
 
 def _node_element_id(node: Any) -> str:
     if isinstance(node, dict):
         return str(node.get("element_id") or node.get("id") or node.get("node_id"))
-    return str(getattr(node, "element_id"))
+    return str(node.element_id)
 
 
 def _node_labels(node: Any) -> list[str]:
@@ -263,13 +270,17 @@ def _node_text(node_payload: dict[str, Any]) -> str:
 def _matches_signature(
     source_payload: dict[str, Any],
     target_payload: dict[str, Any],
-    signature: Optional[dict[str, list[str]]],
+    signature: dict[str, list[str]] | None,
 ) -> bool:
     if not signature:
         return True
 
-    source_type = _primary_node_type(source_payload.get("labels", []), source_payload.get("properties", {}))
-    target_type = _primary_node_type(target_payload.get("labels", []), target_payload.get("properties", {}))
+    source_type = _primary_node_type(
+        source_payload.get("labels", []), source_payload.get("properties", {})
+    )
+    target_type = _primary_node_type(
+        target_payload.get("labels", []), target_payload.get("properties", {})
+    )
     allowed_sources = set(signature.get("source_types") or [])
     allowed_targets = set(signature.get("target_types") or [])
 
@@ -282,7 +293,7 @@ def _matches_signature(
 
 def _matches_property_filters(
     properties: dict[str, Any],
-    property_filters: Optional[dict[str, list[str]]],
+    property_filters: dict[str, list[str]] | None,
 ) -> bool:
     if not property_filters:
         return True
@@ -344,8 +355,8 @@ def _hash_text_to_vector(text: str, dim: int) -> list[float]:
     return vector.tolist()
 
 
-def _coerce_numeric_vector(value: Any) -> Optional[np.ndarray]:
-    if value is None or isinstance(value, (str, bytes, dict)):
+def _coerce_numeric_vector(value: Any) -> np.ndarray | None:
+    if value is None or isinstance(value, str | bytes | dict):
         return None
     try:
         array = np.asarray(value, dtype=float)
@@ -360,11 +371,13 @@ def _coerce_numeric_vector(value: Any) -> Optional[np.ndarray]:
 
 def _collect_neo4j_text_v1_features(
     nodes: list[dict[str, Any]],
-) -> tuple[dict[str, np.ndarray], Optional[int]]:
+) -> tuple[dict[str, np.ndarray], int | None]:
     features: dict[str, np.ndarray] = {}
     dims: set[int] = set()
     for node in nodes:
-        vector = _coerce_numeric_vector(node.get("properties", {}).get("embedding_text_v1"))
+        vector = _coerce_numeric_vector(
+            node.get("properties", {}).get("embedding_text_v1")
+        )
         if vector is None:
             continue
         features[node["id"]] = vector
@@ -392,21 +405,24 @@ def _encode_text_v1_features(
         normalize_embeddings=True,
     )
     feature_map = {
-        node["id"]: np.asarray(vector, dtype=float) for node, vector in zip(nodes, embeddings, strict=True)
+        node["id"]: np.asarray(vector, dtype=float)
+        for node, vector in zip(nodes, embeddings, strict=True)
     }
     return feature_map, int(embeddings.shape[1])
 
 
 def _load_cached_text_v1_features(
     nodes: list[dict[str, Any]],
-) -> tuple[dict[str, np.ndarray], Optional[int], dict[str, int]]:
+) -> tuple[dict[str, np.ndarray], int | None, dict[str, int]]:
     from brain_researcher.services.br_kg.vector_search import (
         VectorIndexManager,
         VectorSearchConfig,
     )
 
     cache_dir = Path("data/br-kg/vector_cache/sbert")
-    config = VectorSearchConfig(cache_dir=str(cache_dir), enable_gpu=False, enable_cache=False)
+    config = VectorSearchConfig(
+        cache_dir=str(cache_dir), enable_gpu=False, enable_cache=False
+    )
     manager = VectorIndexManager(config, skip_load=False)
 
     row_index_by_key: dict[tuple[str, str], int] = {}
@@ -434,7 +450,9 @@ def _load_cached_text_v1_features(
             continue
         feature_map[node["id"]] = vector
         dims.add(int(vector.shape[0]))
-        coverage_by_type[node["node_type"]] = coverage_by_type.get(node["node_type"], 0) + 1
+        coverage_by_type[node["node_type"]] = (
+            coverage_by_type.get(node["node_type"], 0) + 1
+        )
 
     if len(dims) != 1:
         return {}, None, coverage_by_type
@@ -451,7 +469,11 @@ def build_benchmark_graph_slice(
     for raw_node in raw_slice.get("nodes", []):
         labels = _node_labels(raw_node)
         properties = _node_properties(raw_node)
-        node_id = str(raw_node.get("id") if isinstance(raw_node, dict) else _node_external_id(raw_node))
+        node_id = str(
+            raw_node.get("id")
+            if isinstance(raw_node, dict)
+            else _node_external_id(raw_node)
+        )
         node_type = _primary_node_type(labels, properties)
         text = _node_text({"node_type": node_type, "properties": properties})
         nodes.append(
@@ -469,12 +491,14 @@ def build_benchmark_graph_slice(
     feature_fallback_count = 0
     neo4j_feature_map, neo4j_dim = _collect_neo4j_text_v1_features(nodes)
     cached_feature_map: dict[str, np.ndarray] = {}
-    cached_dim: Optional[int] = None
+    cached_dim: int | None = None
     cached_coverage_by_type: dict[str, int] = {}
 
     if feature_source in {"auto", "cache_text_v1"}:
         try:
-            cached_feature_map, cached_dim, cached_coverage_by_type = _load_cached_text_v1_features(nodes)
+            cached_feature_map, cached_dim, cached_coverage_by_type = (
+                _load_cached_text_v1_features(nodes)
+            )
         except Exception as exc:
             logger.warning("Cached text_v1 feature lookup failed: %s", exc)
 
@@ -495,7 +519,9 @@ def build_benchmark_graph_slice(
                 node["features"] = _hash_text_to_vector(node["text"], feature_dim)
                 feature_fallback_count += 1
         if cached_dim is not None:
-            resolved_feature_mode = f"cache_text_v1_partial_hashed_fallback_dim_{cached_dim}"
+            resolved_feature_mode = (
+                f"cache_text_v1_partial_hashed_fallback_dim_{cached_dim}"
+            )
     elif feature_source == "neo4j_text_v1" and neo4j_feature_map:
         assigned_count = _assign_from_map(neo4j_feature_map)
         for node in nodes:
@@ -505,7 +531,9 @@ def build_benchmark_graph_slice(
         if neo4j_dim is not None and assigned_count == len(nodes):
             resolved_feature_mode = f"neo4j_text_v1_dim_{neo4j_dim}"
         elif neo4j_dim is not None:
-            resolved_feature_mode = f"neo4j_text_v1_partial_hashed_fallback_dim_{neo4j_dim}"
+            resolved_feature_mode = (
+                f"neo4j_text_v1_partial_hashed_fallback_dim_{neo4j_dim}"
+            )
     elif feature_source == "encoder_text_v1":
         encoded_feature_map, encoded_dim = _encode_text_v1_features(nodes)
         assigned_count = _assign_from_map(encoded_feature_map)
@@ -513,16 +541,24 @@ def build_benchmark_graph_slice(
     elif feature_source == "auto":
         assigned_count += _assign_from_map(cached_feature_map)
         assigned_count += _assign_from_map(
-            {node_id: vector for node_id, vector in neo4j_feature_map.items() if node_id not in cached_feature_map}
+            {
+                node_id: vector
+                for node_id, vector in neo4j_feature_map.items()
+                if node_id not in cached_feature_map
+            }
         )
         missing_nodes = [node for node in nodes if "features" not in node]
-        encoded_dim: Optional[int] = None
+        encoded_dim: int | None = None
         if missing_nodes:
             try:
-                encoded_feature_map, encoded_dim = _encode_text_v1_features(missing_nodes)
+                encoded_feature_map, encoded_dim = _encode_text_v1_features(
+                    missing_nodes
+                )
                 assigned_count += _assign_from_map(encoded_feature_map)
             except Exception as exc:
-                logger.warning("text_v1 encoder fallback failed, using hashed features: %s", exc)
+                logger.warning(
+                    "text_v1 encoder fallback failed, using hashed features: %s", exc
+                )
         for node in nodes:
             if "features" not in node:
                 node["features"] = _hash_text_to_vector(node["text"], feature_dim)
@@ -576,7 +612,9 @@ def build_benchmark_graph_slice(
     metadata["feature_source_resolved"] = resolved_feature_mode
     metadata["text_template_version"] = TEXT_V1_TEMPLATE_VERSION
     metadata["text_v1_model"] = (
-        DEFAULT_TEXT_V1_MODEL if resolved_feature_mode.startswith("encoder_text_v1") else None
+        DEFAULT_TEXT_V1_MODEL
+        if resolved_feature_mode.startswith("encoder_text_v1")
+        else None
     )
     metadata["feature_stats"] = {
         "total_nodes": len(nodes),
@@ -604,7 +642,7 @@ def _serialise_node(node: Any) -> dict[str, Any]:
 
 def export_fixed_graph_slice(
     *,
-    config: Optional[StructuralQualitySliceExportConfig] = None,
+    config: StructuralQualitySliceExportConfig | None = None,
     db: Any = None,
 ) -> dict[str, Any]:
     """Export a fixed relation-aware graph slice from Neo4j."""
@@ -619,9 +657,13 @@ def export_fixed_graph_slice(
         if cfg.relation_signatures is None:
             cfg.relation_signatures = profile.get("relation_signatures")
         if cfg.source_node_property_filters is None:
-            cfg.source_node_property_filters = profile.get("source_node_property_filters")
+            cfg.source_node_property_filters = profile.get(
+                "source_node_property_filters"
+            )
         if cfg.target_node_property_filters is None:
-            cfg.target_node_property_filters = profile.get("target_node_property_filters")
+            cfg.target_node_property_filters = profile.get(
+                "target_node_property_filters"
+            )
         if cfg.edge_property_filters is None:
             cfg.edge_property_filters = profile.get("edge_property_filters")
         if cfg.exclude_target_node_ids is None:
@@ -652,10 +694,14 @@ def export_fixed_graph_slice(
         if signature:
             if signature.get("source_types"):
                 params["source_types"] = signature["source_types"]
-                signature_clause += " AND any(label IN labels(a) WHERE label IN $source_types)"
+                signature_clause += (
+                    " AND any(label IN labels(a) WHERE label IN $source_types)"
+                )
             if signature.get("target_types"):
                 params["target_types"] = signature["target_types"]
-                signature_clause += " AND any(label IN labels(b) WHERE label IN $target_types)"
+                signature_clause += (
+                    " AND any(label IN labels(b) WHERE label IN $target_types)"
+                )
         sampling_strategy = edge_sampling.get(edge_type, "global_limit")
         needs_post_filtering = bool(
             source_node_property_filters.get(edge_type)
@@ -695,7 +741,9 @@ def export_fixed_graph_slice(
                 target_node_property_filters.get(edge_type),
             ):
                 continue
-            if not _matches_property_filters(rel_props, edge_property_filters.get(edge_type)):
+            if not _matches_property_filters(
+                rel_props, edge_property_filters.get(edge_type)
+            ):
                 continue
             if payload_b["id"] in exclude_target_node_ids.get(edge_type, set()):
                 continue
@@ -704,10 +752,10 @@ def export_fixed_graph_slice(
                     "source_payload": payload_a,
                     "target_payload": payload_b,
                     "edge_payload": {
-                "source": payload_a["id"],
-                "target": payload_b["id"],
-                "edge_type": edge_type,
-                "relation_signature": signature,
+                        "source": payload_a["id"],
+                        "target": payload_b["id"],
+                        "edge_type": edge_type,
+                        "relation_signature": signature,
                         "properties": rel_props,
                     },
                 }
@@ -735,10 +783,14 @@ def export_fixed_graph_slice(
             if signature:
                 if signature.get("source_types"):
                     params["source_types"] = signature["source_types"]
-                    signature_clause += " AND any(label IN labels(a) WHERE label IN $source_types)"
+                    signature_clause += (
+                        " AND any(label IN labels(a) WHERE label IN $source_types)"
+                    )
                 if signature.get("target_types"):
                     params["target_types"] = signature["target_types"]
-                    signature_clause += " AND any(label IN labels(b) WHERE label IN $target_types)"
+                    signature_clause += (
+                        " AND any(label IN labels(b) WHERE label IN $target_types)"
+                    )
             closure_query = f"""
             MATCH (a)-[r:`{edge_type}`]->(b)
             WHERE elementId(a) IN $element_ids
@@ -772,7 +824,8 @@ def export_fixed_graph_slice(
         "target_node_property_filters": target_node_property_filters,
         "edge_property_filters": edge_property_filters,
         "exclude_target_node_ids": {
-            edge_type: sorted(node_ids) for edge_type, node_ids in exclude_target_node_ids.items()
+            edge_type: sorted(node_ids)
+            for edge_type, node_ids in exclude_target_node_ids.items()
         },
         "edge_sampling": edge_sampling,
         "limit_per_edge_type": cfg.limit_per_edge_type,
@@ -794,7 +847,7 @@ def run_structural_quality_benchmark_from_graph_slice(
     graph_slice: dict[str, Any],
     *,
     output_dir: str,
-    benchmark_config: Optional[StructuralQualityBenchmarkConfig] = None,
+    benchmark_config: StructuralQualityBenchmarkConfig | None = None,
     feature_dim: int = 64,
     feature_source: str = "auto",
 ) -> dict[str, Any]:
@@ -825,13 +878,15 @@ def run_structural_quality_benchmark_from_graph_slice(
 def export_and_run_structural_quality_benchmark(
     *,
     output_dir: str,
-    slice_config: Optional[StructuralQualitySliceExportConfig] = None,
-    benchmark_config: Optional[StructuralQualityBenchmarkConfig] = None,
+    slice_config: StructuralQualitySliceExportConfig | None = None,
+    benchmark_config: StructuralQualityBenchmarkConfig | None = None,
     db: Any = None,
 ) -> dict[str, Any]:
     """Export a fixed live slice and run the structural quality benchmark."""
 
-    cfg = slice_config or StructuralQualitySliceExportConfig(edge_types=DEFAULT_EDGE_TYPES)
+    cfg = slice_config or StructuralQualitySliceExportConfig(
+        edge_types=DEFAULT_EDGE_TYPES
+    )
     raw_slice = export_fixed_graph_slice(config=cfg, db=db)
     return run_structural_quality_benchmark_from_graph_slice(
         raw_slice,

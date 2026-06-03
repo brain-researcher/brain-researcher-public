@@ -65,7 +65,15 @@ def _load_legacy_api_gateway():
 
 
 def __getattr__(name: str) -> Any:
-    if name in {"API_GATEWAY_STATUS", "DEFAULT_GATEWAY_ENTRYPOINT", "__version__", "__author__", "__description__", "get_version", "get_info"}:
+    if name in {
+        "API_GATEWAY_STATUS",
+        "DEFAULT_GATEWAY_ENTRYPOINT",
+        "__version__",
+        "__author__",
+        "__description__",
+        "get_version",
+        "get_info",
+    }:
         return globals()[name]
     return getattr(_load_legacy_api_gateway(), name)
 

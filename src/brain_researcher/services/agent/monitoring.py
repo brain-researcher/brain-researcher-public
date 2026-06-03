@@ -3,16 +3,17 @@ Monitoring and observability for the Brain Researcher Agent.
 Tracks tool usage, performance metrics, and error rates.
 """
 
-import time
-import logging
-from datetime import datetime
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field, asdict
 import json
+import logging
+import time
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 try:
-    from prometheus_client import Counter, Histogram, Gauge, generate_latest
+    from prometheus_client import Counter, Gauge, Histogram, generate_latest
+
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
@@ -23,23 +24,25 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ToolMetrics:
     """Metrics for a single tool."""
+
     tool_name: str
     total_calls: int = 0
     successful_calls: int = 0
     failed_calls: int = 0
     total_execution_time: float = 0.0
     avg_execution_time: float = 0.0
-    min_execution_time: float = float('inf')
+    min_execution_time: float = float("inf")
     max_execution_time: float = 0.0
-    last_called: Optional[datetime] = None
-    error_messages: List[str] = field(default_factory=list)
+    last_called: datetime | None = None
+    error_messages: list[str] = field(default_factory=list)
 
 
 @dataclass
 class WorkflowMetrics:
     """Metrics for LangGraph workflows."""
+
     workflow_id: str
-    tools_used: List[str] = field(default_factory=list)
+    tools_used: list[str] = field(default_factory=list)
     total_time: float = 0.0
     state_transitions: int = 0
     checkpoints_saved: int = 0
@@ -50,15 +53,15 @@ class WorkflowMetrics:
 class MetricsCollector:
     """Collects and exports metrics for monitoring."""
 
-    def __init__(self, export_path: Optional[str] = None):
+    def __init__(self, export_path: str | None = None):
         self.export_path = Path(export_path) if export_path else Path("metrics")
         self.export_path.mkdir(parents=True, exist_ok=True)
 
         # Tool metrics
-        self.tool_metrics: Dict[str, ToolMetrics] = {}
+        self.tool_metrics: dict[str, ToolMetrics] = {}
 
         # Workflow metrics
-        self.workflow_metrics: List[WorkflowMetrics] = []
+        self.workflow_metrics: list[WorkflowMetrics] = []
 
         # Real-time counters
         self.active_workflows = 0
@@ -72,73 +75,72 @@ class MetricsCollector:
         """Initialize Prometheus metrics."""
         # Tool metrics
         self.prom_tool_calls = Counter(
-            'brain_researcher_tool_calls_total',
-            'Total number of tool calls',
-            ['tool_name', 'status']
+            "brain_researcher_tool_calls_total",
+            "Total number of tool calls",
+            ["tool_name", "status"],
         )
 
         self.prom_tool_duration = Histogram(
-            'brain_researcher_tool_duration_seconds',
-            'Tool execution duration in seconds',
-            ['tool_name']
+            "brain_researcher_tool_duration_seconds",
+            "Tool execution duration in seconds",
+            ["tool_name"],
         )
 
         # Workflow metrics
         self.prom_workflow_duration = Histogram(
-            'brain_researcher_workflow_duration_seconds',
-            'Workflow execution duration in seconds'
+            "brain_researcher_workflow_duration_seconds",
+            "Workflow execution duration in seconds",
         )
 
         self.prom_active_workflows = Gauge(
-            'brain_researcher_active_workflows',
-            'Number of active workflows'
+            "brain_researcher_active_workflows", "Number of active workflows"
         )
 
         # Error metrics
         self.prom_errors = Counter(
-            'brain_researcher_errors_total',
-            'Total number of errors',
-            ['tool_name', 'error_type']
+            "brain_researcher_errors_total",
+            "Total number of errors",
+            ["tool_name", "error_type"],
         )
 
         self.prom_gfs_autoretrieval = Counter(
-            'brain_researcher_gfs_autoretrieval_total',
-            'Google File Search auto-retrieval decisions by surface and status',
-            ['surface', 'status', 'triggered']
+            "brain_researcher_gfs_autoretrieval_total",
+            "Google File Search auto-retrieval decisions by surface and status",
+            ["surface", "status", "triggered"],
         )
         self.prom_gfs_autoretrieval_calls = Counter(
-            'brain_researcher_gfs_autoretrieval_calls_total',
-            'Google File Search auto-retrieval downstream call count by surface',
-            ['surface']
+            "brain_researcher_gfs_autoretrieval_calls_total",
+            "Google File Search auto-retrieval downstream call count by surface",
+            ["surface"],
         )
         self.prom_gfs_docs = Counter(
-            'brain_researcher_gfs_autoretrieval_docs_total',
-            'Google File Search documents returned by surface',
-            ['surface']
+            "brain_researcher_gfs_autoretrieval_docs_total",
+            "Google File Search documents returned by surface",
+            ["surface"],
         )
 
         # Knowledge cache metrics
         self.prom_knowledge_hits = Counter(
-            'brain_researcher_knowledge_cache_hits_total',
-            'Knowledge cache hits',
-            ['layer', 'account_id']
+            "brain_researcher_knowledge_cache_hits_total",
+            "Knowledge cache hits",
+            ["layer", "account_id"],
         )
         self.prom_knowledge_misses = Counter(
-            'brain_researcher_knowledge_cache_misses_total',
-            'Knowledge cache misses',
-            ['layer', 'account_id']
+            "brain_researcher_knowledge_cache_misses_total",
+            "Knowledge cache misses",
+            ["layer", "account_id"],
         )
         self.prom_knowledge_sets = Counter(
-            'brain_researcher_knowledge_cache_sets_total',
-            'Knowledge cache writes',
-            ['layer', 'account_id']
+            "brain_researcher_knowledge_cache_sets_total",
+            "Knowledge cache writes",
+            ["layer", "account_id"],
         )
 
         # Knowledge memory size (per account)
         self.prom_knowledge_memory_size = Gauge(
-            'brain_researcher_knowledge_memory_size',
-            'Number of stored knowledge bundles per account',
-            ['account_id']
+            "brain_researcher_knowledge_memory_size",
+            "Number of stored knowledge bundles per account",
+            ["account_id"],
         )
 
     def record_tool_call(
@@ -146,7 +148,7 @@ class MetricsCollector:
         tool_name: str,
         execution_time: float,
         success: bool,
-        error_message: Optional[str] = None
+        error_message: str | None = None,
     ):
         """Record a tool call."""
         # Update or create tool metrics
@@ -161,7 +163,9 @@ class MetricsCollector:
         else:
             metrics.failed_calls += 1
             if error_message:
-                metrics.error_messages.append(error_message[-100:])  # Keep last 100 chars
+                metrics.error_messages.append(
+                    error_message[-100:]
+                )  # Keep last 100 chars
                 if len(metrics.error_messages) > 10:
                     metrics.error_messages.pop(0)  # Keep only last 10 errors
 
@@ -180,7 +184,9 @@ class MetricsCollector:
 
             if not success and error_message:
                 error_type = self._classify_error(error_message)
-                self.prom_errors.labels(tool_name=tool_name, error_type=error_type).inc()
+                self.prom_errors.labels(
+                    tool_name=tool_name, error_type=error_type
+                ).inc()
 
     def record_gfs_usage(
         self,
@@ -226,8 +232,7 @@ class MetricsCollector:
         """End tracking a workflow."""
         # Find workflow
         workflow = next(
-            (w for w in self.workflow_metrics if w.workflow_id == workflow_id),
-            None
+            (w for w in self.workflow_metrics if w.workflow_id == workflow_id), None
         )
 
         if workflow:
@@ -256,13 +261,21 @@ class MetricsCollector:
             return
 
         if l1_hits:
-            self.prom_knowledge_hits.labels(layer="l1", account_id=account_id).inc(l1_hits)
+            self.prom_knowledge_hits.labels(layer="l1", account_id=account_id).inc(
+                l1_hits
+            )
         if shared_hits:
-            self.prom_knowledge_hits.labels(layer="shared", account_id=account_id).inc(shared_hits)
+            self.prom_knowledge_hits.labels(layer="shared", account_id=account_id).inc(
+                shared_hits
+            )
         if l1_misses:
-            self.prom_knowledge_misses.labels(layer="l1", account_id=account_id).inc(l1_misses)
+            self.prom_knowledge_misses.labels(layer="l1", account_id=account_id).inc(
+                l1_misses
+            )
         if shared_sets:
-            self.prom_knowledge_sets.labels(layer="shared", account_id=account_id).inc(shared_sets)
+            self.prom_knowledge_sets.labels(layer="shared", account_id=account_id).inc(
+                shared_sets
+            )
 
     def record_knowledge_memory_size(self, account_id: str, size: int):
         """Set per-account knowledge memory size gauge."""
@@ -274,8 +287,7 @@ class MetricsCollector:
     def add_tool_to_workflow(self, workflow_id: str, tool_name: str):
         """Add a tool to workflow tracking."""
         workflow = next(
-            (w for w in self.workflow_metrics if w.workflow_id == workflow_id),
-            None
+            (w for w in self.workflow_metrics if w.workflow_id == workflow_id), None
         )
 
         if workflow:
@@ -284,14 +296,13 @@ class MetricsCollector:
     def increment_state_transitions(self, workflow_id: str):
         """Increment state transitions for a workflow."""
         workflow = next(
-            (w for w in self.workflow_metrics if w.workflow_id == workflow_id),
-            None
+            (w for w in self.workflow_metrics if w.workflow_id == workflow_id), None
         )
 
         if workflow:
             workflow.state_transitions += 1
 
-    def get_tool_statistics(self) -> Dict[str, Any]:
+    def get_tool_statistics(self) -> dict[str, Any]:
         """Get comprehensive tool statistics."""
         stats = {
             "total_tools": len(self.tool_metrics),
@@ -301,39 +312,40 @@ class MetricsCollector:
             "slowest_tools": self._get_slowest_tools(5),
             "error_prone_tools": self._get_error_prone_tools(5),
             "tool_details": {
-                name: asdict(metrics)
-                for name, metrics in self.tool_metrics.items()
-            }
+                name: asdict(metrics) for name, metrics in self.tool_metrics.items()
+            },
         }
         return stats
 
-    def get_workflow_statistics(self) -> Dict[str, Any]:
+    def get_workflow_statistics(self) -> dict[str, Any]:
         """Get workflow statistics."""
         if not self.workflow_metrics:
-            return {
-                "total_workflows": 0,
-                "active_workflows": self.active_workflows
-            }
+            return {"total_workflows": 0, "active_workflows": self.active_workflows}
 
         successful = sum(1 for w in self.workflow_metrics if w.success)
-        avg_duration = sum(w.total_time for w in self.workflow_metrics) / len(self.workflow_metrics)
+        avg_duration = sum(w.total_time for w in self.workflow_metrics) / len(
+            self.workflow_metrics
+        )
 
         return {
             "total_workflows": len(self.workflow_metrics),
             "active_workflows": self.active_workflows,
             "success_rate": successful / len(self.workflow_metrics),
             "avg_duration": avg_duration,
-            "avg_tools_per_workflow": sum(len(w.tools_used) for w in self.workflow_metrics) / len(self.workflow_metrics),
+            "avg_tools_per_workflow": sum(
+                len(w.tools_used) for w in self.workflow_metrics
+            )
+            / len(self.workflow_metrics),
             "recent_workflows": [
                 {
                     "id": w.workflow_id,
                     "tools": w.tools_used,
                     "duration": w.total_time,
                     "success": w.success,
-                    "timestamp": w.timestamp.isoformat()
+                    "timestamp": w.timestamp.isoformat(),
                 }
                 for w in self.workflow_metrics[-10:]  # Last 10 workflows
-            ]
+            ],
         }
 
     def export_metrics(self):
@@ -343,13 +355,13 @@ class MetricsCollector:
         # Export tool metrics
         tool_stats = self.get_tool_statistics()
         tool_file = self.export_path / f"tool_metrics_{timestamp}.json"
-        with open(tool_file, 'w') as f:
+        with open(tool_file, "w") as f:
             json.dump(tool_stats, f, indent=2, default=str)
 
         # Export workflow metrics
         workflow_stats = self.get_workflow_statistics()
         workflow_file = self.export_path / f"workflow_metrics_{timestamp}.json"
-        with open(workflow_file, 'w') as f:
+        with open(workflow_file, "w") as f:
             json.dump(workflow_stats, f, indent=2, default=str)
 
         logger.info(f"Metrics exported to {self.export_path}")
@@ -372,51 +384,48 @@ class MetricsCollector:
 
         return total_success / total_calls
 
-    def _get_most_used_tools(self, n: int) -> List[Dict[str, Any]]:
+    def _get_most_used_tools(self, n: int) -> list[dict[str, Any]]:
         """Get n most used tools."""
         sorted_tools = sorted(
-            self.tool_metrics.values(),
-            key=lambda m: m.total_calls,
-            reverse=True
+            self.tool_metrics.values(), key=lambda m: m.total_calls, reverse=True
         )
 
         return [
             {
                 "name": m.tool_name,
                 "calls": m.total_calls,
-                "success_rate": m.successful_calls / m.total_calls if m.total_calls > 0 else 0
+                "success_rate": (
+                    m.successful_calls / m.total_calls if m.total_calls > 0 else 0
+                ),
             }
             for m in sorted_tools[:n]
         ]
 
-    def _get_slowest_tools(self, n: int) -> List[Dict[str, Any]]:
+    def _get_slowest_tools(self, n: int) -> list[dict[str, Any]]:
         """Get n slowest tools."""
         sorted_tools = sorted(
-            self.tool_metrics.values(),
-            key=lambda m: m.avg_execution_time,
-            reverse=True
+            self.tool_metrics.values(), key=lambda m: m.avg_execution_time, reverse=True
         )
 
         return [
             {
                 "name": m.tool_name,
                 "avg_time": m.avg_execution_time,
-                "max_time": m.max_execution_time
+                "max_time": m.max_execution_time,
             }
             for m in sorted_tools[:n]
         ]
 
-    def _get_error_prone_tools(self, n: int) -> List[Dict[str, Any]]:
+    def _get_error_prone_tools(self, n: int) -> list[dict[str, Any]]:
         """Get n most error-prone tools."""
         tools_with_errors = [
-            m for m in self.tool_metrics.values()
-            if m.failed_calls > 0
+            m for m in self.tool_metrics.values() if m.failed_calls > 0
         ]
 
         sorted_tools = sorted(
             tools_with_errors,
             key=lambda m: m.failed_calls / m.total_calls,
-            reverse=True
+            reverse=True,
         )
 
         return [
@@ -424,7 +433,7 @@ class MetricsCollector:
                 "name": m.tool_name,
                 "error_rate": m.failed_calls / m.total_calls,
                 "failed_calls": m.failed_calls,
-                "recent_errors": m.error_messages[-3:]  # Last 3 errors
+                "recent_errors": m.error_messages[-3:],  # Last 3 errors
             }
             for m in sorted_tools[:n]
         ]
@@ -475,16 +484,13 @@ class MonitoredTool:
             finally:
                 execution_time = time.time() - start_time
                 metrics_collector.record_tool_call(
-                    self.tool_name,
-                    execution_time,
-                    success,
-                    error_message
+                    self.tool_name, execution_time, success, error_message
                 )
 
         return wrapper
 
 
-def get_metrics_summary() -> Dict[str, Any]:
+def get_metrics_summary() -> dict[str, Any]:
     """Get a summary of all metrics."""
     return {
         "tools": metrics_collector.get_tool_statistics(),
@@ -492,8 +498,8 @@ def get_metrics_summary() -> Dict[str, Any]:
         "health": {
             "active_workflows": metrics_collector.active_workflows,
             "total_tools_registered": len(metrics_collector.tool_metrics),
-            "overall_success_rate": metrics_collector._calculate_success_rate()
-        }
+            "overall_success_rate": metrics_collector._calculate_success_rate(),
+        },
     }
 
 

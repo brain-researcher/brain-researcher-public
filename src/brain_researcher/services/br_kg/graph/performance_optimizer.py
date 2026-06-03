@@ -4,13 +4,10 @@ This module adds performance indexes and temporal tracking to the existing datab
 """
 
 import logging
+import sqlite3
 import time
 from datetime import datetime
-from typing import Dict, List, Any, Optional
-from pathlib import Path
-
-from neo4j import GraphDatabase
-import sqlite3
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +22,7 @@ class PerformanceOptimizer:
             db_connection: Database connection (Neo4j driver or SQLite connection)
         """
         self.db = db_connection
-        self.is_neo4j = hasattr(db_connection, 'session')
+        self.is_neo4j = hasattr(db_connection, "session")
 
     def add_performance_indexes(self):
         """Add performance indexes for core node types."""
@@ -36,13 +33,11 @@ class PerformanceOptimizer:
             ("Task", "name"),
             ("Task", "dataset_id"),
             ("Task", "created_at"),
-
             # Concept indexes
             ("Concept", "concept_id"),
             ("Concept", "name"),
             ("Concept", "ontology_id"),
             ("Concept", "confidence_score"),
-
             # Region indexes
             ("Region", "region_id"),
             ("Region", "name"),
@@ -52,24 +47,20 @@ class PerformanceOptimizer:
             ("BrainRegion", "name"),
             ("BrainRegion", "mni_coordinates"),
             ("BrainRegion", "atlas"),
-
             # Canonical spatial substrate indexes
             ("StatsMap", "id"),
             ("StatMap", "id"),
             ("StatisticalMap", "id"),
-
             # Dataset indexes
             ("Dataset", "dataset_id"),
             ("Dataset", "name"),
             ("Dataset", "source"),
             ("Dataset", "created_at"),
-
             # Publication indexes
             ("Publication", "pmid"),
             ("Publication", "doi"),
             ("Publication", "year"),
             ("Publication", "journal"),
-
             # Composite indexes for common queries
             ("Task", ["dataset_id", "name"]),
             ("Concept", ["ontology_id", "confidence_score"]),
@@ -85,7 +76,7 @@ class PerformanceOptimizer:
 
         logger.info(f"Added {len(indexes)} performance indexes")
 
-    def _add_neo4j_indexes(self, indexes: List[tuple]):
+    def _add_neo4j_indexes(self, indexes: list[tuple]):
         """Add indexes for Neo4j database.
 
         Args:
@@ -97,7 +88,9 @@ class PerformanceOptimizer:
                     # Composite index
                     label, properties = index_def
                     props_str = ", ".join([f"n.{p}" for p in properties])
-                    query = f"CREATE INDEX IF NOT EXISTS FOR (n:{label}) ON ({props_str})"
+                    query = (
+                        f"CREATE INDEX IF NOT EXISTS FOR (n:{label}) ON ({props_str})"
+                    )
                 else:
                     # Single property index
                     label, prop = index_def
@@ -105,11 +98,13 @@ class PerformanceOptimizer:
 
                 try:
                     session.run(query)
-                    logger.debug(f"Created index: {label}.{prop if isinstance(index_def[1], str) else index_def[1]}")
+                    logger.debug(
+                        f"Created index: {label}.{prop if isinstance(index_def[1], str) else index_def[1]}"
+                    )
                 except Exception as e:
                     logger.warning(f"Failed to create index: {e}")
 
-    def _add_sqlite_indexes(self, indexes: List[tuple]):
+    def _add_sqlite_indexes(self, indexes: list[tuple]):
         """Add indexes for SQLite database.
 
         Args:
@@ -151,7 +146,7 @@ class PerformanceOptimizer:
             "updated_at": datetime.utcnow().isoformat(),
             "valid_from": datetime.utcnow().isoformat(),
             "valid_to": None,  # NULL means currently valid
-            "version": 1
+            "version": 1,
         }
 
         if self.is_neo4j:
@@ -161,7 +156,7 @@ class PerformanceOptimizer:
 
         logger.info("Added temporal attributes to relationships")
 
-    def _add_neo4j_temporal(self, temporal_properties: Dict[str, Any]):
+    def _add_neo4j_temporal(self, temporal_properties: dict[str, Any]):
         """Add temporal properties to Neo4j relationships.
 
         Args:
@@ -184,7 +179,7 @@ class PerformanceOptimizer:
             count = result.single()["updated_count"]
             logger.info(f"Added temporal attributes to {count} relationships")
 
-    def _add_sqlite_temporal(self, temporal_properties: Dict[str, Any]):
+    def _add_sqlite_temporal(self, temporal_properties: dict[str, Any]):
         """Add temporal properties to SQLite relationships.
 
         Args:
@@ -194,33 +189,41 @@ class PerformanceOptimizer:
 
         # Add temporal columns if they don't exist
         try:
-            cursor.execute("""
+            cursor.execute(
+                """
                 ALTER TABLE relationships
                 ADD COLUMN valid_from TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            """)
-            cursor.execute("""
+            """
+            )
+            cursor.execute(
+                """
                 ALTER TABLE relationships
                 ADD COLUMN valid_to TIMESTAMP DEFAULT NULL
-            """)
-            cursor.execute("""
+            """
+            )
+            cursor.execute(
+                """
                 ALTER TABLE relationships
                 ADD COLUMN version INTEGER DEFAULT 1
-            """)
+            """
+            )
         except sqlite3.OperationalError:
             # Columns already exist
             pass
 
         # Update existing relationships
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE relationships
             SET valid_from = CURRENT_TIMESTAMP,
                 version = 1
             WHERE valid_from IS NULL
-        """)
+        """
+        )
 
         self.db.commit()
 
-    def optimize_queries(self) -> Dict[str, Any]:
+    def optimize_queries(self) -> dict[str, Any]:
         """Optimize common query patterns.
 
         Returns:
@@ -230,31 +233,25 @@ class PerformanceOptimizer:
             "indexes_created": 0,
             "queries_optimized": 0,
             "cache_hits": 0,
-            "performance_improvement": 0
+            "performance_improvement": 0,
         }
 
         # Analyze query patterns
         common_queries = [
             # Find concepts related to a task
             "MATCH (t:Task)-[:MEASURES]->(c:Concept) WHERE t.name = $task_name RETURN c",
-
             # Find brain regions activated by a concept
             "MATCH (c:Concept)-[:ACTIVATES]->(r) WHERE c.name = $concept_name AND (r:BrainRegion OR r:Region) RETURN r",
-
             # Find publications mentioning a concept
             "MATCH (p:Publication)-[:MENTIONS]->(c:Concept) WHERE c.name = $concept_name RETURN p",
-
             # Find tasks in a dataset
             "MATCH (d:Dataset)-[:CONTAINS]->(t:Task) WHERE d.dataset_id = $dataset_id RETURN t",
-
             # Canonical spatial substrate traversal
             "MATCH (m:StatsMap)-[:IN_REGION]->(br:BrainRegion) WHERE m.id = $map_id RETURN br",
-
             # Canonical anatomy hierarchy traversal
             "MATCH (child:BrainRegion)-[:PART_OF]->(parent:BrainRegion) WHERE child.name = $region_name RETURN parent",
-
             # Path queries between concepts
-            "MATCH path = (c1:Concept)-[*..3]-(c2:Concept) WHERE c1.name = $concept1 AND c2.name = $concept2 RETURN path"
+            "MATCH path = (c1:Concept)-[*..3]-(c2:Concept) WHERE c1.name = $concept1 AND c2.name = $concept2 RETURN path",
         ]
 
         # Create materialized views for common queries
@@ -265,7 +262,7 @@ class PerformanceOptimizer:
 
         return stats
 
-    def _optimize_neo4j_queries(self, queries: List[str]) -> Dict[str, Any]:
+    def _optimize_neo4j_queries(self, queries: list[str]) -> dict[str, Any]:
         """Optimize Neo4j queries.
 
         Args:
@@ -290,9 +287,9 @@ class PerformanceOptimizer:
                         "map_id": "dummy",
                         "region_name": "dummy",
                         "concept1": "dummy",
-                        "concept2": "dummy"
+                        "concept2": "dummy",
                     }
-                    result = session.run(explain_query, **params)
+                    session.run(explain_query, **params)
 
                     # Analyze plan (this would need actual plan analysis)
                     stats["queries_optimized"] += 1
@@ -302,7 +299,7 @@ class PerformanceOptimizer:
 
         return stats
 
-    def _optimize_sqlite_queries(self, queries: List[str]) -> Dict[str, Any]:
+    def _optimize_sqlite_queries(self, queries: list[str]) -> dict[str, Any]:
         """Optimize SQLite queries.
 
         Args:
@@ -322,22 +319,18 @@ class PerformanceOptimizer:
             """CREATE INDEX IF NOT EXISTS idx_task_measures
                ON relationships(start_node, end_node, type)
                WHERE type = 'MEASURES'""",
-
             """CREATE INDEX IF NOT EXISTS idx_concept_activates
                ON relationships(start_node, end_node, type)
                WHERE type = 'ACTIVATES'""",
-
             """CREATE INDEX IF NOT EXISTS idx_publication_mentions
                ON relationships(start_node, end_node, type)
                WHERE type = 'MENTIONS'""",
-
             """CREATE INDEX IF NOT EXISTS idx_spatial_in_region
                ON relationships(start_node, end_node, type)
                WHERE type = 'IN_REGION'""",
-
             """CREATE INDEX IF NOT EXISTS idx_brainregion_part_of
                ON relationships(start_node, end_node, type)
-               WHERE type = 'PART_OF'"""
+               WHERE type = 'PART_OF'""",
         ]
 
         for index_query in covering_indexes:
@@ -359,9 +352,12 @@ class PerformanceOptimizer:
         if self.is_neo4j:
             # Neo4j caching configuration
             with self.db.session() as session:
-                session.run("""
+                session.run(
+                    """
                     CALL dbms.setConfigValue('dbms.query_cache_size', $size)
-                """, size=f"{cache_size_mb}m")
+                """,
+                    size=f"{cache_size_mb}m",
+                )
 
                 logger.info(f"Set Neo4j query cache to {cache_size_mb}MB")
         else:
@@ -377,7 +373,7 @@ class PerformanceOptimizer:
 
             logger.info(f"Set SQLite cache to {cache_size_mb}MB")
 
-    def benchmark_performance(self) -> Dict[str, float]:
+    def benchmark_performance(self) -> dict[str, float]:
         """Benchmark database performance.
 
         Returns:
@@ -403,25 +399,31 @@ class PerformanceOptimizer:
         start_time = time.time()
         if self.is_neo4j:
             with self.db.session() as session:
-                result = session.run("""
+                result = session.run(
+                    """
                     MATCH (n)-[r]->(m)
                     RETURN count(r) as count
                     LIMIT 1000
-                """)
+                """
+                )
                 rel_count = result.single()["count"]
         else:
             cursor = self.db.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT COUNT(*) FROM relationships
                 LIMIT 1000
-            """)
+            """
+            )
             rel_count = cursor.fetchone()[0]
 
         metrics["traversal_time_ms"] = (time.time() - start_time) * 1000
         metrics["relationship_count"] = rel_count
 
         # Calculate throughput
-        metrics["read_throughput"] = count / metrics["read_time_ms"] * 1000 if metrics["read_time_ms"] > 0 else 0
+        metrics["read_throughput"] = (
+            count / metrics["read_time_ms"] * 1000 if metrics["read_time_ms"] > 0 else 0
+        )
 
         logger.info(f"Performance metrics: {metrics}")
         return metrics

@@ -44,7 +44,9 @@ async def _resolve_share_requester_id(request: Request) -> str:
     user, _payload = await _resolve_authenticated_user(request)
     user_id = str(getattr(user, "id", "") or "").strip()
     if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+        raise HTTPException(
+            status_code=401, detail="Invalid authentication credentials"
+        )
     return user_id
 
 
@@ -82,16 +84,22 @@ async def revoke_share(share_token: str, request: Request) -> ShareRevokeRespons
 
     record = await store.resolve_analysis_share(share_token=token, now=_utcnow())
     if not record:
-        raise HTTPException(status_code=404, detail="share_not_found_or_already_revoked")
+        raise HTTPException(
+            status_code=404, detail="share_not_found_or_already_revoked"
+        )
 
     requester_id = await _resolve_share_requester_id(request)
     owner_id = str(record.get("created_by") or "").strip()
     if owner_id and requester_id != owner_id:
-        raise HTTPException(status_code=403, detail="Only the share link owner can revoke it.")
+        raise HTTPException(
+            status_code=403, detail="Only the share link owner can revoke it."
+        )
 
     revoked = await store.revoke_analysis_share(share_token=token)
     if not revoked:
-        raise HTTPException(status_code=404, detail="share_not_found_or_already_revoked")
+        raise HTTPException(
+            status_code=404, detail="share_not_found_or_already_revoked"
+        )
 
     return ShareRevokeResponse(revoked=True)
 

@@ -4,13 +4,11 @@ import logging
 import subprocess
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from brain_researcher.services.tools.qc_rendering import render_mask_overlay_png
-from brain_researcher.services.tools.niwrap.executor import execute_niwrap_tool
-from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 from brain_researcher.services.tools.spec import (
     ToolQCPrecheckConfig,
     ToolQCRenderContract,
@@ -18,6 +16,7 @@ from brain_researcher.services.tools.spec import (
     ToolQCSpec,
     ToolSpec,
 )
+from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class BETSurfaceEstimation(str, Enum):
     """BET surface estimation options."""
+
     DEFAULT = ""  # Default surface estimation
     ROBUST = "-R"  # Robust brain center estimation
     EYE_CLEANUP = "-S"  # Eye & optic nerve cleanup
@@ -38,55 +38,38 @@ class FSLBETArgs(BaseModel):
     input_file: str = Field(
         description="Path to input NIfTI file (T1, T2, or functional)"
     )
-    output_file: str = Field(
-        description="Path to output brain-extracted file"
-    )
+    output_file: str = Field(description="Path to output brain-extracted file")
     fractional_intensity: float = Field(
         default=0.5,
         ge=0.0,
         le=1.0,
-        description="Fractional intensity threshold (0-1); smaller values give larger brain outline"
+        description="Fractional intensity threshold (0-1); smaller values give larger brain outline",
     )
     gradient_threshold: float = Field(
         default=0.0,
         ge=0.0,
-        description="Vertical gradient in fractional intensity threshold"
+        description="Vertical gradient in fractional intensity threshold",
     )
-    generate_mask: bool = Field(
-        default=True,
-        description="Generate binary brain mask"
-    )
-    generate_skull: bool = Field(
-        default=False,
-        description="Generate skull image"
-    )
+    generate_mask: bool = Field(default=True, description="Generate binary brain mask")
+    generate_skull: bool = Field(default=False, description="Generate skull image")
     generate_surface: bool = Field(
-        default=False,
-        description="Generate brain surface mesh"
+        default=False, description="Generate brain surface mesh"
     )
     surface_estimation: BETSurfaceEstimation = Field(
-        default=BETSurfaceEstimation.DEFAULT,
-        description="Surface estimation method"
+        default=BETSurfaceEstimation.DEFAULT, description="Surface estimation method"
     )
-    apply_to_4d: bool = Field(
-        default=False,
-        description="Apply to 4D fMRI data"
-    )
+    apply_to_4d: bool = Field(default=False, description="Apply to 4D fMRI data")
     reduce_bias: bool = Field(
-        default=False,
-        description="Reduce image bias and neck cleanup"
+        default=False, description="Reduce image bias and neck cleanup"
     )
     robust_center: bool = Field(
-        default=False,
-        description="Robust brain center estimation (iterative)"
+        default=False, description="Robust brain center estimation (iterative)"
     )
-    center_coordinates: Optional[tuple] = Field(
-        default=None,
-        description="Center of gravity coordinates (x, y, z) in voxels"
+    center_coordinates: tuple | None = Field(
+        default=None, description="Center of gravity coordinates (x, y, z) in voxels"
     )
-    radius: Optional[int] = Field(
-        default=None,
-        description="Head radius in mm (default auto-estimated)"
+    radius: int | None = Field(
+        default=None, description="Head radius in mm (default auto-estimated)"
     )
 
 
@@ -98,8 +81,8 @@ def _model_required(model_cls) -> list[str]:
     return schema.get("required", [])
 
 
-def _model_defaults(model_cls) -> Dict[str, Any]:
-    defaults: Dict[str, Any] = {}
+def _model_defaults(model_cls) -> dict[str, Any]:
+    defaults: dict[str, Any] = {}
     if hasattr(model_cls, "model_fields"):
         for name, field in model_cls.model_fields.items():
             if field.default is not None:
@@ -228,8 +211,8 @@ class FSLBETTool(NeuroToolWrapper):
 
         return cmd
 
-    def _detect_outputs(self, args: FSLBETArgs) -> Dict[str, str]:
-        outputs: Dict[str, str] = {}
+    def _detect_outputs(self, args: FSLBETArgs) -> dict[str, str]:
+        outputs: dict[str, str] = {}
         output_file = Path(args.output_file)
         outputs["brain"] = str(output_file)
 
@@ -328,7 +311,9 @@ class FSLBETTool(NeuroToolWrapper):
     ) -> ToolResult:
         processed = []
         for input_file in input_files:
-            output_file = str(Path(output_dir) / f"{Path(input_file).stem}_brain.nii.gz")
+            output_file = str(
+                Path(output_dir) / f"{Path(input_file).stem}_brain.nii.gz"
+            )
             result = self._run(
                 input_file=input_file,
                 output_file=output_file,

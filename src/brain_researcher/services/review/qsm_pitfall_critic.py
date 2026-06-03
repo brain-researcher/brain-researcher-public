@@ -309,7 +309,10 @@ def _contains_marker(text: str, marker: str) -> bool:
     if not marker:
         return False
     if re.fullmatch(r"[a-z0-9_+-]+", marker):
-        return re.search(rf"(?<![a-z0-9_+-]){re.escape(marker)}(?![a-z0-9_+-])", text) is not None
+        return (
+            re.search(rf"(?<![a-z0-9_+-]){re.escape(marker)}(?![a-z0-9_+-])", text)
+            is not None
+        )
     return marker in text
 
 
@@ -373,9 +376,7 @@ def qsm_retrieval_gate(
     ]
     qsm_specific = [card for card in candidate_rows if _candidate_is_qsm_specific(card)]
     usable = bool(qsm_specific)
-    precision = (
-        len(qsm_specific) / len(candidate_rows) if candidate_rows else 0.0
-    )
+    precision = len(qsm_specific) / len(candidate_rows) if candidate_rows else 0.0
     status = "ok" if usable and precision >= 0.5 else "low_confidence"
     return {
         "task_type": "qsm_reconstruction",
@@ -390,12 +391,14 @@ def qsm_retrieval_gate(
         "qc_protocol": QC_PROTOCOL,
         "forbidden_guidance": FORBIDDEN_GUIDANCE,
         "blocked_candidate_names": [name for name in blocked if name],
-        "reason": None
-        if usable
-        else (
-            "No QSM-specific evidence/tool candidate was retrieved; generic "
-            "fMRI, fieldmap-distortion, tractography, or VBM candidates are not "
-            "appropriate for QSM reconstruction advice."
+        "reason": (
+            None
+            if usable
+            else (
+                "No QSM-specific evidence/tool candidate was retrieved; generic "
+                "fMRI, fieldmap-distortion, tractography, or VBM candidates are not "
+                "appropriate for QSM reconstruction advice."
+            )
         ),
         "anti_pitfall_checklist": ANTI_PITFALL_CHECKLIST,
         "verification_protocol": VERIFICATION_PROTOCOL,
@@ -567,12 +570,16 @@ def _has_explicit_local_field_dataflow(plan: Any) -> bool:
             for output in _collect_key_values(step, _OUTPUT_KEYS):
                 if _looks_like_local_field(output):
                     bg_outputs.add(_field_name(output))
-            natural_bg_output = natural_bg_output or _step_mentions_background_output_local(step_text)
+            natural_bg_output = (
+                natural_bg_output or _step_mentions_background_output_local(step_text)
+            )
         if _has_any(step_text, _INVERSION_MARKERS):
             for input_value in _collect_key_values(step, _INPUT_KEYS):
                 if _looks_like_local_field(input_value):
                     inversion_inputs.add(_field_name(input_value))
-            natural_inv_input = natural_inv_input or _step_mentions_inversion_input_local(step_text)
+            natural_inv_input = (
+                natural_inv_input or _step_mentions_inversion_input_local(step_text)
+            )
 
     if bg_outputs and inversion_inputs and bool(bg_outputs & inversion_inputs):
         return True
@@ -723,7 +730,8 @@ def review_qsm_plan_payload(
         )
 
     if "phase" in text and not any(
-        marker in text for marker in ("delta_te", "delta te", "echo time", "te=", "tes=")
+        marker in text
+        for marker in ("delta_te", "delta te", "echo time", "te=", "tes=")
     ):
         findings.append(
             _make_finding(
@@ -742,9 +750,9 @@ def review_qsm_plan_payload(
         )
 
     decision, risk_level = _roll_up(findings)
-    checklist = [
-        item["assertion"] for item in ANTI_PITFALL_CHECKLIST
-    ] + [item["expected"] for item in VERIFICATION_PROTOCOL]
+    checklist = [item["assertion"] for item in ANTI_PITFALL_CHECKLIST] + [
+        item["expected"] for item in VERIFICATION_PROTOCOL
+    ]
     return CodeReviewVerdict(
         decision=decision,  # type: ignore[arg-type]
         risk_level=risk_level,  # type: ignore[arg-type]

@@ -8,6 +8,7 @@ from enum import Enum
 
 class DemoMode(str, Enum):
     """Demo mode for controlling legacy demo endpoints"""
+
     PRODUCTION = "production"
     DEVELOPMENT = "development"
 
@@ -16,9 +17,7 @@ class OrchestratorConfig:
     """Configuration for orchestrator service"""
 
     # Demo mode - controls whether legacy fake demo endpoints are accessible
-    DEMO_MODE: DemoMode = DemoMode(
-        os.getenv("BR_DEMO_MODE", "production").lower()
-    )
+    DEMO_MODE: DemoMode = DemoMode(os.getenv("BR_DEMO_MODE", "production").lower())
 
     # BR-KG service URL
     BR_KG_URL: str = os.getenv("BR_KG_URL", "http://localhost:5000")

@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 # Add project root to path for direct imports
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -324,7 +324,9 @@ class TestNeurobagelPublicLoader(unittest.TestCase):
         self.assertEqual(summary.imaging_sessions, 1)
         self.assertEqual(summary.phenotypic_sessions, 1)
         self.assertEqual(summary.openneuro_id, "ds123456")
-        self.assertEqual(summary.cohort_metadata["schema_version"], "br-cohort-metadata-v1")
+        self.assertEqual(
+            summary.cohort_metadata["schema_version"], "br-cohort-metadata-v1"
+        )
         self.assertEqual(
             summary.cohort_metadata["group_audit"]["resolved_group_keys"],
             ["sex", "subject_group"],
@@ -393,9 +395,13 @@ class TestNeurobagelPublicLoader(unittest.TestCase):
             args for args, _ in db.create_node.call_args_list if args[0] == "Dataset"
         ]
         subject_group_calls = [
-            args for args, _ in db.create_node.call_args_list if args[0] == "SubjectGroup"
+            args
+            for args, _ in db.create_node.call_args_list
+            if args[0] == "SubjectGroup"
         ]
-        self.assertEqual(dataset_calls[0][1]["audit_group_keys"], ["sex", "subject_group"])
+        self.assertEqual(
+            dataset_calls[0][1]["audit_group_keys"], ["sex", "subject_group"]
+        )
         self.assertEqual(
             dataset_calls[0][1]["cohort_metadata"]["group_audit"]["group_counts"][
                 "subject_group"
@@ -456,13 +462,19 @@ class TestNeurobagelPublicLoader(unittest.TestCase):
                     }
                 ],
             }
-            subject_slug = re.sub(r"[^A-Za-z0-9]+", "_", dataset_uuid).strip("_").lower()
-            (subjects_dir / f"{subject_slug}.json").write_text(json.dumps(subject_record))
+            subject_slug = (
+                re.sub(r"[^A-Za-z0-9]+", "_", dataset_uuid).strip("_").lower()
+            )
+            (subjects_dir / f"{subject_slug}.json").write_text(
+                json.dumps(subject_record)
+            )
 
             db = MagicMock()
             db.find_nodes.return_value = []
             db.find_relationships.return_value = []
-            db.create_node.side_effect = lambda label, props, node_id=None: node_id or f"{label.lower()}-node"
+            db.create_node.side_effect = (
+                lambda label, props, node_id=None: node_id or f"{label.lower()}-node"
+            )
             db.create_relationship.return_value = "rel"
 
             loader = NeurobagelPublicLoader(
@@ -471,7 +483,9 @@ class TestNeurobagelPublicLoader(unittest.TestCase):
                 offline_cache_dir=cache_root,
             )
             loader._fetch_nodes = MagicMock(
-                return_value=[{"NodeName": "Test Node", "ApiURL": "https://offline.invalid/"}]
+                return_value=[
+                    {"NodeName": "Test Node", "ApiURL": "https://offline.invalid/"}
+                ]
             )
 
             stats = loader.load()
@@ -486,9 +500,9 @@ class TestNeurobagelPublicLoader(unittest.TestCase):
                 ["sex", "subject_group"],
             )
             self.assertEqual(
-                stats["cohort_metadata"]["group_audit"]["group_counts"]["subject_group"][
-                    "participant_counts"
-                ],
+                stats["cohort_metadata"]["group_audit"]["group_counts"][
+                    "subject_group"
+                ]["participant_counts"],
                 {"CTRL": 1},
             )
 

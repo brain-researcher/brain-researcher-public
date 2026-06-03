@@ -4,10 +4,11 @@ Provides batch validation with detailed error reporting.
 """
 
 import logging
-from typing import Dict, Any, List, Callable, Tuple, Optional
+from collections.abc import Callable
+from typing import Any
 
+from .rules import RuleValidator, get_rules_for_schema
 from .schemas import COMPILED_SCHEMAS
-from .rules import get_rules_for_schema, RuleValidator
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class ValidationError(Exception):
     """Validation error with line number context."""
 
-    def __init__(self, line: int, message: str, field: Optional[str] = None):
+    def __init__(self, line: int, message: str, field: str | None = None):
         """Initialize validation error.
 
         Args:
@@ -41,8 +42,8 @@ class ValidationEngine:
     def __init__(
         self,
         schema_key: str,
-        extra_checks: Optional[List[Callable[[Dict[str, Any]], None]]] = None,
-        strict: bool = True
+        extra_checks: list[Callable[[dict[str, Any]], None]] | None = None,
+        strict: bool = True,
     ):
         """Initialize validation engine.
 
@@ -74,7 +75,9 @@ class ValidationEngine:
             "rule_errors": 0,
         }
 
-    def validate_single(self, obj: Dict[str, Any], line: int = 0) -> List[ValidationError]:
+    def validate_single(
+        self, obj: dict[str, Any], line: int = 0
+    ) -> list[ValidationError]:
         """Validate a single object.
 
         Args:
@@ -109,10 +112,8 @@ class ValidationEngine:
         return errors
 
     def validate_batch(
-        self,
-        items: List[Tuple[int, Dict[str, Any]]],
-        stop_on_error: bool = False
-    ) -> Tuple[List[Dict[str, Any]], List[ValidationError]]:
+        self, items: list[tuple[int, dict[str, Any]]], stop_on_error: bool = False
+    ) -> tuple[list[dict[str, Any]], list[ValidationError]]:
         """Validate a batch of items.
 
         Args:
@@ -137,7 +138,7 @@ class ValidationEngine:
 
         return valid_objects, all_errors
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get validation statistics.
 
         Returns:
@@ -169,7 +170,7 @@ class ValidationEngine:
 class MultiSchemaValidator:
     """Validate objects against multiple schemas based on type field."""
 
-    def __init__(self, schema_mapping: Dict[str, str]):
+    def __init__(self, schema_mapping: dict[str, str]):
         """Initialize multi-schema validator.
 
         Args:
@@ -182,11 +183,8 @@ class MultiSchemaValidator:
             self.validators[type_value] = ValidationEngine(schema_key)
 
     def validate(
-        self,
-        obj: Dict[str, Any],
-        type_field: str = "type",
-        line: int = 0
-    ) -> List[ValidationError]:
+        self, obj: dict[str, Any], type_field: str = "type", line: int = 0
+    ) -> list[ValidationError]:
         """Validate object based on its type field.
 
         Args:
@@ -213,9 +211,9 @@ class ValidationReport:
 
     def __init__(self):
         """Initialize report generator."""
-        self.errors_by_type: Dict[str, int] = {}
-        self.errors_by_field: Dict[str, int] = {}
-        self.sample_errors: List[ValidationError] = []
+        self.errors_by_type: dict[str, int] = {}
+        self.errors_by_field: dict[str, int] = {}
+        self.sample_errors: list[ValidationError] = []
         self.max_samples = 10
 
     def add_error(self, error: ValidationError):
@@ -236,13 +234,15 @@ class ValidationReport:
 
         # Track field errors
         if error.field:
-            self.errors_by_field[error.field] = self.errors_by_field.get(error.field, 0) + 1
+            self.errors_by_field[error.field] = (
+                self.errors_by_field.get(error.field, 0) + 1
+            )
 
         # Keep sample errors
         if len(self.sample_errors) < self.max_samples:
             self.sample_errors.append(error)
 
-    def generate_report(self) -> Dict[str, Any]:
+    def generate_report(self) -> dict[str, Any]:
         """Generate validation report.
 
         Returns:
@@ -253,11 +253,7 @@ class ValidationReport:
             "errors_by_type": self.errors_by_type,
             "errors_by_field": self.errors_by_field,
             "sample_errors": [
-                {
-                    "line": e.line,
-                    "message": e.message,
-                    "field": e.field
-                }
+                {"line": e.line, "message": e.message, "field": e.field}
                 for e in self.sample_errors
             ],
         }
@@ -277,9 +273,7 @@ class ValidationReport:
         if report["errors_by_field"]:
             print("\nTop fields with errors:")
             sorted_fields = sorted(
-                report["errors_by_field"].items(),
-                key=lambda x: x[1],
-                reverse=True
+                report["errors_by_field"].items(), key=lambda x: x[1], reverse=True
             )[:5]
             for field, count in sorted_fields:
                 print(f"  {field}: {count}")

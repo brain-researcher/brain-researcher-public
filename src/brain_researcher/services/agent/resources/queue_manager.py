@@ -7,10 +7,10 @@ Provides priority-based queueing for resource requests.
 import heapq
 import logging
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import IntEnum
-from typing import Callable, Dict, List, Optional, Set
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 class Priority(IntEnum):
     """Priority levels for resource requests."""
 
-    HIGH = 1      # Interactive user requests
-    NORMAL = 2    # Standard analysis requests
-    LOW = 3       # Background batch jobs
+    HIGH = 1  # Interactive user requests
+    NORMAL = 2  # Standard analysis requests
+    LOW = 3  # Background batch jobs
 
     @classmethod
     def from_string(cls, value: str) -> "Priority":
@@ -48,7 +48,7 @@ class QueueEntry:
     entry_id: str = field(default_factory=lambda: str(uuid4()), compare=False)
     tool_name: str = field(compare=False, default="")
     execution_id: str = field(compare=False, default="")
-    resource_request: Dict = field(default_factory=dict, compare=False)
+    resource_request: dict = field(default_factory=dict, compare=False)
     enqueued_at: datetime = field(default_factory=datetime.now, compare=False)
 
     @property
@@ -77,10 +77,10 @@ class QueueManager:
         self.enable_backpressure = enable_backpressure
 
         # Priority queue (min-heap)
-        self._queue: List[QueueEntry] = []
+        self._queue: list[QueueEntry] = []
 
         # Track entries by execution_id for fast lookup
-        self._entries_by_execution: Dict[str, QueueEntry] = {}
+        self._entries_by_execution: dict[str, QueueEntry] = {}
 
         # Track queue depth by priority
         self._depth_by_priority = {
@@ -144,7 +144,7 @@ class QueueManager:
 
             return True
 
-    def dequeue(self) -> Optional[QueueEntry]:
+    def dequeue(self) -> QueueEntry | None:
         """
         Remove and return highest priority entry.
 
@@ -172,7 +172,9 @@ class QueueManager:
 
             return entry
 
-    def dequeue_if_ready(self, ready_check: Callable[[QueueEntry], bool]) -> Optional[QueueEntry]:
+    def dequeue_if_ready(
+        self, ready_check: Callable[[QueueEntry], bool]
+    ) -> QueueEntry | None:
         """
         Dequeue first entry that passes ready check.
 
@@ -210,7 +212,7 @@ class QueueManager:
 
             return None
 
-    def peek(self) -> Optional[QueueEntry]:
+    def peek(self) -> QueueEntry | None:
         """Peek at highest priority entry without removing."""
         with self._lock:
             return self._queue[0] if self._queue else None
@@ -278,7 +280,7 @@ class QueueManager:
                 self._depth_by_priority[priority] = 0
             logger.info("Queue cleared")
 
-    def get_status(self) -> Dict:
+    def get_status(self) -> dict:
         """Get queue status and metrics."""
         with self._lock:
             entries_by_priority = {}
@@ -286,10 +288,12 @@ class QueueManager:
                 priority_name = entry.priority_name
                 if priority_name not in entries_by_priority:
                     entries_by_priority[priority_name] = []
-                entries_by_priority[priority_name].append({
-                    "tool": entry.tool_name,
-                    "wait_time": f"{entry.wait_time:.1f}s",
-                })
+                entries_by_priority[priority_name].append(
+                    {
+                        "tool": entry.tool_name,
+                        "wait_time": f"{entry.wait_time:.1f}s",
+                    }
+                )
 
             return {
                 "size": len(self._queue),
@@ -317,7 +321,7 @@ class QueueManager:
         total_wait = sum(entry.wait_time for entry in self._queue)
         return total_wait / len(self._queue)
 
-    def get_position(self, execution_id: str) -> Optional[int]:
+    def get_position(self, execution_id: str) -> int | None:
         """
         Get queue position for an execution.
 

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Optional
 
 import nibabel as nib
 import numpy as np
@@ -32,7 +31,9 @@ def _load_atlas() -> tuple[nib.Nifti1Image, np.ndarray, np.ndarray]:
     return img, data, aff_inv
 
 
-def _parcel_stats(stat_data: np.ndarray, atlas_data: np.ndarray, label: int, threshold: float) -> Optional[dict]:
+def _parcel_stats(
+    stat_data: np.ndarray, atlas_data: np.ndarray, label: int, threshold: float
+) -> dict | None:
     mask = atlas_data == label
     if not np.any(mask):
         return None
@@ -52,7 +53,7 @@ def overlay_statmaps_yeo17(
     user: str,
     password: str,
     database: str = "neo4j",
-    statmap_limit: Optional[int] = None,
+    statmap_limit: int | None = None,
     threshold: float = 2.5,
     atlas_id: str = "atlas:yeo2011_17",
     resample: bool = False,
@@ -87,7 +88,9 @@ def overlay_statmaps_yeo17(
             try:
                 stat_img = nib.load(path)
                 if resample:
-                    stat_img = resample_to_img(stat_img, atlas_img, force_resample=False, copy_header=True)
+                    stat_img = resample_to_img(
+                        stat_img, atlas_img, force_resample=False, copy_header=True
+                    )
                 stat_data = stat_img.get_fdata()
                 # squeeze 4D maps (take first vol) if needed
                 if stat_data.ndim == 4:
@@ -135,9 +138,13 @@ def overlay_statmaps_yeo17(
             processed += 1
             if processed % 25 == 0:
                 elapsed = time.time() - start
-                print(f"Processed {processed}/{len(records)} statmaps in {elapsed:.1f}s")
+                print(
+                    f"Processed {processed}/{len(records)} statmaps in {elapsed:.1f}s"
+                )
 
-    print(f"Overlay complete: {processed} statmaps processed in {time.time()-start:.1f}s")
+    print(
+        f"Overlay complete: {processed} statmaps processed in {time.time()-start:.1f}s"
+    )
 
 
 __all__ = ["overlay_statmaps_yeo17"]

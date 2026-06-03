@@ -10,9 +10,9 @@ from __future__ import annotations
 import json
 import logging
 import shutil
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import BaseModel, Field, field_validator
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _load_array(data: Union[str, Sequence[Sequence[float]]]) -> np.ndarray:
+def _load_array(data: str | Sequence[Sequence[float]]) -> np.ndarray:
     """Load a 2D/3D array from path or in-memory sequence."""
 
     if isinstance(data, str):
@@ -60,7 +60,7 @@ def _flatten_upper(mat: np.ndarray) -> np.ndarray:
     return mat[idx]
 
 
-def _ensure_dir(path: Union[str, Path]) -> Path:
+def _ensure_dir(path: str | Path) -> Path:
     p = Path(path)
     p.mkdir(parents=True, exist_ok=True)
     return p
@@ -72,11 +72,13 @@ def _ensure_dir(path: Union[str, Path]) -> Path:
 
 
 class GroupICAArgs(BaseModel):
-    img: Union[str, List[str]] = Field(description="Input BOLD file(s)")
-    n_components: Optional[int] = Field(default=None, description="ICA components")
-    t_r: Optional[float] = Field(default=None, description="Repetition time in seconds")
+    img: str | list[str] = Field(description="Input BOLD file(s)")
+    n_components: int | None = Field(default=None, description="ICA components")
+    t_r: float | None = Field(default=None, description="Repetition time in seconds")
     output_dir: str = Field(description="Output directory for group ICA")
-    mask: Optional[str] = Field(default=None, description="Optional brain mask image to avoid empty masks")
+    mask: str | None = Field(
+        default=None, description="Optional brain mask image to avoid empty masks"
+    )
 
 
 class GroupICATool(NeuroToolWrapper):
@@ -86,12 +88,14 @@ class GroupICATool(NeuroToolWrapper):
         return "group_ica"
 
     def get_tool_description(self) -> str:
-        return "Group ICA using lightweight nilearn CanICA (no external binary required)."
+        return (
+            "Group ICA using lightweight nilearn CanICA (no external binary required)."
+        )
 
     def get_args_schema(self):
         return GroupICAArgs
 
-    def _infer_tr(self, img: Union[str, List[str]], fallback: float = 2.0) -> float:
+    def _infer_tr(self, img: str | list[str], fallback: float = 2.0) -> float:
         try:
             import nibabel as nib  # type: ignore
 
@@ -106,7 +110,6 @@ class GroupICATool(NeuroToolWrapper):
 
     def _run(self, **kwargs) -> ToolResult:
         import json
-        from pathlib import Path
 
         import nibabel as nib  # type: ignore
         import numpy as np
@@ -149,7 +152,9 @@ class GroupICATool(NeuroToolWrapper):
             nib.save(components_img, comp_path)
 
             timecourses_list = canica.transform(imgs)  # list of arrays (subjects)
-            if len(timecourses_list) > 0 and all(tc.shape == timecourses_list[0].shape for tc in timecourses_list):
+            if len(timecourses_list) > 0 and all(
+                tc.shape == timecourses_list[0].shape for tc in timecourses_list
+            ):
                 tc_array = np.stack(timecourses_list, axis=0)
             else:
                 # fall back to object array if lengths differ
@@ -163,7 +168,9 @@ class GroupICATool(NeuroToolWrapper):
                 "n_subjects": len(imgs),
                 "timecourses_shape": list(tc_array.shape),
             }
-            (out_dir / "canica_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+            (out_dir / "canica_summary.json").write_text(
+                json.dumps(summary, indent=2), encoding="utf-8"
+            )
 
             payload = {
                 "outputs": {
@@ -185,11 +192,11 @@ class GroupICATool(NeuroToolWrapper):
 
 
 class HierarchicalClusteringArgs(BaseModel):
-    features: Union[str, Sequence[Sequence[float]]] = Field(description="Samples x features")
+    features: str | Sequence[Sequence[float]] = Field(description="Samples x features")
     n_clusters: int = Field(default=2, ge=2, description="Number of clusters")
     linkage: str = Field(default="ward", description="Linkage method")
     metric: str = Field(default="euclidean", description="Distance metric")
-    output_file: Optional[str] = Field(default=None, description="CSV path for labels")
+    output_file: str | None = Field(default=None, description="CSV path for labels")
 
 
 class HierarchicalClusteringTool(NeuroToolWrapper):
@@ -213,7 +220,7 @@ class HierarchicalClusteringTool(NeuroToolWrapper):
                 data={},
             )
 
-        labels: Optional[np.ndarray] = None
+        labels: np.ndarray | None = None
         try:  # Preferred path
             from sklearn.cluster import AgglomerativeClustering  # type: ignore
 
@@ -228,16 +235,20 @@ class HierarchicalClusteringTool(NeuroToolWrapper):
             for _ in range(5):
                 dists = np.linalg.norm(data[:, None, :] - centroids[None, :, :], axis=2)
                 labels = dists.argmin(axis=1)
-                centroids = np.vstack([
-                    data[labels == k].mean(axis=0) if np.any(labels == k) else centroids[k]
-                    for k in range(args.n_clusters)
-                ])
+                centroids = np.vstack(
+                    [
+                        (
+                            data[labels == k].mean(axis=0)
+                            if np.any(labels == k)
+                            else centroids[k]
+                        )
+                        for k in range(args.n_clusters)
+                    ]
+                )
         assert labels is not None
 
         out_path = (
-            Path(args.output_file)
-            if args.output_file
-            else Path.cwd() / "clusters.csv"
+            Path(args.output_file) if args.output_file else Path.cwd() / "clusters.csv"
         )
         _ensure_dir(out_path.parent)
 
@@ -257,7 +268,10 @@ class HierarchicalClusteringTool(NeuroToolWrapper):
 
         return ToolResult(
             status="success",
-            data={"outputs": {"clusters_csv": str(out_path), "labels": labels.tolist()}, "summary": summary},
+            data={
+                "outputs": {"clusters_csv": str(out_path), "labels": labels.tolist()},
+                "summary": summary,
+            },
         )
 
 
@@ -267,10 +281,12 @@ class HierarchicalClusteringTool(NeuroToolWrapper):
 
 
 class RSAAnalyzerArgs(BaseModel):
-    brain_rdm: Union[str, Sequence[Sequence[float]]] = Field(description="Brain RDM matrix")
-    model_rdm: Union[str, Sequence[Sequence[float]]] = Field(description="Model RDM matrix")
-    metric: str = Field(default="spearman", description="Correlation metric: spearman|pearson")
-    output_file: Optional[str] = Field(default=None, description="CSV path for RSA result")
+    brain_rdm: str | Sequence[Sequence[float]] = Field(description="Brain RDM matrix")
+    model_rdm: str | Sequence[Sequence[float]] = Field(description="Model RDM matrix")
+    metric: str = Field(
+        default="spearman", description="Correlation metric: spearman|pearson"
+    )
+    output_file: str | None = Field(default=None, description="CSV path for RSA result")
 
     @field_validator("metric")
     @classmethod
@@ -317,14 +333,24 @@ class RSAAnalyzerTool(NeuroToolWrapper):
             model_z = (model - model.mean()) / (model.std() + 1e-8)
             corr = float(np.mean(brain_z * model_z))
 
-        out_path = Path(args.output_file) if args.output_file else Path.cwd() / "rsa_result.csv"
+        out_path = (
+            Path(args.output_file)
+            if args.output_file
+            else Path.cwd() / "rsa_result.csv"
+        )
         _ensure_dir(out_path.parent)
 
         try:
             import pandas as pd  # type: ignore
 
             pd.DataFrame(
-                [{"metric": args.metric, "correlation": float(corr), "pvalue": float(pval)}]
+                [
+                    {
+                        "metric": args.metric,
+                        "correlation": float(corr),
+                        "pvalue": float(pval),
+                    }
+                ]
             ).to_csv(out_path, index=False)
         except Exception:  # pragma: no cover
             np.savetxt(out_path, np.array([[corr, pval]]), delimiter=",")
@@ -344,10 +370,10 @@ class RSAAnalyzerTool(NeuroToolWrapper):
 
 
 class TestRetestArgs(BaseModel):
-    features: Union[str, Sequence[Sequence[float]]] = Field(description="Samples x features")
+    features: str | Sequence[Sequence[float]] = Field(description="Samples x features")
     subject_ids: Sequence[str] = Field(description="Subject ID per sample")
     session_ids: Sequence[str] = Field(description="Session ID per sample")
-    output_dir: Optional[str] = Field(default=None, description="Directory for outputs")
+    output_dir: str | None = Field(default=None, description="Directory for outputs")
 
 
 class TestRetestMetricsTool(NeuroToolWrapper):
@@ -373,11 +399,11 @@ class TestRetestMetricsTool(NeuroToolWrapper):
                 data={},
             )
 
-        by_subject: Dict[str, List[np.ndarray]] = {}
-        for row, s in zip(feats, subj):
+        by_subject: dict[str, list[np.ndarray]] = {}
+        for row, s in zip(feats, subj, strict=False):
             by_subject.setdefault(str(s), []).append(np.asarray(row))
 
-        within_corrs: List[float] = []
+        within_corrs: list[float] = []
         for rows in by_subject.values():
             if len(rows) < 2:
                 continue
@@ -394,7 +420,9 @@ class TestRetestMetricsTool(NeuroToolWrapper):
         np.fill_diagonal(corr_mat, -np.inf)
         top_match = corr_mat.argmax(axis=1)
         fingerprint_hits = np.sum(subj[top_match] == subj)
-        fingerprint_rate = float(fingerprint_hits / len(subj)) if len(subj) else float("nan")
+        fingerprint_rate = (
+            float(fingerprint_hits / len(subj)) if len(subj) else float("nan")
+        )
 
         out_dir = _ensure_dir(args.output_dir or (Path.cwd() / "reliability"))
         summary_path = out_dir / "test_retest_metrics.json"
@@ -448,7 +476,9 @@ class UnifiedSegmenterTool(NeuroToolWrapper):
 
         return ToolResult(
             status="success",
-            data={"outputs": {"gm_prob_map": str(gm_path), "segmented_t1w": str(gm_path)}},
+            data={
+                "outputs": {"gm_prob_map": str(gm_path), "segmented_t1w": str(gm_path)}
+            },
         )
 
 
@@ -461,8 +491,8 @@ class UnifiedSegmenterTool(NeuroToolWrapper):
 class WorkflowFallbackTools:
     """Container to expose all fallback tools for registry auto-discovery."""
 
-    def get_all_tools(self) -> List[NeuroToolWrapper]:
-        tools: List[NeuroToolWrapper] = [
+    def get_all_tools(self) -> list[NeuroToolWrapper]:
+        tools: list[NeuroToolWrapper] = [
             GroupICATool(),
             HierarchicalClusteringTool(),
             RSAAnalyzerTool(),

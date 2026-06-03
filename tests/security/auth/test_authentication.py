@@ -12,13 +12,10 @@ Gateway-targeted checks in this module cover the legacy standalone compatibility
 surface only.
 """
 
+import time
+
 import pytest
 import requests
-import time
-import jwt
-from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
-import json
 
 
 class TestAuthentication:
@@ -27,29 +24,29 @@ class TestAuthentication:
     def setup_method(self):
         """Set up test fixtures."""
         self.base_urls = {
-            'orchestrator': 'http://localhost:3001',
-            'br_kg': 'http://localhost:5000',
-            'agent': 'http://localhost:8000',
-            'gateway': 'http://localhost:8080',  # legacy standalone compatibility surface
+            "orchestrator": "http://localhost:3001",
+            "br_kg": "http://localhost:5000",
+            "agent": "http://localhost:8000",
+            "gateway": "http://localhost:8080",  # legacy standalone compatibility surface
         }
 
         self.test_credentials = {
-            'valid_user': {'username': 'test_user', 'password': 'test_password'},
-            'invalid_user': {'username': 'invalid', 'password': 'wrong'},
-            'admin_user': {'username': 'admin', 'password': 'admin_password'}
+            "valid_user": {"username": "test_user", "password": "test_password"},
+            "invalid_user": {"username": "invalid", "password": "wrong"},
+            "admin_user": {"username": "admin", "password": "admin_password"},
         }
 
         # Test JWT secrets (use environment variables in production)
-        self.test_jwt_secret = 'test_secret_key_for_security_testing'
+        self.test_jwt_secret = "test_secret_key_for_security_testing"
 
     def test_unauthenticated_access_blocked(self):
         """Test that protected endpoints block unauthenticated access."""
         protected_endpoints = [
-            ('orchestrator', '/api/chat'),
-            ('orchestrator', '/api/analysis'),
-            ('br_kg', '/api/protected'),
-            ('agent', '/api/agent/query'),
-            ('gateway', '/api/admin')
+            ("orchestrator", "/api/chat"),
+            ("orchestrator", "/api/analysis"),
+            ("br_kg", "/api/protected"),
+            ("agent", "/api/agent/query"),
+            ("gateway", "/api/admin"),
         ]
 
         for service, endpoint in protected_endpoints:
@@ -60,15 +57,14 @@ class TestAuthentication:
             response = requests.get(url)
 
             # Should return 401 Unauthorized or 403 Forbidden
-            assert response.status_code in [401, 403],\
-                f"Endpoint {url} should require authentication but returned {response.status_code}"
+            assert response.status_code in [
+                401,
+                403,
+            ], f"Endpoint {url} should require authentication but returned {response.status_code}"
 
     def test_invalid_credentials_rejected(self):
         """Test that invalid credentials are properly rejected."""
-        login_endpoints = [
-            ('orchestrator', '/auth/login'),
-            ('gateway', '/auth/login')
-        ]
+        login_endpoints = [("orchestrator", "/auth/login"), ("gateway", "/auth/login")]
 
         for service, endpoint in login_endpoints:
             if service not in self.base_urls:
@@ -77,21 +73,21 @@ class TestAuthentication:
             url = f"{self.base_urls[service]}{endpoint}"
 
             # Test with invalid credentials
-            response = requests.post(url, json=self.test_credentials['invalid_user'])
+            response = requests.post(url, json=self.test_credentials["invalid_user"])
 
-            assert response.status_code in [401, 403],\
-                f"Invalid credentials should be rejected at {url}"
+            assert response.status_code in [
+                401,
+                403,
+            ], f"Invalid credentials should be rejected at {url}"
 
             # Ensure no session/token is returned
-            assert 'token' not in response.json().get('data', {}),\
-                "No authentication token should be returned for invalid credentials"
+            assert "token" not in response.json().get(
+                "data", {}
+            ), "No authentication token should be returned for invalid credentials"
 
     def test_valid_credentials_accepted(self):
         """Test that valid credentials are properly accepted."""
-        login_endpoints = [
-            ('orchestrator', '/auth/login'),
-            ('gateway', '/auth/login')
-        ]
+        login_endpoints = [("orchestrator", "/auth/login"), ("gateway", "/auth/login")]
 
         for service, endpoint in login_endpoints:
             if service not in self.base_urls:
@@ -100,19 +96,22 @@ class TestAuthentication:
             url = f"{self.base_urls[service]}{endpoint}"
 
             try:
-                response = requests.post(url, json=self.test_credentials['valid_user'])
+                response = requests.post(url, json=self.test_credentials["valid_user"])
 
                 if response.status_code == 404:
                     # Endpoint doesn't exist yet, skip
                     continue
 
-                assert response.status_code == 200,\
-                    f"Valid credentials should be accepted at {url}"
+                assert (
+                    response.status_code == 200
+                ), f"Valid credentials should be accepted at {url}"
 
                 # Should return some form of authentication token/session
                 response_data = response.json()
-                assert any(key in response_data for key in ['token', 'session_id', 'access_token']),\
-                    "Authentication response should include token or session identifier"
+                assert any(
+                    key in response_data
+                    for key in ["token", "session_id", "access_token"]
+                ), "Authentication response should include token or session identifier"
 
             except requests.exceptions.ConnectionError:
                 # Service not running, skip test
@@ -120,10 +119,7 @@ class TestAuthentication:
 
     def test_brute_force_protection(self):
         """Test protection against brute force attacks."""
-        login_endpoints = [
-            ('orchestrator', '/auth/login'),
-            ('gateway', '/auth/login')
-        ]
+        login_endpoints = [("orchestrator", "/auth/login"), ("gateway", "/auth/login")]
 
         for service, endpoint in login_endpoints:
             if service not in self.base_urls:
@@ -133,9 +129,11 @@ class TestAuthentication:
 
             # Attempt multiple failed logins
             failed_attempts = 0
-            for attempt in range(10):  # Try 10 failed logins
+            for _attempt in range(10):  # Try 10 failed logins
                 try:
-                    response = requests.post(url, json=self.test_credentials['invalid_user'])
+                    response = requests.post(
+                        url, json=self.test_credentials["invalid_user"]
+                    )
 
                     if response.status_code == 404:
                         # Endpoint doesn't exist, skip
@@ -162,10 +160,7 @@ class TestAuthentication:
         # This test checks if long-lived sessions are properly invalidated
         # Implementation depends on session management approach
 
-        login_endpoints = [
-            ('orchestrator', '/auth/login'),
-            ('gateway', '/auth/login')
-        ]
+        login_endpoints = [("orchestrator", "/auth/login"), ("gateway", "/auth/login")]
 
         for service, endpoint in login_endpoints:
             if service not in self.base_urls:
@@ -175,7 +170,9 @@ class TestAuthentication:
 
             try:
                 # Attempt to login
-                response = requests.post(login_url, json=self.test_credentials['valid_user'])
+                response = requests.post(
+                    login_url, json=self.test_credentials["valid_user"]
+                )
 
                 if response.status_code == 404:
                     continue
@@ -185,14 +182,13 @@ class TestAuthentication:
 
                 # Extract token/session
                 response_data = response.json()
-                token = response_data.get('token') or response_data.get('access_token')
+                token = response_data.get("token") or response_data.get("access_token")
 
                 if not token:
                     continue
 
                 # Test immediate access (should work)
-                headers = {'Authorization': f'Bearer {token}'}
-                test_url = f"{self.base_urls[service]}/api/test"
+                f"{self.base_urls[service]}/api/test"
 
                 # Note: This is a basic structure - full implementation would
                 # require actual protected endpoints and proper session management
@@ -203,18 +199,18 @@ class TestAuthentication:
     def test_password_complexity_requirements(self):
         """Test that password complexity requirements are enforced."""
         weak_passwords = [
-            'password',      # Common password
-            '123456',        # Numeric sequence
-            'abc123',        # Simple pattern
-            'password123',   # Dictionary + numbers
-            'qwerty',        # Keyboard pattern
-            'admin',         # Common admin password
-            'test'           # Too short
+            "password",  # Common password
+            "123456",  # Numeric sequence
+            "abc123",  # Simple pattern
+            "password123",  # Dictionary + numbers
+            "qwerty",  # Keyboard pattern
+            "admin",  # Common admin password
+            "test",  # Too short
         ]
 
         registration_endpoints = [
-            ('orchestrator', '/auth/register'),
-            ('gateway', '/auth/register')
+            ("orchestrator", "/auth/register"),
+            ("gateway", "/auth/register"),
         ]
 
         for service, endpoint in registration_endpoints:
@@ -225,9 +221,9 @@ class TestAuthentication:
 
             for weak_password in weak_passwords:
                 test_user = {
-                    'username': f'testuser_{weak_password}',
-                    'password': weak_password,
-                    'email': f'test_{weak_password}@example.com'
+                    "username": f"testuser_{weak_password}",
+                    "password": weak_password,
+                    "email": f"test_{weak_password}@example.com",
                 }
 
                 try:
@@ -238,18 +234,16 @@ class TestAuthentication:
                         break
 
                     # Should reject weak passwords
-                    assert response.status_code != 200 or 'error' in response.json(),\
-                        f"Weak password '{weak_password}' should be rejected"
+                    assert (
+                        response.status_code != 200 or "error" in response.json()
+                    ), f"Weak password '{weak_password}' should be rejected"
 
                 except requests.exceptions.ConnectionError:
                     break
 
     def test_account_lockout_after_failures(self):
         """Test that accounts are locked after repeated failed attempts."""
-        login_endpoints = [
-            ('orchestrator', '/auth/login'),
-            ('gateway', '/auth/login')
-        ]
+        login_endpoints = [("orchestrator", "/auth/login"), ("gateway", "/auth/login")]
 
         for service, endpoint in login_endpoints:
             if service not in self.base_urls:
@@ -259,13 +253,13 @@ class TestAuthentication:
 
             # Use a specific username for lockout testing
             lockout_test_user = {
-                'username': 'lockout_test_user',
-                'password': 'wrong_password'
+                "username": "lockout_test_user",
+                "password": "wrong_password",
             }
 
             try:
                 # Attempt multiple failed logins for same user
-                for attempt in range(5):
+                for _attempt in range(5):
                     response = requests.post(url, json=lockout_test_user)
 
                     if response.status_code == 404:
@@ -276,8 +270,8 @@ class TestAuthentication:
                 # After multiple failures, account should be locked
                 # Even with correct password, should be locked
                 correct_attempt = {
-                    'username': 'lockout_test_user',
-                    'password': 'correct_password'  # Assuming this would be correct
+                    "username": "lockout_test_user",
+                    "password": "correct_password",  # Assuming this would be correct
                 }
                 response = requests.post(url, json=correct_attempt)
 
@@ -291,7 +285,7 @@ class TestAuthentication:
         """Test that logout properly invalidates sessions/tokens."""
         # Test logout functionality across services
 
-        for service in ['orchestrator', 'gateway']:
+        for service in ["orchestrator", "gateway"]:
             if service not in self.base_urls:
                 continue
 
@@ -300,7 +294,9 @@ class TestAuthentication:
 
             try:
                 # Login first
-                response = requests.post(login_url, json=self.test_credentials['valid_user'])
+                response = requests.post(
+                    login_url, json=self.test_credentials["valid_user"]
+                )
 
                 if response.status_code not in [200, 404]:
                     continue
@@ -309,20 +305,22 @@ class TestAuthentication:
                     continue
 
                 # Extract session token
-                token = response.json().get('token')
+                token = response.json().get("token")
                 if not token:
                     continue
 
                 # Logout
-                headers = {'Authorization': f'Bearer {token}'}
-                logout_response = requests.post(logout_url, headers=headers)
+                headers = {"Authorization": f"Bearer {token}"}
+                requests.post(logout_url, headers=headers)
 
                 # After logout, token should be invalid
                 protected_url = f"{self.base_urls[service]}/api/protected"
                 protected_response = requests.get(protected_url, headers=headers)
 
-                assert protected_response.status_code in [401, 403],\
-                    "Token should be invalid after logout"
+                assert protected_response.status_code in [
+                    401,
+                    403,
+                ], "Token should be invalid after logout"
 
             except requests.exceptions.ConnectionError:
                 continue
@@ -334,16 +332,24 @@ class TestAuthorizationControls:
     def setup_method(self):
         """Set up authorization test fixtures."""
         self.base_urls = {
-            'orchestrator': 'http://localhost:3001',
-            'br_kg': 'http://localhost:5000',
-            'agent': 'http://localhost:8000',
-            'gateway': 'http://localhost:8080'
+            "orchestrator": "http://localhost:3001",
+            "br_kg": "http://localhost:5000",
+            "agent": "http://localhost:8000",
+            "gateway": "http://localhost:8080",
         }
 
         self.user_roles = {
-            'admin': {'username': 'admin', 'password': 'admin_pass', 'role': 'admin'},
-            'researcher': {'username': 'researcher', 'password': 'research_pass', 'role': 'researcher'},
-            'viewer': {'username': 'viewer', 'password': 'viewer_pass', 'role': 'viewer'}
+            "admin": {"username": "admin", "password": "admin_pass", "role": "admin"},
+            "researcher": {
+                "username": "researcher",
+                "password": "research_pass",
+                "role": "researcher",
+            },
+            "viewer": {
+                "username": "viewer",
+                "password": "viewer_pass",
+                "role": "viewer",
+            },
         }
 
     def test_role_based_access_control(self):
@@ -351,25 +357,15 @@ class TestAuthorizationControls:
 
         # Admin-only endpoints
         admin_endpoints = [
-            ('orchestrator', '/api/admin/users'),
-            ('orchestrator', '/api/admin/settings'),
-            ('br_kg', '/api/admin/database'),
-            ('gateway', '/api/admin/services')
+            ("orchestrator", "/api/admin/users"),
+            ("orchestrator", "/api/admin/settings"),
+            ("br_kg", "/api/admin/database"),
+            ("gateway", "/api/admin/services"),
         ]
 
         # Researcher endpoints
-        researcher_endpoints = [
-            ('orchestrator', '/api/analysis'),
-            ('br_kg', '/api/query'),
-            ('agent', '/api/agent/analyze')
-        ]
 
         # Public/viewer endpoints
-        public_endpoints = [
-            ('orchestrator', '/api/public/datasets'),
-            ('br_kg', '/api/public/browse'),
-            ('orchestrator', '/health')
-        ]
 
         # Test admin access
         for service, endpoint in admin_endpoints:
@@ -379,13 +375,16 @@ class TestAuthorizationControls:
             url = f"{self.base_urls[service]}{endpoint}"
 
             # Non-admin users should be denied access
-            for role in ['researcher', 'viewer']:
+            for _role in ["researcher", "viewer"]:
                 # This would require implementing proper authentication first
                 # For now, just check that endpoints exist and require auth
                 try:
                     response = requests.get(url)
-                    assert response.status_code in [401, 403, 404],\
-                        f"Admin endpoint {url} should require authentication"
+                    assert response.status_code in [
+                        401,
+                        403,
+                        404,
+                    ], f"Admin endpoint {url} should require authentication"
                 except requests.exceptions.ConnectionError:
                     continue
 
@@ -394,8 +393,8 @@ class TestAuthorizationControls:
 
         # Test participant data access controls
         participant_endpoints = [
-            ('br_kg', '/api/participants/12345'),
-            ('orchestrator', '/api/data/participant/12345'),
+            ("br_kg", "/api/participants/12345"),
+            ("orchestrator", "/api/data/participant/12345"),
         ]
 
         for service, endpoint in participant_endpoints:
@@ -407,8 +406,11 @@ class TestAuthorizationControls:
             try:
                 # Without authentication, should be denied
                 response = requests.get(url)
-                assert response.status_code in [401, 403, 404],\
-                    f"Participant data endpoint {url} should require authorization"
+                assert response.status_code in [
+                    401,
+                    403,
+                    404,
+                ], f"Participant data endpoint {url} should require authorization"
 
             except requests.exceptions.ConnectionError:
                 continue
@@ -418,9 +420,9 @@ class TestAuthorizationControls:
 
         # Test rate limiting on various endpoints
         test_endpoints = [
-            ('orchestrator', '/api/query'),
-            ('br_kg', '/api/search'),
-            ('agent', '/api/agent/query')
+            ("orchestrator", "/api/query"),
+            ("br_kg", "/api/search"),
+            ("agent", "/api/agent/query"),
         ]
 
         for service, endpoint in test_endpoints:
@@ -433,7 +435,7 @@ class TestAuthorizationControls:
             rate_limit_triggered = False
 
             try:
-                for i in range(50):  # Make many requests quickly
+                for _i in range(50):  # Make many requests quickly
                     response = requests.get(url)
 
                     if response.status_code == 429:  # Too Many Requests
@@ -459,17 +461,17 @@ class TestSecurityHeaders:
         """Test that all services return proper security headers."""
 
         required_headers = {
-            'X-Content-Type-Options': 'nosniff',
-            'X-Frame-Options': ['DENY', 'SAMEORIGIN'],
-            'X-XSS-Protection': '1; mode=block',
-            'Strict-Transport-Security': 'max-age=',  # Should contain max-age
-            'Content-Security-Policy': 'default-src'  # Should have CSP
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": ["DENY", "SAMEORIGIN"],
+            "X-XSS-Protection": "1; mode=block",
+            "Strict-Transport-Security": "max-age=",  # Should contain max-age
+            "Content-Security-Policy": "default-src",  # Should have CSP
         }
 
         services = {
-            'orchestrator': 'http://localhost:3001',
-            'br_kg': 'http://localhost:5000',
-            'gateway': 'http://localhost:8080'
+            "orchestrator": "http://localhost:3001",
+            "br_kg": "http://localhost:5000",
+            "gateway": "http://localhost:8080",
         }
 
         for service_name, base_url in services.items():
@@ -489,8 +491,10 @@ class TestSecurityHeaders:
                         ), f"{service_name} missing security header: {header_name}"
                     else:
                         # Single expected pattern
-                        assert header_name in headers and expected_value in headers[header_name],\
-                            f"{service_name} missing or incorrect security header: {header_name}"
+                        assert (
+                            header_name in headers
+                            and expected_value in headers[header_name]
+                        ), f"{service_name} missing or incorrect security header: {header_name}"
 
             except requests.exceptions.ConnectionError:
                 # Service not running, skip

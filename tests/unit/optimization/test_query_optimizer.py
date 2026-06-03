@@ -1,16 +1,14 @@
 """Unit tests for query optimization engine."""
 
 import pytest
-import re
-from datetime import datetime
-from unittest.mock import Mock, MagicMock
+
 from brain_researcher.services.br_kg.optimization.query_optimizer import (
-    QueryType,
     OptimizationStrategy,
+    QueryCache,
+    QueryOptimizer,
     QueryPlan,
     QueryStatistics,
-    QueryCache,
-    QueryOptimizer
+    QueryType,
 )
 
 
@@ -32,16 +30,16 @@ class TestQueryCache:
 
     def test_cache_put_get(self, cache):
         """Test putting and getting from cache."""
-        cache.put('key1', 'value1')
+        cache.put("key1", "value1")
 
-        result = cache.get('key1')
-        assert result == 'value1'
+        result = cache.get("key1")
+        assert result == "value1"
         assert cache.hit_count == 1
         assert cache.miss_count == 0
 
     def test_cache_miss(self, cache):
         """Test cache miss."""
-        result = cache.get('nonexistent')
+        result = cache.get("nonexistent")
         assert result is None
         assert cache.miss_count == 1
 
@@ -49,26 +47,26 @@ class TestQueryCache:
         """Test LRU eviction."""
         # Fill cache to capacity
         for i in range(10):
-            cache.put(f'key{i}', f'value{i}')
+            cache.put(f"key{i}", f"value{i}")
 
         assert len(cache.cache) == 10
 
         # Add one more, should evict oldest
-        cache.put('key10', 'value10')
+        cache.put("key10", "value10")
         assert len(cache.cache) == 10
-        assert cache.get('key0') is None  # Evicted
-        assert cache.get('key10') == 'value10'  # Present
+        assert cache.get("key0") is None  # Evicted
+        assert cache.get("key10") == "value10"  # Present
 
     def test_cache_hit_rate(self, cache):
         """Test hit rate calculation."""
-        cache.put('key1', 'value1')
+        cache.put("key1", "value1")
 
         # 3 hits, 2 misses
-        cache.get('key1')  # Hit
-        cache.get('key1')  # Hit
-        cache.get('key1')  # Hit
-        cache.get('key2')  # Miss
-        cache.get('key3')  # Miss
+        cache.get("key1")  # Hit
+        cache.get("key1")  # Hit
+        cache.get("key1")  # Hit
+        cache.get("key2")  # Miss
+        cache.get("key3")  # Miss
 
         hit_rate = cache.get_hit_rate()
         assert hit_rate == 0.6  # 3/5
@@ -81,9 +79,7 @@ class TestQueryOptimizer:
     def optimizer(self):
         """Create optimizer instance."""
         return QueryOptimizer(
-            enable_cache=True,
-            cache_size=100,
-            collect_statistics=True
+            enable_cache=True, cache_size=100, collect_statistics=True
         )
 
     def test_optimizer_creation(self, optimizer):
@@ -135,16 +131,16 @@ class TestQueryOptimizer:
         query = "MATCH (t:Task {name: 'test'}) RETURN t"
         result = optimizer._optimize_index_lookup(query)
 
-        assert OptimizationStrategy.INDEX_SCAN in result['strategies']
-        assert len(result['hints']) > 0
-        assert 'USING INDEX' in result['hints'][0]
+        assert OptimizationStrategy.INDEX_SCAN in result["strategies"]
+        assert len(result["hints"]) > 0
+        assert "USING INDEX" in result["hints"][0]
 
     def test_optimize_filter_pushdown(self, optimizer):
         """Test filter pushdown optimization."""
         query = "MATCH (n:Task) WHERE n.name = 'test' RETURN n"
         result = optimizer._optimize_filter_pushdown(query)
 
-        assert OptimizationStrategy.FILTER_PUSH_DOWN in result['strategies']
+        assert OptimizationStrategy.FILTER_PUSH_DOWN in result["strategies"]
 
     def test_optimize_path_query(self, optimizer):
         """Test path query optimization."""
@@ -152,16 +148,16 @@ class TestQueryOptimizer:
         query = "MATCH (a)-[*..]->(b) RETURN b"
         result = optimizer._optimize_path_query(query)
 
-        assert OptimizationStrategy.EXPAND in result['strategies']
-        assert '*1..5' in result['query']  # Should add upper bound
+        assert OptimizationStrategy.EXPAND in result["strategies"]
+        assert "*1..5" in result["query"]  # Should add upper bound
 
     def test_optimize_aggregation(self, optimizer):
         """Test aggregation optimization."""
         query = "WITH n, collect(m) AS items RETURN n, items"
         result = optimizer._optimize_aggregation(query)
 
-        assert OptimizationStrategy.HASH_JOIN in result['strategies']
-        assert 'DISTINCT' in result['query']
+        assert OptimizationStrategy.HASH_JOIN in result["strategies"]
+        assert "DISTINCT" in result["query"]
 
     def test_optimize_query(self, optimizer):
         """Test full query optimization."""
@@ -192,11 +188,10 @@ class TestQueryOptimizer:
 
         # Mock executor
         def mock_executor(optimized_query, params):
-            return [{'n.name': 'Region1'}, {'n.name': 'Region2'}]
+            return [{"n.name": "Region1"}, {"n.name": "Region2"}]
 
         results, plan = optimizer.execute_with_optimization(
-            query,
-            executor=mock_executor
+            query, executor=mock_executor
         )
 
         assert len(results) == 2
@@ -233,12 +228,12 @@ class TestQueryOptimizer:
 
         report = optimizer.get_statistics_report()
 
-        assert 'cache_hit_rate' in report
-        assert 'total_queries' in report
-        assert report['total_queries'] == 5
-        assert 'top_queries' in report
-        assert 'slowest_queries' in report
-        assert len(report['slowest_queries']) > 0
+        assert "cache_hit_rate" in report
+        assert "total_queries" in report
+        assert report["total_queries"] == 5
+        assert "top_queries" in report
+        assert "slowest_queries" in report
+        assert len(report["slowest_queries"]) > 0
 
     def test_complex_query_optimization(self, optimizer):
         """Test optimization of complex query."""
@@ -255,11 +250,14 @@ class TestQueryOptimizer:
         assert plan is not None
         assert len(plan.strategies) > 0
         # Should have multiple optimizations applied
-        assert any(s in plan.strategies for s in [
-            OptimizationStrategy.INDEX_SCAN,
-            OptimizationStrategy.FILTER_PUSH_DOWN,
-            OptimizationStrategy.HASH_JOIN
-        ])
+        assert any(
+            s in plan.strategies
+            for s in [
+                OptimizationStrategy.INDEX_SCAN,
+                OptimizationStrategy.FILTER_PUSH_DOWN,
+                OptimizationStrategy.HASH_JOIN,
+            ]
+        )
 
 
 class TestQueryPlan:
@@ -273,7 +271,7 @@ class TestQueryPlan:
             optimized_query="MATCH (n) USING INDEX n:Node(id) RETURN n",
             estimated_cost=5.0,
             strategies=[OptimizationStrategy.INDEX_SCAN],
-            index_hints=["USING INDEX n:Node(id)"]
+            index_hints=["USING INDEX n:Node(id)"],
         )
 
         assert plan.query_id == "q123"
@@ -287,13 +285,11 @@ class TestQueryStatistics:
 
     def test_statistics_creation(self):
         """Test creating query statistics."""
-        stats = QueryStatistics(
-            query_pattern="MATCH (n) RETURN n"
-        )
+        stats = QueryStatistics(query_pattern="MATCH (n) RETURN n")
 
         assert stats.query_pattern == "MATCH (n) RETURN n"
         assert stats.execution_count == 0
         assert stats.total_time == 0.0
         assert stats.avg_time == 0.0
-        assert stats.min_time == float('inf')
+        assert stats.min_time == float("inf")
         assert stats.max_time == 0.0

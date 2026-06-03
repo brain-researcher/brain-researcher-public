@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -18,7 +17,7 @@ class SMRIReconArgs(BaseModel):
     use_fastsurfer: bool = Field(
         default=False, description="Use FastSurfer implementation instead of recon-all"
     )
-    output_dir: Optional[str] = Field(
+    output_dir: str | None = Field(
         default=None, description="Directory to store reconstruction outputs"
     )
 
@@ -30,16 +29,16 @@ class SMRIReconTool(NeuroToolWrapper):
         return "smri_recon"
 
     def get_tool_description(self) -> str:
-        return (
-            "Run FreeSurfer/FastSurfer-style reconstruction to produce surfaces and segmentations."
-        )
+        return "Run FreeSurfer/FastSurfer-style reconstruction to produce surfaces and segmentations."
 
     def get_args_schema(self):
         return SMRIReconArgs
 
     def _run(self, **kwargs) -> ToolResult:
         args = SMRIReconArgs(**kwargs)
-        output_root = Path(args.output_dir or Path.cwd() / "smri_recon" / args.subject_id)
+        output_root = Path(
+            args.output_dir or Path.cwd() / "smri_recon" / args.subject_id
+        )
         surf_dir = output_root / "surf"
         mri_dir = output_root / "mri"
         surf_dir.mkdir(parents=True, exist_ok=True)
@@ -57,7 +56,9 @@ class SMRIReconTool(NeuroToolWrapper):
             "input_t1w": args.t1w_image,
         }
 
-        return ToolResult(status="success", data={"outputs": outputs, "summary": summary})
+        return ToolResult(
+            status="success", data={"outputs": outputs, "summary": summary}
+        )
 
 
 class SMRIReconTools:

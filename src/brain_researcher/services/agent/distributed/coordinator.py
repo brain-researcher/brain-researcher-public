@@ -7,15 +7,12 @@ for the distributed brain researcher agent system.
 import asyncio
 import json
 import logging
-import time
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set, Any
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+from datetime import datetime
 from enum import Enum
+from typing import Any
 
 import redis.asyncio as redis
-from pydantic import BaseModel
-
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +27,7 @@ class NodeStatus(str, Enum):
 @dataclass
 class ResourceCapacity:
     """Resource capacity information for a node"""
+
     cpu_cores: int
     memory_gb: float
     gpu_count: int = 0
@@ -46,36 +44,37 @@ class ResourceCapacity:
 @dataclass
 class NodeInfo:
     """Information about a cluster node"""
+
     node_id: str
     hostname: str
     capacity: ResourceCapacity
     status: NodeStatus = NodeStatus.JOINING
     leader: bool = False
-    last_heartbeat: Optional[datetime] = None
-    joined_at: Optional[datetime] = None
+    last_heartbeat: datetime | None = None
+    joined_at: datetime | None = None
     tasks_running: int = 0
     load_average: float = 0.0
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary for serialization"""
         data = asdict(self)
         if self.last_heartbeat:
-            data['last_heartbeat'] = self.last_heartbeat.isoformat()
+            data["last_heartbeat"] = self.last_heartbeat.isoformat()
         if self.joined_at:
-            data['joined_at'] = self.joined_at.isoformat()
+            data["joined_at"] = self.joined_at.isoformat()
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict) -> 'NodeInfo':
+    def from_dict(cls, data: dict) -> "NodeInfo":
         """Create from dictionary"""
-        if 'last_heartbeat' in data and data['last_heartbeat']:
-            data['last_heartbeat'] = datetime.fromisoformat(data['last_heartbeat'])
-        if 'joined_at' in data and data['joined_at']:
-            data['joined_at'] = datetime.fromisoformat(data['joined_at'])
+        if "last_heartbeat" in data and data["last_heartbeat"]:
+            data["last_heartbeat"] = datetime.fromisoformat(data["last_heartbeat"])
+        if "joined_at" in data and data["joined_at"]:
+            data["joined_at"] = datetime.fromisoformat(data["joined_at"])
 
         # Convert capacity dict to ResourceCapacity
-        if isinstance(data.get('capacity'), dict):
-            data['capacity'] = ResourceCapacity(**data['capacity'])
+        if isinstance(data.get("capacity"), dict):
+            data["capacity"] = ResourceCapacity(**data["capacity"])
 
         return cls(**data)
 
@@ -88,7 +87,7 @@ class HeartbeatManager:
         self.heartbeat_interval = heartbeat_interval
         self.heartbeat_timeout = heartbeat_interval * 3
         self._running = False
-        self._heartbeat_task: Optional[asyncio.Task] = None
+        self._heartbeat_task: asyncio.Task | None = None
 
     async def start_heartbeat(self, node_id: str):
         """Start sending heartbeats for this node"""
@@ -122,15 +121,13 @@ class HeartbeatManager:
     async def _send_heartbeat(self, node_id: str):
         """Send a heartbeat for this node"""
         heartbeat_data = {
-            'node_id': node_id,
-            'timestamp': datetime.utcnow().isoformat(),
-            'status': 'alive'
+            "node_id": node_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "status": "alive",
         }
         # Store as a single JSON blob with TTL to mirror legacy aioredis usage
         await self.redis.setex(
-            f"heartbeat:{node_id}",
-            self.heartbeat_timeout,
-            json.dumps(heartbeat_data)
+            f"heartbeat:{node_id}", self.heartbeat_timeout, json.dumps(heartbeat_data)
         )
 
     async def is_node_alive(self, node_id: str) -> bool:
@@ -141,7 +138,9 @@ class HeartbeatManager:
         try:
             data = json.loads(heartbeat_raw)
             timestamp = datetime.fromisoformat(data.get("timestamp"))
-            return (datetime.utcnow() - timestamp).total_seconds() < self.heartbeat_timeout
+            return (
+                datetime.utcnow() - timestamp
+            ).total_seconds() < self.heartbeat_timeout
         except Exception:
             return False
 
@@ -157,8 +156,8 @@ class RaftConsensus:
         self.redis = redis_client
         self.node_id = node_id
         self.current_term = 0
-        self.voted_for: Optional[str] = None
-        self.leader_id: Optional[str] = None
+        self.voted_for: str | None = None
+        self.leader_id: str | None = None
         self.election_timeout = 5.0  # seconds
         self.heartbeat_interval = 1.0  # seconds
 
@@ -186,7 +185,7 @@ class RaftConsensus:
         try:
             results = await asyncio.wait_for(
                 asyncio.gather(*vote_tasks, return_exceptions=True),
-                timeout=self.election_timeout
+                timeout=self.election_timeout,
             )
 
             for result in results:
@@ -234,24 +233,26 @@ class RaftConsensus:
         await self.redis.setex(
             "cluster:leader",
             30,  # Leader lease duration
-            json.dumps({
-                'node_id': self.node_id,
-                'term': self.current_term,
-                'elected_at': datetime.utcnow().isoformat()
-            })
+            json.dumps(
+                {
+                    "node_id": self.node_id,
+                    "term": self.current_term,
+                    "elected_at": datetime.utcnow().isoformat(),
+                }
+            ),
         )
 
         logger.info(f"Became leader for term {self.current_term}")
 
-    async def _get_active_nodes(self) -> List[str]:
+    async def _get_active_nodes(self) -> list[str]:
         """Get list of active nodes in cluster"""
         nodes = []
         node_pattern = "node:*"
 
         async for key in self.redis.scan_iter(match=node_pattern):
             node_data = await self.redis.hgetall(key)
-            if node_data and node_data.get(b'status') == b'active':
-                nodes.append(node_data[b'node_id'].decode())
+            if node_data and node_data.get(b"status") == b"active":
+                nodes.append(node_data[b"node_id"].decode())
 
         return nodes
 
@@ -259,19 +260,18 @@ class RaftConsensus:
 class DistributedCoordinator:
     """Main coordinator for distributed agent cluster"""
 
-    def __init__(self,
-                 node_id: str,
-                 redis_client: redis.Redis,
-                 heartbeat_interval: int = 30):
+    def __init__(
+        self, node_id: str, redis_client: redis.Redis, heartbeat_interval: int = 30
+    ):
         self.node_id = node_id
         self.cluster_id = "brain_researcher_cluster"
         self.redis = redis_client
-        self.nodes: Dict[str, NodeInfo] = {}
-        self.leader_node: Optional[str] = None
-        self.leader_id: Optional[str] = None
+        self.nodes: dict[str, NodeInfo] = {}
+        self.leader_node: str | None = None
+        self.leader_id: str | None = None
         self._is_leader = False
         self.is_running: bool = False
-        self._heartbeat_task: Optional[asyncio.Task] = None
+        self._heartbeat_task: asyncio.Task | None = None
 
         # Components
         self.heartbeat_manager = HeartbeatManager(redis_client, heartbeat_interval)
@@ -279,7 +279,7 @@ class DistributedCoordinator:
 
         # State
         self._running = False
-        self._coordination_task: Optional[asyncio.Task] = None
+        self._coordination_task: asyncio.Task | None = None
 
         logger.info(f"Initialized coordinator for node {node_id}")
 
@@ -335,8 +335,10 @@ class DistributedCoordinator:
             # Store in Redis
             await self.redis.hset(
                 f"node:{node_info.node_id}",
-                mapping={k: json.dumps(v) if isinstance(v, (dict, list)) else str(v)
-                        for k, v in node_info.to_dict().items()}
+                mapping={
+                    k: json.dumps(v) if isinstance(v, dict | list) else str(v)
+                    for k, v in node_info.to_dict().items()
+                },
             )
 
             # Update local cache
@@ -357,9 +359,18 @@ class DistributedCoordinator:
         """Deregister a node from the cluster"""
         try:
             # Remove from Redis (keep hdel for legacy expectations)
-            await self.redis.hdel(f"node:{node_id}", "node_id", "hostname", "capacity",
-                                  "status", "leader", "last_heartbeat", "joined_at",
-                                  "tasks_running", "load_average")
+            await self.redis.hdel(
+                f"node:{node_id}",
+                "node_id",
+                "hostname",
+                "capacity",
+                "status",
+                "leader",
+                "last_heartbeat",
+                "joined_at",
+                "tasks_running",
+                "load_average",
+            )
             await self.redis.delete(f"node:{node_id}")
             await self.redis.delete(f"heartbeat:{node_id}")
 
@@ -380,7 +391,7 @@ class DistributedCoordinator:
             logger.error(f"Failed to deregister node {node_id}: {e}")
             return False
 
-    async def elect_leader(self) -> Optional[str]:
+    async def elect_leader(self) -> str | None:
         """Elect a new cluster leader"""
         try:
             leader_key = "cluster:leader"
@@ -390,10 +401,12 @@ class DistributedCoordinator:
                 await self.redis.setex(
                     leader_key,
                     30,
-                    json.dumps({
-                        "node_id": self.node_id,
-                        "elected_at": datetime.utcnow().isoformat()
-                    })
+                    json.dumps(
+                        {
+                            "node_id": self.node_id,
+                            "elected_at": datetime.utcnow().isoformat(),
+                        }
+                    ),
                 )
                 self.leader_node = self.node_id
                 self.leader_id = self.node_id
@@ -407,10 +420,14 @@ class DistributedCoordinator:
                     leader_info = json.loads(leader_data)
                     leader_id = leader_info.get("node_id") or leader_data
                 except Exception:
-                    leader_id = leader_data.decode() if isinstance(leader_data, (bytes, bytearray)) else leader_data
+                    leader_id = (
+                        leader_data.decode()
+                        if isinstance(leader_data, bytes | bytearray)
+                        else leader_data
+                    )
                 self.leader_node = leader_id
                 self.leader_id = leader_id
-                self._is_leader = (leader_id == self.node_id)
+                self._is_leader = leader_id == self.node_id
                 return leader_id
             return None
 
@@ -418,7 +435,7 @@ class DistributedCoordinator:
             logger.error(f"Leader election failed: {e}")
             return None
 
-    async def get_cluster_status(self) -> Dict:
+    async def get_cluster_status(self) -> dict:
         """Get current cluster status"""
         # Update node information
         await self._update_node_cache()
@@ -440,16 +457,16 @@ class DistributedCoordinator:
                 failed_nodes += 1
 
         return {
-            'nodes': [node.to_dict() for node in self.nodes.values()],
-            'leader_id': self.leader_node,
-            'partition_detected': False,  # TODO: Implement partition detection
-            'total_capacity': asdict(total_capacity),
-            'active_tasks': total_tasks,
-            'cluster_health': {
-                'active_nodes': active_nodes,
-                'failed_nodes': failed_nodes,
-                'total_nodes': len(self.nodes)
-            }
+            "nodes": [node.to_dict() for node in self.nodes.values()],
+            "leader_id": self.leader_node,
+            "partition_detected": False,  # TODO: Implement partition detection
+            "total_capacity": asdict(total_capacity),
+            "active_tasks": total_tasks,
+            "cluster_health": {
+                "active_nodes": active_nodes,
+                "failed_nodes": failed_nodes,
+                "total_nodes": len(self.nodes),
+            },
         }
 
     async def handle_split_brain(self) -> bool:
@@ -467,16 +484,16 @@ class DistributedCoordinator:
                 logger.warning("Split-brain detected - multiple leaders")
 
                 # Choose leader with highest term
-                chosen_leader = max(leaders, key=lambda x: x.get('term', 0))
+                chosen_leader = max(leaders, key=lambda x: x.get("term", 0))
 
                 # Remove other leader entries
                 for leader in leaders:
-                    if leader['node_id'] != chosen_leader['node_id']:
+                    if leader["node_id"] != chosen_leader["node_id"]:
                         await self.redis.delete(f"leader:{leader['node_id']}")
 
                 # Update our state
-                self.leader_node = chosen_leader['node_id']
-                self.is_leader = (chosen_leader['node_id'] == self.node_id)
+                self.leader_node = chosen_leader["node_id"]
+                self.is_leader = chosen_leader["node_id"] == self.node_id
 
                 logger.info(f"Resolved split-brain, leader: {self.leader_node}")
                 return True
@@ -521,8 +538,10 @@ class DistributedCoordinator:
         node_info = NodeInfo(
             node_id=self.node_id,
             hostname="localhost",  # TODO: Get actual hostname
-            capacity=ResourceCapacity(cpu_cores=4, memory_gb=8.0),  # TODO: Get actual capacity
-            status=NodeStatus.ACTIVE
+            capacity=ResourceCapacity(
+                cpu_cores=4, memory_gb=8.0
+            ),  # TODO: Get actual capacity
+            status=NodeStatus.ACTIVE,
         )
 
         await self.register_node(node_info)
@@ -569,9 +588,7 @@ class DistributedCoordinator:
 
                 # Update in Redis
                 await self.redis.hset(
-                    f"node:{node_id}",
-                    "status",
-                    NodeStatus.FAILED.value
+                    f"node:{node_id}", "status", NodeStatus.FAILED.value
                 )
 
     async def _leader_duties(self):
@@ -581,11 +598,13 @@ class DistributedCoordinator:
             await self.redis.setex(
                 "cluster:leader",
                 30,
-                json.dumps({
-                    'node_id': self.node_id,
-                    'term': self.consensus.current_term,
-                    'elected_at': datetime.utcnow().isoformat()
-                })
+                json.dumps(
+                    {
+                        "node_id": self.node_id,
+                        "term": self.consensus.current_term,
+                        "elected_at": datetime.utcnow().isoformat(),
+                    }
+                ),
             )
 
             # Other leader duties can be added here
@@ -605,7 +624,9 @@ class DistributedCoordinator:
         total_nodes = max(len(self.nodes), 1)
         return total_nodes // 2 + 1
 
-    async def reach_consensus(self, proposal: Dict[str, Any], timeout: float = 5.0) -> Dict[str, Any]:
+    async def reach_consensus(
+        self, proposal: dict[str, Any], timeout: float = 5.0
+    ) -> dict[str, Any]:
         """
         Simplified consensus: gather yes/no votes from all nodes via Redis keys
         and return majority decision.
@@ -614,13 +635,19 @@ class DistributedCoordinator:
         votes_against = 0
         for node_id in self.nodes.keys():
             try:
-                vote_raw = await self.redis.get(f"vote:{proposal.get('action','proposal')}:{node_id}")
+                vote_raw = await self.redis.get(
+                    f"vote:{proposal.get('action','proposal')}:{node_id}"
+                )
             except Exception:
                 vote_raw = None
             # allow injected side_effects in tests regardless of key
             if vote_raw is None:
                 continue
-            vote_val = vote_raw.decode() if isinstance(vote_raw, (bytes, bytearray)) else vote_raw
+            vote_val = (
+                vote_raw.decode()
+                if isinstance(vote_raw, bytes | bytearray)
+                else vote_raw
+            )
             if str(vote_val).lower() == "yes":
                 votes_for += 1
             else:
@@ -630,7 +657,7 @@ class DistributedCoordinator:
             "consensus_reached": consensus_reached,
             "votes_for": votes_for,
             "votes_against": votes_against,
-            "proposal": proposal
+            "proposal": proposal,
         }
 
     async def detect_partition(self) -> bool:
@@ -640,11 +667,15 @@ class DistributedCoordinator:
                 return True
         return False
 
-    async def get_cluster_health(self) -> Dict[str, Any]:
+    async def get_cluster_health(self) -> dict[str, Any]:
         """Summarize cluster health based on node statuses."""
         total_nodes = len(self.nodes)
-        healthy_nodes = sum(1 for n in self.nodes.values() if n.status == NodeStatus.ACTIVE)
-        failed_nodes = sum(1 for n in self.nodes.values() if n.status == NodeStatus.FAILED)
+        healthy_nodes = sum(
+            1 for n in self.nodes.values() if n.status == NodeStatus.ACTIVE
+        )
+        failed_nodes = sum(
+            1 for n in self.nodes.values() if n.status == NodeStatus.FAILED
+        )
         health_ratio = healthy_nodes / total_nodes if total_nodes else 0
         if health_ratio == 1:
             overall = "healthy"
@@ -657,7 +688,7 @@ class DistributedCoordinator:
             "healthy_nodes": healthy_nodes,
             "failed_nodes": failed_nodes,
             "health_ratio": health_ratio,
-            "overall_health": overall
+            "overall_health": overall,
         }
 
     async def _trigger_rebalance(self):
@@ -666,11 +697,13 @@ class DistributedCoordinator:
             # Publish rebalance event
             await self.redis.publish(
                 "cluster:events",
-                json.dumps({
-                    'type': 'rebalance_requested',
-                    'timestamp': datetime.utcnow().isoformat(),
-                    'leader': self.node_id
-                })
+                json.dumps(
+                    {
+                        "type": "rebalance_requested",
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "leader": self.node_id,
+                    }
+                ),
             )
 
             logger.info("Triggered cluster rebalancing")

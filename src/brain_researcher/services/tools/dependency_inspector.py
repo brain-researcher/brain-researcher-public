@@ -12,9 +12,9 @@ from __future__ import annotations
 import importlib.util
 import os
 import shutil
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
 
 try:
     import yaml
@@ -32,12 +32,12 @@ class DependencySpec:
     name: str
     category: str
     optional: bool
-    summary: Optional[str] = None
-    install_hint: Optional[str] = None
-    module: Optional[str] = None
-    command: Optional[str] = None
-    key: Optional[str] = None
-    used_by: Optional[List[str]] = None
+    summary: str | None = None
+    install_hint: str | None = None
+    module: str | None = None
+    command: str | None = None
+    key: str | None = None
+    used_by: list[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -46,7 +46,7 @@ class DependencyStatus:
 
     spec: DependencySpec
     present: bool
-    detail: Optional[str] = None
+    detail: str | None = None
 
 
 class ManifestLoadError(RuntimeError):
@@ -57,7 +57,7 @@ def _default_manifest_path() -> Path:
     return Path(__file__).with_name("dependencies.yaml")
 
 
-def load_dependency_manifest(path: Path | None = None) -> List[DependencySpec]:
+def load_dependency_manifest(path: Path | None = None) -> list[DependencySpec]:
     """Parse the dependency manifest into :class:`DependencySpec` objects."""
 
     manifest_path = path or _default_manifest_path()
@@ -65,7 +65,9 @@ def load_dependency_manifest(path: Path | None = None) -> List[DependencySpec]:
         raise ManifestLoadError(f"Dependency manifest not found: {manifest_path}")
 
     if yaml is None:
-        raise ManifestLoadError("PyYAML is required to parse the dependency manifest") from _YAML_IMPORT_ERROR
+        raise ManifestLoadError(
+            "PyYAML is required to parse the dependency manifest"
+        ) from _YAML_IMPORT_ERROR
 
     try:
         data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
@@ -73,7 +75,7 @@ def load_dependency_manifest(path: Path | None = None) -> List[DependencySpec]:
         raise ManifestLoadError(f"Failed to parse {manifest_path}: {exc}") from exc
 
     entries = data.get("dependencies", [])
-    specs: List[DependencySpec] = []
+    specs: list[DependencySpec] = []
     for entry in entries:
         specs.append(
             DependencySpec(
@@ -91,23 +93,29 @@ def load_dependency_manifest(path: Path | None = None) -> List[DependencySpec]:
     return specs
 
 
-def _check_python_package(spec: DependencySpec) -> Tuple[bool, Optional[str]]:
+def _check_python_package(spec: DependencySpec) -> tuple[bool, str | None]:
     module_name = spec.module or spec.name
     if not module_name:
         return False, "No module specified for python-package dependency"
     module_spec = importlib.util.find_spec(module_name)
-    return (module_spec is not None, None if module_spec else f"Module '{module_name}' not importable")
+    return (
+        module_spec is not None,
+        None if module_spec else f"Module '{module_name}' not importable",
+    )
 
 
-def _check_executable(spec: DependencySpec) -> Tuple[bool, Optional[str]]:
+def _check_executable(spec: DependencySpec) -> tuple[bool, str | None]:
     command = spec.command or spec.name
     if not command:
         return False, "No command specified for executable dependency"
     path = shutil.which(command)
-    return (path is not None, None if path else f"Executable '{command}' not found on PATH")
+    return (
+        path is not None,
+        None if path else f"Executable '{command}' not found on PATH",
+    )
 
 
-def _check_envvar(spec: DependencySpec) -> Tuple[bool, Optional[str]]:
+def _check_envvar(spec: DependencySpec) -> tuple[bool, str | None]:
     key = spec.key or spec.name
     if not key:
         return False, "No key specified for envvar dependency"
@@ -129,23 +137,31 @@ def check_dependency(spec: DependencySpec) -> DependencyStatus:
 
     checker = _CHECKERS.get(spec.category)
     if checker is None:
-        return DependencyStatus(spec=spec, present=False, detail=f"Unknown dependency category: {spec.category}")
+        return DependencyStatus(
+            spec=spec,
+            present=False,
+            detail=f"Unknown dependency category: {spec.category}",
+        )
 
     present, detail = checker(spec)
-    return DependencyStatus(spec=spec, present=present, detail=detail if not present else None)
+    return DependencyStatus(
+        spec=spec, present=present, detail=detail if not present else None
+    )
 
 
-def collect_dependency_status(path: Path | None = None) -> List[DependencyStatus]:
+def collect_dependency_status(path: Path | None = None) -> list[DependencyStatus]:
     """Load the manifest and evaluate each dependency."""
 
     specs = load_dependency_manifest(path)
     return [check_dependency(spec) for spec in specs]
 
 
-def summarise_missing_by_category(statuses: Iterable[DependencyStatus]) -> Dict[str, List[DependencyStatus]]:
+def summarise_missing_by_category(
+    statuses: Iterable[DependencyStatus],
+) -> dict[str, list[DependencyStatus]]:
     """Group missing dependencies so callers can display category-specific guidance."""
 
-    grouped: Dict[str, List[DependencyStatus]] = {}
+    grouped: dict[str, list[DependencyStatus]] = {}
     for status in statuses:
         if status.present:
             continue

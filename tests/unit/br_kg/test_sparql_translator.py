@@ -5,8 +5,9 @@ Tests the translation of SPARQL queries to equivalent Cypher queries
 for execution against Neo4j backend.
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 from brain_researcher.services.br_kg.sparql.translator import SPARQLToCypherTranslator
 
@@ -30,12 +31,23 @@ class TestSPARQLToCypherTranslator:
         assert isinstance(translator.predicate_mappings, dict)
 
         # Check predicate mappings include expected entries
-        assert 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' in translator.predicate_mappings
-        assert f'{base_uri}activatesRegion' in translator.predicate_mappings
+        assert (
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+            in translator.predicate_mappings
+        )
+        assert f"{base_uri}activatesRegion" in translator.predicate_mappings
 
         # Check default predicate mappings
-        assert translator.predicate_mappings['http://www.w3.org/1999/02/22-rdf-syntax-ns#type'] == 'TYPE'
-        assert translator.predicate_mappings[f'{base_uri}activatesRegion'] == 'ACTIVATES_REGION'
+        assert (
+            translator.predicate_mappings[
+                "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+            ]
+            == "TYPE"
+        )
+        assert (
+            translator.predicate_mappings[f"{base_uri}activatesRegion"]
+            == "ACTIVATES_REGION"
+        )
 
     def test_get_node_variable_creation(self, translator):
         """Test creation of Cypher node variables from SPARQL variables"""
@@ -119,9 +131,15 @@ class TestSPARQLToCypherTranslator:
 
     def test_translate_triple_pattern_variable_subject_object(self, translator):
         """Test translation of triple pattern with variable subject and object"""
-        pattern = ("?subject", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "?object")
+        pattern = (
+            "?subject",
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            "?object",
+        )
 
-        match_clause, where_clause, params = translator._translate_triple_pattern(pattern)
+        match_clause, where_clause, params = translator._translate_triple_pattern(
+            pattern
+        )
 
         assert "subject" in match_clause
         assert "object" in match_clause
@@ -133,7 +151,9 @@ class TestSPARQLToCypherTranslator:
         """Test translation of triple pattern with literal object"""
         pattern = ("?subject", "http://example.org/hasValue", '"literal_value"')
 
-        match_clause, where_clause, params = translator._translate_triple_pattern(pattern)
+        match_clause, where_clause, params = translator._translate_triple_pattern(
+            pattern
+        )
 
         # Should handle literal as node property, not relationship
         assert "subject" in match_clause
@@ -147,10 +167,12 @@ class TestSPARQLToCypherTranslator:
         pattern = (
             "https://test.br_kg.org/subject1",
             "http://example.org/relatedTo",
-            "https://test.br_kg.org/object1"
+            "https://test.br_kg.org/object1",
         )
 
-        match_clause, where_clause, params = translator._translate_triple_pattern(pattern)
+        match_clause, where_clause, params = translator._translate_triple_pattern(
+            pattern
+        )
 
         # Should have parameters for both URIs
         assert len(params) >= 2
@@ -171,7 +193,9 @@ class TestSPARQLToCypherTranslator:
     def test_get_query_type_construct(self, translator):
         """Test query type detection for CONSTRUCT queries"""
         mock_query = Mock()
-        mock_query.__str__ = Mock(return_value="CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }")
+        mock_query.__str__ = Mock(
+            return_value="CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }"
+        )
 
         query_type = translator._get_query_type(mock_query)
         assert query_type == "CONSTRUCT"
@@ -249,7 +273,7 @@ class TestSPARQLToCypherTranslator:
         variables = translator._extract_select_variables(mock_query)
 
         # Current implementation returns default variables
-        assert variables == ['?subject', '?predicate', '?object']
+        assert variables == ["?subject", "?predicate", "?object"]
 
     def test_extract_where_patterns_default(self, translator):
         """Test default WHERE pattern extraction (simplified implementation)"""
@@ -258,7 +282,7 @@ class TestSPARQLToCypherTranslator:
 
         # Current implementation returns default pattern
         assert len(patterns) == 1
-        assert patterns[0] == ('?subject', 'http://example.org/predicate', '?object')
+        assert patterns[0] == ("?subject", "http://example.org/predicate", "?object")
 
     def test_extract_filters_empty(self, translator):
         """Test FILTER extraction (not yet implemented)"""
@@ -293,7 +317,7 @@ class TestSPARQLToCypherTranslator:
         mock_query = Mock()
         resources = translator._extract_describe_resources(mock_query)
 
-        assert resources == ['?resource']
+        assert resources == ["?resource"]
 
 
 class TestSPARQLTranslatorQueryTranslation:
@@ -303,18 +327,22 @@ class TestSPARQLTranslatorQueryTranslation:
     def translator(self):
         return SPARQLToCypherTranslator(base_uri="https://br_kg.org/")
 
-    @patch('brain_researcher.services.br_kg.sparql.translator.parseQuery')
+    @patch("brain_researcher.services.br_kg.sparql.translator.parseQuery")
     def test_translate_select_query_basic(self, mock_parse_query, translator):
         """Test basic SELECT query translation"""
         mock_parsed_query = Mock()
         mock_parse_query.return_value = mock_parsed_query
 
         # Mock the query type detection
-        translator._get_query_type = Mock(return_value='SELECT')
+        translator._get_query_type = Mock(return_value="SELECT")
 
         # Mock component extraction methods
-        translator._extract_select_variables = Mock(return_value=['?subject', '?object'])
-        translator._extract_where_patterns = Mock(return_value=[('?subject', 'http://example.org/pred', '?object')])
+        translator._extract_select_variables = Mock(
+            return_value=["?subject", "?object"]
+        )
+        translator._extract_where_patterns = Mock(
+            return_value=[("?subject", "http://example.org/pred", "?object")]
+        )
         translator._extract_filters = Mock(return_value=[])
         translator._extract_optional_patterns = Mock(return_value=[])
         translator._extract_order_by = Mock(return_value=None)
@@ -328,15 +356,17 @@ class TestSPARQLTranslatorQueryTranslation:
         assert "MATCH" in cypher_query
         assert "RETURN" in cypher_query
 
-    @patch('brain_researcher.services.br_kg.sparql.translator.parseQuery')
+    @patch("brain_researcher.services.br_kg.sparql.translator.parseQuery")
     def test_translate_construct_query_basic(self, mock_parse_query, translator):
         """Test basic CONSTRUCT query translation"""
         mock_parsed_query = Mock()
         mock_parse_query.return_value = mock_parsed_query
 
-        translator._get_query_type = Mock(return_value='CONSTRUCT')
+        translator._get_query_type = Mock(return_value="CONSTRUCT")
         translator._extract_construct_patterns = Mock(return_value=[])
-        translator._extract_where_patterns = Mock(return_value=[('?subject', 'http://example.org/pred', '?object')])
+        translator._extract_where_patterns = Mock(
+            return_value=[("?subject", "http://example.org/pred", "?object")]
+        )
 
         cypher_query, params = translator.translate_query(mock_parsed_query)
 
@@ -346,14 +376,16 @@ class TestSPARQLTranslatorQueryTranslation:
         assert "RETURN" in cypher_query
         assert "subject, predicate, object" in cypher_query
 
-    @patch('brain_researcher.services.br_kg.sparql.translator.parseQuery')
+    @patch("brain_researcher.services.br_kg.sparql.translator.parseQuery")
     def test_translate_ask_query_basic(self, mock_parse_query, translator):
         """Test basic ASK query translation"""
         mock_parsed_query = Mock()
         mock_parse_query.return_value = mock_parsed_query
 
-        translator._get_query_type = Mock(return_value='ASK')
-        translator._extract_where_patterns = Mock(return_value=[('?subject', 'http://example.org/pred', '?object')])
+        translator._get_query_type = Mock(return_value="ASK")
+        translator._extract_where_patterns = Mock(
+            return_value=[("?subject", "http://example.org/pred", "?object")]
+        )
 
         cypher_query, params = translator.translate_query(mock_parsed_query)
 
@@ -363,14 +395,14 @@ class TestSPARQLTranslatorQueryTranslation:
         assert "count(*) > 0 as result" in cypher_query
         assert "LIMIT 1" in cypher_query
 
-    @patch('brain_researcher.services.br_kg.sparql.translator.parseQuery')
+    @patch("brain_researcher.services.br_kg.sparql.translator.parseQuery")
     def test_translate_describe_query_basic(self, mock_parse_query, translator):
         """Test basic DESCRIBE query translation"""
         mock_parsed_query = Mock()
         mock_parse_query.return_value = mock_parsed_query
 
-        translator._get_query_type = Mock(return_value='DESCRIBE')
-        translator._extract_describe_resources = Mock(return_value=['?resource'])
+        translator._get_query_type = Mock(return_value="DESCRIBE")
+        translator._extract_describe_resources = Mock(return_value=["?resource"])
 
         cypher_query, params = translator.translate_query(mock_parsed_query)
 
@@ -380,17 +412,23 @@ class TestSPARQLTranslatorQueryTranslation:
         assert "OPTIONAL MATCH" in cypher_query
         assert "type(r) as predicate" in cypher_query
 
-    @patch('brain_researcher.services.br_kg.sparql.translator.parseQuery')
+    @patch("brain_researcher.services.br_kg.sparql.translator.parseQuery")
     def test_translate_query_with_optional_patterns(self, mock_parse_query, translator):
         """Test query translation with OPTIONAL patterns"""
         mock_parsed_query = Mock()
         mock_parse_query.return_value = mock_parsed_query
 
-        translator._get_query_type = Mock(return_value='SELECT')
-        translator._extract_select_variables = Mock(return_value=['?subject', '?object'])
-        translator._extract_where_patterns = Mock(return_value=[('?subject', 'http://example.org/pred', '?object')])
+        translator._get_query_type = Mock(return_value="SELECT")
+        translator._extract_select_variables = Mock(
+            return_value=["?subject", "?object"]
+        )
+        translator._extract_where_patterns = Mock(
+            return_value=[("?subject", "http://example.org/pred", "?object")]
+        )
         translator._extract_filters = Mock(return_value=[])
-        translator._extract_optional_patterns = Mock(return_value=[('?subject', 'http://example.org/optPred', '?optObject')])
+        translator._extract_optional_patterns = Mock(
+            return_value=[("?subject", "http://example.org/optPred", "?optObject")]
+        )
         translator._extract_order_by = Mock(return_value=None)
         translator._extract_limit = Mock(return_value=None)
         translator._extract_offset = Mock(return_value=None)
@@ -399,18 +437,20 @@ class TestSPARQLTranslatorQueryTranslation:
 
         assert "OPTIONAL MATCH" in cypher_query
 
-    @patch('brain_researcher.services.br_kg.sparql.translator.parseQuery')
+    @patch("brain_researcher.services.br_kg.sparql.translator.parseQuery")
     def test_translate_query_with_limit_offset(self, mock_parse_query, translator):
         """Test query translation with LIMIT and OFFSET"""
         mock_parsed_query = Mock()
         mock_parse_query.return_value = mock_parsed_query
 
-        translator._get_query_type = Mock(return_value='SELECT')
-        translator._extract_select_variables = Mock(return_value=['?subject'])
-        translator._extract_where_patterns = Mock(return_value=[('?subject', 'http://example.org/pred', '?object')])
+        translator._get_query_type = Mock(return_value="SELECT")
+        translator._extract_select_variables = Mock(return_value=["?subject"])
+        translator._extract_where_patterns = Mock(
+            return_value=[("?subject", "http://example.org/pred", "?object")]
+        )
         translator._extract_filters = Mock(return_value=[])
         translator._extract_optional_patterns = Mock(return_value=[])
-        translator._extract_order_by = Mock(return_value='?subject')
+        translator._extract_order_by = Mock(return_value="?subject")
         translator._extract_limit = Mock(return_value=10)
         translator._extract_offset = Mock(return_value=5)
 
@@ -423,7 +463,7 @@ class TestSPARQLTranslatorQueryTranslation:
     def test_translate_query_unsupported_type(self, translator):
         """Test handling of unsupported query types"""
         mock_parsed_query = Mock()
-        translator._get_query_type = Mock(return_value='UNKNOWN')
+        translator._get_query_type = Mock(return_value="UNKNOWN")
 
         with pytest.raises(ValueError, match="Unsupported query type: UNKNOWN"):
             translator.translate_query(mock_parsed_query)
@@ -439,8 +479,8 @@ class TestSPARQLTranslatorQueryTranslation:
     def test_variable_counter_reset(self, translator):
         """Test variable counter is reset for each translation"""
         mock_parsed_query = Mock()
-        translator._get_query_type = Mock(return_value='SELECT')
-        translator._extract_select_variables = Mock(return_value=['?s'])
+        translator._get_query_type = Mock(return_value="SELECT")
+        translator._extract_select_variables = Mock(return_value=["?s"])
         translator._extract_where_patterns = Mock(return_value=[])
         translator._extract_filters = Mock(return_value=[])
         translator._extract_optional_patterns = Mock(return_value=[])
@@ -450,7 +490,6 @@ class TestSPARQLTranslatorQueryTranslation:
 
         # First translation
         translator.translate_query(mock_parsed_query)
-        first_counter = translator.variable_counter
 
         # Second translation should reset counter
         translator.translate_query(mock_parsed_query)
@@ -461,8 +500,8 @@ class TestSPARQLTranslatorQueryTranslation:
     def test_node_mappings_reset(self, translator):
         """Test node mappings are reset for each translation"""
         mock_parsed_query = Mock()
-        translator._get_query_type = Mock(return_value='SELECT')
-        translator._extract_select_variables = Mock(return_value=['?s'])
+        translator._get_query_type = Mock(return_value="SELECT")
+        translator._extract_select_variables = Mock(return_value=["?s"])
         translator._extract_where_patterns = Mock(return_value=[])
         translator._extract_filters = Mock(return_value=[])
         translator._extract_optional_patterns = Mock(return_value=[])
@@ -481,7 +520,10 @@ class TestSPARQLTranslatorQueryTranslation:
         translator.translate_query(mock_parsed_query)
 
         # Mappings should be empty or different
-        assert len(translator.node_mappings) == 0 or translator.node_mappings != first_mappings
+        assert (
+            len(translator.node_mappings) == 0
+            or translator.node_mappings != first_mappings
+        )
 
 
 class TestSPARQLTranslatorComplexScenarios:
@@ -494,9 +536,9 @@ class TestSPARQLTranslatorComplexScenarios:
     def test_multiple_triple_patterns(self, translator):
         """Test handling multiple triple patterns in WHERE clause"""
         patterns = [
-            ('?subject', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', '?type'),
-            ('?subject', 'http://br_kg.org/hasProperty', '?property'),
-            ('?property', 'http://br_kg.org/hasValue', '"some_value"')
+            ("?subject", "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "?type"),
+            ("?subject", "http://br_kg.org/hasProperty", "?property"),
+            ("?property", "http://br_kg.org/hasValue", '"some_value"'),
         ]
 
         match_clauses = []
@@ -504,7 +546,9 @@ class TestSPARQLTranslatorComplexScenarios:
         all_params = {}
 
         for pattern in patterns:
-            match_clause, where_clause, params = translator._translate_triple_pattern(pattern)
+            match_clause, where_clause, params = translator._translate_triple_pattern(
+                pattern
+            )
             if match_clause:
                 match_clauses.append(match_clause)
             if where_clause:
@@ -531,8 +575,10 @@ class TestSPARQLTranslatorComplexScenarios:
         assert node_id == "región-cerebral"
 
         # Test triple pattern with unicode
-        pattern = ('?subject', 'http://example.org/description', literal_with_unicode)
-        match_clause, where_clause, params = translator._translate_triple_pattern(pattern)
+        pattern = ("?subject", "http://example.org/description", literal_with_unicode)
+        match_clause, where_clause, params = translator._translate_triple_pattern(
+            pattern
+        )
 
         # Should handle unicode in parameters
         assert any("描述性文本" in str(value) for value in params.values())
@@ -549,8 +595,10 @@ class TestSPARQLTranslatorComplexScenarios:
     def test_edge_case_empty_patterns(self, translator):
         """Test handling of edge cases with empty or None patterns"""
         # Test with empty pattern components
-        pattern = ('', '', '')
-        match_clause, where_clause, params = translator._translate_triple_pattern(pattern)
+        pattern = ("", "", "")
+        match_clause, where_clause, params = translator._translate_triple_pattern(
+            pattern
+        )
 
         # Should handle gracefully without crashing
         assert isinstance(match_clause, str)
@@ -572,5 +620,5 @@ class TestSPARQLTranslatorComplexScenarios:
         assert rel_type2 == "TYPE"  # Fragment extraction should work
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

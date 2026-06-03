@@ -10,11 +10,11 @@ This module provides comprehensive BIDS validation including:
 import json
 import logging
 import subprocess
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
-from .validator import ValidationEngine, ValidationError, ValidationReport
+from .validator import ValidationError, ValidationReport
 
 logger = logging.getLogger(__name__)
 
@@ -25,14 +25,14 @@ class BIDSValidationResult:
     def __init__(self):
         """Initialize validation result container."""
         self.is_valid: bool = True
-        self.errors: List[Dict[str, Any]] = []
-        self.warnings: List[Dict[str, Any]] = []
-        self.metadata: Dict[str, Any] = {}
-        self.quality_metrics: Dict[str, Any] = {}
+        self.errors: list[dict[str, Any]] = []
+        self.warnings: list[dict[str, Any]] = []
+        self.metadata: dict[str, Any] = {}
+        self.quality_metrics: dict[str, Any] = {}
         self.files_checked: int = 0
         self.timestamp: str = datetime.now().isoformat()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "is_valid": self.is_valid,
@@ -97,7 +97,7 @@ class BIDSValidator:
                 ValidationError(
                     line=0,  # BIDS validator doesn't provide line numbers
                     message=error.get("message", "Unknown error"),
-                    field=error.get("file")
+                    field=error.get("file"),
                 )
             )
 
@@ -107,14 +107,14 @@ class BIDSValidator:
                     ValidationError(
                         line=0,
                         message=f"Warning: {warning.get('message', 'Unknown warning')}",
-                        field=warning.get("file")
+                        field=warning.get("file"),
                     )
                 )
                 result.is_valid = False
 
         return result
 
-    def _run_bids_validator(self, bids_path: Path) -> Dict[str, Any]:
+    def _run_bids_validator(self, bids_path: Path) -> dict[str, Any]:
         """Run the bids-validator command.
 
         Args:
@@ -136,7 +136,7 @@ class BIDSValidator:
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=300  # 5 minute timeout
+                timeout=300,  # 5 minute timeout
             )
 
             if proc.stdout:
@@ -151,38 +151,64 @@ class BIDSValidator:
                     # Parse error groups
                     for error_group in issues.get("errors", []):
                         for file_error in error_group.get("files", []):
-                            errors.append({
-                                "code": error_group.get("key", "UNKNOWN"),
-                                "message": file_error.get("reason", error_group.get("reason", "Unknown error")),
-                                "file": file_error.get("file", {}).get("relativePath") if isinstance(file_error.get("file"), dict) else None,
-                                "severity": "error",
-                            })
+                            errors.append(
+                                {
+                                    "code": error_group.get("key", "UNKNOWN"),
+                                    "message": file_error.get(
+                                        "reason",
+                                        error_group.get("reason", "Unknown error"),
+                                    ),
+                                    "file": (
+                                        file_error.get("file", {}).get("relativePath")
+                                        if isinstance(file_error.get("file"), dict)
+                                        else None
+                                    ),
+                                    "severity": "error",
+                                }
+                            )
                         # If no files, add one error for the group
                         if not error_group.get("files"):
-                            errors.append({
-                                "code": error_group.get("key", "UNKNOWN"),
-                                "message": error_group.get("reason", "Unknown error"),
-                                "file": None,
-                                "severity": "error",
-                            })
+                            errors.append(
+                                {
+                                    "code": error_group.get("key", "UNKNOWN"),
+                                    "message": error_group.get(
+                                        "reason", "Unknown error"
+                                    ),
+                                    "file": None,
+                                    "severity": "error",
+                                }
+                            )
 
                     # Parse warning groups
                     for warning_group in issues.get("warnings", []):
                         for file_warning in warning_group.get("files", []):
-                            warnings.append({
-                                "code": warning_group.get("key", "UNKNOWN"),
-                                "message": file_warning.get("reason", warning_group.get("reason", "Unknown warning")),
-                                "file": file_warning.get("file", {}).get("relativePath") if isinstance(file_warning.get("file"), dict) else None,
-                                "severity": "warning",
-                            })
+                            warnings.append(
+                                {
+                                    "code": warning_group.get("key", "UNKNOWN"),
+                                    "message": file_warning.get(
+                                        "reason",
+                                        warning_group.get("reason", "Unknown warning"),
+                                    ),
+                                    "file": (
+                                        file_warning.get("file", {}).get("relativePath")
+                                        if isinstance(file_warning.get("file"), dict)
+                                        else None
+                                    ),
+                                    "severity": "warning",
+                                }
+                            )
                         # If no files, add one warning for the group
                         if not warning_group.get("files"):
-                            warnings.append({
-                                "code": warning_group.get("key", "UNKNOWN"),
-                                "message": warning_group.get("reason", "Unknown warning"),
-                                "file": None,
-                                "severity": "warning",
-                            })
+                            warnings.append(
+                                {
+                                    "code": warning_group.get("key", "UNKNOWN"),
+                                    "message": warning_group.get(
+                                        "reason", "Unknown warning"
+                                    ),
+                                    "file": None,
+                                    "severity": "warning",
+                                }
+                            )
 
                     return {
                         "is_valid": proc.returncode == 0,
@@ -190,12 +216,18 @@ class BIDSValidator:
                         "warnings": warnings,
                     }
                 except json.JSONDecodeError:
-                    logger.error(f"Failed to parse bids-validator output: {proc.stdout}")
+                    logger.error(
+                        f"Failed to parse bids-validator output: {proc.stdout}"
+                    )
 
             # Fallback based on return code
             return {
                 "is_valid": proc.returncode == 0,
-                "errors": [{"message": proc.stderr or "Validation failed"}] if proc.returncode != 0 else [],
+                "errors": (
+                    [{"message": proc.stderr or "Validation failed"}]
+                    if proc.returncode != 0
+                    else []
+                ),
                 "warnings": [],
             }
 
@@ -208,11 +240,15 @@ class BIDSValidator:
         except FileNotFoundError:
             return {
                 "is_valid": False,
-                "errors": [{"message": "bids-validator not found. Please install: npm install -g bids-validator"}],
+                "errors": [
+                    {
+                        "message": "bids-validator not found. Please install: npm install -g bids-validator"
+                    }
+                ],
                 "warnings": [],
             }
 
-    def _parse_issues(self, issues: List[Any]) -> List[Dict[str, Any]]:
+    def _parse_issues(self, issues: list[Any]) -> list[dict[str, Any]]:
         """Parse issues from bids-validator output.
 
         Args:
@@ -225,23 +261,33 @@ class BIDSValidator:
 
         for issue in issues:
             if isinstance(issue, dict):
-                parsed.append({
-                    "code": issue.get("code", "UNKNOWN"),
-                    "message": issue.get("reason", issue.get("message", "Unknown issue")),
-                    "file": issue.get("file", {}).get("path") if isinstance(issue.get("file"), dict) else issue.get("file"),
-                    "severity": issue.get("severity", "error"),
-                })
+                parsed.append(
+                    {
+                        "code": issue.get("code", "UNKNOWN"),
+                        "message": issue.get(
+                            "reason", issue.get("message", "Unknown issue")
+                        ),
+                        "file": (
+                            issue.get("file", {}).get("path")
+                            if isinstance(issue.get("file"), dict)
+                            else issue.get("file")
+                        ),
+                        "severity": issue.get("severity", "error"),
+                    }
+                )
             else:
-                parsed.append({
-                    "code": "UNKNOWN",
-                    "message": str(issue),
-                    "file": None,
-                    "severity": "error",
-                })
+                parsed.append(
+                    {
+                        "code": "UNKNOWN",
+                        "message": str(issue),
+                        "file": None,
+                        "severity": "error",
+                    }
+                )
 
         return parsed
 
-    def _extract_metadata(self, bids_path: Path) -> Dict[str, Any]:
+    def _extract_metadata(self, bids_path: Path) -> dict[str, Any]:
         """Extract metadata from BIDS dataset.
 
         Args:
@@ -266,11 +312,14 @@ class BIDSValidator:
         if participants_file.exists():
             try:
                 import pandas as pd
+
                 df = pd.read_csv(participants_file, sep="\t")
                 metadata["participants"] = {
                     "count": len(df),
                     "columns": list(df.columns),
-                    "demographics": self._extract_demographics(df) if len(df) > 0 else {}
+                    "demographics": (
+                        self._extract_demographics(df) if len(df) > 0 else {}
+                    ),
                 }
             except Exception as e:
                 logger.error(f"Failed to read participants.tsv: {e}")
@@ -279,7 +328,7 @@ class BIDSValidator:
                 metadata["participants"] = {
                     "count": len(subject_dirs),
                     "columns": [],
-                    "demographics": {}
+                    "demographics": {},
                 }
         else:
             # Count subject directories
@@ -287,7 +336,7 @@ class BIDSValidator:
             metadata["participants"] = {
                 "count": len(subject_dirs),
                 "columns": [],
-                "demographics": {}
+                "demographics": {},
             }
 
         # Extract task information
@@ -315,7 +364,7 @@ class BIDSValidator:
 
         return metadata
 
-    def _extract_demographics(self, df) -> Dict[str, Any]:
+    def _extract_demographics(self, df) -> dict[str, Any]:
         """Extract demographic information from participants dataframe.
 
         Args:
@@ -329,10 +378,18 @@ class BIDSValidator:
         # Age statistics
         if "age" in df.columns:
             demographics["age"] = {
-                "mean": float(df["age"].mean()) if df["age"].dtype.kind in 'biufc' else None,
-                "std": float(df["age"].std()) if df["age"].dtype.kind in 'biufc' else None,
-                "min": float(df["age"].min()) if df["age"].dtype.kind in 'biufc' else None,
-                "max": float(df["age"].max()) if df["age"].dtype.kind in 'biufc' else None,
+                "mean": (
+                    float(df["age"].mean()) if df["age"].dtype.kind in "biufc" else None
+                ),
+                "std": (
+                    float(df["age"].std()) if df["age"].dtype.kind in "biufc" else None
+                ),
+                "min": (
+                    float(df["age"].min()) if df["age"].dtype.kind in "biufc" else None
+                ),
+                "max": (
+                    float(df["age"].max()) if df["age"].dtype.kind in "biufc" else None
+                ),
             }
 
         # Sex distribution
@@ -350,7 +407,7 @@ class BIDSValidator:
 
         return demographics
 
-    def _extract_tasks(self, bids_path: Path) -> List[str]:
+    def _extract_tasks(self, bids_path: Path) -> list[str]:
         """Extract task names from BIDS dataset.
 
         Args:
@@ -365,6 +422,7 @@ class BIDSValidator:
         for task_json in bids_path.rglob("*task-*.json"):
             # Extract task name from filename
             import re
+
             match = re.search(r"task-([a-zA-Z0-9]+)", task_json.name)
             if match:
                 tasks.add(match.group(1))
@@ -372,13 +430,14 @@ class BIDSValidator:
         # Also check for task in filenames
         for task_file in bids_path.rglob("*task-*"):
             import re
+
             match = re.search(r"task-([a-zA-Z0-9]+)", task_file.name)
             if match:
                 tasks.add(match.group(1))
 
-        return sorted(list(tasks))
+        return sorted(tasks)
 
-    def _extract_modalities(self, bids_path: Path) -> List[str]:
+    def _extract_modalities(self, bids_path: Path) -> list[str]:
         """Extract imaging modalities from BIDS dataset.
 
         Args:
@@ -390,7 +449,17 @@ class BIDSValidator:
         modalities = set()
 
         # Check for standard BIDS modality folders
-        modality_folders = ["anat", "func", "dwi", "fmap", "perf", "meg", "eeg", "ieeg", "beh"]
+        modality_folders = [
+            "anat",
+            "func",
+            "dwi",
+            "fmap",
+            "perf",
+            "meg",
+            "eeg",
+            "ieeg",
+            "beh",
+        ]
 
         for subject_dir in bids_path.glob("sub-*"):
             for session_or_modality in subject_dir.iterdir():
@@ -400,12 +469,17 @@ class BIDSValidator:
                     elif session_or_modality.name.startswith("ses-"):
                         # Check inside session folder
                         for modality_dir in session_or_modality.iterdir():
-                            if modality_dir.is_dir() and modality_dir.name in modality_folders:
+                            if (
+                                modality_dir.is_dir()
+                                and modality_dir.name in modality_folders
+                            ):
                                 modalities.add(modality_dir.name)
 
-        return sorted(list(modalities))
+        return sorted(modalities)
 
-    def _calculate_quality_metrics(self, bids_path: Path, result: BIDSValidationResult) -> Dict[str, Any]:
+    def _calculate_quality_metrics(
+        self, bids_path: Path, result: BIDSValidationResult
+    ) -> dict[str, Any]:
         """Calculate quality metrics for the BIDS dataset.
 
         Args:
@@ -420,18 +494,25 @@ class BIDSValidator:
         # Completeness score (100 - percentage of errors/warnings)
         total_issues = len(result.errors) + (len(result.warnings) if self.strict else 0)
         if result.files_checked > 0:
-            metrics["completeness_score"] = max(0, 100 - (total_issues * 100 / result.files_checked))
+            metrics["completeness_score"] = max(
+                0, 100 - (total_issues * 100 / result.files_checked)
+            )
         else:
             metrics["completeness_score"] = 100 if total_issues == 0 else 0
 
         # Required files check
         required_files = {
-            "dataset_description.json": (bids_path / "dataset_description.json").exists(),
-            "README": (bids_path / "README").exists() or (bids_path / "README.md").exists(),
+            "dataset_description.json": (
+                bids_path / "dataset_description.json"
+            ).exists(),
+            "README": (bids_path / "README").exists()
+            or (bids_path / "README.md").exists(),
             "participants.tsv": (bids_path / "participants.tsv").exists(),
         }
         metrics["required_files"] = required_files
-        metrics["required_files_score"] = sum(required_files.values()) * 100 / len(required_files)
+        metrics["required_files_score"] = (
+            sum(required_files.values()) * 100 / len(required_files)
+        )
 
         # Consistency checks
         metrics["has_sessions"] = any(bids_path.rglob("ses-*"))
@@ -442,17 +523,21 @@ class BIDSValidator:
         # Error severity breakdown
         if result.errors:
             error_codes = [e.get("code", "UNKNOWN") for e in result.errors]
-            metrics["error_types"] = {code: error_codes.count(code) for code in set(error_codes)}
+            metrics["error_types"] = {
+                code: error_codes.count(code) for code in set(error_codes)
+            }
 
         if result.warnings:
             warning_codes = [w.get("code", "UNKNOWN") for w in result.warnings]
-            metrics["warning_types"] = {code: warning_codes.count(code) for code in set(warning_codes)}
+            metrics["warning_types"] = {
+                code: warning_codes.count(code) for code in set(warning_codes)
+            }
 
         # Overall quality score
         quality_score = (
-            metrics["completeness_score"] * 0.5 +
-            metrics["required_files_score"] * 0.3 +
-            (100 if result.is_valid else 0) * 0.2
+            metrics["completeness_score"] * 0.5
+            + metrics["required_files_score"] * 0.3
+            + (100 if result.is_valid else 0) * 0.2
         )
         metrics["overall_quality_score"] = round(quality_score, 2)
 
@@ -477,7 +562,9 @@ class BIDSValidator:
                         count += 1
         return count
 
-    def validate_batch(self, dataset_paths: List[str]) -> Dict[str, BIDSValidationResult]:
+    def validate_batch(
+        self, dataset_paths: list[str]
+    ) -> dict[str, BIDSValidationResult]:
         """Validate multiple BIDS datasets.
 
         Args:
@@ -502,7 +589,9 @@ class BIDSValidator:
 
         return results
 
-    def generate_report(self, result: BIDSValidationResult, format: str = "json") -> str:
+    def generate_report(
+        self, result: BIDSValidationResult, format: str = "json"
+    ) -> str:
         """Generate validation report in specified format.
 
         Args:
@@ -518,7 +607,9 @@ class BIDSValidator:
         elif format == "markdown":
             report = ["# BIDS Validation Report\n"]
             report.append(f"**Timestamp**: {result.timestamp}\n")
-            report.append(f"**Status**: {'✅ Valid' if result.is_valid else '❌ Invalid'}\n")
+            report.append(
+                f"**Status**: {'✅ Valid' if result.is_valid else '❌ Invalid'}\n"
+            )
             report.append(f"**Files Checked**: {result.files_checked}\n")
 
             if result.metadata:
@@ -526,25 +617,41 @@ class BIDSValidator:
                 if "dataset_description" in result.metadata:
                     desc = result.metadata["dataset_description"]
                     report.append(f"- **Name**: {desc.get('Name', 'N/A')}\n")
-                    report.append(f"- **BIDSVersion**: {desc.get('BIDSVersion', 'N/A')}\n")
+                    report.append(
+                        f"- **BIDSVersion**: {desc.get('BIDSVersion', 'N/A')}\n"
+                    )
                 if "participants" in result.metadata:
-                    report.append(f"- **Participants**: {result.metadata['participants']['count']}\n")
+                    report.append(
+                        f"- **Participants**: {result.metadata['participants']['count']}\n"
+                    )
                 if "tasks" in result.metadata:
-                    report.append(f"- **Tasks**: {', '.join(result.metadata['tasks'])}\n")
+                    report.append(
+                        f"- **Tasks**: {', '.join(result.metadata['tasks'])}\n"
+                    )
                 if "modalities" in result.metadata:
-                    report.append(f"- **Modalities**: {', '.join(result.metadata['modalities'])}\n")
+                    report.append(
+                        f"- **Modalities**: {', '.join(result.metadata['modalities'])}\n"
+                    )
 
             if result.quality_metrics:
                 report.append("\n## Quality Metrics\n")
-                report.append(f"- **Overall Score**: {result.quality_metrics.get('overall_quality_score', 0):.1f}/100\n")
-                report.append(f"- **Completeness**: {result.quality_metrics.get('completeness_score', 0):.1f}%\n")
-                report.append(f"- **Required Files**: {result.quality_metrics.get('required_files_score', 0):.1f}%\n")
+                report.append(
+                    f"- **Overall Score**: {result.quality_metrics.get('overall_quality_score', 0):.1f}/100\n"
+                )
+                report.append(
+                    f"- **Completeness**: {result.quality_metrics.get('completeness_score', 0):.1f}%\n"
+                )
+                report.append(
+                    f"- **Required Files**: {result.quality_metrics.get('required_files_score', 0):.1f}%\n"
+                )
 
             if result.errors:
                 report.append(f"\n## Errors ({len(result.errors)})\n")
                 for i, error in enumerate(result.errors[:10], 1):
-                    report.append(f"{i}. **{error.get('code', 'UNKNOWN')}**: {error.get('message', 'Unknown error')}\n")
-                    if error.get('file'):
+                    report.append(
+                        f"{i}. **{error.get('code', 'UNKNOWN')}**: {error.get('message', 'Unknown error')}\n"
+                    )
+                    if error.get("file"):
                         report.append(f"   - File: `{error['file']}`\n")
                 if len(result.errors) > 10:
                     report.append(f"\n... and {len(result.errors) - 10} more errors\n")
@@ -552,11 +659,15 @@ class BIDSValidator:
             if result.warnings:
                 report.append(f"\n## Warnings ({len(result.warnings)})\n")
                 for i, warning in enumerate(result.warnings[:5], 1):
-                    report.append(f"{i}. **{warning.get('code', 'UNKNOWN')}**: {warning.get('message', 'Unknown warning')}\n")
-                    if warning.get('file'):
+                    report.append(
+                        f"{i}. **{warning.get('code', 'UNKNOWN')}**: {warning.get('message', 'Unknown warning')}\n"
+                    )
+                    if warning.get("file"):
                         report.append(f"   - File: `{warning['file']}`\n")
                 if len(result.warnings) > 5:
-                    report.append(f"\n... and {len(result.warnings) - 5} more warnings\n")
+                    report.append(
+                        f"\n... and {len(result.warnings) - 5} more warnings\n"
+                    )
 
             return "".join(report)
 
@@ -581,22 +692,30 @@ class BIDSValidator:
 
             if result.quality_metrics:
                 html.append("<h2>Quality Metrics</h2>")
-                html.append(f"<div class='metric'>Overall Score: <strong>{result.quality_metrics.get('overall_quality_score', 0):.1f}/100</strong></div>")
-                html.append(f"<div class='metric'>Completeness: {result.quality_metrics.get('completeness_score', 0):.1f}%</div>")
+                html.append(
+                    f"<div class='metric'>Overall Score: <strong>{result.quality_metrics.get('overall_quality_score', 0):.1f}/100</strong></div>"
+                )
+                html.append(
+                    f"<div class='metric'>Completeness: {result.quality_metrics.get('completeness_score', 0):.1f}%</div>"
+                )
 
             if result.errors:
                 html.append(f"<h2>Errors ({len(result.errors)})</h2>")
                 for error in result.errors[:10]:
-                    html.append(f"<div class='error'><strong>{error.get('code', 'UNKNOWN')}:</strong> {error.get('message', 'Unknown error')}")
-                    if error.get('file'):
+                    html.append(
+                        f"<div class='error'><strong>{error.get('code', 'UNKNOWN')}:</strong> {error.get('message', 'Unknown error')}"
+                    )
+                    if error.get("file"):
                         html.append(f"<br><small>File: {error['file']}</small>")
                     html.append("</div>")
 
             if result.warnings:
                 html.append(f"<h2>Warnings ({len(result.warnings)})</h2>")
                 for warning in result.warnings[:5]:
-                    html.append(f"<div class='warning'><strong>{warning.get('code', 'UNKNOWN')}:</strong> {warning.get('message', 'Unknown warning')}")
-                    if warning.get('file'):
+                    html.append(
+                        f"<div class='warning'><strong>{warning.get('code', 'UNKNOWN')}:</strong> {warning.get('message', 'Unknown warning')}"
+                    )
+                    if warning.get("file"):
                         html.append(f"<br><small>File: {warning['file']}</small>")
                     html.append("</div>")
 

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from brain_researcher.services.mcp import server as srv
 from brain_researcher.services.mcp import runstore
+from brain_researcher.services.mcp import server as srv
 from brain_researcher.services.tools import report_tools
 
 
@@ -71,13 +71,17 @@ def test_latex_report_render_writes_safe_report_artifacts(tmp_path, monkeypatch)
     assert "generated automatically by Brain Researcher" in read_back["text"]
 
 
-def test_latex_report_render_allows_raw_section_latex_when_requested(tmp_path, monkeypatch):
+def test_latex_report_render_allows_raw_section_latex_when_requested(
+    tmp_path, monkeypatch
+):
     monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path / "mcp_runs")
 
     resp = srv.latex_report_render(
         title="Raw LaTeX",
         authors="Brain Researcher",
-        sections={"Math": r"Mean activation was $\beta=1.2$ with \textbf{strong} evidence."},
+        sections={
+            "Math": r"Mean activation was $\beta=1.2$ with \textbf{strong} evidence."
+        },
         sections_are_latex=True,
     )
 
@@ -88,7 +92,9 @@ def test_latex_report_render_allows_raw_section_latex_when_requested(tmp_path, m
     assert r"Mean activation was $\beta=1.2$ with \textbf{strong} evidence." in tex_text
 
 
-def test_latex_report_render_adds_lists_for_figure_and_table_reports(tmp_path, monkeypatch):
+def test_latex_report_render_adds_lists_for_figure_and_table_reports(
+    tmp_path, monkeypatch
+):
     monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path / "mcp_runs")
 
     resp = srv.latex_report_render(
@@ -143,9 +149,7 @@ def test_latex_report_render_supports_publication_preset_bib_and_execution_pack(
     assert resp["artifacts"]["bibliography"] == "artifacts/report/references.bib"
     run_dir = Path(resp["run_dir"])
     tex_text = (run_dir / resp["artifacts"]["tex"]).read_text(encoding="utf-8")
-    bib_text = (run_dir / resp["artifacts"]["bibliography"]).read_text(
-        encoding="utf-8"
-    )
+    bib_text = (run_dir / resp["artifacts"]["bibliography"]).read_text(encoding="utf-8")
 
     assert "\\structuredabstract{Background}{Methods}{Results}{Conclusions}" in tex_text
     assert "\\begin{reportingchecklist}[Template Preset Completeness]" in tex_text

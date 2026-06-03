@@ -17,7 +17,7 @@ import time
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 import numpy as np
 import yaml
@@ -332,10 +332,10 @@ class ToolMatch(BaseModel):
     name: str
     family_id: str
     score: float
-    description: Optional[str] = None
-    capabilities: List[str] = Field(default_factory=list)
-    consumes: List[str] = Field(default_factory=list)
-    produces: List[str] = Field(default_factory=list)
+    description: str | None = None
+    capabilities: list[str] = Field(default_factory=list)
+    consumes: list[str] = Field(default_factory=list)
+    produces: list[str] = Field(default_factory=list)
     runtime_kind: str = "container"
     source: str = "embedding"  # embedding | file_search
 
@@ -351,15 +351,15 @@ class FamilyCard:
     id: str
     title: str
     summary: str
-    when_to_use: List[str]
-    tags: List[str]
-    canonical_entrypoints: List[str]
-    query_service_intents: List[str]
-    graph_family_ids: List[str]
+    when_to_use: list[str]
+    tags: list[str]
+    canonical_entrypoints: list[str]
+    query_service_intents: list[str]
+    graph_family_ids: list[str]
 
 
 @lru_cache(maxsize=4)
-def _load_family_cards(path_str: Optional[str] = None) -> List[FamilyCard]:
+def _load_family_cards(path_str: str | None = None) -> list[FamilyCard]:
     override = path_str or os.environ.get("BR_TOOL_FAMILY_CARDS_PATH")
     if override:
         path = Path(override)
@@ -369,7 +369,7 @@ def _load_family_cards(path_str: Optional[str] = None) -> List[FamilyCard]:
         return []
 
     data = yaml.safe_load(path.read_text()) or {}
-    cards: List[FamilyCard] = []
+    cards: list[FamilyCard] = []
     for item in data.get("family_cards", []) or []:
         card_id = str(item.get("id") or "").strip()
         if not card_id:
@@ -415,7 +415,7 @@ def _cached_sentence_transformer(model_name: str):
 
 
 @lru_cache(maxsize=8)
-def _family_cards_by_id(path_str: Optional[str] = None) -> dict[str, FamilyCard]:
+def _family_cards_by_id(path_str: str | None = None) -> dict[str, FamilyCard]:
     return {card.id: card for card in _load_family_cards(path_str)}
 
 
@@ -561,7 +561,7 @@ def _family_card_lexical_bonus(
 
 @lru_cache(maxsize=8)
 def _family_card_embedding_matrix(
-    path_str: Optional[str],
+    path_str: str | None,
     embedding_model_name: str,
 ):
     cards = _load_family_cards(path_str)
@@ -577,9 +577,9 @@ def select_family_card_ids(
     query: str,
     *,
     max_families: int,
-    path_str: Optional[str] = None,
+    path_str: str | None = None,
     embedding_model_name: str = "all-MiniLM-L6-v2",
-) -> List[str]:
+) -> list[str]:
     cards = _load_family_cards(path_str)
     if not cards:
         return []
@@ -596,7 +596,7 @@ def select_family_card_ids(
     similarities = matrix @ query_vec
     query_terms = _routing_terms(query)
 
-    ranked: List[tuple[float, FamilyCard]] = []
+    ranked: list[tuple[float, FamilyCard]] = []
     for index, card in enumerate(cards):
         lexical_bonus = _family_card_lexical_bonus(
             card,
@@ -614,7 +614,7 @@ def rank_family_card_entrypoints(
     *,
     max_families: int,
     limit: int,
-    path_str: Optional[str] = None,
+    path_str: str | None = None,
     embedding_model_name: str = "all-MiniLM-L6-v2",
 ) -> list[str]:
     family_ids = select_family_card_ids(
@@ -645,16 +645,16 @@ def rank_family_card_entrypoints(
 
 
 def family_card_query_service_intents(
-    family_ids: Optional[List[str]],
+    family_ids: list[str] | None,
     *,
-    path_str: Optional[str] = None,
-) -> Optional[List[str]]:
+    path_str: str | None = None,
+) -> list[str] | None:
     if not family_ids:
         return family_ids
 
     by_id = _family_cards_by_id(path_str)
-    intents: List[str] = []
-    seen: Set[str] = set()
+    intents: list[str] = []
+    seen: set[str] = set()
     for family_id in family_ids:
         card = by_id.get(str(family_id))
         values = card.query_service_intents if card is not None else [family_id]
@@ -668,16 +668,16 @@ def family_card_query_service_intents(
 
 
 def family_card_graph_family_ids(
-    family_ids: Optional[List[str]],
+    family_ids: list[str] | None,
     *,
-    path_str: Optional[str] = None,
-) -> Optional[List[str]]:
+    path_str: str | None = None,
+) -> list[str] | None:
     if not family_ids:
         return family_ids
 
     by_id = _family_cards_by_id(path_str)
-    graph_ids: List[str] = []
-    seen: Set[str] = set()
+    graph_ids: list[str] = []
+    seen: set[str] = set()
     for family_id in family_ids:
         card = by_id.get(str(family_id))
         values = card.graph_family_ids if card is not None else [family_id]
@@ -700,11 +700,11 @@ class ToolRetriever:
 
     def __init__(
         self,
-        neo4j_uri: Optional[str] = None,
-        neo4j_user: Optional[str] = None,
-        neo4j_password: Optional[str] = None,
-        embedding_model: Optional[str] = None,
-        embedding_field: Optional[str] = None,
+        neo4j_uri: str | None = None,
+        neo4j_user: str | None = None,
+        neo4j_password: str | None = None,
+        embedding_model: str | None = None,
+        embedding_field: str | None = None,
         enable_semantic: bool | None = None,
     ):
         """
@@ -787,7 +787,7 @@ class ToolRetriever:
         self.snippet_max_chars = int(
             os.environ.get("BR_GFS_AUTORETRIEVAL_SNIPPET_MAX_CHARS", "300") or "300"
         )
-        self.last_gfs_diagnostics: Dict[str, Any] = {}
+        self.last_gfs_diagnostics: dict[str, Any] = {}
 
     def _get_file_search_tool(self):
         return None  # legacy path disabled
@@ -881,7 +881,7 @@ class ToolRetriever:
             pass
         return list(ids)
 
-    def _record_gfs_diagnostics(self, surface: str, payload: Dict[str, Any]) -> None:
+    def _record_gfs_diagnostics(self, surface: str, payload: dict[str, Any]) -> None:
         event = {
             "surface": surface,
             "gfs_triggered": bool(payload.get("triggered")),
@@ -911,7 +911,7 @@ class ToolRetriever:
         except Exception:
             logger.debug("Failed to record GFS metrics", exc_info=True)
 
-    def _snippets_from_gfs_hits(self, hits: List[Dict[str, Any]]) -> List[str]:
+    def _snippets_from_gfs_hits(self, hits: list[dict[str, Any]]) -> list[str]:
         snippets: list[str] = []
         seen_docs: set[str] = set()
         for hit in hits:
@@ -932,12 +932,12 @@ class ToolRetriever:
         query: str,
         *,
         top_k: int = 6,
-        result_count: Optional[int] = None,
-        top_score: Optional[float] = None,
+        result_count: int | None = None,
+        top_score: float | None = None,
         weak_evidence: bool = False,
         max_calls: int = 2,
         surface: str = "agent.tool_retriever",
-    ) -> tuple[str, Dict[str, Any]]:
+    ) -> tuple[str, dict[str, Any]]:
         if not self.gfs_enabled:
             return query, {
                 "status": "skipped",
@@ -1024,16 +1024,18 @@ class ToolRetriever:
                 self._file_search_client = False
         return self._file_search_client
 
-    def get_all_families(self) -> List[dict]:
+    def get_all_families(self) -> list[dict]:
         """Get all ToolFamilies with their tool counts."""
         with self.driver.session() as session:
-            result = session.run("""
+            result = session.run(
+                """
                 MATCH (f:ToolFamily)
                 OPTIONAL MATCH (t:Tool)-[:BELONGS_TO_FAMILY]->(f)
                 WITH f, count(t) AS tool_count
                 RETURN f.id AS id, f.name AS name, tool_count
                 ORDER BY tool_count DESC
-            """)
+            """
+            )
             return [dict(r) for r in result]
 
     def select_families_by_query(
@@ -1041,7 +1043,7 @@ class ToolRetriever:
         query: str,
         llm: Any = None,
         max_families: int = 3,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Stage 1: Select relevant ToolFamilies based on query.
 
@@ -1158,14 +1160,14 @@ Example response: fsl,freesurfer,ants"""
         logger.info(f"Default families (by tool count): {default}")
         return default
 
-    def _load_keyword_map(self, families: List[dict]) -> Optional[dict]:
+    def _load_keyword_map(self, families: list[dict]) -> dict | None:
         """Build keyword map from catalog configs + tool aliases."""
 
         base_dir = resolve_from_config("catalog")
         family_files = [base_dir / "tool_families.yaml", base_dir / "chat_tools.yaml"]
         mappings_file = base_dir / "tool_mappings.yaml"
 
-        keywords: dict[str, Set[str]] = {}
+        keywords: dict[str, set[str]] = {}
 
         # Load family descriptions/ops
         for cfg in family_files:
@@ -1210,15 +1212,15 @@ Example response: fsl,freesurfer,ants"""
             if fid and fid.lower() not in keywords:
                 keywords[fid.lower()] = {fid.lower()}
 
-        return {fid: sorted(list(vals)) for fid, vals in keywords.items()}
+        return {fid: sorted(vals) for fid, vals in keywords.items()}
 
     def _retrieve_via_query_service(
         self,
         query: str,
-        family_ids: Optional[List[str]],
+        family_ids: list[str] | None,
         top_k: int,
-        filters: Optional[dict] = None,
-    ) -> List[ToolMatch]:
+        filters: dict | None = None,
+    ) -> list[ToolMatch]:
         """
         Retrieve tools via BR-KG query_service (structured search + resolve).
 
@@ -1378,7 +1380,7 @@ Example response: fsl,freesurfer,ants"""
             )
         )
 
-        matches: List[ToolMatch] = []
+        matches: list[ToolMatch] = []
         for idx, (cand, score) in enumerate(scores[:top_k]):
             tool_id = cand.get("tool_id")
             if not tool_id:
@@ -1415,10 +1417,10 @@ Example response: fsl,freesurfer,ants"""
     def retrieve_tools(
         self,
         query: str,
-        family_ids: Optional[List[str]] = None,
+        family_ids: list[str] | None = None,
         top_k: int = 10,
-        filters: Optional[dict] = None,
-    ) -> List[ToolMatch]:
+        filters: dict | None = None,
+    ) -> list[ToolMatch]:
         """
         Stage 2: Retrieve tools using hybrid search.
 
@@ -1434,7 +1436,7 @@ Example response: fsl,freesurfer,ants"""
         filters = filters or {}
         disable_gfs = filters.get("disable_gfs") or filters.get("disable_literature")
         working_query = query
-        gfs_result: Dict[str, Any] = {
+        gfs_result: dict[str, Any] = {
             "status": "skipped",
             "reason": "not_attempted",
             "triggered": False,
@@ -1603,7 +1605,7 @@ Example response: fsl,freesurfer,ants"""
             LIMIT $top_k
         """
 
-        matches: List[ToolMatch] = []
+        matches: list[ToolMatch] = []
 
         # If file search produced tool_ids, fetch them directly with a neutral high score to keep ordering
         if fs_tool_ids:
@@ -1695,8 +1697,8 @@ Example response: fsl,freesurfer,ants"""
         llm: Any = None,
         top_k: int = 10,
         max_families: int = 3,
-        filters: Optional[dict] = None,
-    ) -> List[ToolMatch]:
+        filters: dict | None = None,
+    ) -> list[ToolMatch]:
         """
         Full two-stage search: family selection + tool retrieval.
 
@@ -1751,7 +1753,7 @@ Example response: fsl,freesurfer,ants"""
 
 
 # Convenience function for quick searches
-def search_tools(query: str, top_k: int = 10) -> List[ToolMatch]:
+def search_tools(query: str, top_k: int = 10) -> list[ToolMatch]:
     """Quick search for tools matching a query."""
     retriever = ToolRetriever()
     try:

@@ -11,12 +11,12 @@ This module provides efficient NIfTI visualization with:
 - Configurable thresholds and slices
 """
 
+import hashlib
+import logging
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional, Literal
-import logging
-import hashlib
+from typing import Literal
 
 from brain_researcher.config.paths import get_outputs_root, get_repo_root
 
@@ -63,8 +63,8 @@ def get_cache_path(
     demo_id: str,
     artifact_id: str,
     view: ViewMode,
-    slice_idx: Optional[int],
-    threshold: float
+    slice_idx: int | None,
+    threshold: float,
 ) -> Path:
     """
     Generate cache file path for a rendered NIfTI image
@@ -93,9 +93,9 @@ def render_nifti(
     nifti_path: Path,
     output_path: Path,
     view: ViewMode = "axial",
-    slice_idx: Optional[int] = None,
-    threshold: Optional[float] = 2.3,
-    dpi: int = 120
+    slice_idx: int | None = None,
+    threshold: float | None = 2.3,
+    dpi: int = 120,
 ) -> Path:
     """
     Render NIfTI statistical map to PNG with caching
@@ -123,18 +123,14 @@ def render_nifti(
 
     try:
         # Import nilearn here (lazy import to reduce startup time)
-        from nilearn import plotting
         import nibabel as nib
+        from nilearn import plotting
 
         # Load NIfTI image (works with symlinks)
         img = nib.load(str(nifti_path))
 
         # Map view mode to nilearn display_mode
-        display_mode_map = {
-            "axial": "z",
-            "sagittal": "x",
-            "coronal": "y"
-        }
+        display_mode_map = {"axial": "z", "sagittal": "x", "coronal": "y"}
         display_mode = display_mode_map[view]
 
         # Determine cut coordinates
@@ -154,16 +150,11 @@ def render_nifti(
             cut_coords=cut_coords,
             annotate=False,
             colorbar=True,
-            cmap='cold_hot'
+            cmap="cold_hot",
         )
 
         # Save to file
-        display.savefig(
-            str(output_path),
-            dpi=dpi,
-            bbox_inches="tight",
-            pad_inches=0.1
-        )
+        display.savefig(str(output_path), dpi=dpi, bbox_inches="tight", pad_inches=0.1)
         display.close()
 
         logger.info(f"Rendered successfully: {output_path}")
@@ -178,7 +169,7 @@ def extract_peaks(
     nifti_path: Path,
     threshold: float = 2.3,
     min_distance: float = 8.0,
-    max_peaks: int = 10
+    max_peaks: int = 10,
 ) -> list[dict]:
     """Extract peak coordinates from a statistical map.
 
@@ -278,7 +269,7 @@ def extract_peaks(
         return []
 
 
-def clear_cache(demo_id: Optional[str] = None):
+def clear_cache(demo_id: str | None = None):
     """
     Clear rendering cache
 
@@ -290,11 +281,13 @@ def clear_cache(demo_id: Optional[str] = None):
         cache_dir = get_cache_root() / demo_id
         if cache_dir.exists():
             import shutil
+
             shutil.rmtree(cache_dir)
             logger.info(f"Cleared cache for demo: {demo_id}")
     else:
         cache_root = get_cache_root()
         if cache_root.exists():
             import shutil
+
             shutil.rmtree(cache_root)
             logger.info("Cleared entire rendering cache")

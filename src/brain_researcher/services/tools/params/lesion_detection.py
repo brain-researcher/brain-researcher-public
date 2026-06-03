@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional
 
 import numpy as np
 
@@ -14,19 +13,21 @@ import numpy as np
 class LesionDetectionParameters:
     """Configuration for lesion detection."""
 
-    flair_image: Optional[str]
-    t1_image: Optional[str]
-    dwi_image: Optional[str]
+    flair_image: str | None
+    t1_image: str | None
+    dwi_image: str | None
     output_dir: str
     lesion_type: str
     min_lesion_size: int
     threshold_method: str
-    random_state: Optional[int]
+    random_state: int | None
     save_masks: bool
     save_report: bool
 
 
-def lesion_detection_from_payload(payload: Dict[str, object]) -> LesionDetectionParameters:
+def lesion_detection_from_payload(
+    payload: dict[str, object],
+) -> LesionDetectionParameters:
     """Create parameters from payload."""
 
     return LesionDetectionParameters(
@@ -43,7 +44,7 @@ def lesion_detection_from_payload(payload: Dict[str, object]) -> LesionDetection
     )
 
 
-def _load_or_simulate(path: Optional[str], rng: np.random.Generator) -> np.ndarray:
+def _load_or_simulate(path: str | None, rng: np.random.Generator) -> np.ndarray:
     if path:
         img_path = Path(path)
         if img_path.exists() and img_path.suffix == ".npy":
@@ -51,7 +52,9 @@ def _load_or_simulate(path: Optional[str], rng: np.random.Generator) -> np.ndarr
     return rng.normal(size=(64, 64, 64))
 
 
-def _detect_lesions(image: np.ndarray, threshold_method: str, rng: np.random.Generator) -> np.ndarray:
+def _detect_lesions(
+    image: np.ndarray, threshold_method: str, rng: np.random.Generator
+) -> np.ndarray:
     if threshold_method == "manual":
         thresh = np.mean(image) + np.std(image)
     elif threshold_method == "zscore":
@@ -66,7 +69,7 @@ def _detect_lesions(image: np.ndarray, threshold_method: str, rng: np.random.Gen
     return mask.astype(int)
 
 
-def _compute_metrics(mask: np.ndarray) -> Dict[str, float]:
+def _compute_metrics(mask: np.ndarray) -> dict[str, float]:
     volume = float(mask.sum())
     n_lesions = max(1, int(volume // 50))
     return {
@@ -76,7 +79,7 @@ def _compute_metrics(mask: np.ndarray) -> Dict[str, float]:
     }
 
 
-def run_lesion_detection(params: LesionDetectionParameters) -> Dict[str, object]:
+def run_lesion_detection(params: LesionDetectionParameters) -> dict[str, object]:
     """Execute fallback lesion detection."""
 
     rng = np.random.default_rng(params.random_state)
@@ -94,7 +97,11 @@ def run_lesion_detection(params: LesionDetectionParameters) -> Dict[str, object]
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {"summary": None, "lesion_mask": None, "report": None}
+    outputs: dict[str, str | None] = {
+        "summary": None,
+        "lesion_mask": None,
+        "report": None,
+    }
 
     if params.save_masks:
         mask_path = out_dir / "lesion_mask.npy"

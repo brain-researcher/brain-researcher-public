@@ -9,18 +9,78 @@ from brain_researcher.services.br_kg.ml.structural_quality_benchmark import (
 
 def _make_graph_data():
     nodes = [
-        {"id": "t1", "node_type": "Task", "features": [1.0, 0.0, 0.0], "properties": {"site_or_cohort": "site_a"}},
-        {"id": "t2", "node_type": "Task", "features": [0.9, 0.1, 0.0], "properties": {"site_or_cohort": "site_a"}},
-        {"id": "t3", "node_type": "Task", "features": [0.0, 1.0, 0.0], "properties": {"site_or_cohort": "site_b"}},
-        {"id": "t4", "node_type": "Task", "features": [0.0, 0.9, 0.1], "properties": {"site_or_cohort": "site_b"}},
-        {"id": "c1", "node_type": "Concept", "features": [1.0, 0.0, 0.0], "properties": {}},
-        {"id": "c2", "node_type": "Concept", "features": [0.9, 0.1, 0.0], "properties": {}},
-        {"id": "c3", "node_type": "Concept", "features": [0.0, 1.0, 0.0], "properties": {}},
-        {"id": "c4", "node_type": "Concept", "features": [0.0, 0.9, 0.1], "properties": {}},
-        {"id": "tool1", "node_type": "Tool", "features": [1.0, 0.0, 0.0], "properties": {}},
-        {"id": "tool2", "node_type": "Tool", "features": [0.0, 1.0, 0.0], "properties": {}},
-        {"id": "fam1", "node_type": "ToolFamily", "features": [1.0, 0.0, 0.0], "properties": {}},
-        {"id": "fam2", "node_type": "ToolFamily", "features": [0.0, 1.0, 0.0], "properties": {}},
+        {
+            "id": "t1",
+            "node_type": "Task",
+            "features": [1.0, 0.0, 0.0],
+            "properties": {"site_or_cohort": "site_a"},
+        },
+        {
+            "id": "t2",
+            "node_type": "Task",
+            "features": [0.9, 0.1, 0.0],
+            "properties": {"site_or_cohort": "site_a"},
+        },
+        {
+            "id": "t3",
+            "node_type": "Task",
+            "features": [0.0, 1.0, 0.0],
+            "properties": {"site_or_cohort": "site_b"},
+        },
+        {
+            "id": "t4",
+            "node_type": "Task",
+            "features": [0.0, 0.9, 0.1],
+            "properties": {"site_or_cohort": "site_b"},
+        },
+        {
+            "id": "c1",
+            "node_type": "Concept",
+            "features": [1.0, 0.0, 0.0],
+            "properties": {},
+        },
+        {
+            "id": "c2",
+            "node_type": "Concept",
+            "features": [0.9, 0.1, 0.0],
+            "properties": {},
+        },
+        {
+            "id": "c3",
+            "node_type": "Concept",
+            "features": [0.0, 1.0, 0.0],
+            "properties": {},
+        },
+        {
+            "id": "c4",
+            "node_type": "Concept",
+            "features": [0.0, 0.9, 0.1],
+            "properties": {},
+        },
+        {
+            "id": "tool1",
+            "node_type": "Tool",
+            "features": [1.0, 0.0, 0.0],
+            "properties": {},
+        },
+        {
+            "id": "tool2",
+            "node_type": "Tool",
+            "features": [0.0, 1.0, 0.0],
+            "properties": {},
+        },
+        {
+            "id": "fam1",
+            "node_type": "ToolFamily",
+            "features": [1.0, 0.0, 0.0],
+            "properties": {},
+        },
+        {
+            "id": "fam2",
+            "node_type": "ToolFamily",
+            "features": [0.0, 1.0, 0.0],
+            "properties": {},
+        },
     ]
 
     edges = [
@@ -84,7 +144,10 @@ def test_structural_quality_benchmark_writes_expected_artifacts(tmp_path):
     result = benchmark.run(
         _make_graph_data(),
         output_dir=str(tmp_path),
-        graph_metadata={"snapshot_id": "toy_v1", "generated_at": "2026-03-23T00:00:00Z"},
+        graph_metadata={
+            "snapshot_id": "toy_v1",
+            "generated_at": "2026-03-23T00:00:00Z",
+        },
     )
 
     assert result["graph_metadata"]["snapshot_id"] == "toy_v1"
@@ -98,10 +161,18 @@ def test_structural_quality_benchmark_writes_expected_artifacts(tmp_path):
     }
     assert expected_files == {path.name for path in tmp_path.iterdir()}
 
-    manifest = json.loads((tmp_path / "benchmark_manifest.json").read_text(encoding="utf-8"))
-    diagnostics = json.loads((tmp_path / "graph_diagnostic_report.json").read_text(encoding="utf-8"))
-    fairness = json.loads((tmp_path / "fairness_audit_report.json").read_text(encoding="utf-8"))
-    probes = json.loads((tmp_path / "probe_model_comparison.json").read_text(encoding="utf-8"))
+    manifest = json.loads(
+        (tmp_path / "benchmark_manifest.json").read_text(encoding="utf-8")
+    )
+    diagnostics = json.loads(
+        (tmp_path / "graph_diagnostic_report.json").read_text(encoding="utf-8")
+    )
+    fairness = json.loads(
+        (tmp_path / "fairness_audit_report.json").read_text(encoding="utf-8")
+    )
+    probes = json.loads(
+        (tmp_path / "probe_model_comparison.json").read_text(encoding="utf-8")
+    )
 
     assert manifest["benchmark_id"] == "br_kg_structural_quality_v1"
     assert diagnostics["primary_probe_model"] == "text_cosine"

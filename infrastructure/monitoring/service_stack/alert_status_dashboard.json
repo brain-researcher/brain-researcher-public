@@ -1,0 +1,173 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Brain Researcher - Alert Status",
+    "tags": ["brain-researcher", "alerts"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Active Alerts",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "ALERTS{alertstate=\"firing\"}",
+            "legendFormat": "",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true, "Value": true},
+              "renameByName": {
+                "alertname": "Alert",
+                "severity": "Severity",
+                "instance": "Instance",
+                "job": "Service"
+              }
+            }
+          }
+        ],
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Severity"},
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "mappings",
+                  "value": [
+                    {"type": "value", "value": "critical", "text": "Critical", "color": "red"},
+                    {"type": "value", "value": "warning", "text": "Warning", "color": "yellow"},
+                    {"type": "value", "value": "info", "text": "Info", "color": "blue"}
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Alert Summary",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "count(ALERTS{alertstate=\"firing\", severity=\"critical\"})",
+            "legendFormat": "Critical"
+          },
+          {
+            "expr": "count(ALERTS{alertstate=\"firing\", severity=\"warning\"})",
+            "legendFormat": "Warning"
+          },
+          {
+            "expr": "count(ALERTS{alertstate=\"firing\", severity=\"info\"})",
+            "legendFormat": "Info"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "noValue": "0"
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Critical"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Warning"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "yellow"}}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Info"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
+              ]
+            }
+          ]
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+      },
+      {
+        "id": 3,
+        "title": "Alert Firing Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "increase(prometheus_notifications_total[5m])",
+            "legendFormat": "Notifications Sent"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}
+      },
+      {
+        "id": 4,
+        "title": "Service Health Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"brain-researcher-agent\"}",
+            "legendFormat": "Agent"
+          },
+          {
+            "expr": "up{job=\"brain-researcher-br-kg\"}",
+            "legendFormat": "BR-KG"
+          },
+          {
+            "expr": "up{job=\"brain-researcher-web-ui\"}",
+            "legendFormat": "Web UI"
+          },
+          {
+            "expr": "up{job=\"brain-researcher-orchestrator\"}",
+            "legendFormat": "Orchestrator"
+          },
+          {
+            "expr": "up{job=\"redis-exporter\"}",
+            "legendFormat": "Redis"
+          },
+          {
+            "expr": "up{job=\"neo4j\"}",
+            "legendFormat": "Neo4j"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            },
+            "mappings": [
+              {"type": "value", "value": "0", "text": "Down"},
+              {"type": "value", "value": "1", "text": "Up"}
+            ]
+          }
+        },
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

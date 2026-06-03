@@ -7,8 +7,6 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Any, Dict, List
-from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -38,7 +36,7 @@ class TestNipypeConfig(unittest.TestCase):
             working_dir="/data/nipype",
             crash_dir="/data/nipype/crash",
             plugin="MultiProc",
-            plugin_args={"n_procs": 8}
+            plugin_args={"n_procs": 8},
         )
 
         assert config.working_dir == "/data/nipype"
@@ -49,9 +47,7 @@ class TestNipypeConfig(unittest.TestCase):
     def test_config_dict(self):
         """Test configuration dictionary generation."""
         config = NipypeConfig(
-            working_dir="/data/nipype",
-            plugin="SLURM",
-            stop_on_first_crash=True
+            working_dir="/data/nipype", plugin="SLURM", stop_on_first_crash=True
         )
 
         config_dict = config.get_config_dict()
@@ -81,55 +77,55 @@ class TestNipypeWorkflowBuilderTool(unittest.TestCase):
     def test_tool_metadata(self):
         """Test tool metadata is correct."""
         assert self.tool.get_tool_name() == "nipype_workflow_builder"
-        assert "Build and configure Nipype workflows" in self.tool.get_tool_description()
+        assert (
+            "Build and configure Nipype workflows" in self.tool.get_tool_description()
+        )
         assert self.tool.get_args_schema() == NipypeWorkflowBuilderArgs
 
     def test_build_simple_workflow(self):
         """Test building a simple workflow."""
         with tempfile.TemporaryDirectory() as temp_dir:
             nodes = [
-                {
-                    "name": "input_node",
-                    "fields": ["in_file", "mask_file"]
-                },
+                {"name": "input_node", "fields": ["in_file", "mask_file"]},
                 {
                     "name": "smooth_node",
                     "interface": {
                         "type": "fsl",
                         "name": "Smooth",
-                        "params": {"fwhm": 6.0}
-                    }
+                        "params": {"fwhm": 6.0},
+                    },
                 },
-                {
-                    "name": "output_node",
-                    "fields": ["smoothed_file"]
-                }
+                {"name": "output_node", "fields": ["smoothed_file"]},
             ]
 
             connections = [
                 ("input_node", "in_file", "smooth_node", "in_file"),
-                ("smooth_node", "smoothed_file", "output_node", "smoothed_file")
+                ("smooth_node", "smoothed_file", "output_node", "smoothed_file"),
             ]
 
             result = self.tool._run(
                 name="test_workflow",
                 base_dir=temp_dir,
                 nodes=nodes,
-                connections=connections
+                connections=connections,
             )
 
             assert result.status == "success"
             assert result.data["workflow_name"] == "test_workflow"
             assert result.data["n_nodes"] == 3
             assert result.data["n_connections"] == 2
-            assert result.data["node_names"] == ["input_node", "smooth_node", "output_node"]
+            assert result.data["node_names"] == [
+                "input_node",
+                "smooth_node",
+                "output_node",
+            ]
 
             # Check workflow file was created
             workflow_file = Path(result.data["workflow_file"])
             assert workflow_file.exists()
             workflow_content = workflow_file.read_text()
             assert "def create_test_workflow_workflow():" in workflow_content
-            assert "pe.Workflow(name=\"test_workflow\")" in workflow_content
+            assert 'pe.Workflow(name="test_workflow")' in workflow_content
 
     def test_build_with_iterables(self):
         """Test building workflow with iterables."""
@@ -137,27 +133,21 @@ class TestNipypeWorkflowBuilderTool(unittest.TestCase):
             nodes = [
                 {
                     "name": "bet_node",
-                    "interface": {
-                        "type": "fsl",
-                        "name": "BET",
-                        "params": {}
-                    },
-                    "iterables": {
-                        "field": "frac",
-                        "values": [0.3, 0.4, 0.5, 0.6]
-                    }
+                    "interface": {"type": "fsl", "name": "BET", "params": {}},
+                    "iterables": {"field": "frac", "values": [0.3, 0.4, 0.5, 0.6]},
                 }
             ]
 
             result = self.tool._run(
-                name="iterables_workflow",
-                base_dir=temp_dir,
-                nodes=nodes
+                name="iterables_workflow", base_dir=temp_dir, nodes=nodes
             )
 
             assert result.status == "success"
             workflow_content = Path(result.data["workflow_file"]).read_text()
-            assert 'bet_node.iterables = ("frac", [0.3, 0.4, 0.5, 0.6])' in workflow_content
+            assert (
+                'bet_node.iterables = ("frac", [0.3, 0.4, 0.5, 0.6])'
+                in workflow_content
+            )
 
     def test_build_with_plugins(self):
         """Test building workflow with different plugins."""
@@ -170,7 +160,7 @@ class TestNipypeWorkflowBuilderTool(unittest.TestCase):
                 base_dir=temp_dir,
                 nodes=nodes,
                 plugin="MultiProc",
-                plugin_args={"n_procs": 8, "memory_gb": 16}
+                plugin_args={"n_procs": 8, "memory_gb": 16},
             )
 
             assert result.status == "success"
@@ -180,10 +170,7 @@ class TestNipypeWorkflowBuilderTool(unittest.TestCase):
 
             # Test SLURM plugin
             result = self.tool._run(
-                name="slurm_wf",
-                base_dir=temp_dir,
-                nodes=nodes,
-                plugin="SLURM"
+                name="slurm_wf", base_dir=temp_dir, nodes=nodes, plugin="SLURM"
             )
 
             assert result.status == "success"
@@ -193,24 +180,16 @@ class TestNipypeWorkflowBuilderTool(unittest.TestCase):
         """Test workflow with multiple interface types."""
         with tempfile.TemporaryDirectory() as temp_dir:
             nodes = [
-                {
-                    "name": "fsl_node",
-                    "interface": {"type": "fsl", "name": "BET"}
-                },
-                {
-                    "name": "spm_node",
-                    "interface": {"type": "spm", "name": "Smooth"}
-                },
+                {"name": "fsl_node", "interface": {"type": "fsl", "name": "BET"}},
+                {"name": "spm_node", "interface": {"type": "spm", "name": "Smooth"}},
                 {
                     "name": "fs_node",
-                    "interface": {"type": "freesurfer", "name": "ReconAll"}
-                }
+                    "interface": {"type": "freesurfer", "name": "ReconAll"},
+                },
             ]
 
             result = self.tool._run(
-                name="multi_interface_wf",
-                base_dir=temp_dir,
-                nodes=nodes
+                name="multi_interface_wf", base_dir=temp_dir, nodes=nodes
             )
 
             assert result.status == "success"
@@ -245,7 +224,7 @@ class TestNipypeBIDSAppTool(unittest.TestCase):
                 output_dir=output_dir,
                 pipeline="preprocessing",
                 fwhm=8.0,
-                tr=2.5
+                tr=2.5,
             )
 
             assert result.status == "success"
@@ -278,7 +257,7 @@ class TestNipypeBIDSAppTool(unittest.TestCase):
                 output_dir=temp_dir,
                 pipeline="first_level",
                 task="stroop",
-                participant_label=["01", "02"]
+                participant_label=["01", "02"],
             )
 
             assert result.status == "success"
@@ -294,10 +273,7 @@ class TestNipypeBIDSAppTool(unittest.TestCase):
 
     def test_error_missing_bids_dir(self):
         """Test error handling for missing BIDS directory."""
-        result = self.tool._run(
-            bids_dir="/nonexistent/bids",
-            output_dir="/tmp/output"
-        )
+        result = self.tool._run(bids_dir="/nonexistent/bids", output_dir="/tmp/output")
 
         assert result.status == "error"
         assert "BIDS directory not found" in result.error
@@ -313,7 +289,10 @@ class TestNipypeInterfaceWrapperTool(unittest.TestCase):
     def test_tool_metadata(self):
         """Test tool metadata is correct."""
         assert self.tool.get_tool_name() == "nipype_interface_wrapper"
-        assert "Wrap and execute individual Nipype interfaces" in self.tool.get_tool_description()
+        assert (
+            "Wrap and execute individual Nipype interfaces"
+            in self.tool.get_tool_description()
+        )
         assert self.tool.get_args_schema() == NipypeInterfaceWrapperArgs
 
     def test_wrap_fsl_interface(self):
@@ -323,14 +302,14 @@ class TestNipypeInterfaceWrapperTool(unittest.TestCase):
                 "in_file": "/data/brain.nii.gz",
                 "frac": 0.5,
                 "robust": True,
-                "out_file": "/data/brain_skull.nii.gz"
+                "out_file": "/data/brain_skull.nii.gz",
             }
 
             result = self.tool._run(
                 interface_type="fsl",
                 interface_name="BET",
                 inputs=inputs,
-                output_dir=temp_dir
+                output_dir=temp_dir,
             )
 
             assert result.status == "success"
@@ -358,14 +337,14 @@ class TestNipypeInterfaceWrapperTool(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             inputs = {
                 "in_files": ["/data/func1.nii", "/data/func2.nii"],
-                "fwhm": [6, 6, 6]
+                "fwhm": [6, 6, 6],
             }
 
             result = self.tool._run(
                 interface_type="spm",
                 interface_name="Smooth",
                 inputs=inputs,
-                output_dir=temp_dir
+                output_dir=temp_dir,
             )
 
             assert result.status == "success"
@@ -384,7 +363,7 @@ class TestNipypeInterfaceWrapperTool(unittest.TestCase):
                 interface_name="IdentityInterface",
                 inputs={"fields": ["field1", "field2"]},
                 output_dir=temp_dir,
-                run_interface=True
+                run_interface=True,
             )
 
             assert result.status == "success"
@@ -400,15 +379,15 @@ class TestNipypeInterfaceWrapperTool(unittest.TestCase):
             result = self.tool._run(
                 interface_type="fsl",
                 interface_name="FLIRT",
-                inputs={
-                    "in_file": "moving.nii",
-                    "reference": "fixed.nii"
-                },
-                output_dir=temp_dir
+                inputs={"in_file": "moving.nii", "reference": "fixed.nii"},
+                output_dir=temp_dir,
             )
 
             assert result.status == "success"
-            assert result.data["cmdline_preview"] == "flirt -in moving.nii -ref fixed.nii -out output"
+            assert (
+                result.data["cmdline_preview"]
+                == "flirt -in moving.nii -ref fixed.nii -out output"
+            )
 
 
 class TestNipypeDistributedTool(unittest.TestCase):
@@ -436,7 +415,7 @@ class TestNipypeDistributedTool(unittest.TestCase):
                 plugin="MultiProc",
                 n_procs=8,
                 memory_gb=16,
-                working_dir=temp_dir
+                working_dir=temp_dir,
             )
 
             assert result.status == "success"
@@ -464,7 +443,7 @@ class TestNipypeDistributedTool(unittest.TestCase):
                 memory_gb=32,
                 queue="gpu",
                 walltime="24:00:00",
-                working_dir=temp_dir
+                working_dir=temp_dir,
             )
 
             assert result.status == "success"
@@ -492,7 +471,7 @@ class TestNipypeDistributedTool(unittest.TestCase):
                 n_procs=4,
                 memory_gb=8,
                 queue="all.q",
-                working_dir=temp_dir
+                working_dir=temp_dir,
             )
 
             assert result.status == "success"
@@ -515,7 +494,7 @@ class TestNipypeDistributedTool(unittest.TestCase):
                 n_procs=12,
                 memory_gb=24,
                 walltime="12:00:00",
-                working_dir=temp_dir
+                working_dir=temp_dir,
             )
 
             assert result.status == "success"
@@ -529,8 +508,7 @@ class TestNipypeDistributedTool(unittest.TestCase):
     def test_error_missing_workflow(self):
         """Test error handling for missing workflow file."""
         result = self.tool._run(
-            workflow_file="/nonexistent/workflow.py",
-            working_dir="/tmp"
+            workflow_file="/nonexistent/workflow.py", working_dir="/tmp"
         )
 
         assert result.status == "error"

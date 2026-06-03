@@ -7,14 +7,13 @@ Provides seamless status tracking for the Brain Researcher agent execution.
 import asyncio
 import logging
 import time
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, TypedDict
 
 from langchain_core.messages import BaseMessage
 
 from brain_researcher.services.agent.execution_status import (
     AsyncExecutionTracker,
     ExecutionStatus,
-    ExecutionStep,
     ExecutionTracker,
 )
 from brain_researcher.services.agent.status_updates import status_service
@@ -25,12 +24,12 @@ logger = logging.getLogger(__name__)
 class ExecutionState(TypedDict):
     """Extended state with execution tracking."""
 
-    messages: List[BaseMessage]
-    plan: Optional[Dict[str, Any]]
-    execution_id: Optional[str]
-    tracker: Optional[ExecutionTracker]
-    status: Optional[str]
-    progress: Optional[float]
+    messages: list[BaseMessage]
+    plan: dict[str, Any] | None
+    execution_id: str | None
+    tracker: ExecutionTracker | None
+    status: str | None
+    progress: float | None
 
 
 class TrackedExecution:
@@ -38,9 +37,9 @@ class TrackedExecution:
 
     def __init__(
         self,
-        execution_id: Optional[str] = None,
+        execution_id: str | None = None,
         use_async: bool = True,
-        enable_updates: bool = True
+        enable_updates: bool = True,
     ):
         """
         Initialize tracked execution.
@@ -67,7 +66,7 @@ class TrackedExecution:
                 status_service.register_execution(self.execution_id, self.tracker)
             )
 
-    async def track_planning(self, state: Dict[str, Any]) -> Dict[str, Any]:
+    async def track_planning(self, state: dict[str, Any]) -> dict[str, Any]:
         """
         Track planning phase.
 
@@ -78,10 +77,10 @@ class TrackedExecution:
             Updated state
         """
         # Add planning step
-        step = self.tracker.add_step(
+        self.tracker.add_step(
             name="Planning",
             description="Analyzing query and creating execution plan",
-            estimated_duration=5.0
+            estimated_duration=5.0,
         )
 
         # Start execution
@@ -100,10 +99,8 @@ class TrackedExecution:
         return state
 
     async def track_plan_complete(
-        self,
-        state: Dict[str, Any],
-        plan: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, state: dict[str, Any], plan: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Track plan completion.
 
@@ -121,30 +118,25 @@ class TrackedExecution:
                     name=plan_step.get("tool", f"Step {i+1}"),
                     description=plan_step.get("description", ""),
                     estimated_duration=plan_step.get("estimated_duration", 10.0),
-                    metadata=plan_step
+                    metadata=plan_step,
                 )
 
         # Complete planning step
         if self.use_async:
             await self.tracker.complete_step_async(
-                step_index=0,
-                result={"plan_steps": len(plan.get("steps", []))}
+                step_index=0, result={"plan_steps": len(plan.get("steps", []))}
             )
         else:
             self.tracker.complete_step(
-                step_index=0,
-                result={"plan_steps": len(plan.get("steps", []))}
+                step_index=0, result={"plan_steps": len(plan.get("steps", []))}
             )
 
         state["status"] = "executing"
         return state
 
     async def track_tool_execution(
-        self,
-        state: Dict[str, Any],
-        tool_name: str,
-        tool_input: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, state: dict[str, Any], tool_name: str, tool_input: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Track tool execution.
 
@@ -172,7 +164,7 @@ class TrackedExecution:
             step = self.tracker.add_step(
                 name=tool_name,
                 description=f"Executing {tool_name}",
-                metadata={"input": tool_input}
+                metadata={"input": tool_input},
             )
             if self.use_async:
                 await self.tracker.start_step_async(len(self.tracker.steps) - 1)
@@ -182,11 +174,7 @@ class TrackedExecution:
         state["status"] = f"executing_{tool_name}"
         return state
 
-    async def track_tool_progress(
-        self,
-        progress: float,
-        message: Optional[str] = None
-    ):
+    async def track_tool_progress(self, progress: float, message: str | None = None):
         """
         Update tool execution progress.
 
@@ -196,22 +184,18 @@ class TrackedExecution:
         """
         if self.use_async:
             await self.tracker.update_step_progress_async(
-                progress=progress,
-                message=message
+                progress=progress, message=message
             )
         else:
-            self.tracker.update_step_progress(
-                progress=progress,
-                message=message
-            )
+            self.tracker.update_step_progress(progress=progress, message=message)
 
     async def track_tool_complete(
         self,
-        state: Dict[str, Any],
+        state: dict[str, Any],
         tool_name: str,
         result: Any,
-        error: Optional[str] = None
-    ) -> Dict[str, Any]:
+        error: str | None = None,
+    ) -> dict[str, Any]:
         """
         Track tool completion.
 
@@ -225,22 +209,16 @@ class TrackedExecution:
             Updated state
         """
         if self.use_async:
-            await self.tracker.complete_step_async(
-                error=error,
-                result=result
-            )
+            await self.tracker.complete_step_async(error=error, result=result)
         else:
-            self.tracker.complete_step(
-                error=error,
-                result=result
-            )
+            self.tracker.complete_step(error=error, result=result)
 
         # Update progress in state
         state["progress"] = self.tracker.overall_progress
 
         return state
 
-    async def track_review(self, state: Dict[str, Any]) -> Dict[str, Any]:
+    async def track_review(self, state: dict[str, Any]) -> dict[str, Any]:
         """
         Track review phase.
 
@@ -251,15 +229,13 @@ class TrackedExecution:
             Updated state
         """
         # Add review step if not exists
-        review_step_exists = any(
-            step.name == "Review" for step in self.tracker.steps
-        )
+        review_step_exists = any(step.name == "Review" for step in self.tracker.steps)
 
         if not review_step_exists:
-            step = self.tracker.add_step(
+            self.tracker.add_step(
                 name="Review",
                 description="Reviewing and validating results",
-                estimated_duration=3.0
+                estimated_duration=3.0,
             )
 
         # Start review
@@ -273,10 +249,10 @@ class TrackedExecution:
 
     async def track_completion(
         self,
-        state: Dict[str, Any],
-        result: Optional[Any] = None,
-        error: Optional[str] = None
-    ) -> Dict[str, Any]:
+        state: dict[str, Any],
+        result: Any | None = None,
+        error: str | None = None,
+    ) -> dict[str, Any]:
         """
         Track execution completion.
 
@@ -308,11 +284,11 @@ class TrackedExecution:
 
         return state
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get current execution status."""
         return self.tracker.get_status()
 
-    def get_progress_summary(self) -> Dict[str, Any]:
+    def get_progress_summary(self) -> dict[str, Any]:
         """Get progress summary."""
         return self.tracker.get_progress_summary()
 
@@ -329,7 +305,8 @@ def create_tracked_node(node_func):
         return state
     ```
     """
-    async def tracked_wrapper(state: Dict[str, Any]) -> Dict[str, Any]:
+
+    async def tracked_wrapper(state: dict[str, Any]) -> dict[str, Any]:
         """Wrapped node with tracking."""
         # Get or create tracker
         tracker = state.get("tracker")
@@ -342,13 +319,13 @@ def create_tracked_node(node_func):
         node_name = node_func.__name__.replace("_node", "").title()
 
         # Track node start
-        step = tracker.add_step(
+        tracker.add_step(
             name=node_name,
             description=f"Executing {node_name}",
-            estimated_duration=10.0
+            estimated_duration=10.0,
         )
 
-        if hasattr(tracker, 'start_step_async'):
+        if hasattr(tracker, "start_step_async"):
             await tracker.start_step_async()
         else:
             tracker.start_step()
@@ -358,7 +335,7 @@ def create_tracked_node(node_func):
             result = await node_func(state)
 
             # Track completion
-            if hasattr(tracker, 'complete_step_async'):
+            if hasattr(tracker, "complete_step_async"):
                 await tracker.complete_step_async()
             else:
                 tracker.complete_step()
@@ -367,7 +344,7 @@ def create_tracked_node(node_func):
 
         except Exception as e:
             # Track error
-            if hasattr(tracker, 'complete_step_async'):
+            if hasattr(tracker, "complete_step_async"):
                 await tracker.complete_step_async(error=str(e))
             else:
                 tracker.complete_step(error=str(e))
@@ -381,12 +358,12 @@ class ExecutionMonitor:
 
     def __init__(self):
         """Initialize execution monitor."""
-        self.active_executions: Dict[str, TrackedExecution] = {}
+        self.active_executions: dict[str, TrackedExecution] = {}
 
     def start_execution(
         self,
-        execution_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        execution_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> TrackedExecution:
         """
         Start a new tracked execution.
@@ -407,7 +384,7 @@ class ExecutionMonitor:
 
         return tracked
 
-    def get_execution(self, execution_id: str) -> Optional[TrackedExecution]:
+    def get_execution(self, execution_id: str) -> TrackedExecution | None:
         """
         Get tracked execution by ID.
 
@@ -419,7 +396,7 @@ class ExecutionMonitor:
         """
         return self.active_executions.get(execution_id)
 
-    def list_executions(self) -> List[Dict[str, Any]]:
+    def list_executions(self) -> list[dict[str, Any]]:
         """
         List all active executions.
 
@@ -432,8 +409,11 @@ class ExecutionMonitor:
                 "status": tracked.tracker.status,
                 "progress": tracked.tracker.overall_progress,
                 "started_at": tracked.tracker.started_at,
-                "current_step": tracked.tracker.steps[tracked.tracker.current_step_index].name
-                    if tracked.tracker.current_step_index is not None else None
+                "current_step": (
+                    tracked.tracker.steps[tracked.tracker.current_step_index].name
+                    if tracked.tracker.current_step_index is not None
+                    else None
+                ),
             }
             for exec_id, tracked in self.active_executions.items()
         ]
@@ -441,11 +421,13 @@ class ExecutionMonitor:
     def cleanup_completed(self):
         """Remove completed executions."""
         completed = [
-            exec_id for exec_id, tracked in self.active_executions.items()
-            if tracked.tracker.status in [
+            exec_id
+            for exec_id, tracked in self.active_executions.items()
+            if tracked.tracker.status
+            in [
                 ExecutionStatus.COMPLETED,
                 ExecutionStatus.FAILED,
-                ExecutionStatus.CANCELLED
+                ExecutionStatus.CANCELLED,
             ]
         ]
 
@@ -458,7 +440,7 @@ execution_monitor = ExecutionMonitor()
 
 
 # Example integration with LangGraph
-async def tracked_graph_execution(query: str) -> Dict[str, Any]:
+async def tracked_graph_execution(query: str) -> dict[str, Any]:
     """
     Example of executing a LangGraph with tracking.
 
@@ -482,7 +464,7 @@ async def tracked_graph_execution(query: str) -> Dict[str, Any]:
     initial_state = {
         "messages": [{"role": "user", "content": query}],
         "tracker": tracked.tracker,
-        "execution_id": tracked.execution_id
+        "execution_id": tracked.execution_id,
     }
 
     # Track planning
@@ -493,22 +475,16 @@ async def tracked_graph_execution(query: str) -> Dict[str, Any]:
         result = await state_machine.run_async(initial_state)
 
         # Track completion
-        final_state = await tracked.track_completion(
-            result,
-            result=result.get("output")
-        )
+        await tracked.track_completion(result, result=result.get("output"))
 
         return {
             "result": result,
             "execution_id": tracked.execution_id,
             "status": tracked.get_status(),
-            "summary": tracked.get_progress_summary()
+            "summary": tracked.get_progress_summary(),
         }
 
     except Exception as e:
         # Track failure
-        await tracked.track_completion(
-            initial_state,
-            error=str(e)
-        )
+        await tracked.track_completion(initial_state, error=str(e))
         raise

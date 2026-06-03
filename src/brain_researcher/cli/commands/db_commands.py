@@ -71,7 +71,9 @@ def validate(
         db.close()
         console.print("[green]✓[/green] Neo4j reachable")
         console.print(f"[dim]Nodes: {stats.get('total_nodes', 0)}[/dim]")
-        console.print(f"[dim]Relationships: {stats.get('total_relationships', 0)}[/dim]")
+        console.print(
+            f"[dim]Relationships: {stats.get('total_relationships', 0)}[/dim]"
+        )
 
     except ImportError:
         console.print("[red]Error: Validation module not found[/red]")
@@ -82,8 +84,7 @@ def validate(
 
 
 @app.command()
-def status(
-):
+def status():
     """Check database status and statistics."""
     try:
         console.print("[bold blue]Neo4j Status[/bold blue]")
@@ -99,7 +100,9 @@ def status(
         table.add_row("Total Nodes", str(stats.get("total_nodes", 0)))
         table.add_row("Total Relationships", str(stats.get("total_relationships", 0)))
         table.add_row("Node Labels", str(len(stats.get("node_labels", []))))
-        table.add_row("Relationship Types", str(len(stats.get("relationship_types", []))))
+        table.add_row(
+            "Relationship Types", str(len(stats.get("relationship_types", [])))
+        )
 
         console.print(table)
     except Exception as e:

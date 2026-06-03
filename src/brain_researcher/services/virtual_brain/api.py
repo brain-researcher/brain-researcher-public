@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Mapping, Optional
+from collections.abc import Mapping
 
 from fastapi import Depends, FastAPI, HTTPException, status
 
@@ -11,16 +11,18 @@ from brain_researcher.core.ingestion.graph_factory import (
     GraphDatabaseProtocol,
     GraphFactory,
 )
-from brain_researcher.services.br_kg.graph.graph_database import BRKGGraphDB  # type: ignore
+from brain_researcher.services.br_kg.graph.graph_database import (
+    BRKGGraphDB,  # type: ignore
+)
 from brain_researcher.services.br_kg.graph.graph_factory import create_graph_client
 
 from .config import VirtualBrainConfig
 from .models import (
     FitRequest,
     FitResponse,
-    SimulationReport,
     SimulateRequest,
     SimulateResponse,
+    SimulationReport,
     SuggestParamsRequest,
     SuggestParamsResponse,
     WhatIfRequest,
@@ -40,10 +42,10 @@ def _default_db_factory() -> GraphDatabaseProtocol:
 
 
 def create_app(
-    config_mapping: Optional[Mapping[str, object]] = None,
+    config_mapping: Mapping[str, object] | None = None,
     *,
-    db: Optional[GraphDatabaseProtocol] = None,
-    db_factory: Optional[GraphFactory] = None,
+    db: GraphDatabaseProtocol | None = None,
+    db_factory: GraphFactory | None = None,
 ) -> FastAPI:
     """Initialise the FastAPI app bound to a VirtualBrainSimulator instance."""
 
@@ -75,12 +77,15 @@ def create_app(
         summary="Derive simulation priors from BR-KG evidence.",
     )
     async def suggest_params(
-        request: SuggestParamsRequest, sim: VirtualBrainSimulator = Depends(get_simulator)
+        request: SuggestParamsRequest,
+        sim: VirtualBrainSimulator = Depends(get_simulator),
     ) -> SuggestParamsResponse:
         try:
             return sim.suggest_params(request)
         except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+            ) from exc
 
     @app.post(
         "/vb/simulate",
@@ -93,9 +98,13 @@ def create_app(
         try:
             return sim.simulate(request)
         except FileNotFoundError as exc:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+            ) from exc
         except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+            ) from exc
 
     @app.post(
         "/vb/fit",
@@ -108,7 +117,9 @@ def create_app(
         try:
             return sim.fit(request)
         except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+            ) from exc
 
     @app.get(
         "/vb/report/{simulation_id}",
@@ -131,6 +142,8 @@ def create_app(
         try:
             return sim.whatif(request)
         except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+            ) from exc
 
     return app

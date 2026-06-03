@@ -15,7 +15,10 @@ class _FakeBridgeAuditDB:
         compact = " ".join(str(query).split())
         if "MATCH (d:Dataset) RETURN count(DISTINCT d) AS value" in compact:
             return [{"value": 10}]
-        if "MATCH (:Dataset)-[r:HAS_TASK|USES_TASK]->(:Task) RETURN count(r) AS value" in compact:
+        if (
+            "MATCH (:Dataset)-[r:HAS_TASK|USES_TASK]->(:Task) RETURN count(r) AS value"
+            in compact
+        ):
             return [{"value": 20}]
         if "MATCH (ta:TaskAnalysis) RETURN count(DISTINCT ta) AS value" in compact:
             return [{"value": 5}]
@@ -23,19 +26,37 @@ class _FakeBridgeAuditDB:
             return [{"value": 12}]
         if "MATCH (m:StatsMap) RETURN count(DISTINCT m) AS value" in compact:
             return [{"value": 40}]
-        if "MATCH (:StatsMap)-[r:IN_REGION]->(:BrainRegion) RETURN count(r) AS value" in compact:
+        if (
+            "MATCH (:StatsMap)-[r:IN_REGION]->(:BrainRegion) RETURN count(r) AS value"
+            in compact
+        ):
             return [{"value": 200}]
         if "MATCH (e:Psych101Experiment) RETURN count(DISTINCT e) AS value" in compact:
             return [{"value": 3}]
-        if "MATCH (:Psych101Experiment)-[r:USES_TASK]->(:Task) RETURN count(r) AS value" in compact:
+        if (
+            "MATCH (:Psych101Experiment)-[r:USES_TASK]->(:Task) RETURN count(r) AS value"
+            in compact
+        ):
             return [{"value": 4}]
-        if "MATCH (:Psych101Experiment)-[:USES_TASK]->(t:Task)<-[:HAS_TASK|USES_TASK]-(:Dataset)" in compact:
+        if (
+            "MATCH (:Psych101Experiment)-[:USES_TASK]->(t:Task)<-[:HAS_TASK|USES_TASK]-(:Dataset)"
+            in compact
+        ):
             return [{"value": 0}]
-        if "MATCH (:Psych101Experiment)-[:USES_TASK]->(:Task)-[:MAPS_TO]->(t:Task)<-[:HAS_TASK|USES_TASK]-(:Dataset)" in compact:
+        if (
+            "MATCH (:Psych101Experiment)-[:USES_TASK]->(:Task)-[:MAPS_TO]->(t:Task)<-[:HAS_TASK|USES_TASK]-(:Dataset)"
+            in compact
+        ):
             return [{"value": 0}]
-        if "MATCH (:Psych101Experiment)-[:USES_TASK]->(:Task)-[:MAPS_TO]->(t:Task)<-[:MAPS_TO]-(ta:TaskAnalysis)" in compact:
+        if (
+            "MATCH (:Psych101Experiment)-[:USES_TASK]->(:Task)-[:MAPS_TO]->(t:Task)<-[:MAPS_TO]-(ta:TaskAnalysis)"
+            in compact
+        ):
             return [{"value": 1}]
-        if "MATCH (:Psych101Experiment)-[:USES_TASK]->(:Task)-[:BELONGS_TO_FAMILY]->(:TaskFamily)" in compact:
+        if (
+            "MATCH (:Psych101Experiment)-[:USES_TASK]->(:Task)-[:BELONGS_TO_FAMILY]->(:TaskFamily)"
+            in compact
+        ):
             return [{"value": 2}]
         if "RETURN e.id AS experiment_id" in compact:
             limit = int(params.get("limit") or 0)
@@ -114,7 +135,10 @@ def test_psych101_task_fmri_bridge_audit_summarizes_bridge_status(tmp_path):
         output_dir=tmp_path,
     )
     assert (tmp_path / "experiment_bridge_audit.tsv").exists()
-    assert json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))[
-        "bridge_status_counts"
-    ]["family_bridge_ready"] == 1
+    assert (
+        json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))[
+            "bridge_status_counts"
+        ]["family_bridge_ready"]
+        == 1
+    )
     assert artifact_paths["summary_json"].endswith("summary.json")

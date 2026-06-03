@@ -160,7 +160,9 @@ def qbold_fabber_environment_status(
         "env_override_count": len(env),
     }
     if params.fabber_bin or status["fabber_qbold_env"]:
-        status["binary_available"] = Path(binary).exists() or shutil.which(binary) is not None
+        status["binary_available"] = (
+            Path(binary).exists() or shutil.which(binary) is not None
+        )
     else:
         status["binary_available"] = shutil.which(binary) is not None
     return status
@@ -263,7 +265,9 @@ def run_qbold_fabber(params: QBoldFabberParameters) -> dict[str, object]:
                 f"qBOLD FABBER execution failed with return code {returncode}"
             )
         materialized_outputs = {
-            key: value for key, value in expected_outputs.items() if Path(value).exists()
+            key: value
+            for key, value in expected_outputs.items()
+            if Path(value).exists()
         }
         mode = "executed"
         message = "qBOLD FABBER executed successfully."

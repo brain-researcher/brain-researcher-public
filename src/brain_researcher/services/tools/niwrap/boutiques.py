@@ -5,13 +5,15 @@ converts them into tool definitions with JSON Schema validation.
 
 Moved from: archive/mcp_server/adapters/boutiques_loader.py
 """
+
 from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +24,8 @@ class ContainerSpec:
 
     image: str
     type: str = "apptainer"  # docker, apptainer, singularity
-    index: Optional[str] = None
-    entrypoint: Optional[str] = None
+    index: str | None = None
+    entrypoint: str | None = None
 
 
 @dataclass
@@ -33,9 +35,9 @@ class NiwrapDescriptor:
     package: str  # e.g., "afni", "fsl", "ants"
     version: str  # e.g., "24.2.06"
     app: str  # e.g., "3dBlurInMask", "bet"
-    boutiques: Dict[str, Any]  # Raw Boutiques JSON
-    docs: Optional[str] = None  # Optional documentation text
-    container: Optional[ContainerSpec] = None
+    boutiques: dict[str, Any]  # Raw Boutiques JSON
+    docs: str | None = None  # Optional documentation text
+    container: ContainerSpec | None = None
 
     @property
     def tool_name(self) -> str:
@@ -49,9 +51,9 @@ class NiwrapDescriptor:
 
 
 def walk_niwrap_descriptors(
-    niwrap_root: Optional[Path] = None,
-    packages: Optional[List[str]] = None,
-    limit: Optional[int] = None,
+    niwrap_root: Path | None = None,
+    packages: list[str] | None = None,
+    limit: int | None = None,
 ) -> Iterable[NiwrapDescriptor]:
     """Walk the NiWrap directory tree and yield parsed descriptors.
 
@@ -122,7 +124,7 @@ def parse_boutiques_descriptor(
     package: str,
     version: str,
     app: str,
-) -> Optional[NiwrapDescriptor]:
+) -> NiwrapDescriptor | None:
     """Parse a single Boutiques JSON file into a NiwrapDescriptor.
 
     Args:
@@ -135,9 +137,9 @@ def parse_boutiques_descriptor(
         NiwrapDescriptor if parsing succeeded, None otherwise
     """
     try:
-        with open(boutiques_path, "r", encoding="utf-8") as f:
+        with open(boutiques_path, encoding="utf-8") as f:
             boutiques_json = json.load(f)
-    except (IOError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError) as exc:
         logger.warning(f"Failed to load {boutiques_path}: {exc}")
         return None
 
@@ -147,7 +149,7 @@ def parse_boutiques_descriptor(
     if docs_file.exists():
         try:
             docs = docs_file.read_text(encoding="utf-8")
-        except IOError:
+        except OSError:
             pass
 
     # Extract container information if available
@@ -164,8 +166,8 @@ def parse_boutiques_descriptor(
 
 
 def _extract_container_spec(
-    boutiques: Dict[str, Any], package: str, version: str
-) -> Optional[ContainerSpec]:
+    boutiques: dict[str, Any], package: str, version: str
+) -> ContainerSpec | None:
     """Extract container information from Boutiques descriptor."""
     # Check for container-image in Boutiques spec
     container_image = boutiques.get("container-image")
@@ -186,8 +188,8 @@ def _extract_container_spec(
 
 
 def boutiques_to_json_schema(
-    inputs: List[Dict[str, Any]], required_only: bool = False
-) -> Dict[str, Any]:
+    inputs: list[dict[str, Any]], required_only: bool = False
+) -> dict[str, Any]:
     """Convert Boutiques inputs to JSON Schema format.
 
     Args:
@@ -197,8 +199,8 @@ def boutiques_to_json_schema(
     Returns:
         JSON Schema object with properties and required fields
     """
-    properties: Dict[str, Any] = {}
-    required: List[str] = []
+    properties: dict[str, Any] = {}
+    required: list[str] = []
 
     for input_spec in inputs:
         input_id = input_spec.get("id")
@@ -235,9 +237,9 @@ def boutiques_to_json_schema(
     return schema
 
 
-def _boutiques_input_to_property(input_spec: Dict[str, Any]) -> Dict[str, Any]:
+def _boutiques_input_to_property(input_spec: dict[str, Any]) -> dict[str, Any]:
     """Convert a single Boutiques input to a JSON Schema property."""
-    prop: Dict[str, Any] = {}
+    prop: dict[str, Any] = {}
 
     # Extract description
     description = input_spec.get("description", input_spec.get("name", ""))
@@ -263,7 +265,7 @@ def _boutiques_input_to_property(input_spec: Dict[str, Any]) -> Dict[str, Any]:
     # Handle list parameters
     if is_list:
         prop["type"] = "array"
-        item_schema: Dict[str, Any] = {"type": base_type}
+        item_schema: dict[str, Any] = {"type": base_type}
         if "format" in prop:
             item_schema["format"] = prop.pop("format")
         prop["items"] = item_schema
@@ -300,7 +302,7 @@ def _boutiques_input_to_property(input_spec: Dict[str, Any]) -> Dict[str, Any]:
     return prop
 
 
-def build_tool_definition(descriptor: NiwrapDescriptor) -> Dict[str, Any]:
+def build_tool_definition(descriptor: NiwrapDescriptor) -> dict[str, Any]:
     """Build tool definition from a NiwrapDescriptor.
 
     Args:
@@ -331,7 +333,9 @@ def build_tool_definition(descriptor: NiwrapDescriptor) -> Dict[str, Any]:
     # Build tool definition
     tool_def = {
         "name": descriptor.tool_name,
-        "description": boutiques.get("description", f"{descriptor.app} from {descriptor.package}"),
+        "description": boutiques.get(
+            "description", f"{descriptor.app} from {descriptor.package}"
+        ),
         "input_schema": input_schema,
         "output_schema": output_schema,
         "tags": tags,
@@ -343,7 +347,9 @@ def build_tool_definition(descriptor: NiwrapDescriptor) -> Dict[str, Any]:
             "passports": passports,
             "alias": descriptor.tool_alias,
             "boutiques_inputs": inputs,  # Preserve for command rendering
-            "container": descriptor.container.__dict__ if descriptor.container else None,
+            "container": (
+                descriptor.container.__dict__ if descriptor.container else None
+            ),
             "resources": resources,
         },
     }
@@ -355,7 +361,7 @@ def build_tool_definition(descriptor: NiwrapDescriptor) -> Dict[str, Any]:
     return tool_def
 
 
-def _build_output_schema(outputs: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _build_output_schema(outputs: list[dict[str, Any]]) -> dict[str, Any]:
     """Build JSON Schema for outputs from Boutiques output-files."""
     if not outputs:
         return {
@@ -367,7 +373,7 @@ def _build_output_schema(outputs: List[Dict[str, Any]]) -> Dict[str, Any]:
             },
         }
 
-    properties: Dict[str, Any] = {
+    properties: dict[str, Any] = {
         "exit_code": {"type": "integer"},
         "stdout": {"type": "string"},
         "stderr": {"type": "string"},
@@ -378,14 +384,16 @@ def _build_output_schema(outputs: List[Dict[str, Any]]) -> Dict[str, Any]:
         if output_id:
             properties[output_id] = {
                 "type": "string",
-                "description": output.get("description", output.get("name", "Output file")),
+                "description": output.get(
+                    "description", output.get("name", "Output file")
+                ),
                 "format": "uri-reference",
             }
 
     return {"type": "object", "properties": properties}
 
 
-def _assign_tags(descriptor: NiwrapDescriptor) -> List[str]:
+def _assign_tags(descriptor: NiwrapDescriptor) -> list[str]:
     """Assign tags for a tool based on package and metadata."""
     tags = ["neuro", descriptor.package]
 
@@ -419,10 +427,10 @@ def _assign_tags(descriptor: NiwrapDescriptor) -> List[str]:
 
 
 def _assign_passports(
-    descriptor: NiwrapDescriptor, outputs: List[Dict[str, Any]]
-) -> List[str]:
+    descriptor: NiwrapDescriptor, outputs: list[dict[str, Any]]
+) -> list[str]:
     """Assign passports (permissions) for a tool."""
-    passports: List[str] = []
+    passports: list[str] = []
 
     if outputs:
         passports.append("write")
@@ -438,7 +446,7 @@ def _assign_passports(
     return passports
 
 
-def _infer_resource_hints(descriptor: NiwrapDescriptor) -> Dict[str, Any]:
+def _infer_resource_hints(descriptor: NiwrapDescriptor) -> dict[str, Any]:
     """Infer resource requirements and hints from tool metadata."""
     boutiques = descriptor.boutiques
     package = descriptor.package
@@ -456,9 +464,17 @@ def _infer_resource_hints(descriptor: NiwrapDescriptor) -> Dict[str, Any]:
     return resources
 
 
-def _infer_cpu_requirement(inputs: List[Dict], command_line: str) -> Dict[str, int]:
+def _infer_cpu_requirement(inputs: list[dict], command_line: str) -> dict[str, int]:
     """Infer CPU core requirements."""
-    threading_keywords = ["thread", "parallel", "cores", "cpu", "proc", "jobs", "nthreads"]
+    threading_keywords = [
+        "thread",
+        "parallel",
+        "cores",
+        "cpu",
+        "proc",
+        "jobs",
+        "nthreads",
+    ]
 
     has_threading = False
     for input_spec in inputs:
@@ -466,8 +482,10 @@ def _infer_cpu_requirement(inputs: List[Dict], command_line: str) -> Dict[str, i
         input_name = input_spec.get("name", "").lower()
         input_desc = input_spec.get("description", "").lower()
 
-        if any(kw in input_id or kw in input_name or kw in input_desc
-               for kw in threading_keywords):
+        if any(
+            kw in input_id or kw in input_name or kw in input_desc
+            for kw in threading_keywords
+        ):
             has_threading = True
             break
 
@@ -480,7 +498,9 @@ def _infer_cpu_requirement(inputs: List[Dict], command_line: str) -> Dict[str, i
         return {"min": 1, "max": 1, "default": 1}
 
 
-def _infer_memory_requirement(package: str, app_name: str, command_line: str) -> Dict[str, float]:
+def _infer_memory_requirement(
+    package: str, app_name: str, command_line: str
+) -> dict[str, float]:
     """Infer memory requirements in GB."""
     package_defaults = {
         "freesurfer": {"min": 4.0, "recommended": 8.0},

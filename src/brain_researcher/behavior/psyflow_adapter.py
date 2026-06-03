@@ -76,10 +76,10 @@ _MAIN_STUB = (
     '"""\n\n'
     "def main() -> None:\n"
     "    raise SystemExit(\n"
-    "        \"This is a generated scaffold. Implement or import a psyflow \"\n"
-    "        \"runner to execute the task.\"\n"
+    '        "This is a generated scaffold. Implement or import a psyflow "\n'
+    '        "runner to execute the task."\n'
     "    )\n\n\n"
-    "if __name__ == \"__main__\":\n"
+    'if __name__ == "__main__":\n'
     "    main()\n"
 )
 

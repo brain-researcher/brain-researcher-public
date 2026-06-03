@@ -9,9 +9,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-import numpy as np
+
 import nibabel as nib
+import numpy as np
 
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class ClinicalPriority(Enum):
     """Clinical finding priority levels."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MODERATE = "moderate"
@@ -29,6 +30,7 @@ class ClinicalPriority(Enum):
 
 class PathologyType(Enum):
     """Types of pathologies."""
+
     STROKE = "stroke"
     TUMOR = "tumor"
     MS_LESION = "multiple_sclerosis"
@@ -42,27 +44,29 @@ class PathologyType(Enum):
 @dataclass
 class ClinicalFinding:
     """Single clinical finding."""
+
     pathology: PathologyType
     priority: ClinicalPriority
     location: str
     volume_ml: float
     confidence: float
     description: str
-    recommendations: List[str]
-    references: List[str] = field(default_factory=list)
+    recommendations: list[str]
+    references: list[str] = field(default_factory=list)
 
 
 @dataclass
 class ClinicalReport:
     """Complete clinical report."""
+
     patient_id: str
     scan_date: str
-    findings: List[ClinicalFinding]
+    findings: list[ClinicalFinding]
     overall_assessment: str
-    clinical_recommendations: List[str]
+    clinical_recommendations: list[str]
     follow_up: str
-    risk_scores: Dict[str, float]
-    quality_metrics: Dict[str, float]
+    risk_scores: dict[str, float]
+    quality_metrics: dict[str, float]
 
 
 class ClinicalDecisionSupport(NeuroToolWrapper):
@@ -71,65 +75,53 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
     def __init__(self):
         super().__init__(
             name="clinical_decision_support",
-            description="Automated clinical insights and recommendations"
+            description="Automated clinical insights and recommendations",
         )
         self.clinical_thresholds = self._load_clinical_thresholds()
         self.risk_models = self._load_risk_models()
 
-    def _load_clinical_thresholds(self) -> Dict:
+    def _load_clinical_thresholds(self) -> dict:
         """Load clinical thresholds for various conditions."""
         return {
-            "wmh_volume": {
-                "mild": 5.0,  # ml
-                "moderate": 15.0,
-                "severe": 30.0
-            },
+            "wmh_volume": {"mild": 5.0, "moderate": 15.0, "severe": 30.0},  # ml
             "brain_volume_percentile": {
                 "atrophy": 5,  # Below 5th percentile
-                "normal": 50
+                "normal": 50,
             },
-            "stroke_volume": {
-                "small": 1.0,  # ml
-                "moderate": 10.0,
-                "large": 50.0
-            },
-            "tumor_growth_rate": {
-                "stable": 0.1,  # cm/year
-                "slow": 0.5,
-                "rapid": 1.0
-            }
+            "stroke_volume": {"small": 1.0, "moderate": 10.0, "large": 50.0},  # ml
+            "tumor_growth_rate": {"stable": 0.1, "slow": 0.5, "rapid": 1.0},  # cm/year
         }
 
-    def _load_risk_models(self) -> Dict:
+    def _load_risk_models(self) -> dict:
         """Load risk assessment models."""
         return {
             "stroke_risk": {
                 "wmh_weight": 0.3,
                 "age_weight": 0.2,
                 "atrophy_weight": 0.2,
-                "microbleed_weight": 0.3
+                "microbleed_weight": 0.3,
             },
             "dementia_risk": {
                 "hippocampal_volume_weight": 0.4,
                 "wmh_weight": 0.3,
-                "cortical_thickness_weight": 0.3
+                "cortical_thickness_weight": 0.3,
             },
             "progression_risk": {
                 "lesion_count_weight": 0.3,
                 "lesion_volume_weight": 0.4,
-                "new_lesions_weight": 0.3
-            }
+                "new_lesions_weight": 0.3,
+            },
         }
 
     def _run(
         self,
-        segmentation_file: Optional[str] = None,
-        lesion_file: Optional[str] = None,
-        volumetrics: Optional[Dict] = None,
-        clinical_data: Optional[Dict] = None,
-        prior_scan: Optional[str] = None,
-        output_dir: Optional[str] = None,
-        **kwargs
+        segmentation_file: str | None = None,
+        lesion_file: str | None = None,
+        volumetrics: dict | None = None,
+        clinical_data: dict | None = None,
+        prior_scan: str | None = None,
+        output_dir: str | None = None,
+        **kwargs,
     ) -> ToolResult:
         """
         Generate clinical decision support report.
@@ -182,14 +174,18 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
 
             # Create report
             report = ClinicalReport(
-                patient_id=clinical_data.get("patient_id", "Unknown") if clinical_data else "Unknown",
+                patient_id=(
+                    clinical_data.get("patient_id", "Unknown")
+                    if clinical_data
+                    else "Unknown"
+                ),
                 scan_date=datetime.now().strftime("%Y-%m-%d"),
                 findings=findings,
                 overall_assessment=assessment,
                 clinical_recommendations=recommendations,
                 follow_up=self._determine_follow_up(findings, risk_scores),
                 risk_scores=risk_scores,
-                quality_metrics=self._assess_quality(segmentation_file, lesion_file)
+                quality_metrics=self._assess_quality(segmentation_file, lesion_file),
             )
 
             # Generate outputs
@@ -204,26 +200,22 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
                 data={
                     "findings_count": len(findings),
                     "highest_priority": max(
-                        [f.priority.value for f in findings],
-                        default="normal"
+                        [f.priority.value for f in findings], default="normal"
                     ),
                     "risk_scores": risk_scores,
                     "recommendations": recommendations,
                     "html_report": str(html_report),
                     "json_report": str(json_report),
                     "alerts": alerts,
-                    "follow_up": report.follow_up
-                }
+                    "follow_up": report.follow_up,
+                },
             )
 
         except Exception as e:
             logger.error(f"Clinical decision support failed: {e}")
-            return ToolResult(
-                status="error",
-                error=str(e)
-            )
+            return ToolResult(status="error", error=str(e))
 
-    def _analyze_segmentation(self, seg_file: str) -> List[ClinicalFinding]:
+    def _analyze_segmentation(self, seg_file: str) -> list[ClinicalFinding]:
         """Analyze brain segmentation for clinical findings."""
         findings = []
 
@@ -242,45 +234,55 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
             # Check for atrophy
             expected_brain_volume = 1200  # ml (average)
             if total_brain < expected_brain_volume * 0.9:
-                atrophy_severity = (expected_brain_volume - total_brain) / expected_brain_volume
+                atrophy_severity = (
+                    expected_brain_volume - total_brain
+                ) / expected_brain_volume
 
-                findings.append(ClinicalFinding(
-                    pathology=PathologyType.ATROPHY,
-                    priority=ClinicalPriority.MODERATE if atrophy_severity < 0.15 else ClinicalPriority.HIGH,
-                    location="Global",
-                    volume_ml=expected_brain_volume - total_brain,
-                    confidence=0.85,
-                    description=f"Brain volume {total_brain:.0f}ml ({atrophy_severity*100:.1f}% below expected)",
-                    recommendations=[
-                        "Consider neurodegenerative evaluation",
-                        "Recommend cognitive assessment",
-                        "Follow-up MRI in 6-12 months"
-                    ],
-                    references=["Jack et al., 2018 NIA-AA Framework"]
-                ))
+                findings.append(
+                    ClinicalFinding(
+                        pathology=PathologyType.ATROPHY,
+                        priority=(
+                            ClinicalPriority.MODERATE
+                            if atrophy_severity < 0.15
+                            else ClinicalPriority.HIGH
+                        ),
+                        location="Global",
+                        volume_ml=expected_brain_volume - total_brain,
+                        confidence=0.85,
+                        description=f"Brain volume {total_brain:.0f}ml ({atrophy_severity*100:.1f}% below expected)",
+                        recommendations=[
+                            "Consider neurodegenerative evaluation",
+                            "Recommend cognitive assessment",
+                            "Follow-up MRI in 6-12 months",
+                        ],
+                        references=["Jack et al., 2018 NIA-AA Framework"],
+                    )
+                )
 
             # Check CSF expansion
             csf_ratio = csf_volume / (total_brain + csf_volume)
             if csf_ratio > 0.15:
-                findings.append(ClinicalFinding(
-                    pathology=PathologyType.ATROPHY,
-                    priority=ClinicalPriority.MODERATE,
-                    location="Ventricular system",
-                    volume_ml=csf_volume,
-                    confidence=0.80,
-                    description=f"Ventricular enlargement (CSF ratio: {csf_ratio:.2f})",
-                    recommendations=[
-                        "Evaluate for hydrocephalus",
-                        "Check for normal pressure hydrocephalus symptoms"
-                    ]
-                ))
+                findings.append(
+                    ClinicalFinding(
+                        pathology=PathologyType.ATROPHY,
+                        priority=ClinicalPriority.MODERATE,
+                        location="Ventricular system",
+                        volume_ml=csf_volume,
+                        confidence=0.80,
+                        description=f"Ventricular enlargement (CSF ratio: {csf_ratio:.2f})",
+                        recommendations=[
+                            "Evaluate for hydrocephalus",
+                            "Check for normal pressure hydrocephalus symptoms",
+                        ],
+                    )
+                )
 
         except Exception as e:
             logger.error(f"Segmentation analysis failed: {e}")
 
         return findings
 
-    def _analyze_lesions(self, lesion_file: str) -> List[ClinicalFinding]:
+    def _analyze_lesions(self, lesion_file: str) -> list[ClinicalFinding]:
         """Analyze lesion segmentation."""
         findings = []
 
@@ -292,6 +294,7 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
 
             # Find connected components
             from scipy import ndimage
+
             labeled, n_lesions = ndimage.label(lesion_data > 0)
 
             # Analyze each lesion
@@ -311,7 +314,7 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
                     recommendations = [
                         "URGENT: Possible acute stroke",
                         "Immediate neurological consultation",
-                        "Consider thrombolysis/thrombectomy if within window"
+                        "Consider thrombolysis/thrombectomy if within window",
                     ]
                 elif lesion_volume > 10:
                     pathology = PathologyType.TUMOR
@@ -319,50 +322,54 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
                     recommendations = [
                         "Neurosurgical consultation recommended",
                         "Consider contrast-enhanced MRI",
-                        "Evaluate for biopsy"
+                        "Evaluate for biopsy",
                     ]
                 else:
                     pathology = PathologyType.WMH
                     priority = ClinicalPriority.LOW
                     recommendations = [
                         "Monitor progression",
-                        "Vascular risk factor assessment"
+                        "Vascular risk factor assessment",
                     ]
 
-                findings.append(ClinicalFinding(
-                    pathology=pathology,
-                    priority=priority,
-                    location=location,
-                    volume_ml=lesion_volume,
-                    confidence=0.75,
-                    description=f"Lesion detected: {lesion_volume:.1f}ml",
-                    recommendations=recommendations
-                ))
+                findings.append(
+                    ClinicalFinding(
+                        pathology=pathology,
+                        priority=priority,
+                        location=location,
+                        volume_ml=lesion_volume,
+                        confidence=0.75,
+                        description=f"Lesion detected: {lesion_volume:.1f}ml",
+                        recommendations=recommendations,
+                    )
+                )
 
             # Calculate total WMH burden
             total_wmh = np.sum(lesion_data > 0) * voxel_volume
             if total_wmh > self.clinical_thresholds["wmh_volume"]["moderate"]:
-                findings.append(ClinicalFinding(
-                    pathology=PathologyType.WMH,
-                    priority=ClinicalPriority.MODERATE,
-                    location="Periventricular and deep white matter",
-                    volume_ml=total_wmh,
-                    confidence=0.85,
-                    description=f"Moderate to severe WMH burden (Fazekas 2-3)",
-                    recommendations=[
-                        "Cardiovascular risk assessment",
-                        "Blood pressure management",
-                        "Consider antiplatelet therapy"
-                    ],
-                    references=["Wardlaw et al., 2013 STRIVE"]
-                ))
+                findings.append(
+                    ClinicalFinding(
+                        pathology=PathologyType.WMH,
+                        priority=ClinicalPriority.MODERATE,
+                        location="Periventricular and deep white matter",
+                        volume_ml=total_wmh,
+                        confidence=0.85,
+                        description="Moderate to severe WMH burden (Fazekas 2-3)",
+                        recommendations=[
+                            "Cardiovascular risk assessment",
+                            "Blood pressure management",
+                            "Consider antiplatelet therapy",
+                        ],
+                        references=["Wardlaw et al., 2013 STRIVE"],
+                    )
+                )
 
         except Exception as e:
             logger.error(f"Lesion analysis failed: {e}")
 
         return findings
 
-    def _analyze_volumetrics(self, volumetrics: Dict) -> List[ClinicalFinding]:
+    def _analyze_volumetrics(self, volumetrics: dict) -> list[ClinicalFinding]:
         """Analyze volumetric measurements."""
         findings = []
 
@@ -372,24 +379,26 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
             expected_hc = 3.5  # ml per hemisphere
 
             if hc_volume < expected_hc * 0.7:
-                findings.append(ClinicalFinding(
-                    pathology=PathologyType.ATROPHY,
-                    priority=ClinicalPriority.HIGH,
-                    location="Bilateral hippocampi",
-                    volume_ml=expected_hc - hc_volume,
-                    confidence=0.80,
-                    description=f"Hippocampal atrophy ({hc_volume:.1f}ml, {(hc_volume/expected_hc)*100:.0f}% of expected)",
-                    recommendations=[
-                        "Memory assessment recommended",
-                        "Consider Alzheimer's biomarkers",
-                        "Neuropsychological evaluation"
-                    ],
-                    references=["Scheltens et al., 1992 MTA scale"]
-                ))
+                findings.append(
+                    ClinicalFinding(
+                        pathology=PathologyType.ATROPHY,
+                        priority=ClinicalPriority.HIGH,
+                        location="Bilateral hippocampi",
+                        volume_ml=expected_hc - hc_volume,
+                        confidence=0.80,
+                        description=f"Hippocampal atrophy ({hc_volume:.1f}ml, {(hc_volume/expected_hc)*100:.0f}% of expected)",
+                        recommendations=[
+                            "Memory assessment recommended",
+                            "Consider Alzheimer's biomarkers",
+                            "Neuropsychological evaluation",
+                        ],
+                        references=["Scheltens et al., 1992 MTA scale"],
+                    )
+                )
 
         return findings
 
-    def _analyze_progression(self, current: str, prior: str) -> List[ClinicalFinding]:
+    def _analyze_progression(self, current: str, prior: str) -> list[ClinicalFinding]:
         """Analyze progression between scans."""
         findings = []
 
@@ -404,18 +413,24 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
             change_pct = ((current_vol - prior_vol) / prior_vol) * 100
 
             if abs(change_pct) > 5:
-                findings.append(ClinicalFinding(
-                    pathology=PathologyType.ATROPHY if change_pct < 0 else PathologyType.EDEMA,
-                    priority=ClinicalPriority.MODERATE,
-                    location="Global",
-                    volume_ml=abs(current_vol - prior_vol) * 0.001,
-                    confidence=0.70,
-                    description=f"Volume change: {change_pct:+.1f}% from prior",
-                    recommendations=[
-                        "Disease progression noted",
-                        "Consider treatment modification"
-                    ]
-                ))
+                findings.append(
+                    ClinicalFinding(
+                        pathology=(
+                            PathologyType.ATROPHY
+                            if change_pct < 0
+                            else PathologyType.EDEMA
+                        ),
+                        priority=ClinicalPriority.MODERATE,
+                        location="Global",
+                        volume_ml=abs(current_vol - prior_vol) * 0.001,
+                        confidence=0.70,
+                        description=f"Volume change: {change_pct:+.1f}% from prior",
+                        recommendations=[
+                            "Disease progression noted",
+                            "Consider treatment modification",
+                        ],
+                    )
+                )
 
         except Exception as e:
             logger.error(f"Progression analysis failed: {e}")
@@ -423,10 +438,8 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
         return findings
 
     def _calculate_risk_scores(
-        self,
-        findings: List[ClinicalFinding],
-        clinical_data: Optional[Dict]
-    ) -> Dict[str, float]:
+        self, findings: list[ClinicalFinding], clinical_data: dict | None
+    ) -> dict[str, float]:
         """Calculate clinical risk scores."""
         scores = {}
 
@@ -457,34 +470,46 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
 
         # Progression risk
         progression_risk = 0.0
-        high_priority_count = sum(1 for f in findings if f.priority in [ClinicalPriority.HIGH, ClinicalPriority.CRITICAL])
+        high_priority_count = sum(
+            1
+            for f in findings
+            if f.priority in [ClinicalPriority.HIGH, ClinicalPriority.CRITICAL]
+        )
         progression_risk = min(high_priority_count * 0.3, 1.0)
         scores["progression_risk"] = progression_risk
 
         return scores
 
     def _generate_recommendations(
-        self,
-        findings: List[ClinicalFinding],
-        risk_scores: Dict[str, float]
-    ) -> List[str]:
+        self, findings: list[ClinicalFinding], risk_scores: dict[str, float]
+    ) -> list[str]:
         """Generate clinical recommendations."""
         recommendations = []
 
         # Priority-based recommendations
-        critical_findings = [f for f in findings if f.priority == ClinicalPriority.CRITICAL]
+        critical_findings = [
+            f for f in findings if f.priority == ClinicalPriority.CRITICAL
+        ]
         if critical_findings:
-            recommendations.append("⚠️ URGENT: Critical findings requiring immediate attention")
+            recommendations.append(
+                "⚠️ URGENT: Critical findings requiring immediate attention"
+            )
 
         # Risk-based recommendations
         if risk_scores.get("stroke_risk", 0) > 0.7:
-            recommendations.append("High stroke risk - aggressive vascular risk management indicated")
+            recommendations.append(
+                "High stroke risk - aggressive vascular risk management indicated"
+            )
 
         if risk_scores.get("dementia_risk", 0) > 0.6:
-            recommendations.append("Elevated dementia risk - consider cognitive assessment and biomarkers")
+            recommendations.append(
+                "Elevated dementia risk - consider cognitive assessment and biomarkers"
+            )
 
         if risk_scores.get("progression_risk", 0) > 0.5:
-            recommendations.append("Disease progression likely - close monitoring recommended")
+            recommendations.append(
+                "Disease progression likely - close monitoring recommended"
+            )
 
         # General recommendations
         if not recommendations:
@@ -493,15 +518,15 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
         return recommendations
 
     def _generate_assessment(
-        self,
-        findings: List[ClinicalFinding],
-        risk_scores: Dict[str, float]
+        self, findings: list[ClinicalFinding], risk_scores: dict[str, float]
     ) -> str:
         """Generate overall clinical assessment."""
         if not findings:
             return "No significant abnormalities detected. Brain structure appears within normal limits."
 
-        critical_count = sum(1 for f in findings if f.priority == ClinicalPriority.CRITICAL)
+        critical_count = sum(
+            1 for f in findings if f.priority == ClinicalPriority.CRITICAL
+        )
         high_count = sum(1 for f in findings if f.priority == ClinicalPriority.HIGH)
 
         if critical_count > 0:
@@ -519,12 +544,12 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
         return assessment
 
     def _determine_follow_up(
-        self,
-        findings: List[ClinicalFinding],
-        risk_scores: Dict[str, float]
+        self, findings: list[ClinicalFinding], risk_scores: dict[str, float]
     ) -> str:
         """Determine follow-up recommendations."""
-        max_priority = max([f.priority for f in findings], default=ClinicalPriority.NORMAL)
+        max_priority = max(
+            [f.priority for f in findings], default=ClinicalPriority.NORMAL
+        )
         max_risk = max(risk_scores.values()) if risk_scores else 0
 
         if max_priority == ClinicalPriority.CRITICAL:
@@ -536,17 +561,19 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
         else:
             return "Annual follow-up recommended"
 
-    def _assess_quality(self, seg_file: Optional[str], lesion_file: Optional[str]) -> Dict[str, float]:
+    def _assess_quality(
+        self, seg_file: str | None, lesion_file: str | None
+    ) -> dict[str, float]:
         """Assess scan quality metrics."""
         metrics = {
             "signal_to_noise": 0.85,  # Placeholder
             "motion_artifact": 0.1,
             "coverage_complete": 1.0,
-            "resolution_adequate": 1.0
+            "resolution_adequate": 1.0,
         }
         return metrics
 
-    def _check_critical_findings(self, findings: List[ClinicalFinding]) -> List[str]:
+    def _check_critical_findings(self, findings: list[ClinicalFinding]) -> list[str]:
         """Check for critical findings requiring alerts."""
         alerts = []
 
@@ -556,7 +583,7 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
 
         return alerts
 
-    def _get_anatomical_location(self, coords: List[int]) -> str:
+    def _get_anatomical_location(self, coords: list[int]) -> str:
         """Get anatomical location from coordinates."""
         # Simplified anatomical mapping
         x, y, z = coords
@@ -619,15 +646,19 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
                 html += f"            <li>{rec}</li>\n"
             html += "        </ul>\n    </div>\n"
 
-        html += f"""
+        html += """
     <h2>Risk Assessment</h2>
     <div>
 """
         for risk_name, risk_value in report.risk_scores.items():
-            color = "#e74c3c" if risk_value > 0.7 else "#f39c12" if risk_value > 0.4 else "#27ae60"
+            color = (
+                "#e74c3c"
+                if risk_value > 0.7
+                else "#f39c12" if risk_value > 0.4 else "#27ae60"
+            )
             html += f'        <span class="risk-score" style="background: {color};">{risk_name}: {risk_value*100:.0f}%</span>\n'
 
-        html += f"""
+        html += """
     </div>
 
     <div class="recommendations">
@@ -650,7 +681,7 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
 """
 
         report_path = output_path / "clinical_report.html"
-        with open(report_path, 'w') as f:
+        with open(report_path, "w") as f:
             f.write(html)
 
         return report_path
@@ -670,18 +701,18 @@ class ClinicalDecisionSupport(NeuroToolWrapper):
                     "confidence": f.confidence,
                     "description": f.description,
                     "recommendations": f.recommendations,
-                    "references": f.references
+                    "references": f.references,
                 }
                 for f in report.findings
             ],
             "risk_scores": report.risk_scores,
             "clinical_recommendations": report.clinical_recommendations,
             "follow_up": report.follow_up,
-            "quality_metrics": report.quality_metrics
+            "quality_metrics": report.quality_metrics,
         }
 
         json_path = output_path / "clinical_report.json"
-        with open(json_path, 'w') as f:
+        with open(json_path, "w") as f:
             json.dump(json_data, f, indent=2)
 
         return json_path

@@ -6,7 +6,8 @@ clear, and only revise when a deterministic patch is available.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from .contracts import CriticIssue, CriticVerdict
 
@@ -41,11 +42,11 @@ class CriticAgent:
     def review_plan(
         self,
         *,
-        plan: Dict[str, Any],
+        plan: dict[str, Any],
         user_msg: str = "",
         structured_ctx: str = "",
-        context: Optional[Dict[str, Any]] = None,
-        tool_candidates: Optional[Iterable[Dict[str, Any]]] = None,
+        context: dict[str, Any] | None = None,
+        tool_candidates: Iterable[dict[str, Any]] | None = None,
     ) -> CriticVerdict:
         tool = str(plan.get("leaf_runtime_id") or plan.get("tool") or "no_tool")
         params = plan.get("params")
@@ -105,7 +106,7 @@ class CriticAgent:
             )
 
         # Keep "dangerous" checks advisory to avoid unnecessary behavior change.
-        candidate_map: Dict[str, Dict[str, Any]] = {}
+        candidate_map: dict[str, dict[str, Any]] = {}
         for candidate in tool_candidates or []:
             if isinstance(candidate, dict) and candidate.get("id"):
                 candidate_map[str(candidate["id"])] = candidate
@@ -134,9 +135,9 @@ class CriticAgent:
         self,
         *,
         tool_name: str,
-        params: Dict[str, Any] | Any,
-        context: Optional[Dict[str, Any]] = None,
-        tool_metadata: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | Any,
+        context: dict[str, Any] | None = None,
+        tool_metadata: dict[str, Any] | None = None,
     ) -> CriticVerdict:
         if not isinstance(params, dict):
             issue = CriticIssue(
@@ -185,7 +186,9 @@ class CriticAgent:
                 reason="allowlist_block",
             )
 
-        if isinstance(tool_metadata, dict) and _is_truthy(tool_metadata.get("dangerous")):
+        if isinstance(tool_metadata, dict) and _is_truthy(
+            tool_metadata.get("dangerous")
+        ):
             issue = CriticIssue(
                 code="DANGEROUS_TOOL",
                 message="Dangerous tool execution should be audited.",

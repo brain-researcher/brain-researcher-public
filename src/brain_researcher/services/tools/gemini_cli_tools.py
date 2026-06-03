@@ -9,19 +9,19 @@ from __future__ import annotations
 
 import json
 import subprocess
-from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 
-def _run_cli(args: list[str], stdin: Optional[str] = None, timeout: int = 20) -> ToolResult:
+def _run_cli(
+    args: list[str], stdin: str | None = None, timeout: int = 20
+) -> ToolResult:
     proc = subprocess.run(
         args,
         input=stdin.encode("utf-8") if stdin is not None else None,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         check=False,
         timeout=timeout,
     )
@@ -38,9 +38,12 @@ class GeminiListDirectory(NeuroToolWrapper):
     DANGEROUS = False
     TAGS = ["fs", "coding", "read_only"]
     COST_HINT = "cheap"
+
     class Args(BaseModel):
         path: str = Field(default=".", description="Directory to list")
-        recursive: bool = Field(default=False, description="Recurse into subdirectories")
+        recursive: bool = Field(
+            default=False, description="Recurse into subdirectories"
+        )
 
     def get_tool_name(self) -> str:
         return "gemini.list_directory"
@@ -62,6 +65,7 @@ class GeminiReadFile(NeuroToolWrapper):
     DANGEROUS = False
     TAGS = ["fs", "coding", "read_only"]
     COST_HINT = "cheap"
+
     class Args(BaseModel):
         path: str = Field(description="Path to file")
         max_bytes: int = Field(default=8000, description="Maximum bytes to read")
@@ -77,7 +81,15 @@ class GeminiReadFile(NeuroToolWrapper):
         return self.Args
 
     def _run(self, path: str, max_bytes: int = 8000, offset: int = 0) -> ToolResult:
-        args = ["gemini", "read", path, "--max-bytes", str(max_bytes), "--offset", str(offset)]
+        args = [
+            "gemini",
+            "read",
+            path,
+            "--max-bytes",
+            str(max_bytes),
+            "--offset",
+            str(offset),
+        ]
         return _run_cli(args)
 
 
@@ -85,6 +97,7 @@ class GeminiSearchText(NeuroToolWrapper):
     DANGEROUS = False
     TAGS = ["fs", "coding", "read_only"]
     COST_HINT = "cheap"
+
     class Args(BaseModel):
         query: str = Field(description="Search pattern")
         root: str = Field(default=".", description="Root directory")
@@ -108,6 +121,7 @@ class GeminiWebFetch(NeuroToolWrapper):
     DANGEROUS = False
     TAGS = ["net", "http"]
     COST_HINT = "normal"
+
     class Args(BaseModel):
         url: str = Field(description="URL to fetch")
         timeout: int = Field(default=20, description="Timeout seconds")
@@ -130,6 +144,7 @@ class GeminiGoogleSearch(NeuroToolWrapper):
     DANGEROUS = False
     TAGS = ["net", "search"]
     COST_HINT = "normal"
+
     class Args(BaseModel):
         query: str = Field(description="Search query")
         num_results: int = Field(default=5, description="Number of results")
@@ -152,6 +167,7 @@ class GeminiWriteFile(NeuroToolWrapper):
     DANGEROUS = True
     TAGS = ["fs", "coding", "write"]
     COST_HINT = "normal"
+
     class Args(BaseModel):
         path: str = Field(description="Path to write")
         content: str = Field(description="Content to write")
@@ -174,6 +190,7 @@ class GeminiReplace(NeuroToolWrapper):
     DANGEROUS = True
     TAGS = ["fs", "coding", "write"]
     COST_HINT = "normal"
+
     class Args(BaseModel):
         patch: str = Field(description="Patch text")
 
@@ -195,6 +212,7 @@ class GeminiRunShell(NeuroToolWrapper):
     DANGEROUS = True
     TAGS = ["shell", "coding", "dangerous"]
     COST_HINT = "expensive"
+
     class Args(BaseModel):
         command: str = Field(description="Command to run")
         timeout: int = Field(default=20, description="Timeout seconds")
@@ -217,6 +235,7 @@ class GeminiWriteTodos(NeuroToolWrapper):
     DANGEROUS = True
     TAGS = ["planning", "write"]
     COST_HINT = "normal"
+
     class Args(BaseModel):
         context: str = Field(description="Context for TODO generation")
 
@@ -238,6 +257,7 @@ class GeminiSaveMemory(NeuroToolWrapper):
     DANGEROUS = True
     TAGS = ["memory", "write"]
     COST_HINT = "normal"
+
     class Args(BaseModel):
         content: str = Field(description="Content to save")
 
@@ -259,6 +279,7 @@ class GeminiCodebaseInvestigator(NeuroToolWrapper):
     DANGEROUS = True
     TAGS = ["analysis", "coding", "expensive"]
     COST_HINT = "expensive"
+
     class Args(BaseModel):
         query: str = Field(description="Investigation prompt")
         root: str = Field(default=".", description="Repo root")

@@ -16,7 +16,6 @@ from brain_researcher.services.review.claim_provenance_producer import (
     attach_claim_artifact_provenance,
 )
 
-
 _MANIFEST = [
     {
         "role": "artifact",

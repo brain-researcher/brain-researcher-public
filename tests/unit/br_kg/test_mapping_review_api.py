@@ -105,7 +105,9 @@ class InMemoryMappingDB:
         deleted_count = before - len(self.relationships)
         return [{"deleted_count": deleted_count}]
 
-    def relationship_data(self, source_id: str, target_id: str) -> dict[str, Any] | None:
+    def relationship_data(
+        self, source_id: str, target_id: str
+    ) -> dict[str, Any] | None:
         for rel in self.relationships:
             if (
                 rel["start"] == source_id
@@ -165,7 +167,9 @@ def test_bulk_action_selected_subset_takes_precedence_over_filters(
     assert db.relationship_data("s1", "t1").get("reviewed") is None
 
 
-def test_bulk_action_filtered_subset_applies_when_no_selection(client, db: InMemoryMappingDB):
+def test_bulk_action_filtered_subset_applies_when_no_selection(
+    client, db: InMemoryMappingDB
+):
     resp = client.post(
         "/api/mapping-review/mappings/bulk-action",
         json={"action": "delete", "filters": {"method": "exact"}},
@@ -214,7 +218,9 @@ def test_bulk_delete_reports_mixed_success_and_failure(client, db: InMemoryMappi
     assert payload["processed"] == 2
     assert payload["succeeded"] == 1
     assert payload["failed"] == 1
-    assert payload["errors"] == [{"mapping_id": "missing->t9", "error": "Mapping not found"}]
+    assert payload["errors"] == [
+        {"mapping_id": "missing->t9", "error": "Mapping not found"}
+    ]
     assert db.relationship_data("s1", "t1") is None
 
 

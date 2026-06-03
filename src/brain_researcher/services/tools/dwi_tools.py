@@ -25,7 +25,7 @@ from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResu
 def _normalize_participant_labels(participant_label: Any) -> list[str]:
     if participant_label is None:
         return []
-    if isinstance(participant_label, (list, tuple, set)):
+    if isinstance(participant_label, list | tuple | set):
         raw_items = participant_label
     else:
         raw_items = [participant_label]
@@ -238,12 +238,14 @@ class RunTractographyTool(NeuroToolWrapper):
                     "dwi": str(Path(dwi).expanduser().resolve()),
                     "bval": str(Path(bval_path).expanduser().resolve()),
                     "bvec": str(Path(bvec_path).expanduser().resolve()),
-                    "qsiprep_dir": resolved_inputs["qsiprep_dir"]
-                    if resolved_inputs
-                    else (
-                        str(Path(qsiprep_dir).expanduser().resolve())
-                        if qsiprep_dir
-                        else None
+                    "qsiprep_dir": (
+                        resolved_inputs["qsiprep_dir"]
+                        if resolved_inputs
+                        else (
+                            str(Path(qsiprep_dir).expanduser().resolve())
+                            if qsiprep_dir
+                            else None
+                        )
                     ),
                 },
                 "outputs": {

@@ -103,7 +103,9 @@ class HypothesisEntryV1(BaseModel):
 
         prior = data.get("prior")
         if isinstance(prior, dict):
-            data.setdefault("prior_claim", prior.get("claim") or prior.get("hypothesis"))
+            data.setdefault(
+                "prior_claim", prior.get("claim") or prior.get("hypothesis")
+            )
             data.setdefault(
                 "expected_effect",
                 prior.get("expected_effect") or prior.get("effect"),
@@ -112,7 +114,10 @@ class HypothesisEntryV1(BaseModel):
                 "expected_direction",
                 prior.get("expected_direction") or prior.get("direction"),
             )
-            if data.get("prior_confidence") is None and prior.get("confidence") is not None:
+            if (
+                data.get("prior_confidence") is None
+                and prior.get("confidence") is not None
+            ):
                 data["prior_confidence"] = prior.get("confidence")
 
         outcome = data.get("outcome")

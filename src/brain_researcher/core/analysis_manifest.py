@@ -72,8 +72,12 @@ def save_analysis_manifest(job, output_dir: Path) -> None:
             payload_json = getattr(job, "payload_json", None)
             if payload_json:
                 payload = json.loads(payload_json)
-                if isinstance(payload, dict) and isinstance(payload.get("artifacts"), list):
-                    artifacts = [a for a in payload.get("artifacts") if isinstance(a, dict)]
+                if isinstance(payload, dict) and isinstance(
+                    payload.get("artifacts"), list
+                ):
+                    artifacts = [
+                        a for a in payload.get("artifacts") if isinstance(a, dict)
+                    ]
         except Exception:
             artifacts = []
 

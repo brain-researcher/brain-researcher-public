@@ -1,12 +1,11 @@
 """Experiment Management for A/B testing and feature rollouts."""
 
-import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set, Tuple
-from dataclasses import dataclass, asdict
-from enum import Enum
-import redis
 import json
+import logging
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta
+
+import redis
 
 from .ab_testing import ABTestingFramework, Experiment, ExperimentStatus
 
@@ -19,8 +18,8 @@ class FeatureFlag:
     description: str
     enabled: bool
     rollout_percentage: float
-    target_groups: List[str]
-    conditions: Dict[str, any]
+    target_groups: list[str]
+    conditions: dict[str, any]
     created_at: datetime
     updated_at: datetime
 
@@ -29,18 +28,22 @@ class FeatureFlag:
 class ExperimentRule:
     experiment_id: str
     priority: int
-    conditions: Dict[str, any]
+    conditions: dict[str, any]
     enabled: bool
 
 
 class ExperimentManager:
     """High-level experiment management and coordination."""
 
-    def __init__(self, ab_framework: ABTestingFramework, redis_client: Optional[redis.Redis] = None):
+    def __init__(
+        self,
+        ab_framework: ABTestingFramework,
+        redis_client: redis.Redis | None = None,
+    ):
         self.ab_framework = ab_framework
         self.redis_client = redis_client or redis.Redis(decode_responses=True)
-        self.feature_flags: Dict[str, FeatureFlag] = {}
-        self.experiment_rules: List[ExperimentRule] = []
+        self.feature_flags: dict[str, FeatureFlag] = {}
+        self.experiment_rules: list[ExperimentRule] = []
 
         # Load existing data
         self._load_feature_flags()
@@ -54,8 +57,8 @@ class ExperimentManager:
         description: str,
         enabled: bool = False,
         rollout_percentage: float = 0.0,
-        target_groups: Optional[List[str]] = None,
-        conditions: Optional[Dict[str, any]] = None
+        target_groups: list[str] | None = None,
+        conditions: dict[str, any] | None = None,
     ) -> FeatureFlag:
         """Create a new feature flag."""
         flag = FeatureFlag(
@@ -66,7 +69,7 @@ class ExperimentManager:
             target_groups=target_groups or [],
             conditions=conditions or {},
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
         self.feature_flags[name] = flag
@@ -78,10 +81,10 @@ class ExperimentManager:
     def update_feature_flag(
         self,
         name: str,
-        enabled: Optional[bool] = None,
-        rollout_percentage: Optional[float] = None,
-        target_groups: Optional[List[str]] = None,
-        conditions: Optional[Dict[str, any]] = None
+        enabled: bool | None = None,
+        rollout_percentage: float | None = None,
+        target_groups: list[str] | None = None,
+        conditions: dict[str, any] | None = None,
     ) -> FeatureFlag:
         """Update an existing feature flag."""
         if name not in self.feature_flags:
@@ -105,7 +108,9 @@ class ExperimentManager:
 
         return flag
 
-    def is_feature_enabled(self, flag_name: str, user_id: str, context: Optional[Dict] = None) -> bool:
+    def is_feature_enabled(
+        self, flag_name: str, user_id: str, context: dict | None = None
+    ) -> bool:
         """Check if a feature is enabled for a user."""
         if flag_name not in self.feature_flags:
             return False
@@ -135,7 +140,7 @@ class ExperimentManager:
 
         return True
 
-    def get_feature_flags(self, enabled_only: bool = False) -> List[Dict]:
+    def get_feature_flags(self, enabled_only: bool = False) -> list[dict]:
         """Get all feature flags."""
         flags = []
 
@@ -156,12 +161,12 @@ class ExperimentManager:
         self,
         name: str,
         description: str,
-        variants: List[str],
-        allocation: Dict[str, float],
-        metrics: List[str],
-        feature_flags: List[str],
-        conditions: Optional[Dict[str, any]] = None,
-        priority: int = 1
+        variants: list[str],
+        allocation: dict[str, float],
+        metrics: list[str],
+        feature_flags: list[str],
+        conditions: dict[str, any] | None = None,
+        priority: int = 1,
     ) -> Experiment:
         """Create an experiment with associated feature flags."""
         # Create the A/B test
@@ -170,7 +175,7 @@ class ExperimentManager:
             description=description,
             variants=variants,
             allocation=allocation,
-            metrics=metrics
+            metrics=metrics,
         )
 
         # Create experiment rule
@@ -178,7 +183,7 @@ class ExperimentManager:
             experiment_id=experiment.id,
             priority=priority,
             conditions=conditions or {},
-            enabled=True
+            enabled=True,
         )
 
         self.experiment_rules.append(rule)
@@ -192,13 +197,17 @@ class ExperimentManager:
                     name=flag_name,
                     description=f"Feature flag for experiment {name}",
                     enabled=True,
-                    rollout_percentage=100
+                    rollout_percentage=100,
                 )
 
-        logger.info(f"Created experiment {experiment.id} with {len(feature_flags)} feature flags")
+        logger.info(
+            f"Created experiment {experiment.id} with {len(feature_flags)} feature flags"
+        )
         return experiment
 
-    def get_user_experiments(self, user_id: str, context: Optional[Dict] = None) -> List[Dict]:
+    def get_user_experiments(
+        self, user_id: str, context: dict | None = None
+    ) -> list[dict]:
         """Get all active experiments for a user."""
         context = context or {}
         user_experiments = []
@@ -206,7 +215,7 @@ class ExperimentManager:
         # Sort rules by priority
         sorted_rules = sorted(
             [rule for rule in self.experiment_rules if rule.enabled],
-            key=lambda x: x.priority
+            key=lambda x: x.priority,
         )
 
         for rule in sorted_rules:
@@ -221,24 +230,25 @@ class ExperimentManager:
 
                 variant = self.ab_framework.assign_user(user_id, experiment.id)
 
-                user_experiments.append({
-                    "experiment_id": experiment.id,
-                    "experiment_name": experiment.name,
-                    "variant": variant,
-                    "priority": rule.priority
-                })
+                user_experiments.append(
+                    {
+                        "experiment_id": experiment.id,
+                        "experiment_name": experiment.name,
+                        "variant": variant,
+                        "priority": rule.priority,
+                    }
+                )
 
             except Exception as e:
-                logger.error(f"Error processing experiment {rule.experiment_id} for user {user_id}: {e}")
+                logger.error(
+                    f"Error processing experiment {rule.experiment_id} for user {user_id}: {e}"
+                )
 
         return user_experiments
 
     def get_user_variant(
-        self,
-        user_id: str,
-        experiment_name: str,
-        context: Optional[Dict] = None
-    ) -> Optional[str]:
+        self, user_id: str, experiment_name: str, context: dict | None = None
+    ) -> str | None:
         """Get user's variant for a specific experiment."""
         # Find experiment by name
         experiment = None
@@ -268,7 +278,7 @@ class ExperimentManager:
 
     # Automated Experiment Management
 
-    def auto_promote_winners(self, min_significance: float = 0.95) -> List[Dict]:
+    def auto_promote_winners(self, min_significance: float = 0.95) -> list[dict]:
         """Automatically promote winning variants to 100% traffic."""
         promoted = []
 
@@ -287,39 +297,45 @@ class ExperimentManager:
             # Check for clear winners
             for metric, result in results.items():
                 if (
-                    result.get("significant") and
-                    result.get("probability_treatment_better", 0) > min_significance and
-                    result.get("lift", 0) > 0.05  # 5% minimum lift
+                    result.get("significant")
+                    and result.get("probability_treatment_better", 0) > min_significance
+                    and result.get("lift", 0) > 0.05  # 5% minimum lift
                 ):
                     # Promote winner
                     winner = "treatment"  # Assuming binary test
 
                     self._promote_variant(experiment.id, winner)
 
-                    promoted.append({
-                        "experiment_id": experiment.id,
-                        "experiment_name": experiment.name,
-                        "winning_variant": winner,
-                        "metric": metric,
-                        "lift": result.get("lift", 0),
-                        "significance": result.get("probability_treatment_better", 0)
-                    })
+                    promoted.append(
+                        {
+                            "experiment_id": experiment.id,
+                            "experiment_name": experiment.name,
+                            "winning_variant": winner,
+                            "metric": metric,
+                            "lift": result.get("lift", 0),
+                            "significance": result.get(
+                                "probability_treatment_better", 0
+                            ),
+                        }
+                    )
 
-                    logger.info(f"Auto-promoted experiment {experiment.id} variant {winner}")
+                    logger.info(
+                        f"Auto-promoted experiment {experiment.id} variant {winner}"
+                    )
                     break
 
         return promoted
 
-    def auto_stop_experiments(self, max_duration_days: int = 30) -> List[str]:
+    def auto_stop_experiments(self, max_duration_days: int = 30) -> list[str]:
         """Automatically stop experiments that have run too long."""
         stopped = []
         cutoff_date = datetime.utcnow() - timedelta(days=max_duration_days)
 
         for experiment in self.ab_framework.experiments.values():
             if (
-                experiment.status == ExperimentStatus.RUNNING and
-                experiment.start_date and
-                experiment.start_date < cutoff_date
+                experiment.status == ExperimentStatus.RUNNING
+                and experiment.start_date
+                and experiment.start_date < cutoff_date
             ):
                 self.ab_framework.stop_experiment(experiment.id)
                 stopped.append(experiment.id)
@@ -329,11 +345,12 @@ class ExperimentManager:
 
     # Health Monitoring
 
-    def get_system_health(self) -> Dict:
+    def get_system_health(self) -> dict:
         """Get overall system health metrics."""
         total_experiments = len(self.ab_framework.experiments)
         running_experiments = sum(
-            1 for exp in self.ab_framework.experiments.values()
+            1
+            for exp in self.ab_framework.experiments.values()
             if exp.status == ExperimentStatus.RUNNING
         )
 
@@ -351,19 +368,18 @@ class ExperimentManager:
             "experiments": {
                 "total": total_experiments,
                 "running": running_experiments,
-                "completed": total_experiments - running_experiments
+                "completed": total_experiments - running_experiments,
             },
-            "feature_flags": {
-                "total": total_flags,
-                "enabled": enabled_flags
-            },
+            "feature_flags": {"total": total_flags, "enabled": enabled_flags},
             "redis_healthy": redis_healthy,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     # Private Methods
 
-    def _evaluate_conditions(self, conditions: Dict, user_id: str, context: Dict) -> bool:
+    def _evaluate_conditions(
+        self, conditions: dict, user_id: str, context: dict
+    ) -> bool:
         """Evaluate experiment/flag conditions for a user."""
         for condition_type, condition_value in conditions.items():
             if condition_type == "user_id":
@@ -374,7 +390,10 @@ class ExperimentManager:
                     return False
 
             elif condition_type == "user_attribute":
-                attr_name, expected_value = condition_value["attribute"], condition_value["value"]
+                attr_name, expected_value = (
+                    condition_value["attribute"],
+                    condition_value["value"],
+                )
                 user_value = context.get("user_attributes", {}).get(attr_name)
                 if user_value != expected_value:
                     return False
@@ -399,11 +418,13 @@ class ExperimentManager:
         self.ab_framework.stop_experiment(experiment_id)
 
         # Update associated feature flags
-        experiment = self.ab_framework.experiments[experiment_id]
+        self.ab_framework.experiments[experiment_id]
 
         # This would integrate with feature deployment system
         # For now, just log the promotion
-        logger.info(f"Promoted variant {winning_variant} for experiment {experiment_id}")
+        logger.info(
+            f"Promoted variant {winning_variant} for experiment {experiment_id}"
+        )
 
     def _save_feature_flag(self, flag: FeatureFlag) -> None:
         """Save feature flag to Redis."""
@@ -412,10 +433,13 @@ class ExperimentManager:
         data["created_at"] = flag.created_at.isoformat()
         data["updated_at"] = flag.updated_at.isoformat()
 
-        self.redis_client.hset(key, mapping={
-            k: json.dumps(v) if isinstance(v, (dict, list)) else str(v)
-            for k, v in data.items()
-        })
+        self.redis_client.hset(
+            key,
+            mapping={
+                k: json.dumps(v) if isinstance(v, dict | list) else str(v)
+                for k, v in data.items()
+            },
+        )
 
     def _load_feature_flags(self) -> None:
         """Load feature flags from Redis."""
@@ -450,10 +474,13 @@ class ExperimentManager:
         key = f"experiment_rule:{rule.experiment_id}"
         data = asdict(rule)
 
-        self.redis_client.hset(key, mapping={
-            k: json.dumps(v) if isinstance(v, dict) else str(v)
-            for k, v in data.items()
-        })
+        self.redis_client.hset(
+            key,
+            mapping={
+                k: json.dumps(v) if isinstance(v, dict) else str(v)
+                for k, v in data.items()
+            },
+        )
 
     def _load_experiment_rules(self) -> None:
         """Load experiment rules from Redis."""

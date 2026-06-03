@@ -683,47 +683,55 @@ def resolve_space_assets(
         base = template_path.parent
         extras = {
             "template_t1w": str(template_path),
-            "template_t2w": str(
-                base / f"tpl-{canonical_space}_res-{resolved_resolution}_T2w.nii.gz"
-            )
-            if (
-                base / f"tpl-{canonical_space}_res-{resolved_resolution}_T2w.nii.gz"
-            ).exists()
-            else None,
-            "template_pd": str(
-                base / f"tpl-{canonical_space}_res-{resolved_resolution}_PD.nii.gz"
-            )
-            if (
-                base / f"tpl-{canonical_space}_res-{resolved_resolution}_PD.nii.gz"
-            ).exists()
-            else None,
-            "gm_probseg": str(
-                base
-                / f"tpl-{canonical_space}_res-{resolved_resolution}_label-gm_probseg.nii.gz"
-            )
-            if (
-                base
-                / f"tpl-{canonical_space}_res-{resolved_resolution}_label-gm_probseg.nii.gz"
-            ).exists()
-            else None,
-            "wm_probseg": str(
-                base
-                / f"tpl-{canonical_space}_res-{resolved_resolution}_label-wm_probseg.nii.gz"
-            )
-            if (
-                base
-                / f"tpl-{canonical_space}_res-{resolved_resolution}_label-wm_probseg.nii.gz"
-            ).exists()
-            else None,
-            "csf_probseg": str(
-                base
-                / f"tpl-{canonical_space}_res-{resolved_resolution}_label-csf_probseg.nii.gz"
-            )
-            if (
-                base
-                / f"tpl-{canonical_space}_res-{resolved_resolution}_label-csf_probseg.nii.gz"
-            ).exists()
-            else None,
+            "template_t2w": (
+                str(
+                    base / f"tpl-{canonical_space}_res-{resolved_resolution}_T2w.nii.gz"
+                )
+                if (
+                    base / f"tpl-{canonical_space}_res-{resolved_resolution}_T2w.nii.gz"
+                ).exists()
+                else None
+            ),
+            "template_pd": (
+                str(base / f"tpl-{canonical_space}_res-{resolved_resolution}_PD.nii.gz")
+                if (
+                    base / f"tpl-{canonical_space}_res-{resolved_resolution}_PD.nii.gz"
+                ).exists()
+                else None
+            ),
+            "gm_probseg": (
+                str(
+                    base
+                    / f"tpl-{canonical_space}_res-{resolved_resolution}_label-gm_probseg.nii.gz"
+                )
+                if (
+                    base
+                    / f"tpl-{canonical_space}_res-{resolved_resolution}_label-gm_probseg.nii.gz"
+                ).exists()
+                else None
+            ),
+            "wm_probseg": (
+                str(
+                    base
+                    / f"tpl-{canonical_space}_res-{resolved_resolution}_label-wm_probseg.nii.gz"
+                )
+                if (
+                    base
+                    / f"tpl-{canonical_space}_res-{resolved_resolution}_label-wm_probseg.nii.gz"
+                ).exists()
+                else None
+            ),
+            "csf_probseg": (
+                str(
+                    base
+                    / f"tpl-{canonical_space}_res-{resolved_resolution}_label-csf_probseg.nii.gz"
+                )
+                if (
+                    base
+                    / f"tpl-{canonical_space}_res-{resolved_resolution}_label-csf_probseg.nii.gz"
+                ).exists()
+                else None
+            ),
         }
         return {
             **resolved,

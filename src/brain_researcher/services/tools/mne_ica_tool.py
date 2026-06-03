@@ -7,24 +7,21 @@ and cardiac components.
 """
 
 import logging
-import json
-import numpy as np
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any
 
+import numpy as np
 from pydantic import BaseModel, Field
 
+from brain_researcher.core.utils import configure_mne_environment
 from brain_researcher.services.tools.params import (
-    MNEICAParameters,
     mne_ica_from_payload,
     run_mne_ica,
 )
+from brain_researcher.services.tools.spec import ToolSpec
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
     ToolResult,
 )
-from brain_researcher.services.tools.spec import ToolSpec
-from brain_researcher.core.utils import configure_mne_environment
 
 configure_mne_environment()
 
@@ -33,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class ICAMethod(str):
     """ICA algorithm options."""
+
     FASTICA = "fastica"
     INFOMAX = "infomax"
     PICARD = "picard"
@@ -41,6 +39,7 @@ class ICAMethod(str):
 
 class ArtifactType(str):
     """Artifact types for automatic detection."""
+
     EOG = "eog"  # Eye blinks/movements
     ECG = "ecg"  # Cardiac artifacts
     MUSCLE = "muscle"  # Muscle artifacts
@@ -53,128 +52,102 @@ class MNEICAArgs(BaseModel):
     raw_file: str = Field(
         description="Path to preprocessed raw data file (.fif format)"
     )
-    output_dir: str = Field(
-        description="Output directory for ICA results"
-    )
+    output_dir: str = Field(description="Output directory for ICA results")
 
     # ICA parameters
-    n_components: Optional[Union[int, float]] = Field(
+    n_components: int | float | None = Field(
         default=None,
-        description="Number of components (int) or variance to explain (0-1 float). None=use all"
+        description="Number of components (int) or variance to explain (0-1 float). None=use all",
     )
     method: str = Field(
         default="fastica",
-        description="ICA algorithm: fastica, infomax, picard, extended-infomax"
+        description="ICA algorithm: fastica, infomax, picard, extended-infomax",
     )
-    max_iter: Union[int, str] = Field(
-        default="auto",
-        description="Maximum iterations for ICA convergence"
+    max_iter: int | str = Field(
+        default="auto", description="Maximum iterations for ICA convergence"
     )
-    random_state: Optional[int] = Field(
-        default=42,
-        description="Random seed for reproducibility"
+    random_state: int | None = Field(
+        default=42, description="Random seed for reproducibility"
     )
 
     # Filtering for ICA
-    l_freq: Optional[float] = Field(
-        default=1.0,
-        description="High-pass filter before ICA (Hz). Recommended: 1.0"
+    l_freq: float | None = Field(
+        default=1.0, description="High-pass filter before ICA (Hz). Recommended: 1.0"
     )
-    h_freq: Optional[float] = Field(
+    h_freq: float | None = Field(
         default=None,
-        description="Low-pass filter before ICA (Hz). None for no low-pass"
+        description="Low-pass filter before ICA (Hz). None for no low-pass",
     )
 
     # Artifact detection
-    detect_artifacts: List[str] = Field(
+    detect_artifacts: list[str] = Field(
         default=["eog", "ecg"],
-        description="Artifact types to automatically detect: eog, ecg, muscle, ref"
+        description="Artifact types to automatically detect: eog, ecg, muscle, ref",
     )
-    eog_channels: Optional[List[str]] = Field(
+    eog_channels: list[str] | None = Field(
         default=None,
-        description="EOG channel names for correlation (auto-detect if None)"
+        description="EOG channel names for correlation (auto-detect if None)",
     )
-    ecg_channels: Optional[List[str]] = Field(
+    ecg_channels: list[str] | None = Field(
         default=None,
-        description="ECG channel names for correlation (auto-detect if None)"
+        description="ECG channel names for correlation (auto-detect if None)",
     )
 
     # Thresholds for automatic detection
     eog_threshold: float = Field(
-        default=3.0,
-        description="Z-score threshold for EOG artifact detection"
+        default=3.0, description="Z-score threshold for EOG artifact detection"
     )
     ecg_threshold: float = Field(
-        default=3.0,
-        description="Z-score threshold for ECG artifact detection"
+        default=3.0, description="Z-score threshold for ECG artifact detection"
     )
     muscle_threshold: float = Field(
-        default=5.0,
-        description="Z-score threshold for muscle artifact detection"
+        default=5.0, description="Z-score threshold for muscle artifact detection"
     )
 
     # Component selection
-    exclude_components: Optional[List[int]] = Field(
-        default=None,
-        description="Manually specify component indices to exclude"
+    exclude_components: list[int] | None = Field(
+        default=None, description="Manually specify component indices to exclude"
     )
     n_max_eog: int = Field(
-        default=2,
-        description="Maximum number of EOG components to remove"
+        default=2, description="Maximum number of EOG components to remove"
     )
     n_max_ecg: int = Field(
-        default=2,
-        description="Maximum number of ECG components to remove"
+        default=2, description="Maximum number of ECG components to remove"
     )
 
     # Visualization and reporting
-    plot_components: bool = Field(
-        default=True,
-        description="Generate component plots"
-    )
-    plot_sources: bool = Field(
-        default=True,
-        description="Plot ICA sources"
-    )
+    plot_components: bool = Field(default=True, description="Generate component plots")
+    plot_sources: bool = Field(default=True, description="Plot ICA sources")
     plot_overlay: bool = Field(
-        default=True,
-        description="Plot before/after overlay comparison"
+        default=True, description="Plot before/after overlay comparison"
     )
-    n_pca_components: Optional[int] = Field(
+    n_pca_components: int | None = Field(
         default=None,
-        description="Number of PCA components for dimension reduction before ICA"
+        description="Number of PCA components for dimension reduction before ICA",
     )
 
     # Advanced options
-    fit_params: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="Additional parameters for the ICA algorithm"
+    fit_params: dict[str, Any] | None = Field(
+        default=None, description="Additional parameters for the ICA algorithm"
     )
-    reject: Optional[Dict[str, float]] = Field(
-        default=None,
-        description="Rejection parameters for bad segments during fitting"
+    reject: dict[str, float] | None = Field(
+        default=None, description="Rejection parameters for bad segments during fitting"
     )
-    picks: Optional[List[str]] = Field(
-        default=None,
-        description="Channel types or names to include in ICA"
+    picks: list[str] | None = Field(
+        default=None, description="Channel types or names to include in ICA"
     )
 
     # Output options
-    save_ica: bool = Field(
-        default=True,
-        description="Save ICA solution for later use"
-    )
+    save_ica: bool = Field(default=True, description="Save ICA solution for later use")
     apply_ica: bool = Field(
-        default=True,
-        description="Apply ICA to remove artifacts from data"
+        default=True, description="Apply ICA to remove artifacts from data"
     )
     overwrite: bool = Field(
-        default=False,
-        description="Overwrite existing output files"
+        default=False, description="Overwrite existing output files"
     )
 
 
-def _model_required(model_cls) -> List[str]:
+def _model_required(model_cls) -> list[str]:
     try:
         schema = model_cls.model_json_schema()
     except AttributeError:
@@ -182,8 +155,8 @@ def _model_required(model_cls) -> List[str]:
     return schema.get("required", [])
 
 
-def _model_defaults(model_cls) -> Dict[str, Any]:
-    defaults: Dict[str, Any] = {}
+def _model_defaults(model_cls) -> dict[str, Any]:
+    defaults: dict[str, Any] = {}
     if hasattr(model_cls, "model_fields"):
         for name, field in model_cls.model_fields.items():
             if field.default is not None:
@@ -224,6 +197,7 @@ class MNEICATool(NeuroToolWrapper):
         """Check MNE-Python availability."""
         try:
             import mne
+
             self.mne_available = True
             self.mne_version = mne.__version__
             logger.info(f"MNE-Python {self.mne_version} available")
@@ -245,7 +219,9 @@ class MNEICATool(NeuroToolWrapper):
     def get_args_schema(self):
         return MNEICAArgs
 
-    def _detect_eog_components(self, ica, raw, eog_channels=None, threshold=3.0, n_max=2):
+    def _detect_eog_components(
+        self, ica, raw, eog_channels=None, threshold=3.0, n_max=2
+    ):
         """Detect EOG artifact components."""
         import mne
 
@@ -254,7 +230,7 @@ class MNEICATool(NeuroToolWrapper):
             eog_inds = mne.pick_types(raw.info, eog=True, exclude=[])
             if len(eog_inds) == 0:
                 # Try to find channels with EOG in the name
-                eog_channels = [ch for ch in raw.ch_names if 'EOG' in ch.upper()]
+                eog_channels = [ch for ch in raw.ch_names if "EOG" in ch.upper()]
 
         if not eog_channels and len(eog_inds) == 0:
             logger.warning("No EOG channels found")
@@ -262,24 +238,24 @@ class MNEICATool(NeuroToolWrapper):
 
         # Use automatic detection
         eog_indices, scores = ica.find_bads_eog(
-            raw,
-            ch_name=eog_channels[0] if eog_channels else None,
-            threshold=threshold
+            raw, ch_name=eog_channels[0] if eog_channels else None, threshold=threshold
         )
 
         # Limit to n_max components
         if len(eog_indices) > n_max:
             # Sort by score and take top n_max
             sorted_indices = sorted(
-                zip(eog_indices, scores[eog_indices]),
+                zip(eog_indices, scores[eog_indices], strict=False),
                 key=lambda x: abs(x[1]),
-                reverse=True
+                reverse=True,
             )
             eog_indices = [idx for idx, _ in sorted_indices[:n_max]]
 
         return eog_indices
 
-    def _detect_ecg_components(self, ica, raw, ecg_channels=None, threshold=3.0, n_max=2):
+    def _detect_ecg_components(
+        self, ica, raw, ecg_channels=None, threshold=3.0, n_max=2
+    ):
         """Detect ECG artifact components."""
         import mne
 
@@ -288,7 +264,7 @@ class MNEICATool(NeuroToolWrapper):
             ecg_inds = mne.pick_types(raw.info, ecg=True, exclude=[])
             if len(ecg_inds) == 0:
                 # Try to find channels with ECG in the name
-                ecg_channels = [ch for ch in raw.ch_names if 'ECG' in ch.upper()]
+                ecg_channels = [ch for ch in raw.ch_names if "ECG" in ch.upper()]
 
         try:
             # Use automatic detection
@@ -296,7 +272,7 @@ class MNEICATool(NeuroToolWrapper):
                 raw,
                 ch_name=ecg_channels[0] if ecg_channels else None,
                 threshold=threshold,
-                method='correlation'
+                method="correlation",
             )
         except Exception as e:
             logger.warning(f"Could not detect ECG components: {e}")
@@ -305,9 +281,9 @@ class MNEICATool(NeuroToolWrapper):
         # Limit to n_max components
         if len(ecg_indices) > n_max:
             sorted_indices = sorted(
-                zip(ecg_indices, scores[ecg_indices]),
+                zip(ecg_indices, scores[ecg_indices], strict=False),
                 key=lambda x: abs(x[1]),
-                reverse=True
+                reverse=True,
             )
             ecg_indices = [idx for idx, _ in sorted_indices[:n_max]]
 
@@ -315,7 +291,6 @@ class MNEICATool(NeuroToolWrapper):
 
     def _detect_muscle_components(self, ica, raw, threshold=5.0):
         """Detect muscle artifact components using frequency characteristics."""
-        import mne
 
         muscle_indices = []
 
@@ -330,7 +305,8 @@ class MNEICATool(NeuroToolWrapper):
 
             # Calculate power in high frequency band (>30 Hz)
             from scipy import signal
-            freqs, psd = signal.welch(component_data, raw.info['sfreq'], nperseg=1024)
+
+            freqs, psd = signal.welch(component_data, raw.info["sfreq"], nperseg=1024)
 
             # Get power in muscle frequency range (30-100 Hz)
             muscle_freq_mask = (freqs >= 30) & (freqs <= 100)
@@ -350,9 +326,9 @@ class MNEICATool(NeuroToolWrapper):
 
     def _generate_plots(self, ica, raw, exclude_indices, output_dir):
         """Generate ICA component plots."""
-        import mne
         import matplotlib
-        matplotlib.use('Agg')  # Non-interactive backend
+
+        matplotlib.use("Agg")  # Non-interactive backend
         import matplotlib.pyplot as plt
 
         plot_files = {}
@@ -411,40 +387,40 @@ class MNEICATool(NeuroToolWrapper):
         self,
         raw_file: str,
         output_dir: str,
-        n_components: Optional[Union[int, float]] = None,
+        n_components: int | float | None = None,
         method: str = "fastica",
-        max_iter: Union[int, str] = "auto",
-        random_state: Optional[int] = 42,
-        l_freq: Optional[float] = 1.0,
-        h_freq: Optional[float] = None,
-        detect_artifacts: List[str] = ["eog", "ecg"],
-        eog_channels: Optional[List[str]] = None,
-        ecg_channels: Optional[List[str]] = None,
+        max_iter: int | str = "auto",
+        random_state: int | None = 42,
+        l_freq: float | None = 1.0,
+        h_freq: float | None = None,
+        detect_artifacts: list[str] = None,
+        eog_channels: list[str] | None = None,
+        ecg_channels: list[str] | None = None,
         eog_threshold: float = 3.0,
         ecg_threshold: float = 3.0,
         muscle_threshold: float = 5.0,
-        exclude_components: Optional[List[int]] = None,
+        exclude_components: list[int] | None = None,
         n_max_eog: int = 2,
         n_max_ecg: int = 2,
         plot_components: bool = True,
         plot_sources: bool = True,
         plot_overlay: bool = True,
-        n_pca_components: Optional[int] = None,
-        fit_params: Optional[Dict[str, Any]] = None,
-        reject: Optional[Dict[str, float]] = None,
-        picks: Optional[List[str]] = None,
+        n_pca_components: int | None = None,
+        fit_params: dict[str, Any] | None = None,
+        reject: dict[str, float] | None = None,
+        picks: list[str] | None = None,
         save_ica: bool = True,
         apply_ica: bool = True,
         overwrite: bool = False,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Execute MNE ICA artifact removal."""
+        if detect_artifacts is None:
+            detect_artifacts = ["eog", "ecg"]
         try:
             if not self.mne_available:
                 return ToolResult(
-                    status="error",
-                    error="MNE-Python not available",
-                    data={}
+                    status="error", error="MNE-Python not available", data={}
                 )
 
             payload = {
@@ -490,26 +466,20 @@ class MNEICATool(NeuroToolWrapper):
 
         except Exception as e:
             logger.error(f"ICA processing failed: {str(e)}")
-            return ToolResult(
-                status="error",
-                error=str(e),
-                data={}
-            )
+            return ToolResult(status="error", error=str(e), data={})
 
     def apply_saved_ica(
         self,
         raw_file: str,
         ica_file: str,
         output_file: str,
-        exclude_additional: Optional[List[int]] = None
+        exclude_additional: list[int] | None = None,
     ) -> ToolResult:
         """Apply a previously saved ICA solution to new data."""
         try:
             if not self.mne_available:
                 return ToolResult(
-                    status="error",
-                    error="MNE-Python not available",
-                    data={}
+                    status="error", error="MNE-Python not available", data={}
                 )
 
             import mne
@@ -525,7 +495,9 @@ class MNEICATool(NeuroToolWrapper):
                 ica.exclude = list(set(ica.exclude))
 
             # Apply ICA
-            logger.info(f"Applying saved ICA with {len(ica.exclude)} excluded components")
+            logger.info(
+                f"Applying saved ICA with {len(ica.exclude)} excluded components"
+            )
             ica.apply(raw)
 
             # Save cleaned data
@@ -536,24 +508,18 @@ class MNEICATool(NeuroToolWrapper):
                 data={
                     "output": output_file,
                     "excluded_components": ica.exclude,
-                    "message": f"Applied saved ICA solution, removed {len(ica.exclude)} components"
-                }
+                    "message": f"Applied saved ICA solution, removed {len(ica.exclude)} components",
+                },
             )
 
         except Exception as e:
-            return ToolResult(
-                status="error",
-                error=str(e),
-                data={}
-            )
+            return ToolResult(status="error", error=str(e), data={})
 
 
 class MNEICATools:
     """Collection of MNE ICA tools."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         """Get all MNE ICA tools."""
-        return [
-            MNEICATool()
-        ]
+        return [MNEICATool()]

@@ -9,7 +9,7 @@ Brain Researcher is an OSS-preview neuroimaging research assistant with a recipe
 
 ## Product Surfaces
 
-- [Architecture overview](architecture/overview.md) - service layout and core components.
+- [Runtime stack](specs/brain_researcher_runtime_stack.md) - service layout and runtime boundaries.
 - [MCP tool catalog](mcp_tools.schema.json) - machine-readable tool contracts.
 - [MCP surface tiers](mcp.md#surface-tiers) - public, internal, and compatibility MCP tools.
 - [KG tool schema](services/br-kg/kg_tool_schema.md) - graph schema for tools, versions, and runs.
@@ -19,10 +19,10 @@ Brain Researcher is an OSS-preview neuroimaging research assistant with a recipe
 
 ## Release And Review
 
-- [OSS preview release gate](release/oss_preview_release_gate_2026-05-28.md) - latest public web and docs boundary check.
-- [Public KG dump](release/public_kg_dump.md) - export and release notes for the public graph dump.
-- [Tracked legacy/script/demo review](review/tracked_legacy_script_demo_review.md) - cleanup ledger for public-surface files.
-- [Scientific review stack](review/scientific_review_stack.md) - review workflow and failure-mode framing.
+- [Call for contributors](CALL_FOR_CONTRIBUTORS_EXPANDED.md) - review workflow and contribution areas.
+- [Collaborator review items](CALL_FOR_COLLABATORS_REVIEW_ITEMS.md) - reviewer-facing item inventory.
+- [BR-KG plot probe](use_cases/br_kg_plot_probe_20260502/SUMMARY.md) - bounded public summary and retained figures.
+- [Bounded autoresearch case report](use_cases/bounded_autoresearch_a1_2026-04-30/BOUNDED_AUTORESEARCH_CASE_REPORT.md) - public markdown report.
 
 ## Support
 

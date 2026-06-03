@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
 
 
-def _to_tuple(values: Optional[Sequence[float]], default: Sequence[float]) -> Tuple[float, ...]:
+def _to_tuple(
+    values: Sequence[float] | None, default: Sequence[float]
+) -> tuple[float, ...]:
     if values is None:
         values = default
     return tuple(float(v) for v in values)
@@ -20,13 +23,13 @@ def _to_tuple(values: Optional[Sequence[float]], default: Sequence[float]) -> Tu
 class AFNIClustSimParameters:
     """Parameters required for AFNI-style cluster simulations."""
 
-    input_file: Optional[str]
-    mask_file: Optional[str]
-    fwhm: Optional[Tuple[float, float, float]]
-    pthr: Tuple[float, ...]
-    athr: Tuple[float, ...]
+    input_file: str | None
+    mask_file: str | None
+    fwhm: tuple[float, float, float] | None
+    pthr: tuple[float, ...]
+    athr: tuple[float, ...]
     iterations: int
-    seed: Optional[int]
+    seed: int | None
     sided: int
     prefix: str
     acf: bool
@@ -35,7 +38,7 @@ class AFNIClustSimParameters:
     output_dir: str
 
 
-def afni_clustsim_from_payload(payload: Dict[str, Any]) -> AFNIClustSimParameters:
+def afni_clustsim_from_payload(payload: dict[str, Any]) -> AFNIClustSimParameters:
     """Construct parameters from a JSON-serialisable payload."""
 
     output_dir = payload.get("output_dir")
@@ -43,7 +46,7 @@ def afni_clustsim_from_payload(payload: Dict[str, Any]) -> AFNIClustSimParameter
         output_dir = Path(payload.get("prefix", "ClustSim")).resolve().parent
 
     fwhm = payload.get("fwhm")
-    fwhm_tuple: Optional[Tuple[float, float, float]] = None
+    fwhm_tuple: tuple[float, float, float] | None = None
     if fwhm is not None:
         if len(fwhm) != 3:
             raise ValueError("fwhm must contain three values (x, y, z).")
@@ -66,15 +69,17 @@ def afni_clustsim_from_payload(payload: Dict[str, Any]) -> AFNIClustSimParameter
     )
 
 
-def _cluster_threshold(p: float, alpha: float, iterations: int, sided: int, rng: np.random.Generator) -> float:
+def _cluster_threshold(
+    p: float, alpha: float, iterations: int, sided: int, rng: np.random.Generator
+) -> float:
     base = max(1.0, 15.0 * (0.01 / max(p, 1e-6)) ** 0.75)
     sided_factor = 1.0 if sided == 2 else 0.85
     iter_factor = 1.0 + np.log10(max(iterations, 1000)) * 0.05
     noise = rng.normal(loc=1.0, scale=0.1)
-    return max(1.0, base * sided_factor * iter_factor * (alpha ** -0.15) * noise)
+    return max(1.0, base * sided_factor * iter_factor * (alpha**-0.15) * noise)
 
 
-def run_afni_clustsim(params: AFNIClustSimParameters) -> Dict[str, Any]:
+def run_afni_clustsim(params: AFNIClustSimParameters) -> dict[str, Any]:
     """Generate AFNI-style cluster thresholds with analytic fallbacks."""
 
     output_dir = Path(params.output_dir)

@@ -6,9 +6,10 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
+
 from brain_researcher.core.utils import configure_mne_environment
 
 
@@ -16,14 +17,14 @@ from brain_researcher.core.utils import configure_mne_environment
 class MNEAutorejectParameters:
     epochs_file: str
     output_dir: str
-    n_interpolate: Optional[Tuple[int, ...]] = None
-    consensus: Optional[Tuple[float, ...]] = None
+    n_interpolate: tuple[int, ...] | None = None
+    consensus: tuple[float, ...] | None = None
     cv: int = 5
     thresh_method: str = "bayesian_optimization"
     n_jobs: int = 1
-    random_state: Optional[int] = 42
+    random_state: int | None = 42
     mode: str = "repair"
-    picks: Optional[Union[str, Tuple[str, ...]]] = None
+    picks: str | tuple[str, ...] | None = None
     use_local: bool = True
     use_global: bool = True
     save_epochs: bool = True
@@ -32,15 +33,15 @@ class MNEAutorejectParameters:
     verbose: bool = True
 
 
-def _ensure_tuple(value: Any) -> Optional[Tuple[Any, ...]]:
+def _ensure_tuple(value: Any) -> tuple[Any, ...] | None:
     if value is None:
         return None
-    if isinstance(value, (list, tuple, set)):
+    if isinstance(value, list | tuple | set):
         return tuple(value)
     return (value,)
 
 
-def _ensure_picks(value: Any) -> Optional[Union[str, Tuple[str, ...]]]:
+def _ensure_picks(value: Any) -> str | tuple[str, ...] | None:
     if value is None:
         return None
     if isinstance(value, str):
@@ -48,7 +49,7 @@ def _ensure_picks(value: Any) -> Optional[Union[str, Tuple[str, ...]]]:
     return tuple(value)
 
 
-def mne_autoreject_from_payload(payload: Dict[str, Any]) -> MNEAutorejectParameters:
+def mne_autoreject_from_payload(payload: dict[str, Any]) -> MNEAutorejectParameters:
     return MNEAutorejectParameters(
         epochs_file=str(payload["epochs_file"]),
         output_dir=str(payload["output_dir"]),
@@ -88,10 +89,12 @@ def _autoreject_with_package(epochs, params: MNEAutorejectParameters, pick_idx):
     )
     epochs_clean = ar.fit_transform(epochs)
     reject_log = ar.get_reject_log(epochs)
-    thresholds: Dict[str, Any] = {}
+    thresholds: dict[str, Any] = {}
     if hasattr(ar, "threshes_"):
         threshes = ar.threshes_
-        thresholds["thresholds"] = threshes.tolist() if hasattr(threshes, "tolist") else threshes
+        thresholds["thresholds"] = (
+            threshes.tolist() if hasattr(threshes, "tolist") else threshes
+        )
     if hasattr(ar, "consensus_"):
         thresholds["consensus"] = float(ar.consensus_)
     if hasattr(ar, "n_interpolate_"):
@@ -116,7 +119,7 @@ def _autoreject_fallback(epochs, params: MNEAutorejectParameters, pick_idx):
     thresholds = np.zeros(n_channels)
     for ch_idx in range(n_channels):
         ch_data = data[:, ch_idx, :]
-        cv_thresholds: List[float] = []
+        cv_thresholds: list[float] = []
         for train_idx, _ in kf.split(ch_data):
             train_data = ch_data[train_idx]
             peak_to_peak = np.ptp(train_data, axis=1)
@@ -147,7 +150,7 @@ def _autoreject_fallback(epochs, params: MNEAutorejectParameters, pick_idx):
             continue
         for idx in bad_indices:
             ch = channel_indices[idx]
-            neighbors: List[np.ndarray] = []
+            neighbors: list[np.ndarray] = []
             neighbor_positions = np.where(channel_indices == ch)[0]
             pos = neighbor_positions[0] if len(neighbor_positions) else None
             if pos is not None:
@@ -170,11 +173,13 @@ def _autoreject_fallback(epochs, params: MNEAutorejectParameters, pick_idx):
     return epochs_clean, reject_log, {}
 
 
-def _calculate_rejection_stats(epochs_original, epochs_clean, reject_log) -> Dict[str, Any]:
+def _calculate_rejection_stats(
+    epochs_original, epochs_clean, reject_log
+) -> dict[str, Any]:
     n_epochs_original = len(epochs_original)
     n_epochs_clean = len(epochs_clean)
     n_rejected = n_epochs_original - n_epochs_clean
-    stats: Dict[str, Any] = {
+    stats: dict[str, Any] = {
         "n_epochs_original": n_epochs_original,
         "n_epochs_clean": n_epochs_clean,
         "n_epochs_rejected": n_rejected,
@@ -202,13 +207,19 @@ def _plot_reject_log(has_package: bool, epochs, reject_log, output_file: Path) -
 
     fig, axes = plt.subplots(2, 1, figsize=(12, 8))
     axes[0].plot(bad_epochs.astype(int), "r-", alpha=0.7)
-    axes[0].fill_between(range(len(bad_epochs)), 0, bad_epochs.astype(int), alpha=0.3, color="red")
+    axes[0].fill_between(
+        range(len(bad_epochs)), 0, bad_epochs.astype(int), alpha=0.3, color="red"
+    )
     axes[0].set_xlabel("Epoch")
     axes[0].set_ylabel("Rejected")
-    axes[0].set_title(f"Epoch Rejection ({np.sum(bad_epochs)}/{len(bad_epochs)} rejected)")
+    axes[0].set_title(
+        f"Epoch Rejection ({np.sum(bad_epochs)}/{len(bad_epochs)} rejected)"
+    )
     axes[0].set_ylim(-0.1, 1.1)
 
-    im = axes[1].imshow(labels.T, aspect="auto", cmap="RdYlGn_r", interpolation="nearest")
+    im = axes[1].imshow(
+        labels.T, aspect="auto", cmap="RdYlGn_r", interpolation="nearest"
+    )
     axes[1].set_xlabel("Epoch")
     axes[1].set_ylabel("Channel")
     axes[1].set_title("Bad Channels per Epoch (red = bad)")
@@ -218,7 +229,7 @@ def _plot_reject_log(has_package: bool, epochs, reject_log, output_file: Path) -
     plt.close()
 
 
-def run_mne_autoreject(params: MNEAutorejectParameters) -> Dict[str, Any]:
+def run_mne_autoreject(params: MNEAutorejectParameters) -> dict[str, Any]:
     configure_mne_environment()
     cache_dir = Path(params.output_dir) / ".numba-cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -226,8 +237,8 @@ def run_mne_autoreject(params: MNEAutorejectParameters) -> Dict[str, Any]:
     os.environ.setdefault("NUMBA_DISABLE_CACHING", "1")
     os.environ.setdefault("MNE_HOME", str(Path(params.output_dir)))
 
-    import mne
     import matplotlib
+    import mne
 
     matplotlib.use("Agg")
 
@@ -249,19 +260,30 @@ def run_mne_autoreject(params: MNEAutorejectParameters) -> Dict[str, Any]:
 
     try:
         has_autoreject = True
-        epochs_clean, reject_log, thresholds = _autoreject_with_package(epochs, params, pick_idx)
-    except (ImportError, RuntimeError, ValueError, AttributeError, TypeError, Exception):
+        epochs_clean, reject_log, thresholds = _autoreject_with_package(
+            epochs, params, pick_idx
+        )
+    except (
+        ImportError,
+        RuntimeError,
+        ValueError,
+        AttributeError,
+        TypeError,
+        Exception,
+    ):
         has_autoreject = False
-        epochs_clean, reject_log, thresholds = _autoreject_fallback(epochs, params, pick_idx)
+        epochs_clean, reject_log, thresholds = _autoreject_fallback(
+            epochs, params, pick_idx
+        )
 
     stats = _calculate_rejection_stats(epochs, epochs_clean, reject_log)
 
-    epochs_file_clean: Optional[Path] = None
+    epochs_file_clean: Path | None = None
     if params.save_epochs:
         epochs_file_clean = output_path / "epochs_autoreject_epo.fif"
         epochs_clean.save(epochs_file_clean, overwrite=True)
 
-    plot_files: Dict[str, str] = {}
+    plot_files: dict[str, str] = {}
     if params.save_plots:
         reject_plot = output_path / "autoreject_log.png"
         _plot_reject_log(has_autoreject, epochs, reject_log, reject_plot)
@@ -284,7 +306,9 @@ def run_mne_autoreject(params: MNEAutorejectParameters) -> Dict[str, Any]:
         axes[0].set_ylabel("Amplitude")
 
         data_clean = epochs_clean.get_data()
-        axes[1].plot(epochs_clean.times, np.mean(data_clean, axis=(0, 1)), "g-", alpha=0.7)
+        axes[1].plot(
+            epochs_clean.times, np.mean(data_clean, axis=(0, 1)), "g-", alpha=0.7
+        )
         axes[1].fill_between(
             epochs_clean.times,
             np.mean(data_clean, axis=(0, 1)) - np.std(data_clean, axis=(0, 1)),
@@ -316,7 +340,7 @@ def run_mne_autoreject(params: MNEAutorejectParameters) -> Dict[str, Any]:
         },
     }
 
-    report_path: Optional[Path] = None
+    report_path: Path | None = None
     if params.save_report:
         report_path = output_path / "autoreject_report.json"
         with open(report_path, "w", encoding="utf-8") as fp:

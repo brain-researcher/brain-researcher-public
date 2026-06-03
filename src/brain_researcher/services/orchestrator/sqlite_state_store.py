@@ -12,13 +12,12 @@ import hashlib
 import json
 import logging
 import os
+import sqlite3
 import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
-
-import sqlite3
+from typing import Any
 
 try:
     import aiosqlite
@@ -80,8 +79,8 @@ class _SyncConnection:
     def __init__(
         self,
         path: Path,
-        lock: Optional[threading.Lock] = None,
-        timeout_s: Optional[float] = None,
+        lock: threading.Lock | None = None,
+        timeout_s: float | None = None,
     ):
         self._path = str(path)
         self._conn: sqlite3.Connection | None = None
@@ -135,12 +134,12 @@ class _SyncConnection:
         self._conn.rollback()
 
 
-def _parse_epoch_seconds(value: Any) -> Optional[int]:
+def _parse_epoch_seconds(value: Any) -> int | None:
     if value is None:
         return None
     if isinstance(value, bool):
         return int(value)
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return int(value)
     if isinstance(value, datetime):
         return int(value.timestamp())
@@ -347,7 +346,7 @@ class SqliteStateStore:
             )
             await db.commit()
 
-    async def get_thread(self, thread_id: str) -> Optional[dict[str, Any]]:
+    async def get_thread(self, thread_id: str) -> dict[str, Any] | None:
         async with self._connect() as db:
             await self._configure_connection(db)
             db.row_factory = self._row_factory()
@@ -480,7 +479,9 @@ class SqliteStateStore:
         created_at = _parse_epoch_seconds(notification.get("created_at")) or now
         expires_at = _parse_epoch_seconds(notification.get("expires_at"))
         read = 1 if notification.get("read") else 0
-        notification_json = json.dumps(notification, separators=(",", ":"), ensure_ascii=False)
+        notification_json = json.dumps(
+            notification, separators=(",", ":"), ensure_ascii=False
+        )
         async with self._connect() as db:
             await self._configure_connection(db)
             await db.execute(
@@ -578,7 +579,9 @@ class SqliteStateStore:
                 row = await cursor.fetchone()
                 return int(row[0] if row else 0)
 
-    async def mark_notifications_read(self, user_id: str, notification_ids: list[str]) -> int:
+    async def mark_notifications_read(
+        self, user_id: str, notification_ids: list[str]
+    ) -> int:
         if not notification_ids:
             return 0
         now = int(time.time())
@@ -675,7 +678,7 @@ class SqliteStateStore:
             )
             await db.commit()
 
-    async def get_monitor(self, monitor_id: str) -> Optional[dict[str, Any]]:
+    async def get_monitor(self, monitor_id: str) -> dict[str, Any] | None:
         async with self._connect() as db:
             await self._configure_connection(db)
             db.row_factory = self._row_factory()
@@ -833,7 +836,7 @@ class SqliteStateStore:
             )
             await db.commit()
 
-    async def get_chat_bridge(self, bridge_id: str) -> Optional[dict[str, Any]]:
+    async def get_chat_bridge(self, bridge_id: str) -> dict[str, Any] | None:
         async with self._connect() as db:
             await self._configure_connection(db)
             db.row_factory = self._row_factory()
@@ -851,7 +854,7 @@ class SqliteStateStore:
         *,
         platform: str,
         bridge_key: str,
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         async with self._connect() as db:
             await self._configure_connection(db)
             db.row_factory = self._row_factory()
@@ -938,7 +941,14 @@ class SqliteStateStore:
                 )
                 VALUES (?, ?, ?, ?, ?, NULL, ?)
                 """,
-                (token_hash, demo_id, 1 if is_public else 0, now, expires_at_ts, created_by),
+                (
+                    token_hash,
+                    demo_id,
+                    1 if is_public else 0,
+                    now,
+                    expires_at_ts,
+                    created_by,
+                ),
             )
             await db.commit()
 
@@ -946,8 +956,8 @@ class SqliteStateStore:
         self,
         *,
         share_token: str,
-        now: Optional[datetime] = None,
-    ) -> Optional[dict[str, Any]]:
+        now: datetime | None = None,
+    ) -> dict[str, Any] | None:
         token_hash = self.hash_demo_share_token(share_token)
         now_dt = now or datetime.utcnow()
         now_ts = int(now_dt.timestamp())
@@ -1022,8 +1032,8 @@ class SqliteStateStore:
         self,
         *,
         share_token: str,
-        now: Optional[datetime] = None,
-    ) -> Optional[dict[str, Any]]:
+        now: datetime | None = None,
+    ) -> dict[str, Any] | None:
         token_hash = self.hash_analysis_share_token(share_token)
         now_dt = now or datetime.utcnow()
         now_ts = int(now_dt.timestamp())

@@ -106,7 +106,9 @@ def extract_confounds_family_flags(x_terms: Iterable[str]) -> dict[str, bool]:
         "confounds_white_matter": _starts_with(("white_matter",)),
         "confounds_csf_wm": _starts_with(("csf_wm",)),
         "confounds_framewise_displacement": "framewise_displacement" in terms,
-        "confounds_dvars": any(term.startswith(("dvars", "std_dvars")) for term in terms),
+        "confounds_dvars": any(
+            term.startswith(("dvars", "std_dvars")) for term in terms
+        ),
         "confounds_cosine_dct": _starts_with(("cosine",)),
         "confounds_acompcor": _starts_with(("a_comp_cor",)),
         "confounds_tcompcor": _starts_with(("t_comp_cor",)) or "tcompcor" in terms,

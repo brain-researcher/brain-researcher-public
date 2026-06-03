@@ -15,7 +15,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Lazy import helpers
 # ---------------------------------------------------------------------------
-_SPD_LEARN_AVAILABLE: Optional[bool] = None
+_SPD_LEARN_AVAILABLE: bool | None = None
 
 
 def _has_spd_learn() -> bool:
@@ -32,6 +32,7 @@ def _has_spd_learn() -> bool:
     if _SPD_LEARN_AVAILABLE is None:
         try:
             import spd_learn  # noqa: F401
+
             _SPD_LEARN_AVAILABLE = True
         except ImportError:
             _SPD_LEARN_AVAILABLE = False
@@ -41,6 +42,7 @@ def _has_spd_learn() -> bool:
 def _has_torch() -> bool:
     try:
         import torch  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -87,7 +89,9 @@ class CovarianceEstimateParameters:
     diagonal: bool = False
 
 
-def covariance_estimate_from_payload(payload: Dict[str, Any]) -> CovarianceEstimateParameters:
+def covariance_estimate_from_payload(
+    payload: dict[str, Any],
+) -> CovarianceEstimateParameters:
     return CovarianceEstimateParameters(
         data_file=str(payload["data_file"]),
         output_file=str(payload["output_file"]),
@@ -97,7 +101,7 @@ def covariance_estimate_from_payload(payload: Dict[str, Any]) -> CovarianceEstim
     )
 
 
-def run_covariance_estimate(params: CovarianceEstimateParameters) -> Dict[str, Any]:
+def run_covariance_estimate(params: CovarianceEstimateParameters) -> dict[str, Any]:
     """Compute covariance matrix from timeseries data."""
     ts = _load_matrix(Path(params.data_file))
 
@@ -125,18 +129,21 @@ def run_covariance_estimate(params: CovarianceEstimateParameters) -> Dict[str, A
         if method == "ledoit_wolf":
             try:
                 from sklearn.covariance import LedoitWolf
+
                 cov = LedoitWolf().fit(ts).covariance_
             except ImportError:
                 cov = np.cov(ts, rowvar=False)
         elif method == "oas":
             try:
                 from sklearn.covariance import OAS
+
                 cov = OAS().fit(ts).covariance_
             except ImportError:
                 cov = np.cov(ts, rowvar=False)
         elif method == "shrinkage":
             try:
                 from sklearn.covariance import ShrunkCovariance
+
                 cov = ShrunkCovariance().fit(ts).covariance_
             except ImportError:
                 cov = np.cov(ts, rowvar=False)
@@ -173,7 +180,7 @@ class SPDProjectParameters:
     method: str = "eig_clamp"  # eig_clamp, add_epsilon, project
 
 
-def spd_project_from_payload(payload: Dict[str, Any]) -> SPDProjectParameters:
+def spd_project_from_payload(payload: dict[str, Any]) -> SPDProjectParameters:
     return SPDProjectParameters(
         matrix_file=str(payload["matrix_file"]),
         output_file=str(payload["output_file"]),
@@ -182,7 +189,7 @@ def spd_project_from_payload(payload: Dict[str, Any]) -> SPDProjectParameters:
     )
 
 
-def run_spd_project(params: SPDProjectParameters) -> Dict[str, Any]:
+def run_spd_project(params: SPDProjectParameters) -> dict[str, Any]:
     """Project a matrix to SPD cone."""
     mat = _load_matrix(Path(params.matrix_file))
     eps = params.epsilon
@@ -242,7 +249,7 @@ class SPDLogmParameters:
     reference: str = "identity"  # identity, or file path to reference SPD
 
 
-def spd_logm_from_payload(payload: Dict[str, Any]) -> SPDLogmParameters:
+def spd_logm_from_payload(payload: dict[str, Any]) -> SPDLogmParameters:
     return SPDLogmParameters(
         spd_matrix_file=str(payload["spd_matrix_file"]),
         output_file=str(payload["output_file"]),
@@ -250,7 +257,7 @@ def spd_logm_from_payload(payload: Dict[str, Any]) -> SPDLogmParameters:
     )
 
 
-def run_spd_logm(params: SPDLogmParameters) -> Dict[str, Any]:
+def run_spd_logm(params: SPDLogmParameters) -> dict[str, Any]:
     """Compute matrix logarithm."""
     mat = _load_matrix(Path(params.spd_matrix_file))
     fallback = False
@@ -306,10 +313,12 @@ class SPDGeodesicDistanceParameters:
     matrix_a_file: str
     matrix_b_file: str
     metric: str = "log_euclidean"  # log_euclidean, airm, euclidean
-    output_file: Optional[str] = None
+    output_file: str | None = None
 
 
-def spd_geodesic_distance_from_payload(payload: Dict[str, Any]) -> SPDGeodesicDistanceParameters:
+def spd_geodesic_distance_from_payload(
+    payload: dict[str, Any],
+) -> SPDGeodesicDistanceParameters:
     return SPDGeodesicDistanceParameters(
         matrix_a_file=str(payload["matrix_a_file"]),
         matrix_b_file=str(payload["matrix_b_file"]),
@@ -318,7 +327,7 @@ def spd_geodesic_distance_from_payload(payload: Dict[str, Any]) -> SPDGeodesicDi
     )
 
 
-def run_spd_geodesic_distance(params: SPDGeodesicDistanceParameters) -> Dict[str, Any]:
+def run_spd_geodesic_distance(params: SPDGeodesicDistanceParameters) -> dict[str, Any]:
     """Compute geodesic distance between two SPD matrices."""
     a = _load_matrix(Path(params.matrix_a_file))
     b = _load_matrix(Path(params.matrix_b_file))
@@ -332,9 +341,11 @@ def run_spd_geodesic_distance(params: SPDGeodesicDistanceParameters) -> Dict[str
 
         if params.metric == "airm":
             from spd_learn.functional import airm_distance
+
             dist = float(airm_distance(a_t, b_t).item())
         elif params.metric == "log_euclidean":
             from spd_learn.functional import log_euclidean_distance
+
             dist = float(log_euclidean_distance(a_t, b_t).item())
         else:
             dist = float(np.linalg.norm(a - b, "fro"))
@@ -356,7 +367,7 @@ def run_spd_geodesic_distance(params: SPDGeodesicDistanceParameters) -> Dict[str
         else:
             dist = float(np.linalg.norm(a - b, "fro"))
 
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "distances": [dist],
         "mean_distance": dist,
         "metric": params.metric,
@@ -382,15 +393,15 @@ def run_spd_geodesic_distance(params: SPDGeodesicDistanceParameters) -> Dict[str
 class SPDBiMapParameters:
     """Learnable bilinear mapping for SPD dimensionality reduction."""
 
-    data_files: List[str] = field(default_factory=list)
-    labels_file: Optional[str] = None
+    data_files: list[str] = field(default_factory=list)
+    labels_file: str | None = None
     output_dim: int = 10
     output_dir: str = "spd_bimap_output"
     epochs: int = 50
     learning_rate: float = 0.01
 
 
-def spd_bimap_from_payload(payload: Dict[str, Any]) -> SPDBiMapParameters:
+def spd_bimap_from_payload(payload: dict[str, Any]) -> SPDBiMapParameters:
     data_files = payload.get("data_files", [])
     if isinstance(data_files, str):
         data_files = [data_files]
@@ -404,7 +415,7 @@ def spd_bimap_from_payload(payload: Dict[str, Any]) -> SPDBiMapParameters:
     )
 
 
-def run_spd_bimap(params: SPDBiMapParameters) -> Dict[str, Any]:
+def run_spd_bimap(params: SPDBiMapParameters) -> dict[str, Any]:
     """Apply BiMap dimensionality reduction to SPD matrices."""
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -427,8 +438,8 @@ def run_spd_bimap(params: SPDBiMapParameters) -> Dict[str, Any]:
         optimizer = torch.optim.Adam(layer.parameters(), lr=params.learning_rate)
 
         # Simple reconstruction-based training loop
-        losses: List[float] = []
-        for epoch in range(params.epochs):
+        losses: list[float] = []
+        for _epoch in range(params.epochs):
             projected = layer(data)  # (N, output_dim, output_dim)
 
             # Minimize negative log-det (proxy objective for preserving geometry)
@@ -490,7 +501,7 @@ def run_spd_bimap(params: SPDBiMapParameters) -> Dict[str, Any]:
 class SPDNetTrainParameters:
     """Train SPDNet classifier on SPD covariance data."""
 
-    data_files: List[str] = field(default_factory=list)
+    data_files: list[str] = field(default_factory=list)
     output_dir: str = "spdnet_output"
     architecture: str = "spdnet"  # spdnet, eeg_spdnet
     n_classes: int = 2
@@ -498,10 +509,10 @@ class SPDNetTrainParameters:
     batch_size: int = 32
     learning_rate: float = 0.001
     val_split: float = 0.2
-    labels_file: Optional[str] = None
+    labels_file: str | None = None
 
 
-def spdnet_train_from_payload(payload: Dict[str, Any]) -> SPDNetTrainParameters:
+def spdnet_train_from_payload(payload: dict[str, Any]) -> SPDNetTrainParameters:
     data_files = payload.get("data_files", [])
     if isinstance(data_files, str):
         data_files = [data_files]
@@ -518,7 +529,7 @@ def spdnet_train_from_payload(payload: Dict[str, Any]) -> SPDNetTrainParameters:
     )
 
 
-def _load_labels(path: Optional[str]) -> Optional[np.ndarray]:
+def _load_labels(path: str | None) -> np.ndarray | None:
     if not path:
         return None
     p = Path(path)
@@ -530,7 +541,7 @@ def _load_labels(path: Optional[str]) -> Optional[np.ndarray]:
     return None
 
 
-def run_spdnet_train(params: SPDNetTrainParameters) -> Dict[str, Any]:
+def run_spdnet_train(params: SPDNetTrainParameters) -> dict[str, Any]:
     """Train SPDNet on SPD matrices."""
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -551,7 +562,7 @@ def run_spdnet_train(params: SPDNetTrainParameters) -> Dict[str, Any]:
     if _has_spd_learn() and _has_torch():
         import torch
         import torch.nn as nn
-        from spd_learn import SPDNet, EEGSPDNet
+        from spd_learn import EEGSPDNet, SPDNet
 
         data_t = torch.tensor(data_np, dtype=torch.float32)
         labels_t = torch.tensor(labels_np, dtype=torch.long)
@@ -584,7 +595,7 @@ def run_spdnet_train(params: SPDNetTrainParameters) -> Dict[str, Any]:
         optimizer = torch.optim.Adam(model.parameters(), lr=params.learning_rate)
         criterion = nn.CrossEntropyLoss()
 
-        history: List[Dict[str, float]] = []
+        history: list[dict[str, float]] = []
         for epoch in range(params.epochs):
             model.train()
             # Mini-batch (simplified: full batch if small)
@@ -605,12 +616,14 @@ def run_spdnet_train(params: SPDNetTrainParameters) -> Dict[str, Any]:
                 val_preds = val_logits.argmax(dim=1)
                 val_acc = (val_preds == labels_t[val_idx]).float().mean().item()
 
-            history.append({
-                "epoch": epoch + 1,
-                "train_loss": float(loss.item()),
-                "val_loss": float(val_loss.item()),
-                "val_accuracy": val_acc,
-            })
+            history.append(
+                {
+                    "epoch": epoch + 1,
+                    "train_loss": float(loss.item()),
+                    "val_loss": float(val_loss.item()),
+                    "val_accuracy": val_acc,
+                }
+            )
 
         # Save model
         model_path = out_dir / "spdnet_model.pt"

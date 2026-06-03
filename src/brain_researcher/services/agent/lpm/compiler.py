@@ -11,19 +11,19 @@ This module implements the core LPM compilation logic, which:
 from __future__ import annotations
 
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Any
 
-from .specs import SmoothParams, CompiledOp
-from .adapters import compile_smooth_afni, compile_smooth_fsl, compile_smooth_fsl_masked
 from ..tool_catalog_loader import load_niwrap_containers
+from .adapters import compile_smooth_afni, compile_smooth_fsl, compile_smooth_fsl_masked
+from .specs import CompiledOp, SmoothParams
 
 logger = logging.getLogger(__name__)
 
 
 def compile_op(
     op_name: str,
-    params: Dict[str, Any],
-    preferred: Optional[str] = None,
+    params: dict[str, Any],
+    preferred: str | None = None,
 ) -> CompiledOp:
     """
     Compile a canonical operation to a backend-specific tool.
@@ -55,7 +55,9 @@ def compile_op(
         >>> print(result.tool)  # "afni.3dBlurInMask"
     """
     if op_name != "smooth":
-        raise ValueError(f"Unsupported operation: {op_name}. Only 'smooth' is currently supported.")
+        raise ValueError(
+            f"Unsupported operation: {op_name}. Only 'smooth' is currently supported."
+        )
 
     # Parse and validate parameters
     try:
@@ -88,9 +90,7 @@ def compile_op(
     raise RuntimeError(error_msg)
 
 
-def _determine_backend_order(
-    preferred: Optional[str], params: SmoothParams
-) -> List[str]:
+def _determine_backend_order(preferred: str | None, params: SmoothParams) -> list[str]:
     """
     Determine the order in which to try backends.
 
@@ -123,8 +123,8 @@ def _determine_backend_order(
 
 
 def _compile_smooth_backend(
-    backend: str, params: SmoothParams, containers: Dict[str, Any]
-) -> Optional[CompiledOp]:
+    backend: str, params: SmoothParams, containers: dict[str, Any]
+) -> CompiledOp | None:
     """
     Compile smooth operation for a specific backend.
 
@@ -148,8 +148,8 @@ def _compile_smooth_backend(
 
 
 def _compile_smooth_afni(
-    params: SmoothParams, containers: Dict[str, Any]
-) -> Optional[CompiledOp]:
+    params: SmoothParams, containers: dict[str, Any]
+) -> CompiledOp | None:
     """Compile smooth operation for AFNI backend."""
     # Check if AFNI container is available
     if "afni" not in containers:
@@ -185,8 +185,8 @@ def _compile_smooth_afni(
 
 
 def _compile_smooth_fsl(
-    params: SmoothParams, containers: Dict[str, Any]
-) -> Optional[CompiledOp]:
+    params: SmoothParams, containers: dict[str, Any]
+) -> CompiledOp | None:
     """Compile smooth operation for FSL backend."""
     # Check if FSL container is available
     if "fsl" not in containers:

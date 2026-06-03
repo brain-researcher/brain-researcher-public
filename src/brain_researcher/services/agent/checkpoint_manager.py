@@ -8,28 +8,28 @@ for resilient execution with partial rerun capabilities.
 import json
 import logging
 import os
-import pickle
 import time
 from dataclasses import asdict, dataclass
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-from uuid import uuid4
+from typing import Any
 
 import redis
 from fakeredis import FakeRedis
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class ExecutionState:
     """Execution state for checkpointing."""
+
     execution_id: str
     current_step: int
-    completed_steps: List[int]
-    step_results: Dict[int, Any]
-    variables: Dict[str, Any]
+    completed_steps: list[int]
+    step_results: dict[int, Any]
+    variables: dict[str, Any]
     timestamp: float
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
+
 
 class CheckpointManager:
     """
@@ -43,7 +43,7 @@ class CheckpointManager:
     - Storage backend abstraction (Redis/disk)
     """
 
-    def __init__(self, storage_backend: Optional[str] = None):
+    def __init__(self, storage_backend: str | None = None):
         """Initialize checkpoint manager.
 
         storage_backend: "redis" (default) or "memory".
@@ -117,6 +117,7 @@ class CheckpointManager:
         """Deserialize execution state."""
         state_dict = json.loads(data)
         return ExecutionState(**state_dict)
+
 
 class AdaptiveCheckpointing:
     """Adaptive checkpointing strategy."""

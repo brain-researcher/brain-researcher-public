@@ -7,26 +7,27 @@ for plan/patch/test progress.
 
 from __future__ import annotations
 
-import os
 import logging
+import os
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
-from brain_researcher.services.agent.router import LLMRouter
 from brain_researcher.services.agent.codegen.context import CodegenContext, FileSnippet
-from brain_researcher.services.agent.codegen.loop import CodegenLoop
-from brain_researcher.services.agent.codegen.render import render_result_for_chat
 from brain_researcher.services.agent.codegen.fs_context import (
     GeminiCliFsClient,
     build_fs_context_for_task_sync,
 )
+from brain_researcher.services.agent.codegen.loop import CodegenLoop
+from brain_researcher.services.agent.codegen.render import render_result_for_chat
 from brain_researcher.services.agent.llm_budget_manager import (
     get_shared_llm_budget_manager,
 )
 from brain_researcher.services.agent.managed_credential_pool import (
     get_shared_managed_pool,
 )
+from brain_researcher.services.agent.router import LLMRouter
 
 logger = logging.getLogger(__name__)
 
@@ -37,15 +38,15 @@ class CodeResult:
 
     status: str  # "success" | "failed" | "error"
     answer: str  # Human-readable summary
-    patches: List[str] = field(default_factory=list)
-    files_touched: List[str] = field(default_factory=list)
+    patches: list[str] = field(default_factory=list)
+    files_touched: list[str] = field(default_factory=list)
     iterations: int = 0
-    test_status: Optional[str] = None  # "passed" | "failed" | "not_run"
-    exec_stdout: Optional[str] = None
-    exec_stderr: Optional[str] = None
+    test_status: str | None = None  # "passed" | "failed" | "not_run"
+    exec_stdout: str | None = None
+    exec_stderr: str | None = None
     requires_confirmation: bool = False
-    apply_logs: Optional[List[str]] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    apply_logs: list[str] | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class CodeOrchestrator:
@@ -61,9 +62,9 @@ class CodeOrchestrator:
 
     def __init__(
         self,
-        llm_router: Optional[LLMRouter] = None,
+        llm_router: LLMRouter | None = None,
         max_iters: int = 3,
-        event_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+        event_callback: Callable[[str, dict[str, Any]], None] | None = None,
     ):
         self._router = llm_router or LLMRouter(
             budget_manager=get_shared_llm_budget_manager(),
@@ -80,11 +81,11 @@ class CodeOrchestrator:
         self._fs_client = GeminiCliFsClient()
 
     @staticmethod
-    def _noop_emit(event: str, data: Dict[str, Any]) -> None:
+    def _noop_emit(event: str, data: dict[str, Any]) -> None:
         """No-op event emitter when no callback is provided."""
         pass
 
-    def _get_model(self, ctx: Dict[str, Any]) -> str:
+    def _get_model(self, ctx: dict[str, Any]) -> str:
         """Resolve model hint for coding tasks."""
         tools_cfg = ctx.get("tools", {}) or {}
         return (
@@ -100,9 +101,9 @@ class CodeOrchestrator:
     def run_task(
         self,
         instruction: str,
-        ctx: Dict[str, Any],
+        ctx: dict[str, Any],
         thread_id: str = "default",
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> CodeResult:
         """Main entry point for coding tasks.
 
@@ -200,12 +201,12 @@ class CodeOrchestrator:
                 files_touched=loop_result.files_touched,
                 iterations=loop_result.iterations,
                 test_status=self._exec_status(loop_result.exec_result),
-                exec_stdout=loop_result.exec_result.stdout
-                if loop_result.exec_result
-                else None,
-                exec_stderr=loop_result.exec_result.stderr
-                if loop_result.exec_result
-                else None,
+                exec_stdout=(
+                    loop_result.exec_result.stdout if loop_result.exec_result else None
+                ),
+                exec_stderr=(
+                    loop_result.exec_result.stderr if loop_result.exec_result else None
+                ),
                 requires_confirmation=bool(loop_result.patches) and not apply,
                 apply_logs=apply_logs,
                 metadata={
@@ -230,8 +231,8 @@ class CodeOrchestrator:
     def _build_file_context(
         self,
         instruction: str,
-        ctx: Dict[str, Any],
-    ) -> Optional[List[FileSnippet]]:
+        ctx: dict[str, Any],
+    ) -> list[FileSnippet] | None:
         """Build file context for the coding task."""
         tools_cfg = ctx.get("tools", {}) or {}
 
@@ -270,10 +271,10 @@ class CodeOrchestrator:
 
     def _apply_patches(
         self,
-        patches: List[str],
+        patches: list[str],
         repo_root: str,
         dry_run: bool,
-    ) -> List[str]:
+    ) -> list[str]:
         """Apply patches to the repository."""
         if dry_run:
             return ["dry-run: patches not applied"]
@@ -289,7 +290,7 @@ class CodeOrchestrator:
             return [f"error: {exc}"]
 
     @staticmethod
-    def _exec_status(exec_result) -> Optional[str]:
+    def _exec_status(exec_result) -> str | None:
         """Convert execution result to status string."""
         if exec_result is None:
             return None
@@ -303,7 +304,7 @@ class CodeOrchestrator:
 # NOTE: Coding tasks are per-request; using fresh instances avoids
 # cross-request callback leakage. Keep a simple helper for callers.
 def get_code_orchestrator(
-    event_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+    event_callback: Callable[[str, dict[str, Any]], None] | None = None,
 ) -> CodeOrchestrator:
     """Return a new CodeOrchestrator wired to the given callback."""
 

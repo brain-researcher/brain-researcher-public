@@ -7,20 +7,23 @@ PlanningEngine, and CoreStateMachine.
 
 import functools
 import logging
-from typing import Any, Callable, Dict, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
-from brain_researcher.services.agent.execution_status import ExecutionTracker, ExecutionStatus
+from brain_researcher.services.agent.execution_status import (
+    ExecutionTracker,
+)
 from brain_researcher.services.agent.planning import ExecutionPlan
-from brain_researcher.services.agent.resources.resource_manager import ResourceManager
-from brain_researcher.services.agent.resources.resource_monitor import ResourceMonitor
 from brain_researcher.services.agent.resources.queue_manager import Priority
 from brain_researcher.services.agent.resources.resource_limits import get_tool_profile
+from brain_researcher.services.agent.resources.resource_manager import ResourceManager
+from brain_researcher.services.agent.resources.resource_monitor import ResourceMonitor
 
 logger = logging.getLogger(__name__)
 
 # Global resource manager instance (singleton)
-_resource_manager: Optional[ResourceManager] = None
-_resource_monitor: Optional[ResourceMonitor] = None
+_resource_manager: ResourceManager | None = None
+_resource_monitor: ResourceMonitor | None = None
 
 
 def initialize_resource_management(
@@ -28,7 +31,7 @@ def initialize_resource_management(
     max_memory_gb: float = 8.0,
     max_gpus: int = 0,
     enable_monitoring: bool = True,
-) -> Tuple[ResourceManager, ResourceMonitor]:
+) -> tuple[ResourceManager, ResourceMonitor]:
     """
     Initialize global resource management system.
 
@@ -55,12 +58,12 @@ def initialize_resource_management(
     return _resource_manager, _resource_monitor
 
 
-def get_resource_manager() -> Optional[ResourceManager]:
+def get_resource_manager() -> ResourceManager | None:
     """Get global resource manager instance."""
     return _resource_manager
 
 
-def get_resource_monitor() -> Optional[ResourceMonitor]:
+def get_resource_monitor() -> ResourceMonitor | None:
     """Get global resource monitor instance."""
     return _resource_monitor
 
@@ -74,10 +77,10 @@ class ResourceAwareExecutionTracker(ExecutionTracker):
 
     def __init__(
         self,
-        execution_id: Optional[str] = None,
-        redis_client: Optional[Any] = None,
-        resource_manager: Optional[ResourceManager] = None,
-        resource_monitor: Optional[ResourceMonitor] = None,
+        execution_id: str | None = None,
+        redis_client: Any | None = None,
+        resource_manager: ResourceManager | None = None,
+        resource_monitor: ResourceMonitor | None = None,
     ):
         """
         Initialize resource-aware execution tracker.
@@ -95,7 +98,7 @@ class ResourceAwareExecutionTracker(ExecutionTracker):
         self.resource_allocation = None
         self.resource_metrics = None
 
-    def start_step(self, step_index: Optional[int] = None):
+    def start_step(self, step_index: int | None = None):
         """
         Start a step with resource allocation.
 
@@ -118,7 +121,9 @@ class ResourceAwareExecutionTracker(ExecutionTracker):
             priority = self._determine_priority(current_step)
 
             # Request resources
-            logger.info(f"Requesting resources for {tool_name} (step {current_step.name})")
+            logger.info(
+                f"Requesting resources for {tool_name} (step {current_step.name})"
+            )
             self.resource_allocation = self.resource_manager.request_resources(
                 tool_name=tool_name,
                 execution_id=self.execution_id,
@@ -142,7 +147,7 @@ class ResourceAwareExecutionTracker(ExecutionTracker):
                 logger.warning(f"Failed to allocate resources for {tool_name}")
                 # Could mark step as failed here if strict resource enforcement
 
-    def complete_step(self, step_index: Optional[int] = None):
+    def complete_step(self, step_index: int | None = None):
         """
         Complete a step and release resources.
 
@@ -168,7 +173,7 @@ class ResourceAwareExecutionTracker(ExecutionTracker):
                     current_step.data["resource_metrics"] = metrics.to_dict()
             self.resource_metrics = None
 
-    def fail_step(self, step_index: Optional[int] = None, error: Optional[str] = None):
+    def fail_step(self, step_index: int | None = None, error: str | None = None):
         """
         Fail a step and release resources.
 
@@ -219,9 +224,9 @@ class ResourceAwareExecutionTracker(ExecutionTracker):
 
 
 def resource_aware_tool(
-    cpu_cores: Optional[float] = None,
-    memory_gb: Optional[float] = None,
-    gpu_count: Optional[int] = None,
+    cpu_cores: float | None = None,
+    memory_gb: float | None = None,
+    gpu_count: int | None = None,
     priority: Priority = Priority.NORMAL,
 ):
     """
@@ -233,6 +238,7 @@ def resource_aware_tool(
         gpu_count: GPU count required (overrides profile)
         priority: Execution priority
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -289,6 +295,7 @@ def resource_aware_tool(
                         result["_resource_metrics"] = final_metrics.to_dict()
 
         return wrapper
+
     return decorator
 
 
@@ -341,15 +348,23 @@ class ResourceAwarePlanningEngine:
         plan.metadata["resource_analysis"] = {
             "available_cpu": available_cpu,
             "available_memory_gb": available_memory,
-            "queue_required_steps": sum(1 for s in plan.steps if s.get("queue_required")),
+            "queue_required_steps": sum(
+                1 for s in plan.steps if s.get("queue_required")
+            ),
             "estimated_total_cpu": sum(
                 get_tool_profile(s.get("tool", "")).cpu_cores
-                for s in plan.steps if s.get("tool")
+                for s in plan.steps
+                if s.get("tool")
             ),
-            "estimated_total_memory_gb": max(
-                get_tool_profile(s.get("tool", "")).memory_gb
-                for s in plan.steps if s.get("tool")
-            ) if plan.steps else 0,
+            "estimated_total_memory_gb": (
+                max(
+                    get_tool_profile(s.get("tool", "")).memory_gb
+                    for s in plan.steps
+                    if s.get("tool")
+                )
+                if plan.steps
+                else 0
+            ),
         }
 
         return plan
@@ -368,6 +383,7 @@ def with_resource_management(
                 # Execute tool
                 result = run_glm_analysis()
     """
+
     class ResourceContext:
         def __init__(self, tool_name: str, priority: Priority):
             self.tool_name = tool_name

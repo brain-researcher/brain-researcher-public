@@ -7,17 +7,19 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
-import nibabel as nib
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
-from nibabel.affines import apply_affine
 from neo4j import GraphDatabase
+from nibabel.affines import apply_affine
 
 from brain_researcher.services.br_kg.etl.yeo17_features import Yeo17Feature
-from brain_researcher.services.br_kg.etl.yeo17_writer import WriterConfig, write_sparse_edges
+from brain_researcher.services.br_kg.etl.yeo17_writer import (
+    WriterConfig,
+    write_sparse_edges,
+)
 from brain_researcher.services.br_kg.spatial.neuromaps_assets import (
     NeuromapsAssets,
     resolve_neuromaps_assets,
@@ -32,8 +34,8 @@ class DecodeResult:
     edge_count: int
     ttl_expires_at: int
     study_count: int
-    features: List[Yeo17Feature]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    features: list[Yeo17Feature]
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -42,7 +44,7 @@ class _LdaVariant:
     matrix: sp.csr_matrix
     topic_count: int
     description: str
-    keywords: Dict[int, str]
+    keywords: dict[int, str]
 
 
 class NeurosynthDecoder:
@@ -52,9 +54,9 @@ class NeurosynthDecoder:
         self,
         *,
         data_dir: Path,
-        lda_dir: Optional[Path] = None,
+        lda_dir: Path | None = None,
         writer_config: WriterConfig,
-        neuromaps_root: Optional[Path] = None,
+        neuromaps_root: Path | None = None,
     ) -> None:
         self.data_dir = Path(data_dir)
         self.lda_dir = Path(lda_dir) if lda_dir else None
@@ -64,27 +66,34 @@ class NeurosynthDecoder:
         self._load_metadata()
         self._load_coordinates()
         self._load_label_assets()
-        self._lda_variants: Dict[str, _LdaVariant] = {}
+        self._lda_variants: dict[str, _LdaVariant] = {}
         if self.lda_dir and self.lda_dir.exists():
             self._load_lda_variants()
         elif self.lda_dir:
-            logger.warning(
-                "Configured LDA directory %s does not exist", self.lda_dir
-            )
+            logger.warning("Configured LDA directory %s does not exist", self.lda_dir)
 
     # ------------------------------------------------------------------
     def _load_term_matrix(self) -> None:
-        features_path = self.data_dir / "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
-        vocab_path = self.data_dir / "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
+        features_path = (
+            self.data_dir
+            / "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
+        )
+        vocab_path = (
+            self.data_dir / "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
+        )
         if not features_path.exists() or not vocab_path.exists():
-            raise FileNotFoundError(f"Missing Neurosynth feature files under {self.data_dir}")
+            raise FileNotFoundError(
+                f"Missing Neurosynth feature files under {self.data_dir}"
+            )
         logger.info("Loading Neurosynth term feature matrix from %s", features_path)
         self._term_matrix = sp.load_npz(features_path).tocsc()
         with vocab_path.open("r", encoding="utf-8") as f:
             vocab = [line.strip() for line in f]
         self._term_index = {term.lower(): idx for idx, term in enumerate(vocab)}
         self._terms = vocab
-        logger.info("Loaded %d terms; matrix shape=%s", len(vocab), self._term_matrix.shape)
+        logger.info(
+            "Loaded %d terms; matrix shape=%s", len(vocab), self._term_matrix.shape
+        )
 
     def _load_metadata(self) -> None:
         metadata_path = self.data_dir / "data-neurosynth_version-7_metadata.tsv.gz"
@@ -101,7 +110,7 @@ class NeurosynthDecoder:
             raise FileNotFoundError(coords_path)
         logger.info("Loading Neurosynth coordinates from %s", coords_path)
         coords_df = pd.read_csv(coords_path, sep="\t")
-        grouped: Dict[str, List[tuple[float, float, float]]] = defaultdict(list)
+        grouped: dict[str, list[tuple[float, float, float]]] = defaultdict(list)
         for row in coords_df.itertuples(index=False):
             grouped[str(row.id)].append((float(row.x), float(row.y), float(row.z)))
         self._coords_by_study = grouped
@@ -122,11 +131,15 @@ class NeurosynthDecoder:
                 continue
             variant_name = variant_dir.name
             prefix = f"data-neurosynth_version-7_vocab-{variant_name}"
-            features_path = variant_dir / f"{prefix}_source-abstract_type-weight_features.npz"
+            features_path = (
+                variant_dir / f"{prefix}_source-abstract_type-weight_features.npz"
+            )
             metadata_path = variant_dir / f"{prefix}_metadata.json"
             keys_path = variant_dir / f"{prefix}_keys.tsv"
             if not features_path.exists():
-                logger.warning("Skipping LDA variant %s (missing %s)", variant_name, features_path)
+                logger.warning(
+                    "Skipping LDA variant %s (missing %s)", variant_name, features_path
+                )
                 continue
             try:
                 matrix = sp.load_npz(features_path).tocsr()
@@ -142,7 +155,7 @@ class NeurosynthDecoder:
                 except Exception as exc:
                     logger.warning("Failed to parse %s: %s", metadata_path, exc)
 
-            keywords: Dict[int, str] = {}
+            keywords: dict[int, str] = {}
             if keys_path.exists():
                 with keys_path.open("r", encoding="utf-8") as f:
                     for line in f:
@@ -174,7 +187,8 @@ class NeurosynthDecoder:
             )
         if not self._lda_variants:
             logger.warning(
-                "LDA directory %s is configured but no variants were loaded", self.lda_dir
+                "LDA directory %s is configured but no variants were loaded",
+                self.lda_dir,
             )
 
     def _get_lda_variant(self, variant_name: str) -> _LdaVariant:
@@ -183,7 +197,9 @@ class NeurosynthDecoder:
         key = variant_name.strip()
         match = self._lda_variants.get(key) or self._lda_variants.get(key.lower())
         if not match:
-            available = sorted({variant.name for variant in self._lda_variants.values()})
+            available = sorted(
+                {variant.name for variant in self._lda_variants.values()}
+            )
             raise ValueError(
                 f"Unknown LDA variant {variant_name}. Available: {available}"
             )
@@ -196,7 +212,7 @@ class NeurosynthDecoder:
         study_indices: np.ndarray,
         study_weights: np.ndarray,
         top_k: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         variant = self._get_lda_variant(variant_name)
         if study_indices.size == 0:
             return {}
@@ -242,7 +258,7 @@ class NeurosynthDecoder:
         analysis_type: str = "association",
         ttl_hours: int = 24,
         top_k: int = 8,
-        topic_variant: Optional[str] = None,
+        topic_variant: str | None = None,
         topic_top_k: int = 5,
     ) -> DecodeResult:
         term_idx = self._term_index.get(term.lower())
@@ -256,11 +272,11 @@ class NeurosynthDecoder:
         study_indices = np.asarray(column.indices, dtype=int)
         study_weights = np.asarray(column.data, dtype=np.float64)
 
-        region_weights: Dict[int, float] = defaultdict(float)
-        region_counts: Dict[int, int] = defaultdict(int)
+        region_weights: dict[int, float] = defaultdict(float)
+        region_counts: dict[int, int] = defaultdict(int)
         studies_used = set()
 
-        for study_idx, weight in zip(study_indices, study_weights):
+        for study_idx, weight in zip(study_indices, study_weights, strict=False):
             pmid = self._study_ids[study_idx]
             coords = self._coords_by_study.get(pmid)
             if not coords:
@@ -311,7 +327,7 @@ class NeurosynthDecoder:
             etl_version="v1",
             expires_at_epoch=expires_at,
         )
-        metadata: Dict[str, Any] = {}
+        metadata: dict[str, Any] = {}
         if topic_variant:
             summary = self._summarize_topics(
                 variant_name=topic_variant,
@@ -337,7 +353,11 @@ class NeurosynthDecoder:
         ijk = np.rint(apply_affine(self._inv_affine, coord)).astype(int)
         if np.any(ijk < 0):
             return 0
-        if ijk[0] >= self._label_shape[0] or ijk[1] >= self._label_shape[1] or ijk[2] >= self._label_shape[2]:
+        if (
+            ijk[0] >= self._label_shape[0]
+            or ijk[1] >= self._label_shape[1]
+            or ijk[2] >= self._label_shape[2]
+        ):
             return 0
         return int(self._label_data[ijk[0], ijk[1], ijk[2]])
 

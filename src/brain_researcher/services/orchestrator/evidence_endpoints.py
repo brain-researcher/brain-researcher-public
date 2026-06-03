@@ -4,16 +4,15 @@ Provides comprehensive tracking of data sources, methods, and results for reprod
 """
 
 import asyncio
-import json
-import uuid
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, AsyncGenerator
-from enum import Enum
 import logging
+import uuid
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Body, BackgroundTasks
-from pydantic import BaseModel, Field, HttpUrl
 import httpx
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+from pydantic import BaseModel, Field, HttpUrl
 
 from .env import AGENT_URL, BR_KG_URL
 
@@ -25,6 +24,7 @@ router = APIRouter(prefix="/api/evidence", tags=["evidence"])
 # ============================================================================
 # Models
 # ============================================================================
+
 
 class EvidenceType(str, Enum):
     DATASET = "dataset"
@@ -40,6 +40,7 @@ class EvidenceType(str, Enum):
     TOOL_MATCH = "tool_match"  # Relevant tool from registry
     EMBEDDING_MATCH = "embedding_match"  # NiCLIP semantic match
 
+
 class EvidenceSource(str, Enum):
     BR_KG = "br_kg"
     AGENT = "agent"
@@ -53,12 +54,14 @@ class EvidenceSource(str, Enum):
     TOOL_REGISTRY = "tool_registry"  # Tool catalog
     DATASET_CATALOG = "dataset_catalog"  # Dataset catalog
 
+
 class ValidationStatus(str, Enum):
     PENDING = "pending"
     VALID = "valid"
     INVALID = "invalid"
     WARNING = "warning"
     UNKNOWN = "unknown"
+
 
 class CitationFormat(str, Enum):
     APA = "apa"
@@ -68,81 +71,96 @@ class CitationFormat(str, Enum):
     BIBTEX = "bibtex"
     ENDNOTE = "endnote"
 
+
 class EvidenceItem(BaseModel):
     """Individual evidence item with metadata"""
+
     id: str = Field(..., description="Unique evidence identifier")
     type: EvidenceType = Field(..., description="Type of evidence")
     source: EvidenceSource = Field(..., description="Source of evidence")
     title: str = Field(..., description="Evidence title/name")
-    description: Optional[str] = Field(None, description="Evidence description")
-    value: Optional[str] = Field(None, description="Evidence value (for parameters)")
-    url: Optional[HttpUrl] = Field(None, description="External URL")
-    doi: Optional[str] = Field(None, description="DOI if applicable")
-    version: Optional[str] = Field(None, description="Version information")
+    description: str | None = Field(None, description="Evidence description")
+    value: str | None = Field(None, description="Evidence value (for parameters)")
+    url: HttpUrl | None = Field(None, description="External URL")
+    doi: str | None = Field(None, description="DOI if applicable")
+    version: str | None = Field(None, description="Version information")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     validation_status: ValidationStatus = Field(default=ValidationStatus.PENDING)
-    validation_message: Optional[str] = Field(None, description="Validation details")
-    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    validation_message: str | None = Field(None, description="Validation details")
+    metadata: dict[str, Any] | None = Field(default_factory=dict)
+
 
 class Citation(BaseModel):
     """Citation information for academic references"""
+
     id: str = Field(..., description="Citation identifier")
     title: str = Field(..., description="Publication title")
-    authors: List[str] = Field(..., description="List of authors")
-    journal: Optional[str] = Field(None, description="Journal name")
-    year: Optional[int] = Field(None, description="Publication year")
-    volume: Optional[str] = Field(None, description="Volume number")
-    issue: Optional[str] = Field(None, description="Issue number")
-    pages: Optional[str] = Field(None, description="Page numbers")
-    doi: Optional[str] = Field(None, description="DOI")
-    pmid: Optional[str] = Field(None, description="PubMed ID")
-    url: Optional[HttpUrl] = Field(None, description="Publication URL")
-    abstract: Optional[str] = Field(None, description="Publication abstract")
-    keywords: List[str] = Field(default_factory=list, description="Keywords")
-    citation_count: Optional[int] = Field(None, description="Number of citations")
+    authors: list[str] = Field(..., description="List of authors")
+    journal: str | None = Field(None, description="Journal name")
+    year: int | None = Field(None, description="Publication year")
+    volume: str | None = Field(None, description="Volume number")
+    issue: str | None = Field(None, description="Issue number")
+    pages: str | None = Field(None, description="Page numbers")
+    doi: str | None = Field(None, description="DOI")
+    pmid: str | None = Field(None, description="PubMed ID")
+    url: HttpUrl | None = Field(None, description="Publication URL")
+    abstract: str | None = Field(None, description="Publication abstract")
+    keywords: list[str] = Field(default_factory=list, description="Keywords")
+    citation_count: int | None = Field(None, description="Number of citations")
+
 
 class JobEvidence(BaseModel):
     """Complete evidence package for a job"""
+
     job_id: str = Field(..., description="Job identifier")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    evidence_items: List[EvidenceItem] = Field(default_factory=list)
-    citations: List[Citation] = Field(default_factory=list)
-    data_lineage: Dict[str, Any] = Field(default_factory=dict)
-    reproducibility_score: Optional[float] = Field(None, ge=0.0, le=1.0)
-    validation_summary: Dict[str, int] = Field(default_factory=dict)
+    evidence_items: list[EvidenceItem] = Field(default_factory=list)
+    citations: list[Citation] = Field(default_factory=list)
+    data_lineage: dict[str, Any] = Field(default_factory=dict)
+    reproducibility_score: float | None = Field(None, ge=0.0, le=1.0)
+    validation_summary: dict[str, int] = Field(default_factory=dict)
+
 
 class EvidenceValidationRequest(BaseModel):
     """Request to validate evidence items"""
-    evidence_ids: List[str] = Field(..., description="Evidence IDs to validate")
+
+    evidence_ids: list[str] = Field(..., description="Evidence IDs to validate")
     force_revalidation: bool = Field(default=False)
+
 
 class EvidenceValidationResponse(BaseModel):
     """Response from evidence validation"""
+
     validated_count: int
-    validation_results: Dict[str, ValidationStatus]
-    errors: List[str] = Field(default_factory=list)
+    validation_results: dict[str, ValidationStatus]
+    errors: list[str] = Field(default_factory=list)
+
 
 class CitationExportRequest(BaseModel):
     """Request to export citations"""
+
     job_id: str = Field(..., description="Job ID")
     format: CitationFormat = Field(..., description="Citation format")
     include_abstract: bool = Field(default=False)
     include_metadata: bool = Field(default=False)
 
+
 class CitationExportResponse(BaseModel):
     """Response with formatted citations"""
+
     format: CitationFormat
-    citations: List[str]
+    citations: list[str]
     exported_at: datetime = Field(default_factory=datetime.utcnow)
-    download_url: Optional[str] = Field(None)
+    download_url: str | None = Field(None)
+
 
 # ============================================================================
 # In-Memory Storage (Replace with Database in production)
 # ============================================================================
 
-job_evidence_db: Dict[str, JobEvidence] = {}
-validation_cache: Dict[str, ValidationStatus] = {}
+job_evidence_db: dict[str, JobEvidence] = {}
+validation_cache: dict[str, ValidationStatus] = {}
 
 # Mock data for demonstration
 SAMPLE_CITATIONS = [
@@ -158,22 +176,38 @@ SAMPLE_CITATIONS = [
         doi="10.1002/hbm.10062",
         pmid="12391568",
         keywords=["brain extraction", "skull stripping", "fMRI", "preprocessing"],
-        citation_count=1250
+        citation_count=1250,
     ),
     Citation(
         id="friston2007",
         title="Statistical Parametric Mapping: The Analysis of Functional Brain Images",
-        authors=["Friston, K.J.", "Ashburner, J.", "Kiebel, S.J.", "Nichols, T.E.", "Penny, W.D."],
+        authors=[
+            "Friston, K.J.",
+            "Ashburner, J.",
+            "Kiebel, S.J.",
+            "Nichols, T.E.",
+            "Penny, W.D.",
+        ],
         journal="Academic Press",
         year=2007,
         doi="10.1016/B978-012372560-8/50002-4",
         keywords=["SPM", "statistical parametric mapping", "fMRI", "analysis"],
-        citation_count=3420
+        citation_count=3420,
     ),
     Citation(
         id="nilearn2014",
         title="Machine learning for neuroimaging with scikit-learn",
-        authors=["Abraham, A.", "Pedregosa, F.", "Eickenberg, M.", "Gervais, P.", "Mueller, A.", "Kossaifi, J.", "Gramfort, A.", "Thirion, B.", "Varoquaux, G."],
+        authors=[
+            "Abraham, A.",
+            "Pedregosa, F.",
+            "Eickenberg, M.",
+            "Gervais, P.",
+            "Mueller, A.",
+            "Kossaifi, J.",
+            "Gramfort, A.",
+            "Thirion, B.",
+            "Varoquaux, G.",
+        ],
         journal="Frontiers in Neuroinformatics",
         year=2014,
         volume="8",
@@ -181,19 +215,20 @@ SAMPLE_CITATIONS = [
         doi="10.3389/fninf.2014.00014",
         pmid="24600385",
         keywords=["machine learning", "neuroimaging", "Python", "scikit-learn"],
-        citation_count=892
-    )
+        citation_count=892,
+    ),
 ]
 
 # ============================================================================
 # Service Clients
 # ============================================================================
 
+
 class EvidenceServiceClient:
     """Client for retrieving evidence from various services"""
 
     @staticmethod
-    async def get_br_kg_evidence(job_id: str) -> List[EvidenceItem]:
+    async def get_br_kg_evidence(job_id: str) -> list[EvidenceItem]:
         """Get evidence items from BR-KG service"""
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
@@ -209,7 +244,7 @@ class EvidenceServiceClient:
         return []
 
     @staticmethod
-    async def get_agent_evidence(job_id: str) -> List[EvidenceItem]:
+    async def get_agent_evidence(job_id: str) -> list[EvidenceItem]:
         """Get evidence items from Agent service"""
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
@@ -230,18 +265,24 @@ class EvidenceServiceClient:
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 response = await client.head(f"https://doi.org/{doi}")
-                return ValidationStatus.VALID if response.status_code == 200 else ValidationStatus.INVALID
+                return (
+                    ValidationStatus.VALID
+                    if response.status_code == 200
+                    else ValidationStatus.INVALID
+                )
         except Exception:
             return ValidationStatus.UNKNOWN
 
     @staticmethod
-    async def enrich_citation(doi: str) -> Optional[Citation]:
+    async def enrich_citation(doi: str) -> Citation | None:
         """Enrich citation information using DOI"""
         try:
             # Mock implementation - in practice, use CrossRef API
             async with httpx.AsyncClient(timeout=3.0) as client:
                 headers = {"Accept": "application/json"}
-                response = await client.get(f"https://api.crossref.org/works/{doi}", headers=headers)
+                response = await client.get(
+                    f"https://api.crossref.org/works/{doi}", headers=headers
+                )
                 if response.status_code == 200:
                     # Parse CrossRef response and create Citation
                     # This is a mock - real implementation would parse the JSON
@@ -250,11 +291,13 @@ class EvidenceServiceClient:
             logger.warning(f"Failed to enrich citation for DOI {doi}: {e}")
         return None
 
+
 # ============================================================================
 # Evidence Processing Logic
 # ============================================================================
 
-def generate_mock_evidence(job_id: str) -> List[EvidenceItem]:
+
+def generate_mock_evidence(job_id: str) -> list[EvidenceItem]:
     """Generate mock evidence for demonstration"""
     evidence_items = [
         EvidenceItem(
@@ -269,8 +312,8 @@ def generate_mock_evidence(job_id: str) -> List[EvidenceItem]:
                 "subjects": 10,
                 "sessions": 1,
                 "modalities": ["func", "anat"],
-                "task": "flanker"
-            }
+                "task": "flanker",
+            },
         ),
         EvidenceItem(
             id=f"method_glm_{job_id}",
@@ -280,11 +323,7 @@ def generate_mock_evidence(job_id: str) -> List[EvidenceItem]:
             description="First-level GLM analysis using FSL FEAT",
             version="6.0.5",
             validation_status=ValidationStatus.VALID,
-            metadata={
-                "software": "FSL",
-                "version": "6.0.5",
-                "method": "GLM"
-            }
+            metadata={"software": "FSL", "version": "6.0.5", "method": "GLM"},
         ),
         EvidenceItem(
             id=f"param_smooth_{job_id}",
@@ -294,10 +333,7 @@ def generate_mock_evidence(job_id: str) -> List[EvidenceItem]:
             description="Gaussian smoothing kernel",
             value="6mm FWHM",
             validation_status=ValidationStatus.VALID,
-            metadata={
-                "parameter_type": "preprocessing",
-                "unit": "mm"
-            }
+            metadata={"parameter_type": "preprocessing", "unit": "mm"},
         ),
         EvidenceItem(
             id=f"param_threshold_{job_id}",
@@ -307,10 +343,7 @@ def generate_mock_evidence(job_id: str) -> List[EvidenceItem]:
             description="Cluster-forming threshold",
             value="p < 0.001",
             validation_status=ValidationStatus.VALID,
-            metadata={
-                "correction": "uncorrected",
-                "type": "cluster_forming"
-            }
+            metadata={"correction": "uncorrected", "type": "cluster_forming"},
         ),
         EvidenceItem(
             id=f"code_analysis_{job_id}",
@@ -320,10 +353,7 @@ def generate_mock_evidence(job_id: str) -> List[EvidenceItem]:
             description="Generated analysis code",
             url=f"/api/evidence/{job_id}/code/analysis.py",
             validation_status=ValidationStatus.VALID,
-            metadata={
-                "language": "Python",
-                "framework": "Nilearn"
-            }
+            metadata={"language": "Python", "framework": "Nilearn"},
         ),
         EvidenceItem(
             id=f"env_python_{job_id}",
@@ -338,12 +368,13 @@ def generate_mock_evidence(job_id: str) -> List[EvidenceItem]:
                     "nilearn": "0.10.1",
                     "nipype": "1.8.6",
                     "numpy": "1.24.3",
-                    "scipy": "1.10.1"
+                    "scipy": "1.10.1",
                 }
-            }
-        )
+            },
+        ),
     ]
     return evidence_items
+
 
 def calculate_reproducibility_score(evidence: JobEvidence) -> float:
     """Calculate reproducibility score based on available evidence"""
@@ -351,28 +382,44 @@ def calculate_reproducibility_score(evidence: JobEvidence) -> float:
     max_score = 100.0
 
     # Dataset evidence (20 points)
-    dataset_items = [e for e in evidence.evidence_items if e.type == EvidenceType.DATASET]
-    if dataset_items and any(e.validation_status == ValidationStatus.VALID for e in dataset_items):
+    dataset_items = [
+        e for e in evidence.evidence_items if e.type == EvidenceType.DATASET
+    ]
+    if dataset_items and any(
+        e.validation_status == ValidationStatus.VALID for e in dataset_items
+    ):
         score += 20.0
 
     # Method evidence (25 points)
     method_items = [e for e in evidence.evidence_items if e.type == EvidenceType.METHOD]
-    if method_items and any(e.validation_status == ValidationStatus.VALID for e in method_items):
+    if method_items and any(
+        e.validation_status == ValidationStatus.VALID for e in method_items
+    ):
         score += 25.0
 
     # Parameter evidence (20 points)
-    param_items = [e for e in evidence.evidence_items if e.type == EvidenceType.PARAMETER]
-    if param_items and any(e.validation_status == ValidationStatus.VALID for e in param_items):
+    param_items = [
+        e for e in evidence.evidence_items if e.type == EvidenceType.PARAMETER
+    ]
+    if param_items and any(
+        e.validation_status == ValidationStatus.VALID for e in param_items
+    ):
         score += 20.0
 
     # Code evidence (15 points)
     code_items = [e for e in evidence.evidence_items if e.type == EvidenceType.CODE]
-    if code_items and any(e.validation_status == ValidationStatus.VALID for e in code_items):
+    if code_items and any(
+        e.validation_status == ValidationStatus.VALID for e in code_items
+    ):
         score += 15.0
 
     # Environment evidence (10 points)
-    env_items = [e for e in evidence.evidence_items if e.type == EvidenceType.ENVIRONMENT]
-    if env_items and any(e.validation_status == ValidationStatus.VALID for e in env_items):
+    env_items = [
+        e for e in evidence.evidence_items if e.type == EvidenceType.ENVIRONMENT
+    ]
+    if env_items and any(
+        e.validation_status == ValidationStatus.VALID for e in env_items
+    ):
         score += 10.0
 
     # Citations (10 points)
@@ -380,6 +427,7 @@ def calculate_reproducibility_score(evidence: JobEvidence) -> float:
         score += 10.0
 
     return min(score, max_score) / max_score
+
 
 async def validate_evidence_item(item: EvidenceItem) -> ValidationStatus:
     """Validate a single evidence item"""
@@ -396,7 +444,11 @@ async def validate_evidence_item(item: EvidenceItem) -> ValidationStatus:
             # Validate dataset URL
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.head(str(item.url))
-                status = ValidationStatus.VALID if response.status_code == 200 else ValidationStatus.INVALID
+                status = (
+                    ValidationStatus.VALID
+                    if response.status_code == 200
+                    else ValidationStatus.INVALID
+                )
 
         elif item.type == EvidenceType.CITATION and item.doi:
             # Validate DOI
@@ -427,6 +479,7 @@ async def validate_evidence_item(item: EvidenceItem) -> ValidationStatus:
     # Cache result
     validation_cache[cache_key] = status
     return status
+
 
 def format_citation(citation: Citation, format: CitationFormat) -> str:
     """Format citation according to specified style"""
@@ -490,9 +543,11 @@ def format_citation(citation: Citation, format: CitationFormat) -> str:
         # Default format
         return f"{authors_str} ({citation.year}). {citation.title}. {citation.journal or 'Unknown'}."
 
+
 # ============================================================================
 # API Endpoints
 # ============================================================================
+
 
 @router.get("/{job_id}", response_model=JobEvidence)
 async def get_job_evidence(job_id: str) -> JobEvidence:
@@ -510,7 +565,7 @@ async def get_job_evidence(job_id: str) -> JobEvidence:
         # Get evidence from services (in parallel)
         tasks = [
             EvidenceServiceClient.get_br_kg_evidence(job_id),
-            EvidenceServiceClient.get_agent_evidence(job_id)
+            EvidenceServiceClient.get_agent_evidence(job_id),
         ]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -534,7 +589,13 @@ async def get_job_evidence(job_id: str) -> JobEvidence:
     evidence.reproducibility_score = calculate_reproducibility_score(evidence)
 
     # Update validation summary
-    validation_counts = {"valid": 0, "invalid": 0, "pending": 0, "warning": 0, "unknown": 0}
+    validation_counts = {
+        "valid": 0,
+        "invalid": 0,
+        "pending": 0,
+        "warning": 0,
+        "unknown": 0,
+    }
     for item in evidence.evidence_items:
         validation_counts[item.validation_status] += 1
     evidence.validation_summary = validation_counts
@@ -544,10 +605,10 @@ async def get_job_evidence(job_id: str) -> JobEvidence:
 
     return evidence
 
+
 @router.post("/validate", response_model=EvidenceValidationResponse)
 async def validate_evidence(
-    request: EvidenceValidationRequest,
-    background_tasks: BackgroundTasks
+    request: EvidenceValidationRequest, background_tasks: BackgroundTasks
 ) -> EvidenceValidationResponse:
     """Validate evidence items"""
 
@@ -556,7 +617,7 @@ async def validate_evidence(
 
     # Find evidence items to validate
     items_to_validate = []
-    for job_id, evidence in job_evidence_db.items():
+    for _job_id, evidence in job_evidence_db.items():
         for item in evidence.evidence_items:
             if item.id in request.evidence_ids:
                 items_to_validate.append(item)
@@ -564,13 +625,18 @@ async def validate_evidence(
     # Validate items
     for item in items_to_validate:
         try:
-            if request.force_revalidation or item.validation_status == ValidationStatus.PENDING:
+            if (
+                request.force_revalidation
+                or item.validation_status == ValidationStatus.PENDING
+            ):
                 status = await validate_evidence_item(item)
                 validation_results[item.id] = status
 
                 # Update item status
                 item.validation_status = status
-                item.validation_message = f"Validated at {datetime.utcnow().isoformat()}"
+                item.validation_message = (
+                    f"Validated at {datetime.utcnow().isoformat()}"
+                )
             else:
                 validation_results[item.id] = item.validation_status
 
@@ -581,8 +647,9 @@ async def validate_evidence(
     return EvidenceValidationResponse(
         validated_count=len(validation_results),
         validation_results=validation_results,
-        errors=errors
+        errors=errors,
     )
+
 
 @router.post("/citations/export", response_model=CitationExportResponse)
 async def export_citations(request: CitationExportRequest) -> CitationExportResponse:
@@ -601,8 +668,9 @@ async def export_citations(request: CitationExportRequest) -> CitationExportResp
     return CitationExportResponse(
         format=request.format,
         citations=formatted_citations,
-        download_url=f"/api/evidence/citations/download/{request.job_id}/{request.format.value}"
+        download_url=f"/api/evidence/citations/download/{request.job_id}/{request.format.value}",
     )
+
 
 @router.get("/citations/download/{job_id}/{format}")
 async def download_citations(job_id: str, format: str):
@@ -633,21 +701,23 @@ async def download_citations(job_id: str, format: str):
         CitationFormat.CHICAGO: "txt",
         CitationFormat.VANCOUVER: "txt",
         CitationFormat.BIBTEX: "bib",
-        CitationFormat.ENDNOTE: "enw"
+        CitationFormat.ENDNOTE: "enw",
     }
 
     ext = extensions.get(citation_format, "txt")
     filename = f"citations_{job_id}.{ext}"
 
     from fastapi.responses import Response
+
     return Response(
         content=content,
         media_type="application/octet-stream",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
+
 @router.get("/{job_id}/lineage")
-async def get_data_lineage(job_id: str) -> Dict[str, Any]:
+async def get_data_lineage(job_id: str) -> dict[str, Any]:
     """Get data lineage graph for a job"""
 
     if job_id not in job_evidence_db:
@@ -661,39 +731,40 @@ async def get_data_lineage(job_id: str) -> Dict[str, Any]:
                 "id": "dataset_input",
                 "type": "dataset",
                 "label": "OpenNeuro ds000114",
-                "metadata": {"subjects": 10, "modalities": ["func", "anat"]}
+                "metadata": {"subjects": 10, "modalities": ["func", "anat"]},
             },
             {
                 "id": "preprocess_step",
                 "type": "processing",
                 "label": "Preprocessing",
-                "metadata": {"software": "fMRIPrep", "version": "20.2.3"}
+                "metadata": {"software": "fMRIPrep", "version": "20.2.3"},
             },
             {
                 "id": "glm_step",
                 "type": "analysis",
                 "label": "GLM Analysis",
-                "metadata": {"software": "FSL", "version": "6.0.5"}
+                "metadata": {"software": "FSL", "version": "6.0.5"},
             },
             {
                 "id": "result_output",
                 "type": "result",
                 "label": "Statistical Maps",
-                "metadata": {"format": "NIfTI", "threshold": "p<0.001"}
-            }
+                "metadata": {"format": "NIfTI", "threshold": "p<0.001"},
+            },
         ],
         "edges": [
             {"from": "dataset_input", "to": "preprocess_step", "label": "raw_data"},
             {"from": "preprocess_step", "to": "glm_step", "label": "preprocessed_data"},
-            {"from": "glm_step", "to": "result_output", "label": "statistical_maps"}
+            {"from": "glm_step", "to": "result_output", "label": "statistical_maps"},
         ],
-        "generated_at": datetime.utcnow().isoformat()
+        "generated_at": datetime.utcnow().isoformat(),
     }
 
     return lineage
 
+
 @router.post("/{job_id}/items")
-async def add_evidence_item(job_id: str, item: EvidenceItem) -> Dict[str, str]:
+async def add_evidence_item(job_id: str, item: EvidenceItem) -> dict[str, str]:
     """Add evidence item to a job"""
 
     if job_id not in job_evidence_db:
@@ -716,8 +787,9 @@ async def add_evidence_item(job_id: str, item: EvidenceItem) -> Dict[str, str]:
 
     return {"status": "added", "item_id": item.id}
 
+
 @router.delete("/{job_id}/items/{item_id}")
-async def remove_evidence_item(job_id: str, item_id: str) -> Dict[str, str]:
+async def remove_evidence_item(job_id: str, item_id: str) -> dict[str, str]:
     """Remove evidence item from a job"""
 
     if job_id not in job_evidence_db:
@@ -727,7 +799,9 @@ async def remove_evidence_item(job_id: str, item_id: str) -> Dict[str, str]:
 
     # Find and remove item
     original_count = len(evidence.evidence_items)
-    evidence.evidence_items = [item for item in evidence.evidence_items if item.id != item_id]
+    evidence.evidence_items = [
+        item for item in evidence.evidence_items if item.id != item_id
+    ]
 
     if len(evidence.evidence_items) == original_count:
         raise HTTPException(status_code=404, detail="Evidence item not found")
@@ -739,16 +813,23 @@ async def remove_evidence_item(job_id: str, item_id: str) -> Dict[str, str]:
 
     return {"status": "removed", "item_id": item_id}
 
+
 @router.get("/stats/summary")
-async def get_evidence_statistics() -> Dict[str, Any]:
+async def get_evidence_statistics() -> dict[str, Any]:
     """Get evidence collection statistics"""
 
     total_jobs = len(job_evidence_db)
-    total_evidence_items = sum(len(ev.evidence_items) for ev in job_evidence_db.values())
+    total_evidence_items = sum(
+        len(ev.evidence_items) for ev in job_evidence_db.values()
+    )
     total_citations = sum(len(ev.citations) for ev in job_evidence_db.values())
 
     # Calculate average reproducibility score
-    scores = [ev.reproducibility_score for ev in job_evidence_db.values() if ev.reproducibility_score]
+    scores = [
+        ev.reproducibility_score
+        for ev in job_evidence_db.values()
+        if ev.reproducibility_score
+    ]
     avg_reproducibility = sum(scores) / len(scores) if scores else 0.0
 
     # Evidence type distribution
@@ -764,5 +845,5 @@ async def get_evidence_statistics() -> Dict[str, Any]:
         "average_reproducibility_score": round(avg_reproducibility, 2),
         "evidence_type_distribution": type_counts,
         "validation_cache_size": len(validation_cache),
-        "last_updated": datetime.utcnow().isoformat()
+        "last_updated": datetime.utcnow().isoformat(),
     }

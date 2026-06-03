@@ -6,19 +6,22 @@ Uses env:
   NEO4J_USER (default neo4j)
   NEO4J_PASSWORD (required)
 """
+
 from __future__ import annotations
 
-import os
-from functools import lru_cache
 import json
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+import os
+from collections.abc import Iterable
+from functools import lru_cache
+from typing import Any
 
 from neo4j import GraphDatabase
 from neo4j.exceptions import Neo4jError
 
 from brain_researcher.config.paths import resolve_from_config
 
-_CATALOG_ALIAS_CACHE: Dict[str, str] | None = None
+_CATALOG_ALIAS_CACHE: dict[str, str] | None = None
+
 
 @lru_cache(maxsize=1)
 def _get_driver():
@@ -37,7 +40,7 @@ def _get_driver():
         return None
 
 
-def get_preferred_families_for_pipeline(pipeline_id: str) -> List[str]:
+def get_preferred_families_for_pipeline(pipeline_id: str) -> list[str]:
     """Return family IDs preferred for a pipeline template."""
     driver = _get_driver()
     if driver is None:
@@ -54,7 +57,7 @@ def get_preferred_families_for_pipeline(pipeline_id: str) -> List[str]:
         return []
 
 
-def get_family_stats_for_operation(op_id: str) -> List[Tuple[str, int]]:
+def get_family_stats_for_operation(op_id: str) -> list[tuple[str, int]]:
     """Return (family_id, tool_count) pairs for an operation."""
     driver = _get_driver()
     if driver is None:
@@ -72,8 +75,8 @@ def get_family_stats_for_operation(op_id: str) -> List[Tuple[str, int]]:
         return []
 
 
-def _normalize_values(values: Iterable[str] | None) -> List[str]:
-    cleaned: List[str] = []
+def _normalize_values(values: Iterable[str] | None) -> list[str]:
+    cleaned: list[str] = []
     for val in values or []:
         if not isinstance(val, str):
             continue
@@ -88,7 +91,7 @@ def get_tool_ids_for_constraints(
     modalities: Iterable[str] | None = None,
     consumes: Iterable[str] | None = None,
     produces: Iterable[str] | None = None,
-) -> Set[str] | None:
+) -> set[str] | None:
     """Return tool_ids that satisfy the given KG constraints.
 
     Returns:
@@ -184,7 +187,9 @@ def get_failed_on_stats(
                     "fail_count": int(row.get("fail_count") or 0),
                     "last_seen": row.get("last_seen"),
                     "error_categories": [
-                        ec for ec in row.get("error_categories") or [] if isinstance(ec, str)
+                        ec
+                        for ec in row.get("error_categories") or []
+                        if isinstance(ec, str)
                     ],
                 }
             return out
@@ -192,9 +197,9 @@ def get_failed_on_stats(
         return {}
 
 
-def _load_catalog_alias_map() -> Dict[str, str]:
+def _load_catalog_alias_map() -> dict[str, str]:
     """Load alias -> canonical dataset_id from configs/datasets catalogs (best effort)."""
-    alias_map: Dict[str, str] = {}
+    alias_map: dict[str, str] = {}
     try:
         root = resolve_from_config("datasets")
         candidates = [
@@ -234,7 +239,7 @@ def _load_catalog_alias_map() -> Dict[str, str]:
         return {}
 
 
-def resolve_dataset_id(key: Optional[str]) -> Optional[str]:
+def resolve_dataset_id(key: str | None) -> str | None:
     """
     Resolve a dataset key (id, dataset_id, openneuro_id, alias) to canonical Dataset.id.
     Uses KG first, then falls back to catalog alias map.
@@ -272,11 +277,11 @@ def resolve_dataset_id(key: Optional[str]) -> Optional[str]:
 
 def _resolve_key_union(
     *,
-    key: Optional[str],
+    key: str | None,
     label: str,
     preferred_prop: str,
     fallback_prop: str,
-) -> Optional[str]:
+) -> str | None:
     """
     Resolve a key via UNION (preferred then fallback) to avoid OR scans.
     Returns the preferred property when present, otherwise fallback.
@@ -306,7 +311,7 @@ def _resolve_key_union(
         return key
 
 
-def resolve_tool_key(key: Optional[str]) -> Optional[str]:
+def resolve_tool_key(key: str | None) -> str | None:
     """Resolve a tool identifier to canonical tool_id (fallback id)."""
     return _resolve_key_union(
         key=key,
@@ -316,7 +321,7 @@ def resolve_tool_key(key: Optional[str]) -> Optional[str]:
     )
 
 
-def resolve_version_key(key: Optional[str]) -> Optional[str]:
+def resolve_version_key(key: str | None) -> str | None:
     """Resolve a ToolVersion identifier to canonical version_id (fallback id)."""
     return _resolve_key_union(
         key=key,

@@ -12,18 +12,10 @@ Exposes 6 composable tools:
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from brain_researcher.services.tools.params.spd_learn import (
-    CovarianceEstimateParameters,
-    SPDBiMapParameters,
-    SPDGeodesicDistanceParameters,
-    SPDLogmParameters,
-    SPDNetTrainParameters,
-    SPDProjectParameters,
     covariance_estimate_from_payload,
     run_covariance_estimate,
     run_spd_bimap,
@@ -102,7 +94,7 @@ class SPDDistanceArgs(BaseModel):
         default="log_euclidean",
         description="Distance metric: log_euclidean, airm, euclidean",
     )
-    output_file: Optional[str] = Field(
+    output_file: str | None = Field(
         default=None, description="Optional output file for distance result JSON"
     )
 
@@ -112,14 +104,10 @@ class SPDBiMapArgs(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    data_files: List[str] = Field(description="List of SPD matrix file paths")
-    labels_file: Optional[str] = Field(
-        default=None, description="Optional labels file"
-    )
+    data_files: list[str] = Field(description="List of SPD matrix file paths")
+    labels_file: str | None = Field(default=None, description="Optional labels file")
     output_dim: int = Field(default=10, description="Target output dimension")
-    output_dir: str = Field(
-        default="spd_bimap_output", description="Output directory"
-    )
+    output_dir: str = Field(default="spd_bimap_output", description="Output directory")
     epochs: int = Field(default=50, description="Training epochs")
     learning_rate: float = Field(default=0.01, description="Learning rate")
 
@@ -129,7 +117,7 @@ class SPDNetTrainArgs(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    data_files: List[str] = Field(description="List of SPD matrix file paths")
+    data_files: list[str] = Field(description="List of SPD matrix file paths")
     output_dir: str = Field(default="spdnet_output", description="Output directory")
     architecture: str = Field(
         default="spdnet", description="Model architecture: spdnet, eeg_spdnet"
@@ -139,7 +127,7 @@ class SPDNetTrainArgs(BaseModel):
     batch_size: int = Field(default=32, description="Batch size")
     learning_rate: float = Field(default=0.001, description="Learning rate")
     val_split: float = Field(default=0.2, description="Validation split ratio")
-    labels_file: Optional[str] = Field(
+    labels_file: str | None = Field(
         default=None, description="Optional labels file (.npy/.npz)"
     )
 
@@ -326,7 +314,7 @@ class SPDTools:
     """Registry helper for SPD tools."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         return [
             CovarianceEstimateTool(),
             SPDProjectTool(),

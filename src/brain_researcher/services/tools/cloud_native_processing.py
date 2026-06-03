@@ -12,13 +12,15 @@ This module provides tools for distributed and cloud-based neuroimaging:
 - Stream Processing
 """
 
-import logging
-from typing import Dict, Any, Optional, List, Tuple
-import numpy as np
-from datetime import datetime
-import json
 import hashlib
-from pydantic import BaseModel, Field, ConfigDict
+import json
+import logging
+from datetime import datetime
+from typing import Any
+
+import numpy as np
+from pydantic import BaseModel, ConfigDict, Field
+
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper
 
 logger = logging.getLogger(__name__)
@@ -26,12 +28,17 @@ logger = logging.getLogger(__name__)
 
 class CloudProcessingInput(BaseModel):
     """Input model for cloud processing."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     data_path: str = Field(..., description="Path to neuroimaging data")
-    n_workers: Optional[int] = Field(default=4, description="Number of parallel workers")
-    memory_per_worker: Optional[str] = Field(default="4GB", description="Memory per worker")
-    processing_config: Optional[Dict] = Field(default_factory=dict, description="Processing configuration")
+    n_workers: int | None = Field(default=4, description="Number of parallel workers")
+    memory_per_worker: str | None = Field(
+        default="4GB", description="Memory per worker"
+    )
+    processing_config: dict | None = Field(
+        default_factory=dict, description="Processing configuration"
+    )
 
 
 class DistributedFMRITool(NeuroToolWrapper):
@@ -49,19 +56,20 @@ class DistributedFMRITool(NeuroToolWrapper):
     def get_args_schema(self):
         return CloudProcessingInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run distributed fMRI processing."""
         try:
             input_data = CloudProcessingInput(**kwargs)
 
             # Initialize distributed cluster (simulated)
             cluster_info = self._initialize_cluster(
-                input_data.n_workers,
-                input_data.memory_per_worker
+                input_data.n_workers, input_data.memory_per_worker
             )
 
             # Partition data for parallel processing
-            partitions = self._partition_data(input_data.data_path, input_data.n_workers)
+            partitions = self._partition_data(
+                input_data.data_path, input_data.n_workers
+            )
 
             # Process partitions in parallel
             results = self._process_parallel(partitions, input_data.processing_config)
@@ -75,38 +83,40 @@ class DistributedFMRITool(NeuroToolWrapper):
                 "partitions_processed": len(partitions),
                 "processing_time": aggregated.get("total_time", 0),
                 "results": aggregated,
-                "worker_stats": self._get_worker_stats(input_data.n_workers)
+                "worker_stats": self._get_worker_stats(input_data.n_workers),
             }
 
         except Exception as e:
             logger.error(f"Distributed processing failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _initialize_cluster(self, n_workers: int, memory: str) -> Dict:
+    def _initialize_cluster(self, n_workers: int, memory: str) -> dict:
         """Initialize distributed computing cluster."""
         return {
             "cluster_id": f"cluster_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             "n_workers": n_workers,
             "memory_per_worker": memory,
             "scheduler": "dask",
-            "dashboard_url": f"http://localhost:8787",
-            "status": "running"
+            "dashboard_url": "http://localhost:8787",
+            "status": "running",
         }
 
-    def _partition_data(self, data_path: str, n_partitions: int) -> List[Dict]:
+    def _partition_data(self, data_path: str, n_partitions: int) -> list[dict]:
         """Partition data for parallel processing."""
         # Simulate data partitioning
         partitions = []
         for i in range(n_partitions):
-            partitions.append({
-                "partition_id": i,
-                "data_path": f"{data_path}_part_{i}",
-                "size_mb": np.random.randint(100, 500),
-                "n_voxels": np.random.randint(10000, 50000)
-            })
+            partitions.append(
+                {
+                    "partition_id": i,
+                    "data_path": f"{data_path}_part_{i}",
+                    "size_mb": np.random.randint(100, 500),
+                    "n_voxels": np.random.randint(10000, 50000),
+                }
+            )
         return partitions
 
-    def _process_parallel(self, partitions: List[Dict], config: Dict) -> List[Dict]:
+    def _process_parallel(self, partitions: list[dict], config: dict) -> list[dict]:
         """Process partitions in parallel."""
         results = []
         for partition in partitions:
@@ -118,13 +128,13 @@ class DistributedFMRITool(NeuroToolWrapper):
                 "metrics": {
                     "mean_activation": np.random.randn(),
                     "variance": np.random.uniform(0.5, 2),
-                    "snr": np.random.uniform(10, 30)
-                }
+                    "snr": np.random.uniform(10, 30),
+                },
             }
             results.append(result)
         return results
 
-    def _aggregate_results(self, results: List[Dict]) -> Dict:
+    def _aggregate_results(self, results: list[dict]) -> dict:
         """Aggregate results from parallel processing."""
         total_time = sum(r["processing_time"] for r in results)
         total_voxels = sum(r["voxels_processed"] for r in results)
@@ -140,19 +150,21 @@ class DistributedFMRITool(NeuroToolWrapper):
             "total_time": total_time,
             "total_voxels": total_voxels,
             "aggregated_metrics": metrics,
-            "n_partitions": len(results)
+            "n_partitions": len(results),
         }
 
-    def _get_worker_stats(self, n_workers: int) -> List[Dict]:
+    def _get_worker_stats(self, n_workers: int) -> list[dict]:
         """Get statistics for each worker."""
         stats = []
         for i in range(n_workers):
-            stats.append({
-                "worker_id": i,
-                "cpu_usage": np.random.uniform(50, 90),
-                "memory_usage": np.random.uniform(60, 85),
-                "tasks_completed": np.random.randint(10, 50)
-            })
+            stats.append(
+                {
+                    "worker_id": i,
+                    "cpu_usage": np.random.uniform(50, 90),
+                    "memory_usage": np.random.uniform(60, 85),
+                    "tasks_completed": np.random.randint(10, 50),
+                }
+            )
         return stats
 
 
@@ -171,7 +183,7 @@ class KubernetesJobTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CloudProcessingInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run Kubernetes job orchestration."""
         try:
             input_data = CloudProcessingInput(**kwargs)
@@ -194,61 +206,68 @@ class KubernetesJobTool(NeuroToolWrapper):
                 "job_spec": job_spec,
                 "progress": progress,
                 "results": results,
-                "kubernetes_cluster": self._get_cluster_info()
+                "kubernetes_cluster": self._get_cluster_info(),
             }
 
         except Exception as e:
             logger.error(f"Kubernetes orchestration failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _create_job_spec(self, input_data: CloudProcessingInput) -> Dict:
+    def _create_job_spec(self, input_data: CloudProcessingInput) -> dict:
         """Create Kubernetes job specification."""
         return {
             "apiVersion": "batch/v1",
             "kind": "Job",
             "metadata": {
                 "name": f"neuroimaging-job-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-                "labels": {
-                    "app": "brain-researcher",
-                    "type": "processing"
-                }
+                "labels": {"app": "brain-researcher", "type": "processing"},
             },
             "spec": {
                 "parallelism": input_data.n_workers,
                 "completions": input_data.n_workers,
                 "template": {
                     "spec": {
-                        "containers": [{
-                            "name": "neuroimaging-processor",
-                            "image": "brain-researcher:latest",
-                            "resources": {
-                                "requests": {
-                                    "memory": input_data.memory_per_worker,
-                                    "cpu": "2"
-                                }
-                            },
-                            "env": [
-                                {"name": "DATA_PATH", "value": input_data.data_path},
-                                {"name": "CONFIG", "value": json.dumps(input_data.processing_config)}
-                            ]
-                        }],
-                        "restartPolicy": "OnFailure"
+                        "containers": [
+                            {
+                                "name": "neuroimaging-processor",
+                                "image": "brain-researcher:latest",
+                                "resources": {
+                                    "requests": {
+                                        "memory": input_data.memory_per_worker,
+                                        "cpu": "2",
+                                    }
+                                },
+                                "env": [
+                                    {
+                                        "name": "DATA_PATH",
+                                        "value": input_data.data_path,
+                                    },
+                                    {
+                                        "name": "CONFIG",
+                                        "value": json.dumps(
+                                            input_data.processing_config
+                                        ),
+                                    },
+                                ],
+                            }
+                        ],
+                        "restartPolicy": "OnFailure",
                     }
-                }
-            }
+                },
+            },
         }
 
-    def _submit_job(self, job_spec: Dict) -> Dict:
+    def _submit_job(self, job_spec: dict) -> dict:
         """Submit job to Kubernetes cluster."""
         job_id = f"job-{hashlib.md5(str(job_spec).encode()).hexdigest()[:8]}"
         return {
             "job_id": job_id,
             "status": "submitted",
             "submission_time": datetime.now().isoformat(),
-            "namespace": "neuroimaging"
+            "namespace": "neuroimaging",
         }
 
-    def _monitor_job(self, job_id: str) -> Dict:
+    def _monitor_job(self, job_id: str) -> dict:
         """Monitor job progress."""
         return {
             "job_id": job_id,
@@ -256,21 +275,21 @@ class KubernetesJobTool(NeuroToolWrapper):
             "pods_running": np.random.randint(2, 5),
             "pods_succeeded": np.random.randint(0, 3),
             "pods_failed": 0,
-            "progress_percentage": np.random.uniform(30, 90)
+            "progress_percentage": np.random.uniform(30, 90),
         }
 
-    def _get_job_results(self, job_id: str) -> Dict:
+    def _get_job_results(self, job_id: str) -> dict:
         """Get results from completed job."""
         return {
             "output_path": f"s3://neuroimaging-results/{job_id}/",
             "processing_time_seconds": np.random.uniform(100, 500),
             "resources_used": {
                 "cpu_hours": np.random.uniform(5, 20),
-                "memory_gb_hours": np.random.uniform(10, 40)
-            }
+                "memory_gb_hours": np.random.uniform(10, 40),
+            },
         }
 
-    def _get_cluster_info(self) -> Dict:
+    def _get_cluster_info(self) -> dict:
         """Get Kubernetes cluster information."""
         return {
             "cluster_name": "neuroimaging-cluster",
@@ -278,7 +297,7 @@ class KubernetesJobTool(NeuroToolWrapper):
             "nodes": 5,
             "total_cpu": 40,
             "total_memory_gb": 160,
-            "namespace": "neuroimaging"
+            "namespace": "neuroimaging",
         }
 
 
@@ -297,7 +316,7 @@ class RayDistributedTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CloudProcessingInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run Ray distributed computing."""
         try:
             input_data = CloudProcessingInput(**kwargs)
@@ -319,40 +338,42 @@ class RayDistributedTool(NeuroToolWrapper):
                 "cluster": cluster,
                 "n_tasks": len(tasks),
                 "results": reduced,
-                "performance": self._get_performance_metrics(tasks, results)
+                "performance": self._get_performance_metrics(tasks, results),
             }
 
         except Exception as e:
             logger.error(f"Ray processing failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _init_ray_cluster(self, n_workers: int) -> Dict:
+    def _init_ray_cluster(self, n_workers: int) -> dict:
         """Initialize Ray cluster."""
         return {
             "head_node": "ray-head-0",
             "worker_nodes": [f"ray-worker-{i}" for i in range(n_workers)],
             "dashboard": "http://localhost:8265",
             "object_store_memory_gb": 10,
-            "plasma_store": True
+            "plasma_store": True,
         }
 
-    def _create_remote_tasks(self, input_data: CloudProcessingInput) -> List[Dict]:
+    def _create_remote_tasks(self, input_data: CloudProcessingInput) -> list[dict]:
         """Create Ray remote tasks."""
         tasks = []
         for i in range(input_data.n_workers * 2):  # Create more tasks than workers
-            tasks.append({
-                "task_id": f"task_{i}",
-                "function": "process_brain_region",
-                "args": {
-                    "region_id": i,
-                    "data_path": input_data.data_path,
-                    "config": input_data.processing_config
-                },
-                "resources": {"cpu": 1, "memory": 2e9}
-            })
+            tasks.append(
+                {
+                    "task_id": f"task_{i}",
+                    "function": "process_brain_region",
+                    "args": {
+                        "region_id": i,
+                        "data_path": input_data.data_path,
+                        "config": input_data.processing_config,
+                    },
+                    "resources": {"cpu": 1, "memory": 2e9},
+                }
+            )
         return tasks
 
-    def _execute_tasks(self, tasks: List[Dict]) -> List[Dict]:
+    def _execute_tasks(self, tasks: list[dict]) -> list[dict]:
         """Execute tasks in parallel using Ray."""
         results = []
         for task in tasks:
@@ -365,14 +386,14 @@ class RayDistributedTool(NeuroToolWrapper):
                     "region_stats": {
                         "mean": np.random.randn(),
                         "std": np.random.uniform(0.1, 1),
-                        "max": np.random.uniform(2, 5)
+                        "max": np.random.uniform(2, 5),
                     }
-                }
+                },
             }
             results.append(result)
         return results
 
-    def _distributed_reduce(self, results: List[Dict]) -> Dict:
+    def _distributed_reduce(self, results: list[dict]) -> dict:
         """Perform distributed reduction of results."""
         # Aggregate statistics
         all_means = [r["output"]["region_stats"]["mean"] for r in results]
@@ -382,10 +403,10 @@ class RayDistributedTool(NeuroToolWrapper):
             "global_mean": float(np.mean(all_means)),
             "global_std": float(np.mean(all_stds)),
             "n_regions_processed": len(results),
-            "total_execution_time": sum(r["execution_time"] for r in results)
+            "total_execution_time": sum(r["execution_time"] for r in results),
         }
 
-    def _get_performance_metrics(self, tasks: List[Dict], results: List[Dict]) -> Dict:
+    def _get_performance_metrics(self, tasks: list[dict], results: list[dict]) -> dict:
         """Get performance metrics."""
         execution_times = [r["execution_time"] for r in results]
         return {
@@ -393,7 +414,7 @@ class RayDistributedTool(NeuroToolWrapper):
             "max_task_time": float(np.max(execution_times)),
             "min_task_time": float(np.min(execution_times)),
             "throughput_tasks_per_second": len(tasks) / sum(execution_times),
-            "efficiency": 0.85  # Simulated parallel efficiency
+            "efficiency": 0.85,  # Simulated parallel efficiency
         }
 
 
@@ -412,7 +433,7 @@ class CloudStorageIntegrationTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CloudProcessingInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run cloud storage operations."""
         try:
             input_data = CloudProcessingInput(**kwargs)
@@ -435,7 +456,7 @@ class CloudStorageIntegrationTool(NeuroToolWrapper):
                 "upload_info": upload_info,
                 "catalog_entry": catalog_entry,
                 "versioning": versioning,
-                "access_urls": self._generate_access_urls(upload_info)
+                "access_urls": self._generate_access_urls(upload_info),
             }
 
         except Exception as e:
@@ -453,10 +474,12 @@ class CloudStorageIntegrationTool(NeuroToolWrapper):
         else:
             return "local"
 
-    def _upload_to_cloud(self, data_path: str, storage_type: str) -> Dict:
+    def _upload_to_cloud(self, data_path: str, storage_type: str) -> dict:
         """Upload data to cloud storage."""
         bucket = f"neuroimaging-{datetime.now().strftime('%Y%m')}"
-        key = f"data/{hashlib.md5(data_path.encode()).hexdigest()[:8]}/brain_data.nii.gz"
+        key = (
+            f"data/{hashlib.md5(data_path.encode()).hexdigest()[:8]}/brain_data.nii.gz"
+        )
 
         return {
             "bucket": bucket,
@@ -465,10 +488,10 @@ class CloudStorageIntegrationTool(NeuroToolWrapper):
             "size_mb": np.random.uniform(100, 1000),
             "upload_time": datetime.now().isoformat(),
             "etag": hashlib.md5(f"{bucket}/{key}".encode()).hexdigest(),
-            "storage_class": "STANDARD"
+            "storage_class": "STANDARD",
         }
 
-    def _create_catalog_entry(self, upload_info: Dict) -> Dict:
+    def _create_catalog_entry(self, upload_info: dict) -> dict:
         """Create data catalog entry."""
         return {
             "catalog_id": hashlib.md5(str(upload_info).encode()).hexdigest()[:12],
@@ -478,13 +501,13 @@ class CloudStorageIntegrationTool(NeuroToolWrapper):
                 "modality": "fMRI",
                 "dimensions": [91, 109, 91, 200],
                 "voxel_size": [2, 2, 2],
-                "tr": 2.0
+                "tr": 2.0,
             },
             "created_at": datetime.now().isoformat(),
-            "tags": ["neuroimaging", "fmri", "processed"]
+            "tags": ["neuroimaging", "fmri", "processed"],
         }
 
-    def _setup_versioning(self, bucket: str) -> Dict:
+    def _setup_versioning(self, bucket: str) -> dict:
         """Set up versioning for cloud storage."""
         return {
             "enabled": True,
@@ -494,30 +517,30 @@ class CloudStorageIntegrationTool(NeuroToolWrapper):
                 {
                     "id": "delete_old_versions",
                     "status": "enabled",
-                    "expiration_days": 90
+                    "expiration_days": 90,
                 },
                 {
                     "id": "transition_to_glacier",
                     "status": "enabled",
                     "transition_days": 30,
-                    "storage_class": "GLACIER"
-                }
-            ]
+                    "storage_class": "GLACIER",
+                },
+            ],
         }
 
-    def _generate_access_urls(self, upload_info: Dict) -> Dict:
+    def _generate_access_urls(self, upload_info: dict) -> dict:
         """Generate access URLs for the data."""
         base_url = {
             "aws_s3": f"https://{upload_info['bucket']}.s3.amazonaws.com",
             "google_cloud_storage": f"https://storage.googleapis.com/{upload_info['bucket']}",
-            "azure_blob": f"https://neuroimaging.blob.core.windows.net/{upload_info['bucket']}"
+            "azure_blob": f"https://neuroimaging.blob.core.windows.net/{upload_info['bucket']}",
         }.get(upload_info["storage_type"], "")
 
         return {
             "direct_url": f"{base_url}/{upload_info['key']}",
             "signed_url": f"{base_url}/{upload_info['key']}?signature=...",
             "api_endpoint": f"https://api.neuroimaging.io/v1/data/{upload_info['etag']}",
-            "expires_in": 3600
+            "expires_in": 3600,
         }
 
 
@@ -536,7 +559,7 @@ class ServerlessProcessingTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CloudProcessingInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run serverless processing."""
         try:
             input_data = CloudProcessingInput(**kwargs)
@@ -559,14 +582,14 @@ class ServerlessProcessingTool(NeuroToolWrapper):
                 "deployment": deployment,
                 "invocations": invocations,
                 "results": results,
-                "cost_estimate": self._estimate_cost(invocations)
+                "cost_estimate": self._estimate_cost(invocations),
             }
 
         except Exception as e:
             logger.error(f"Serverless processing failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _create_functions(self, config: Dict) -> List[Dict]:
+    def _create_functions(self, config: dict) -> list[dict]:
         """Create serverless function definitions."""
         functions = [
             {
@@ -574,78 +597,87 @@ class ServerlessProcessingTool(NeuroToolWrapper):
                 "runtime": "python3.9",
                 "memory_mb": 3008,
                 "timeout_seconds": 300,
-                "handler": "preprocessing.handler"
+                "handler": "preprocessing.handler",
             },
             {
                 "name": "run_glm",
                 "runtime": "python3.9",
                 "memory_mb": 2048,
                 "timeout_seconds": 600,
-                "handler": "glm_analysis.handler"
+                "handler": "glm_analysis.handler",
             },
             {
                 "name": "extract_features",
                 "runtime": "python3.9",
                 "memory_mb": 1024,
                 "timeout_seconds": 180,
-                "handler": "feature_extraction.handler"
-            }
+                "handler": "feature_extraction.handler",
+            },
         ]
         return functions
 
-    def _deploy_functions(self, functions: List[Dict]) -> Dict:
+    def _deploy_functions(self, functions: list[dict]) -> dict:
         """Deploy serverless functions."""
         return {
             "deployment_id": hashlib.md5(str(functions).encode()).hexdigest()[:8],
             "provider": "aws_lambda",
             "region": "us-east-1",
-            "functions": {f["name"]: f"arn:aws:lambda:us-east-1:123456789:function:{f['name']}"
-                        for f in functions},
-            "api_gateway": "https://api.neuroimaging.execute-api.us-east-1.amazonaws.com/prod"
+            "functions": {
+                f["name"]: f"arn:aws:lambda:us-east-1:123456789:function:{f['name']}"
+                for f in functions
+            },
+            "api_gateway": "https://api.neuroimaging.execute-api.us-east-1.amazonaws.com/prod",
         }
 
-    def _invoke_functions(self, deployment: Dict, data_path: str) -> List[Dict]:
+    def _invoke_functions(self, deployment: dict, data_path: str) -> list[dict]:
         """Invoke serverless functions."""
         invocations = []
         for func_name, func_arn in deployment["functions"].items():
-            invocations.append({
-                "invocation_id": hashlib.md5(f"{func_arn}{datetime.now()}".encode()).hexdigest()[:8],
-                "function": func_name,
-                "status": "completed",
-                "duration_ms": np.random.uniform(100, 5000),
-                "billed_duration_ms": np.random.uniform(100, 5000),
-                "memory_used_mb": np.random.uniform(100, 2000)
-            })
+            invocations.append(
+                {
+                    "invocation_id": hashlib.md5(
+                        f"{func_arn}{datetime.now()}".encode()
+                    ).hexdigest()[:8],
+                    "function": func_name,
+                    "status": "completed",
+                    "duration_ms": np.random.uniform(100, 5000),
+                    "billed_duration_ms": np.random.uniform(100, 5000),
+                    "memory_used_mb": np.random.uniform(100, 2000),
+                }
+            )
         return invocations
 
-    def _collect_results(self, invocations: List[Dict]) -> Dict:
+    def _collect_results(self, invocations: list[dict]) -> dict:
         """Collect results from function invocations."""
         return {
             "preprocessing": {
                 "status": "completed",
                 "motion_corrected": True,
-                "slice_timing_corrected": True
+                "slice_timing_corrected": True,
             },
             "glm_results": {
                 "contrasts_computed": 5,
-                "significant_voxels": np.random.randint(1000, 5000)
+                "significant_voxels": np.random.randint(1000, 5000),
             },
             "features": {
                 "n_features": 100,
-                "feature_types": ["mean", "variance", "connectivity"]
-            }
+                "feature_types": ["mean", "variance", "connectivity"],
+            },
         }
 
-    def _estimate_cost(self, invocations: List[Dict]) -> Dict:
+    def _estimate_cost(self, invocations: list[dict]) -> dict:
         """Estimate serverless execution cost."""
-        total_gb_seconds = sum(i["memory_used_mb"] * i["duration_ms"] / 1000 / 1024
-                              for i in invocations)
+        total_gb_seconds = sum(
+            i["memory_used_mb"] * i["duration_ms"] / 1000 / 1024 for i in invocations
+        )
 
         return {
             "total_invocations": len(invocations),
             "total_gb_seconds": float(total_gb_seconds),
-            "estimated_cost_usd": float(total_gb_seconds * 0.0000166667),  # AWS Lambda pricing
-            "free_tier_used": min(400000, total_gb_seconds)
+            "estimated_cost_usd": float(
+                total_gb_seconds * 0.0000166667
+            ),  # AWS Lambda pricing
+            "free_tier_used": min(400000, total_gb_seconds),
         }
 
 
@@ -664,7 +696,7 @@ class ContainerWorkflowTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CloudProcessingInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run container workflow."""
         try:
             input_data = CloudProcessingInput(**kwargs)
@@ -687,14 +719,14 @@ class ContainerWorkflowTool(NeuroToolWrapper):
                 "workflow": workflow,
                 "execution": execution,
                 "monitoring": monitoring,
-                "artifacts": self._get_artifacts(execution["execution_id"])
+                "artifacts": self._get_artifacts(execution["execution_id"]),
             }
 
         except Exception as e:
             logger.error(f"Container workflow failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _build_images(self, config: Dict) -> List[Dict]:
+    def _build_images(self, config: dict) -> list[dict]:
         """Build container images for workflow."""
         images = [
             {
@@ -702,26 +734,26 @@ class ContainerWorkflowTool(NeuroToolWrapper):
                 "tag": "23.1.0",
                 "base": "nipreps/fmriprep:23.1.0",
                 "size_mb": 8500,
-                "registry": "docker.io"
+                "registry": "docker.io",
             },
             {
                 "name": "freesurfer",
                 "tag": "7.3.2",
                 "base": "freesurfer/freesurfer:7.3.2",
                 "size_mb": 12000,
-                "registry": "docker.io"
+                "registry": "docker.io",
             },
             {
                 "name": "custom-analysis",
                 "tag": "latest",
                 "base": "python:3.9-slim",
                 "size_mb": 500,
-                "registry": "gcr.io/neuroimaging"
-            }
+                "registry": "gcr.io/neuroimaging",
+            },
         ]
         return images
 
-    def _create_workflow_dag(self, images: List[Dict]) -> Dict:
+    def _create_workflow_dag(self, images: list[dict]) -> dict:
         """Create workflow DAG."""
         return {
             "name": "neuroimaging_pipeline",
@@ -731,38 +763,42 @@ class ContainerWorkflowTool(NeuroToolWrapper):
                     "id": "preprocessing",
                     "image": images[0]["name"] + ":" + images[0]["tag"],
                     "command": ["fmriprep", "/data", "/output", "participant"],
-                    "dependencies": []
+                    "dependencies": [],
                 },
                 {
                     "id": "segmentation",
                     "image": images[1]["name"] + ":" + images[1]["tag"],
                     "command": ["recon-all", "-s", "subject", "-all"],
-                    "dependencies": ["preprocessing"]
+                    "dependencies": ["preprocessing"],
                 },
                 {
                     "id": "analysis",
                     "image": images[2]["name"] + ":" + images[2]["tag"],
                     "command": ["python", "analyze.py"],
-                    "dependencies": ["preprocessing", "segmentation"]
-                }
-            ]
+                    "dependencies": ["preprocessing", "segmentation"],
+                },
+            ],
         }
 
-    def _execute_workflow(self, workflow: Dict, input_data: CloudProcessingInput) -> Dict:
+    def _execute_workflow(
+        self, workflow: dict, input_data: CloudProcessingInput
+    ) -> dict:
         """Execute container workflow."""
         return {
-            "execution_id": hashlib.md5(f"{workflow['name']}{datetime.now()}".encode()).hexdigest()[:8],
+            "execution_id": hashlib.md5(
+                f"{workflow['name']}{datetime.now()}".encode()
+            ).hexdigest()[:8],
             "status": "running",
             "started_at": datetime.now().isoformat(),
             "engine": "argo_workflows",
             "namespace": "neuroimaging",
             "resource_requests": {
                 "cpu": input_data.n_workers * 2,
-                "memory_gb": input_data.n_workers * 4
-            }
+                "memory_gb": input_data.n_workers * 4,
+            },
         }
 
-    def _monitor_execution(self, execution_id: str) -> Dict:
+    def _monitor_execution(self, execution_id: str) -> dict:
         """Monitor workflow execution."""
         return {
             "execution_id": execution_id,
@@ -774,31 +810,31 @@ class ContainerWorkflowTool(NeuroToolWrapper):
             "logs_available": True,
             "metrics": {
                 "cpu_usage_percent": np.random.uniform(40, 80),
-                "memory_usage_gb": np.random.uniform(2, 6)
-            }
+                "memory_usage_gb": np.random.uniform(2, 6),
+            },
         }
 
-    def _get_artifacts(self, execution_id: str) -> List[Dict]:
+    def _get_artifacts(self, execution_id: str) -> list[dict]:
         """Get workflow artifacts."""
         return [
             {
                 "name": "preprocessed_data",
                 "type": "directory",
                 "path": f"/output/{execution_id}/fmriprep",
-                "size_mb": 2500
+                "size_mb": 2500,
             },
             {
                 "name": "freesurfer_output",
                 "type": "directory",
                 "path": f"/output/{execution_id}/freesurfer",
-                "size_mb": 3000
+                "size_mb": 3000,
             },
             {
                 "name": "analysis_results",
                 "type": "file",
                 "path": f"/output/{execution_id}/results.json",
-                "size_mb": 10
-            }
+                "size_mb": 10,
+            },
         ]
 
 
@@ -817,7 +853,7 @@ class StreamProcessingTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CloudProcessingInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run stream processing."""
         try:
             input_data = CloudProcessingInput(**kwargs)
@@ -840,14 +876,14 @@ class StreamProcessingTool(NeuroToolWrapper):
                 "pipeline": pipeline,
                 "batches_processed": len(results),
                 "streaming_stats": stats,
-                "throughput": self._calculate_throughput(results)
+                "throughput": self._calculate_throughput(results),
             }
 
         except Exception as e:
             logger.error(f"Stream processing failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _init_stream_processor(self, input_data: CloudProcessingInput) -> Dict:
+    def _init_stream_processor(self, input_data: CloudProcessingInput) -> dict:
         """Initialize stream processor."""
         return {
             "processor": "apache_kafka",
@@ -856,61 +892,63 @@ class StreamProcessingTool(NeuroToolWrapper):
             "replication_factor": 3,
             "retention_ms": 86400000,  # 24 hours
             "batch_size": 1000,
-            "compression": "snappy"
+            "compression": "snappy",
         }
 
-    def _setup_pipeline(self, stream: Dict) -> Dict:
+    def _setup_pipeline(self, stream: dict) -> dict:
         """Set up streaming pipeline."""
         return {
             "stages": [
                 {
                     "name": "ingestion",
                     "type": "kafka_consumer",
-                    "parallelism": stream["partitions"]
+                    "parallelism": stream["partitions"],
                 },
                 {
                     "name": "preprocessing",
                     "type": "map",
                     "function": "denoise_and_normalize",
-                    "parallelism": stream["partitions"]
+                    "parallelism": stream["partitions"],
                 },
                 {
                     "name": "feature_extraction",
                     "type": "window",
                     "window_size": 100,
                     "slide": 50,
-                    "function": "extract_temporal_features"
+                    "function": "extract_temporal_features",
                 },
                 {
                     "name": "aggregation",
                     "type": "reduce",
-                    "function": "aggregate_features"
+                    "function": "aggregate_features",
                 },
                 {
                     "name": "output",
                     "type": "kafka_producer",
-                    "topic": "processed_neuroimaging"
-                }
+                    "topic": "processed_neuroimaging",
+                },
             ],
             "checkpointing": True,
-            "checkpoint_interval_ms": 10000
+            "checkpoint_interval_ms": 10000,
         }
 
-    def _process_stream(self, pipeline: Dict, n_batches: int) -> List[Dict]:
+    def _process_stream(self, pipeline: dict, n_batches: int) -> list[dict]:
         """Process stream batches."""
         results = []
         for i in range(n_batches):
-            results.append({
-                "batch_id": i,
-                "timestamp": datetime.now().isoformat(),
-                "records_processed": np.random.randint(900, 1100),
-                "processing_time_ms": np.random.uniform(50, 200),
-                "errors": 0,
-                "output_records": np.random.randint(40, 60)
-            })
+            results.append(
+                {
+                    "batch_id": i,
+                    "timestamp": datetime.now().isoformat(),
+                    "records_processed": np.random.randint(900, 1100),
+                    "processing_time_ms": np.random.uniform(50, 200),
+                    "errors": 0,
+                    "output_records": np.random.randint(40, 60),
+                }
+            )
         return results
 
-    def _compute_stream_stats(self, results: List[Dict]) -> Dict:
+    def _compute_stream_stats(self, results: list[dict]) -> dict:
         """Compute streaming statistics."""
         total_records = sum(r["records_processed"] for r in results)
         total_time = sum(r["processing_time_ms"] for r in results)
@@ -921,19 +959,31 @@ class StreamProcessingTool(NeuroToolWrapper):
             "min_latency_ms": float(min(r["processing_time_ms"] for r in results)),
             "max_latency_ms": float(max(r["processing_time_ms"] for r in results)),
             "error_rate": 0.0,
-            "backpressure": False
+            "backpressure": False,
         }
 
-    def _calculate_throughput(self, results: List[Dict]) -> Dict:
+    def _calculate_throughput(self, results: list[dict]) -> dict:
         """Calculate streaming throughput."""
         total_records = sum(r["records_processed"] for r in results)
         total_time_seconds = sum(r["processing_time_ms"] for r in results) / 1000
 
         return {
-            "records_per_second": float(total_records / total_time_seconds) if total_time_seconds > 0 else 0,
-            "mb_per_second": float(total_records * 0.1 / total_time_seconds) if total_time_seconds > 0 else 0,  # Assume 100KB per record
-            "peak_throughput": float(max(r["records_processed"] / (r["processing_time_ms"] / 1000)
-                                        for r in results))
+            "records_per_second": (
+                float(total_records / total_time_seconds)
+                if total_time_seconds > 0
+                else 0
+            ),
+            "mb_per_second": (
+                float(total_records * 0.1 / total_time_seconds)
+                if total_time_seconds > 0
+                else 0
+            ),  # Assume 100KB per record
+            "peak_throughput": float(
+                max(
+                    r["records_processed"] / (r["processing_time_ms"] / 1000)
+                    for r in results
+                )
+            ),
         }
 
 
@@ -952,7 +1002,7 @@ class EdgeComputingTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CloudProcessingInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run edge computing."""
         try:
             input_data = CloudProcessingInput(**kwargs)
@@ -975,69 +1025,75 @@ class EdgeComputingTool(NeuroToolWrapper):
                 "deployments": deployments,
                 "edge_results": edge_results,
                 "sync_status": sync_status,
-                "edge_metrics": self._get_edge_metrics(edge_nodes)
+                "edge_metrics": self._get_edge_metrics(edge_nodes),
             }
 
         except Exception as e:
             logger.error(f"Edge computing failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _init_edge_nodes(self, n_nodes: int) -> List[Dict]:
+    def _init_edge_nodes(self, n_nodes: int) -> list[dict]:
         """Initialize edge computing nodes."""
         nodes = []
         for i in range(n_nodes):
-            nodes.append({
-                "node_id": f"edge-{i}",
-                "location": f"scanner-site-{i}",
-                "hardware": {
-                    "cpu_cores": 16,
-                    "memory_gb": 64,
-                    "gpu": "NVIDIA RTX 3090",
-                    "storage_tb": 2
-                },
-                "connectivity": {
-                    "bandwidth_mbps": np.random.uniform(100, 1000),
-                    "latency_ms": np.random.uniform(1, 10)
-                },
-                "status": "online"
-            })
+            nodes.append(
+                {
+                    "node_id": f"edge-{i}",
+                    "location": f"scanner-site-{i}",
+                    "hardware": {
+                        "cpu_cores": 16,
+                        "memory_gb": 64,
+                        "gpu": "NVIDIA RTX 3090",
+                        "storage_tb": 2,
+                    },
+                    "connectivity": {
+                        "bandwidth_mbps": np.random.uniform(100, 1000),
+                        "latency_ms": np.random.uniform(1, 10),
+                    },
+                    "status": "online",
+                }
+            )
         return nodes
 
-    def _deploy_to_edge(self, nodes: List[Dict], config: Dict) -> List[Dict]:
+    def _deploy_to_edge(self, nodes: list[dict], config: dict) -> list[dict]:
         """Deploy workloads to edge nodes."""
         deployments = []
         for node in nodes:
-            deployments.append({
-                "node_id": node["node_id"],
-                "deployment_id": hashlib.md5(f"{node['node_id']}{datetime.now()}".encode()).hexdigest()[:8],
-                "workload": "neuroimaging_preprocessor",
-                "version": "2.0.0",
-                "resources": {
-                    "cpu": 8,
-                    "memory_gb": 32,
-                    "gpu": 1
-                },
-                "status": "running"
-            })
+            deployments.append(
+                {
+                    "node_id": node["node_id"],
+                    "deployment_id": hashlib.md5(
+                        f"{node['node_id']}{datetime.now()}".encode()
+                    ).hexdigest()[:8],
+                    "workload": "neuroimaging_preprocessor",
+                    "version": "2.0.0",
+                    "resources": {"cpu": 8, "memory_gb": 32, "gpu": 1},
+                    "status": "running",
+                }
+            )
         return deployments
 
-    def _process_at_edge(self, deployments: List[Dict]) -> List[Dict]:
+    def _process_at_edge(self, deployments: list[dict]) -> list[dict]:
         """Process data at edge nodes."""
         results = []
         for deployment in deployments:
-            results.append({
-                "deployment_id": deployment["deployment_id"],
-                "node_id": deployment["node_id"],
-                "scans_processed": np.random.randint(5, 15),
-                "processing_time_minutes": np.random.uniform(10, 30),
-                "quality_score": np.random.uniform(0.8, 1.0),
-                "local_cache_hits": np.random.randint(10, 50)
-            })
+            results.append(
+                {
+                    "deployment_id": deployment["deployment_id"],
+                    "node_id": deployment["node_id"],
+                    "scans_processed": np.random.randint(5, 15),
+                    "processing_time_minutes": np.random.uniform(10, 30),
+                    "quality_score": np.random.uniform(0.8, 1.0),
+                    "local_cache_hits": np.random.randint(10, 50),
+                }
+            )
         return results
 
-    def _sync_to_cloud(self, edge_results: List[Dict]) -> Dict:
+    def _sync_to_cloud(self, edge_results: list[dict]) -> dict:
         """Sync edge results to cloud."""
-        total_data_mb = sum(r["scans_processed"] * 500 for r in edge_results)  # 500MB per scan
+        total_data_mb = sum(
+            r["scans_processed"] * 500 for r in edge_results
+        )  # 500MB per scan
 
         return {
             "sync_status": "completed",
@@ -1045,10 +1101,10 @@ class EdgeComputingTool(NeuroToolWrapper):
             "transfer_time_seconds": total_data_mb / 100,  # 100MB/s transfer rate
             "compression_ratio": 2.5,
             "deduplication_savings_percent": 30,
-            "cloud_endpoint": "s3://neuroimaging-central/edge-sync/"
+            "cloud_endpoint": "s3://neuroimaging-central/edge-sync/",
         }
 
-    def _get_edge_metrics(self, nodes: List[Dict]) -> Dict:
+    def _get_edge_metrics(self, nodes: list[dict]) -> dict:
         """Get edge computing metrics."""
         return {
             "total_edge_nodes": len(nodes),
@@ -1056,20 +1112,20 @@ class EdgeComputingTool(NeuroToolWrapper):
             "total_compute_power": {
                 "cpu_cores": sum(n["hardware"]["cpu_cores"] for n in nodes),
                 "memory_gb": sum(n["hardware"]["memory_gb"] for n in nodes),
-                "gpu_count": len(nodes)
+                "gpu_count": len(nodes),
             },
             "average_utilization": {
                 "cpu_percent": np.random.uniform(50, 70),
                 "memory_percent": np.random.uniform(40, 60),
-                "gpu_percent": np.random.uniform(60, 80)
-            }
+                "gpu_percent": np.random.uniform(60, 80),
+            },
         }
 
 
 class CloudNativeProcessingTools:
     """Collection of cloud-native processing tools."""
 
-    def get_all_tools(self) -> List[NeuroToolWrapper]:
+    def get_all_tools(self) -> list[NeuroToolWrapper]:
         """Get all cloud-native processing tools."""
         return [
             DistributedFMRITool(),
@@ -1079,5 +1135,5 @@ class CloudNativeProcessingTools:
             ServerlessProcessingTool(),
             ContainerWorkflowTool(),
             StreamProcessingTool(),
-            EdgeComputingTool()
+            EdgeComputingTool(),
         ]

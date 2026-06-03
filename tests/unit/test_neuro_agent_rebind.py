@@ -3,8 +3,9 @@
 Tests the two-stage retrieval, complexity gating, and dynamic rebinding logic.
 """
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch
 
 
 def _attach_binding_helpers(agent):
@@ -58,9 +59,9 @@ class TestFamilyToRegistryMapping:
 
         core_families = ["fsl", "freesurfer", "ants", "afni", "mrtrix3", "bidsapps"]
         for family in core_families:
-            assert family in FAMILY_TO_REGISTRY_TOOLS, (
-                f"Core family '{family}' missing from FAMILY_TO_REGISTRY_TOOLS"
-            )
+            assert (
+                family in FAMILY_TO_REGISTRY_TOOLS
+            ), f"Core family '{family}' missing from FAMILY_TO_REGISTRY_TOOLS"
 
 
 class TestComplexityGating:
@@ -69,9 +70,6 @@ class TestComplexityGating:
     @pytest.fixture
     def mock_agent(self):
         """Create a mock NeuroAgentLLM with minimal setup."""
-        from brain_researcher.services.agent.agents.neuro_agent_llm import (
-            FAMILY_TO_REGISTRY_TOOLS,
-        )
 
         # Create mock tools
         mock_tools = []

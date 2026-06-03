@@ -20,7 +20,6 @@ from pathlib import Path
 
 import pytest
 
-
 TEMPLATE_PATH = (
     Path(__file__).resolve().parents[3]
     / "notebooks"
@@ -77,9 +76,9 @@ def test_cell_graph_references_are_resolvable() -> None:
         unresolved = [
             r for r in cell.refs if r not in defined and r not in builtin_whitelist
         ]
-        assert not unresolved, (
-            f"cell {cell.name!r} references undefined names: {unresolved}"
-        )
+        assert (
+            not unresolved
+        ), f"cell {cell.name!r} references undefined names: {unresolved}"
 
 
 def test_template_references_every_expected_tool_name_via_behavior_execute() -> None:
@@ -93,7 +92,9 @@ def test_template_references_every_expected_tool_name_via_behavior_execute() -> 
         if not isinstance(node, ast.Call):
             continue
         func = node.func
-        is_behavior_execute = isinstance(func, ast.Name) and func.id == "_behavior_execute"
+        is_behavior_execute = (
+            isinstance(func, ast.Name) and func.id == "_behavior_execute"
+        )
         if not is_behavior_execute:
             continue
         if not node.args:
@@ -132,8 +133,7 @@ def test_template_uses_no_br_call_invocations() -> None:
                 br_call_names.append("<dynamic>")
 
     assert not br_call_names, (
-        "template must not use br.call() for behavior tools; "
-        f"found: {br_call_names}"
+        "template must not use br.call() for behavior tools; " f"found: {br_call_names}"
     )
 
 
@@ -269,7 +269,9 @@ def test_behavior_execute_helper_uses_local_stdio_client(monkeypatch) -> None:
     execute_calls = []
 
     class FakeClient:
-        def __init__(self, server_command=None, mcp_http_url=None, mcp_http_headers=None):
+        def __init__(
+            self, server_command=None, mcp_http_url=None, mcp_http_headers=None
+        ):
             init_calls.append(
                 {
                     "server_command": server_command,

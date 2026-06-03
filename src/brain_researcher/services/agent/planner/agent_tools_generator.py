@@ -10,7 +10,6 @@ from __future__ import annotations
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List
 
 
 @dataclass
@@ -21,7 +20,7 @@ class PythonCapability:
     python_function: str
     runtime_kind: str = "python"
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return {
             "id": self.id,
             "name": self.name,
@@ -31,7 +30,12 @@ class PythonCapability:
             "capabilities": [],
             "consumes": [],
             "produces": [],
-            "resources": {"cpu_min": 1, "mem_mb_min": 512, "gpu": False, "time_min_default": 5.0},
+            "resources": {
+                "cpu_min": 1,
+                "mem_mb_min": 512,
+                "gpu": False,
+                "time_min_default": 5.0,
+            },
             "python": {
                 "module": self.python_module,
                 "function": self.python_function,
@@ -50,13 +54,17 @@ def _find_tool_class(source: str) -> str | None:
     except SyntaxError:
         return None
     for node in tree.body:
-        if isinstance(node, ast.ClassDef) and node.name.endswith("Tool") and not node.name.startswith("_"):
+        if (
+            isinstance(node, ast.ClassDef)
+            and node.name.endswith("Tool")
+            and not node.name.startswith("_")
+        ):
             return node.name
     return None
 
 
-def generate_agent_python_capabilities(tools_dir: Path) -> List[Dict[str, object]]:
-    caps: List[Dict[str, object]] = []
+def generate_agent_python_capabilities(tools_dir: Path) -> list[dict[str, object]]:
+    caps: list[dict[str, object]] = []
     for path in sorted(tools_dir.glob("*_tool.py")):
         source = path.read_text(encoding="utf-8")
         class_name = _find_tool_class(source)

@@ -4,14 +4,14 @@ Bio2RDF Link Enrichment for BR-KG
 Enriches BR-KG entities with biological knowledge from Bio2RDF.
 """
 
-import logging
 import json
-from typing import Dict, Any, List, Optional, Set, Tuple
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
+from typing import Any
 
 from .bio2rdf_client import Bio2RDFClient, create_bio2rdf_client
-from .ontology_mapper import OntologyMapper, ConceptMapping, create_ontology_mapper
+from .ontology_mapper import ConceptMapping, OntologyMapper, create_ontology_mapper
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +23,12 @@ class EnrichedEntity:
     entity_id: str
     entity_type: str
     entity_label: str
-    bio2rdf_mappings: List[ConceptMapping]
-    biological_annotations: Dict[str, Any]
-    related_genes: List[Dict[str, str]]
-    related_drugs: List[Dict[str, str]]
-    pathways: List[Dict[str, str]]
-    literature_refs: List[str]
+    bio2rdf_mappings: list[ConceptMapping]
+    biological_annotations: dict[str, Any]
+    related_genes: list[dict[str, str]]
+    related_drugs: list[dict[str, str]]
+    pathways: list[dict[str, str]]
+    literature_refs: list[str]
     confidence_score: float
 
 
@@ -39,8 +39,8 @@ class LinkEnrichmentEngine:
 
     def __init__(
         self,
-        bio2rdf_client: Optional[Bio2RDFClient] = None,
-        ontology_mapper: Optional[OntologyMapper] = None
+        bio2rdf_client: Bio2RDFClient | None = None,
+        ontology_mapper: OntologyMapper | None = None,
     ):
         """
         Initialize the enrichment engine
@@ -58,7 +58,7 @@ class LinkEnrichmentEngine:
         entity_id: str,
         entity_type: str,
         entity_label: str,
-        additional_context: Optional[Dict[str, Any]] = None
+        additional_context: dict[str, Any] | None = None,
     ) -> EnrichedEntity:
         """
         Enrich a single BR-KG entity with Bio2RDF data
@@ -78,9 +78,7 @@ class LinkEnrichmentEngine:
 
         # Map to Bio2RDF ontologies
         mappings = self.ontology_mapper.map_concept(
-            entity_label,
-            entity_type,
-            fuzzy=True
+            entity_label, entity_type, fuzzy=True
         )
 
         # Initialize enriched entity
@@ -94,17 +92,17 @@ class LinkEnrichmentEngine:
             related_drugs=[],
             pathways=[],
             literature_refs=[],
-            confidence_score=0.0
+            confidence_score=0.0,
         )
 
         # Enrich based on entity type
-        if entity_type == 'brain_region':
+        if entity_type == "brain_region":
             self._enrich_brain_region(enriched, entity_label)
-        elif entity_type == 'cognitive_task':
+        elif entity_type == "cognitive_task":
             self._enrich_cognitive_task(enriched, entity_label)
-        elif entity_type == 'disorder':
+        elif entity_type == "disorder":
             self._enrich_disorder(enriched, entity_label)
-        elif entity_type == 'neurochemical':
+        elif entity_type == "neurochemical":
             self._enrich_neurochemical(enriched, entity_label)
 
         # Calculate overall confidence score
@@ -114,11 +112,7 @@ class LinkEnrichmentEngine:
         self._enrichment_cache[cache_key] = enriched
         return enriched
 
-    def _enrich_brain_region(
-        self,
-        enriched: EnrichedEntity,
-        region_name: str
-    ):
+    def _enrich_brain_region(self, enriched: EnrichedEntity, region_name: str):
         """Enrich brain region with anatomical and gene expression data"""
 
         # Get anatomical hierarchy
@@ -151,41 +145,55 @@ class LinkEnrichmentEngine:
 
         try:
             anatomy_results = self.bio2rdf_client.query(anatomy_query)
-            if 'results' in anatomy_results:
-                enriched.biological_annotations['anatomical_hierarchy'] = {
-                    'parents': [],
-                    'children': []
+            if "results" in anatomy_results:
+                enriched.biological_annotations["anatomical_hierarchy"] = {
+                    "parents": [],
+                    "children": [],
                 }
 
-                for binding in anatomy_results['results'].get('bindings', []):
-                    if 'parent' in binding:
-                        enriched.biological_annotations['anatomical_hierarchy']['parents'].append({
-                            'uri': binding['parent']['value'],
-                            'label': binding.get('parent_label', {}).get('value', '')
-                        })
-                    if 'child' in binding:
-                        enriched.biological_annotations['anatomical_hierarchy']['children'].append({
-                            'uri': binding['child']['value'],
-                            'label': binding.get('child_label', {}).get('value', '')
-                        })
+                for binding in anatomy_results["results"].get("bindings", []):
+                    if "parent" in binding:
+                        enriched.biological_annotations["anatomical_hierarchy"][
+                            "parents"
+                        ].append(
+                            {
+                                "uri": binding["parent"]["value"],
+                                "label": binding.get("parent_label", {}).get(
+                                    "value", ""
+                                ),
+                            }
+                        )
+                    if "child" in binding:
+                        enriched.biological_annotations["anatomical_hierarchy"][
+                            "children"
+                        ].append(
+                            {
+                                "uri": binding["child"]["value"],
+                                "label": binding.get("child_label", {}).get(
+                                    "value", ""
+                                ),
+                            }
+                        )
         except Exception as e:
             logger.error(f"Failed to enrich brain region anatomy: {e}")
 
         # Get associated genes
         gene_results = self.bio2rdf_client.get_gene_info(region_name)
-        if 'results' in gene_results:
-            for binding in gene_results['results'].get('bindings', [])[:10]:
-                enriched.related_genes.append({
-                    'uri': binding.get('gene', {}).get('value', ''),
-                    'label': binding.get('label', {}).get('value', ''),
-                    'go_term': binding.get('go_term', {}).get('value', '') if 'go_term' in binding else None
-                })
+        if "results" in gene_results:
+            for binding in gene_results["results"].get("bindings", [])[:10]:
+                enriched.related_genes.append(
+                    {
+                        "uri": binding.get("gene", {}).get("value", ""),
+                        "label": binding.get("label", {}).get("value", ""),
+                        "go_term": (
+                            binding.get("go_term", {}).get("value", "")
+                            if "go_term" in binding
+                            else None
+                        ),
+                    }
+                )
 
-    def _enrich_cognitive_task(
-        self,
-        enriched: EnrichedEntity,
-        task_name: str
-    ):
+    def _enrich_cognitive_task(self, enriched: EnrichedEntity, task_name: str):
         """Enrich cognitive task with GO processes and neural correlates"""
 
         # Get GO biological processes
@@ -210,50 +218,57 @@ class LinkEnrichmentEngine:
 
         try:
             go_results = self.bio2rdf_client.query(go_query)
-            if 'results' in go_results:
-                enriched.biological_annotations['go_processes'] = []
+            if "results" in go_results:
+                enriched.biological_annotations["go_processes"] = []
 
-                for binding in go_results['results'].get('bindings', []):
-                    enriched.biological_annotations['go_processes'].append({
-                        'uri': binding.get('process', {}).get('value', ''),
-                        'label': binding.get('label', {}).get('value', ''),
-                        'definition': binding.get('definition', {}).get('value', '') if 'definition' in binding else None
-                    })
+                for binding in go_results["results"].get("bindings", []):
+                    enriched.biological_annotations["go_processes"].append(
+                        {
+                            "uri": binding.get("process", {}).get("value", ""),
+                            "label": binding.get("label", {}).get("value", ""),
+                            "definition": (
+                                binding.get("definition", {}).get("value", "")
+                                if "definition" in binding
+                                else None
+                            ),
+                        }
+                    )
         except Exception as e:
             logger.error(f"Failed to enrich cognitive task: {e}")
 
-    def _enrich_disorder(
-        self,
-        enriched: EnrichedEntity,
-        disorder_name: str
-    ):
+    def _enrich_disorder(self, enriched: EnrichedEntity, disorder_name: str):
         """Enrich neurological/psychiatric disorder with clinical data"""
 
         # Get associated genes and drugs
         disorder_results = self.bio2rdf_client.federated_search(
-            disorder_name,
-            endpoints=['drugbank', 'omim', 'kegg']
+            disorder_name, endpoints=["drugbank", "omim", "kegg"]
         )
 
         # Process DrugBank results for treatments
-        if 'drugbank' in disorder_results and 'results' in disorder_results['drugbank']:
-            for binding in disorder_results['drugbank']['results'].get('bindings', [])[:10]:
-                if 'object' in binding and 'drug' in binding['object']['value']:
-                    enriched.related_drugs.append({
-                        'uri': binding['object']['value'],
-                        'type': 'treatment',
-                        'source': 'drugbank'
-                    })
+        if "drugbank" in disorder_results and "results" in disorder_results["drugbank"]:
+            for binding in disorder_results["drugbank"]["results"].get("bindings", [])[
+                :10
+            ]:
+                if "object" in binding and "drug" in binding["object"]["value"]:
+                    enriched.related_drugs.append(
+                        {
+                            "uri": binding["object"]["value"],
+                            "type": "treatment",
+                            "source": "drugbank",
+                        }
+                    )
 
         # Process KEGG results for pathways
-        if 'kegg' in disorder_results and 'results' in disorder_results['kegg']:
-            for binding in disorder_results['kegg']['results'].get('bindings', [])[:5]:
-                if 'object' in binding and 'pathway' in binding['object']['value']:
-                    enriched.pathways.append({
-                        'uri': binding['object']['value'],
-                        'type': 'disease_pathway',
-                        'source': 'kegg'
-                    })
+        if "kegg" in disorder_results and "results" in disorder_results["kegg"]:
+            for binding in disorder_results["kegg"]["results"].get("bindings", [])[:5]:
+                if "object" in binding and "pathway" in binding["object"]["value"]:
+                    enriched.pathways.append(
+                        {
+                            "uri": binding["object"]["value"],
+                            "type": "disease_pathway",
+                            "source": "kegg",
+                        }
+                    )
 
         # Get literature references
         pubmed_query = f"""
@@ -270,45 +285,47 @@ class LinkEnrichmentEngine:
 
         try:
             pubmed_results = self.bio2rdf_client.query(pubmed_query)
-            if 'results' in pubmed_results:
-                for binding in pubmed_results['results'].get('bindings', []):
-                    enriched.literature_refs.append(binding['article']['value'])
+            if "results" in pubmed_results:
+                for binding in pubmed_results["results"].get("bindings", []):
+                    enriched.literature_refs.append(binding["article"]["value"])
         except Exception as e:
             logger.error(f"Failed to get literature references: {e}")
 
-    def _enrich_neurochemical(
-        self,
-        enriched: EnrichedEntity,
-        chemical_name: str
-    ):
+    def _enrich_neurochemical(self, enriched: EnrichedEntity, chemical_name: str):
         """Enrich neurochemical with receptor and drug interaction data"""
 
         # Get drug interactions
         drug_results = self.bio2rdf_client.get_drug_target_interactions(chemical_name)
-        if 'results' in drug_results:
-            for binding in drug_results['results'].get('bindings', [])[:10]:
-                enriched.related_drugs.append({
-                    'uri': binding.get('drug', {}).get('value', ''),
-                    'name': binding.get('drug_name', {}).get('value', ''),
-                    'target': binding.get('target_name', {}).get('value', ''),
-                    'action': binding.get('action', {}).get('value', '') if 'action' in binding else None
-                })
+        if "results" in drug_results:
+            for binding in drug_results["results"].get("bindings", [])[:10]:
+                enriched.related_drugs.append(
+                    {
+                        "uri": binding.get("drug", {}).get("value", ""),
+                        "name": binding.get("drug_name", {}).get("value", ""),
+                        "target": binding.get("target_name", {}).get("value", ""),
+                        "action": (
+                            binding.get("action", {}).get("value", "")
+                            if "action" in binding
+                            else None
+                        ),
+                    }
+                )
 
         # Get associated pathways
         pathway_results = self.bio2rdf_client.get_pathway_info(chemical_name)
-        if 'results' in pathway_results:
-            for binding in pathway_results['results'].get('bindings', [])[:5]:
-                enriched.pathways.append({
-                    'uri': binding.get('pathway', {}).get('value', ''),
-                    'name': binding.get('name', {}).get('value', ''),
-                    'type': 'metabolic_pathway'
-                })
+        if "results" in pathway_results:
+            for binding in pathway_results["results"].get("bindings", [])[:5]:
+                enriched.pathways.append(
+                    {
+                        "uri": binding.get("pathway", {}).get("value", ""),
+                        "name": binding.get("name", {}).get("value", ""),
+                        "type": "metabolic_pathway",
+                    }
+                )
 
     def batch_enrich(
-        self,
-        entities: List[Tuple[str, str, str]],
-        max_workers: int = 5
-    ) -> List[EnrichedEntity]:
+        self, entities: list[tuple[str, str, str]], max_workers: int = 5
+    ) -> list[EnrichedEntity]:
         """
         Enrich multiple entities in parallel
 
@@ -325,10 +342,7 @@ class LinkEnrichmentEngine:
             futures = {}
             for entity_id, entity_type, entity_label in entities:
                 future = executor.submit(
-                    self.enrich_entity,
-                    entity_id,
-                    entity_type,
-                    entity_label
+                    self.enrich_entity, entity_id, entity_type, entity_label
                 )
                 futures[future] = (entity_id, entity_type, entity_label)
 
@@ -343,9 +357,7 @@ class LinkEnrichmentEngine:
         return enriched_entities
 
     def export_enrichment_graph(
-        self,
-        enriched_entities: List[EnrichedEntity],
-        format: str = 'json'
+        self, enriched_entities: list[EnrichedEntity], format: str = "json"
     ) -> str:
         """
         Export enriched entities as a graph
@@ -357,62 +369,64 @@ class LinkEnrichmentEngine:
         Returns:
             Serialized graph data
         """
-        if format == 'json':
+        if format == "json":
             # Export as JSON-LD
             graph_data = {
-                '@context': {
-                    'br_kg': 'https://br_kg.org/',
-                    'bio2rdf': 'http://bio2rdf.org/',
-                    'owl': 'http://www.w3.org/2002/07/owl#',
-                    'skos': 'http://www.w3.org/2004/02/skos/core#'
+                "@context": {
+                    "br_kg": "https://br_kg.org/",
+                    "bio2rdf": "http://bio2rdf.org/",
+                    "owl": "http://www.w3.org/2002/07/owl#",
+                    "skos": "http://www.w3.org/2004/02/skos/core#",
                 },
-                '@graph': []
+                "@graph": [],
             }
 
             for entity in enriched_entities:
                 node = {
-                    '@id': entity.entity_id,
-                    '@type': entity.entity_type,
-                    'label': entity.entity_label,
-                    'confidence': entity.confidence_score,
-                    'mappings': []
+                    "@id": entity.entity_id,
+                    "@type": entity.entity_type,
+                    "label": entity.entity_label,
+                    "confidence": entity.confidence_score,
+                    "mappings": [],
                 }
 
                 for mapping in entity.bio2rdf_mappings:
-                    node['mappings'].append({
-                        '@id': mapping.bio2rdf_uri,
-                        'namespace': mapping.bio2rdf_namespace.value,
-                        'label': mapping.bio2rdf_label,
-                        'mapping_type': mapping.mapping_type
-                    })
+                    node["mappings"].append(
+                        {
+                            "@id": mapping.bio2rdf_uri,
+                            "namespace": mapping.bio2rdf_namespace.value,
+                            "label": mapping.bio2rdf_label,
+                            "mapping_type": mapping.mapping_type,
+                        }
+                    )
 
                 if entity.related_genes:
-                    node['genes'] = entity.related_genes
+                    node["genes"] = entity.related_genes
                 if entity.related_drugs:
-                    node['drugs'] = entity.related_drugs
+                    node["drugs"] = entity.related_drugs
                 if entity.pathways:
-                    node['pathways'] = entity.pathways
+                    node["pathways"] = entity.pathways
                 if entity.literature_refs:
-                    node['references'] = entity.literature_refs
+                    node["references"] = entity.literature_refs
 
-                graph_data['@graph'].append(node)
+                graph_data["@graph"].append(node)
 
             return json.dumps(graph_data, indent=2)
 
         else:
             # For other formats, build RDF graph
-            from rdflib import Graph, Namespace, URIRef, Literal
+            from rdflib import Graph, Namespace, URIRef
 
             g = Graph()
-            br_kg = Namespace('https://br_kg.org/')
-            bio2rdf = Namespace('http://bio2rdf.org/')
-            owl = Namespace('http://www.w3.org/2002/07/owl#')
-            skos = Namespace('http://www.w3.org/2004/02/skos/core#')
+            br_kg = Namespace("https://br_kg.org/")
+            bio2rdf = Namespace("http://bio2rdf.org/")
+            owl = Namespace("http://www.w3.org/2002/07/owl#")
+            skos = Namespace("http://www.w3.org/2004/02/skos/core#")
 
-            g.bind('br_kg', br_kg)
-            g.bind('bio2rdf', bio2rdf)
-            g.bind('owl', owl)
-            g.bind('skos', skos)
+            g.bind("br_kg", br_kg)
+            g.bind("bio2rdf", bio2rdf)
+            g.bind("owl", owl)
+            g.bind("skos", skos)
 
             for entity in enriched_entities:
                 entity_uri = URIRef(entity.entity_id)
@@ -420,22 +434,22 @@ class LinkEnrichmentEngine:
                 for mapping in entity.bio2rdf_mappings:
                     bio2rdf_uri = URIRef(mapping.bio2rdf_uri)
 
-                    if mapping.mapping_type == 'exact':
+                    if mapping.mapping_type == "exact":
                         g.add((entity_uri, owl.sameAs, bio2rdf_uri))
                         g.add((entity_uri, skos.exactMatch, bio2rdf_uri))
-                    elif mapping.mapping_type == 'narrow':
+                    elif mapping.mapping_type == "narrow":
                         g.add((entity_uri, skos.narrowMatch, bio2rdf_uri))
-                    elif mapping.mapping_type == 'broad':
+                    elif mapping.mapping_type == "broad":
                         g.add((entity_uri, skos.broadMatch, bio2rdf_uri))
                     else:
                         g.add((entity_uri, skos.relatedMatch, bio2rdf_uri))
 
-            if format == 'turtle':
-                return g.serialize(format='turtle')
-            elif format == 'ntriples':
-                return g.serialize(format='ntriples')
+            if format == "turtle":
+                return g.serialize(format="turtle")
+            elif format == "ntriples":
+                return g.serialize(format="ntriples")
             else:
-                return g.serialize(format='xml')
+                return g.serialize(format="xml")
 
 
 def create_link_enrichment_engine(**kwargs) -> LinkEnrichmentEngine:

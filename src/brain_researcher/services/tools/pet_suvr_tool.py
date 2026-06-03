@@ -6,7 +6,6 @@ validation.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,11 +19,11 @@ class PETSUVRArgs(BaseModel):
     reference_mask: str = Field(
         description="Path to binary mask defining reference region (e.g., cerebellum)"
     )
-    frames: Optional[str] = Field(
+    frames: str | None = Field(
         default="40:60",
         description="Integration window as 'start:end' in minutes (e.g., '40:60')",
     )
-    output_dir: Optional[str] = Field(
+    output_dir: str | None = Field(
         default=None, description="Directory to store SUVR outputs"
     )
 
@@ -45,9 +44,7 @@ class PETSUVRTool(NeuroToolWrapper):
         return "pet_suvr"
 
     def get_tool_description(self) -> str:
-        return (
-            "Compute SUVR (Standardized Uptake Value Ratio) map from PET image with reference region normalization."
-        )
+        return "Compute SUVR (Standardized Uptake Value Ratio) map from PET image with reference region normalization."
 
     def get_args_schema(self):
         return PETSUVRArgs

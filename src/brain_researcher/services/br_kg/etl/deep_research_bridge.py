@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from difflib import SequenceMatcher
 import hashlib
 import html
 import json
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -27,7 +27,9 @@ BRIDGE_VERSION = "deep-research-gabriel-bridge/v1"
 _TITLE_TAG_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 _DOI_RE = re.compile(r"\b10\.\d{4,9}/[-._;()/:a-z0-9]+\b", re.IGNORECASE)
 _PMID_RE = re.compile(r"\b(?:pmid[:/ ]*)?(\d{4,})\b", re.IGNORECASE)
-_ARXIV_RE = re.compile(r"\b(?:arxiv\.org/(?:abs|pdf)/)?(\d{4}\.\d{4,5})\b", re.IGNORECASE)
+_ARXIV_RE = re.compile(
+    r"\b(?:arxiv\.org/(?:abs|pdf)/)?(\d{4}\.\d{4,5})\b", re.IGNORECASE
+)
 _ARXIV_DOI_RE = re.compile(
     r"\b10\.48550/arxiv\.(\d{4}\.\d{4,5})(?:v\d+)?\b", re.IGNORECASE
 )
@@ -220,7 +222,9 @@ def _normalize_title_for_match(value: Any) -> str:
         return ""
     text = html.unescape(text)
     text = _ARXIV_TITLE_PREFIX_RE.sub("", text)
-    text = re.sub(r"\(arxiv[:\s]*\d{4}\.\d{4,5}(?:v\d+)?\)", "", text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"\(arxiv[:\s]*\d{4}\.\d{4,5}(?:v\d+)?\)", "", text, flags=re.IGNORECASE
+    )
     text = _NON_ALNUM_RE.sub(" ", text.casefold())
     return _normalize_space(text)
 
@@ -339,7 +343,9 @@ def _fetch_arxiv_metadata(
         entry = root.find("atom:entry", atom_ns)
         if entry is None:
             return None
-        title = _clean_title(entry.findtext("atom:title", default="", namespaces=atom_ns))
+        title = _clean_title(
+            entry.findtext("atom:title", default="", namespaces=atom_ns)
+        )
         entry_id = _normalize_space(
             entry.findtext("atom:id", default="", namespaces=atom_ns)
         )
@@ -441,7 +447,9 @@ def _lookup_openalex_title(
     best: dict[str, Any] | None = None
     best_score = 0.0
     for record in payload.get("results") or []:
-        candidate_title = _clean_title(record.get("display_name") or record.get("title"))
+        candidate_title = _clean_title(
+            record.get("display_name") or record.get("title")
+        )
         if not candidate_title:
             continue
         score = _title_match_score(title, candidate_title)
@@ -469,7 +477,9 @@ def _validate_paper_link(
     canonical_url = _canonicalize_url(final_url)
     clean_title = _clean_title(title)
     if not canonical_url:
-        return LinkValidationResult(final_url=None, status="missing_url", reason="missing_url")
+        return LinkValidationResult(
+            final_url=None, status="missing_url", reason="missing_url"
+        )
     if not clean_title or _uses_generic_source_title(clean_title):
         return LinkValidationResult(
             final_url=canonical_url,
@@ -499,7 +509,10 @@ def _validate_paper_link(
                 session=session,
                 timeout_sec=timeout_sec,
             )
-            if corrected and corrected.get("match_score", 0.0) >= _TITLE_MATCH_THRESHOLD:
+            if (
+                corrected
+                and corrected.get("match_score", 0.0) >= _TITLE_MATCH_THRESHOLD
+            ):
                 return LinkValidationResult(
                     final_url=corrected.get("url"),
                     status="corrected",
@@ -952,7 +965,9 @@ def build_source_seeds(
         seed.snippets.append(snippet)
 
     network_session = (
-        requests.Session() if (requests and (resolve_redirects or validate_identifiers)) else None
+        requests.Session()
+        if (requests and (resolve_redirects or validate_identifiers))
+        else None
     )
     grouped: dict[str, SourceSeed] = {}
     for raw_url, seed in sorted(sources_by_raw_url.items()):
@@ -965,9 +980,9 @@ def build_source_seeds(
             seed.final_url = _canonicalize_url(resolved.get("final_url")) or raw_url
             seed.resolved_title = _clean_title(resolved.get("resolved_title"))
             seed.content_type = resolved.get("content_type")
-            seed.resolution_error = _normalize_space(
-                resolved.get("resolution_error") or ""
-            ) or None
+            seed.resolution_error = (
+                _normalize_space(resolved.get("resolution_error") or "") or None
+            )
         else:
             seed.final_url = raw_url
 

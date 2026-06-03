@@ -491,7 +491,8 @@ def _normalize_record_for_loop_primitives(
             or run_json.get("status")
             or "unknown",
             "started_at": observation.get("started_at") or run_json.get("started_at"),
-            "finished_at": observation.get("finished_at") or run_json.get("finished_at"),
+            "finished_at": observation.get("finished_at")
+            or run_json.get("finished_at"),
             "error": run_json.get("error") or observation.get("error"),
             "steps": [
                 _normalize_step_from_observation(step)
@@ -547,7 +548,9 @@ def _build_local_metrics(record: dict[str, Any], run_dir: Path) -> dict[str, Any
 
         payload = _load_step_payload(run_dir, step.get("result_path"))
         data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
-        metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+        metadata = (
+            payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+        )
         execution_time = None
         for key in (
             "execution_time",
@@ -561,28 +564,30 @@ def _build_local_metrics(record: dict[str, Any], run_dir: Path) -> dict[str, Any
             if key in metadata:
                 execution_time = metadata[key]
                 break
-        if isinstance(execution_time, (int, float)):
+        if isinstance(execution_time, int | float):
             totals["execution_time_s_sum"] += float(execution_time)
 
         tokens = metadata.get("tokens") or metadata.get("total_tokens")
         if tokens is None:
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
-            if isinstance(input_tokens, (int, float)) or isinstance(
-                output_tokens, (int, float)
+            if isinstance(input_tokens, int | float) or isinstance(
+                output_tokens, int | float
             ):
                 tokens = int(input_tokens or 0) + int(output_tokens or 0)
-        if isinstance(tokens, (int, float)):
+        if isinstance(tokens, int | float):
             totals["tokens_sum"] += int(tokens)
 
         cost = metadata.get("cost_usd") or metadata.get("estimated_usd")
-        if isinstance(cost, (int, float)):
+        if isinstance(cost, int | float):
             totals["cost_usd_sum"] += float(cost)
 
     started = _parse_iso(record.get("started_at"))
     finished = _parse_iso(record.get("finished_at"))
     duration_s = (
-        (finished - started).total_seconds() if started is not None and finished is not None else None
+        (finished - started).total_seconds()
+        if started is not None and finished is not None
+        else None
     )
     return {
         "run_id": record.get("run_id"),
@@ -594,7 +599,9 @@ def _build_local_metrics(record: dict[str, Any], run_dir: Path) -> dict[str, Any
     }
 
 
-def _extract_observation_violations(observation: dict[str, Any] | None) -> list[dict[str, Any]]:
+def _extract_observation_violations(
+    observation: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
     if not isinstance(observation, dict):
         return []
     raw = observation.get("violations")
@@ -666,7 +673,7 @@ def load_observed_run(
     summary_metrics = scorecard.get("summary_metrics")
     if isinstance(summary_metrics, dict):
         value = summary_metrics.get("artifact_completeness_ratio")
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             artifact_ratio = float(value)
     return ObservedRun(
         run_id=str(run_json.get("run_id") or run_dir.name),
@@ -747,7 +754,7 @@ def detect_failure_observations(observed: ObservedRun) -> list[FailureObservatio
             )
         )
 
-    violation_codes = set(code.lower() for code in observed.violation_codes)
+    violation_codes = {code.lower() for code in observed.violation_codes}
     if (
         "params_missing_required" in violation_codes
         or "validation_error" in text
@@ -788,7 +795,8 @@ def detect_failure_observations(observed: ObservedRun) -> list[FailureObservatio
         "jsondecodeerror" in text
         or "unreadable" in text
         or "corrupt" in text
-        or "trace_jsonl" in text and "missing from persisted run bundle" in text
+        or "trace_jsonl" in text
+        and "missing from persisted run bundle" in text
     ):
         add("trace_or_bundle_corruption", severity="high")
 
@@ -803,13 +811,10 @@ def detect_failure_observations(observed: ObservedRun) -> list[FailureObservatio
         if observed.dry_run or not observed.errors:
             add("step_skipped_without_useful_result", severity="medium")
 
-    if (
-        any(status == "failed" for status in observed.step_statuses)
-        or (
-            observed.status == "failed"
-            and "plan_invalid" not in text
-            and "missing required" not in text
-        )
+    if any(status == "failed" for status in observed.step_statuses) or (
+        observed.status == "failed"
+        and "plan_invalid" not in text
+        and "missing required" not in text
     ):
         add("tool_execution_failure", severity="medium")
 
@@ -844,7 +849,9 @@ def collect_observed_runs(
     root = Path(run_root) if run_root is not None else get_mcp_run_root()
     cutoff = _utc_now() - timedelta(days=days)
     collected: list[ObservedRun] = []
-    for run_dir in sorted(iter_mcp_run_dirs(root), key=lambda p: p.stat().st_mtime, reverse=True):
+    for run_dir in sorted(
+        iter_mcp_run_dirs(root), key=lambda p: p.stat().st_mtime, reverse=True
+    ):
         observed = load_observed_run(run_dir, profile_id=profile_id)
         if observed is None:
             continue
@@ -857,7 +864,9 @@ def collect_observed_runs(
         # Prioritize completed runs, but keep stale active runs because they are
         # informative for incomplete-bundle motifs.
         if observed.status in ACTIVE_RUN_STATES:
-            age = _utc_now() - datetime.fromtimestamp(run_dir.stat().st_mtime, tz=timezone.utc)
+            age = _utc_now() - datetime.fromtimestamp(
+                run_dir.stat().st_mtime, tz=timezone.utc
+            )
             if age < timedelta(minutes=10):
                 continue
         collected.append(observed)
@@ -923,7 +932,9 @@ def mine_failure_motifs(
                 motif_family=motif_family,
                 severity=highest_severity,
                 frequency=len(findings),
-                affected_tools_workflows=[name for name, _ in tool_counter.most_common(8)],
+                affected_tools_workflows=[
+                    name for name, _ in tool_counter.most_common(8)
+                ],
                 representative_runs=run_ids[:8],
                 evidence_snippets=snippets[:8],
                 suspected_surface=dominant_surface,
@@ -961,7 +972,10 @@ def load_failure_motifs(
     """Load persisted failure motifs from the latest or a specific path."""
 
     if path is None:
-        path = _failure_motif_dir(get_autoresearch_root(autoresearch_root)) / "failure_motifs_latest.jsonl"
+        path = (
+            _failure_motif_dir(get_autoresearch_root(autoresearch_root))
+            / "failure_motifs_latest.jsonl"
+        )
     source = Path(path)
     if not source.exists():
         raise FileNotFoundError(f"Failure motifs file not found: {source}")
@@ -994,9 +1008,13 @@ def _materialize_worktree(
     worktree_path = _worktrees_dir(autoresearch_root) / candidate_id
     if worktree_path.exists():
         return worktree_path
-    result = _git("worktree", "add", "--detach", str(worktree_path), "HEAD", cwd=repo_root)
+    result = _git(
+        "worktree", "add", "--detach", str(worktree_path), "HEAD", cwd=repo_root
+    )
     if result.returncode != 0:
-        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "git worktree add failed")
+        raise RuntimeError(
+            result.stderr.strip() or result.stdout.strip() or "git worktree add failed"
+        )
     return worktree_path
 
 
@@ -1008,7 +1026,9 @@ def _write_fix_brief(
     candidate: FixCandidate,
 ) -> None:
     allowlist_block = "\n".join(f"- `{item}`" for item in candidate.allowed_paths)
-    snippet_block = "\n".join(f"- {item}" for item in motif.evidence_snippets[:6]) or "- none"
+    snippet_block = (
+        "\n".join(f"- {item}" for item in motif.evidence_snippets[:6]) or "- none"
+    )
     brief = (
         f"# Fix Candidate {candidate.candidate_id}\n\n"
         f"Motif: `{motif.motif_id}`\n"
@@ -1040,7 +1060,9 @@ def propose_fix_candidates(
         raise ValueError(f"Unknown motif_id: {motif_id}")
     blueprints = list(MOTIF_CANDIDATE_BLUEPRINTS.get(motif.motif_family) or [])
     if not blueprints:
-        raise ValueError(f"No candidate blueprint registered for motif: {motif.motif_family}")
+        raise ValueError(
+            f"No candidate blueprint registered for motif: {motif.motif_family}"
+        )
 
     created: list[FixCandidate] = []
     timestamp = _utc_now().strftime("%Y%m%d_%H%M%S")
@@ -1057,7 +1079,9 @@ def propose_fix_candidates(
             motif_id=motif.motif_id,
             motif_family=motif.motif_family,
             target_surface=str(blueprint.get("target_surface") or "unknown_surface"),
-            allowed_paths=[str(item) for item in list(blueprint.get("allowed_paths") or [])],
+            allowed_paths=[
+                str(item) for item in list(blueprint.get("allowed_paths") or [])
+            ],
             worktree_path=str(worktree_path),
             patch_rationale=str(blueprint.get("patch_rationale") or "").strip(),
             validation_slice_id=motif.recommended_benchmark_slice_id,
@@ -1066,7 +1090,9 @@ def propose_fix_candidates(
         )
         candidate_root = _candidate_dir(state_root, candidate_id)
         _write_json(candidate_root / "candidate_fix.json", asdict(candidate))
-        _write_fix_brief(worktree_path, motif=motif, blueprint=blueprint, candidate=candidate)
+        _write_fix_brief(
+            worktree_path, motif=motif, blueprint=blueprint, candidate=candidate
+        )
         created.append(candidate)
     return created
 
@@ -1126,8 +1152,14 @@ def load_motif_slice_config(
 ) -> dict[str, Any]:
     """Return the raw benchmark slice config entry for one failure motif."""
 
-    root = Path(benchmark_root) if benchmark_root is not None else DEFAULT_BENCHMARK_ROOT
-    config_path = Path(path) if path is not None else root / "configs" / "autoresearch" / "motif_slices.yaml"
+    root = (
+        Path(benchmark_root) if benchmark_root is not None else DEFAULT_BENCHMARK_ROOT
+    )
+    config_path = (
+        Path(path)
+        if path is not None
+        else root / "configs" / "autoresearch" / "motif_slices.yaml"
+    )
     payload = _load_yaml(config_path)
     motifs = payload.get("motifs")
     if not isinstance(motifs, dict):
@@ -1206,8 +1238,14 @@ def load_canary_task_ids(
 ) -> list[str]:
     """Return the fixed canary benchmark slice."""
 
-    root = Path(benchmark_root) if benchmark_root is not None else DEFAULT_BENCHMARK_ROOT
-    config_path = Path(path) if path is not None else root / "configs" / "autoresearch" / "canary_slice.yaml"
+    root = (
+        Path(benchmark_root) if benchmark_root is not None else DEFAULT_BENCHMARK_ROOT
+    )
+    config_path = (
+        Path(path)
+        if path is not None
+        else root / "configs" / "autoresearch" / "canary_slice.yaml"
+    )
     payload = _load_yaml(config_path)
     task_ids = payload.get("task_ids")
     if not isinstance(task_ids, list):
@@ -1222,8 +1260,14 @@ def load_canary_scaffold_task_ids(
 ) -> list[str]:
     """Return optional draft HARNESS task IDs from the global canary config."""
 
-    root = Path(benchmark_root) if benchmark_root is not None else DEFAULT_BENCHMARK_ROOT
-    config_path = Path(path) if path is not None else root / "configs" / "autoresearch" / "canary_slice.yaml"
+    root = (
+        Path(benchmark_root) if benchmark_root is not None else DEFAULT_BENCHMARK_ROOT
+    )
+    config_path = (
+        Path(path)
+        if path is not None
+        else root / "configs" / "autoresearch" / "canary_slice.yaml"
+    )
     payload = _load_yaml(config_path)
     task_ids = payload.get("scaffold_task_ids")
     if task_ids is None:
@@ -1275,7 +1319,11 @@ def _harbor_required_outputs(
                 continue
             required_outputs = item.get("required_outputs")
             if isinstance(required_outputs, list):
-                return [str(value).strip() for value in required_outputs if str(value).strip()]
+                return [
+                    str(value).strip()
+                    for value in required_outputs
+                    if str(value).strip()
+                ]
     return []
 
 
@@ -1290,7 +1338,11 @@ def _run_native_harness_slice(
     slice_name: str,
 ) -> dict[str, Any]:
     workdir_base = (
-        get_autoresearch_root() / "benchmark_workdirs" / candidate_id / candidate_label / slice_name
+        get_autoresearch_root()
+        / "benchmark_workdirs"
+        / candidate_id
+        / candidate_label
+        / slice_name
     )
     python_bin = shutil.which("python") or "python"
     results: list[dict[str, Any]] = []
@@ -1300,9 +1352,13 @@ def _run_native_harness_slice(
         solve_sh = task_root / "solution" / "solve.sh"
         verifier = task_root / "tests" / "test_outputs.py"
         if not solve_sh.exists():
-            raise FileNotFoundError(f"Native harness solve.sh missing for {task_id}: {solve_sh}")
+            raise FileNotFoundError(
+                f"Native harness solve.sh missing for {task_id}: {solve_sh}"
+            )
         if not verifier.exists():
-            raise FileNotFoundError(f"Native harness verifier missing for {task_id}: {verifier}")
+            raise FileNotFoundError(
+                f"Native harness verifier missing for {task_id}: {verifier}"
+            )
 
         attempt_root = workdir_base / task_id / "attempt_1"
         if attempt_root.exists():
@@ -1354,7 +1410,7 @@ def _run_native_harness_slice(
                 evidence_missing.append(relpath)
 
         run_summary = _read_json(output_dir / "run_summary.json") or {}
-        run_metadata = _read_json(output_dir / "run_metadata.json") or {}
+        _read_json(output_dir / "run_metadata.json") or {}
         observation = _read_json(output_dir / "observation.json") or {}
         analysis_bundle = _read_json(output_dir / "analysis_bundle.json") or {}
         trajectory = _read_json(output_dir / "trajectory.json") or {}
@@ -1367,7 +1423,12 @@ def _run_native_harness_slice(
             metrics_failed.append("run_terminal")
         if all(
             bool(run_summary.get(key))
-            for key in ("has_trace", "has_observation", "has_trajectory", "has_analysis_bundle")
+            for key in (
+                "has_trace",
+                "has_observation",
+                "has_trajectory",
+                "has_analysis_bundle",
+            )
         ):
             metrics_met.append("bundle_persisted")
         else:
@@ -1401,9 +1462,15 @@ def _run_native_harness_slice(
             if required_outputs
             else (1.0 if passed else 0.0)
         )
-        run_state = str(run_summary.get("status") or ("succeeded" if passed else "failed")).strip()
-        completion_state = "succeeded" if passed else (
-            "failed" if run_state in {"failed", "queued", "running"} else run_state
+        run_state = str(
+            run_summary.get("status") or ("succeeded" if passed else "failed")
+        ).strip()
+        completion_state = (
+            "succeeded"
+            if passed
+            else (
+                "failed" if run_state in {"failed", "queued", "running"} else run_state
+            )
         )
         motif_present = not passed
 
@@ -1446,8 +1513,16 @@ def _run_native_harness_slice(
                             "status": run_state,
                             "completion_state": completion_state,
                             "policy": {"issue_count": 0},
-                            "warnings": [] if passed else [text for text in error_parts[:1] if text],
-                            "errors": [] if passed else [text for text in error_parts[:1] if text],
+                            "warnings": (
+                                []
+                                if passed
+                                else [text for text in error_parts[:1] if text]
+                            ),
+                            "errors": (
+                                []
+                                if passed
+                                else [text for text in error_parts[:1] if text]
+                            ),
                             "summary_metrics": {
                                 "artifact_completeness_ratio": round(artifact_ratio, 6),
                                 "error_count": 0 if passed else 1,
@@ -1476,7 +1551,9 @@ def _run_native_harness_slice(
     results_path.parent.mkdir(parents=True, exist_ok=True)
     _write_json(results_path, payload)
     return {
-        "returncode": 0 if all(item.get("final_status") == "success" for item in results) else 2,
+        "returncode": (
+            0 if all(item.get("final_status") == "success" for item in results) else 2
+        ),
         "stdout": "",
         "stderr": "",
         "results_path": str(results_path),
@@ -1495,10 +1572,24 @@ def _first_attempt(result: dict[str, Any]) -> dict[str, Any]:
 
 def _observed_run_from_benchmark_attempt(result: dict[str, Any]) -> ObservedRun:
     attempt = _first_attempt(result)
-    run_scorecard = attempt.get("run_scorecard") if isinstance(attempt.get("run_scorecard"), dict) else {}
-    run_bundle = attempt.get("run_bundle") if isinstance(attempt.get("run_bundle"), dict) else {}
-    observation = run_bundle.get("observation") if isinstance(run_bundle.get("observation"), dict) else {}
-    violation_payload = observation.get("violations") if isinstance(observation.get("violations"), list) else []
+    run_scorecard = (
+        attempt.get("run_scorecard")
+        if isinstance(attempt.get("run_scorecard"), dict)
+        else {}
+    )
+    run_bundle = (
+        attempt.get("run_bundle") if isinstance(attempt.get("run_bundle"), dict) else {}
+    )
+    observation = (
+        run_bundle.get("observation")
+        if isinstance(run_bundle.get("observation"), dict)
+        else {}
+    )
+    violation_payload = (
+        observation.get("violations")
+        if isinstance(observation.get("violations"), list)
+        else []
+    )
     violation_codes = []
     violation_messages = []
     for item in violation_payload:
@@ -1510,7 +1601,11 @@ def _observed_run_from_benchmark_attempt(result: dict[str, Any]) -> ObservedRun:
             violation_codes.append(code)
         if message:
             violation_messages.append(message)
-    steps = run_scorecard.get("steps") if isinstance(run_scorecard.get("steps"), list) else []
+    steps = (
+        run_scorecard.get("steps")
+        if isinstance(run_scorecard.get("steps"), list)
+        else []
+    )
     tool_ids = [
         str(step.get("tool_id") or "").strip()
         for step in steps
@@ -1523,7 +1618,8 @@ def _observed_run_from_benchmark_attempt(result: dict[str, Any]) -> ObservedRun:
     ]
     warnings = [
         str(item).strip()
-        for item in list(run_scorecard.get("warnings") or []) + list(attempt.get("run_warnings") or [])
+        for item in list(run_scorecard.get("warnings") or [])
+        + list(attempt.get("run_warnings") or [])
         if str(item).strip()
     ]
     errors = [
@@ -1534,15 +1630,28 @@ def _observed_run_from_benchmark_attempt(result: dict[str, Any]) -> ObservedRun:
     attempt_error = str(attempt.get("error_message") or "").strip()
     if attempt_error:
         errors.append(attempt_error)
-    summary_metrics = run_scorecard.get("summary_metrics") if isinstance(run_scorecard.get("summary_metrics"), dict) else {}
+    summary_metrics = (
+        run_scorecard.get("summary_metrics")
+        if isinstance(run_scorecard.get("summary_metrics"), dict)
+        else {}
+    )
     artifact_ratio = summary_metrics.get("artifact_completeness_ratio")
-    if not isinstance(artifact_ratio, (int, float)):
+    if not isinstance(artifact_ratio, int | float):
         artifact_ratio = None
     return ObservedRun(
         run_id=str(attempt.get("brainr_run_id") or result.get("task_id") or "unknown"),
         run_dir=str(attempt.get("run_dir") or attempt.get("workdir") or ""),
-        status=str(run_scorecard.get("status") or attempt.get("status") or result.get("final_status") or "unknown"),
-        dry_run=bool(observation.get("policy", {}).get("dry_run")) if isinstance(observation.get("policy"), dict) else False,
+        status=str(
+            run_scorecard.get("status")
+            or attempt.get("status")
+            or result.get("final_status")
+            or "unknown"
+        ),
+        dry_run=(
+            bool(observation.get("policy", {}).get("dry_run"))
+            if isinstance(observation.get("policy"), dict)
+            else False
+        ),
         created_at=None,
         started_at=attempt.get("start_time"),
         finished_at=attempt.get("end_time"),
@@ -1552,14 +1661,20 @@ def _observed_run_from_benchmark_attempt(result: dict[str, Any]) -> ObservedRun:
         warnings=warnings,
         violation_codes=violation_codes,
         violation_messages=violation_messages,
-        artifact_completeness_ratio=float(artifact_ratio) if isinstance(artifact_ratio, (int, float)) else None,
-        policy_issue_count=int(((run_scorecard.get("policy") or {}).get("issue_count")) or 0),
+        artifact_completeness_ratio=(
+            float(artifact_ratio) if isinstance(artifact_ratio, int | float) else None
+        ),
+        policy_issue_count=int(
+            ((run_scorecard.get("policy") or {}).get("issue_count")) or 0
+        ),
         scorecard=run_scorecard,
         bundle=run_bundle,
     )
 
 
-def _assess_task_result(result: dict[str, Any], motif_family: str) -> BenchmarkTaskAssessment:
+def _assess_task_result(
+    result: dict[str, Any], motif_family: str
+) -> BenchmarkTaskAssessment:
     motif_present_override = result.get("motif_present")
     if isinstance(motif_present_override, bool):
         motif_present = motif_present_override
@@ -1568,10 +1683,18 @@ def _assess_task_result(result: dict[str, Any], motif_family: str) -> BenchmarkT
         motifs = detect_failure_observations(observed)
         motif_present = any(item.motif_family == motif_family for item in motifs)
     attempt = _first_attempt(result)
-    run_scorecard = attempt.get("run_scorecard") if isinstance(attempt.get("run_scorecard"), dict) else {}
+    run_scorecard = (
+        attempt.get("run_scorecard")
+        if isinstance(attempt.get("run_scorecard"), dict)
+        else {}
+    )
     completion_state = str(run_scorecard.get("completion_state") or "").strip()
-    policy_issue_count = int(((run_scorecard.get("policy") or {}).get("issue_count")) or 0)
-    error_count = int(((run_scorecard.get("summary_metrics") or {}).get("error_count")) or 0)
+    policy_issue_count = int(
+        ((run_scorecard.get("policy") or {}).get("issue_count")) or 0
+    )
+    error_count = int(
+        ((run_scorecard.get("summary_metrics") or {}).get("error_count")) or 0
+    )
     blocker_override = result.get("blocker")
     if isinstance(blocker_override, bool):
         blocker = blocker_override
@@ -1582,9 +1705,13 @@ def _assess_task_result(result: dict[str, Any], motif_family: str) -> BenchmarkT
             or policy_issue_count > 0
             or error_count > 0
         )
-    final_eval = result.get("final_evaluation") if isinstance(result.get("final_evaluation"), dict) else {}
+    final_eval = (
+        result.get("final_evaluation")
+        if isinstance(result.get("final_evaluation"), dict)
+        else {}
+    )
     score = final_eval.get("score")
-    if not isinstance(score, (int, float)):
+    if not isinstance(score, int | float):
         score = 0.0
     return BenchmarkTaskAssessment(
         task_id=str(result.get("task_id") or ""),
@@ -1616,13 +1743,21 @@ def _run_benchmark_slice(
     if not task_ids:
         raise ValueError(f"No task ids supplied for benchmark slice: {slice_name}")
     results_dir = benchmark_root / "benchmark_results"
-    before = {
-        path.resolve()
-        for path in results_dir.glob("results_*.json")
-        if path.is_file()
-    } if results_dir.exists() else set()
+    before = (
+        {
+            path.resolve()
+            for path in results_dir.glob("results_*.json")
+            if path.is_file()
+        }
+        if results_dir.exists()
+        else set()
+    )
     workdir_base = (
-        get_autoresearch_root() / "benchmark_workdirs" / candidate_id / candidate_label / slice_name
+        get_autoresearch_root()
+        / "benchmark_workdirs"
+        / candidate_id
+        / candidate_label
+        / slice_name
     )
     pythonpath_parts = []
     python_src = python_repo / "src"
@@ -1661,11 +1796,15 @@ def _run_benchmark_slice(
         text=True,
         check=False,
     )
-    after = {
-        path.resolve()
-        for path in results_dir.glob("results_*.json")
-        if path.is_file()
-    } if results_dir.exists() else set()
+    after = (
+        {
+            path.resolve()
+            for path in results_dir.glob("results_*.json")
+            if path.is_file()
+        }
+        if results_dir.exists()
+        else set()
+    )
     new_files = sorted(after - before, key=lambda item: item.stat().st_mtime)
     if not new_files:
         latest = sorted(after, key=lambda item: item.stat().st_mtime)
@@ -1699,7 +1838,9 @@ def _run_validation_slice(
     slice_name: str,
 ) -> dict[str, Any]:
     native_ids = [task_id for task_id in task_ids if _is_native_harness_task(task_id)]
-    benchmark_ids = [task_id for task_id in task_ids if not _is_native_harness_task(task_id)]
+    benchmark_ids = [
+        task_id for task_id in task_ids if not _is_native_harness_task(task_id)
+    ]
 
     native_result = (
         _run_native_harness_slice(
@@ -1730,7 +1871,13 @@ def _run_validation_slice(
     )
 
     if native_result is None:
-        return benchmark_result or {"returncode": 0, "stdout": "", "stderr": "", "results_path": "", "payload": {"results": []}}
+        return benchmark_result or {
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "results_path": "",
+            "payload": {"results": []},
+        }
     if benchmark_result is None:
         return native_result
 
@@ -1755,10 +1902,20 @@ def _run_validation_slice(
             int(native_result.get("returncode", 0)),
         ),
         "stdout": "\n".join(
-            text for text in (benchmark_result.get("stdout", ""), native_result.get("stdout", "")) if text
+            text
+            for text in (
+                benchmark_result.get("stdout", ""),
+                native_result.get("stdout", ""),
+            )
+            if text
         ),
         "stderr": "\n".join(
-            text for text in (benchmark_result.get("stderr", ""), native_result.get("stderr", "")) if text
+            text
+            for text in (
+                benchmark_result.get("stderr", ""),
+                native_result.get("stderr", ""),
+            )
+            if text
         ),
         "results_path": str(merged_path),
         "payload": merged_payload,
@@ -1858,7 +2015,9 @@ def _run_local_checks(candidate: FixCandidate) -> dict[str, Any]:
 def _list_touched_paths(worktree_path: Path) -> list[str]:
     proc = _git("diff", "--name-only", "HEAD", "--", cwd=worktree_path)
     if proc.returncode != 0:
-        raise RuntimeError(proc.stderr.strip() or proc.stdout.strip() or "git diff failed")
+        raise RuntimeError(
+            proc.stderr.strip() or proc.stdout.strip() or "git diff failed"
+        )
     touched = []
     for line in proc.stdout.splitlines():
         text = line.strip()
@@ -1867,7 +2026,9 @@ def _list_touched_paths(worktree_path: Path) -> list[str]:
     return touched
 
 
-def _diff_numstat(worktree_path: Path) -> tuple[int, int, dict[str, dict[str, int]], list[str]]:
+def _diff_numstat(
+    worktree_path: Path,
+) -> tuple[int, int, dict[str, dict[str, int]], list[str]]:
     proc = _git("diff", "--numstat", "HEAD", "--", cwd=worktree_path)
     if proc.returncode != 0:
         return 0, 0, {}, ["diff_numstat_unavailable"]
@@ -1879,7 +2040,11 @@ def _diff_numstat(worktree_path: Path) -> tuple[int, int, dict[str, dict[str, in
         parts = line.split("\t")
         if len(parts) < 3:
             continue
-        added_raw, deleted_raw, path_str = parts[0].strip(), parts[1].strip(), parts[2].strip()
+        added_raw, deleted_raw, path_str = (
+            parts[0].strip(),
+            parts[1].strip(),
+            parts[2].strip(),
+        )
         try:
             added = int(added_raw) if added_raw != "-" else 0
             deleted = int(deleted_raw) if deleted_raw != "-" else 0
@@ -1921,7 +2086,9 @@ def _matching_allowlist_root(path_str: str, allowed_paths: list[str]) -> str | N
     normalized = str(path_str).strip()
     for item in allowed_paths:
         prefix = str(item).strip()
-        if prefix and (normalized == prefix or normalized.startswith(prefix.rstrip("/") + "/")):
+        if prefix and (
+            normalized == prefix or normalized.startswith(prefix.rstrip("/") + "/")
+        ):
             return prefix
     return None
 
@@ -1962,10 +2129,14 @@ def _assess_patch_legibility(
         findings.append("Patch is spread across multiple allowed roots.")
     if total_changed > 40:
         score -= 5.0
-        findings.append("Patch is larger than a small surgical edit (>40 changed lines).")
+        findings.append(
+            "Patch is larger than a small surgical edit (>40 changed lines)."
+        )
     if total_changed > 120:
         score -= 10.0
-        findings.append("Patch is large enough to merit extra review (>120 changed lines).")
+        findings.append(
+            "Patch is large enough to merit extra review (>120 changed lines)."
+        )
     if temp_hits:
         score -= min(15.0, float(len(temp_hits) * 5))
         findings.append("Added temporary markers such as TODO/FIXME/HACK.")
@@ -2038,7 +2209,9 @@ def validate_fix_candidate(
         return report
 
     unauthorized = [
-        path for path in touched_paths if not _is_allowed_path(path, candidate.allowed_paths)
+        path
+        for path in touched_paths
+        if not _is_allowed_path(path, candidate.allowed_paths)
     ]
     if unauthorized:
         report = ValidationReport(
@@ -2153,10 +2326,18 @@ def validate_fix_candidate(
         slice_name="canary_slice",
     )
 
-    baseline_motif_summary = _summarize_slice(baseline_motif["payload"], candidate.motif_family)
-    candidate_motif_summary = _summarize_slice(candidate_motif["payload"], candidate.motif_family)
-    baseline_canary_summary = _summarize_slice(baseline_canary["payload"], candidate.motif_family)
-    candidate_canary_summary = _summarize_slice(candidate_canary["payload"], candidate.motif_family)
+    baseline_motif_summary = _summarize_slice(
+        baseline_motif["payload"], candidate.motif_family
+    )
+    candidate_motif_summary = _summarize_slice(
+        candidate_motif["payload"], candidate.motif_family
+    )
+    baseline_canary_summary = _summarize_slice(
+        baseline_canary["payload"], candidate.motif_family
+    )
+    candidate_canary_summary = _summarize_slice(
+        candidate_canary["payload"], candidate.motif_family
+    )
     fixed_failures, motif_regressions = _diff_task_outcomes(
         baseline_motif_summary,
         candidate_motif_summary,
@@ -2207,22 +2388,30 @@ def validate_fix_candidate(
             )
     else:
         canary_drop = (
-            baseline_canary_summary["success_rate"] - candidate_canary_summary["success_rate"]
+            baseline_canary_summary["success_rate"]
+            - candidate_canary_summary["success_rate"]
         )
         eligible = bool(
             candidate_motif_summary["motif_blocker_count"]
             < baseline_motif_summary["motif_blocker_count"]
             and len(fixed_failures) >= 1
-            and candidate_canary_summary["blocker_count"] <= baseline_canary_summary["blocker_count"]
+            and candidate_canary_summary["blocker_count"]
+            <= baseline_canary_summary["blocker_count"]
             and canary_drop <= 0.10
         )
         verdict = "passed" if eligible else "failed_gate"
         warnings = []
-        if candidate_motif_summary["motif_blocker_count"] >= baseline_motif_summary["motif_blocker_count"]:
+        if (
+            candidate_motif_summary["motif_blocker_count"]
+            >= baseline_motif_summary["motif_blocker_count"]
+        ):
             warnings.append("Target motif blocker incidence did not decrease.")
         if not fixed_failures:
             warnings.append("Candidate did not fix any baseline failing motif task.")
-        if candidate_canary_summary["blocker_count"] > baseline_canary_summary["blocker_count"]:
+        if (
+            candidate_canary_summary["blocker_count"]
+            > baseline_canary_summary["blocker_count"]
+        ):
             warnings.append("Candidate introduced a new blocker on the canary slice.")
         if canary_drop > 0.10:
             warnings.append("Candidate reduced canary success rate by more than 10%.")

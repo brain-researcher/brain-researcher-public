@@ -105,8 +105,12 @@ def distill_run_records(
         analysis_bundle=analysis_bundle if isinstance(analysis_bundle, dict) else None,
         provenance=provenance if isinstance(provenance, dict) else None,
         trajectory=trajectory if isinstance(trajectory, dict) else None,
-        execution_manifest=execution_manifest if isinstance(execution_manifest, dict) else None,
-        session_snapshot=session_snapshot if isinstance(session_snapshot, dict) else None,
+        execution_manifest=(
+            execution_manifest if isinstance(execution_manifest, dict) else None
+        ),
+        session_snapshot=(
+            session_snapshot if isinstance(session_snapshot, dict) else None
+        ),
         trace_rows=trace_rows,
         research_events=research_events,
     )
@@ -177,16 +181,22 @@ def distill_and_store_run(
                 risk_level=verdict.risk_level,
                 finding_count=len(verdict.findings),
                 blocking_finding_count=sum(
-                    1 for f in verdict.findings if getattr(f, "action", "warn") == "block"
+                    1
+                    for f in verdict.findings
+                    if getattr(f, "action", "warn") == "block"
                 ),
                 mean_fd=bundle.stats_metrics.get("mean_fd") if bundle else None,
                 r_squared=bundle.stats_metrics.get("r_squared") if bundle else None,
                 flag_rate=bundle.stats_metrics.get("flag_rate") if bundle else None,
                 step_success_rate=(
-                    bundle.scorecard_snapshot.get("step_success_rate") if bundle else None
+                    bundle.scorecard_snapshot.get("step_success_rate")
+                    if bundle
+                    else None
                 ),
                 artifact_completeness_ratio=(
-                    bundle.scorecard_snapshot.get("artifact_completeness_ratio") if bundle else None
+                    bundle.scorecard_snapshot.get("artifact_completeness_ratio")
+                    if bundle
+                    else None
                 ),
             )
             writes.append(
@@ -234,7 +244,9 @@ def _build_episodic_card(
 ) -> EpisodicRunMemoryV1:
     status = _episodic_status(run_payload.get("status"))
     route = normalize_space((provenance or {}).get("route"))
-    steps = run_payload.get("steps") if isinstance(run_payload.get("steps"), list) else []
+    steps = (
+        run_payload.get("steps") if isinstance(run_payload.get("steps"), list) else []
+    )
     step_logs = _load_step_logs(run_dir=run_dir, steps=steps)
     tool_sequence = [
         normalize_space(step.get("tool_id"))
@@ -288,7 +300,9 @@ def _build_episodic_card(
         if manifest_summary:
             what_worked.append(manifest_summary)
         if tool_sequence:
-            what_worked.append(f"Executed tool sequence: {', '.join(tool_sequence[:4])}.")
+            what_worked.append(
+                f"Executed tool sequence: {', '.join(tool_sequence[:4])}."
+            )
         if (run_dir / "analysis_bundle.json").exists():
             what_worked.append("Persisted canonical run bundle artifacts.")
     what_failed = unique_non_empty((session_snapshot or {}).get("open"))
@@ -327,7 +341,8 @@ def _build_episodic_card(
 
     return EpisodicRunMemoryV1(
         source_run_id=run_id,
-        source_session_id=normalize_space((session_snapshot or {}).get("session_id")) or None,
+        source_session_id=normalize_space((session_snapshot or {}).get("session_id"))
+        or None,
         task_description=task_description,
         task_type=task_type,
         dataset_refs=datasets,
@@ -342,7 +357,8 @@ def _build_episodic_card(
         what_worked=what_worked,
         what_failed=what_failed,
         next_time_hints=next_time_hints,
-        resume_point=normalize_space((session_snapshot or {}).get("next_command")) or None,
+        resume_point=normalize_space((session_snapshot or {}).get("next_command"))
+        or None,
         tags=_episodic_tags(
             status=status,
             route=route,
@@ -371,7 +387,9 @@ def _build_claim_cards(
         ("analysis_bundle.json", analysis_bundle),
         ("provenance.json", provenance),
     ]
-    steps = run_payload.get("steps") if isinstance(run_payload.get("steps"), list) else []
+    steps = (
+        run_payload.get("steps") if isinstance(run_payload.get("steps"), list) else []
+    )
     for step in steps:
         if not isinstance(step, dict):
             continue
@@ -392,15 +410,21 @@ def _build_claim_cards(
             continue
         if claim_card.stable_key in by_key:
             existing = by_key[claim_card.stable_key]
-            merged_support = existing.supporting_evidence + claim_card.supporting_evidence
-            merged_conflict = existing.conflicting_evidence + claim_card.conflicting_evidence
+            merged_support = (
+                existing.supporting_evidence + claim_card.supporting_evidence
+            )
+            merged_conflict = (
+                existing.conflicting_evidence + claim_card.conflicting_evidence
+            )
             by_key[claim_card.stable_key] = ClaimMemoryV1.model_validate(
                 {
                     **existing.model_dump(exclude_none=True),
                     "source_run_ids": unique_non_empty(
                         existing.source_run_ids + claim_card.source_run_ids
                     ),
-                    "target_ids": unique_non_empty(existing.target_ids + claim_card.target_ids),
+                    "target_ids": unique_non_empty(
+                        existing.target_ids + claim_card.target_ids
+                    ),
                     "analytic_conditions": unique_non_empty(
                         existing.analytic_conditions + claim_card.analytic_conditions
                     ),
@@ -414,7 +438,9 @@ def _build_claim_cards(
                 }
             )
         else:
-            by_key[claim_card.stable_key or claim_card.card_id or f"claim:{len(by_key)}"] = claim_card
+            by_key[
+                claim_card.stable_key or claim_card.card_id or f"claim:{len(by_key)}"
+            ] = claim_card
     claim_cards = list(by_key.values())
     return _apply_claim_updates_to_cards(
         claim_cards,
@@ -542,7 +568,8 @@ def _claim_update_extra_entry(
         "action": normalize_space(update.get("action")) or "support",
         "claim_id": normalize_space(update.get("claim_id")) or None,
         "canonical_claim_id": normalize_space(update.get("canonical_claim_id")) or None,
-        "supersedes_claim_id": normalize_space(update.get("supersedes_claim_id")) or None,
+        "supersedes_claim_id": normalize_space(update.get("supersedes_claim_id"))
+        or None,
         "updated_at": normalize_space(update.get("updated_at")) or None,
         "note": normalize_space(update.get("note")) or None,
         "run_id": run_id,
@@ -705,7 +732,8 @@ def _apply_claim_updates_to_cards(
         current_indices = _claim_card_match_indices(
             alias_index,
             claim_id=normalize_space(update.get("claim_id")) or None,
-            canonical_claim_id=normalize_space(update.get("canonical_claim_id")) or None,
+            canonical_claim_id=normalize_space(update.get("canonical_claim_id"))
+            or None,
         )
         if not current_indices:
             continue
@@ -720,9 +748,9 @@ def _apply_claim_updates_to_cards(
 
         if normalize_space(update.get("action")) == "supersede":
             superseded_id = normalize_space(update.get("supersedes_claim_id"))
-            replacement_id = normalize_space(update.get("canonical_claim_id")) or normalize_space(
-                update.get("claim_id")
-            )
+            replacement_id = normalize_space(
+                update.get("canonical_claim_id")
+            ) or normalize_space(update.get("claim_id"))
             if superseded_id and replacement_id:
                 superseded_indices = _claim_card_match_indices(
                     alias_index,
@@ -762,7 +790,9 @@ def _task_description(
             content = normalize_space(event.get("content"))
             if content:
                 return content
-    run_card = (observation or {}).get("run_card") if isinstance(observation, dict) else {}
+    run_card = (
+        (observation or {}).get("run_card") if isinstance(observation, dict) else {}
+    )
     if isinstance(run_card, dict):
         for key in ("description", "title"):
             value = normalize_space(run_card.get(key))
@@ -803,7 +833,8 @@ def _output_summary(
     succeeded = sum(
         1
         for step in steps
-        if isinstance(step, dict) and normalize_token_text(step.get("status")) == "succeeded"
+        if isinstance(step, dict)
+        and normalize_token_text(step.get("status")) == "succeeded"
     )
     bundle_bits = [
         name
@@ -831,7 +862,8 @@ def _quality_indicators(
     failed_steps = sum(
         1
         for step in steps
-        if isinstance(step, dict) and normalize_token_text(step.get("status")) not in {"succeeded", ""}
+        if isinstance(step, dict)
+        and normalize_token_text(step.get("status")) not in {"succeeded", ""}
     )
     artifacts = observation.get("artifacts") if isinstance(observation, dict) else []
     violations = observation.get("violations") if isinstance(observation, dict) else []
@@ -846,14 +878,20 @@ def _quality_indicators(
         "successful_log_count": sum(
             1 for item in log_statuses if item in {"success", "succeeded"}
         ),
-        "failed_log_count": sum(1 for item in log_statuses if item in {"failed", "error"}),
+        "failed_log_count": sum(
+            1 for item in log_statuses if item in {"failed", "error"}
+        ),
         "file_manifest_count": manifest_stats.get("file_manifest_count", 0),
         "verified_checksum_count": manifest_stats.get("verified_checksum_count", 0),
-        "execution_manifest_step_count": manifest_stats.get("execution_manifest_step_count", 0),
+        "execution_manifest_step_count": manifest_stats.get(
+            "execution_manifest_step_count", 0
+        ),
         "trajectory_step_count": trajectory_metadata.get("step_count", 0),
         "research_note_count": research_note_count,
-        "selected_tool": normalize_space(execution_metadata.get("selected_tool")) or None,
-        "execution_provider": normalize_space(execution_metadata.get("provider")) or None,
+        "selected_tool": normalize_space(execution_metadata.get("selected_tool"))
+        or None,
+        "execution_provider": normalize_space(execution_metadata.get("provider"))
+        or None,
         "transport": normalize_space(execution_metadata.get("transport")) or None,
         "status": normalize_space(run_payload.get("status")) or "unknown",
     }
@@ -863,7 +901,8 @@ def _failed_step_summary(steps: list[dict[str, Any]]) -> str:
     failed = [
         f"{normalize_space(step.get('tool_id'))}: {normalize_space(step.get('error')) or normalize_space(step.get('status'))}"
         for step in steps
-        if isinstance(step, dict) and normalize_token_text(step.get("status")) not in {"succeeded", ""}
+        if isinstance(step, dict)
+        and normalize_token_text(step.get("status")) not in {"succeeded", ""}
     ]
     return "; ".join(item for item in failed if item)
 
@@ -888,7 +927,9 @@ def _load_step_logs(
         if not isinstance(payload, dict):
             continue
         source_name = str(path.relative_to(run_dir))
-        metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+        metadata = (
+            payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+        )
         tool_id = normalize_space(
             metadata.get("tool_id")
             or metadata.get("tool")
@@ -910,13 +951,21 @@ def _load_step_logs(
 
 def _successful_step_log_summaries(step_logs: list[dict[str, Any]]) -> list[str]:
     return unique_non_empty(
-        [_step_log_success_summary(item) for item in step_logs if _is_successful_step_log(item)]
+        [
+            _step_log_success_summary(item)
+            for item in step_logs
+            if _is_successful_step_log(item)
+        ]
     )
 
 
 def _failed_step_log_summaries(step_logs: list[dict[str, Any]]) -> list[str]:
     return unique_non_empty(
-        [_step_log_failure_summary(item) for item in step_logs if _is_failed_step_log(item)]
+        [
+            _step_log_failure_summary(item)
+            for item in step_logs
+            if _is_failed_step_log(item)
+        ]
     )
 
 
@@ -1037,7 +1086,11 @@ def _extract_modalities(
             if isinstance(datasets, list):
                 for dataset in datasets:
                     if isinstance(dataset, dict):
-                        out.extend(unique_non_empty([dataset.get("modality"), dataset.get("type")]))
+                        out.extend(
+                            unique_non_empty(
+                                [dataset.get("modality"), dataset.get("type")]
+                            )
+                        )
     request = (provenance or {}).get("request")
     if isinstance(request, dict):
         modalities = request.get("modality")
@@ -1295,17 +1348,24 @@ def _legacy_claim_candidate_from_node(node: dict[str, Any]) -> dict[str, Any] | 
     if not claim_text:
         return None
     if not any(key in node for key in _CLAIM_IDENTITY_KEYS) and not (
-        isinstance(node.get("claim"), dict) and any(key in node.get("claim", {}) for key in ("id", "polarity", "claim_strength"))
+        isinstance(node.get("claim"), dict)
+        and any(
+            key in node.get("claim", {}) for key in ("id", "polarity", "claim_strength")
+        )
     ):
         return None
 
     claim_block = node.get("claim") if isinstance(node.get("claim"), dict) else {}
     target_block = node.get("target") if isinstance(node.get("target"), dict) else {}
     mapping_block = node.get("mapping") if isinstance(node.get("mapping"), dict) else {}
-    variables_block = node.get("variables") if isinstance(node.get("variables"), dict) else {}
+    variables_block = (
+        node.get("variables") if isinstance(node.get("variables"), dict) else {}
+    )
     run_block = node.get("run") if isinstance(node.get("run"), dict) else {}
     paper_block = node.get("paper") if isinstance(node.get("paper"), dict) else {}
-    evidence_block = node.get("evidence") if isinstance(node.get("evidence"), dict) else {}
+    evidence_block = (
+        node.get("evidence") if isinstance(node.get("evidence"), dict) else {}
+    )
 
     target_id = normalize_space(
         node.get("target_id")
@@ -1325,7 +1385,11 @@ def _legacy_claim_candidate_from_node(node: dict[str, Any]) -> dict[str, Any] | 
             polarity = "supports"
         elif expected_verdict in {"conflicting", "refuted", "refutes", "negative"}:
             polarity = "refutes"
-    source_records = node.get("source_records") if isinstance(node.get("source_records"), list) else []
+    source_records = (
+        node.get("source_records")
+        if isinstance(node.get("source_records"), list)
+        else []
+    )
     if not target_id and source_records:
         first = next((item for item in source_records if isinstance(item, dict)), None)
         if isinstance(first, dict):
@@ -1357,7 +1421,10 @@ def _legacy_claim_candidate_from_node(node: dict[str, Any]) -> dict[str, Any] | 
         "claim_id": claim_id or None,
         "canonical_claim_id": canonical_claim_id or None,
         "target_id": target_id or None,
-        "target_type": normalize_space(node.get("target_type") or target_block.get("type")) or None,
+        "target_type": normalize_space(
+            node.get("target_type") or target_block.get("type")
+        )
+        or None,
         "polarity": polarity or None,
         "claim_type": normalize_space(
             node.get("claim_kind")
@@ -1398,9 +1465,13 @@ def _candidate_card_claim_candidate(node: dict[str, Any]) -> dict[str, Any] | No
     if not mapping:
         return None
 
-    provenance = node.get("provenance") if isinstance(node.get("provenance"), dict) else {}
+    provenance = (
+        node.get("provenance") if isinstance(node.get("provenance"), dict) else {}
+    )
     kg_verification = (
-        node.get("kg_verification") if isinstance(node.get("kg_verification"), dict) else {}
+        node.get("kg_verification")
+        if isinstance(node.get("kg_verification"), dict)
+        else {}
     )
     extra_target_ids = unique_non_empty(mapping.get("target_ids") or [])
     target_id = normalize_space(mapping.get("canonical_target_id")) or (
@@ -1425,14 +1496,17 @@ def _candidate_card_claim_candidate(node: dict[str, Any]) -> dict[str, Any] | No
 
     return {
         "claim_text": claim_text,
-        "claim_id": normalize_space(node.get("card_id")) or mapping.get("canonical_claim_id"),
+        "claim_id": normalize_space(node.get("card_id"))
+        or mapping.get("canonical_claim_id"),
         "canonical_claim_id": mapping.get("canonical_claim_id"),
         "canonical_target_id": mapping.get("canonical_target_id"),
         "target_id": target_id,
         "target_ids": extra_target_ids,
         "target_type": normalize_space(mapping.get("target_type")) or None,
         "polarity": normalize_space(mapping.get("claim_polarity")) or None,
-        "claim_type": "verification" if has_normalized_claim else "candidate_hypothesis",
+        "claim_type": (
+            "verification" if has_normalized_claim else "candidate_hypothesis"
+        ),
         "claim_strength": _first_numeric(
             provenance.get("avg_confidence"),
             node.get("principle_confidence"),
@@ -1463,7 +1537,8 @@ def _candidate_card_claim_candidate(node: dict[str, Any]) -> dict[str, Any] | No
             [
                 *list(mapping.get("tags") or []),
                 "candidate_card",
-                normalize_space(node.get("card_id")) and f"card_id:{node.get('card_id')}",
+                normalize_space(node.get("card_id"))
+                and f"card_id:{node.get('card_id')}",
                 normalize_space(node.get("taste_axis"))
                 and f"taste_axis:{node.get('taste_axis')}",
                 normalize_space(node.get("grounding_status"))
@@ -1501,7 +1576,9 @@ def _candidate_card_claim_mapping(
     claim_text: str,
 ) -> dict[str, Any] | None:
     kg_verification = (
-        node.get("kg_verification") if isinstance(node.get("kg_verification"), dict) else {}
+        node.get("kg_verification")
+        if isinstance(node.get("kg_verification"), dict)
+        else {}
     )
     normalized_claim = (
         kg_verification.get("normalized_claim")
@@ -1516,7 +1593,9 @@ def _candidate_card_claim_mapping(
             verdict=verdict,
         )
 
-    provenance = node.get("provenance") if isinstance(node.get("provenance"), dict) else {}
+    provenance = (
+        node.get("provenance") if isinstance(node.get("provenance"), dict) else {}
+    )
     seed_kg_id = _candidate_card_scalar(provenance.get("seed_kg_id"))
     subject = (
         _candidate_card_entity(
@@ -1664,10 +1743,16 @@ def _claim_card_from_candidate(
         paper_id=normalize_space(raw.get("paper_id")) or None,
         target_id=target_id,
         polarity=polarity,
-        metric="evidence_quality_score" if raw.get("evidence_quality_score") is not None else None,
-        value=float(raw.get("evidence_quality_score"))
-        if isinstance(raw.get("evidence_quality_score"), int | float)
-        else None,
+        metric=(
+            "evidence_quality_score"
+            if raw.get("evidence_quality_score") is not None
+            else None
+        ),
+        value=(
+            float(raw.get("evidence_quality_score"))
+            if isinstance(raw.get("evidence_quality_score"), int | float)
+            else None
+        ),
         confidence=_confidence_from_scores(
             raw.get("claim_strength"),
             raw.get("evidence_quality_score"),
@@ -1709,15 +1794,17 @@ def _claim_card_from_candidate(
             claim_text=claim_text,
             target_id=target_id,
         ),
-        related_claims=[
-            {
-                "claim_id": normalize_space(raw.get("related_claim_id")),
-                "relation": "refines",
-                "note": "Declared related claim from source artifact.",
-            }
-        ]
-        if normalize_space(raw.get("related_claim_id"))
-        else [],
+        related_claims=(
+            [
+                {
+                    "claim_id": normalize_space(raw.get("related_claim_id")),
+                    "relation": "refines",
+                    "note": "Declared related claim from source artifact.",
+                }
+            ]
+            if normalize_space(raw.get("related_claim_id"))
+            else []
+        ),
     )
 
 

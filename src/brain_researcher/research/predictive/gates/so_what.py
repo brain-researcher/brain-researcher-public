@@ -15,7 +15,11 @@ def evaluate_so_what(
     comparator_score = (
         float(comparator_score_raw) if comparator_score_raw is not None else None
     )
-    delta = leader_score - comparator_score if comparator_score is not None else leader_score
+    delta = (
+        leader_score - comparator_score
+        if comparator_score is not None
+        else leader_score
+    )
     passed = delta > float(defaults["so_what_delta_threshold_r2"])
     return {
         "leader_backbone": plan["leader_backbone"],

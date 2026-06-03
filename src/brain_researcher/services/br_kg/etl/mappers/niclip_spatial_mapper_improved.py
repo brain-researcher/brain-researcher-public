@@ -5,8 +5,9 @@ Compatibility wrapper over the real NiCLIP coordinate mapper.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional, Sequence
+from typing import Any
 
 from brain_researcher.services.br_kg.niclip.coordinate_mapper import (
     NiCLIPCoordinateMapper,
@@ -20,7 +21,7 @@ class ImprovedNiCLIPSpatialMapper:
     Backward-compatible mapper interface that delegates to real NiCLIP backends.
     """
 
-    def __init__(self, niclip_path: Optional[Path | str] = None):
+    def __init__(self, niclip_path: Path | str | None = None):
         self._backend = NiCLIPCoordinateMapper(niclip_path=niclip_path)
         self.niclip_path = self._backend.niclip_path
         self.task_priors = dict(getattr(self._backend, "task_priors", {}))
@@ -39,7 +40,11 @@ class ImprovedNiCLIPSpatialMapper:
     ) -> list[dict[str, Any]]:
         if not self._loaded:
             return [
-                {"coordinate": tuple(coord), "error": "Mapper not loaded", "concepts": []}
+                {
+                    "coordinate": tuple(coord),
+                    "error": "Mapper not loaded",
+                    "concepts": [],
+                }
                 for coord in coordinates
             ]
         payload = self._backend.map_with_metadata(
@@ -73,20 +78,20 @@ class ImprovedNiCLIPSpatialMapper:
             coordinates, radius_mm=radius, top_k=top_k, allow_full=True
         )
 
-    def get_task_brain_alignment(self, task_name: str) -> Optional[float]:
+    def get_task_brain_alignment(self, task_name: str) -> float | None:
         return self._backend.get_task_brain_alignment(task_name)
 
-    def get_concept_process(self, concept: str) -> Optional[str]:
+    def get_concept_process(self, concept: str) -> str | None:
         return self._backend.get_concept_process(concept)
 
 
-_MAPPER_INSTANCE: Optional[ImprovedNiCLIPSpatialMapper] = None
-_MAPPER_PATH: Optional[str] = None
+_MAPPER_INSTANCE: ImprovedNiCLIPSpatialMapper | None = None
+_MAPPER_PATH: str | None = None
 
 
 def get_improved_mapper(
-    niclip_path: Optional[Path | str] = None, *, force_reload: bool = False
-) -> Optional[ImprovedNiCLIPSpatialMapper]:
+    niclip_path: Path | str | None = None, *, force_reload: bool = False
+) -> ImprovedNiCLIPSpatialMapper | None:
     """Get or create improved spatial mapper instance."""
     global _MAPPER_INSTANCE, _MAPPER_PATH
     try:

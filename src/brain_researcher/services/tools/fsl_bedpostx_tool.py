@@ -5,17 +5,16 @@ Implements FSL's Bayesian Estimation of Diffusion Parameters Obtained using
 Sampling Techniques with Crossing Fibres (BEDPOSTX) for advanced diffusion MRI analysis.
 """
 
-import logging
 import json
-import subprocess
-import tempfile
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+import logging
 import shutil
+import subprocess
+from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field
-from brain_researcher.services.tools.niwrap.executor import execute_niwrap_tool
 
+from brain_researcher.services.tools.niwrap.executor import execute_niwrap_tool
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
     ToolResult,
@@ -36,181 +35,115 @@ class FSLBEDPOSTXArgs(BaseModel):
     )
 
     # Required input files (in data_dir)
-    data_file: Optional[str] = Field(
+    data_file: str | None = Field(
         default="data.nii.gz",
-        description="Diffusion data filename (default: data.nii.gz)"
+        description="Diffusion data filename (default: data.nii.gz)",
     )
-    mask_file: Optional[str] = Field(
+    mask_file: str | None = Field(
         default="nodif_brain_mask.nii.gz",
-        description="Brain mask filename (default: nodif_brain_mask.nii.gz)"
+        description="Brain mask filename (default: nodif_brain_mask.nii.gz)",
     )
-    bvals_file: Optional[str] = Field(
-        default="bvals",
-        description="b-values filename (default: bvals)"
+    bvals_file: str | None = Field(
+        default="bvals", description="b-values filename (default: bvals)"
     )
-    bvecs_file: Optional[str] = Field(
-        default="bvecs",
-        description="b-vectors filename (default: bvecs)"
+    bvecs_file: str | None = Field(
+        default="bvecs", description="b-vectors filename (default: bvecs)"
     )
 
     # Model parameters
     n_fibres: int = Field(
-        default=3,
-        description="Maximum number of crossing fibres to model (1-3)"
+        default=3, description="Maximum number of crossing fibres to model (1-3)"
     )
     weight: float = Field(
-        default=1.0,
-        description="ARD weight for automatic relevance determination"
+        default=1.0, description="ARD weight for automatic relevance determination"
     )
     burnin: int = Field(
-        default=1000,
-        description="Number of burn-in iterations for MCMC"
+        default=1000, description="Number of burn-in iterations for MCMC"
     )
-    n_jumps: int = Field(
-        default=1250,
-        description="Number of jumps for MCMC sampling"
-    )
-    sample_every: int = Field(
-        default=25,
-        description="Sample every N iterations"
-    )
+    n_jumps: int = Field(default=1250, description="Number of jumps for MCMC sampling")
+    sample_every: int = Field(default=25, description="Sample every N iterations")
 
     # Model options
     model: str = Field(
         default="1",
-        description="Deconvolution model: 1=ball&stick, 2=ball&stick with dispersion, 3=ball&zeppelins"
+        description="Deconvolution model: 1=ball&stick, 2=ball&stick with dispersion, 3=ball&zeppelins",
     )
-    grad_nonlin: Optional[str] = Field(
-        default=None,
-        description="Gradient nonlinearity correction file"
+    grad_nonlin: str | None = Field(
+        default=None, description="Gradient nonlinearity correction file"
     )
 
     # Additional options
     rician: bool = Field(
-        default=False,
-        description="Use Rician noise model instead of Gaussian"
+        default=False, description="Use Rician noise model instead of Gaussian"
     )
     f0_threshold: float = Field(
-        default=0.01,
-        description="Threshold for f0 (CSF volume fraction)"
+        default=0.01, description="Threshold for f0 (CSF volume fraction)"
     )
-    no_spat: bool = Field(
-        default=False,
-        description="Disable spatial priors"
-    )
+    no_spat: bool = Field(default=False, description="Disable spatial priors")
     no_ard: bool = Field(
-        default=False,
-        description="Disable automatic relevance determination"
+        default=False, description="Disable automatic relevance determination"
     )
-    all_ard: bool = Field(
-        default=False,
-        description="Use ARD on all fibres"
-    )
+    all_ard: bool = Field(default=False, description="Use ARD on all fibres")
 
     # CUDA options
     use_gpu: bool = Field(
-        default=False,
-        description="Use GPU acceleration (requires CUDA)"
+        default=False, description="Use GPU acceleration (requires CUDA)"
     )
-    gpu_id: Optional[int] = Field(
-        default=None,
-        description="GPU device ID to use"
-    )
+    gpu_id: int | None = Field(default=None, description="GPU device ID to use")
 
     # Runtime options
     n_jobs: int = Field(
-        default=1,
-        description="Number of parallel jobs for CPU version"
+        default=1, description="Number of parallel jobs for CPU version"
     )
-    verbose: bool = Field(
-        default=False,
-        description="Verbose output"
-    )
+    verbose: bool = Field(default=False, description="Verbose output")
 
     # Post-processing options
     run_probtrackx: bool = Field(
-        default=False,
-        description="Run probabilistic tractography after BEDPOSTX"
+        default=False, description="Run probabilistic tractography after BEDPOSTX"
     )
     make_dyads: bool = Field(
-        default=True,
-        description="Generate dyad (fiber direction) files"
+        default=True, description="Generate dyad (fiber direction) files"
     )
 
 
 class ProbtrackXArgs(BaseModel):
     """Arguments for probabilistic tractography."""
 
-    samples_dir: str = Field(
-        description="BEDPOSTX samples directory (.bedpostX)"
-    )
-    mask_file: str = Field(
-        description="Brain mask file"
-    )
-    seed_file: str = Field(
-        description="Seed mask or coordinate list"
-    )
-    output_dir: str = Field(
-        description="Output directory for tractography"
-    )
+    samples_dir: str = Field(description="BEDPOSTX samples directory (.bedpostX)")
+    mask_file: str = Field(description="Brain mask file")
+    seed_file: str = Field(description="Seed mask or coordinate list")
+    output_dir: str = Field(description="Output directory for tractography")
 
     # Tracking parameters
-    n_samples: int = Field(
-        default=5000,
-        description="Number of samples per seed"
-    )
-    n_steps: int = Field(
-        default=2000,
-        description="Maximum number of steps"
-    )
-    step_length: float = Field(
-        default=0.5,
-        description="Step length in mm"
-    )
+    n_samples: int = Field(default=5000, description="Number of samples per seed")
+    n_steps: int = Field(default=2000, description="Maximum number of steps")
+    step_length: float = Field(default=0.5, description="Step length in mm")
     curvature_threshold: float = Field(
-        default=0.2,
-        description="Curvature threshold (cosine of minimum angle)"
+        default=0.2, description="Curvature threshold (cosine of minimum angle)"
     )
 
     # Target/waypoint/exclusion masks
-    target_masks: Optional[List[str]] = Field(
-        default=None,
-        description="Target mask files"
+    target_masks: list[str] | None = Field(
+        default=None, description="Target mask files"
     )
-    waypoint_masks: Optional[List[str]] = Field(
-        default=None,
-        description="Waypoint mask files (AND operation)"
+    waypoint_masks: list[str] | None = Field(
+        default=None, description="Waypoint mask files (AND operation)"
     )
-    exclusion_mask: Optional[str] = Field(
-        default=None,
-        description="Exclusion mask file"
-    )
-    termination_mask: Optional[str] = Field(
-        default=None,
-        description="Termination mask file"
+    exclusion_mask: str | None = Field(default=None, description="Exclusion mask file")
+    termination_mask: str | None = Field(
+        default=None, description="Termination mask file"
     )
 
     # Output options
     output_type: str = Field(
-        default="volume",
-        description="Output type: volume, surface, or matrix"
+        default="volume", description="Output type: volume, surface, or matrix"
     )
     save_paths: bool = Field(
-        default=False,
-        description="Save individual streamline paths"
+        default=False, description="Save individual streamline paths"
     )
-    opd: bool = Field(
-        default=True,
-        description="Output path distribution"
-    )
-    pd: bool = Field(
-        default=True,
-        description="Correct for path length"
-    )
-    os2t: bool = Field(
-        default=False,
-        description="Output seeds to targets"
-    )
+    opd: bool = Field(default=True, description="Output path distribution")
+    pd: bool = Field(default=True, description="Correct for path length")
+    os2t: bool = Field(default=False, description="Output seeds to targets")
 
 
 class FSLBEDPOSTXTool(NeuroToolWrapper):
@@ -225,9 +158,7 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
         """Check FSL and BEDPOSTX installation."""
         try:
             result = subprocess.run(
-                ["which", "bedpostx"],
-                capture_output=True,
-                text=True
+                ["which", "bedpostx"], capture_output=True, text=True
             )
             if result.returncode == 0:
                 self.fsl_available = True
@@ -236,9 +167,7 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
 
                 # Check for GPU version
                 gpu_result = subprocess.run(
-                    ["which", "bedpostx_gpu"],
-                    capture_output=True,
-                    text=True
+                    ["which", "bedpostx_gpu"], capture_output=True, text=True
                 )
                 self.gpu_available = gpu_result.returncode == 0
                 if self.gpu_available:
@@ -277,10 +206,12 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
 
         # Copy/link required files
         required_files = {
-            kwargs.get('data_file', 'data.nii.gz'): 'data.nii.gz',
-            kwargs.get('mask_file', 'nodif_brain_mask.nii.gz'): 'nodif_brain_mask.nii.gz',
-            kwargs.get('bvals_file', 'bvals'): 'bvals',
-            kwargs.get('bvecs_file', 'bvecs'): 'bvecs'
+            kwargs.get("data_file", "data.nii.gz"): "data.nii.gz",
+            kwargs.get(
+                "mask_file", "nodif_brain_mask.nii.gz"
+            ): "nodif_brain_mask.nii.gz",
+            kwargs.get("bvals_file", "bvals"): "bvals",
+            kwargs.get("bvecs_file", "bvecs"): "bvecs",
         }
 
         for src_name, dst_name in required_files.items():
@@ -304,23 +235,16 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
         logger.info("Running BEDPOSTX preprocessing...")
 
         # Run bedpostx_preproc
-        preproc_cmd = [
-            "bedpostx_preproc.sh",
-            str(bedpost_dir)
-        ]
+        preproc_cmd = ["bedpostx_preproc.sh", str(bedpost_dir)]
 
-        result = subprocess.run(
-            preproc_cmd,
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(preproc_cmd, capture_output=True, text=True)
 
         if result.returncode != 0:
             logger.warning(f"Preprocessing warning: {result.stderr}")
 
         # Create options file
         options_file = bedpost_dir / "options"
-        with open(options_file, 'w') as f:
+        with open(options_file, "w") as f:
             f.write(f"--nf={n_fibres}\n")
             f.write(f"--fudge={kwargs.get('weight', 1.0)}\n")
             f.write(f"--bi={kwargs.get('burnin', 1000)}\n")
@@ -328,13 +252,13 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
             f.write(f"--se={kwargs.get('sample_every', 25)}\n")
             f.write(f"--model={kwargs.get('model', '1')}\n")
 
-            if kwargs.get('rician', False):
+            if kwargs.get("rician", False):
                 f.write("--rician\n")
-            if kwargs.get('no_spat', False):
+            if kwargs.get("no_spat", False):
                 f.write("--nospat\n")
-            if kwargs.get('no_ard', False):
+            if kwargs.get("no_ard", False):
                 f.write("--noard\n")
-            if kwargs.get('all_ard', False):
+            if kwargs.get("all_ard", False):
                 f.write("--allard\n")
 
         return True
@@ -343,29 +267,29 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
         self,
         data_dir: str,
         output_dir: str,
-        data_file: Optional[str] = "data.nii.gz",
-        mask_file: Optional[str] = "nodif_brain_mask.nii.gz",
-        bvals_file: Optional[str] = "bvals",
-        bvecs_file: Optional[str] = "bvecs",
+        data_file: str | None = "data.nii.gz",
+        mask_file: str | None = "nodif_brain_mask.nii.gz",
+        bvals_file: str | None = "bvals",
+        bvecs_file: str | None = "bvecs",
         n_fibres: int = 3,
         weight: float = 1.0,
         burnin: int = 1000,
         n_jumps: int = 1250,
         sample_every: int = 25,
         model: str = "1",
-        grad_nonlin: Optional[str] = None,
+        grad_nonlin: str | None = None,
         rician: bool = False,
         f0_threshold: float = 0.01,
         no_spat: bool = False,
         no_ard: bool = False,
         all_ard: bool = False,
         use_gpu: bool = False,
-        gpu_id: Optional[int] = None,
+        gpu_id: int | None = None,
         n_jobs: int = 1,
         verbose: bool = False,
         run_probtrackx: bool = False,
         make_dyads: bool = True,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Execute FSL BEDPOSTX diffusion modeling."""
         try:
@@ -373,32 +297,39 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
                 return ToolResult(
                     status="error",
                     error="FSL BEDPOSTX not available. Please install FSL.",
-                    data={}
+                    data={},
                 )
 
             # Validate n_fibres
             if n_fibres < 1 or n_fibres > 3:
                 return ToolResult(
-                    status="error",
-                    error="n_fibres must be between 1 and 3",
-                    data={}
+                    status="error", error="n_fibres must be between 1 and 3", data={}
                 )
 
             # Prepare directory structure
             logger.info("Preparing BEDPOSTX directory structure")
             bedpost_dir = self._prepare_bedpostx_dir(
-                data_dir, output_dir,
-                data_file=data_file, mask_file=mask_file,
-                bvals_file=bvals_file, bvecs_file=bvecs_file
+                data_dir,
+                output_dir,
+                data_file=data_file,
+                mask_file=mask_file,
+                bvals_file=bvals_file,
+                bvecs_file=bvecs_file,
             )
 
             # Run preprocessing
             self._run_bedpostx_monitors(
-                bedpost_dir, n_fibres,
-                weight=weight, burnin=burnin, n_jumps=n_jumps,
-                sample_every=sample_every, model=model,
-                rician=rician, no_spat=no_spat, no_ard=no_ard,
-                all_ard=all_ard
+                bedpost_dir,
+                n_fibres,
+                weight=weight,
+                burnin=burnin,
+                n_jumps=n_jumps,
+                sample_every=sample_every,
+                model=model,
+                rician=rician,
+                no_spat=no_spat,
+                no_ard=no_ard,
+                all_ard=all_ard,
             )
 
             # Build BEDPOSTX command
@@ -433,10 +364,7 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
             logger.info("This may take several hours depending on data size...")
 
             result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=36000  # 10 hour timeout
+                cmd, capture_output=True, text=True, timeout=36000  # 10 hour timeout
             )
 
             if result.returncode != 0:
@@ -448,13 +376,13 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
                         return ToolResult(
                             status="error",
                             error=f"BEDPOSTX incomplete: {result.stderr}",
-                            data={}
+                            data={},
                         )
                 else:
                     return ToolResult(
                         status="error",
                         error=f"BEDPOSTX failed: {result.stderr}",
-                        data={"command": " ".join(cmd)}
+                        data={"command": " ".join(cmd)},
                     )
 
             # Wait for completion and check results
@@ -462,7 +390,7 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
                 return ToolResult(
                     status="error",
                     error="BEDPOSTX did not complete successfully",
-                    data={}
+                    data={},
                 )
 
             # Generate dyads if requested
@@ -481,8 +409,9 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
             if run_probtrackx and "seed_file" in kwargs:
                 logger.info("Running probabilistic tractography")
                 probtrackx_output = self._run_probtrackx(
-                    bedpost_dir, kwargs.get("seed_file"),
-                    kwargs.get("probtrackx_args", {})
+                    bedpost_dir,
+                    kwargs.get("seed_file"),
+                    kwargs.get("probtrackx_args", {}),
                 )
 
             # Generate report
@@ -494,17 +423,17 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
                 "mcmc_parameters": {
                     "burnin": burnin,
                     "n_jumps": n_jumps,
-                    "sample_every": sample_every
+                    "sample_every": sample_every,
                 },
                 "outputs": outputs,
                 "metrics": metrics,
                 "probtrackx": probtrackx_output,
-                "command": " ".join(cmd)
+                "command": " ".join(cmd),
             }
 
             # Save report
             report_file = bedpost_dir / "bedpostx_report.json"
-            with open(report_file, 'w') as f:
+            with open(report_file, "w") as f:
                 json.dump(report, f, indent=2)
 
             return ToolResult(
@@ -514,23 +443,17 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
                     "metrics": metrics,
                     "bedpost_dir": str(bedpost_dir),
                     "report": str(report_file),
-                    "message": f"BEDPOSTX completed successfully ({n_fibres} fibres)"
-                }
+                    "message": f"BEDPOSTX completed successfully ({n_fibres} fibres)",
+                },
             )
 
         except subprocess.TimeoutExpired:
             return ToolResult(
-                status="error",
-                error="BEDPOSTX timed out after 10 hours",
-                data={}
+                status="error", error="BEDPOSTX timed out after 10 hours", data={}
             )
         except Exception as e:
             logger.error(f"BEDPOSTX failed: {str(e)}")
-            return ToolResult(
-                status="error",
-                error=str(e),
-                data={}
-            )
+            return ToolResult(status="error", error=str(e), data={})
 
     def _check_bedpostx_complete(self, bedpost_dir: Path) -> bool:
         """Check if BEDPOSTX completed successfully."""
@@ -541,7 +464,7 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
             "mean_ph1samples.nii.gz",
             "merged_f1samples.nii.gz",
             "merged_th1samples.nii.gz",
-            "merged_ph1samples.nii.gz"
+            "merged_ph1samples.nii.gz",
         ]
 
         for file_name in required_files:
@@ -567,7 +490,7 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
                     str(bedpost_dir / f"merged_th{i}samples"),
                     str(bedpost_dir / f"merged_ph{i}samples"),
                     str(bedpost_dir / "nodif_brain_mask"),
-                    str(bedpost_dir / f"dyads{i}")
+                    str(bedpost_dir / f"dyads{i}"),
                 ]
 
                 subprocess.run(cmd, capture_output=True)
@@ -575,20 +498,16 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
         except Exception as e:
             logger.warning(f"Could not create dyads: {e}")
 
-    def _get_bedpostx_outputs(self, bedpost_dir: Path, n_fibres: int) -> Dict[str, Any]:
+    def _get_bedpostx_outputs(self, bedpost_dir: Path, n_fibres: int) -> dict[str, Any]:
         """Get BEDPOSTX output files."""
-        outputs = {
-            "mean_samples": {},
-            "merged_samples": {},
-            "dyads": {}
-        }
+        outputs = {"mean_samples": {}, "merged_samples": {}, "dyads": {}}
 
         for i in range(1, n_fibres + 1):
             # Mean samples
             mean_files = {
                 f"mean_f{i}": str(bedpost_dir / f"mean_f{i}samples.nii.gz"),
                 f"mean_th{i}": str(bedpost_dir / f"mean_th{i}samples.nii.gz"),
-                f"mean_ph{i}": str(bedpost_dir / f"mean_ph{i}samples.nii.gz")
+                f"mean_ph{i}": str(bedpost_dir / f"mean_ph{i}samples.nii.gz"),
             }
             outputs["mean_samples"][f"fibre_{i}"] = mean_files
 
@@ -596,7 +515,7 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
             merged_files = {
                 f"merged_f{i}": str(bedpost_dir / f"merged_f{i}samples.nii.gz"),
                 f"merged_th{i}": str(bedpost_dir / f"merged_th{i}samples.nii.gz"),
-                f"merged_ph{i}": str(bedpost_dir / f"merged_ph{i}samples.nii.gz")
+                f"merged_ph{i}": str(bedpost_dir / f"merged_ph{i}samples.nii.gz"),
             }
             outputs["merged_samples"][f"fibre_{i}"] = merged_files
 
@@ -612,7 +531,7 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
 
         return outputs
 
-    def _calculate_metrics(self, bedpost_dir: Path, n_fibres: int) -> Dict[str, Any]:
+    def _calculate_metrics(self, bedpost_dir: Path, n_fibres: int) -> dict[str, Any]:
         """Calculate diffusion metrics from BEDPOSTX results."""
         metrics = {}
 
@@ -653,8 +572,9 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
 
         return metrics
 
-    def _run_probtrackx(self, bedpost_dir: Path, seed_file: str,
-                        probtrackx_args: Dict) -> Dict[str, Any]:
+    def _run_probtrackx(
+        self, bedpost_dir: Path, seed_file: str, probtrackx_args: dict
+    ) -> dict[str, Any]:
         """Run probabilistic tractography using probtrackx2."""
         try:
             output_dir = bedpost_dir / "probtrackx"
@@ -662,21 +582,32 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
 
             cmd = [
                 "probtrackx2",
-                "-x", seed_file,
+                "-x",
+                seed_file,
                 "-l",
                 "--onewaycondition",
                 "--forcedir",
                 "--opd",
-                "-c", str(probtrackx_args.get("curvature", 0.2)),
-                "-S", str(probtrackx_args.get("n_steps", 2000)),
-                "--steplength", str(probtrackx_args.get("step_length", 0.5)),
-                "-P", str(probtrackx_args.get("n_samples", 5000)),
-                "--fibthresh", str(probtrackx_args.get("fib_thresh", 0.01)),
-                "--distthresh", str(probtrackx_args.get("dist_thresh", 0.0)),
-                "--sampvox", str(probtrackx_args.get("samp_vox", 0.0)),
-                "-s", str(bedpost_dir),
-                "-m", str(bedpost_dir / "nodif_brain_mask"),
-                "--dir", str(output_dir)
+                "-c",
+                str(probtrackx_args.get("curvature", 0.2)),
+                "-S",
+                str(probtrackx_args.get("n_steps", 2000)),
+                "--steplength",
+                str(probtrackx_args.get("step_length", 0.5)),
+                "-P",
+                str(probtrackx_args.get("n_samples", 5000)),
+                "--fibthresh",
+                str(probtrackx_args.get("fib_thresh", 0.01)),
+                "--distthresh",
+                str(probtrackx_args.get("dist_thresh", 0.0)),
+                "--sampvox",
+                str(probtrackx_args.get("samp_vox", 0.0)),
+                "-s",
+                str(bedpost_dir),
+                "-m",
+                str(bedpost_dir / "nodif_brain_mask"),
+                "--dir",
+                str(output_dir),
             ]
 
             # Add optional targets
@@ -691,7 +622,7 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
             if result.returncode == 0:
                 return {
                     "output_dir": str(output_dir),
-                    "fdt_paths": str(output_dir / "fdt_paths.nii.gz")
+                    "fdt_paths": str(output_dir / "fdt_paths.nii.gz"),
                 }
             else:
                 logger.warning(f"Probtrackx failed: {result.stderr}")
@@ -710,7 +641,7 @@ class FSLBEDPOSTXTool(NeuroToolWrapper):
 class FSLBEDPOSTXNiWrapArgs(BaseModel):
     """Pass-through args for BEDPOSTX; NiWrap Boutiques schema is source of truth."""
 
-    model_config = dict(extra="allow")
+    model_config = {"extra": "allow"}
 
 
 class FSLBEDPOSTXNiWrapTool(NeuroToolWrapper):
@@ -753,7 +684,7 @@ class FSLBEDPOSTXTools:
     """Collection of FSL BEDPOSTX tools."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         """Get all FSL BEDPOSTX tools."""
         return [
             FSLBEDPOSTXNiWrapTool(),

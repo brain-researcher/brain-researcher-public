@@ -7,7 +7,7 @@ so they can be reused by the tool wrapper and unit tests.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 
 @dataclass
@@ -16,9 +16,9 @@ class FileSnippet:
 
     path: str
     snippet: str
-    language: Optional[str] = None
-    start_line: Optional[int] = None
-    end_line: Optional[int] = None
+    language: str | None = None
+    start_line: int | None = None
+    end_line: int | None = None
 
 
 @dataclass
@@ -27,27 +27,27 @@ class CodegenContext:
 
     user_query: str
     instruction: str
-    code_context: Optional[str] = None
-    plan_steps: Optional[List[Dict[str, Any]]] = None
-    pipeline_context: Optional[Dict[str, Any]] = None
-    datasets: Optional[List[str]] = None
-    kg_info: Optional[str] = None
-    tool_outputs: Optional[List[Dict[str, Any]]] = None
-    file_paths: Optional[List[str]] = None
+    code_context: str | None = None
+    plan_steps: list[dict[str, Any]] | None = None
+    pipeline_context: dict[str, Any] | None = None
+    datasets: list[str] | None = None
+    kg_info: str | None = None
+    tool_outputs: list[dict[str, Any]] | None = None
+    file_paths: list[str] | None = None
     # Preferred structured snippets. Keep legacy dict for backward compat.
-    files: Optional[List[FileSnippet]] = None
-    file_snippets: Optional[Dict[str, str]] = None
-    error_trace: Optional[str] = None
-    prior_errors: Optional[List[str]] = None
+    files: list[FileSnippet] | None = None
+    file_snippets: dict[str, str] | None = None
+    error_trace: str | None = None
+    prior_errors: list[str] | None = None
     iteration: int = 0
-    constraints: Optional[Dict[str, Any]] = None
-    test_command: Optional[str] = None
-    model_hint: Optional[str] = None
-    provider_lock: Optional[str] = None
-    ctx_tokens: Optional[int] = None
-    budget_id: Optional[str] = None
-    credential_name: Optional[str] = None
-    repo_root: Optional[str] = None
+    constraints: dict[str, Any] | None = None
+    test_command: str | None = None
+    model_hint: str | None = None
+    provider_lock: str | None = None
+    ctx_tokens: int | None = None
+    budget_id: str | None = None
+    credential_name: str | None = None
+    repo_root: str | None = None
 
 
 @dataclass
@@ -57,8 +57,8 @@ class ExecutionResult:
     success: bool
     stdout: str = ""
     stderr: str = ""
-    exit_code: Optional[int] = None
-    duration_ms: Optional[int] = None
+    exit_code: int | None = None
+    duration_ms: int | None = None
 
 
 @dataclass
@@ -68,11 +68,11 @@ class CodegenResult:
     status: str
     iterations: int
     response_text: str
-    patches: List[str] = field(default_factory=list)
-    files_touched: List[str] = field(default_factory=list)
-    exec_result: Optional[ExecutionResult] = None
-    errors: Optional[str] = None
-    provider: Optional[str] = None
-    model: Optional[str] = None
-    usage: Dict[str, Any] = field(default_factory=dict)
-    fallback_reason: Optional[str] = None
+    patches: list[str] = field(default_factory=list)
+    files_touched: list[str] = field(default_factory=list)
+    exec_result: ExecutionResult | None = None
+    errors: str | None = None
+    provider: str | None = None
+    model: str | None = None
+    usage: dict[str, Any] = field(default_factory=dict)
+    fallback_reason: str | None = None

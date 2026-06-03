@@ -43,6 +43,7 @@ def kg_lens_entities(lens: str):
         logger,
         monotonic,
     )
+
     if not BR_KG_LENSES_V1:
         return _lens_disabled_response()
     lens = _normalize_lens(lens)
@@ -120,6 +121,7 @@ def kg_task_family_tree():
         build_task_family_tree,
         logger,
     )
+
     if not BR_KG_LENSES_V1:
         return _lens_disabled_response()
     try:
@@ -210,6 +212,7 @@ def kg_lens_summary(lens: str):
         logger,
         neo4j_db,
     )
+
     if not BR_KG_LENSES_V1:
         return _lens_disabled_response()
     lens = _normalize_lens(lens)
@@ -273,6 +276,7 @@ def kg_lens_entity_summary(lens: str, entity_id: str):
         logger,
         monotonic,
     )
+
     if not BR_KG_LENSES_V1:
         return _lens_disabled_response()
     lens = _normalize_lens(lens)
@@ -356,6 +360,7 @@ def kg_lens_entity_evidence(lens: str, entity_id: str):
         logger,
         monotonic,
     )
+
     if not BR_KG_LENSES_V1:
         return _lens_disabled_response()
     lens = _normalize_lens(lens)
@@ -372,9 +377,10 @@ def kg_lens_entity_evidence(lens: str, entity_id: str):
         try:
             confidence_min = float(confidence_min_raw)
         except (TypeError, ValueError):
-            return jsonify(
-                {"error": "confidence_min must be a float between 0 and 1"}
-            ), 400
+            return (
+                jsonify({"error": "confidence_min must be a float between 0 and 1"}),
+                400,
+            )
         if confidence_min < 0 or confidence_min > 1:
             return jsonify({"error": "confidence_min must be between 0 and 1"}), 400
         try:
@@ -548,6 +554,7 @@ def kg_lens_entity_evidence_paths(lens: str, entity_id: str):
         logger,
         monotonic,
     )
+
     if not BR_KG_LENSES_V1:
         return _lens_disabled_response()
     lens = _normalize_lens(lens)
@@ -644,9 +651,23 @@ def kg_lens_entity_evidence_paths(lens: str, entity_id: str):
 
 def register(bp):
     """Register the lens routes on kg_bp (called by app.py each import)."""
-    bp.add_url_rule('/lens/<lens>/entities', methods=['GET'], view_func=kg_lens_entities)
-    bp.add_url_rule('/lens/task/tree', methods=['GET'], view_func=kg_task_family_tree)
-    bp.add_url_rule('/lens/<lens>/summary', methods=['GET'], view_func=kg_lens_summary)
-    bp.add_url_rule('/lens/<lens>/entity/<entity_id>/summary', methods=['GET'], view_func=kg_lens_entity_summary)
-    bp.add_url_rule('/lens/<lens>/entity/<entity_id>/evidence', methods=['GET'], view_func=kg_lens_entity_evidence)
-    bp.add_url_rule('/lens/<lens>/entity/<entity_id>/evidence/paths', methods=['GET'], view_func=kg_lens_entity_evidence_paths)
+    bp.add_url_rule(
+        "/lens/<lens>/entities", methods=["GET"], view_func=kg_lens_entities
+    )
+    bp.add_url_rule("/lens/task/tree", methods=["GET"], view_func=kg_task_family_tree)
+    bp.add_url_rule("/lens/<lens>/summary", methods=["GET"], view_func=kg_lens_summary)
+    bp.add_url_rule(
+        "/lens/<lens>/entity/<entity_id>/summary",
+        methods=["GET"],
+        view_func=kg_lens_entity_summary,
+    )
+    bp.add_url_rule(
+        "/lens/<lens>/entity/<entity_id>/evidence",
+        methods=["GET"],
+        view_func=kg_lens_entity_evidence,
+    )
+    bp.add_url_rule(
+        "/lens/<lens>/entity/<entity_id>/evidence/paths",
+        methods=["GET"],
+        view_func=kg_lens_entity_evidence_paths,
+    )

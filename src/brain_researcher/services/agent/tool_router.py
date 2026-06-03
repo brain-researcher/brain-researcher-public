@@ -17,7 +17,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
@@ -30,10 +30,10 @@ from brain_researcher.services.agent.tool_allowlist_loader import (
     is_local_first_blocked_tool,
     load_chat_tools_allowlist,
 )
+from brain_researcher.services.tools.spec import ToolSpec, spec_from_tool
 from brain_researcher.services.tools.tool_registry import (
     ToolRegistry as CoreToolRegistry,
 )
-from brain_researcher.services.tools.spec import ToolSpec, spec_from_tool
 
 if TYPE_CHECKING:
     from brain_researcher.services.agent.knowledge import EvidenceBundle
@@ -49,7 +49,7 @@ class ToolFamily:
     id: str
     description: str
     op_param: str
-    ops: Dict[str, str]  # op name -> leaf runtime id
+    ops: dict[str, str]  # op name -> leaf runtime id
     internal: bool = False
 
 
@@ -60,10 +60,10 @@ class RoutingToolView:
     runtime_id: str  # family id or leaf id
     name: str
     description: str
-    tags: List[str]
+    tags: list[str]
     dangerous: bool = False
-    family_id: Optional[str] = None
-    family_ops: Optional[List[str]] = None
+    family_id: str | None = None
+    family_ops: list[str] | None = None
     op_param: str = "op"
 
     def is_family(self) -> bool:
@@ -112,15 +112,15 @@ class RoutingView:
     def __init__(
         self,
         core_registry: CoreToolRegistry,
-        families: Optional[Dict[str, ToolFamily]] = None,
+        families: dict[str, ToolFamily] | None = None,
     ):
         self.core_registry = core_registry
         self.families = families or {}
 
-    def all_tools(self) -> List[RoutingToolView]:
-        leaf_views: Dict[str, RoutingToolView] = {}
+    def all_tools(self) -> list[RoutingToolView]:
+        leaf_views: dict[str, RoutingToolView] = {}
         for tool in self.core_registry.get_all_tools():
-            tool_spec: Optional[ToolSpec] = spec_from_tool(tool)
+            tool_spec: ToolSpec | None = spec_from_tool(tool)
             if tool_spec:
                 dangerous = bool(
                     getattr(tool_spec, "dangerous", False)
@@ -145,8 +145,8 @@ class RoutingView:
                     family_ops=None,
                 )
 
-        family_views: List[RoutingToolView] = []
-        consumed: Set[str] = set()
+        family_views: list[RoutingToolView] = []
+        consumed: set[str] = set()
         for fam in self.families.values():
             valid_ops = {
                 op_name: leaf_id
@@ -192,7 +192,7 @@ class RoutingView:
         return any(re.search(p, tid) for p in self.HEAVY_PATTERNS)
 
 
-def load_chat_tools_whitelist(path: Path = CHAT_TOOLS_PATH) -> Set[str]:
+def load_chat_tools_whitelist(path: Path = CHAT_TOOLS_PATH) -> set[str]:
     """Load chat-safe whitelist from configs/catalog/chat_tools.yaml."""
 
     try:
@@ -201,17 +201,17 @@ def load_chat_tools_whitelist(path: Path = CHAT_TOOLS_PATH) -> Set[str]:
         if not path.exists():
             return set()
         data = yaml.safe_load(path.read_text()) or {}
-        return set(
+        return {
             tool_id
             for tool_id in (str(t).strip() for t in (data.get("chat_tools", []) or []))
             if tool_id and not is_local_first_blocked_tool(tool_id)
-        )
+        }
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning("Failed to load chat_tools whitelist: %s", exc)
         return set()
 
 
-def load_tool_families(config_path: Optional[Path] = None) -> Dict[str, ToolFamily]:
+def load_tool_families(config_path: Path | None = None) -> dict[str, ToolFamily]:
     """Load tool family definitions."""
 
     if config_path is None:
@@ -241,7 +241,7 @@ def load_tool_families(config_path: Optional[Path] = None) -> Dict[str, ToolFami
             base["ops"] = base_ops
             base_families[fam_id] = base
         data["families"] = list(base_families.values())
-    families: Dict[str, ToolFamily] = {}
+    families: dict[str, ToolFamily] = {}
     for item in data.get("families", []) or []:
         fam = ToolFamily(
             id=item["id"],
@@ -260,12 +260,12 @@ class ToolRouter:
     def __init__(
         self,
         core_registry: CoreToolRegistry,
-        chat_whitelist: Optional[Set[str]] = None,
+        chat_whitelist: set[str] | None = None,
         max_candidates: int = 30,
-        families: Optional[Dict[str, ToolFamily]] = None,
+        families: dict[str, ToolFamily] | None = None,
         allow_dangerous: bool = False,
         allow_internal: bool = False,
-        exposure_filter: Optional[List[str]] = None,
+        exposure_filter: list[str] | None = None,
     ) -> None:
         self.core_registry = core_registry
         self.families = families if families is not None else load_tool_families()
@@ -282,12 +282,12 @@ class ToolRouter:
     def get_candidates(
         self,
         user_msg: str,
-        history: Optional[Sequence[Any]] = None,
-        ctx: Optional[Dict[str, Any]] = None,
-        domain_filter: Optional[List[str]] = None,
-        function_filter: Optional[List[str]] = None,
-        risk_filter: Optional[List[str]] = None,
-    ) -> List[RoutingToolView]:
+        history: Sequence[Any] | None = None,
+        ctx: dict[str, Any] | None = None,
+        domain_filter: list[str] | None = None,
+        function_filter: list[str] | None = None,
+        risk_filter: list[str] | None = None,
+    ) -> list[RoutingToolView]:
         """Return filtered + ranked routing specs.
 
         Filtering order:
@@ -327,7 +327,7 @@ class ToolRouter:
         if isinstance(ctx, dict):
             tool_candidates = ctx.get("tool_candidates")
             if tool_candidates:
-                allowed_ids: Set[str] = set()
+                allowed_ids: set[str] = set()
                 for cand in tool_candidates:
                     tool_id = None
                     if isinstance(cand, dict):
@@ -361,10 +361,10 @@ class ToolRouter:
     def get_candidates_unified(
         self,
         goal: str,
-        modalities: Optional[List[str]] = None,
-        kind: Optional[str] = None,
+        modalities: list[str] | None = None,
+        kind: str | None = None,
         k: int = 8,
-    ) -> List[ToolSpec]:
+    ) -> list[ToolSpec]:
         """Get candidates using unified ToolSpec system.
 
         Uses the new catalog_loader-based ToolSpec with modality/intent filtering.
@@ -386,7 +386,7 @@ class ToolRouter:
     def build_llm_prompt(
         self,
         goal: str,
-        candidates: List[ToolSpec],
+        candidates: list[ToolSpec],
         context: str = "",
         verbose: bool = False,
     ) -> str:
@@ -410,15 +410,15 @@ class ToolRouter:
     # ------------------------------------------------------------------
     @staticmethod
     def _rank(
-        query: str, specs: List[RoutingToolView], ctx: Optional[Dict[str, Any]] = None
-    ) -> List[RoutingToolView]:
+        query: str, specs: list[RoutingToolView], ctx: dict[str, Any] | None = None
+    ) -> list[RoutingToolView]:
         if not specs:
             return []
 
         q = query.lower()
         words = [w for w in re.findall(r"[a-z0-9_]+", q) if len(w) > 2]
         qur = None
-        knowledge_evidence: Optional["EvidenceBundle"] = None
+        knowledge_evidence: EvidenceBundle | None = None
         if isinstance(ctx, dict):
             qur = ctx.get("query_understanding")
             knowledge_evidence = ctx.get("knowledge_evidence")
@@ -448,8 +448,8 @@ class ToolRouter:
                     has_concept = True
 
         # Track K+: Extract tool names and tags from knowledge evidence (EvidenceBundle)
-        evidence_tool_names: Set[str] = set()
-        evidence_tags: Set[str] = set()
+        evidence_tool_names: set[str] = set()
+        evidence_tags: set[str] = set()
         evidence_has_datasets = False
         evidence_has_kg_nodes = False
         evidence_has_niclip = False
@@ -563,7 +563,7 @@ class ToolRouter:
 
 
 def build_default_router(
-    core_registry: Optional[CoreToolRegistry] = None,
+    core_registry: CoreToolRegistry | None = None,
 ) -> ToolRouter:
     core_registry = core_registry or CoreToolRegistry()
     # Default router (non-chat) can allow dangerous tools; callers like chat orchestrator

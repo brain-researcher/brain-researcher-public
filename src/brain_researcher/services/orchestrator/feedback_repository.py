@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sqlite3
 from contextlib import contextmanager
@@ -10,9 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from threading import RLock
-from typing import Any, Dict, Iterable, List, Optional
-
-import logging
+from typing import Any
 
 from brain_researcher.config.paths import get_data_root
 
@@ -28,21 +27,21 @@ class FeedbackRecord:
     category: str
     title: str
     description: str
-    emoji_rating: Optional[str]
-    user_id: Optional[str]
-    session_id: Optional[str]
-    user_agent: Optional[str]
-    url: Optional[str]
-    screenshot_url: Optional[str]
+    emoji_rating: str | None
+    user_id: str | None
+    session_id: str | None
+    user_agent: str | None
+    url: str | None
+    screenshot_url: str | None
     created_at: datetime
     updated_at: datetime
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class FeedbackRepository:
     """SQLite-backed repository for feedback submissions and screenshots."""
 
-    def __init__(self, db_path: Optional[os.PathLike[str] | str] = None) -> None:
+    def __init__(self, db_path: os.PathLike[str] | str | None = None) -> None:
         configured_dir = os.getenv("FEEDBACK_DATA_DIR")
         base_dir = (
             Path(configured_dir).expanduser()
@@ -133,10 +132,10 @@ class FeedbackRepository:
         self,
         *,
         limit: int = 50,
-        category: Optional[str] = None,
-    ) -> List[FeedbackRecord]:
+        category: str | None = None,
+    ) -> list[FeedbackRecord]:
         query = "SELECT * FROM feedback_submissions"
-        params: List[Any] = []
+        params: list[Any] = []
         if category:
             query += " WHERE category = ?"
             params.append(category)
@@ -146,7 +145,7 @@ class FeedbackRepository:
             rows = conn.execute(query, params).fetchall()
         return [self._row_to_record(row) for row in rows]
 
-    def get_submission(self, feedback_id: str) -> Optional[FeedbackRecord]:
+    def get_submission(self, feedback_id: str) -> FeedbackRecord | None:
         with self._get_conn() as conn:
             row = conn.execute(
                 "SELECT * FROM feedback_submissions WHERE id = ?",
@@ -157,10 +156,10 @@ class FeedbackRepository:
     def save_screenshot(
         self,
         *,
-        feedback_id: Optional[str],
+        feedback_id: str | None,
         filename: str,
         content: bytes,
-        content_type: Optional[str],
+        content_type: str | None,
     ) -> str:
         timestamp_suffix = datetime.utcnow().strftime("%Y%m%d%H%M%S")
         screenshot_id = f"shot_{timestamp_suffix}_{os.urandom(4).hex()}"
@@ -185,7 +184,7 @@ class FeedbackRepository:
             )
         return screenshot_id
 
-    def resolve_screenshot(self, screenshot_id: str) -> Optional[Dict[str, Any]]:
+    def resolve_screenshot(self, screenshot_id: str) -> dict[str, Any] | None:
         with self._get_conn() as conn:
             row = conn.execute(
                 "SELECT * FROM feedback_screenshots WHERE id = ?",

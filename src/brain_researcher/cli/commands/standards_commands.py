@@ -5,15 +5,15 @@ This module provides commands to validate standards compliance,
 check invariants, and manage configuration.
 """
 
-import json
 import importlib.util
+import json
 from pathlib import Path
-from typing import Optional
+
 import typer
 import yaml
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from brain_researcher.config.paths import get_repo_root
 
@@ -39,16 +39,12 @@ def _load_standards_validator() -> type:
 
 @app.command()
 def validate(
-    output: Optional[Path] = typer.Option(
-        None,
-        "--output", "-o",
-        help="Path to save validation report"
+    output: Path | None = typer.Option(
+        None, "--output", "-o", help="Path to save validation report"
     ),
     verbose: bool = typer.Option(
-        False,
-        "--verbose", "-v",
-        help="Show detailed validation output"
-    )
+        False, "--verbose", "-v", help="Show detailed validation output"
+    ),
 ):
     """Validate codebase compliance with BR-KG standards."""
 
@@ -67,9 +63,14 @@ def validate(
     table.add_column("Details", style="dim")
 
     # Add check results
-    for check_name in ["ID Generation", "Relationship Whitelist",
-                       "Provenance Requirements", "NDJSON Contract",
-                       "Coordinate Space", "Loader Compliance"]:
+    for check_name in [
+        "ID Generation",
+        "Relationship Whitelist",
+        "Provenance Requirements",
+        "NDJSON Contract",
+        "Coordinate Space",
+        "Loader Compliance",
+    ]:
         if check_name in results:
             status = results[check_name]
             if status == "PASS":
@@ -92,17 +93,21 @@ def validate(
     # Show summary
     overall = results.get("overall", "UNKNOWN")
     if overall == "PASS":
-        console.print(Panel.fit(
-            "[bold green]✓ All standards checks PASSED[/bold green]",
-            title="Overall Result",
-            border_style="green"
-        ))
+        console.print(
+            Panel.fit(
+                "[bold green]✓ All standards checks PASSED[/bold green]",
+                title="Overall Result",
+                border_style="green",
+            )
+        )
     else:
-        console.print(Panel.fit(
-            "[bold red]✗ Some standards checks FAILED[/bold red]",
-            title="Overall Result",
-            border_style="red"
-        ))
+        console.print(
+            Panel.fit(
+                "[bold red]✗ Some standards checks FAILED[/bold red]",
+                title="Overall Result",
+                border_style="red",
+            )
+        )
 
         # Show failures
         if results.get("failed"):
@@ -128,8 +133,10 @@ def validate(
 
 @app.command()
 def check_id(
-    entity_type: str = typer.Argument(..., help="Entity type (e.g., Publication, Task)"),
-    entity_data: str = typer.Argument(..., help="JSON string of entity data")
+    entity_type: str = typer.Argument(
+        ..., help="Entity type (e.g., Publication, Task)"
+    ),
+    entity_data: str = typer.Argument(..., help="JSON string of entity data"),
 ):
     """Check if an entity ID would be generated correctly."""
 
@@ -143,25 +150,27 @@ def check_id(
             data["prov"] = {
                 "source": "manual",
                 "method": "check",
-                "loader_version": "cli"
+                "loader_version": "cli",
             }
 
         node = validate_node(entity_type, data)
 
-        console.print(Panel.fit(
-            f"[bold green]Generated ID:[/bold green] {node.id}",
-            title=f"{entity_type} ID Generation",
-            border_style="green"
-        ))
+        console.print(
+            Panel.fit(
+                f"[bold green]Generated ID:[/bold green] {node.id}",
+                title=f"{entity_type} ID Generation",
+                border_style="green",
+            )
+        )
 
         # Show ID components
         console.print("\n[bold]ID Components:[/bold]")
         console.print(f"  Type: {entity_type}")
-        if hasattr(node, 'pmid') and node.pmid:
+        if hasattr(node, "pmid") and node.pmid:
             console.print(f"  PMID: {node.pmid}")
-        if hasattr(node, 'doi') and node.doi:
+        if hasattr(node, "doi") and node.doi:
             console.print(f"  DOI: {node.doi}")
-        if hasattr(node, 'cognitive_atlas_id') and node.cognitive_atlas_id:
+        if hasattr(node, "cognitive_atlas_id") and node.cognitive_atlas_id:
             console.print(f"  Cognitive Atlas: {node.cognitive_atlas_id}")
 
     except json.JSONDecodeError:
@@ -175,8 +184,7 @@ def check_id(
 @app.command()
 def show_config(
     config_type: str = typer.Argument(
-        ...,
-        help="Configuration type: thresholds, scoring, or all"
+        ..., help="Configuration type: thresholds, scoring, or all"
     )
 ):
     """Display current configuration settings."""
@@ -185,7 +193,7 @@ def show_config(
 
     configs = {
         "thresholds": config_dir / "thresholds.yaml",
-        "scoring": config_dir / "edge_scoring.yaml"
+        "scoring": config_dir / "edge_scoring.yaml",
     }
 
     if config_type == "all":
@@ -202,10 +210,9 @@ def show_config(
             with open(config_file) as f:
                 config = yaml.safe_load(f)
 
-            console.print(Panel.fit(
-                f"[bold]{config_file.name}[/bold]",
-                border_style="blue"
-            ))
+            console.print(
+                Panel.fit(f"[bold]{config_file.name}[/bold]", border_style="blue")
+            )
 
             # Pretty print config
             _print_config_recursive(config)
@@ -234,36 +241,30 @@ def _print_config_recursive(config, indent=0):
 @app.command()
 def export_schema(
     output_format: str = typer.Option(
-        "json",
-        "--format", "-f",
-        help="Output format: json, yaml, or cypher"
+        "json", "--format", "-f", help="Output format: json, yaml, or cypher"
     ),
-    output: Optional[Path] = typer.Option(
-        None,
-        "--output", "-o",
-        help="Output file path"
-    )
+    output: Path | None = typer.Option(None, "--output", "-o", help="Output file path"),
 ):
     """Export BR-KG schema definitions."""
 
-    from brain_researcher.services.br_kg.schemas.node_schemas import NODE_TYPES
     from brain_researcher.services.br_kg.schemas.edge_schemas import (
-        EDGE_TYPES,
         ALLOWED_EDGES,
+        EDGE_TYPES,
         OPTIONAL_EDGE_SIGNATURES,
     )
+    from brain_researcher.services.br_kg.schemas.node_schemas import NODE_TYPES
 
     schema = {
         "node_types": list(NODE_TYPES.keys()),
         "edge_types": list(EDGE_TYPES.keys()),
-        "allowed_relationships": {}
+        "allowed_relationships": {},
     }
 
     # Build allowed relationships
     for edge_type, (source, target) in ALLOWED_EDGES.items():
         schema["allowed_relationships"][edge_type] = {
             "source": source if isinstance(source, str) else list(source),
-            "target": target if isinstance(target, str) else list(target)
+            "target": target if isinstance(target, str) else list(target),
         }
 
     if OPTIONAL_EDGE_SIGNATURES:
@@ -337,7 +338,12 @@ def list_invariants():
                 # Extract category from rule ID
                 category = rule_id.split("-")[0]
 
-                table.add_row(rule_id, category, desc[:50] + "..." if len(desc) > 50 else desc, owner)
+                table.add_row(
+                    rule_id,
+                    category,
+                    desc[:50] + "..." if len(desc) > 50 else desc,
+                    owner,
+                )
 
     console.print(table)
     console.print(f"\n[dim]Full details: {invariants_path}[/dim]")

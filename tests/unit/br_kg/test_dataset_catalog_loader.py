@@ -38,7 +38,10 @@ class StubDB:
         self.queries.append((normalized, params or {}))
         if "RETURN elementId(legacy) AS element_id" in normalized:
             return StubResult([{"element_id": "legacy-1"}])
-        if "RETURN src.id AS node_id, type(r) AS rel_type, properties(r) AS props" in normalized:
+        if (
+            "RETURN src.id AS node_id, type(r) AS rel_type, properties(r) AS props"
+            in normalized
+        ):
             return StubResult(
                 [
                     {
@@ -48,7 +51,10 @@ class StubDB:
                     }
                 ]
             )
-        if "RETURN dst.id AS node_id, type(r) AS rel_type, properties(r) AS props" in normalized:
+        if (
+            "RETURN dst.id AS node_id, type(r) AS rel_type, properties(r) AS props"
+            in normalized
+        ):
             return StubResult([])
         return StubResult([])
 

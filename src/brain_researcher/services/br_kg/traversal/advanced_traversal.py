@@ -5,12 +5,10 @@ centrality metrics, and graph analytics.
 """
 
 import logging
-from typing import Dict, List, Any, Optional, Set, Tuple
+from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from collections import defaultdict, deque
-import heapq
-import numpy as np
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +41,7 @@ class TraversalResult:
     execution_time_ms: float
     nodes_visited: int
     edges_traversed: int
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class AdvancedTraversal:
@@ -61,10 +59,10 @@ class AdvancedTraversal:
         self,
         start_node_id: str,
         end_node_id: str,
-        relationship_types: Optional[List[str]] = None,
+        relationship_types: list[str] | None = None,
         max_hops: int = 10,
-        weight_property: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
+        weight_property: str | None = None,
+    ) -> dict[str, Any] | None:
         """Find shortest path between two nodes.
 
         Args:
@@ -80,7 +78,9 @@ class AdvancedTraversal:
         with self.driver.session() as session:
             # Build relationship pattern
             if relationship_types:
-                rel_pattern = f"[r:{relationship_types[0]}|{relationship_types[1:]}*..{max_hops}]"
+                rel_pattern = (
+                    f"[r:{relationship_types[0]}|{relationship_types[1:]}*..{max_hops}]"
+                )
             else:
                 rel_pattern = f"[r*..{max_hops}]"
 
@@ -96,8 +96,10 @@ class AdvancedTraversal:
                 params = {
                     "start_id": start_node_id,
                     "end_id": end_node_id,
-                    "rel_types": "|".join(relationship_types) if relationship_types else "",
-                    "weight_prop": weight_property
+                    "rel_types": (
+                        "|".join(relationship_types) if relationship_types else ""
+                    ),
+                    "weight_prop": weight_property,
                 }
             else:
                 # Unweighted shortest path
@@ -106,10 +108,7 @@ class AdvancedTraversal:
                 MATCH p = shortestPath((start)-{rel_pattern}-(end))
                 RETURN p as path, length(p) as weight
                 """
-                params = {
-                    "start_id": start_node_id,
-                    "end_id": end_node_id
-                }
+                params = {"start_id": start_node_id, "end_id": end_node_id}
 
             result = session.run(query, params)
             record = result.single()
@@ -123,12 +122,12 @@ class AdvancedTraversal:
                             "source": rel.start_node["id"],
                             "target": rel.end_node["id"],
                             "type": rel.type,
-                            "properties": dict(rel)
+                            "properties": dict(rel),
                         }
                         for rel in path.relationships
                     ],
                     "length": len(path.relationships),
-                    "weight": record["weight"]
+                    "weight": record["weight"],
                 }
 
         return None
@@ -137,9 +136,9 @@ class AdvancedTraversal:
         self,
         start_node_id: str,
         end_node_id: str,
-        relationship_types: Optional[List[str]] = None,
-        max_hops: int = 10
-    ) -> List[Dict[str, Any]]:
+        relationship_types: list[str] | None = None,
+        max_hops: int = 10,
+    ) -> list[dict[str, Any]]:
         """Find all shortest paths between two nodes.
 
         Args:
@@ -154,7 +153,9 @@ class AdvancedTraversal:
         with self.driver.session() as session:
             # Build relationship pattern
             if relationship_types:
-                rel_pattern = f"[:{relationship_types[0]}|{relationship_types[1:]}*..{max_hops}]"
+                rel_pattern = (
+                    f"[:{relationship_types[0]}|{relationship_types[1:]}*..{max_hops}]"
+                )
             else:
                 rel_pattern = f"[*..{max_hops}]"
 
@@ -164,26 +165,27 @@ class AdvancedTraversal:
             RETURN p as path
             """
 
-            result = session.run(query, {
-                "start_id": start_node_id,
-                "end_id": end_node_id
-            })
+            result = session.run(
+                query, {"start_id": start_node_id, "end_id": end_node_id}
+            )
 
             paths = []
             for record in result:
                 path = record["path"]
-                paths.append({
-                    "nodes": [node["id"] for node in path.nodes],
-                    "edges": [
-                        {
-                            "source": rel.start_node["id"],
-                            "target": rel.end_node["id"],
-                            "type": rel.type
-                        }
-                        for rel in path.relationships
-                    ],
-                    "length": len(path.relationships)
-                })
+                paths.append(
+                    {
+                        "nodes": [node["id"] for node in path.nodes],
+                        "edges": [
+                            {
+                                "source": rel.start_node["id"],
+                                "target": rel.end_node["id"],
+                                "type": rel.type,
+                            }
+                            for rel in path.relationships
+                        ],
+                        "length": len(path.relationships),
+                    }
+                )
 
             return paths
 
@@ -192,9 +194,9 @@ class AdvancedTraversal:
         start_node_id: str,
         end_node_id: str,
         k: int = 5,
-        relationship_types: Optional[List[str]] = None,
-        max_hops: int = 10
-    ) -> List[Dict[str, Any]]:
+        relationship_types: list[str] | None = None,
+        max_hops: int = 10,
+    ) -> list[dict[str, Any]]:
         """Find K shortest paths using Yen's algorithm.
 
         Args:
@@ -217,38 +219,45 @@ class AdvancedTraversal:
             LIMIT $k
             """
 
-            result = session.run(query, {
-                "start_id": start_node_id,
-                "end_id": end_node_id,
-                "k": k,
-                "rel_types": "|".join(relationship_types) if relationship_types else ""
-            })
+            result = session.run(
+                query,
+                {
+                    "start_id": start_node_id,
+                    "end_id": end_node_id,
+                    "k": k,
+                    "rel_types": (
+                        "|".join(relationship_types) if relationship_types else ""
+                    ),
+                },
+            )
 
             paths = []
             for record in result:
                 path = record["path"]
-                paths.append({
-                    "nodes": [node["id"] for node in path.nodes],
-                    "edges": [
-                        {
-                            "source": rel.start_node["id"],
-                            "target": rel.end_node["id"],
-                            "type": rel.type
-                        }
-                        for rel in path.relationships
-                    ],
-                    "length": len(path.relationships)
-                })
+                paths.append(
+                    {
+                        "nodes": [node["id"] for node in path.nodes],
+                        "edges": [
+                            {
+                                "source": rel.start_node["id"],
+                                "target": rel.end_node["id"],
+                                "type": rel.type,
+                            }
+                            for rel in path.relationships
+                        ],
+                        "length": len(path.relationships),
+                    }
+                )
 
             return paths[:k]
 
     def calculate_centrality(
         self,
         centrality_type: CentralityType,
-        node_type: Optional[str] = None,
-        relationship_types: Optional[List[str]] = None,
-        top_k: int = 10
-    ) -> List[Dict[str, Any]]:
+        node_type: str | None = None,
+        relationship_types: list[str] | None = None,
+        top_k: int = 10,
+    ) -> list[dict[str, Any]]:
         """Calculate centrality metrics for nodes.
 
         Args:
@@ -262,13 +271,21 @@ class AdvancedTraversal:
         """
         with self.driver.session() as session:
             if centrality_type == CentralityType.DEGREE:
-                return self._degree_centrality(session, node_type, relationship_types, top_k)
+                return self._degree_centrality(
+                    session, node_type, relationship_types, top_k
+                )
             elif centrality_type == CentralityType.BETWEENNESS:
-                return self._betweenness_centrality(session, node_type, relationship_types, top_k)
+                return self._betweenness_centrality(
+                    session, node_type, relationship_types, top_k
+                )
             elif centrality_type == CentralityType.CLOSENESS:
-                return self._closeness_centrality(session, node_type, relationship_types, top_k)
+                return self._closeness_centrality(
+                    session, node_type, relationship_types, top_k
+                )
             elif centrality_type == CentralityType.EIGENVECTOR:
-                return self._eigenvector_centrality(session, node_type, relationship_types, top_k)
+                return self._eigenvector_centrality(
+                    session, node_type, relationship_types, top_k
+                )
             elif centrality_type == CentralityType.PAGERANK:
                 return self._pagerank(session, node_type, relationship_types, top_k)
             else:
@@ -277,13 +294,17 @@ class AdvancedTraversal:
     def _degree_centrality(
         self,
         session,
-        node_type: Optional[str],
-        relationship_types: Optional[List[str]],
-        top_k: int
-    ) -> List[Dict[str, Any]]:
+        node_type: str | None,
+        relationship_types: list[str] | None,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
         """Calculate degree centrality."""
         node_pattern = f":{node_type}" if node_type else ""
-        rel_pattern = f"[:{relationship_types[0]}|{relationship_types[1:]}]" if relationship_types else ""
+        rel_pattern = (
+            f"[:{relationship_types[0]}|{relationship_types[1:]}]"
+            if relationship_types
+            else ""
+        )
 
         query = f"""
         MATCH (n{node_pattern})
@@ -304,7 +325,7 @@ class AdvancedTraversal:
                 "node_id": record["node_id"],
                 "label": record["label"],
                 "centrality": record["degree"],
-                "normalized": record["normalized_degree"]
+                "normalized": record["normalized_degree"],
             }
             for record in result
         ]
@@ -312,10 +333,10 @@ class AdvancedTraversal:
     def _betweenness_centrality(
         self,
         session,
-        node_type: Optional[str],
-        relationship_types: Optional[List[str]],
-        top_k: int
-    ) -> List[Dict[str, Any]]:
+        node_type: str | None,
+        relationship_types: list[str] | None,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
         """Calculate betweenness centrality."""
         # Use APOC if available
         query = """
@@ -328,17 +349,20 @@ class AdvancedTraversal:
         LIMIT $top_k
         """
 
-        result = session.run(query, {
-            "rel_types": "|".join(relationship_types) if relationship_types else "",
-            "node_label": node_type or "",
-            "top_k": top_k
-        })
+        result = session.run(
+            query,
+            {
+                "rel_types": "|".join(relationship_types) if relationship_types else "",
+                "node_label": node_type or "",
+                "top_k": top_k,
+            },
+        )
 
         return [
             {
                 "node_id": record["node_id"],
                 "label": record["label"],
-                "centrality": record["centrality"]
+                "centrality": record["centrality"],
             }
             for record in result
         ]
@@ -346,10 +370,10 @@ class AdvancedTraversal:
     def _closeness_centrality(
         self,
         session,
-        node_type: Optional[str],
-        relationship_types: Optional[List[str]],
-        top_k: int
-    ) -> List[Dict[str, Any]]:
+        node_type: str | None,
+        relationship_types: list[str] | None,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
         """Calculate closeness centrality."""
         query = """
         CALL apoc.algo.closeness($rel_types, $node_label, 'BOTH')
@@ -361,17 +385,20 @@ class AdvancedTraversal:
         LIMIT $top_k
         """
 
-        result = session.run(query, {
-            "rel_types": "|".join(relationship_types) if relationship_types else "",
-            "node_label": node_type or "",
-            "top_k": top_k
-        })
+        result = session.run(
+            query,
+            {
+                "rel_types": "|".join(relationship_types) if relationship_types else "",
+                "node_label": node_type or "",
+                "top_k": top_k,
+            },
+        )
 
         return [
             {
                 "node_id": record["node_id"],
                 "label": record["label"],
-                "centrality": record["centrality"]
+                "centrality": record["centrality"],
             }
             for record in result
         ]
@@ -379,10 +406,10 @@ class AdvancedTraversal:
     def _eigenvector_centrality(
         self,
         session,
-        node_type: Optional[str],
-        relationship_types: Optional[List[str]],
-        top_k: int
-    ) -> List[Dict[str, Any]]:
+        node_type: str | None,
+        relationship_types: list[str] | None,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
         """Calculate eigenvector centrality."""
         # Simplified eigenvector centrality using iterative approach
         node_pattern = f":{node_type}" if node_type else ""
@@ -402,15 +429,12 @@ class AdvancedTraversal:
         result = session.run(query)
 
         # Build adjacency list
-        adjacency = defaultdict(list)
+        defaultdict(list)
         nodes = []
 
         for record in result:
             node_id = record["node_id"]
-            nodes.append({
-                "node_id": node_id,
-                "label": record["label"]
-            })
+            nodes.append({"node_id": node_id, "label": record["label"]})
 
         # Power iteration for eigenvector centrality
         scores = {node["node_id"]: 1.0 for node in nodes}
@@ -421,8 +445,8 @@ class AdvancedTraversal:
                 node_id = node["node_id"]
 
                 # Get neighbors
-                neighbor_query = f"""
-                MATCH (n {{id: $node_id}})-[r]-(m)
+                neighbor_query = """
+                MATCH (n {id: $node_id})-[r]-(m)
                 RETURN m.id as neighbor_id
                 """
                 neighbors = session.run(neighbor_query, {"node_id": node_id})
@@ -444,7 +468,7 @@ class AdvancedTraversal:
             {
                 "node_id": node["node_id"],
                 "label": node["label"],
-                "centrality": scores[node["node_id"]]
+                "centrality": scores[node["node_id"]],
             }
             for node in sorted_nodes[:top_k]
         ]
@@ -452,10 +476,10 @@ class AdvancedTraversal:
     def _pagerank(
         self,
         session,
-        node_type: Optional[str],
-        relationship_types: Optional[List[str]],
-        top_k: int
-    ) -> List[Dict[str, Any]]:
+        node_type: str | None,
+        relationship_types: list[str] | None,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
         """Calculate PageRank."""
         query = """
         CALL apoc.algo.pageRank($rel_types, $node_label)
@@ -467,26 +491,27 @@ class AdvancedTraversal:
         LIMIT $top_k
         """
 
-        result = session.run(query, {
-            "rel_types": "|".join(relationship_types) if relationship_types else "",
-            "node_label": node_type or "",
-            "top_k": top_k
-        })
+        result = session.run(
+            query,
+            {
+                "rel_types": "|".join(relationship_types) if relationship_types else "",
+                "node_label": node_type or "",
+                "top_k": top_k,
+            },
+        )
 
         return [
             {
                 "node_id": record["node_id"],
                 "label": record["label"],
-                "centrality": record["centrality"]
+                "centrality": record["centrality"],
             }
             for record in result
         ]
 
     def find_communities(
-        self,
-        algorithm: str = "louvain",
-        min_community_size: int = 3
-    ) -> List[Dict[str, Any]]:
+        self, algorithm: str = "louvain", min_community_size: int = 3
+    ) -> list[dict[str, Any]]:
         """Detect communities in the graph.
 
         Args:
@@ -526,16 +551,18 @@ class AdvancedTraversal:
 
             communities = []
             for record in result:
-                communities.append({
-                    "community_id": record["community"],
-                    "members": record["members"],
-                    "size": record["size"],
-                    "modularity": record.get("modularity")
-                })
+                communities.append(
+                    {
+                        "community_id": record["community"],
+                        "members": record["members"],
+                        "size": record["size"],
+                        "modularity": record.get("modularity"),
+                    }
+                )
 
             return communities
 
-    def find_bridges(self) -> List[Dict[str, Any]]:
+    def find_bridges(self) -> list[dict[str, Any]]:
         """Find bridge edges (edges whose removal increases components).
 
         Returns:
@@ -561,16 +588,18 @@ class AdvancedTraversal:
 
             bridges = []
             for record in result:
-                bridges.append({
-                    "source": record["source"],
-                    "target": record["target"],
-                    "type": record["relationship_type"],
-                    "properties": dict(record["relationship"])
-                })
+                bridges.append(
+                    {
+                        "source": record["source"],
+                        "target": record["target"],
+                        "type": record["relationship_type"],
+                        "properties": dict(record["relationship"]),
+                    }
+                )
 
             return bridges
 
-    def find_cliques(self, min_size: int = 3) -> List[List[str]]:
+    def find_cliques(self, min_size: int = 3) -> list[list[str]]:
         """Find cliques (fully connected subgraphs).
 
         Args:
@@ -594,11 +623,13 @@ class AdvancedTraversal:
                 # Fallback to manual detection for small graphs
                 return self._find_cliques_manual(session, min_size)
 
-    def _find_cliques_manual(self, session, min_size: int) -> List[List[str]]:
+    def _find_cliques_manual(self, session, min_size: int) -> list[list[str]]:
         """Manual clique detection using Bron-Kerbosch algorithm."""
         # Get all nodes and edges
         nodes_query = "MATCH (n) RETURN n.id as id"
-        edges_query = "MATCH (n)-[r]-(m) WHERE n.id < m.id RETURN n.id as source, m.id as target"
+        edges_query = (
+            "MATCH (n)-[r]-(m) WHERE n.id < m.id RETURN n.id as source, m.id as target"
+        )
 
         nodes = {record["id"] for record in session.run(nodes_query)}
 
@@ -611,7 +642,7 @@ class AdvancedTraversal:
         # Bron-Kerbosch algorithm
         cliques = []
 
-        def bron_kerbosch(r: Set[str], p: Set[str], x: Set[str]):
+        def bron_kerbosch(r: set[str], p: set[str], x: set[str]):
             if not p and not x:
                 if len(r) >= min_size:
                     cliques.append(list(r))
@@ -619,11 +650,7 @@ class AdvancedTraversal:
 
             for node in list(p):
                 neighbors = adjacency[node]
-                bron_kerbosch(
-                    r | {node},
-                    p & neighbors,
-                    x & neighbors
-                )
+                bron_kerbosch(r | {node}, p & neighbors, x & neighbors)
                 p.remove(node)
                 x.add(node)
 
@@ -632,11 +659,8 @@ class AdvancedTraversal:
         return cliques
 
     def find_influence_paths(
-        self,
-        source_node_id: str,
-        max_hops: int = 3,
-        min_influence: float = 0.1
-    ) -> Dict[str, Any]:
+        self, source_node_id: str, max_hops: int = 3, min_influence: float = 0.1
+    ) -> dict[str, Any]:
         """Find influence paths from a source node.
 
         Args:
@@ -648,12 +672,12 @@ class AdvancedTraversal:
             Influence tree
         """
         with self.driver.session() as session:
-            query = f"""
-            MATCH (source {{id: $source_id}})
-            CALL apoc.path.spanningTree(source, {{
+            query = """
+            MATCH (source {id: $source_id})
+            CALL apoc.path.spanningTree(source, {
                 maxLevel: $max_hops,
                 relationshipFilter: '>'
-            }})
+            })
             YIELD path
             WITH path,
                  reduce(influence = 1.0, r IN relationships(path) |
@@ -665,16 +689,19 @@ class AdvancedTraversal:
             ORDER BY influence DESC
             """
 
-            result = session.run(query, {
-                "source_id": source_node_id,
-                "max_hops": max_hops,
-                "min_influence": min_influence
-            })
+            result = session.run(
+                query,
+                {
+                    "source_id": source_node_id,
+                    "max_hops": max_hops,
+                    "min_influence": min_influence,
+                },
+            )
 
             influence_tree = {
                 "source": source_node_id,
                 "influenced_nodes": [],
-                "paths": []
+                "paths": [],
             }
 
             influenced = set()
@@ -683,11 +710,13 @@ class AdvancedTraversal:
                 path_nodes = [n["id"] for n in record["nodes"]]
                 influenced.update(path_nodes[1:])  # Exclude source
 
-                influence_tree["paths"].append({
-                    "nodes": path_nodes,
-                    "influence": record["influence"],
-                    "length": len(path_nodes) - 1
-                })
+                influence_tree["paths"].append(
+                    {
+                        "nodes": path_nodes,
+                        "influence": record["influence"],
+                        "length": len(path_nodes) - 1,
+                    }
+                )
 
             influence_tree["influenced_nodes"] = list(influenced)
             influence_tree["total_influence"] = len(influenced)
@@ -695,10 +724,8 @@ class AdvancedTraversal:
             return influence_tree
 
     def find_motifs(
-        self,
-        motif_size: int = 3,
-        min_frequency: int = 5
-    ) -> List[Dict[str, Any]]:
+        self, motif_size: int = 3, min_frequency: int = 5
+    ) -> list[dict[str, Any]]:
         """Find recurring motifs (subgraph patterns).
 
         Args:
@@ -748,15 +775,17 @@ class AdvancedTraversal:
 
             motifs = []
             for record in result:
-                motifs.append({
-                    "pattern": record["pattern"],
-                    "frequency": record["frequency"],
-                    "examples": record["examples"]
-                })
+                motifs.append(
+                    {
+                        "pattern": record["pattern"],
+                        "frequency": record["frequency"],
+                        "examples": record["examples"],
+                    }
+                )
 
             return motifs
 
-    def calculate_graph_metrics(self) -> Dict[str, Any]:
+    def calculate_graph_metrics(self) -> dict[str, Any]:
         """Calculate overall graph metrics.
 
         Returns:
@@ -799,7 +828,9 @@ class AdvancedTraversal:
             RETURN triangles * 3.0 / edges as clustering_coefficient
             """
             result = session.run(clustering_query).single()
-            metrics["clustering_coefficient"] = result["clustering_coefficient"] if result else 0
+            metrics["clustering_coefficient"] = (
+                result["clustering_coefficient"] if result else 0
+            )
 
             # Connected components
             components_query = """

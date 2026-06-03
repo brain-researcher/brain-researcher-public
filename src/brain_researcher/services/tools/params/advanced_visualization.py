@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -20,11 +20,13 @@ class AdvancedVisualizationParameters:
     plot_type: str
     figure_format: str
     interactive_backend: str
-    glass_display_mode: Optional[str]
-    seed: Optional[int]
+    glass_display_mode: str | None
+    seed: int | None
 
 
-def advanced_visualization_from_payload(payload: Dict[str, Any]) -> AdvancedVisualizationParameters:
+def advanced_visualization_from_payload(
+    payload: dict[str, Any],
+) -> AdvancedVisualizationParameters:
     """Create parameters from payload dict."""
 
     return AdvancedVisualizationParameters(
@@ -49,7 +51,9 @@ def _load_array(path: Path) -> np.ndarray:
     return np.asarray([[path.stat().st_size]])
 
 
-def run_advanced_visualization(params: AdvancedVisualizationParameters) -> Dict[str, Any]:
+def run_advanced_visualization(
+    params: AdvancedVisualizationParameters,
+) -> dict[str, Any]:
     """Generate placeholder visualization artefacts and summary metadata."""
 
     data_path = Path(params.data_file)
@@ -83,10 +87,13 @@ def run_advanced_visualization(params: AdvancedVisualizationParameters) -> Dict[
 
     viz_path = output_dir / f"visualization.{ext}"
     if ext == "html":
-        viz_path.write_text("<html><body><h1>Visualization Placeholder</h1></body></html>", encoding="utf-8")
+        viz_path.write_text(
+            "<html><body><h1>Visualization Placeholder</h1></body></html>",
+            encoding="utf-8",
+        )
     else:
         # Write a small binary placeholder to mimic an image file.
-        payload = f"Visualization placeholder for {params.plot_type}".encode("utf-8")
+        payload = f"Visualization placeholder for {params.plot_type}".encode()
         viz_path.write_bytes(payload)
 
     metadata_path = output_dir / "visualization_summary.json"

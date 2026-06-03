@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any
 
 DEFAULT_CONFIDENCE_VERSION = "conf_v1_k10"
 DEFAULT_K = 10
@@ -28,7 +29,7 @@ SOURCE_CONF = {
 }
 
 
-def support_keys(evidence: Dict[str, Any]) -> List[str]:
+def support_keys(evidence: dict[str, Any]) -> list[str]:
     """Return de-dup keys for a single evidence item (pmid > doi > dataset)."""
     pmid = evidence.get("pmid") or evidence.get("PMID")
     if pmid:
@@ -47,7 +48,7 @@ def support_keys(evidence: Dict[str, Any]) -> List[str]:
     return [f"src:{source}|id:{item_id}"]
 
 
-def compute_support_counts(evidence_items: Iterable[Dict[str, Any]]) -> Tuple[int, int]:
+def compute_support_counts(evidence_items: Iterable[dict[str, Any]]) -> tuple[int, int]:
     raw = 0
     unique_keys: set[str] = set()
     for ev in evidence_items:
@@ -57,11 +58,15 @@ def compute_support_counts(evidence_items: Iterable[Dict[str, Any]]) -> Tuple[in
     return raw, len(unique_keys)
 
 
-def compute_diversity(evidence_items: Iterable[Dict[str, Any]]) -> Tuple[int, int]:
+def compute_diversity(evidence_items: Iterable[dict[str, Any]]) -> tuple[int, int]:
     sources: set[str] = set()
     types: set[str] = set()
     for ev in evidence_items:
-        src = ev.get("source") or ev.get("prov_source") or ev.get("provenance", {}).get("source")
+        src = (
+            ev.get("source")
+            or ev.get("prov_source")
+            or ev.get("provenance", {}).get("source")
+        )
         if src:
             sources.add(str(src))
         etype = ev.get("evidence_type") or ev.get("type")
@@ -71,11 +76,11 @@ def compute_diversity(evidence_items: Iterable[Dict[str, Any]]) -> Tuple[int, in
 
 
 def compute_prov_base_conf(
-    prov_source: Optional[str],
-    prov_method: Optional[str],
+    prov_source: str | None,
+    prov_method: str | None,
     *,
-    method_conf: Optional[Dict[str, float]] = None,
-    source_conf: Optional[Dict[str, float]] = None,
+    method_conf: dict[str, float] | None = None,
+    source_conf: dict[str, float] | None = None,
 ) -> float:
     method_conf = method_conf or METHOD_CONF
     source_conf = source_conf or SOURCE_CONF
@@ -90,7 +95,9 @@ def compute_support_factor(support_unique: int, k: int = DEFAULT_K) -> float:
     return 1.0 - math.exp(-float(support_unique) / float(k))
 
 
-def compute_diversity_factor(source_diversity: int, evidence_type_diversity: int) -> float:
+def compute_diversity_factor(
+    source_diversity: int, evidence_type_diversity: int
+) -> float:
     factor = 0.6 + 0.2 * float(source_diversity) + 0.2 * float(evidence_type_diversity)
     return max(0.0, min(1.0, factor))
 
@@ -101,11 +108,13 @@ def compute_confidence(
     source_diversity: int,
     evidence_type_diversity: int,
     prov_base_conf: float,
-    match_score: Optional[float] = None,
+    match_score: float | None = None,
     k: int = DEFAULT_K,
-) -> Tuple[float, Dict[str, float]]:
+) -> tuple[float, dict[str, float]]:
     support_factor = compute_support_factor(support_unique, k=k)
-    diversity_factor = compute_diversity_factor(source_diversity, evidence_type_diversity)
+    diversity_factor = compute_diversity_factor(
+        source_diversity, evidence_type_diversity
+    )
     base = prov_base_conf
     if match_score is not None:
         base *= float(match_score)
@@ -120,11 +129,11 @@ def compute_confidence(
 
 
 def compute_confidence_from_props(
-    rel_props: Dict[str, Any],
+    rel_props: dict[str, Any],
     *,
     k: int = DEFAULT_K,
     confidence_version: str = DEFAULT_CONFIDENCE_VERSION,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     evidence_items = rel_props.get("evidence") or rel_props.get("supports") or []
     support_raw = rel_props.get("support_count_raw")
     support_unique = rel_props.get("support_count_unique")
@@ -140,10 +149,16 @@ def compute_confidence_from_props(
     source_diversity = rel_props.get("source_diversity")
     evidence_type_diversity = rel_props.get("evidence_type_diversity")
     if source_diversity is None or evidence_type_diversity is None:
-        source_diversity_calc, evidence_type_diversity_calc = compute_diversity(evidence_items)
-        source_diversity = source_diversity if source_diversity is not None else source_diversity_calc
+        source_diversity_calc, evidence_type_diversity_calc = compute_diversity(
+            evidence_items
+        )
+        source_diversity = (
+            source_diversity if source_diversity is not None else source_diversity_calc
+        )
         evidence_type_diversity = (
-            evidence_type_diversity if evidence_type_diversity is not None else evidence_type_diversity_calc
+            evidence_type_diversity
+            if evidence_type_diversity is not None
+            else evidence_type_diversity_calc
         )
 
     provenance = rel_props.get("provenance")

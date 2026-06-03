@@ -1,0 +1,260 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "clear": "Effacer",
+    "apply": "Appliquer",
+    "reset": "Réinitialiser",
+    "refresh": "Actualiser",
+    "download": "Télécharger",
+    "upload": "Téléverser",
+    "export": "Exporter",
+    "import": "Importer",
+    "settings": "Paramètres",
+    "help": "Aide",
+    "documentation": "Documentation",
+    "privacy": "Confidentialité",
+    "terms": "Conditions",
+    "about": "À propos",
+    "contact": "Contact"
+  },
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "chat": "Chat",
+    "datasets": "Jeux de données",
+    "finder": "Chercheur",
+    "knowledgeGraph": "Graphe de connaissances",
+    "workflow": "Flux de travail",
+    "settings": "Paramètres",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "signup": "S'inscrire",
+    "profile": "Profil"
+  },
+  "dashboard": {
+    "title": "Tableau de Bord",
+    "subtitle": "Bienvenue sur Brain Researcher",
+    "customizeWidgets": "Personnaliser les Widgets",
+    "addWidget": "Ajouter un Widget",
+    "removeWidget": "Supprimer le Widget",
+    "widgets": {
+      "analysisQueue": {
+        "title": "File d'Analyse",
+        "description": "Voir les analyses en cours et en attente",
+        "empty": "Aucune analyse en file",
+        "running": "En cours",
+        "queued": "En attente",
+        "completed": "Terminé"
+      },
+      "recentResults": {
+        "title": "Résultats Récents",
+        "description": "Vos derniers résultats d'analyse",
+        "empty": "Aucun résultat récent",
+        "viewAll": "Voir Tous les Résultats"
+      },
+      "datasetStats": {
+        "title": "Statistiques des Jeux de Données",
+        "description": "Aperçu des jeux de données disponibles",
+        "totalDatasets": "Total des Jeux de Données",
+        "totalSubjects": "Total des Sujets",
+        "totalSessions": "Total des Sessions"
+      },
+      "resourceUsage": {
+        "title": "Utilisation des Ressources",
+        "description": "Utilisation des ressources système",
+        "cpu": "Utilisation CPU",
+        "memory": "Utilisation Mémoire",
+        "storage": "Utilisation Stockage"
+      },
+      "quickActions": {
+        "title": "Actions Rapides",
+        "description": "Tâches communes et raccourcis",
+        "newAnalysis": "Nouvelle Analyse",
+        "uploadData": "Téléverser des Données",
+        "viewResults": "Voir les Résultats"
+      },
+      "teamActivity": {
+        "title": "Activité de l'Équipe",
+        "description": "Activités récentes de l'équipe",
+        "empty": "Aucune activité récente"
+      }
+    }
+  },
+  "chat": {
+    "title": "Chat",
+    "subtitle": "Posez une question neuro. Obtenez une figure en 90 secondes.",
+    "placeholder": "Posez-moi une question sur l'analyse de neuroimagerie...",
+    "send": "Envoyer",
+    "thinking": "Réflexion...",
+    "executing": "Exécution...",
+    "newChat": "Nouveau Chat",
+    "chatHistory": "Historique du Chat",
+    "clearHistory": "Effacer l'Historique",
+    "exportChat": "Exporter le Chat",
+    "examples": {
+      "glm": "Exécuter une analyse GLM sur les données fMRI de tâche",
+      "connectivity": "Analyser la connectivité fonctionnelle",
+      "preprocessing": "Prétraiter les données IRM structurelles"
+    },
+    "evidence": {
+      "title": "Preuves",
+      "sources": "Sources",
+      "datasets": "Jeux de données",
+      "papers": "Articles",
+      "empty": "Aucune preuve trouvée"
+    }
+  },
+  "datasets": {
+    "title": "Jeux de Données",
+    "subtitle": "Explorer les jeux de données de neuroimagerie",
+    "search": "Rechercher des jeux de données...",
+    "filters": {
+      "modality": "Modalité",
+      "taskType": "Type de Tâche",
+      "subjects": "Sujets",
+      "sessions": "Sessions",
+      "demographics": "Démographie"
+    },
+    "card": {
+      "subjects": "{count} sujets",
+      "sessions": "{count} sessions",
+      "tasks": "{count} tâches",
+      "modalities": "Modalités",
+      "viewDetails": "Voir les Détails",
+      "download": "Télécharger",
+      "analyze": "Analyser"
+    },
+    "modalities": {
+      "fmri": "fMRI",
+      "smri": "sMRI",
+      "dmri": "dMRI",
+      "pet": "PET",
+      "eeg": "EEG",
+      "meg": "MEG"
+    }
+  },
+  "finder": {
+    "title": "Chercheur de Jeux de Données",
+    "subtitle": "Trouvez des jeux de données correspondant à vos besoins de recherche",
+    "searchPlaceholder": "Rechercher par mots-clés, tâches ou conditions...",
+    "facets": {
+      "modality": "Modalité",
+      "taskDomain": "Domaine de Tâche",
+      "ageRange": "Tranche d'Âge",
+      "sampleSize": "Taille d'Échantillon",
+      "studyType": "Type d'Étude"
+    },
+    "results": {
+      "found": "Trouvé {count} jeux de données",
+      "noResults": "Aucun jeu de données trouvé",
+      "refineSearch": "Essayez d'affiner vos critères de recherche"
+    }
+  },
+  "knowledgeGraph": {
+    "title": "Graphe de Connaissances",
+    "subtitle": "Explorer les connexions des connaissances neuroscientifiques",
+    "search": "Rechercher des concepts...",
+    "filters": {
+      "nodeType": "Type de Nœud",
+      "relationship": "Relation",
+      "confidence": "Confiance"
+    },
+    "nodeTypes": {
+      "concept": "Concept",
+      "region": "Région Cérébrale",
+      "task": "Tâche",
+      "disorder": "Trouble",
+      "gene": "Gène"
+    },
+    "relationships": {
+      "activates": "Active",
+      "inhibits": "Inhibe",
+      "connects": "Connecte",
+      "associated": "Associé"
+    }
+  },
+  "workflow": {
+    "title": "Concepteur de Flux de Travail",
+    "subtitle": "Construire des pipelines d'analyse personnalisés",
+    "newWorkflow": "Nouveau Flux de Travail",
+    "saveWorkflow": "Enregistrer le Flux de Travail",
+    "runWorkflow": "Exécuter le Flux de Travail",
+    "toolPalette": "Palette d'Outils",
+    "properties": "Propriétés",
+    "execution": "Exécution",
+    "categories": {
+      "preprocessing": "Prétraitement",
+      "analysis": "Analyse",
+      "visualization": "Visualisation",
+      "statistics": "Statistiques"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Se Connecter",
+      "subtitle": "Accédez à votre compte Brain Researcher",
+      "email": "Email",
+      "password": "Mot de passe",
+      "rememberMe": "Se souvenir de moi",
+      "forgotPassword": "Mot de passe oublié ?",
+      "signIn": "Se Connecter",
+      "noAccount": "Vous n'avez pas de compte ?",
+      "signUp": "S'inscrire"
+    },
+    "signup": {
+      "title": "Créer un Compte",
+      "subtitle": "Rejoignez la communauté Brain Researcher",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "Email",
+      "password": "Mot de passe",
+      "confirmPassword": "Confirmer le Mot de Passe",
+      "agreeTerms": "J'accepte les Conditions de Service",
+      "createAccount": "Créer un Compte",
+      "hasAccount": "Vous avez déjà un compte ?",
+      "signIn": "Se connecter"
+    },
+    "resetPassword": {
+      "title": "Réinitialiser le Mot de Passe",
+      "subtitle": "Entrez votre email pour réinitialiser le mot de passe",
+      "email": "Email",
+      "sendReset": "Envoyer le Lien de Réinitialisation",
+      "backToLogin": "Retour à la connexion"
+    }
+  },
+  "errors": {
+    "general": "Une erreur s'est produite",
+    "network": "Erreur réseau",
+    "timeout": "Délai d'attente dépassé",
+    "unauthorized": "Accès non autorisé",
+    "forbidden": "Accès interdit",
+    "notFound": "Ressource non trouvée",
+    "serverError": "Erreur serveur",
+    "validationError": "Erreur de validation",
+    "fileUpload": "Échec du téléversement de fichier",
+    "analysisError": "Échec de l'analyse"
+  },
+  "meta": {
+    "title": "Brain Researcher - Posez une question neuro. Obtenez une figure en 90 secondes.",
+    "description": "Flux de travail conversationnels pour fMRI/dMRI — GLM, connectivité et résultats reproductibles.",
+    "keywords": "neuroimagerie, fMRI, dMRI, GLM, connectivité, reproductible, flux de travail"
+  },
+  "footer": {
+    "copyright": "© 2024 Brain Researcher. Tous droits réservés.",
+    "documentation": "Documentation",
+    "api": "API",
+    "privacy": "Confidentialité"
+  }
+}

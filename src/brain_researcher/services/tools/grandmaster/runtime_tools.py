@@ -12,8 +12,8 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Iterable, Mapping
 
 import matplotlib
 
@@ -21,7 +21,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -301,9 +300,7 @@ def generate_study_report_tool(
     out = Path(output_file).expanduser().resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        "<html><head><meta charset='utf-8'><title>{}</title></head><body>".format(
-            title
-        ),
+        f"<html><head><meta charset='utf-8'><title>{title}</title></head><body>",
         f"<h1>{title}</h1>",
     ]
     if notes:
@@ -438,6 +435,7 @@ def query_neuromaps_tool(
     - If neither is provided, fall back to MNI152 template (keeps backward compat).
     """
     import tempfile
+
     import nibabel as nib
     from nilearn import datasets
 
@@ -451,11 +449,7 @@ def query_neuromaps_tool(
     def _default_local_dir() -> Path:
         # project_root/data/br-kg/raw/neuromaps
         return (
-            Path(__file__).resolve().parents[5]
-            / "data"
-            / "br_kg"
-            / "raw"
-            / "neuromaps"
+            Path(__file__).resolve().parents[5] / "data" / "br_kg" / "raw" / "neuromaps"
         )
 
     def _pick_local(
@@ -561,13 +555,13 @@ def query_neuromaps_tool(
                 fallback_template = True
                 fallback_reason = f"fetch_annotation_error:{type(e).__name__}"
                 fetched = None
-            if isinstance(fetched, (list, tuple)):
+            if isinstance(fetched, list | tuple):
                 fetched = fetched[0] if fetched else None
             if isinstance(fetched, dict):
                 candidates = [
                     v
                     for v in fetched.values()
-                    if isinstance(v, (str, bytes, os.PathLike))
+                    if isinstance(v, str | bytes | os.PathLike)
                 ]
                 if candidates:
                     try:
@@ -782,6 +776,7 @@ def individual_parcellation_tool(
       - provenance.json with tool/input/reference-context metadata.
     """
     from itertools import combinations
+
     from sklearn.decomposition import NMF, PCA
     from sklearn.metrics import adjusted_rand_score
 
@@ -815,7 +810,7 @@ def individual_parcellation_tool(
     if seed_list is None:
         seeds = list(range(n_init))
     else:
-        if isinstance(seed_list, (str, bytes)):
+        if isinstance(seed_list, str | bytes):
             return _error("INVALID_INPUT", "seed_list must be an iterable of integers")
         try:
             seeds = [int(s) for s in seed_list]
@@ -827,7 +822,7 @@ def individual_parcellation_tool(
 
     if reference_asset_ids is None:
         reference_ids: list[str] = []
-    elif isinstance(reference_asset_ids, (str, bytes)):
+    elif isinstance(reference_asset_ids, str | bytes):
         reference_ids = [str(reference_asset_ids).strip()]
     else:
         reference_ids = [
@@ -1049,7 +1044,7 @@ def visual_feature_decoder_tool(
       - ridge (regression)
       - logistic / logistic_regression (classification)
     """
-    from sklearn.linear_model import Ridge, LogisticRegression
+    from sklearn.linear_model import LogisticRegression, Ridge
     from sklearn.metrics import (
         accuracy_score,
         balanced_accuracy_score,
@@ -1432,7 +1427,7 @@ def process_cifti_tool(
     Minimal volume-to-surface projection using nilearn.surface.vol_to_surf.
     If hemi=both, writes left/right with suffixes.
     """
-    from nilearn import surface, datasets
+    from nilearn import datasets, surface
 
     vol = _ensure_path(volume_img)
     fsavg = datasets.fetch_surf_fsaverage(mesh=surf_mesh)
@@ -1471,8 +1466,8 @@ def map_volume_to_surface_tool(
     writes the sampled texture as a GIFTI functional data file for downstream
     neuromaps/spin-test utilities.
     """
-    from nilearn import surface as nilearn_surface
     import nibabel as nib
+    from nilearn import surface as nilearn_surface
 
     vol_path = _ensure_path(volume)
     mesh_path = _ensure_path(surface)
@@ -1635,9 +1630,9 @@ def compare_surface_maps_tool(
     from nilearn import image
 
     try:
-        from neuromaps.stats import compare_images
-        from neuromaps.nulls import alexander_bloch
         from neuromaps.datasets import fetch_fsaverage, fetch_fslr
+        from neuromaps.nulls import alexander_bloch
+        from neuromaps.stats import compare_images
     except ImportError as exc:  # pragma: no cover - only hit if neuromaps missing
         raise ImportError(
             "compare_surface_maps requires neuromaps; install `neuromaps` to use spin tests."
@@ -1692,17 +1687,17 @@ def compare_surface_maps_tool(
         raw2 = img2.agg_data()
         parts1 = [
             np.asarray(a).ravel()
-            for a in (raw1 if isinstance(raw1, (list, tuple)) else [raw1])
+            for a in (raw1 if isinstance(raw1, list | tuple) else [raw1])
         ]
         parts2 = [
             np.asarray(a).ravel()
-            for a in (raw2 if isinstance(raw2, (list, tuple)) else [raw2])
+            for a in (raw2 if isinstance(raw2, list | tuple) else [raw2])
         ]
         if len(parts1) != len(parts2):
             raise ValueError(
                 "Surface data hemispheres differ; supply matched hemispheres."
             )
-        for a, b in zip(parts1, parts2):
+        for a, b in zip(parts1, parts2, strict=False):
             if a.shape != b.shape:
                 raise ValueError(
                     "Surface data lengths differ; supply matched surface maps."
@@ -1989,9 +1984,11 @@ def glm_first_level_batch_tool(
         "status": "success",
         "outputs": {
             # Backward compatible: for single subject, return the full list.
-            "zmaps": selected_maps
-            if len(subject_records) > 1
-            else per_subject[0]["available_zmaps"],
+            "zmaps": (
+                selected_maps
+                if len(subject_records) > 1
+                else per_subject[0]["available_zmaps"]
+            ),
             "selected_zmaps": selected_maps,
             "first_level_dirs": [p["output_dir"] for p in per_subject],
             "resolved_inputs_manifest": manifest_path,

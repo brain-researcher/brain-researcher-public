@@ -50,7 +50,7 @@ class BaseConnector(ABC):
         self.max_retries = max_retries
         self.backoff_factor = backoff_factor
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self._client: "httpx.AsyncClient | None" = None
+        self._client: httpx.AsyncClient | None = None
 
     @property
     @abstractmethod
@@ -78,10 +78,12 @@ class BaseConnector(ABC):
         """Default implementation - override if source supports direct lookup."""
         return None
 
-    async def _get_client(self) -> "httpx.AsyncClient":
+    async def _get_client(self) -> httpx.AsyncClient:
         """Get or create async HTTP client."""
         if httpx is None:
-            raise ImportError("httpx is required for HTTP connectors. Install with: pip install httpx")
+            raise ImportError(
+                "httpx is required for HTTP connectors. Install with: pip install httpx"
+            )
 
         if self._client is None or self._client.is_closed:
             self._client = httpx.AsyncClient(
@@ -139,21 +141,31 @@ class BaseConnector(ABC):
                 if status == 429:
                     # Rate limited - check for Retry-After header
                     retry_after = e.response.headers.get("Retry-After")
-                    wait_time = float(retry_after) if retry_after else (self.backoff_factor * (2**attempt))
-                    self.logger.warning(f"Rate limited, waiting {wait_time:.1f}s (attempt {attempt + 1})")
+                    wait_time = (
+                        float(retry_after)
+                        if retry_after
+                        else (self.backoff_factor * (2**attempt))
+                    )
+                    self.logger.warning(
+                        f"Rate limited, waiting {wait_time:.1f}s (attempt {attempt + 1})"
+                    )
                     await asyncio.sleep(wait_time)
                     last_error = ConnectorRateLimitError(self.source, wait_time, e)
 
                 elif status >= 500:
                     # Server error - retry with backoff
                     wait_time = self.backoff_factor * (2**attempt)
-                    self.logger.warning(f"Server error {status}, retrying in {wait_time:.1f}s")
+                    self.logger.warning(
+                        f"Server error {status}, retrying in {wait_time:.1f}s"
+                    )
                     await asyncio.sleep(wait_time)
                     last_error = e
 
                 else:
                     # Client error - don't retry
-                    raise ConnectorError(self.source, f"HTTP {status}: {e.response.text[:200]}", e)
+                    raise ConnectorError(
+                        self.source, f"HTTP {status}: {e.response.text[:200]}", e
+                    )
 
             except httpx.TimeoutException as e:
                 wait_time = self.backoff_factor * (2**attempt)
@@ -171,7 +183,9 @@ class BaseConnector(ABC):
         # All retries exhausted
         if isinstance(last_error, ConnectorError):
             raise last_error
-        raise ConnectorError(self.source, f"Failed after {self.max_retries} retries", last_error)
+        raise ConnectorError(
+            self.source, f"Failed after {self.max_retries} retries", last_error
+        )
 
     async def _fetch_xml(
         self,
@@ -209,7 +223,9 @@ class BaseConnector(ABC):
                 await asyncio.sleep(wait_time)
                 last_error = e
 
-        raise ConnectorError(self.source, f"Failed after {self.max_retries} retries", last_error)
+        raise ConnectorError(
+            self.source, f"Failed after {self.max_retries} retries", last_error
+        )
 
     async def close(self) -> None:
         """Close HTTP client and release resources."""
@@ -217,7 +233,7 @@ class BaseConnector(ABC):
             await self._client.aclose()
             self._client = None
 
-    async def __aenter__(self) -> "BaseConnector":
+    async def __aenter__(self) -> BaseConnector:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

@@ -10,12 +10,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from brain_researcher.services.knowledge.evidence.base import (
     EvidenceQuery,
     EvidenceResult,
-    EvidenceSource,
     EvidenceSourceType,
 )
 
@@ -29,7 +28,7 @@ class LiteratureEvidenceSource:
     matching the EvidenceSource protocol.
     """
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         """Initialize the literature evidence source.
 
         Args:
@@ -61,7 +60,7 @@ class LiteratureEvidenceSource:
                 return None
         return self._connector
 
-    async def query(self, query: EvidenceQuery) -> List[EvidenceResult]:
+    async def query(self, query: EvidenceQuery) -> list[EvidenceResult]:
         """Query PubMed for matching publications.
 
         Args:
@@ -77,7 +76,7 @@ class LiteratureEvidenceSource:
 
         try:
             # Build filters from query
-            filters: Dict[str, Any] = {}
+            filters: dict[str, Any] = {}
             if query.year_min:
                 filters["year_from"] = query.year_min
             if query.year_max:
@@ -91,7 +90,7 @@ class LiteratureEvidenceSource:
             )
 
             # Convert to EvidenceResult
-            results: List[EvidenceResult] = []
+            results: list[EvidenceResult] = []
             for item in items:
                 results.append(
                     EvidenceResult(
@@ -105,7 +104,11 @@ class LiteratureEvidenceSource:
                             "journal": item.metadata.get("journal"),
                             "year": item.metadata.get("year"),
                             "doi": item.doi,
-                            "item_type": str(item.item_type.value) if item.item_type else "publication",
+                            "item_type": (
+                                str(item.item_type.value)
+                                if item.item_type
+                                else "publication"
+                            ),
                         },
                         url=item.url,
                         summary=item.description,
@@ -129,10 +132,10 @@ class LiteratureEvidenceSource:
 
 async def search_literature(
     query_text: str,
-    year_min: Optional[int] = None,
-    year_max: Optional[int] = None,
+    year_min: int | None = None,
+    year_max: int | None = None,
     limit: int = 10,
-) -> List[EvidenceResult]:
+) -> list[EvidenceResult]:
     """Convenience function to search for literature evidence.
 
     Args:
@@ -156,10 +159,10 @@ async def search_literature(
 
 def search_literature_sync(
     query_text: str,
-    year_min: Optional[int] = None,
-    year_max: Optional[int] = None,
+    year_min: int | None = None,
+    year_max: int | None = None,
     limit: int = 10,
-) -> List[EvidenceResult]:
+) -> list[EvidenceResult]:
     """Synchronous version of search_literature for non-async contexts.
 
     Args:
@@ -171,9 +174,7 @@ def search_literature_sync(
     Returns:
         List of EvidenceResult for matching publications.
     """
-    return asyncio.run(
-        search_literature(query_text, year_min, year_max, limit)
-    )
+    return asyncio.run(search_literature(query_text, year_min, year_max, limit))
 
 
 __all__ = [

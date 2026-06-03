@@ -3,18 +3,18 @@ Test suite for vector search functionality
 Tests KG-016: Vector Search Integration
 """
 
-import pytest
-import numpy as np
-from unittest.mock import Mock, MagicMock, patch
-from pathlib import Path
-import tempfile
 import shutil
+import tempfile
+from unittest.mock import MagicMock, Mock, patch
+
+import numpy as np
+import pytest
 
 from brain_researcher.services.br_kg.vector_search import (
-    VectorSearchEngine,
+    VectorIndexManager,
     VectorSearchConfig,
+    VectorSearchEngine,
     VectorSearchResult,
-    VectorIndexManager
 )
 
 
@@ -28,7 +28,7 @@ class TestVectorIndexManager:
             cache_dir=self.temp_dir,
             dimension=384,
             index_type="IndexFlatIP",
-            normalize_embeddings=True
+            normalize_embeddings=True,
         )
         self.manager = VectorIndexManager(self.config)
 
@@ -50,7 +50,7 @@ class TestVectorIndexManager:
     def test_add_embeddings(self):
         """Test adding embeddings to index."""
         # Create test embeddings
-        embeddings = np.random.randn(10, 384).astype('float32')
+        embeddings = np.random.randn(10, 384).astype("float32")
         metadata = [{"id": i, "text": f"test_{i}"} for i in range(10)]
 
         # Add to index
@@ -64,12 +64,12 @@ class TestVectorIndexManager:
     def test_search(self):
         """Test searching in index."""
         # Add test data
-        embeddings = np.random.randn(10, 384).astype('float32')
+        embeddings = np.random.randn(10, 384).astype("float32")
         metadata = [{"id": i} for i in range(10)]
         self.manager.add_embeddings("test_type", embeddings, metadata)
 
         # Search
-        query = np.random.randn(384).astype('float32')
+        query = np.random.randn(384).astype("float32")
         distances, indices = self.manager.search("test_type", query, k=5)
 
         assert len(distances) == 5
@@ -79,7 +79,7 @@ class TestVectorIndexManager:
     def test_save_and_load_index(self):
         """Test saving and loading indices."""
         # Add test data
-        embeddings = np.random.randn(5, 384).astype('float32')
+        embeddings = np.random.randn(5, 384).astype("float32")
         metadata = [{"id": i} for i in range(5)]
         self.manager.add_embeddings("test_type", embeddings, metadata)
 
@@ -106,7 +106,7 @@ class TestVectorSearchEngine:
             model_name="sentence-transformers/all-MiniLM-L6-v2",
             normalize_embeddings=True,
             enable_cache=True,
-            max_cache_size=100
+            max_cache_size=100,
         )
 
         # Mock database
@@ -118,7 +118,7 @@ class TestVectorSearchEngine:
         """Clean up test fixtures."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch('brain_researcher.services.br_kg.vector_search.SentenceTransformer')
+    @patch("brain_researcher.services.br_kg.vector_search.SentenceTransformer")
     def test_initialization(self, mock_st):
         """Test engine initialization."""
         mock_model = MagicMock()
@@ -131,12 +131,9 @@ class TestVectorSearchEngine:
         assert engine.db == self.mock_db
         assert engine.config == self.config
         assert engine.model is not None
-        mock_st.assert_called_once_with(
-            self.config.model_name,
-            device='cpu'
-        )
+        mock_st.assert_called_once_with(self.config.model_name, device="cpu")
 
-    @patch('brain_researcher.services.br_kg.vector_search.SentenceTransformer')
+    @patch("brain_researcher.services.br_kg.vector_search.SentenceTransformer")
     def test_create_text_representation(self, mock_st):
         """Test creating text representations for different node types."""
         mock_model = MagicMock()
@@ -149,7 +146,7 @@ class TestVectorSearchEngine:
         concept_props = {
             "name": "Working Memory",
             "definition": "A cognitive system",
-            "description": "Temporary storage and manipulation"
+            "description": "Temporary storage and manipulation",
         }
         text = engine._create_text_representation("Concept", concept_props)
         assert "Working Memory" in text
@@ -159,13 +156,13 @@ class TestVectorSearchEngine:
         pub_props = {
             "title": "Neural Mechanisms",
             "abstract": "This study investigates...",
-            "keywords": ["fMRI", "cognition"]
+            "keywords": ["fMRI", "cognition"],
         }
         text = engine._create_text_representation("Publication", pub_props)
         assert "Neural Mechanisms" in text
         assert "fMRI cognition" in text
 
-    @patch('brain_researcher.services.br_kg.vector_search.SentenceTransformer')
+    @patch("brain_researcher.services.br_kg.vector_search.SentenceTransformer")
     def test_generate_embedding(self, mock_st):
         """Test embedding generation with caching."""
         mock_model = MagicMock()
@@ -187,7 +184,7 @@ class TestVectorSearchEngine:
         np.testing.assert_array_equal(embedding1, embedding2)
         mock_model.encode.assert_not_called()
 
-    @patch('brain_researcher.services.br_kg.vector_search.SentenceTransformer')
+    @patch("brain_researcher.services.br_kg.vector_search.SentenceTransformer")
     def test_vector_search(self, mock_st):
         """Test vector similarity search."""
         # Setup mock model
@@ -200,7 +197,7 @@ class TestVectorSearchEngine:
         self.mock_db.find_nodes.return_value = [
             ("node1", {"name": "Test Node 1", "description": "Description 1"}),
             ("node2", {"name": "Test Node 2", "description": "Description 2"}),
-            ("node3", {"name": "Test Node 3", "description": "Description 3"})
+            ("node3", {"name": "Test Node 3", "description": "Description 3"}),
         ]
 
         engine = VectorSearchEngine(self.mock_db, self.config)
@@ -213,11 +210,17 @@ class TestVectorSearchEngine:
         for result in results:
             assert isinstance(result, VectorSearchResult)
             assert result.node_id in ["node1", "node2", "node3"]
-            assert result.node_type in ["Concept", "Task", "Region", "Dataset", "Publication"]
+            assert result.node_type in [
+                "Concept",
+                "Task",
+                "Region",
+                "Dataset",
+                "Publication",
+            ]
             assert 0 <= result.score <= 1
 
-    @patch('brain_researcher.services.br_kg.vector_search.SentenceTransformer')
-    @patch('brain_researcher.services.br_kg.search.SearchEngine')
+    @patch("brain_researcher.services.br_kg.vector_search.SentenceTransformer")
+    @patch("brain_researcher.services.br_kg.search.SearchEngine")
     def test_hybrid_search(self, mock_search_engine, mock_st):
         """Test hybrid search combining vector and text search."""
         # Setup mock model
@@ -228,13 +231,14 @@ class TestVectorSearchEngine:
 
         # Setup mock text search
         from brain_researcher.services.br_kg.search import SearchResult
+
         mock_text_results = [
             SearchResult(
                 node_id="node1",
                 node_type="Concept",
                 score=0.8,
                 matched_fields=["name"],
-                properties={"name": "Test"}
+                properties={"name": "Test"},
             )
         ]
         mock_search_engine.return_value.search.return_value = mock_text_results
@@ -243,10 +247,7 @@ class TestVectorSearchEngine:
 
         # Perform hybrid search
         results = engine.hybrid_search(
-            "test query",
-            k=5,
-            vector_weight=0.7,
-            text_weight=0.3
+            "test query", k=5, vector_weight=0.7, text_weight=0.3
         )
 
         # Verify results structure
@@ -257,7 +258,7 @@ class TestVectorSearchEngine:
             assert "vector_score" in result
             assert "text_score" in result
 
-    @patch('brain_researcher.services.br_kg.vector_search.SentenceTransformer')
+    @patch("brain_researcher.services.br_kg.vector_search.SentenceTransformer")
     def test_find_similar_nodes(self, mock_st):
         """Test finding similar nodes."""
         # Setup mock model
@@ -269,22 +270,19 @@ class TestVectorSearchEngine:
         # Setup mock database
         self.mock_db.get_node.return_value = {
             "name": "Reference Node",
-            "description": "Test description"
+            "description": "Test description",
         }
         self.mock_db.find_nodes.return_value = [
             ("ref_node", {"name": "Reference Node"}),
             ("similar1", {"name": "Similar Node 1"}),
-            ("similar2", {"name": "Similar Node 2"})
+            ("similar2", {"name": "Similar Node 2"}),
         ]
 
         engine = VectorSearchEngine(self.mock_db, self.config)
 
         # Find similar nodes
         results = engine.find_similar_nodes(
-            "ref_node",
-            "Concept",
-            k=2,
-            include_self=False
+            "ref_node", "Concept", k=2, include_self=False
         )
 
         # Verify results
@@ -292,7 +290,7 @@ class TestVectorSearchEngine:
         node_ids = [r.node_id for r in results]
         assert "ref_node" not in node_ids  # Self should be excluded
 
-    @patch('brain_researcher.services.br_kg.vector_search.SentenceTransformer')
+    @patch("brain_researcher.services.br_kg.vector_search.SentenceTransformer")
     def test_get_embedding_stats(self, mock_st):
         """Test getting embedding statistics."""
         mock_model = MagicMock()
@@ -320,7 +318,7 @@ class TestVectorSearchIntegration:
         """Test with real sentence transformer model."""
         config = VectorSearchConfig(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
-            cache_dir=tempfile.mkdtemp()
+            cache_dir=tempfile.mkdtemp(),
         )
 
         mock_db = Mock()
@@ -344,7 +342,7 @@ class TestVectorSearchIntegration:
         config = VectorSearchConfig(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
             cache_dir=tempfile.mkdtemp(),
-            normalize_embeddings=True
+            normalize_embeddings=True,
         )
 
         mock_db = Mock()

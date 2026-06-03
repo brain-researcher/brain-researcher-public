@@ -8,42 +8,42 @@ This module tests the complex event processing functionality including:
 - Complex event pattern detection
 """
 
-import pytest
 import asyncio
 from datetime import datetime, timedelta
-from unittest.mock import Mock, AsyncMock, patch
-from typing import List, Dict, Any
+
+import pytest
 
 # Import the modules to test
 try:
-    from brain_researcher.services.br_kg.streaming.stream_processor import (
-        StreamProcessor,
-        EventWindow,
-        AggregationRule,
-        WindowType,
-        AggregationType,
-        create_common_aggregation_rules
-    )
     from brain_researcher.services.br_kg.streaming.cdc_processor import (
+        ChangeType,
         GraphChangeEvent,
-        ChangeType
+    )
+    from brain_researcher.services.br_kg.streaming.stream_processor import (
+        AggregationRule,
+        AggregationType,
+        EventWindow,
+        StreamProcessor,
+        WindowType,
+        create_common_aggregation_rules,
     )
 except ImportError:
     # Fallback if absolute imports don't work
-    import sys
     import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
-    from brain_researcher.services.br_kg.streaming.stream_processor import (
-        StreamProcessor,
-        EventWindow,
-        AggregationRule,
-        WindowType,
-        AggregationType,
-        create_common_aggregation_rules
-    )
+    import sys
+
+    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
     from brain_researcher.services.br_kg.streaming.cdc_processor import (
+        ChangeType,
         GraphChangeEvent,
-        ChangeType
+    )
+    from brain_researcher.services.br_kg.streaming.stream_processor import (
+        AggregationRule,
+        AggregationType,
+        EventWindow,
+        StreamProcessor,
+        WindowType,
+        create_common_aggregation_rules,
     )
 
 
@@ -60,7 +60,7 @@ class TestEventWindow:
             window_type=WindowType.TUMBLING,
             start_time=start_time,
             end_time=end_time,
-            duration=end_time - start_time
+            duration=end_time - start_time,
         )
 
         assert window.window_id == "test-window-1"
@@ -81,7 +81,7 @@ class TestEventWindow:
             window_type=WindowType.TUMBLING,
             start_time=start_time,
             end_time=end_time,
-            duration=end_time - start_time
+            duration=end_time - start_time,
         )
 
         # Event within window
@@ -90,7 +90,7 @@ class TestEventWindow:
             change_type=ChangeType.NODE_CREATED,
             timestamp=start_time + timedelta(minutes=2),
             entity_id="node-1",
-            entity_type="node"
+            entity_type="node",
         )
 
         # Event outside window
@@ -99,7 +99,7 @@ class TestEventWindow:
             change_type=ChangeType.NODE_CREATED,
             timestamp=end_time + timedelta(minutes=1),
             entity_id="node-2",
-            entity_type="node"
+            entity_type="node",
         )
 
         assert window.add_event(event1) is True
@@ -118,7 +118,7 @@ class TestEventWindow:
             window_type=WindowType.TUMBLING,
             start_time=start_time,
             end_time=end_time,
-            duration=end_time - start_time
+            duration=end_time - start_time,
         )
 
         # Before end time
@@ -137,7 +137,7 @@ class TestEventWindow:
             window_type=WindowType.SESSION,
             start_time=start_time,
             end_time=end_time,
-            duration=end_time - start_time
+            duration=end_time - start_time,
         )
 
         # Empty session window
@@ -149,7 +149,7 @@ class TestEventWindow:
             change_type=ChangeType.NODE_CREATED,
             timestamp=start_time,
             entity_id="node-1",
-            entity_type="node"
+            entity_type="node",
         )
         window.add_event(event)
 
@@ -166,15 +166,27 @@ class TestEventWindow:
             window_type=WindowType.TUMBLING,
             start_time=datetime.now(),
             end_time=datetime.now() + timedelta(minutes=5),
-            duration=timedelta(minutes=5)
+            duration=timedelta(minutes=5),
         )
 
         # Add various events
         events = [
-            GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node"),
-            GraphChangeEvent("2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node"),
-            GraphChangeEvent("3", ChangeType.NODE_UPDATED, datetime.now(), "n1", "node"),
-            GraphChangeEvent("4", ChangeType.RELATIONSHIP_CREATED, datetime.now(), "r1", "relationship")
+            GraphChangeEvent(
+                "1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node"
+            ),
+            GraphChangeEvent(
+                "2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node"
+            ),
+            GraphChangeEvent(
+                "3", ChangeType.NODE_UPDATED, datetime.now(), "n1", "node"
+            ),
+            GraphChangeEvent(
+                "4",
+                ChangeType.RELATIONSHIP_CREATED,
+                datetime.now(),
+                "r1",
+                "relationship",
+            ),
         ]
 
         for event in events:
@@ -193,15 +205,27 @@ class TestEventWindow:
             window_type=WindowType.TUMBLING,
             start_time=datetime.now(),
             end_time=datetime.now() + timedelta(minutes=5),
-            duration=timedelta(minutes=5)
+            duration=timedelta(minutes=5),
         )
 
         # Add events with different entities
         events = [
-            GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "node-1", "node"),
-            GraphChangeEvent("2", ChangeType.NODE_UPDATED, datetime.now(), "node-1", "node"),
-            GraphChangeEvent("3", ChangeType.NODE_CREATED, datetime.now(), "node-2", "node"),
-            GraphChangeEvent("4", ChangeType.RELATIONSHIP_CREATED, datetime.now(), "rel-1", "relationship")
+            GraphChangeEvent(
+                "1", ChangeType.NODE_CREATED, datetime.now(), "node-1", "node"
+            ),
+            GraphChangeEvent(
+                "2", ChangeType.NODE_UPDATED, datetime.now(), "node-1", "node"
+            ),
+            GraphChangeEvent(
+                "3", ChangeType.NODE_CREATED, datetime.now(), "node-2", "node"
+            ),
+            GraphChangeEvent(
+                "4",
+                ChangeType.RELATIONSHIP_CREATED,
+                datetime.now(),
+                "rel-1",
+                "relationship",
+            ),
         ]
 
         for event in events:
@@ -224,11 +248,13 @@ class TestEventWindow:
             window_type=WindowType.HOPPING,
             start_time=start_time,
             end_time=end_time,
-            duration=timedelta(minutes=5)
+            duration=timedelta(minutes=5),
         )
 
         # Add test event
-        event = GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "node-1", "node")
+        event = GraphChangeEvent(
+            "1", ChangeType.NODE_CREATED, datetime.now(), "node-1", "node"
+        )
         window.add_event(event)
 
         # Add test aggregation
@@ -252,14 +278,19 @@ class TestAggregationRule:
     def test_count_aggregation(self):
         """Test count aggregation."""
         rule = AggregationRule(
-            name="event_count",
-            aggregation_type=AggregationType.COUNT
+            name="event_count", aggregation_type=AggregationType.COUNT
         )
 
         events = [
-            GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node"),
-            GraphChangeEvent("2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node"),
-            GraphChangeEvent("3", ChangeType.NODE_UPDATED, datetime.now(), "n1", "node")
+            GraphChangeEvent(
+                "1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node"
+            ),
+            GraphChangeEvent(
+                "2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node"
+            ),
+            GraphChangeEvent(
+                "3", ChangeType.NODE_UPDATED, datetime.now(), "n1", "node"
+            ),
         ]
 
         result = rule.apply(events)
@@ -270,13 +301,19 @@ class TestAggregationRule:
         rule = AggregationRule(
             name="distinct_entities",
             aggregation_type=AggregationType.DISTINCT_COUNT,
-            field_path="entity_id"
+            field_path="entity_id",
         )
 
         events = [
-            GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "node-1", "node"),
-            GraphChangeEvent("2", ChangeType.NODE_UPDATED, datetime.now(), "node-1", "node"),
-            GraphChangeEvent("3", ChangeType.NODE_CREATED, datetime.now(), "node-2", "node")
+            GraphChangeEvent(
+                "1", ChangeType.NODE_CREATED, datetime.now(), "node-1", "node"
+            ),
+            GraphChangeEvent(
+                "2", ChangeType.NODE_UPDATED, datetime.now(), "node-1", "node"
+            ),
+            GraphChangeEvent(
+                "3", ChangeType.NODE_CREATED, datetime.now(), "node-2", "node"
+            ),
         ]
 
         result = rule.apply(events)
@@ -287,13 +324,19 @@ class TestAggregationRule:
         rule = AggregationRule(
             name="count_by_type",
             aggregation_type=AggregationType.COUNT,
-            group_by=["change_type"]
+            group_by=["change_type"],
         )
 
         events = [
-            GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node"),
-            GraphChangeEvent("2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node"),
-            GraphChangeEvent("3", ChangeType.NODE_UPDATED, datetime.now(), "n1", "node")
+            GraphChangeEvent(
+                "1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node"
+            ),
+            GraphChangeEvent(
+                "2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node"
+            ),
+            GraphChangeEvent(
+                "3", ChangeType.NODE_UPDATED, datetime.now(), "n1", "node"
+            ),
         ]
 
         result = rule.apply(events)
@@ -307,22 +350,34 @@ class TestAggregationRule:
         rule = AggregationRule(
             name="property_sum",
             aggregation_type=AggregationType.SUM,
-            field_path="new_properties.value"
+            field_path="new_properties.value",
         )
 
         events = [
             GraphChangeEvent(
-                "1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node",
-                new_properties={"value": 10}
+                "1",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n1",
+                "node",
+                new_properties={"value": 10},
             ),
             GraphChangeEvent(
-                "2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node",
-                new_properties={"value": 20}
+                "2",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n2",
+                "node",
+                new_properties={"value": 20},
             ),
             GraphChangeEvent(
-                "3", ChangeType.NODE_CREATED, datetime.now(), "n3", "node",
-                new_properties={"value": 15}
-            )
+                "3",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n3",
+                "node",
+                new_properties={"value": 15},
+            ),
         ]
 
         result = rule.apply(events)
@@ -333,22 +388,34 @@ class TestAggregationRule:
         rule = AggregationRule(
             name="property_average",
             aggregation_type=AggregationType.AVERAGE,
-            field_path="new_properties.score"
+            field_path="new_properties.score",
         )
 
         events = [
             GraphChangeEvent(
-                "1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node",
-                new_properties={"score": 10.0}
+                "1",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n1",
+                "node",
+                new_properties={"score": 10.0},
             ),
             GraphChangeEvent(
-                "2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node",
-                new_properties={"score": 20.0}
+                "2",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n2",
+                "node",
+                new_properties={"score": 20.0},
             ),
             GraphChangeEvent(
-                "3", ChangeType.NODE_CREATED, datetime.now(), "n3", "node",
-                new_properties={"score": 30.0}
-            )
+                "3",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n3",
+                "node",
+                new_properties={"score": 30.0},
+            ),
         ]
 
         result = rule.apply(events)
@@ -360,14 +427,42 @@ class TestAggregationRule:
             name="top_users",
             aggregation_type=AggregationType.TOP_K,
             field_path="user_id",
-            parameters={"k": 2}
+            parameters={"k": 2},
         )
 
         events = [
-            GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node", user_id="user1"),
-            GraphChangeEvent("2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node", user_id="user1"),
-            GraphChangeEvent("3", ChangeType.NODE_CREATED, datetime.now(), "n3", "node", user_id="user2"),
-            GraphChangeEvent("4", ChangeType.NODE_CREATED, datetime.now(), "n4", "node", user_id="user3")
+            GraphChangeEvent(
+                "1",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n1",
+                "node",
+                user_id="user1",
+            ),
+            GraphChangeEvent(
+                "2",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n2",
+                "node",
+                user_id="user1",
+            ),
+            GraphChangeEvent(
+                "3",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n3",
+                "node",
+                user_id="user2",
+            ),
+            GraphChangeEvent(
+                "4",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n4",
+                "node",
+                user_id="user3",
+            ),
         ]
 
         result = rule.apply(events)
@@ -381,13 +476,19 @@ class TestAggregationRule:
         rule = AggregationRule(
             name="node_creations_only",
             aggregation_type=AggregationType.COUNT,
-            filter_condition=lambda e: e.change_type == ChangeType.NODE_CREATED
+            filter_condition=lambda e: e.change_type == ChangeType.NODE_CREATED,
         )
 
         events = [
-            GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node"),
-            GraphChangeEvent("2", ChangeType.NODE_UPDATED, datetime.now(), "n2", "node"),
-            GraphChangeEvent("3", ChangeType.NODE_CREATED, datetime.now(), "n3", "node")
+            GraphChangeEvent(
+                "1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node"
+            ),
+            GraphChangeEvent(
+                "2", ChangeType.NODE_UPDATED, datetime.now(), "n2", "node"
+            ),
+            GraphChangeEvent(
+                "3", ChangeType.NODE_CREATED, datetime.now(), "n3", "node"
+            ),
         ]
 
         result = rule.apply(events)
@@ -399,14 +500,42 @@ class TestAggregationRule:
             name="value_histogram",
             aggregation_type=AggregationType.HISTOGRAM,
             field_path="new_properties.value",
-            parameters={"bins": 3}
+            parameters={"bins": 3},
         )
 
         events = [
-            GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node", new_properties={"value": 1}),
-            GraphChangeEvent("2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node", new_properties={"value": 5}),
-            GraphChangeEvent("3", ChangeType.NODE_CREATED, datetime.now(), "n3", "node", new_properties={"value": 10}),
-            GraphChangeEvent("4", ChangeType.NODE_CREATED, datetime.now(), "n4", "node", new_properties={"value": 15})
+            GraphChangeEvent(
+                "1",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n1",
+                "node",
+                new_properties={"value": 1},
+            ),
+            GraphChangeEvent(
+                "2",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n2",
+                "node",
+                new_properties={"value": 5},
+            ),
+            GraphChangeEvent(
+                "3",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n3",
+                "node",
+                new_properties={"value": 10},
+            ),
+            GraphChangeEvent(
+                "4",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n4",
+                "node",
+                new_properties={"value": 15},
+            ),
         ]
 
         result = rule.apply(events)
@@ -421,14 +550,42 @@ class TestAggregationRule:
             name="median_value",
             aggregation_type=AggregationType.PERCENTILE,
             field_path="new_properties.value",
-            parameters={"percentile": 50}
+            parameters={"percentile": 50},
         )
 
         events = [
-            GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node", new_properties={"value": 1}),
-            GraphChangeEvent("2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node", new_properties={"value": 5}),
-            GraphChangeEvent("3", ChangeType.NODE_CREATED, datetime.now(), "n3", "node", new_properties={"value": 10}),
-            GraphChangeEvent("4", ChangeType.NODE_CREATED, datetime.now(), "n4", "node", new_properties={"value": 15})
+            GraphChangeEvent(
+                "1",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n1",
+                "node",
+                new_properties={"value": 1},
+            ),
+            GraphChangeEvent(
+                "2",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n2",
+                "node",
+                new_properties={"value": 5},
+            ),
+            GraphChangeEvent(
+                "3",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n3",
+                "node",
+                new_properties={"value": 10},
+            ),
+            GraphChangeEvent(
+                "4",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n4",
+                "node",
+                new_properties={"value": 15},
+            ),
         ]
 
         result = rule.apply(events)
@@ -439,11 +596,15 @@ class TestAggregationRule:
         rule = AggregationRule("test", AggregationType.COUNT)
 
         event = GraphChangeEvent(
-            "1", ChangeType.NODE_UPDATED, datetime.now(), "n1", "node",
+            "1",
+            ChangeType.NODE_UPDATED,
+            datetime.now(),
+            "n1",
+            "node",
             new_properties={"name": "John", "age": 30},
             old_properties={"name": "Jane", "age": 25},
             metadata={"source": "test"},
-            property_changes={"age": {"old": 25, "new": 30}}
+            property_changes={"age": {"old": 25, "new": 30}},
         )
 
         # Test direct property access
@@ -471,7 +632,7 @@ class TestStreamProcessor:
             window_size=timedelta(minutes=5),
             window_type=WindowType.TUMBLING,
             max_windows=10,
-            late_arrival_grace=timedelta(seconds=30)
+            late_arrival_grace=timedelta(seconds=30),
         )
 
     def test_processor_initialization(self, stream_processor):
@@ -503,11 +664,7 @@ class TestStreamProcessor:
     async def test_event_processing(self, stream_processor):
         """Test basic event processing."""
         event = GraphChangeEvent(
-            "test-1",
-            ChangeType.NODE_CREATED,
-            datetime.now(),
-            "node-1",
-            "node"
+            "test-1", ChangeType.NODE_CREATED, datetime.now(), "node-1", "node"
         )
 
         await stream_processor.process_event(event)
@@ -525,7 +682,7 @@ class TestStreamProcessor:
                 ChangeType.NODE_CREATED,
                 datetime.now(),
                 f"node-{i}",
-                "node"
+                "node",
             )
             events.append(event)
 
@@ -544,7 +701,7 @@ class TestStreamProcessor:
             ChangeType.NODE_CREATED,
             base_time + timedelta(minutes=1),
             "node-1",
-            "node"
+            "node",
         )
 
         await stream_processor._assign_to_windows(event)
@@ -560,7 +717,7 @@ class TestStreamProcessor:
         processor = StreamProcessor(
             window_size=timedelta(minutes=5),
             window_type=WindowType.HOPPING,
-            hop_size=timedelta(minutes=2)
+            hop_size=timedelta(minutes=2),
         )
 
         base_time = datetime.now().replace(second=0, microsecond=0)
@@ -570,7 +727,7 @@ class TestStreamProcessor:
             ChangeType.NODE_CREATED,
             base_time + timedelta(minutes=3),
             "node-1",
-            "node"
+            "node",
         )
 
         await processor._assign_to_windows(event)
@@ -586,19 +743,14 @@ class TestStreamProcessor:
     async def test_session_window_creation(self):
         """Test session window creation."""
         processor = StreamProcessor(
-            window_size=timedelta(minutes=30),
-            window_type=WindowType.SESSION
+            window_size=timedelta(minutes=30), window_type=WindowType.SESSION
         )
 
         base_time = datetime.now()
 
         # First event creates new session
         event1 = GraphChangeEvent(
-            "event-1",
-            ChangeType.NODE_CREATED,
-            base_time,
-            "node-1",
-            "node"
+            "event-1", ChangeType.NODE_CREATED, base_time, "node-1", "node"
         )
 
         await processor._assign_to_windows(event1)
@@ -610,7 +762,7 @@ class TestStreamProcessor:
             ChangeType.NODE_CREATED,
             base_time + timedelta(seconds=10),
             "node-2",
-            "node"
+            "node",
         )
 
         await processor._assign_to_windows(event2)
@@ -623,19 +775,14 @@ class TestStreamProcessor:
     async def test_sliding_window_creation(self):
         """Test sliding window creation."""
         processor = StreamProcessor(
-            window_size=timedelta(minutes=5),
-            window_type=WindowType.SLIDING
+            window_size=timedelta(minutes=5), window_type=WindowType.SLIDING
         )
 
         base_time = datetime.now()
 
         # Each event creates its own sliding window
         event1 = GraphChangeEvent(
-            "event-1",
-            ChangeType.NODE_CREATED,
-            base_time,
-            "node-1",
-            "node"
+            "event-1", ChangeType.NODE_CREATED, base_time, "node-1", "node"
         )
 
         await processor._assign_to_windows(event1)
@@ -646,7 +793,7 @@ class TestStreamProcessor:
             ChangeType.NODE_CREATED,
             base_time + timedelta(minutes=1),
             "node-2",
-            "node"
+            "node",
         )
 
         await processor._assign_to_windows(event2)
@@ -661,9 +808,7 @@ class TestStreamProcessor:
 
         # Create a window that should be completed
         window = await stream_processor._create_window(
-            "test-window",
-            past_time,
-            past_time + timedelta(minutes=5)
+            "test-window", past_time, past_time + timedelta(minutes=5)
         )
 
         # Add event to window
@@ -672,7 +817,7 @@ class TestStreamProcessor:
             ChangeType.NODE_CREATED,
             past_time + timedelta(minutes=1),
             "node-1",
-            "node"
+            "node",
         )
         window.add_event(event)
 
@@ -689,8 +834,7 @@ class TestStreamProcessor:
         """Test aggregation rule application during window completion."""
         # Add aggregation rule
         rule = AggregationRule(
-            name="event_count",
-            aggregation_type=AggregationType.COUNT
+            name="event_count", aggregation_type=AggregationType.COUNT
         )
         stream_processor.add_aggregation_rule(rule)
 
@@ -698,7 +842,7 @@ class TestStreamProcessor:
         window = await stream_processor._create_window(
             "test-window",
             datetime.now() - timedelta(minutes=10),
-            datetime.now() - timedelta(minutes=5)
+            datetime.now() - timedelta(minutes=5),
         )
 
         # Add events
@@ -708,7 +852,7 @@ class TestStreamProcessor:
                 ChangeType.NODE_CREATED,
                 datetime.now() - timedelta(minutes=8),
                 f"node-{i}",
-                "node"
+                "node",
             )
             window.add_event(event)
 
@@ -744,7 +888,7 @@ class TestStreamProcessor:
         window = await stream_processor._create_window(
             "test-window",
             datetime.now() - timedelta(minutes=10),
-            datetime.now() - timedelta(minutes=5)
+            datetime.now() - timedelta(minutes=5),
         )
 
         event = GraphChangeEvent(
@@ -752,7 +896,7 @@ class TestStreamProcessor:
             ChangeType.NODE_CREATED,
             datetime.now() - timedelta(minutes=8),
             "node-1",
-            "node"
+            "node",
         )
         window.add_event(event)
 
@@ -777,7 +921,7 @@ class TestStreamProcessor:
             ChangeType.NODE_CREATED,
             current_time - timedelta(minutes=5),  # Much older than grace period
             "node-1",
-            "node"
+            "node",
         )
 
         await stream_processor.process_event(late_event)
@@ -798,7 +942,7 @@ class TestStreamProcessor:
                 ChangeType.NODE_CREATED,
                 datetime.now(),
                 f"node-{i}",
-                "node"
+                "node",
             )
             await stream_processor.process_event(event)
 
@@ -827,7 +971,7 @@ class TestStreamProcessor:
 
         stats = stream_processor.get_stats()
 
-        assert stats["is_running"] == False
+        assert not stats["is_running"]
         assert stats["window_type"] == WindowType.TUMBLING.value
         assert stats["events_processed"] == 100
         assert stats["windows_created"] == 10
@@ -842,7 +986,7 @@ class TestStreamProcessor:
             WindowType.TUMBLING,
             datetime.now(),
             datetime.now() + timedelta(minutes=5),
-            timedelta(minutes=5)
+            timedelta(minutes=5),
         )
         stream_processor.windows["test-window"] = window
 
@@ -861,7 +1005,7 @@ class TestStreamProcessor:
                 WindowType.TUMBLING,
                 datetime.now(),
                 datetime.now() + timedelta(minutes=5),
-                timedelta(minutes=5)
+                timedelta(minutes=5),
             )
             stream_processor.completed_windows.append(window)
 
@@ -898,10 +1042,38 @@ class TestCommonAggregationRules:
 
         # Create sample events
         events = [
-            GraphChangeEvent("1", ChangeType.NODE_CREATED, datetime.now(), "n1", "node", user_id="user1"),
-            GraphChangeEvent("2", ChangeType.NODE_CREATED, datetime.now(), "n2", "node", user_id="user1"),
-            GraphChangeEvent("3", ChangeType.NODE_UPDATED, datetime.now(), "n1", "node", user_id="user2"),
-            GraphChangeEvent("4", ChangeType.RELATIONSHIP_CREATED, datetime.now(), "r1", "relationship", user_id="user2")
+            GraphChangeEvent(
+                "1",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n1",
+                "node",
+                user_id="user1",
+            ),
+            GraphChangeEvent(
+                "2",
+                ChangeType.NODE_CREATED,
+                datetime.now(),
+                "n2",
+                "node",
+                user_id="user1",
+            ),
+            GraphChangeEvent(
+                "3",
+                ChangeType.NODE_UPDATED,
+                datetime.now(),
+                "n1",
+                "node",
+                user_id="user2",
+            ),
+            GraphChangeEvent(
+                "4",
+                ChangeType.RELATIONSHIP_CREATED,
+                datetime.now(),
+                "r1",
+                "relationship",
+                user_id="user2",
+            ),
         ]
 
         # Apply each rule
@@ -932,8 +1104,7 @@ class TestCommonAggregationRules:
 async def test_end_to_end_stream_processing():
     """Test end-to-end stream processing with multiple events and windows."""
     processor = StreamProcessor(
-        window_size=timedelta(seconds=2),
-        window_type=WindowType.TUMBLING
+        window_size=timedelta(seconds=2), window_type=WindowType.TUMBLING
     )
 
     # Add common aggregation rules
@@ -963,7 +1134,7 @@ async def test_end_to_end_stream_processing():
             base_time + timedelta(milliseconds=i * 200),
             f"node-{i % 3}",  # 3 different entities
             "node",
-            user_id=f"user-{i % 2}"  # 2 different users
+            user_id=f"user-{i % 2}",  # 2 different users
         )
         events.append(event)
         await processor.process_event(event)
@@ -1000,7 +1171,7 @@ async def test_concurrent_event_processing():
     processor = StreamProcessor(
         window_size=timedelta(seconds=1),
         window_type=WindowType.TUMBLING,
-        buffer_size=1000
+        buffer_size=1000,
     )
 
     await processor.start()
@@ -1014,7 +1185,7 @@ async def test_concurrent_event_processing():
                 ChangeType.NODE_CREATED,
                 datetime.now(),
                 f"node-{i}",
-                "node"
+                "node",
             )
             tasks.append(processor.process_event(event))
 
@@ -1022,9 +1193,7 @@ async def test_concurrent_event_processing():
 
     # Generate events from multiple coroutines
     await asyncio.gather(
-        generate_events(0, 100),
-        generate_events(100, 100),
-        generate_events(200, 100)
+        generate_events(0, 100), generate_events(100, 100), generate_events(200, 100)
     )
 
     # Allow processing time

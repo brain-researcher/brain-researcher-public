@@ -6,18 +6,17 @@ the format expected by NipypeWorkflowBuilderTool.
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from brain_researcher.services.shared.planner.models import Plan, StepSpec, RuntimeKind
 from brain_researcher.services.agent.adapters.tool_interface_map import (
+    InterfaceSpec,
     get_interface_spec,
     load_tool_interface_map,
-    InterfaceSpec,
 )
+from brain_researcher.services.shared.planner.models import Plan, RuntimeKind, StepSpec
 
 logger = logging.getLogger(__name__)
 
@@ -31,18 +30,18 @@ class NipypeExportResult:
     """Result of plan-to-Nipype conversion."""
 
     # Arguments for NipypeWorkflowBuilderTool._run()
-    builder_args: Dict[str, Any]
+    builder_args: dict[str, Any]
 
     # Metadata
     plan_id: str
-    exported_steps: List[str]
-    skipped_steps: List[str]
-    warnings: List[str]
+    exported_steps: list[str]
+    skipped_steps: list[str]
+    warnings: list[str]
 
     # Mapping of step_id -> node_name for reference
-    step_to_node: Dict[str, str] = field(default_factory=dict)
+    step_to_node: dict[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
             "builder_args": self.builder_args,
@@ -69,8 +68,8 @@ def _sanitize_node_name(step_id: str) -> str:
 
 def _map_step_to_node(
     step: StepSpec,
-    interface_map: Dict[str, InterfaceSpec],
-) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    interface_map: dict[str, InterfaceSpec],
+) -> tuple[dict[str, Any] | None, str | None]:
     """Convert a StepSpec to a Nipype node configuration.
 
     Args:
@@ -96,7 +95,7 @@ def _map_step_to_node(
         }, f"No interface mapping for tool '{step.tool}', using IdentityInterface"
 
     # Build node configuration
-    node_config: Dict[str, Any] = {
+    node_config: dict[str, Any] = {
         "name": node_name,
         "interface": {
             "type": iface_spec.get("type", "utility"),
@@ -109,10 +108,10 @@ def _map_step_to_node(
 
 
 def _derive_connections(
-    steps: List[StepSpec],
-    step_to_node: Dict[str, str],
-    interface_map: Dict[str, InterfaceSpec],
-) -> Tuple[List[Tuple[str, str, str, str]], List[str]]:
+    steps: list[StepSpec],
+    step_to_node: dict[str, str],
+    interface_map: dict[str, InterfaceSpec],
+) -> tuple[list[tuple[str, str, str, str]], list[str]]:
     """Derive DAG connections from produces/consumes relationships.
 
     Strategy:
@@ -128,11 +127,13 @@ def _derive_connections(
     Returns:
         Tuple of (connections, warnings)
     """
-    connections: List[Tuple[str, str, str, str]] = []
-    warnings: List[str] = []
+    connections: list[tuple[str, str, str, str]] = []
+    warnings: list[str] = []
 
     # Build index of which steps produce which resources
-    resource_producers: Dict[str, Tuple[StepSpec, str]] = {}  # resource_name -> (step, resource_type)
+    resource_producers: dict[str, tuple[StepSpec, str]] = (
+        {}
+    )  # resource_name -> (step, resource_type)
     for step in steps:
         for res_name, res_type in (step.produces or {}).items():
             if res_name in resource_producers:
@@ -178,13 +179,21 @@ def _derive_connections(
             to_field = consumer_consumes_map.get(res_name, "in_file")
 
             # Add connection
-            from_node = step_to_node.get(producer_step.id, _sanitize_node_name(producer_step.id))
-            to_node = step_to_node.get(consumer_step.id, _sanitize_node_name(consumer_step.id))
+            from_node = step_to_node.get(
+                producer_step.id, _sanitize_node_name(producer_step.id)
+            )
+            to_node = step_to_node.get(
+                consumer_step.id, _sanitize_node_name(consumer_step.id)
+            )
 
             connections.append((from_node, from_field, to_node, to_field))
             logger.debug(
                 "Added connection: %s.%s -> %s.%s (resource: %s)",
-                from_node, from_field, to_node, to_field, res_name
+                from_node,
+                from_field,
+                to_node,
+                to_field,
+                res_name,
             )
 
     # Fallback: if no explicit resources connect steps, create a linear chain.
@@ -208,8 +217,12 @@ def _derive_connections(
             from_field = next(iter(produces_map.values()), "out_file")
             to_field = next(iter(consumes_map.values()), "in_file")
 
-            from_node = step_to_node.get(producer_step.id, _sanitize_node_name(producer_step.id))
-            to_node = step_to_node.get(consumer_step.id, _sanitize_node_name(consumer_step.id))
+            from_node = step_to_node.get(
+                producer_step.id, _sanitize_node_name(producer_step.id)
+            )
+            to_node = step_to_node.get(
+                consumer_step.id, _sanitize_node_name(consumer_step.id)
+            )
 
             connections.append((from_node, from_field, to_node, to_field))
 
@@ -220,9 +233,9 @@ def plan_to_nipype_builder_args(
     plan: Plan,
     base_dir: str,
     plugin: str = "MultiProc",
-    plugin_args: Optional[Dict[str, Any]] = None,
+    plugin_args: dict[str, Any] | None = None,
     strict: bool = False,
-    interface_map: Optional[Dict[str, InterfaceSpec]] = None,
+    interface_map: dict[str, InterfaceSpec] | None = None,
 ) -> NipypeExportResult:
     """Convert a Plan to NipypeWorkflowBuilderTool arguments.
 
@@ -243,11 +256,11 @@ def plan_to_nipype_builder_args(
     if interface_map is None:
         interface_map = load_tool_interface_map()
 
-    nodes: List[Dict[str, Any]] = []
-    exported_steps: List[str] = []
-    skipped_steps: List[str] = []
-    warnings: List[str] = []
-    step_to_node: Dict[str, str] = {}
+    nodes: list[dict[str, Any]] = []
+    exported_steps: list[str] = []
+    skipped_steps: list[str] = []
+    warnings: list[str] = []
+    step_to_node: dict[str, str] = {}
 
     # Process each step
     for step in plan.dag.steps:
@@ -287,7 +300,7 @@ def plan_to_nipype_builder_args(
     warnings.extend(conn_warnings)
 
     # Build result
-    builder_args: Dict[str, Any] = {
+    builder_args: dict[str, Any] = {
         "name": f"plan_{plan.plan_id.replace('-', '_')}",
         "base_dir": base_dir,
         "nodes": nodes,
@@ -310,9 +323,9 @@ def export_plan_to_nipype(
     plan: Plan,
     output_dir: str,
     plugin: str = "MultiProc",
-    plugin_args: Optional[Dict[str, Any]] = None,
+    plugin_args: dict[str, Any] | None = None,
     strict: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Export a Plan to Nipype workflow files.
 
     This is the high-level function that:

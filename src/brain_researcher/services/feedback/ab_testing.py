@@ -2,15 +2,15 @@
 
 import hashlib
 import json
-import time
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass, asdict
-from enum import Enum
-import numpy as np
-from scipy import stats
-import redis
 import logging
+import time
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+
+import numpy as np
+import redis
+from scipy import stats
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +27,13 @@ class Experiment:
     id: str
     name: str
     description: str
-    variants: List[str]
-    allocation: Dict[str, float]  # variant -> allocation ratio
-    metrics: List[str]
+    variants: list[str]
+    allocation: dict[str, float]  # variant -> allocation ratio
+    metrics: list[str]
     status: ExperimentStatus
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    sample_size: Optional[int] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    sample_size: int | None = None
     significance_level: float = 0.05
     created_at: datetime = None
 
@@ -46,11 +46,11 @@ class Experiment:
 class ExperimentResult:
     experiment_id: str
     variant: str
-    metrics: Dict[str, float]
+    metrics: dict[str, float]
     sample_size: int
-    confidence_intervals: Dict[str, Tuple[float, float]]
-    statistical_significance: Dict[str, bool]
-    p_values: Dict[str, float]
+    confidence_intervals: dict[str, tuple[float, float]]
+    statistical_significance: dict[str, bool]
+    p_values: dict[str, float]
 
 
 class StatisticalAnalyzer:
@@ -64,7 +64,9 @@ class StatisticalAnalyzer:
         return (successes + 1) / (trials + 2)
 
     @staticmethod
-    def wilson_confidence_interval(successes: int, trials: int, alpha: float = 0.05) -> Tuple[float, float]:
+    def wilson_confidence_interval(
+        successes: int, trials: int, alpha: float = 0.05
+    ) -> tuple[float, float]:
         """Calculate Wilson confidence interval for conversion rate."""
         if trials == 0:
             return 0.0, 0.0
@@ -73,12 +75,18 @@ class StatisticalAnalyzer:
         p = successes / trials
 
         center = (p + z**2 / (2 * trials)) / (1 + z**2 / trials)
-        margin = z * np.sqrt(p * (1 - p) / trials + z**2 / (4 * trials**2)) / (1 + z**2 / trials)
+        margin = (
+            z
+            * np.sqrt(p * (1 - p) / trials + z**2 / (4 * trials**2))
+            / (1 + z**2 / trials)
+        )
 
         return max(0, center - margin), min(1, center + margin)
 
     @staticmethod
-    def two_proportion_z_test(x1: int, n1: int, x2: int, n2: int) -> Tuple[float, float]:
+    def two_proportion_z_test(
+        x1: int, n1: int, x2: int, n2: int
+    ) -> tuple[float, float]:
         """Perform two-proportion z-test."""
         if n1 == 0 or n2 == 0:
             return 0.0, 1.0
@@ -87,7 +95,7 @@ class StatisticalAnalyzer:
         p2 = x2 / n2
         p_pool = (x1 + x2) / (n1 + n2)
 
-        se = np.sqrt(p_pool * (1 - p_pool) * (1/n1 + 1/n2))
+        se = np.sqrt(p_pool * (1 - p_pool) * (1 / n1 + 1 / n2))
 
         if se == 0:
             return 0.0, 1.0
@@ -114,10 +122,12 @@ class StatisticalAnalyzer:
 class ABTestingFramework:
     """Main A/B testing framework for experiment management and analysis."""
 
-    def __init__(self, redis_client: Optional[redis.Redis] = None):
+    def __init__(self, redis_client: redis.Redis | None = None):
         self.redis_client = redis_client or redis.Redis(decode_responses=True)
-        self.experiments: Dict[str, Experiment] = {}
-        self.assignments: Dict[str, Dict[str, str]] = {}  # user_id -> {experiment_id: variant}
+        self.experiments: dict[str, Experiment] = {}
+        self.assignments: dict[str, dict[str, str]] = (
+            {}
+        )  # user_id -> {experiment_id: variant}
         self.stats = StatisticalAnalyzer()
 
         # Load existing experiments
@@ -127,11 +137,11 @@ class ABTestingFramework:
         self,
         name: str,
         description: str,
-        variants: List[str],
-        allocation: Dict[str, float],
-        metrics: List[str],
-        sample_size: Optional[int] = None,
-        significance_level: float = 0.05
+        variants: list[str],
+        allocation: dict[str, float],
+        metrics: list[str],
+        sample_size: int | None = None,
+        significance_level: float = 0.05,
     ) -> Experiment:
         """Create a new A/B test experiment."""
         # Validate allocation ratios
@@ -151,7 +161,7 @@ class ABTestingFramework:
             metrics=metrics,
             status=ExperimentStatus.DRAFT,
             sample_size=sample_size,
-            significance_level=significance_level
+            significance_level=significance_level,
         )
 
         self.experiments[experiment_id] = experiment
@@ -213,22 +223,20 @@ class ABTestingFramework:
             cumulative += experiment.allocation[variant]
             if random_value <= cumulative:
                 # Store assignment
-                self.redis_client.setex(
-                    assignment_key,
-                    timedelta(days=30),
-                    variant
-                )
+                self.redis_client.setex(assignment_key, timedelta(days=30), variant)
 
                 # Track assignment
                 self._track_assignment(user_id, experiment_id, variant)
 
-                logger.debug(f"Assigned user {user_id} to variant {variant} in experiment {experiment_id}")
+                logger.debug(
+                    f"Assigned user {user_id} to variant {variant} in experiment {experiment_id}"
+                )
                 return variant
 
         # Fallback to first variant
         return experiment.variants[0]
 
-    def get_experiment_results(self, experiment_id: str) -> Dict[str, ExperimentResult]:
+    def get_experiment_results(self, experiment_id: str) -> dict[str, ExperimentResult]:
         """Get statistical analysis results for an experiment."""
         if experiment_id not in self.experiments:
             raise ValueError(f"Experiment {experiment_id} not found")
@@ -247,7 +255,7 @@ class ABTestingFramework:
 
         return results
 
-    def get_experiment_status(self, experiment_id: str) -> Dict:
+    def get_experiment_status(self, experiment_id: str) -> dict:
         """Get current status and progress of an experiment."""
         if experiment_id not in self.experiments:
             raise ValueError(f"Experiment {experiment_id} not found")
@@ -268,29 +276,33 @@ class ABTestingFramework:
             "variant_assignments": assignment_counts,
             "completion_rate": (
                 total_assignments / experiment.sample_size
-                if experiment.sample_size else None
+                if experiment.sample_size
+                else None
             ),
             "days_running": (
                 (datetime.utcnow() - experiment.start_date).days
-                if experiment.start_date else None
-            )
+                if experiment.start_date
+                else None
+            ),
         }
 
         return status
 
-    def list_experiments(self, status: Optional[ExperimentStatus] = None) -> List[Dict]:
+    def list_experiments(self, status: ExperimentStatus | None = None) -> list[dict]:
         """List all experiments, optionally filtered by status."""
         experiments = []
 
         for experiment in self.experiments.values():
             if status is None or experiment.status == status:
-                experiments.append({
-                    **asdict(experiment),
-                    "total_assignments": sum(
-                        self._count_variant_assignments(experiment.id, variant)
-                        for variant in experiment.variants
-                    )
-                })
+                experiments.append(
+                    {
+                        **asdict(experiment),
+                        "total_assignments": sum(
+                            self._count_variant_assignments(experiment.id, variant)
+                            for variant in experiment.variants
+                        ),
+                    }
+                )
 
         return sorted(experiments, key=lambda x: x["created_at"], reverse=True)
 
@@ -312,10 +324,13 @@ class ABTestingFramework:
 
         data["status"] = experiment.status.value
 
-        self.redis_client.hset(key, mapping={
-            k: json.dumps(v) if isinstance(v, (dict, list)) else str(v)
-            for k, v in data.items()
-        })
+        self.redis_client.hset(
+            key,
+            mapping={
+                k: json.dumps(v) if isinstance(v, dict | list) else str(v)
+                for k, v in data.items()
+            },
+        )
 
     def _load_experiments(self) -> None:
         """Load experiments from Redis."""
@@ -363,14 +378,16 @@ class ABTestingFramework:
 
         # Also track timestamp
         timestamp_key = f"assignment_time:{user_id}:{experiment_id}"
-        self.redis_client.setex(timestamp_key, timedelta(days=30), str(int(time.time())))
+        self.redis_client.setex(
+            timestamp_key, timedelta(days=30), str(int(time.time()))
+        )
 
     def _count_variant_assignments(self, experiment_id: str, variant: str) -> int:
         """Count assignments for a variant."""
         key = f"assignments:{experiment_id}:{variant}"
         return self.redis_client.scard(key)
 
-    def _get_variant_metrics(self, experiment_id: str, variant: str) -> Dict:
+    def _get_variant_metrics(self, experiment_id: str, variant: str) -> dict:
         """Get metrics data for a variant."""
         # This would integrate with MetricsCollector
         # For now, return mock data
@@ -381,10 +398,12 @@ class ABTestingFramework:
             "conversions": int(data.get("conversions", 0)),
             "impressions": int(data.get("impressions", 0)),
             "revenue": float(data.get("revenue", 0.0)),
-            "engagement_time": float(data.get("engagement_time", 0.0))
+            "engagement_time": float(data.get("engagement_time", 0.0)),
         }
 
-    def _analyze_metric(self, experiment: Experiment, metric: str, variant_data: Dict) -> Dict:
+    def _analyze_metric(
+        self, experiment: Experiment, metric: str, variant_data: dict
+    ) -> dict:
         """Perform statistical analysis for a metric across variants."""
         if len(experiment.variants) != 2:
             # Multi-variant testing not implemented
@@ -401,13 +420,19 @@ class ABTestingFramework:
             treatment_impressions = treatment_data.get("impressions", 0)
 
             # Calculate rates
-            control_rate = self.stats.calculate_conversion_rate(control_conversions, control_impressions)
-            treatment_rate = self.stats.calculate_conversion_rate(treatment_conversions, treatment_impressions)
+            control_rate = self.stats.calculate_conversion_rate(
+                control_conversions, control_impressions
+            )
+            treatment_rate = self.stats.calculate_conversion_rate(
+                treatment_conversions, treatment_impressions
+            )
 
             # Statistical test
             z_stat, p_value = self.stats.two_proportion_z_test(
-                control_conversions, control_impressions,
-                treatment_conversions, treatment_impressions
+                control_conversions,
+                control_impressions,
+                treatment_conversions,
+                treatment_impressions,
             )
 
             # Confidence intervals
@@ -415,19 +440,27 @@ class ABTestingFramework:
                 control_conversions, control_impressions, experiment.significance_level
             )
             treatment_ci = self.stats.wilson_confidence_interval(
-                treatment_conversions, treatment_impressions, experiment.significance_level
+                treatment_conversions,
+                treatment_impressions,
+                experiment.significance_level,
             )
 
             # Bayesian probability
             prob_treatment_better = self.stats.bayesian_probability(
-                treatment_conversions, treatment_impressions,
-                control_conversions, control_impressions
+                treatment_conversions,
+                treatment_impressions,
+                control_conversions,
+                control_impressions,
             )
 
             return {
                 "control_rate": control_rate,
                 "treatment_rate": treatment_rate,
-                "lift": (treatment_rate - control_rate) / control_rate if control_rate > 0 else 0,
+                "lift": (
+                    (treatment_rate - control_rate) / control_rate
+                    if control_rate > 0
+                    else 0
+                ),
                 "z_statistic": z_stat,
                 "p_value": p_value,
                 "significant": p_value < experiment.significance_level,
@@ -435,7 +468,7 @@ class ABTestingFramework:
                 "treatment_ci": treatment_ci,
                 "probability_treatment_better": prob_treatment_better,
                 "control_sample_size": control_impressions,
-                "treatment_sample_size": treatment_impressions
+                "treatment_sample_size": treatment_impressions,
             }
 
         # Add more metric types as needed

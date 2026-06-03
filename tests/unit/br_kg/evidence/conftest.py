@@ -103,7 +103,9 @@ def mock_br_kg_connector(sample_evidence_items):
 @pytest.fixture
 def mock_dataset_connector(sample_evidence_items):
     """Create a mock dataset connector."""
-    items = [i for i in sample_evidence_items if i.source == EvidenceSource.DATASET_CATALOG]
+    items = [
+        i for i in sample_evidence_items if i.source == EvidenceSource.DATASET_CATALOG
+    ]
     return MockConnector(EvidenceSource.DATASET_CATALOG, items)
 
 

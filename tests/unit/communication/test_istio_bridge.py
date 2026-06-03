@@ -5,11 +5,10 @@ Tests the communication layer between services through the Istio service mesh,
 including service discovery, load balancing, and traffic routing.
 """
 
+from typing import Any
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-import asyncio
-import json
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-from typing import Dict, Any, List, Optional
 
 # Test markers
 pytestmark = [pytest.mark.unit, pytest.mark.istio]
@@ -24,10 +23,10 @@ class MockIstioConfig:
         self.service_entries = {}
         self.gateways = {}
 
-    def add_virtual_service(self, name: str, config: Dict[str, Any]):
+    def add_virtual_service(self, name: str, config: dict[str, Any]):
         self.virtual_services[name] = config
 
-    def add_destination_rule(self, name: str, config: Dict[str, Any]):
+    def add_destination_rule(self, name: str, config: dict[str, Any]):
         self.destination_rules[name] = config
 
 
@@ -53,9 +52,11 @@ class TestIstioServiceDiscovery:
     @pytest.fixture
     def service_registry(self, mock_k8s_client):
         """Create a mock service registry."""
-        from brain_researcher.infrastructure.istio.service_registry import IstioServiceRegistry
+        from brain_researcher.infrastructure.istio.service_registry import (
+            IstioServiceRegistry,
+        )
 
-        with patch('kubernetes.client', return_value=mock_k8s_client):
+        with patch("kubernetes.client", return_value=mock_k8s_client):
             registry = IstioServiceRegistry(namespace="brain-researcher")
 
         return registry
@@ -66,7 +67,7 @@ class TestIstioServiceDiscovery:
             "name": "br_kg-service",
             "port": 5001,
             "labels": {"app": "br_kg", "version": "v1"},
-            "health_check": "/health"
+            "health_check": "/health",
         }
 
         result = service_registry.register_service(service_info)
@@ -80,7 +81,7 @@ class TestIstioServiceDiscovery:
         services = [
             {"name": "br_kg-service", "port": 5001, "labels": {"app": "br_kg"}},
             {"name": "agent-service", "port": 8000, "labels": {"app": "agent"}},
-            {"name": "web-ui-service", "port": 3000, "labels": {"app": "web-ui"}}
+            {"name": "web-ui-service", "port": 3000, "labels": {"app": "web-ui"}},
         ]
 
         for service in services:
@@ -97,12 +98,12 @@ class TestIstioServiceDiscovery:
             "name": "test-service",
             "port": 8080,
             "labels": {"app": "test"},
-            "health_check": "/health"
+            "health_check": "/health",
         }
 
         service_registry.register_service(service_info)
 
-        with patch('requests.get') as mock_get:
+        with patch("requests.get") as mock_get:
             mock_get.return_value.status_code = 200
             mock_get.return_value.json.return_value = {"status": "healthy"}
 
@@ -118,9 +119,11 @@ class TestIstioTrafficManagement:
     @pytest.fixture
     def traffic_manager(self, mock_k8s_client, mock_istio_config):
         """Create a mock traffic manager."""
-        from brain_researcher.infrastructure.istio.traffic_manager import IstioTrafficManager
+        from brain_researcher.infrastructure.istio.traffic_manager import (
+            IstioTrafficManager,
+        )
 
-        with patch('kubernetes.client', return_value=mock_k8s_client):
+        with patch("kubernetes.client", return_value=mock_k8s_client):
             manager = IstioTrafficManager(namespace="brain-researcher")
             manager.config = mock_istio_config
 
@@ -131,22 +134,23 @@ class TestIstioTrafficManagement:
         vs_config = {
             "apiVersion": "networking.istio.io/v1beta1",
             "kind": "VirtualService",
-            "metadata": {
-                "name": "br_kg-vs",
-                "namespace": "brain-researcher"
-            },
+            "metadata": {"name": "br_kg-vs", "namespace": "brain-researcher"},
             "spec": {
                 "hosts": ["br_kg-service"],
-                "http": [{
-                    "route": [{
-                        "destination": {
-                            "host": "br_kg-service",
-                            "subset": "v1"
-                        },
-                        "weight": 100
-                    }]
-                }]
-            }
+                "http": [
+                    {
+                        "route": [
+                            {
+                                "destination": {
+                                    "host": "br_kg-service",
+                                    "subset": "v1",
+                                },
+                                "weight": 100,
+                            }
+                        ]
+                    }
+                ],
+            },
         }
 
         result = traffic_manager.create_virtual_service("br_kg-vs", vs_config)
@@ -159,24 +163,12 @@ class TestIstioTrafficManagement:
         dr_config = {
             "apiVersion": "networking.istio.io/v1beta1",
             "kind": "DestinationRule",
-            "metadata": {
-                "name": "br_kg-dr",
-                "namespace": "brain-researcher"
-            },
+            "metadata": {"name": "br_kg-dr", "namespace": "brain-researcher"},
             "spec": {
                 "host": "br_kg-service",
-                "trafficPolicy": {
-                    "loadBalancer": {
-                        "simple": "LEAST_CONN"
-                    }
-                },
-                "subsets": [
-                    {
-                        "name": "v1",
-                        "labels": {"version": "v1"}
-                    }
-                ]
-            }
+                "trafficPolicy": {"loadBalancer": {"simple": "LEAST_CONN"}},
+                "subsets": [{"name": "v1", "labels": {"version": "v1"}}],
+            },
         }
 
         result = traffic_manager.create_destination_rule("br_kg-dr", dr_config)
@@ -190,19 +182,27 @@ class TestIstioTrafficManagement:
             "metadata": {"name": "canary-split"},
             "spec": {
                 "hosts": ["br_kg-service"],
-                "http": [{
-                    "route": [
-                        {
-                            "destination": {"host": "br_kg-service", "subset": "v1"},
-                            "weight": 80
-                        },
-                        {
-                            "destination": {"host": "br_kg-service", "subset": "v2"},
-                            "weight": 20
-                        }
-                    ]
-                }]
-            }
+                "http": [
+                    {
+                        "route": [
+                            {
+                                "destination": {
+                                    "host": "br_kg-service",
+                                    "subset": "v1",
+                                },
+                                "weight": 80,
+                            },
+                            {
+                                "destination": {
+                                    "host": "br_kg-service",
+                                    "subset": "v2",
+                                },
+                                "weight": 20,
+                            },
+                        ]
+                    }
+                ],
+            },
         }
 
         result = traffic_manager.configure_traffic_split("canary-split", split_config)
@@ -222,9 +222,11 @@ class TestIstioSecurityPolicies:
     @pytest.fixture
     def security_manager(self, mock_k8s_client):
         """Create a mock security manager."""
-        from brain_researcher.infrastructure.istio.security_manager import IstioSecurityManager
+        from brain_researcher.infrastructure.istio.security_manager import (
+            IstioSecurityManager,
+        )
 
-        with patch('kubernetes.client', return_value=mock_k8s_client):
+        with patch("kubernetes.client", return_value=mock_k8s_client):
             manager = IstioSecurityManager(namespace="brain-researcher")
 
         return manager
@@ -234,30 +236,29 @@ class TestIstioSecurityPolicies:
         policy_config = {
             "apiVersion": "security.istio.io/v1beta1",
             "kind": "AuthorizationPolicy",
-            "metadata": {
-                "name": "br_kg-access",
-                "namespace": "brain-researcher"
-            },
+            "metadata": {"name": "br_kg-access", "namespace": "brain-researcher"},
             "spec": {
-                "selector": {
-                    "matchLabels": {"app": "br_kg"}
-                },
-                "rules": [{
-                    "from": [{
-                        "source": {
-                            "principals": ["cluster.local/ns/brain-researcher/sa/agent-service"]
-                        }
-                    }],
-                    "to": [{
-                        "operation": {
-                            "methods": ["GET", "POST"]
-                        }
-                    }]
-                }]
-            }
+                "selector": {"matchLabels": {"app": "br_kg"}},
+                "rules": [
+                    {
+                        "from": [
+                            {
+                                "source": {
+                                    "principals": [
+                                        "cluster.local/ns/brain-researcher/sa/agent-service"
+                                    ]
+                                }
+                            }
+                        ],
+                        "to": [{"operation": {"methods": ["GET", "POST"]}}],
+                    }
+                ],
+            },
         }
 
-        result = security_manager.create_authorization_policy("br_kg-access", policy_config)
+        result = security_manager.create_authorization_policy(
+            "br_kg-access", policy_config
+        )
 
         assert result is True
 
@@ -266,15 +267,8 @@ class TestIstioSecurityPolicies:
         peer_auth_config = {
             "apiVersion": "security.istio.io/v1beta1",
             "kind": "PeerAuthentication",
-            "metadata": {
-                "name": "default",
-                "namespace": "brain-researcher"
-            },
-            "spec": {
-                "mtls": {
-                    "mode": "STRICT"
-                }
-            }
+            "metadata": {"name": "default", "namespace": "brain-researcher"},
+            "spec": {"mtls": {"mode": "STRICT"}},
         }
 
         result = security_manager.enable_mtls("brain-researcher", peer_auth_config)
@@ -286,22 +280,21 @@ class TestIstioSecurityPolicies:
         request_auth_config = {
             "apiVersion": "security.istio.io/v1beta1",
             "kind": "RequestAuthentication",
-            "metadata": {
-                "name": "jwt-auth",
-                "namespace": "brain-researcher"
-            },
+            "metadata": {"name": "jwt-auth", "namespace": "brain-researcher"},
             "spec": {
-                "selector": {
-                    "matchLabels": {"app": "web-ui"}
-                },
-                "jwtRules": [{
-                    "issuer": "https://auth.brain-researcher.io",
-                    "jwksUri": "https://auth.brain-researcher.io/.well-known/jwks.json"
-                }]
-            }
+                "selector": {"matchLabels": {"app": "web-ui"}},
+                "jwtRules": [
+                    {
+                        "issuer": "https://auth.brain-researcher.io",
+                        "jwksUri": "https://auth.brain-researcher.io/.well-known/jwks.json",
+                    }
+                ],
+            },
         }
 
-        result = security_manager.configure_jwt_validation("jwt-auth", request_auth_config)
+        result = security_manager.configure_jwt_validation(
+            "jwt-auth", request_auth_config
+        )
 
         assert result is True
 
@@ -312,9 +305,11 @@ class TestIstioObservability:
     @pytest.fixture
     def observability_manager(self, mock_k8s_client):
         """Create a mock observability manager."""
-        from brain_researcher.infrastructure.istio.observability_manager import IstioObservabilityManager
+        from brain_researcher.infrastructure.istio.observability_manager import (
+            IstioObservabilityManager,
+        )
 
-        with patch('kubernetes.client', return_value=mock_k8s_client):
+        with patch("kubernetes.client", return_value=mock_k8s_client):
             manager = IstioObservabilityManager(namespace="brain-researcher")
 
         return manager
@@ -324,40 +319,39 @@ class TestIstioObservability:
         telemetry_config = {
             "apiVersion": "telemetry.istio.io/v1alpha1",
             "kind": "Telemetry",
-            "metadata": {
-                "name": "metrics-config",
-                "namespace": "brain-researcher"
-            },
+            "metadata": {"name": "metrics-config", "namespace": "brain-researcher"},
             "spec": {
-                "metrics": [{
-                    "providers": [{"name": "prometheus"}],
-                    "overrides": [{
-                        "match": {"metric": "ALL_METRICS"},
-                        "tagOverrides": {
-                            "request_protocol": {"value": "unknown"}
-                        }
-                    }]
-                }]
-            }
+                "metrics": [
+                    {
+                        "providers": [{"name": "prometheus"}],
+                        "overrides": [
+                            {
+                                "match": {"metric": "ALL_METRICS"},
+                                "tagOverrides": {
+                                    "request_protocol": {"value": "unknown"}
+                                },
+                            }
+                        ],
+                    }
+                ]
+            },
         }
 
-        result = observability_manager.configure_telemetry("metrics-config", telemetry_config)
+        result = observability_manager.configure_telemetry(
+            "metrics-config", telemetry_config
+        )
 
         assert result is True
 
     def test_access_log_configuration(self, observability_manager):
         """Test access log configuration."""
-        access_log_config = {
-            "providers": [{
-                "name": "otel"
-            }]
-        }
+        access_log_config = {"providers": [{"name": "otel"}]}
 
         result = observability_manager.configure_access_logs(access_log_config)
 
         assert result is True
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_metrics_collection(self, mock_get, observability_manager):
         """Test metrics collection from Prometheus."""
         mock_response = Mock()
@@ -366,7 +360,7 @@ class TestIstioObservability:
                 "result": [
                     {
                         "metric": {"__name__": "istio_requests_total"},
-                        "value": [1640995200, "100"]
+                        "value": [1640995200, "100"],
                     }
                 ]
             }
@@ -387,7 +381,7 @@ class TestIstioBridge:
         """Create an Istio bridge instance."""
         from brain_researcher.infrastructure.istio.bridge import IstioBridge
 
-        with patch('kubernetes.client', return_value=mock_k8s_client):
+        with patch("kubernetes.client", return_value=mock_k8s_client):
             bridge = IstioBridge(namespace="brain-researcher")
             bridge.config = mock_istio_config
 
@@ -397,7 +391,7 @@ class TestIstioBridge:
     async def test_service_to_service_communication(self, istio_bridge):
         """Test service-to-service communication through Istio."""
         # Mock HTTP client
-        with patch('aiohttp.ClientSession.request') as mock_request:
+        with patch("aiohttp.ClientSession.request") as mock_request:
             mock_response = Mock()
             mock_response.status = 200
             mock_response.json = AsyncMock(return_value={"data": "test"})
@@ -407,7 +401,7 @@ class TestIstioBridge:
                 service_name="br_kg-service",
                 endpoint="/api/v1/search",
                 method="POST",
-                data={"query": "test query"}
+                data={"query": "test query"},
             )
 
             assert result["data"] == "test"
@@ -418,16 +412,13 @@ class TestIstioBridge:
         cb_config = {
             "connectionPool": {
                 "tcp": {"maxConnections": 10},
-                "http": {
-                    "http1MaxPendingRequests": 10,
-                    "maxRequestsPerConnection": 2
-                }
+                "http": {"http1MaxPendingRequests": 10, "maxRequestsPerConnection": 2},
             },
             "outlierDetection": {
                 "consecutiveErrors": 3,
                 "interval": "30s",
-                "baseEjectionTime": "30s"
-            }
+                "baseEjectionTime": "30s",
+            },
         }
 
         result = istio_bridge.configure_circuit_breaker("br_kg-service", cb_config)
@@ -439,7 +430,7 @@ class TestIstioBridge:
         retry_config = {
             "attempts": 3,
             "perTryTimeout": "10s",
-            "retryOn": "5xx,reset,connect-failure,refused-stream"
+            "retryOn": "5xx,reset,connect-failure,refused-stream",
         }
 
         result = istio_bridge.configure_retry_policy("br_kg-service", retry_config)
@@ -450,10 +441,7 @@ class TestIstioBridge:
         """Test timeout configuration."""
         timeout_config = {
             "timeout": "30s",
-            "retry": {
-                "attempts": 3,
-                "perTryTimeout": "10s"
-            }
+            "retry": {"attempts": 3, "perTryTimeout": "10s"},
         }
 
         result = istio_bridge.configure_timeout("br_kg-service", timeout_config)
@@ -463,14 +451,12 @@ class TestIstioBridge:
     @pytest.mark.asyncio
     async def test_error_handling(self, istio_bridge):
         """Test error handling in service communication."""
-        with patch('aiohttp.ClientSession.request') as mock_request:
+        with patch("aiohttp.ClientSession.request") as mock_request:
             mock_request.side_effect = Exception("Network error")
 
             with pytest.raises(Exception) as exc_info:
                 await istio_bridge.call_service(
-                    service_name="failing-service",
-                    endpoint="/api/test",
-                    method="GET"
+                    service_name="failing-service", endpoint="/api/test", method="GET"
                 )
 
             assert "Network error" in str(exc_info.value)
@@ -483,7 +469,7 @@ class TestIstioBridge:
                 "intervalSeconds": 10,
                 "timeoutSeconds": 5,
                 "unhealthyThreshold": 3,
-                "healthyThreshold": 2
+                "healthyThreshold": 2,
             }
         }
 
@@ -497,7 +483,9 @@ class TestIstioConfiguration:
 
     def test_configuration_validation(self):
         """Test Istio configuration validation."""
-        from brain_researcher.infrastructure.istio.config_validator import IstioConfigValidator
+        from brain_researcher.infrastructure.istio.config_validator import (
+            IstioConfigValidator,
+        )
 
         validator = IstioConfigValidator()
 
@@ -508,12 +496,8 @@ class TestIstioConfiguration:
             "metadata": {"name": "test-vs"},
             "spec": {
                 "hosts": ["test-service"],
-                "http": [{
-                    "route": [{
-                        "destination": {"host": "test-service"}
-                    }]
-                }]
-            }
+                "http": [{"route": [{"destination": {"host": "test-service"}}]}],
+            },
         }
 
         assert validator.validate_virtual_service(valid_config) is True
@@ -523,21 +507,21 @@ class TestIstioConfiguration:
             "apiVersion": "networking.istio.io/v1beta1",
             "kind": "VirtualService",
             "metadata": {"name": "test-vs"},
-            "spec": {}  # Missing required fields
+            "spec": {},  # Missing required fields
         }
 
         assert validator.validate_virtual_service(invalid_config) is False
 
     def test_configuration_templating(self):
         """Test Istio configuration templating."""
-        from brain_researcher.infrastructure.istio.config_templates import IstioConfigTemplates
+        from brain_researcher.infrastructure.istio.config_templates import (
+            IstioConfigTemplates,
+        )
 
         templates = IstioConfigTemplates()
 
         vs_template = templates.get_virtual_service_template(
-            name="test-service-vs",
-            host="test-service",
-            namespace="brain-researcher"
+            name="test-service-vs", host="test-service", namespace="brain-researcher"
         )
 
         assert vs_template["kind"] == "VirtualService"
@@ -550,8 +534,7 @@ class TestIstioIntegration:
     """Integration tests for Istio bridge functionality."""
 
     @pytest.mark.skipif(
-        not pytest.importorskip("kubernetes"),
-        reason="Kubernetes client not available"
+        not pytest.importorskip("kubernetes"), reason="Kubernetes client not available"
     )
     def test_kubernetes_integration(self):
         """Test integration with real Kubernetes cluster (if available)."""
@@ -566,7 +549,7 @@ class TestIstioIntegration:
 
         from brain_researcher.infrastructure.istio.bridge import IstioBridge
 
-        with patch('kubernetes.client'):
+        with patch("kubernetes.client"):
             bridge = IstioBridge()
 
             start_time = time.time()

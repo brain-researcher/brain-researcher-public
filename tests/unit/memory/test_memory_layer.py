@@ -401,7 +401,9 @@ def test_distill_run_records_enriches_episodic_card_from_failed_step_log(tmp_pat
         run_dir / "observation.json",
         {"artifacts": [], "violations": [], "run_card": {"tools": []}},
     )
-    _write_json(run_dir / "analysis_bundle.json", {"schema_version": "analysis-bundle-v1"})
+    _write_json(
+        run_dir / "analysis_bundle.json", {"schema_version": "analysis-bundle-v1"}
+    )
     _write_json(
         run_dir / "logs" / "step-01-s1.json",
         {
@@ -463,7 +465,9 @@ def test_distill_run_records_uses_success_step_log_for_output_summary(tmp_path):
         run_dir / "observation.json",
         {"artifacts": [], "violations": [], "run_card": {"tools": []}},
     )
-    _write_json(run_dir / "analysis_bundle.json", {"schema_version": "analysis-bundle-v1"})
+    _write_json(
+        run_dir / "analysis_bundle.json", {"schema_version": "analysis-bundle-v1"}
+    )
     _write_json(
         run_dir / "logs" / "step-01-s1.json",
         {
@@ -586,7 +590,10 @@ def test_distill_run_records_surfaces_execution_and_manifest_metadata(tmp_path):
     assert card.quality_indicators["selected_tool"] == "query_neuromaps"
     assert card.quality_indicators["execution_provider"] == "local"
     assert "execution_manifest.json" in card.provenance_refs
-    assert any("Captured 2 manifest entries with 2 verified checksums." in item for item in card.what_worked)
+    assert any(
+        "Captured 2 manifest entries with 2 verified checksums." in item
+        for item in card.what_worked
+    )
 
 
 def test_distill_run_records_surfaces_trajectory_and_research_notes(tmp_path):
@@ -619,12 +626,18 @@ def test_distill_run_records_surfaces_trajectory_and_research_notes(tmp_path):
         run_dir / "observation.json",
         {"artifacts": [], "violations": [], "run_card": {"tools": []}},
     )
-    _write_json(run_dir / "analysis_bundle.json", {"schema_version": "analysis-bundle-v1"})
+    _write_json(
+        run_dir / "analysis_bundle.json", {"schema_version": "analysis-bundle-v1"}
+    )
     _write_json(
         run_dir / "trajectory.json",
         {
             "steps": [
-                {"step_id": 1, "source": "user", "message": "Find reusable prod signals"},
+                {
+                    "step_id": 1,
+                    "source": "user",
+                    "message": "Find reusable prod signals",
+                },
                 {
                     "step_id": 2,
                     "source": "assistant",
@@ -900,9 +913,13 @@ def test_distill_run_records_extracts_claim_from_candidate_card_provenance_label
 
     assert len(distilled.claim_cards) == 1
     claim = distilled.claim_cards[0]
-    assert claim.claim_text == "dmPFC may coordinate social inference under uncertainty."
+    assert (
+        claim.claim_text == "dmPFC may coordinate social inference under uncertainty."
+    )
     assert claim.claim_type == "candidate_hypothesis"
-    assert claim.target_ids[0] == "region:dmpfc|engages|candidate_object:social_inference"
+    assert (
+        claim.target_ids[0] == "region:dmpfc|engages|candidate_object:social_inference"
+    )
     assert "region:dmpfc" in claim.target_ids
     assert "candidate_object:social_inference" in claim.target_ids
     assert "predicate:engages" in claim.tags
@@ -1138,12 +1155,16 @@ def test_distill_run_records_marks_superseded_claim_from_claim_update(tmp_path):
     old_claim = next(
         claim
         for claim in distilled.claim_cards
-        if any(evidence.claim_id == "claim:old" for evidence in claim.supporting_evidence)
+        if any(
+            evidence.claim_id == "claim:old" for evidence in claim.supporting_evidence
+        )
     )
     new_claim = next(
         claim
         for claim in distilled.claim_cards
-        if any(evidence.claim_id == "claim:new" for evidence in claim.supporting_evidence)
+        if any(
+            evidence.claim_id == "claim:new" for evidence in claim.supporting_evidence
+        )
     )
     assert old_claim.status == "superseded"
     assert old_claim.superseded_by == "claim:new"
@@ -1214,8 +1235,8 @@ def test_memory_store_preserves_superseded_claim_status_on_merge(tmp_path):
 
 
 def test_persist_mcp_run_bundle_writes_memory_cards(tmp_path, monkeypatch):
-    from brain_researcher.services.mcp import server as srv
     from brain_researcher.services.mcp import runstore
+    from brain_researcher.services.mcp import server as srv
 
     monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
     monkeypatch.setattr(srv, "ALLOWED_ROOTS", [tmp_path.resolve()])
@@ -1269,8 +1290,8 @@ def test_persist_mcp_run_bundle_writes_memory_cards(tmp_path, monkeypatch):
 
 
 def test_memory_tools_surface_claim_update_summary_and_filters(tmp_path, monkeypatch):
-    from brain_researcher.services.mcp import server as srv
     from brain_researcher.services.mcp import runstore
+    from brain_researcher.services.mcp import server as srv
 
     monkeypatch.setattr(runstore, "RUN_ROOT", tmp_path)
 
@@ -1317,4 +1338,7 @@ def test_memory_tools_surface_claim_update_summary_and_filters(tmp_path, monkeyp
     get_resp = srv.memory_get(write_resp["card_id"])
     assert get_resp["ok"] is True
     assert get_resp["card"]["claim_update_actions"] == ["weaken"]
-    assert get_resp["card"]["extra"]["claim_updates"][0]["source_ref"] == "claim_update.json[0]"
+    assert (
+        get_resp["card"]["extra"]["claim_updates"][0]["source_ref"]
+        == "claim_update.json[0]"
+    )

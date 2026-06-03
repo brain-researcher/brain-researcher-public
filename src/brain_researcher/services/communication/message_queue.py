@@ -7,20 +7,19 @@ event bus patterns, and pub/sub capabilities for service communication.
 
 import asyncio
 import json
-import time
-from typing import Dict, List, Optional, Any, Callable, AsyncIterator, Union
-from datetime import datetime, timedelta
-from enum import Enum
-from dataclasses import dataclass, field, asdict
-from abc import ABC, abstractmethod
 import logging
 import uuid
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Callable
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any
 
-import redis.asyncio as redis
-import pika
 import aio_pika
-from aio_pika import Message, DeliveryMode
-from aio_pika.abc import AbstractRobustConnection, AbstractChannel, AbstractQueue
+import redis.asyncio as redis
+from aio_pika import DeliveryMode, Message
+from aio_pika.abc import AbstractQueue
 
 logger = logging.getLogger(__name__)
 
@@ -65,34 +64,34 @@ class Message:
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     topic: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, str] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, str] = field(default_factory=dict)
     priority: MessagePriority = MessagePriority.NORMAL
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    correlation_id: Optional[str] = None
-    reply_to: Optional[str] = None
-    headers: Dict[str, str] = field(default_factory=dict)
+    correlation_id: str | None = None
+    reply_to: str | None = None
+    headers: dict[str, str] = field(default_factory=dict)
     retry_count: int = 0
     max_retries: int = 3
-    delay_until: Optional[datetime] = None
+    delay_until: datetime | None = None
 
     def to_json(self) -> str:
         """Serialize message to JSON."""
         data = asdict(self)
         # Convert datetime objects to ISO strings
-        data['timestamp'] = self.timestamp.isoformat()
+        data["timestamp"] = self.timestamp.isoformat()
         if self.delay_until:
-            data['delay_until'] = self.delay_until.isoformat()
+            data["delay_until"] = self.delay_until.isoformat()
         return json.dumps(data)
 
     @classmethod
-    def from_json(cls, json_str: str) -> 'Message':
+    def from_json(cls, json_str: str) -> "Message":
         """Deserialize message from JSON."""
         data = json.loads(json_str)
         # Convert ISO strings back to datetime objects
-        data['timestamp'] = datetime.fromisoformat(data['timestamp'])
-        if data.get('delay_until'):
-            data['delay_until'] = datetime.fromisoformat(data['delay_until'])
+        data["timestamp"] = datetime.fromisoformat(data["timestamp"])
+        if data.get("delay_until"):
+            data["delay_until"] = datetime.fromisoformat(data["delay_until"])
         return cls(**data)
 
     def should_retry(self) -> bool:
@@ -139,7 +138,9 @@ class QueueBackendBase(ABC):
         pass
 
     @abstractmethod
-    async def consume(self, queue: str, handler: MessageHandler) -> AsyncIterator[Message]:
+    async def consume(
+        self, queue: str, handler: MessageHandler
+    ) -> AsyncIterator[Message]:
         """Consume messages from queue."""
         pass
 
@@ -173,8 +174,7 @@ class RedisQueueBackend(QueueBackendBase):
         """Connect to Redis."""
         try:
             self.redis_client = redis.from_url(
-                self.config.redis_url,
-                decode_responses=False
+                self.config.redis_url, decode_responses=False
             )
             self.pubsub = self.redis_client.pubsub()
             logger.info("Connected to Redis message queue")
@@ -200,10 +200,7 @@ class RedisQueueBackend(QueueBackendBase):
         try:
             # Add to queue with priority
             score = -message.priority.value  # Negative for high priority first
-            await self.redis_client.zadd(
-                f"queue:{queue}",
-                {message.to_json(): score}
-            )
+            await self.redis_client.zadd(f"queue:{queue}", {message.to_json(): score})
 
             # Notify consumers
             await self.redis_client.publish(f"queue:{queue}:notify", "1")
@@ -212,7 +209,9 @@ class RedisQueueBackend(QueueBackendBase):
             logger.error(f"Failed to publish message to Redis queue {queue}: {e}")
             raise
 
-    async def consume(self, queue: str, handler: MessageHandler) -> AsyncIterator[Message]:
+    async def consume(
+        self, queue: str, handler: MessageHandler
+    ) -> AsyncIterator[Message]:
         """Consume messages from Redis queue."""
         queue_key = f"queue:{queue}"
         notify_key = f"queue:{queue}:notify"
@@ -242,7 +241,8 @@ class RedisQueueBackend(QueueBackendBase):
                             # Retry message
                             message.retry_count += 1
                             message.delay_until = datetime.utcnow() + timedelta(
-                                seconds=self.config.retry_delay_seconds * message.retry_count
+                                seconds=self.config.retry_delay_seconds
+                                * message.retry_count
                             )
 
                             # Add to delayed queue
@@ -261,7 +261,7 @@ class RedisQueueBackend(QueueBackendBase):
                     try:
                         await asyncio.wait_for(
                             self.pubsub.get_message(ignore_subscribe_messages=True),
-                            timeout=self.config.consumer_timeout_seconds
+                            timeout=self.config.consumer_timeout_seconds,
                         )
                     except asyncio.TimeoutError:
                         pass
@@ -278,7 +278,7 @@ class RedisQueueBackend(QueueBackendBase):
             await self.pubsub.subscribe(f"topic:{topic}")
 
             # Start message processor if not running
-            if not hasattr(self, '_pubsub_task'):
+            if not hasattr(self, "_pubsub_task"):
                 self._pubsub_task = asyncio.create_task(self._process_pubsub_messages())
 
         except Exception as e:
@@ -299,15 +299,15 @@ class RedisQueueBackend(QueueBackendBase):
         """Process pub/sub messages."""
         try:
             async for message in self.pubsub.listen():
-                if message['type'] == 'message':
-                    channel = message['channel'].decode()
+                if message["type"] == "message":
+                    channel = message["channel"].decode()
 
-                    if channel.startswith('topic:'):
+                    if channel.startswith("topic:"):
                         topic = channel[6:]  # Remove 'topic:' prefix
 
                         if topic in self.subscribers:
                             try:
-                                msg_data = json.loads(message['data'].decode())
+                                msg_data = json.loads(message["data"].decode())
                                 msg = Message(**msg_data)
                                 await self.subscribers[topic].handle(msg)
 
@@ -327,7 +327,7 @@ class RedisQueueBackend(QueueBackendBase):
             delayed_key, 0, now, withscores=True
         )
 
-        for message_json, score in ready_messages:
+        for message_json, _score in ready_messages:
             try:
                 message = Message.from_json(message_json.decode())
 
@@ -343,8 +343,7 @@ class RedisQueueBackend(QueueBackendBase):
         if message.delay_until:
             delayed_key = f"queue:{queue}:delayed"
             await self.redis_client.zadd(
-                delayed_key,
-                {message.to_json(): message.delay_until.timestamp()}
+                delayed_key, {message.to_json(): message.delay_until.timestamp()}
             )
 
     async def _send_to_dlq(self, queue: str, message: Message):
@@ -352,8 +351,8 @@ class RedisQueueBackend(QueueBackendBase):
         dlq_key = f"queue:{self.config.dead_letter_queue}"
 
         # Add metadata about original queue
-        message.metadata['original_queue'] = queue
-        message.metadata['failed_at'] = datetime.utcnow().isoformat()
+        message.metadata["original_queue"] = queue
+        message.metadata["failed_at"] = datetime.utcnow().isoformat()
 
         await self.redis_client.lpush(dlq_key, message.to_json())
 
@@ -411,20 +410,23 @@ class RabbitMQQueueBackend(QueueBackendBase):
                 correlation_id=message.correlation_id,
                 reply_to=message.reply_to,
                 headers=message.headers,
-                delivery_mode=DeliveryMode.PERSISTENT if self.config.enable_persistence else DeliveryMode.NOT_PERSISTENT
+                delivery_mode=(
+                    DeliveryMode.PERSISTENT
+                    if self.config.enable_persistence
+                    else DeliveryMode.NOT_PERSISTENT
+                ),
             )
 
             # Publish message
-            await self.channel.default_exchange.publish(
-                amqp_message,
-                routing_key=queue
-            )
+            await self.channel.default_exchange.publish(amqp_message, routing_key=queue)
 
         except Exception as e:
             logger.error(f"Failed to publish message to RabbitMQ queue {queue}: {e}")
             raise
 
-    async def consume(self, queue: str, handler: MessageHandler) -> AsyncIterator[Message]:
+    async def consume(
+        self, queue: str, handler: MessageHandler
+    ) -> AsyncIterator[Message]:
         """Consume messages from RabbitMQ queue."""
         try:
             # Ensure queue exists
@@ -497,10 +499,10 @@ class RabbitMQQueueBackend(QueueBackendBase):
                 queue_name,
                 durable=self.config.enable_persistence,
                 arguments={
-                    'x-message-ttl': self.config.message_ttl_seconds * 1000,
-                    'x-dead-letter-exchange': '',
-                    'x-dead-letter-routing-key': self.config.dead_letter_queue
-                }
+                    "x-message-ttl": self.config.message_ttl_seconds * 1000,
+                    "x-dead-letter-exchange": "",
+                    "x-dead-letter-routing-key": self.config.dead_letter_queue,
+                },
             )
             self.queues[queue_name] = queue
 
@@ -512,13 +514,15 @@ class RabbitMQQueueBackend(QueueBackendBase):
             exchange = await self.channel.declare_exchange(
                 f"topic_{topic}",
                 aio_pika.ExchangeType.TOPIC,
-                durable=self.config.enable_persistence
+                durable=self.config.enable_persistence,
             )
             self.exchanges[topic] = exchange
 
         return self.exchanges[topic]
 
-    async def _consume_topic_messages(self, queue: AbstractQueue, handler: MessageHandler):
+    async def _consume_topic_messages(
+        self, queue: AbstractQueue, handler: MessageHandler
+    ):
         """Consume messages from topic queue."""
         try:
             async with queue.iterator() as queue_iter:
@@ -569,7 +573,9 @@ class InMemoryQueueBackend(QueueBackendBase):
 
         await self.queues[queue].put(message)
 
-    async def consume(self, queue: str, handler: MessageHandler) -> AsyncIterator[Message]:
+    async def consume(
+        self, queue: str, handler: MessageHandler
+    ) -> AsyncIterator[Message]:
         """Consume messages from in-memory queue."""
         if queue not in self.queues:
             self.queues[queue] = asyncio.Queue()
@@ -579,8 +585,7 @@ class InMemoryQueueBackend(QueueBackendBase):
         while self.running:
             try:
                 message = await asyncio.wait_for(
-                    queue_obj.get(),
-                    timeout=self.config.consumer_timeout_seconds
+                    queue_obj.get(), timeout=self.config.consumer_timeout_seconds
                 )
 
                 success = await handler.handle(message)
@@ -611,7 +616,7 @@ class InMemoryQueueBackend(QueueBackendBase):
 class MessageQueue:
     """Main message queue interface."""
 
-    def __init__(self, config: Optional[QueueConfig] = None):
+    def __init__(self, config: QueueConfig | None = None):
         """Initialize message queue.
 
         Args:
@@ -648,7 +653,9 @@ class MessageQueue:
         """Publish message to queue."""
         await self.backend.publish(queue, message)
 
-    async def consume(self, queue: str, handler: MessageHandler) -> AsyncIterator[Message]:
+    async def consume(
+        self, queue: str, handler: MessageHandler
+    ) -> AsyncIterator[Message]:
         """Consume messages from queue."""
         async for message in self.backend.consume(queue, handler):
             yield message
@@ -675,7 +682,7 @@ class EventBus:
         self.event_handlers = {}
         self.middleware = []
 
-    async def publish_event(self, event_type: str, data: Dict[str, Any], **kwargs):
+    async def publish_event(self, event_type: str, data: dict[str, Any], **kwargs):
         """Publish an event.
 
         Args:
@@ -683,11 +690,7 @@ class EventBus:
             data: Event data
             **kwargs: Additional message parameters
         """
-        message = Message(
-            topic=event_type,
-            data=data,
-            **kwargs
-        )
+        message = Message(topic=event_type, data=data, **kwargs)
 
         # Apply middleware
         for middleware_func in self.middleware:
@@ -702,6 +705,7 @@ class EventBus:
             event_type: Event type to subscribe to
             handler: Event handler function
         """
+
         # Wrap handler in MessageHandler
         class EventMessageHandler(MessageHandler):
             def __init__(self, event_handler):
@@ -735,5 +739,5 @@ __all__ = [
     "MessageHandler",
     "QueueConfig",
     "QueueBackend",
-    "MessagePriority"
+    "MessagePriority",
 ]

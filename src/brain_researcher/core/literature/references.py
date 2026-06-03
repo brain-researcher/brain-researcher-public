@@ -10,9 +10,8 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 
 @dataclass
@@ -20,19 +19,19 @@ class Reference:
     source: str  # e.g., "static", "dataset"
     kind: str  # e.g., "method", "dataset"
     title: str
-    year: Optional[int] = None
-    doi: Optional[str] = None
-    url: Optional[str] = None
+    year: int | None = None
+    doi: str | None = None
+    url: str | None = None
     note: str = ""
-    supports: Optional[List[Dict[str, str]]] = None
-    evidence: Optional[Dict[str, int]] = None
+    supports: list[dict[str, str]] | None = None
+    evidence: dict[str, int] | None = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return asdict(self)
 
 
 # Static method references (minimal, extendable)
-STATIC_METHOD_REFS: Dict[tuple, Reference] = {
+STATIC_METHOD_REFS: dict[tuple, Reference] = {
     ("confounds", "24mot_acompcor"): Reference(
         source="static",
         kind="method",
@@ -87,14 +86,18 @@ STATIC_METHOD_REFS: Dict[tuple, Reference] = {
 }
 
 
-def _dataset_reference(dataset_description: Path, dataset_id: str) -> Optional[Reference]:
+def _dataset_reference(dataset_description: Path, dataset_id: str) -> Reference | None:
     if not dataset_description.exists():
         return None
     try:
         desc = json.loads(dataset_description.read_text())
         doi = desc.get("DatasetDOI") or desc.get("DOI")
         title = desc.get("Name") or dataset_id
-        url = desc.get("ReferencesAndLinks", [None])[0] if desc.get("ReferencesAndLinks") else None
+        url = (
+            desc.get("ReferencesAndLinks", [None])[0]
+            if desc.get("ReferencesAndLinks")
+            else None
+        )
         return Reference(
             source="dataset",
             kind="dataset",
@@ -111,10 +114,10 @@ def _dataset_reference(dataset_description: Path, dataset_id: str) -> Optional[R
 def gather_references(
     dataset_id: str,
     task: str,
-    decisions: Dict[str, str],
-    datasets_folder: Optional[Path] = None,
-) -> List[Dict]:
-    refs: List[Reference] = []
+    decisions: dict[str, str],
+    datasets_folder: Path | None = None,
+) -> list[dict]:
+    refs: list[Reference] = []
 
     # Static method refs
     for dec_name, option in decisions.items():
@@ -127,7 +130,7 @@ def gather_references(
 
     # Dataset DOI
     dataset_desc = None
-    search_roots: List[Path] = []
+    search_roots: list[Path] = []
     if datasets_folder:
         search_roots.append(datasets_folder)
     # Common dataset roots (override with BR_DATASET_SEARCH_ROOTS, colon-separated)
@@ -137,15 +140,24 @@ def gather_references(
     else:
         search_roots.extend([Path("/app/data"), Path("/data")])
 
-    candidates: List[Path] = []
+    candidates: list[Path] = []
     for root in search_roots:
         candidates.extend(
             [
                 root / "openneuro" / dataset_id / "dataset_description.json",
                 root / "input" / dataset_id / "dataset_description.json",
                 root / "openneuro_mount" / dataset_id / "dataset_description.json",
-                root / "OpenNeuroDerivatives" / "fmriprep" / f"{dataset_id}-fmriprep" / "sourcedata" / "dataset_description.json",
-                root / "openneuro_metadata" / "openneuro" / dataset_id / "dataset_description.json",
+                root
+                / "OpenNeuroDerivatives"
+                / "fmriprep"
+                / f"{dataset_id}-fmriprep"
+                / "sourcedata"
+                / "dataset_description.json",
+                root
+                / "openneuro_metadata"
+                / "openneuro"
+                / dataset_id
+                / "dataset_description.json",
                 root / "openneuro_metadata" / dataset_id / "dataset_description.json",
             ]
         )

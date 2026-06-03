@@ -38,8 +38,8 @@ _TASK_REPO_NAME_RE = re.compile(r"^[HT]\d{6}-[A-Za-z0-9][A-Za-z0-9._-]{0,199}$")
 _PATH_KEYS = ("template_path", "task_path", "local_path", "path", "repo_path")
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 _TASKBEACON_GITHUB_ORG = (
-    (os.getenv("BR_TASKBEACON_GITHUB_ORG") or "TaskBeacon").strip() or "TaskBeacon"
-)
+    os.getenv("BR_TASKBEACON_GITHUB_ORG") or "TaskBeacon"
+).strip() or "TaskBeacon"
 _TASKBEACON_GITHUB_REPOS_URL = (
     f"https://github.com/orgs/{_TASKBEACON_GITHUB_ORG}/repositories?type=all"
 )
@@ -60,7 +60,9 @@ class TaskBeaconMCPError(RuntimeError):
 
 
 def _taskbeacon_mcp_command_parts() -> list[str]:
-    raw = (os.getenv("BR_TASKBEACON_MCP_COMMAND") or _DEFAULT_TASKBEACON_MCP_COMMAND).strip()
+    raw = (
+        os.getenv("BR_TASKBEACON_MCP_COMMAND") or _DEFAULT_TASKBEACON_MCP_COMMAND
+    ).strip()
     return shlex.split(raw) or [_DEFAULT_TASKBEACON_MCP_COMMAND]
 
 
@@ -68,9 +70,7 @@ def _taskbeacon_mcp_command_parts() -> list[str]:
 class TaskBeaconMCPConfig:
     """Runtime configuration for the upstream TaskBeacon MCP stdio server."""
 
-    command: str = field(
-        default_factory=lambda: _taskbeacon_mcp_command_parts()[0]
-    )
+    command: str = field(default_factory=lambda: _taskbeacon_mcp_command_parts()[0])
     args: tuple[str, ...] = field(
         default_factory=lambda: tuple(
             shlex.split(os.getenv("BR_TASKBEACON_MCP_ARGS") or "")
@@ -79,7 +79,9 @@ class TaskBeaconMCPConfig:
     )
     cwd: str | None = None
     timeout_seconds: float = field(
-        default_factory=lambda: float(os.getenv("BR_TASKBEACON_MCP_TIMEOUT_SECONDS", "90"))
+        default_factory=lambda: float(
+            os.getenv("BR_TASKBEACON_MCP_TIMEOUT_SECONDS", "90")
+        )
     )
 
     def command_vector(self) -> list[str]:
@@ -535,9 +537,7 @@ def download_taskbeacon_task(
     mcp_error: str | None = None
     mcp_skipped_reason: str | None = None
     if prefer_mcp and normalized_ref:
-        mcp_skipped_reason = (
-            "taskbeacon-mcp download_task does not accept refs; using direct Git fallback"
-        )
+        mcp_skipped_reason = "taskbeacon-mcp download_task does not accept refs; using direct Git fallback"
     elif prefer_mcp:
         with tempfile.TemporaryDirectory(prefix="br_taskbeacon_mcp_") as tmp:
             tmp_dir = Path(tmp)
@@ -557,9 +557,9 @@ def download_taskbeacon_task(
                 )
                 if not result.ok:
                     raise TaskBeaconMCPError(result.error or "download_task failed")
-                source_text = _extract_download_path(result.structured) or _extract_download_path(
-                    result.text
-                )
+                source_text = _extract_download_path(
+                    result.structured
+                ) or _extract_download_path(result.text)
                 source_dir = Path(source_text).expanduser() if source_text else None
                 if source_dir is not None and not source_dir.is_absolute():
                     source_dir = (tmp_dir / source_dir).resolve()
@@ -636,9 +636,7 @@ async def async_download_taskbeacon_task(
     mcp_error: str | None = None
     mcp_skipped_reason: str | None = None
     if prefer_mcp and normalized_ref:
-        mcp_skipped_reason = (
-            "taskbeacon-mcp download_task does not accept refs; using direct Git fallback"
-        )
+        mcp_skipped_reason = "taskbeacon-mcp download_task does not accept refs; using direct Git fallback"
     elif prefer_mcp:
         with tempfile.TemporaryDirectory(prefix="br_taskbeacon_mcp_") as tmp:
             tmp_dir = Path(tmp)
@@ -658,9 +656,9 @@ async def async_download_taskbeacon_task(
                 )
                 if not result.ok:
                     raise TaskBeaconMCPError(result.error or "download_task failed")
-                source_text = _extract_download_path(result.structured) or _extract_download_path(
-                    result.text
-                )
+                source_text = _extract_download_path(
+                    result.structured
+                ) or _extract_download_path(result.text)
                 source_dir = Path(source_text).expanduser() if source_text else None
                 if source_dir is not None and not source_dir.is_absolute():
                     source_dir = (tmp_dir / source_dir).resolve()
@@ -815,7 +813,9 @@ def run_taskbeacon_qa_sim(
         raise ValueError("mode must be 'qa' or 'sim'")
     resolved_task = resolve_taskbeacon_target_path(workspace_root, task_path)
     if not (resolved_task / "main.py").exists():
-        raise ValueError(f"TaskBeacon task directory does not contain main.py: {task_path!r}")
+        raise ValueError(
+            f"TaskBeacon task directory does not contain main.py: {task_path!r}"
+        )
 
     command = [
         "bash",
@@ -862,7 +862,9 @@ async def async_run_taskbeacon_qa_sim(
         raise ValueError("mode must be 'qa' or 'sim'")
     resolved_task = resolve_taskbeacon_target_path(workspace_root, task_path)
     if not (resolved_task / "main.py").exists():
-        raise ValueError(f"TaskBeacon task directory does not contain main.py: {task_path!r}")
+        raise ValueError(
+            f"TaskBeacon task directory does not contain main.py: {task_path!r}"
+        )
 
     command = [
         "bash",

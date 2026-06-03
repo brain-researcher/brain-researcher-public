@@ -1,0 +1,152 @@
+{
+  "demos": [
+    {
+      "slug": "case1-neuromark-schizophrenia-multiverse",
+      "analysis_id": "run_case1_neuromark_schizophrenia_multiverse",
+      "title": "Case 1: NeuroMark Schizophrenia Multiverse Analysis",
+      "description": "Leading case report on multiverse analysis using NeuroMark 2.2 functional network connectivity from schizophrenia patients and controls.",
+      "primary_prompt": "Review the curated PDF case report: Multiverse analysis using NeuroMark 2.2 functional network connectivity from schizophrenia patients and controls.",
+      "tags": [
+        "case1",
+        "leading-case",
+        "neuromark",
+        "schizophrenia",
+        "multiverse"
+      ],
+      "created_at": "2026-05-26",
+      "demo_type": "manuscript_case_report",
+      "stage_tags": [
+        "R5"
+      ],
+      "evidence_mode": "real",
+      "log_mode": "summary_only",
+      "source_run_ids": [],
+      "canonical_name": "Case1_NeuroMark_Schizophrenia_Multiverse",
+      "is_template": false,
+      "report_title": "Multiverse analysis using NeuroMark 2.2 functional network connectivity from schizophrenia patients and controls"
+    },
+    {
+      "slug": "case2-cocaine-network-segregation",
+      "analysis_id": "run_case2_cocaine_network_segregation",
+      "title": "Case 2: Cocaine Network Segregation Robustness",
+      "description": "Case report on multiverse robustness of resting-state network segregation in cocaine use disorder.",
+      "primary_prompt": "Review the curated PDF case report: Multiverse Robustness of Resting-State Network Segregation in Cocaine Use Disorder.",
+      "tags": [
+        "case2",
+        "cocaine",
+        "resting-state",
+        "network-segregation",
+        "multiverse"
+      ],
+      "created_at": "2026-05-26",
+      "demo_type": "manuscript_case_report",
+      "stage_tags": [
+        "R5"
+      ],
+      "evidence_mode": "real",
+      "log_mode": "summary_only",
+      "source_run_ids": [],
+      "canonical_name": "Case2_Cocaine_Network_Segregation",
+      "is_template": false,
+      "report_title": "Multiverse Robustness of Resting-State Network Segregation in Cocaine Use Disorder"
+    },
+    {
+      "slug": "case3-connectome-hubness-decoding",
+      "analysis_id": "run_case3_connectome_hubness_decoding",
+      "title": "Case 3: Connectome Hubness and Decoding",
+      "description": "Case report on high-dimensional connectome matrices, hubness, decoding, and generative fidelity.",
+      "primary_prompt": "Review the curated PDF case report: High-Dimensional Connectome Matrices: Hubness, Decoding, and Generative Fidelity.",
+      "tags": [
+        "case3",
+        "connectome",
+        "hubness",
+        "decoding",
+        "generative-fidelity"
+      ],
+      "created_at": "2026-05-26",
+      "demo_type": "manuscript_case_report",
+      "stage_tags": [
+        "R5"
+      ],
+      "evidence_mode": "real",
+      "log_mode": "summary_only",
+      "source_run_ids": [],
+      "canonical_name": "Case3_Connectome_Hubness_Decoding",
+      "is_template": false,
+      "report_title": "High-Dimensional Connectome Matrices: Hubness, Decoding, and Generative Fidelity"
+    },
+    {
+      "slug": "case4-ingroup-outgroup-cultural-boundaries",
+      "analysis_id": "run_case4_ingroup_outgroup_cultural_boundaries",
+      "title": "Case 4: Ingroup-Outgroup Cultural Boundaries",
+      "description": "Case report on ingroup-outgroup boundaries across cultures and a unified neural architecture.",
+      "primary_prompt": "Review the curated PDF case report: Ingroup-Outgroup Boundaries Across Cultures: A Unified Neural Architecture.",
+      "tags": [
+        "case4",
+        "ingroup-outgroup",
+        "culture",
+        "social-neuroscience"
+      ],
+      "created_at": "2026-05-26",
+      "demo_type": "manuscript_case_report",
+      "stage_tags": [
+        "R5"
+      ],
+      "evidence_mode": "real",
+      "log_mode": "summary_only",
+      "source_run_ids": [],
+      "canonical_name": "Case4_Ingroup_Outgroup_Cultural_Boundaries",
+      "is_template": false,
+      "report_title": "Ingroup-Outgroup Boundaries Across Cultures: A Unified Neural Architecture"
+    },
+    {
+      "slug": "bounded-self-evolving-discovery",
+      "analysis_id": "run_bounded_self_evolving_discovery",
+      "title": "Bounded Self-Evolving Research: Discovery",
+      "description": "Bounded autoresearch discovery case report using TRIBE stimulus discovery as the worked example.",
+      "primary_prompt": "Review the curated PDF case report: TRIBE Stimulus Discovery as a Bounded Autoresearch Case Study.",
+      "tags": [
+        "bounded-self-evolving",
+        "discovery",
+        "autoresearch",
+        "tribe"
+      ],
+      "created_at": "2026-05-26",
+      "demo_type": "manuscript_case_report",
+      "stage_tags": [
+        "R5"
+      ],
+      "evidence_mode": "real",
+      "log_mode": "summary_only",
+      "source_run_ids": [],
+      "canonical_name": "Bounded_Self_Evolving_Discovery",
+      "is_template": false,
+      "report_title": "TRIBE Stimulus Discovery as a Bounded Autoresearch Case Study"
+    },
+    {
+      "slug": "bounded-self-evolving-predictive",
+      "analysis_id": "run_bounded_self_evolving_predictive",
+      "title": "Bounded Self-Evolving Research: Predictive",
+      "description": "Bounded autoresearch predictive case report on calibrated resting-state functional connectivity prediction of HCP behavioral components.",
+      "primary_prompt": "Review the curated PDF case report: Calibrated rs-FC Prediction of HCP Behavioral Components.",
+      "tags": [
+        "bounded-self-evolving",
+        "predictive",
+        "autoresearch",
+        "rs-fc",
+        "hcp"
+      ],
+      "created_at": "2026-05-26",
+      "demo_type": "manuscript_case_report",
+      "stage_tags": [
+        "R5"
+      ],
+      "evidence_mode": "real",
+      "log_mode": "summary_only",
+      "source_run_ids": [],
+      "canonical_name": "Bounded_Self_Evolving_Predictive",
+      "is_template": false,
+      "report_title": "Calibrated rs-FC Prediction of HCP Behavioral Components"
+    }
+  ]
+}

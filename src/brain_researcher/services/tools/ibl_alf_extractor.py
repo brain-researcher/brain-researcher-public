@@ -158,9 +158,7 @@ def _ordered_probe_sites(
 def _session_output_dir(output_dir: str | None, session_path: Path) -> Path:
     if output_dir:
         return Path(output_dir).expanduser()
-    return Path(
-        tempfile.mkdtemp(prefix=f"ibl_alf_{session_path.name}_")
-    )
+    return Path(tempfile.mkdtemp(prefix=f"ibl_alf_{session_path.name}_"))
 
 
 def extract_trials_table(alf_dir: Path) -> pd.DataFrame:
@@ -180,7 +178,11 @@ def extract_trials_table(alf_dir: Path) -> pd.DataFrame:
             values = _load_npy(alf_dir, "_ibl_trials.intervals_bpod")
         if values is None:
             continue
-        if field == "intervals" and np.asarray(values).ndim == 2 and np.asarray(values).shape[1] >= 2:
+        if (
+            field == "intervals"
+            and np.asarray(values).ndim == 2
+            and np.asarray(values).shape[1] >= 2
+        ):
             array = np.asarray(values)
             columns["interval_start"] = _series(array[:, 0])
             columns["interval_end"] = _series(array[:, 1])
@@ -463,14 +465,18 @@ def extract_session_tables(
             )
 
     probe_dirs = sorted(
-        child for child in alf_dir.iterdir() if child.is_dir() and child.name.startswith("probe")
+        child
+        for child in alf_dir.iterdir()
+        if child.is_dir() and child.name.startswith("probe")
     )
     if probe_label:
         probe_dirs = [probe for probe in probe_dirs if probe.name == probe_label]
 
     outputs["probes"] = [probe.name for probe in probe_dirs]
     if probe_label and not probe_dirs:
-        outputs["notes"].append(f"Requested probe not found in ALF directory: {probe_label}")
+        outputs["notes"].append(
+            f"Requested probe not found in ALF directory: {probe_label}"
+        )
 
     for probe_dir in probe_dirs:
         if include_spikes:

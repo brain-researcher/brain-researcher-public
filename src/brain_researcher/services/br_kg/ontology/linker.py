@@ -1,9 +1,8 @@
 """Ontology linking and alignment functionality."""
 
-from typing import Dict, List, Tuple, Optional, Set, Any
-import networkx as nx
 from difflib import SequenceMatcher
-import numpy as np
+from typing import Any
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -16,10 +15,12 @@ class OntologyLinker:
         self.conflicts = []
         self.bridging_axioms = []
 
-    def align_concepts(self,
-                      onto1: Dict[str, Dict[str, Any]],
-                      onto2: Dict[str, Dict[str, Any]],
-                      similarity_threshold: float = 0.8) -> List[Tuple[str, str, float]]:
+    def align_concepts(
+        self,
+        onto1: dict[str, dict[str, Any]],
+        onto2: dict[str, dict[str, Any]],
+        similarity_threshold: float = 0.8,
+    ) -> list[tuple[str, str, float]]:
         """Align concepts between two ontologies.
 
         Args:
@@ -46,8 +47,12 @@ class OntologyLinker:
 
         # Use multiple similarity metrics
         alignments.extend(self._label_similarity(onto1, onto2, similarity_threshold))
-        alignments.extend(self._semantic_similarity(onto1_texts, onto2_texts, similarity_threshold))
-        alignments.extend(self._structural_similarity(onto1, onto2, similarity_threshold))
+        alignments.extend(
+            self._semantic_similarity(onto1_texts, onto2_texts, similarity_threshold)
+        )
+        alignments.extend(
+            self._structural_similarity(onto1, onto2, similarity_threshold)
+        )
 
         # Deduplicate and merge scores
         alignment_dict = {}
@@ -60,17 +65,22 @@ class OntologyLinker:
                 alignment_dict[key] = score
 
         # Filter by threshold and sort by score
-        final_alignments = [(c1, c2, score) for (c1, c2), score in alignment_dict.items()
-                           if score >= similarity_threshold]
+        final_alignments = [
+            (c1, c2, score)
+            for (c1, c2), score in alignment_dict.items()
+            if score >= similarity_threshold
+        ]
         final_alignments.sort(key=lambda x: x[2], reverse=True)
 
         self.mappings = final_alignments
         return final_alignments
 
-    def _label_similarity(self,
-                         onto1: Dict[str, Dict[str, Any]],
-                         onto2: Dict[str, Dict[str, Any]],
-                         threshold: float) -> List[Tuple[str, str, float]]:
+    def _label_similarity(
+        self,
+        onto1: dict[str, dict[str, Any]],
+        onto2: dict[str, dict[str, Any]],
+        threshold: float,
+    ) -> list[tuple[str, str, float]]:
         """Calculate label-based similarity.
 
         Args:
@@ -84,13 +94,13 @@ class OntologyLinker:
         alignments = []
 
         for c1, data1 in onto1.items():
-            label1 = data1.get('label', '').lower()
-            synonyms1 = set([s.lower() for s in data1.get('synonyms', [])])
+            label1 = data1.get("label", "").lower()
+            synonyms1 = {s.lower() for s in data1.get("synonyms", [])}
             synonyms1.add(label1)
 
             for c2, data2 in onto2.items():
-                label2 = data2.get('label', '').lower()
-                synonyms2 = set([s.lower() for s in data2.get('synonyms', [])])
+                label2 = data2.get("label", "").lower()
+                synonyms2 = {s.lower() for s in data2.get("synonyms", [])}
                 synonyms2.add(label2)
 
                 # Check exact matches
@@ -109,10 +119,9 @@ class OntologyLinker:
 
         return alignments
 
-    def _semantic_similarity(self,
-                           texts1: Dict[str, str],
-                           texts2: Dict[str, str],
-                           threshold: float) -> List[Tuple[str, str, float]]:
+    def _semantic_similarity(
+        self, texts1: dict[str, str], texts2: dict[str, str], threshold: float
+    ) -> list[tuple[str, str, float]]:
         """Calculate semantic similarity using TF-IDF.
 
         Args:
@@ -144,8 +153,8 @@ class OntologyLinker:
         tfidf_matrix = vectorizer.fit_transform(all_docs)
 
         # Split back into two sets
-        tfidf1 = tfidf_matrix[:len(docs1)]
-        tfidf2 = tfidf_matrix[len(docs1):]
+        tfidf1 = tfidf_matrix[: len(docs1)]
+        tfidf2 = tfidf_matrix[len(docs1) :]
 
         # Calculate cosine similarity
         similarity_matrix = cosine_similarity(tfidf1, tfidf2)
@@ -159,10 +168,12 @@ class OntologyLinker:
 
         return alignments
 
-    def _structural_similarity(self,
-                             onto1: Dict[str, Dict[str, Any]],
-                             onto2: Dict[str, Dict[str, Any]],
-                             threshold: float) -> List[Tuple[str, str, float]]:
+    def _structural_similarity(
+        self,
+        onto1: dict[str, dict[str, Any]],
+        onto2: dict[str, dict[str, Any]],
+        threshold: float,
+    ) -> list[tuple[str, str, float]]:
         """Calculate structural similarity based on relationships.
 
         Args:
@@ -176,12 +187,12 @@ class OntologyLinker:
         alignments = []
 
         for c1, data1 in onto1.items():
-            parents1 = set(data1.get('parents', []))
-            children1 = set(data1.get('children', []))
+            parents1 = set(data1.get("parents", []))
+            children1 = set(data1.get("children", []))
 
             for c2, data2 in onto2.items():
-                parents2 = set(data2.get('parents', []))
-                children2 = set(data2.get('children', []))
+                parents2 = set(data2.get("parents", []))
+                children2 = set(data2.get("children", []))
 
                 # Calculate Jaccard similarity for structure
                 if parents1 or parents2:
@@ -201,7 +212,9 @@ class OntologyLinker:
 
         return alignments
 
-    def resolve_conflicts(self, mappings: List[Tuple[str, str, float]]) -> List[Tuple[str, str, float]]:
+    def resolve_conflicts(
+        self, mappings: list[tuple[str, str, float]]
+    ) -> list[tuple[str, str, float]]:
         """Resolve conflicts in mappings (1-to-1 constraint).
 
         Args:
@@ -239,18 +252,21 @@ class OntologyLinker:
                 used_targets.add(c2)
             else:
                 # Record as conflict
-                self.conflicts.append({
-                    "type": "MAPPING_CONFLICT",
-                    "source": c1,
-                    "target": c2,
-                    "score": score,
-                    "reason": "Already mapped"
-                })
+                self.conflicts.append(
+                    {
+                        "type": "MAPPING_CONFLICT",
+                        "source": c1,
+                        "target": c2,
+                        "score": score,
+                        "reason": "Already mapped",
+                    }
+                )
 
         return list(resolved)
 
-    def generate_bridging_axioms(self,
-                                mappings: List[Tuple[str, str, float]]) -> List[Dict[str, Any]]:
+    def generate_bridging_axioms(
+        self, mappings: list[tuple[str, str, float]]
+    ) -> list[dict[str, Any]]:
         """Generate bridging axioms for aligned concepts.
 
         Args:
@@ -264,33 +280,39 @@ class OntologyLinker:
         for c1, c2, score in mappings:
             if score >= 0.95:
                 # High confidence: equivalent
-                axioms.append({
-                    "type": "equivalent_to",
-                    "subject": c1,
-                    "object": c2,
-                    "confidence": score
-                })
+                axioms.append(
+                    {
+                        "type": "equivalent_to",
+                        "subject": c1,
+                        "object": c2,
+                        "confidence": score,
+                    }
+                )
             elif score >= 0.85:
                 # Medium confidence: subclass
-                axioms.append({
-                    "type": "subclass_of",
-                    "subject": c1,
-                    "object": c2,
-                    "confidence": score
-                })
+                axioms.append(
+                    {
+                        "type": "subclass_of",
+                        "subject": c1,
+                        "object": c2,
+                        "confidence": score,
+                    }
+                )
             else:
                 # Low confidence: related
-                axioms.append({
-                    "type": "related_to",
-                    "subject": c1,
-                    "object": c2,
-                    "confidence": score
-                })
+                axioms.append(
+                    {
+                        "type": "related_to",
+                        "subject": c1,
+                        "object": c2,
+                        "confidence": score,
+                    }
+                )
 
         self.bridging_axioms = axioms
         return axioms
 
-    def get_alignment_report(self) -> Dict[str, Any]:
+    def get_alignment_report(self) -> dict[str, Any]:
         """Get comprehensive alignment report.
 
         Returns:
@@ -302,5 +324,5 @@ class OntologyLinker:
             "bridging_axioms": len(self.bridging_axioms),
             "mappings": self.mappings[:10],  # Top 10
             "conflicts": self.conflicts[:10],  # First 10
-            "axioms": self.bridging_axioms[:10]  # First 10
+            "axioms": self.bridging_axioms[:10],  # First 10
         }

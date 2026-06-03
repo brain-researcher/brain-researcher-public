@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -20,14 +20,16 @@ class CrossValidationParameters:
     cv_type: str
     n_splits: int
     task_type: str
-    metrics: Tuple[str, ...]
-    random_state: Optional[int]
-    groups_file: Optional[str]
+    metrics: tuple[str, ...]
+    random_state: int | None
+    groups_file: str | None
     save_predictions: bool
     save_importance: bool
 
 
-def cross_validation_from_payload(payload: Dict[str, object]) -> CrossValidationParameters:
+def cross_validation_from_payload(
+    payload: dict[str, object],
+) -> CrossValidationParameters:
     """Create parameters from payload."""
 
     metrics = payload.get("metrics") or ["accuracy"]
@@ -57,7 +59,9 @@ def _load_array(path: str) -> np.ndarray:
     raise ValueError(f"Unsupported array format: {path}")
 
 
-def _generate_group_splits(groups: np.ndarray, n_splits: int, rng: np.random.Generator) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
+def _generate_group_splits(
+    groups: np.ndarray, n_splits: int, rng: np.random.Generator
+) -> Iterable[tuple[np.ndarray, np.ndarray]]:
     unique_groups = np.unique(groups)
     rng.shuffle(unique_groups)
     splits = np.array_split(unique_groups, n_splits)
@@ -71,7 +75,9 @@ def _generate_group_splits(groups: np.ndarray, n_splits: int, rng: np.random.Gen
         yield train_idx, test_idx
 
 
-def _generate_kfold_splits(n_samples: int, n_splits: int, rng: np.random.Generator) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
+def _generate_kfold_splits(
+    n_samples: int, n_splits: int, rng: np.random.Generator
+) -> Iterable[tuple[np.ndarray, np.ndarray]]:
     indices = rng.permutation(n_samples)
     folds = np.array_split(indices, n_splits)
     for i in range(n_splits):
@@ -80,7 +86,7 @@ def _generate_kfold_splits(n_samples: int, n_splits: int, rng: np.random.Generat
         yield train_idx, test_idx
 
 
-def _generate_leave_one_out(n_samples: int) -> Iterable[Tuple[np.ndarray, np.ndarray]]:
+def _generate_leave_one_out(n_samples: int) -> Iterable[tuple[np.ndarray, np.ndarray]]:
     indices = np.arange(n_samples)
     for idx in indices:
         test_idx = np.array([idx])
@@ -109,8 +115,14 @@ def _mean_squared_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(np.mean((y_true - y_pred) ** 2))
 
 
-def _compute_metrics(task_type: str, metric_names: Sequence[str], y_true: np.ndarray, predictions: np.ndarray, scores: np.ndarray) -> Dict[str, float]:
-    metrics: Dict[str, float] = {}
+def _compute_metrics(
+    task_type: str,
+    metric_names: Sequence[str],
+    y_true: np.ndarray,
+    predictions: np.ndarray,
+    scores: np.ndarray,
+) -> dict[str, float]:
+    metrics: dict[str, float] = {}
     for metric in metric_names:
         if metric == "accuracy" and task_type.startswith("class"):
             metrics["accuracy"] = _accuracy(y_true, predictions)
@@ -123,7 +135,7 @@ def _compute_metrics(task_type: str, metric_names: Sequence[str], y_true: np.nda
     return metrics
 
 
-def run_cross_validation(params: CrossValidationParameters) -> Dict[str, Any]:
+def run_cross_validation(params: CrossValidationParameters) -> dict[str, Any]:
     """Execute lightweight cross-validation routine."""
 
     rng = np.random.default_rng(params.random_state)
@@ -136,7 +148,7 @@ def run_cross_validation(params: CrossValidationParameters) -> Dict[str, Any]:
         raise ValueError("Number of samples and labels must match.")
 
     n_samples = data.shape[0]
-    splits: List[Tuple[np.ndarray, np.ndarray]]
+    splits: list[tuple[np.ndarray, np.ndarray]]
     if params.cv_type == "leave_one_out":
         splits = list(_generate_leave_one_out(n_samples))
     elif params.cv_type == "group" and groups is not None:
@@ -144,7 +156,7 @@ def run_cross_validation(params: CrossValidationParameters) -> Dict[str, Any]:
     else:
         splits = list(_generate_kfold_splits(n_samples, max(2, params.n_splits), rng))
 
-    fold_metrics: List[Dict[str, float]] = []
+    fold_metrics: list[dict[str, float]] = []
     all_predictions = np.zeros(n_samples)
     all_scores = np.zeros(n_samples)
 
@@ -166,15 +178,24 @@ def run_cross_validation(params: CrossValidationParameters) -> Dict[str, Any]:
         all_predictions[test_idx] = preds
         all_scores[test_idx] = scores
 
-        fold_metric = _compute_metrics(params.task_type, params.metrics, y_test, preds, scores)
+        fold_metric = _compute_metrics(
+            params.task_type, params.metrics, y_test, preds, scores
+        )
         fold_metrics.append(fold_metric)
 
-    mean_metrics = {k: float(np.mean([fm.get(k, 0.0) for fm in fold_metrics])) for k in params.metrics}
+    mean_metrics = {
+        k: float(np.mean([fm.get(k, 0.0) for fm in fold_metrics]))
+        for k in params.metrics
+    }
 
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {"summary": None, "predictions": None, "feature_importance": None}
+    outputs: dict[str, str | None] = {
+        "summary": None,
+        "predictions": None,
+        "feature_importance": None,
+    }
     summary = {
         "cv_type": params.cv_type,
         "n_splits": len(splits),

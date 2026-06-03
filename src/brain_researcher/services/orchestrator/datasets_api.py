@@ -3,13 +3,17 @@ from __future__ import annotations
 import threading
 import time
 from collections import Counter
+from collections.abc import Iterable
 from datetime import datetime
-from typing import Dict, Iterable, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from brain_researcher.core.datasets.catalog import DatasetRecord, DatasetPreview, load_catalog
+from brain_researcher.core.datasets.catalog import (
+    DatasetPreview,
+    DatasetRecord,
+    load_catalog,
+)
 
 try:  # pragma: no cover - optional dependency
     from rapidfuzz import fuzz  # type: ignore
@@ -22,32 +26,32 @@ router = APIRouter(prefix="/api/datasets", tags=["datasets"])
 class PreviewResponse(BaseModel):
     kind: str
     uri: str
-    label: Optional[str] = None
+    label: str | None = None
 
 
 class DatasetCard(BaseModel):
     id: str = Field(..., description="Stable dataset identifier")
     name: str
-    description: Optional[str] = None
-    category: Optional[str] = None
-    modalities: List[str]
-    acquisitions: List[str]
-    subjects_count: Optional[int] = None
-    sessions_count: Optional[int] = None
+    description: str | None = None
+    category: str | None = None
+    modalities: list[str]
+    acquisitions: list[str]
+    subjects_count: int | None = None
+    sessions_count: int | None = None
     access_type: str
     license: str
     source_repo: str
-    source_repo_id: Optional[str] = None
+    source_repo_id: str | None = None
     primary_url: str
-    center: Optional[str] = None
-    consortium: Optional[str] = None
-    tags: List[str]
-    tasks: List[str]
+    center: str | None = None
+    consortium: str | None = None
+    tags: list[str]
+    tasks: list[str]
     has_derivatives: bool = False
-    preview_media: List[PreviewResponse] = Field(default_factory=list)
-    score: Optional[float] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    preview_media: list[PreviewResponse] = Field(default_factory=list)
+    score: float | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class AgeRangeResponse(BaseModel):
@@ -57,13 +61,13 @@ class AgeRangeResponse(BaseModel):
 
 
 class DatasetDetail(DatasetCard):
-    species: List[str]
-    age_range: Optional[AgeRangeResponse] = None
-    disease_flags: List[str]
-    approx_size_bytes: Optional[int] = None
-    size_human: Optional[str] = None
-    created_from: Optional[str] = None
-    source_version: Optional[str] = None
+    species: list[str]
+    age_range: AgeRangeResponse | None = None
+    disease_flags: list[str]
+    approx_size_bytes: int | None = None
+    size_human: str | None = None
+    created_from: str | None = None
+    source_version: str | None = None
     search_blob: str
 
 
@@ -73,26 +77,26 @@ class FacetValue(BaseModel):
 
 
 class DatasetSearchResponse(BaseModel):
-    datasets: List[DatasetCard]
+    datasets: list[DatasetCard]
     total: int
     limit: int
     offset: int
     has_more: bool
     search_time_ms: int
-    facets: Dict[str, List[FacetValue]]
+    facets: dict[str, list[FacetValue]]
     last_updated: datetime
 
 
 class DatasetSearchPayload(BaseModel):
-    query: Optional[str] = None
-    modalities: Optional[List[str]] = None
-    acquisitions: Optional[List[str]] = None
-    source_repo: Optional[List[str]] = None
-    access_type: Optional[List[str]] = None
-    category: Optional[List[str]] = None
-    tags: Optional[List[str]] = None
-    center: Optional[List[str]] = None
-    consortium: Optional[List[str]] = None
+    query: str | None = None
+    modalities: list[str] | None = None
+    acquisitions: list[str] | None = None
+    source_repo: list[str] | None = None
+    access_type: list[str] | None = None
+    category: list[str] | None = None
+    tags: list[str] | None = None
+    center: list[str] | None = None
+    consortium: list[str] | None = None
     limit: int = Field(20, ge=1, le=100)
     offset: int = Field(0, ge=0)
     sort: str = Field("relevance", pattern="^(relevance|subjects|updated)$")
@@ -101,21 +105,21 @@ class DatasetSearchPayload(BaseModel):
 class DatasetRecommendation(BaseModel):
     dataset: DatasetCard
     score: float
-    reasons: List[str]
+    reasons: list[str]
 
 
 class CatalogStats(BaseModel):
     total_datasets: int
     total_subjects: int
     average_subjects_per_dataset: float
-    modality_distribution: Dict[str, int]
-    source_distribution: Dict[str, int]
-    access_distribution: Dict[str, int]
+    modality_distribution: dict[str, int]
+    source_distribution: dict[str, int]
+    access_distribution: dict[str, int]
     last_updated: datetime
 
 
 class DatasetCatalogIndex:
-    def __init__(self, catalog_path: Optional[str] = None) -> None:
+    def __init__(self, catalog_path: str | None = None) -> None:
         self._catalog_path = catalog_path
         self._lock = threading.RLock()
         self._load()
@@ -136,26 +140,26 @@ class DatasetCatalogIndex:
         with self._lock:
             return self._last_loaded
 
-    def facets_all(self) -> Dict[str, List[FacetValue]]:
+    def facets_all(self) -> dict[str, list[FacetValue]]:
         with self._lock:
             return self._facets
 
-    def get(self, dataset_id: str) -> Optional[DatasetRecord]:
+    def get(self, dataset_id: str) -> DatasetRecord | None:
         with self._lock:
             return self._record_map.get(dataset_id)
 
     def search(
         self,
         *,
-        query: Optional[str],
-        modalities: Optional[List[str]],
-        acquisitions: Optional[List[str]],
-        source_repo: Optional[List[str]],
-        access_type: Optional[List[str]],
-        category: Optional[List[str]],
-        tags: Optional[List[str]],
-        center: Optional[List[str]],
-        consortium: Optional[List[str]],
+        query: str | None,
+        modalities: list[str] | None,
+        acquisitions: list[str] | None,
+        source_repo: list[str] | None,
+        access_type: list[str] | None,
+        category: list[str] | None,
+        tags: list[str] | None,
+        center: list[str] | None,
+        consortium: list[str] | None,
         limit: int,
         offset: int,
         sort: str,
@@ -167,7 +171,15 @@ class DatasetCatalogIndex:
             r
             for r in records
             if self._matches(
-                r, modalities, acquisitions, source_repo, access_type, category, tags, center, consortium
+                r,
+                modalities,
+                acquisitions,
+                source_repo,
+                access_type,
+                category,
+                tags,
+                center,
+                consortium,
             )
         ]
         scored = [(self._score(query, r, sort), r) for r in filtered]
@@ -188,11 +200,11 @@ class DatasetCatalogIndex:
             last_updated=self.last_loaded,
         )
 
-    def similar(self, dataset_id: str, limit: int = 5) -> List[DatasetCard]:
+    def similar(self, dataset_id: str, limit: int = 5) -> list[DatasetCard]:
         anchor = self.get(dataset_id)
         if not anchor:
             return []
-        sims: List[tuple[float, DatasetRecord]] = []
+        sims: list[tuple[float, DatasetRecord]] = []
         with self._lock:
             for candidate in self._records:
                 if candidate.dataset_id == anchor.dataset_id:
@@ -230,42 +242,48 @@ class DatasetCatalogIndex:
     def _matches(
         self,
         record: DatasetRecord,
-        modalities: Optional[List[str]],
-        acquisitions: Optional[List[str]],
-        source_repo: Optional[List[str]],
-        access_type: Optional[List[str]],
-        category: Optional[List[str]],
-        tags: Optional[List[str]],
-        center: Optional[List[str]],
-        consortium: Optional[List[str]],
+        modalities: list[str] | None,
+        acquisitions: list[str] | None,
+        source_repo: list[str] | None,
+        access_type: list[str] | None,
+        category: list[str] | None,
+        tags: list[str] | None,
+        center: list[str] | None,
+        consortium: list[str] | None,
     ) -> bool:
         if modalities:
-            record_modalities = set(m.lower() for m in self._modalities(record))
-            if not set(m.lower() for m in modalities).issubset(record_modalities):
+            record_modalities = {m.lower() for m in self._modalities(record)}
+            if not {m.lower() for m in modalities}.issubset(record_modalities):
                 return False
         if acquisitions:
-            record_acq = set(a.lower() for a in record.acquisitions)
-            if not set(a.lower() for a in acquisitions).issubset(record_acq):
+            record_acq = {a.lower() for a in record.acquisitions}
+            if not {a.lower() for a in acquisitions}.issubset(record_acq):
                 return False
-        if source_repo and record.source_repo.lower() not in {s.lower() for s in source_repo}:
+        if source_repo and record.source_repo.lower() not in {
+            s.lower() for s in source_repo
+        }:
             return False
-        if access_type and record.access_type.lower() not in {a.lower() for a in access_type}:
+        if access_type and record.access_type.lower() not in {
+            a.lower() for a in access_type
+        }:
             return False
         if category:
             record_category = (record.category or "").lower()
             if record_category not in {c.lower() for c in category}:
                 return False
         if tags:
-            record_tags = set(t.lower() for t in record.tags)
-            if not set(t.lower() for t in tags).issubset(record_tags):
+            record_tags = {t.lower() for t in record.tags}
+            if not {t.lower() for t in tags}.issubset(record_tags):
                 return False
         if center and (record.center or "").lower() not in {c.lower() for c in center}:
             return False
-        if consortium and (record.consortium or "").lower() not in {c.lower() for c in consortium}:
+        if consortium and (record.consortium or "").lower() not in {
+            c.lower() for c in consortium
+        }:
             return False
         return True
 
-    def _score(self, query: Optional[str], record: DatasetRecord, sort: str) -> float:
+    def _score(self, query: str | None, record: DatasetRecord, sort: str) -> float:
         base = 0.0
         if query:
             if fuzz:
@@ -293,17 +311,17 @@ class DatasetCatalogIndex:
         return score
 
     def _similarity(self, a: DatasetRecord, b: DatasetRecord) -> float:
-        tags_a = set(t.lower() for t in a.tags)
-        tags_b = set(t.lower() for t in b.tags)
-        mod_a = set(m.lower() for m in self._modalities(a))
-        mod_b = set(m.lower() for m in self._modalities(b))
+        tags_a = {t.lower() for t in a.tags}
+        tags_b = {t.lower() for t in b.tags}
+        mod_a = {m.lower() for m in self._modalities(a)}
+        mod_b = {m.lower() for m in self._modalities(b)}
         intersect = len(tags_a & tags_b) + len(mod_a & mod_b)
         union = len(tags_a | tags_b | mod_a | mod_b)
         if union == 0:
             return 0.0
         return intersect / union
 
-    def _modalities(self, record: DatasetRecord) -> List[str]:
+    def _modalities(self, record: DatasetRecord) -> list[str]:
         return [str(m) for m in record.modalities]
 
     def _to_card(self, record: DatasetRecord, score: float | None) -> DatasetCard:
@@ -334,10 +352,14 @@ class DatasetCatalogIndex:
         )
 
     def _preview_to_dict(self, preview: DatasetPreview) -> PreviewResponse:
-        return PreviewResponse(kind=preview.kind, uri=str(preview.uri), label=preview.label)
+        return PreviewResponse(
+            kind=preview.kind, uri=str(preview.uri), label=preview.label
+        )
 
-    def _compute_facets(self, records: Iterable[DatasetRecord]) -> Dict[str, List[FacetValue]]:
-        facets: Dict[str, Counter[str]] = {
+    def _compute_facets(
+        self, records: Iterable[DatasetRecord]
+    ) -> dict[str, list[FacetValue]]:
+        facets: dict[str, Counter[str]] = {
             "modalities": Counter(),
             "source_repo": Counter(),
             "access_type": Counter(),
@@ -352,7 +374,10 @@ class DatasetCatalogIndex:
             if record.category:
                 facets["category"].update([record.category])
         return {
-            key: [FacetValue(value=value, count=count) for value, count in counter.most_common()]
+            key: [
+                FacetValue(value=value, count=count)
+                for value, count in counter.most_common()
+            ]
             for key, counter in facets.items()
         }
 
@@ -362,15 +387,15 @@ CATALOG_INDEX = DatasetCatalogIndex()
 
 @router.get("/search", response_model=DatasetSearchResponse)
 async def search_datasets(
-    q: Optional[str] = Query(None, description="Free-text query"),
-    modalities: Optional[List[str]] = Query(None),
-    acquisitions: Optional[List[str]] = Query(None),
-    source_repo: Optional[List[str]] = Query(None),
-    access_type: Optional[List[str]] = Query(None),
-    category: Optional[List[str]] = Query(None),
-    tags: Optional[List[str]] = Query(None),
-    center: Optional[List[str]] = Query(None),
-    consortium: Optional[List[str]] = Query(None),
+    q: str | None = Query(None, description="Free-text query"),
+    modalities: list[str] | None = Query(None),
+    acquisitions: list[str] | None = Query(None),
+    source_repo: list[str] | None = Query(None),
+    access_type: list[str] | None = Query(None),
+    category: list[str] | None = Query(None),
+    tags: list[str] | None = Query(None),
+    center: list[str] | None = Query(None),
+    consortium: list[str] | None = Query(None),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     sort: str = Query("relevance", pattern="^(relevance|subjects|updated)$"),
@@ -411,8 +436,8 @@ async def search_datasets_post(payload: DatasetSearchPayload) -> DatasetSearchRe
 
 @router.get("", response_model=DatasetSearchResponse)
 async def list_datasets(
-    q: Optional[str] = None,
-    category: Optional[List[str]] = None,
+    q: str | None = None,
+    category: list[str] | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> DatasetSearchResponse:
@@ -458,36 +483,42 @@ async def get_dataset(dataset_id: str) -> DatasetDetail:
     )
 
 
-@router.get("/{dataset_id}/similar", response_model=List[DatasetCard])
+@router.get("/{dataset_id}/similar", response_model=list[DatasetCard])
 async def get_similar_datasets(
     dataset_id: str,
     limit: int = Query(5, ge=1, le=20),
-) -> List[DatasetCard]:
+) -> list[DatasetCard]:
     sims = CATALOG_INDEX.similar(dataset_id, limit=limit)
     if not sims:
         record = CATALOG_INDEX.get(dataset_id)
         if not record:
-            raise HTTPException(status_code=404, detail=f"Dataset {dataset_id} not found")
+            raise HTTPException(
+                status_code=404, detail=f"Dataset {dataset_id} not found"
+            )
     return sims
 
 
-@router.get("/{dataset_id}/recommendations", response_model=List[DatasetRecommendation])
+@router.get("/{dataset_id}/recommendations", response_model=list[DatasetRecommendation])
 async def recommend_datasets(
     dataset_id: str,
     limit: int = Query(5, ge=1, le=20),
-) -> List[DatasetRecommendation]:
+) -> list[DatasetRecommendation]:
     baseline = CATALOG_INDEX.get(dataset_id)
     if not baseline:
         raise HTTPException(status_code=404, detail=f"Dataset {dataset_id} not found")
     recs = []
     for card in CATALOG_INDEX.similar(dataset_id, limit=limit):
         reasons = []
-        shared_tags = set(t.lower() for t in card.tags) & set(t.lower() for t in baseline.tags)
+        shared_tags = {t.lower() for t in card.tags} & {
+            t.lower() for t in baseline.tags
+        }
         if shared_tags:
             reasons.append(f"Shares tags: {', '.join(sorted(shared_tags))}")
-        shared_modalities = set(card.modalities) & set(str(m) for m in baseline.modalities)
+        shared_modalities = set(card.modalities) & {str(m) for m in baseline.modalities}
         if shared_modalities:
-            reasons.append(f"Includes modalities: {', '.join(sorted(shared_modalities))}")
+            reasons.append(
+                f"Includes modalities: {', '.join(sorted(shared_modalities))}"
+            )
         recs.append(
             DatasetRecommendation(
                 dataset=card,
@@ -498,10 +529,10 @@ async def recommend_datasets(
     return recs
 
 
-@router.get("/facets/values", response_model=Dict[str, List[FacetValue]])
+@router.get("/facets/values", response_model=dict[str, list[FacetValue]])
 async def get_facet_values(
     fields: str = Query(..., description="Comma-separated facet names"),
-) -> Dict[str, List[FacetValue]]:
+) -> dict[str, list[FacetValue]]:
     requested = [field.strip() for field in fields.split(",") if field.strip()]
     facets = CATALOG_INDEX.facets_all()
     return {field: facets.get(field, []) for field in requested}
@@ -513,6 +544,6 @@ async def get_catalog_stats() -> CatalogStats:
 
 
 @router.post("/refresh-cache")
-async def refresh_catalog() -> Dict[str, str]:
+async def refresh_catalog() -> dict[str, str]:
     CATALOG_INDEX.refresh()
     return {"status": "ok", "last_updated": CATALOG_INDEX.last_loaded.isoformat()}

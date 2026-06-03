@@ -6,9 +6,6 @@ Demonstrates how NiCLIP embeddings extend the concept
 hierarchy with semantic clustering and relationships.
 """
 
-import json
-from datetime import datetime
-
 
 def test_niclip_concept_hierarchy():
     """Test concept hierarchy building with NiCLIP."""
@@ -17,7 +14,7 @@ def test_niclip_concept_hierarchy():
 
     try:
         from brain_researcher.services.br_kg.etl.mappers.niclip_concept_hierarchy import (
-            get_hierarchy_builder
+            get_hierarchy_builder,
         )
 
         # Initialize hierarchy builder
@@ -32,18 +29,18 @@ def test_niclip_concept_hierarchy():
         print("\n1️⃣ Building Concept Hierarchy with NiCLIP Embeddings...")
         hierarchy = builder.build_hierarchy(n_clusters=15)
 
-        print(f"\n📊 Hierarchy Statistics:")
+        print("\n📊 Hierarchy Statistics:")
         print(f"   Total concepts: {hierarchy['total_concepts']}")
         print(f"   Number of clusters: {hierarchy['n_clusters']}")
         print(f"   Relationships generated: {len(hierarchy['relationships'])}")
 
         # Show cognitive process mapping
-        print(f"\n2️⃣ Cognitive Process Mapping:")
+        print("\n2️⃣ Cognitive Process Mapping:")
         process_concepts = {}
-        for cluster_id, process in hierarchy['process_mapping'].items():
+        for cluster_id, process in hierarchy["process_mapping"].items():
             if process not in process_concepts:
                 process_concepts[process] = []
-            process_concepts[process].extend(hierarchy['clusters'][cluster_id])
+            process_concepts[process].extend(hierarchy["clusters"][cluster_id])
 
         for process, concepts in process_concepts.items():
             print(f"\n   {process}:")
@@ -53,12 +50,12 @@ def test_niclip_concept_hierarchy():
                 print(f"      ... and {len(concepts)-5} more")
 
         # Show sample hierarchical relationships
-        print(f"\n3️⃣ Sample Hierarchical Relationships:")
+        print("\n3️⃣ Sample Hierarchical Relationships:")
 
         # Group by relationship type
         rel_types = {}
-        for rel in hierarchy['relationships']:
-            rel_type = rel['type']
+        for rel in hierarchy["relationships"]:
+            rel_type = rel["type"]
             if rel_type not in rel_types:
                 rel_types[rel_type] = []
             rel_types[rel_type].append(rel)
@@ -66,17 +63,19 @@ def test_niclip_concept_hierarchy():
         for rel_type, rels in rel_types.items():
             print(f"\n   {rel_type} relationships ({len(rels)} total):")
             for rel in rels[:3]:  # Show first 3
-                props = rel.get('properties', {})
-                confidence = props.get('confidence', props.get('similarity', 'N/A'))
-                print(f"      {rel['source']} → {rel['target']} (confidence: {confidence})")
+                props = rel.get("properties", {})
+                confidence = props.get("confidence", props.get("similarity", "N/A"))
+                print(
+                    f"      {rel['source']} → {rel['target']} (confidence: {confidence})"
+                )
 
         # Test specific concepts
-        print(f"\n4️⃣ Concept Details:")
+        print("\n4️⃣ Concept Details:")
         test_concepts = ["working memory", "language", "motor", "attention"]
 
         for concept in test_concepts:
             info = builder.get_concept_hierarchy_info(concept)
-            if info['embedding'] is not None:
+            if info["embedding"] is not None:
                 print(f"\n   📍 {concept}:")
                 print(f"      Process: {info['cognitive_process']}")
                 print(f"      Cluster: {info['cluster_id']}")
@@ -100,30 +99,35 @@ def demonstrate_mock_hierarchy():
                 ("working memory", "IS_A", "cognitive control"),
                 ("attention", "IS_A", "cognitive control"),
                 ("working memory", "RELATED_TO", "attention"),
-            ]
+            ],
         },
         "Language": {
-            "concepts": ["speech processing", "reading", "semantic processing", "syntax"],
+            "concepts": [
+                "speech processing",
+                "reading",
+                "semantic processing",
+                "syntax",
+            ],
             "relationships": [
                 ("speech processing", "IS_A", "language"),
                 ("reading", "IS_A", "language"),
                 ("reading", "RELATED_TO", "semantic processing"),
-            ]
+            ],
         },
         "Motor": {
             "concepts": ["motor control", "action planning", "movement execution"],
             "relationships": [
                 ("motor control", "IS_A", "motor"),
                 ("action planning", "PART_OF", "motor control"),
-            ]
-        }
+            ],
+        },
     }
 
     for process, data in mock_hierarchy.items():
         print(f"\n{process}:")
         print(f"  Concepts: {', '.join(data['concepts'][:3])}")
-        print(f"  Relationships:")
-        for source, rel_type, target in data['relationships'][:2]:
+        print("  Relationships:")
+        for source, rel_type, target in data["relationships"][:2]:
             print(f"    {source} -[{rel_type}]-> {target}")
 
 
@@ -156,7 +160,8 @@ def show_usage_example():
     print("\n\n🔧 Usage Example")
     print("=" * 60)
 
-    print("""
+    print(
+        """
 from brain_researcher.services.br_kg.etl.mappers.niclip_concept_hierarchy import (
     get_hierarchy_builder
 )
@@ -181,7 +186,8 @@ print(f"Related concepts: {info['related_concepts']}")
 # - Find all concepts under "cognitive control"
 # - Find related concepts to "language processing"
 # - Navigate from specific to general concepts
-""")
+"""
+    )
 
 
 if __name__ == "__main__":

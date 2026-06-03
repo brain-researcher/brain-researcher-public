@@ -49,7 +49,9 @@ def _compose(cmd: list[str], workdir: Path) -> int:
         res = subprocess.run(cmd, cwd=str(workdir), check=False)
         return res.returncode
     except FileNotFoundError:
-        console.print("[red]docker compose not found. Install Docker or use 'docker-compose'.[/red]")
+        console.print(
+            "[red]docker compose not found. Install Docker or use 'docker-compose'.[/red]"
+        )
         return 1
 
 
@@ -73,13 +75,18 @@ def docker_start(
             raise typer.Exit(code)
         console.print("[green]✓ Started kg stack[/green]")
         if wait:
-            console.print("[dim]Waiting for API health at http://localhost:5000/health ...[/dim]")
+            console.print(
+                "[dim]Waiting for API health at http://localhost:5000/health ...[/dim]"
+            )
             deadline = time.time() + max(5, timeout)
             healthy = False
             while time.time() < deadline:
                 try:
                     response = requests.get("http://localhost:5000/health", timeout=3)
-                    if response.ok and response.json().get("status") in {"healthy", "ok"}:
+                    if response.ok and response.json().get("status") in {
+                        "healthy",
+                        "ok",
+                    }:
                         healthy = True
                         break
                 except Exception:
@@ -88,7 +95,9 @@ def docker_start(
             if healthy:
                 console.print("[green]✓ API healthy[/green]")
             else:
-                console.print("[yellow]API health not confirmed within timeout[/yellow]")
+                console.print(
+                    "[yellow]API health not confirmed within timeout[/yellow]"
+                )
         console.print("[dim]Seed with: br service docker seed[/dim]")
     elif stack == "all":
         console.print("[cyan]Starting all services from root compose...[/cyan]")
@@ -159,7 +168,16 @@ def docker_seed():
     kg_dir = get_package_root() / "services" / "br_kg"
     console.print("[cyan]Seeding demo data via API container...[/cyan]")
     code = _compose(
-        ["docker", "compose", "exec", "-T", "api", "python", "-m", "scripts.seed_neo4j"],
+        [
+            "docker",
+            "compose",
+            "exec",
+            "-T",
+            "api",
+            "python",
+            "-m",
+            "scripts.seed_neo4j",
+        ],
         kg_dir,
     )
     if code != 0:
@@ -221,8 +239,12 @@ def status():
 
 @app.command()
 def stop(
-    service: str = typer.Argument(..., help=f"Service to stop: {_service_choices()}, or 'all'"),
-    force: bool = typer.Option(False, "--force", "-f", help="Force stop without confirmation"),
+    service: str = typer.Argument(
+        ..., help=f"Service to stop: {_service_choices()}, or 'all'"
+    ),
+    force: bool = typer.Option(
+        False, "--force", "-f", help="Force stop without confirmation"
+    ),
 ):
     """Stop a running service."""
     if service == "all":
@@ -249,7 +271,9 @@ def stop(
 
 @app.command()
 def restart(
-    service: str = typer.Argument(..., help=f"Service to restart: {_service_choices()}"),
+    service: str = typer.Argument(
+        ..., help=f"Service to restart: {_service_choices()}"
+    ),
     host: str = typer.Option("127.0.0.1", "--host", "-h", help="Host to bind to"),
     port: int | None = typer.Option(None, "--port", "-p", help="Port to bind to"),
 ):
@@ -288,7 +312,9 @@ def ports():
     console.print("\n[bold]Environment Variables:[/bold]")
     for service, env_var in port_manager.SERVICE_ENV_VARS.items():
         if env_var in os.environ:
-            console.print(f"  {env_var:18} : {os.environ[env_var]} [dim]({service})[/dim]")
+            console.print(
+                f"  {env_var:18} : {os.environ[env_var]} [dim]({service})[/dim]"
+            )
 
     console.print("\n[dim]To set a custom port: export SERVICE_PORT=<port>[/dim]")
     console.print("[dim]Example: export AGENT_PORT=8000[/dim]")
@@ -296,13 +322,19 @@ def ports():
 
 @app.command()
 def cleanup(
-    force: bool = typer.Option(False, "--force", "-f", help="Force cleanup without confirmation"),
+    force: bool = typer.Option(
+        False, "--force", "-f", help="Force cleanup without confirmation"
+    ),
 ):
     """Clean up orphaned processes and ports."""
-    console.print("[yellow]Searching for orphaned Brain Researcher processes...[/yellow]")
+    console.print(
+        "[yellow]Searching for orphaned Brain Researcher processes...[/yellow]"
+    )
 
     orphaned = []
-    ports_to_check = sorted(set(port_manager.DEFAULT_PORTS.values()) | set(LEGACY_CLEANUP_PORTS))
+    ports_to_check = sorted(
+        set(port_manager.DEFAULT_PORTS.values()) | set(LEGACY_CLEANUP_PORTS)
+    )
     for port in ports_to_check:
         process_info = port_manager.get_process_on_port(port)
         if process_info:
@@ -331,7 +363,9 @@ def cleanup(
 
 @app.command()
 def logs(
-    service: str = typer.Argument(..., help=f"Service to show logs for: {_service_choices()}"),
+    service: str = typer.Argument(
+        ..., help=f"Service to show logs for: {_service_choices()}"
+    ),
     lines: int = typer.Option(100, "--lines", "-n", help="Number of lines to show"),
     follow: bool = typer.Option(False, "--follow", "-f", help="Follow log output"),
 ):

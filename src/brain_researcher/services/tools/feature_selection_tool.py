@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -24,14 +23,18 @@ class FeatureSelectionArgs(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     data_file: str = Field(description="Input feature matrix")
-    labels_file: Optional[str] = Field(default=None, description="Labels for supervised methods")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    labels_file: str | None = Field(
+        default=None, description="Labels for supervised methods"
+    )
+    output_dir: str | None = Field(default=None, description="Output directory")
 
     method: str = Field(default="univariate", description="Feature selection method")
     task_type: str = Field(default="classification", description="Task type")
-    n_features: Optional[int] = Field(default=None, description="Number of features to select")
-    percentile: Optional[int] = Field(default=None, description="Percentile to select")
-    random_state: Optional[int] = Field(default=42, description="Random seed")
+    n_features: int | None = Field(
+        default=None, description="Number of features to select"
+    )
+    percentile: int | None = Field(default=None, description="Percentile to select")
+    random_state: int | None = Field(default=42, description="Random seed")
     save_indices: bool = Field(default=True, description="Persist selected indices")
     save_scores: bool = Field(default=True, description="Persist feature scores")
     save_reduced_data: bool = Field(default=True, description="Persist reduced dataset")

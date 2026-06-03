@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -15,66 +15,64 @@ class KGNodeRefModel(BaseModel):
     label: str
     type: str
     score: float = 1.0
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class DerivativeHitModel(BaseModel):
     dataset_id: str
     kind: str
     path: str
-    description: Optional[str] = None
-    pipeline_signature: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    description: str | None = None
+    pipeline_signature: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class DatasetResourcesModel(BaseModel):
-    bids_path: Optional[str] = None
-    derivatives: Dict[str, str] = Field(default_factory=dict)
-    remote_urls: Dict[str, str] = Field(default_factory=dict)
-    size_bytes: Optional[int] = None
+    bids_path: str | None = None
+    derivatives: dict[str, str] = Field(default_factory=dict)
+    remote_urls: dict[str, str] = Field(default_factory=dict)
+    size_bytes: int | None = None
     is_bids_available: bool = False
-    available_derivatives: List[str] = Field(default_factory=list)
+    available_derivatives: list[str] = Field(default_factory=list)
     analysis_goal: str = "generic"
-    source_trace: List[Dict[str, Any]] = Field(default_factory=list)
-    required_files: Dict[str, Any] = Field(default_factory=dict)
-    readiness: Dict[str, Any] = Field(default_factory=dict)
-    auto_heal: Dict[str, Any] = Field(default_factory=dict)
-    semantic_match: Dict[str, Any] = Field(default_factory=dict)
-    source_access: Dict[str, Any] = Field(default_factory=dict)
+    source_trace: list[dict[str, Any]] = Field(default_factory=list)
+    required_files: dict[str, Any] = Field(default_factory=dict)
+    readiness: dict[str, Any] = Field(default_factory=dict)
+    auto_heal: dict[str, Any] = Field(default_factory=dict)
+    semantic_match: dict[str, Any] = Field(default_factory=dict)
+    source_access: dict[str, Any] = Field(default_factory=dict)
     dataset_name: str = ""
     display_name: str = ""
     source_repo: str = ""
-    dataset_metadata: Dict[str, Any] = Field(default_factory=dict)
+    dataset_metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class DatasetResolutionModel(BaseModel):
     dataset_id: str
     name: str
     source_repo: str
-    primary_url: Optional[str] = None
-    local_path: Optional[str] = None
-    kg_node_id: Optional[str] = None
-    display_name: Optional[str] = None
-    bids_path: Optional[str] = None
-    remote_url: Optional[str] = None
-    aliases: List[str] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    resources: Optional[DatasetResourcesModel] = None
+    primary_url: str | None = None
+    local_path: str | None = None
+    kg_node_id: str | None = None
+    display_name: str | None = None
+    bids_path: str | None = None
+    remote_url: str | None = None
+    aliases: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    resources: DatasetResourcesModel | None = None
 
 
 class QueryUnderstandingModel(BaseModel):
     original_query: str
-    entities: List[Dict[str, Any]] = Field(default_factory=list)
-    resolved_datasets: List[DatasetResolutionModel] = Field(default_factory=list)
-    candidate_datasets: List[DatasetResolutionModel] = Field(default_factory=list)
-    kg_nodes: List[KGNodeRefModel] = Field(default_factory=list)
-    ambiguities: List[str] = Field(default_factory=list)
-    existing_derivatives: List[DerivativeHitModel] = Field(default_factory=list)
+    entities: list[dict[str, Any]] = Field(default_factory=list)
+    resolved_datasets: list[DatasetResolutionModel] = Field(default_factory=list)
+    candidate_datasets: list[DatasetResolutionModel] = Field(default_factory=list)
+    kg_nodes: list[KGNodeRefModel] = Field(default_factory=list)
+    ambiguities: list[str] = Field(default_factory=list)
+    existing_derivatives: list[DerivativeHitModel] = Field(default_factory=list)
 
     @classmethod
-    def from_dataclass(
-        cls, q: dc.QueryUnderstandingResult
-    ) -> "QueryUnderstandingModel":
+    def from_dataclass(cls, q: dc.QueryUnderstandingResult) -> QueryUnderstandingModel:
         return cls(
             original_query=q.original_query,
             entities=q.entities,
@@ -91,43 +89,67 @@ class QueryUnderstandingModel(BaseModel):
                     remote_url=ds.remote_url,
                     aliases=ds.aliases,
                     metadata=ds.metadata,
-                    resources=DatasetResourcesModel(
-                        bids_path=str(ds.resources.bids_path)
-                        if ds.resources and ds.resources.bids_path
-                        else None,
-                        derivatives=ds.resources.derivatives if ds.resources else {},
-                        remote_urls=ds.resources.remote_urls if ds.resources else {},
-                        size_bytes=ds.resources.size_bytes if ds.resources else None,
-                        is_bids_available=ds.resources.is_bids_available
+                    resources=(
+                        DatasetResourcesModel(
+                            bids_path=(
+                                str(ds.resources.bids_path)
+                                if ds.resources and ds.resources.bids_path
+                                else None
+                            ),
+                            derivatives=(
+                                ds.resources.derivatives if ds.resources else {}
+                            ),
+                            remote_urls=(
+                                ds.resources.remote_urls if ds.resources else {}
+                            ),
+                            size_bytes=(
+                                ds.resources.size_bytes if ds.resources else None
+                            ),
+                            is_bids_available=(
+                                ds.resources.is_bids_available
+                                if ds.resources
+                                else False
+                            ),
+                            available_derivatives=(
+                                ds.resources.available_derivatives
+                                if ds.resources
+                                else []
+                            ),
+                            analysis_goal=(
+                                ds.resources.analysis_goal
+                                if ds.resources
+                                else "generic"
+                            ),
+                            source_trace=(
+                                ds.resources.source_trace if ds.resources else []
+                            ),
+                            required_files=(
+                                ds.resources.required_files if ds.resources else {}
+                            ),
+                            readiness=ds.resources.readiness if ds.resources else {},
+                            auto_heal=ds.resources.auto_heal if ds.resources else {},
+                            semantic_match=(
+                                ds.resources.semantic_match if ds.resources else {}
+                            ),
+                            source_access=(
+                                ds.resources.source_access if ds.resources else {}
+                            ),
+                            dataset_name=(
+                                ds.resources.dataset_name if ds.resources else ""
+                            ),
+                            display_name=(
+                                ds.resources.display_name if ds.resources else ""
+                            ),
+                            source_repo=(
+                                ds.resources.source_repo if ds.resources else ""
+                            ),
+                            dataset_metadata=(
+                                ds.resources.dataset_metadata if ds.resources else {}
+                            ),
+                        )
                         if ds.resources
-                        else False,
-                        available_derivatives=ds.resources.available_derivatives
-                        if ds.resources
-                        else [],
-                        analysis_goal=ds.resources.analysis_goal
-                        if ds.resources
-                        else "generic",
-                        source_trace=ds.resources.source_trace if ds.resources else [],
-                        required_files=ds.resources.required_files
-                        if ds.resources
-                        else {},
-                        readiness=ds.resources.readiness if ds.resources else {},
-                        auto_heal=ds.resources.auto_heal if ds.resources else {},
-                        semantic_match=ds.resources.semantic_match
-                        if ds.resources
-                        else {},
-                        source_access=ds.resources.source_access
-                        if ds.resources
-                        else {},
-                        dataset_name=ds.resources.dataset_name if ds.resources else "",
-                        display_name=ds.resources.display_name if ds.resources else "",
-                        source_repo=ds.resources.source_repo if ds.resources else "",
-                        dataset_metadata=ds.resources.dataset_metadata
-                        if ds.resources
-                        else {},
-                    )
-                    if ds.resources
-                    else None,
+                        else None
+                    ),
                 )
                 for ds in q.resolved_datasets
             ],
@@ -144,43 +166,67 @@ class QueryUnderstandingModel(BaseModel):
                     remote_url=ds.remote_url,
                     aliases=ds.aliases,
                     metadata=ds.metadata,
-                    resources=DatasetResourcesModel(
-                        bids_path=str(ds.resources.bids_path)
-                        if ds.resources and ds.resources.bids_path
-                        else None,
-                        derivatives=ds.resources.derivatives if ds.resources else {},
-                        remote_urls=ds.resources.remote_urls if ds.resources else {},
-                        size_bytes=ds.resources.size_bytes if ds.resources else None,
-                        is_bids_available=ds.resources.is_bids_available
+                    resources=(
+                        DatasetResourcesModel(
+                            bids_path=(
+                                str(ds.resources.bids_path)
+                                if ds.resources and ds.resources.bids_path
+                                else None
+                            ),
+                            derivatives=(
+                                ds.resources.derivatives if ds.resources else {}
+                            ),
+                            remote_urls=(
+                                ds.resources.remote_urls if ds.resources else {}
+                            ),
+                            size_bytes=(
+                                ds.resources.size_bytes if ds.resources else None
+                            ),
+                            is_bids_available=(
+                                ds.resources.is_bids_available
+                                if ds.resources
+                                else False
+                            ),
+                            available_derivatives=(
+                                ds.resources.available_derivatives
+                                if ds.resources
+                                else []
+                            ),
+                            analysis_goal=(
+                                ds.resources.analysis_goal
+                                if ds.resources
+                                else "generic"
+                            ),
+                            source_trace=(
+                                ds.resources.source_trace if ds.resources else []
+                            ),
+                            required_files=(
+                                ds.resources.required_files if ds.resources else {}
+                            ),
+                            readiness=ds.resources.readiness if ds.resources else {},
+                            auto_heal=ds.resources.auto_heal if ds.resources else {},
+                            semantic_match=(
+                                ds.resources.semantic_match if ds.resources else {}
+                            ),
+                            source_access=(
+                                ds.resources.source_access if ds.resources else {}
+                            ),
+                            dataset_name=(
+                                ds.resources.dataset_name if ds.resources else ""
+                            ),
+                            display_name=(
+                                ds.resources.display_name if ds.resources else ""
+                            ),
+                            source_repo=(
+                                ds.resources.source_repo if ds.resources else ""
+                            ),
+                            dataset_metadata=(
+                                ds.resources.dataset_metadata if ds.resources else {}
+                            ),
+                        )
                         if ds.resources
-                        else False,
-                        available_derivatives=ds.resources.available_derivatives
-                        if ds.resources
-                        else [],
-                        analysis_goal=ds.resources.analysis_goal
-                        if ds.resources
-                        else "generic",
-                        source_trace=ds.resources.source_trace if ds.resources else [],
-                        required_files=ds.resources.required_files
-                        if ds.resources
-                        else {},
-                        readiness=ds.resources.readiness if ds.resources else {},
-                        auto_heal=ds.resources.auto_heal if ds.resources else {},
-                        semantic_match=ds.resources.semantic_match
-                        if ds.resources
-                        else {},
-                        source_access=ds.resources.source_access
-                        if ds.resources
-                        else {},
-                        dataset_name=ds.resources.dataset_name if ds.resources else "",
-                        display_name=ds.resources.display_name if ds.resources else "",
-                        source_repo=ds.resources.source_repo if ds.resources else "",
-                        dataset_metadata=ds.resources.dataset_metadata
-                        if ds.resources
-                        else {},
-                    )
-                    if ds.resources
-                    else None,
+                        else None
+                    ),
                 )
                 for ds in getattr(q, "candidate_datasets", []) or []
             ],
@@ -200,14 +246,14 @@ class QueryUnderstandingModel(BaseModel):
         )
 
     def to_dataclass(self) -> dc.QueryUnderstandingResult:
-        ds_list: List[dc.DatasetResolution] = []
+        ds_list: list[dc.DatasetResolution] = []
         for ds in self.resolved_datasets:
             resources = None
             if ds.resources:
                 resources = dc.DatasetResources(
-                    bids_path=Path(ds.resources.bids_path)
-                    if ds.resources.bids_path
-                    else None,
+                    bids_path=(
+                        Path(ds.resources.bids_path) if ds.resources.bids_path else None
+                    ),
                     derivatives=ds.resources.derivatives,
                     remote_urls=ds.resources.remote_urls,
                     size_bytes=ds.resources.size_bytes,
@@ -242,14 +288,14 @@ class QueryUnderstandingModel(BaseModel):
                 )
             )
 
-        candidate_list: List[dc.DatasetResolution] = []
+        candidate_list: list[dc.DatasetResolution] = []
         for ds in self.candidate_datasets:
             resources = None
             if ds.resources:
                 resources = dc.DatasetResources(
-                    bids_path=Path(ds.resources.bids_path)
-                    if ds.resources.bids_path
-                    else None,
+                    bids_path=(
+                        Path(ds.resources.bids_path) if ds.resources.bids_path else None
+                    ),
                     derivatives=ds.resources.derivatives,
                     remote_urls=ds.resources.remote_urls,
                     size_bytes=ds.resources.size_bytes,

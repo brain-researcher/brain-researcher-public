@@ -9,20 +9,20 @@ Goals:
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, Optional
+from typing import Any
 
 _OPENNEURO_PREFIX = "ds:openneuro:"
 _OPENNEURO_RE = re.compile(r"^ds:?0*\d+$", re.IGNORECASE)  # e.g., ds000001 or DS000123
 
 
-def normalize_tool_id(tool_id: Optional[str]) -> Optional[str]:
+def normalize_tool_id(tool_id: str | None) -> str | None:
     """Best-effort tool key normalization."""
     if not tool_id:
         return None
     return str(tool_id).strip()
 
 
-def normalize_dataset_id(dataset_id: Optional[str]) -> Optional[str]:
+def normalize_dataset_id(dataset_id: str | None) -> str | None:
     """
     Normalize dataset ids to the canonical KG form.
 
@@ -43,7 +43,7 @@ def normalize_dataset_id(dataset_id: Optional[str]) -> Optional[str]:
     return ds
 
 
-def extract_dataset_from_context(context: Optional[Dict[str, Any]]) -> Optional[str]:
+def extract_dataset_from_context(context: dict[str, Any] | None) -> str | None:
     """
     Pull a dataset id from plan/query context if available.
 
@@ -55,7 +55,7 @@ def extract_dataset_from_context(context: Optional[Dict[str, Any]]) -> Optional[
     if not isinstance(context, dict):
         return None
 
-    def _pick(ds_obj: Dict[str, Any]) -> Optional[str]:
+    def _pick(ds_obj: dict[str, Any]) -> str | None:
         for key in ("dataset_id", "id", "openneuro_id"):
             val = ds_obj.get(key)
             if isinstance(val, str) and val.strip():
@@ -86,7 +86,9 @@ def extract_dataset_from_context(context: Optional[Dict[str, Any]]) -> Optional[
     return None
 
 
-def extract_task_family(context: Optional[Dict[str, Any]], pipeline: Optional[str]) -> Optional[str]:
+def extract_task_family(
+    context: dict[str, Any] | None, pipeline: str | None
+) -> str | None:
     """
     Derive task_family for failure/evidence records.
     Preference: query_understanding.intent[0] -> pipeline -> None

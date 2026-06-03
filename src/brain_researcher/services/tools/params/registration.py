@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -18,25 +19,27 @@ class RegistrationParameters:
     registration_type: str
     transform_type: str
     metric: str
-    iterations: Tuple[int, ...]
-    shrink_factors: Tuple[int, ...]
-    smoothing_sigmas: Tuple[float, ...]
+    iterations: tuple[int, ...]
+    shrink_factors: tuple[int, ...]
+    smoothing_sigmas: tuple[float, ...]
     interpolation: str
     save_transform: bool
     save_warped: bool
     save_inverse: bool
     save_field: bool
     compute_similarity: bool
-    seed: Optional[int]
+    seed: int | None
 
 
-def _coerce_sequence(values: Optional[Sequence[Any]], default: Sequence[Any]) -> Tuple[Any, ...]:
+def _coerce_sequence(
+    values: Sequence[Any] | None, default: Sequence[Any]
+) -> tuple[Any, ...]:
     if not values:
         values = default
     return tuple(values)
 
 
-def registration_from_payload(payload: Dict[str, Any]) -> RegistrationParameters:
+def registration_from_payload(payload: dict[str, Any]) -> RegistrationParameters:
     """Construct parameters from JSON-like payload."""
 
     return RegistrationParameters(
@@ -48,7 +51,9 @@ def registration_from_payload(payload: Dict[str, Any]) -> RegistrationParameters
         metric=str(payload.get("metric", "MI")),
         iterations=_coerce_sequence(payload.get("iterations"), [100, 100, 50]),
         shrink_factors=_coerce_sequence(payload.get("shrink_factors"), [4, 2, 1]),
-        smoothing_sigmas=_coerce_sequence(payload.get("smoothing_sigmas"), [2.0, 1.0, 0.0]),
+        smoothing_sigmas=_coerce_sequence(
+            payload.get("smoothing_sigmas"), [2.0, 1.0, 0.0]
+        ),
         interpolation=str(payload.get("interpolation", "Linear")),
         save_transform=bool(payload.get("save_transform", True)),
         save_warped=bool(payload.get("save_warped", True)),
@@ -59,7 +64,7 @@ def registration_from_payload(payload: Dict[str, Any]) -> RegistrationParameters
     )
 
 
-def run_registration(params: RegistrationParameters) -> Dict[str, Any]:
+def run_registration(params: RegistrationParameters) -> dict[str, Any]:
     """
     Execute registration with placeholders.
 
@@ -78,7 +83,7 @@ def run_registration(params: RegistrationParameters) -> Dict[str, Any]:
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {
+    outputs: dict[str, str | None] = {
         "summary": None,
         "transform": None,
         "warped_image": None,

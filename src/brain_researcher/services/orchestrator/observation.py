@@ -172,7 +172,9 @@ def _artifact_key(artifact: dict[str, Any], *, run_dir: Path | None = None) -> s
 
 def _infer_artifact_type(relative_path: str, media_type: str | None) -> str:
     lower = relative_path.lower()
-    if lower.endswith((".png", ".jpg", ".jpeg", ".svg", ".gif", ".webp", ".nii", ".nii.gz")):
+    if lower.endswith(
+        (".png", ".jpg", ".jpeg", ".svg", ".gif", ".webp", ".nii", ".nii.gz")
+    ):
         return "image"
     if lower.endswith((".csv", ".tsv", ".parquet", ".xlsx", ".xls")):
         return "table"
@@ -408,12 +410,14 @@ def _attach_quote_grounded_provenance(run_card: RunCardV1, run_dir: Path) -> Non
     provenance["quote_grounded"] = {
         "schema_version": "quote-grounded-v1",
         "claims_file": QUOTE_GROUNDED_CLAIMS_FILENAME if claims_path.exists() else None,
-        "evidence_items_file": QUOTE_GROUNDED_EVIDENCE_ITEMS_FILENAME
-        if evidence_items_path.exists()
-        else None,
-        "file_search_file": QUOTE_GROUNDED_FILE_SEARCH_FILENAME
-        if file_search_path.exists()
-        else None,
+        "evidence_items_file": (
+            QUOTE_GROUNDED_EVIDENCE_ITEMS_FILENAME
+            if evidence_items_path.exists()
+            else None
+        ),
+        "file_search_file": (
+            QUOTE_GROUNDED_FILE_SEARCH_FILENAME if file_search_path.exists() else None
+        ),
         "payload_prefix": QUOTE_GROUNDED_EVIDENCE_PAYLOAD_PREFIX,
         "payload_suffix": QUOTE_GROUNDED_EVIDENCE_PAYLOAD_SUFFIX,
     }
@@ -517,7 +521,9 @@ def _build_run_card_v1(
         provenance=provenance or {},
         citations=citations,
         cross_stage_context=plan_payload.get("cross_stage_context"),
-        loop_signals=plan_payload.get("loop_signals") or payload.get("loop_signals") or [],
+        loop_signals=plan_payload.get("loop_signals")
+        or payload.get("loop_signals")
+        or [],
     )
     # Keep legacy timestamp formatting compatible with existing TS mapping.
     if isinstance(created_at, int):
@@ -565,31 +571,35 @@ def build_observation(
     files = ObservationFiles(
         observation_json="observation.json",
         analysis_json="analysis.json" if (run_dir / "analysis.json").exists() else None,
-        provenance_json="provenance.json"
-        if (run_dir / "provenance.json").exists()
-        else None,
+        provenance_json=(
+            "provenance.json" if (run_dir / "provenance.json").exists() else None
+        ),
         trace_jsonl="trace.jsonl" if (run_dir / "trace.jsonl").exists() else None,
-        reward_breakdown_json="reward_breakdown.json"
-        if (run_dir / "reward_breakdown.json").exists()
-        else None,
-        research_episode_json="research_episode.json"
-        if (run_dir / "research_episode.json").exists()
-        else None,
-        option_set_json="option_set.json"
-        if (run_dir / "option_set.json").exists()
-        else None,
-        evidence_gate_json="evidence_gate.json"
-        if (run_dir / "evidence_gate.json").exists()
-        else None,
-        commitment_json="commitment.json"
-        if (run_dir / "commitment.json").exists()
-        else None,
-        claim_report_json="claim_report.json"
-        if (run_dir / "claim_report.json").exists()
-        else None,
-        claim_update_json="claim_update.json"
-        if (run_dir / "claim_update.json").exists()
-        else None,
+        reward_breakdown_json=(
+            "reward_breakdown.json"
+            if (run_dir / "reward_breakdown.json").exists()
+            else None
+        ),
+        research_episode_json=(
+            "research_episode.json"
+            if (run_dir / "research_episode.json").exists()
+            else None
+        ),
+        option_set_json=(
+            "option_set.json" if (run_dir / "option_set.json").exists() else None
+        ),
+        evidence_gate_json=(
+            "evidence_gate.json" if (run_dir / "evidence_gate.json").exists() else None
+        ),
+        commitment_json=(
+            "commitment.json" if (run_dir / "commitment.json").exists() else None
+        ),
+        claim_report_json=(
+            "claim_report.json" if (run_dir / "claim_report.json").exists() else None
+        ),
+        claim_update_json=(
+            "claim_update.json" if (run_dir / "claim_update.json").exists() else None
+        ),
     )
     payload = _extract_payload(record)
 
@@ -654,19 +664,20 @@ def load_or_build_observation(record: JobRecord) -> ObservationSpecV1 | None:
                 has_scanned_artifacts = len(scanned_artifacts) > 0
                 has_existing_artifacts = len(existing.artifacts or []) > 0
                 run_card_outputs = (
-                    existing.run_card.outputs if getattr(existing, "run_card", None) else []
+                    existing.run_card.outputs
+                    if getattr(existing, "run_card", None)
+                    else []
                 )
-                has_existing_outputs = isinstance(run_card_outputs, list) and len(run_card_outputs) > 0
+                has_existing_outputs = (
+                    isinstance(run_card_outputs, list) and len(run_card_outputs) > 0
+                )
                 missing_scanned_artifacts = bool(
                     _artifact_key_set(scanned_artifacts, run_dir=run_dir)
                     - _artifact_key_set(existing.artifacts or [], run_dir=run_dir)
                 )
-                if (
-                    not missing_scanned_artifacts
-                    and (
-                        (not has_scanned_artifacts)
-                        or (has_existing_artifacts and has_existing_outputs)
-                    )
+                if not missing_scanned_artifacts and (
+                    (not has_scanned_artifacts)
+                    or (has_existing_artifacts and has_existing_outputs)
                 ):
                     return existing
 

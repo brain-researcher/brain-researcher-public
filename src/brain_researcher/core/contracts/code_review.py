@@ -98,7 +98,11 @@ class CodeReviewBundle(BaseModel):
     @model_validator(mode="after")
     def _normalize_review_context(self) -> CodeReviewBundle:
         if not self.review_context:
-            for source in (self.observed_artifacts, self.scorecard_snapshot, self.kg_context):
+            for source in (
+                self.observed_artifacts,
+                self.scorecard_snapshot,
+                self.kg_context,
+            ):
                 review_context = _coerce_review_context(source)
                 if review_context:
                     self.review_context = review_context

@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .models import Job, StepStatus
 
 
-def _map_step_status(status: Optional[StepStatus | str]) -> str:
+def _map_step_status(status: StepStatus | str | None) -> str:
     if status is None:
         return "pending"
     raw = status.value if isinstance(status, StepStatus) else str(status)
@@ -28,18 +28,24 @@ def _map_step_status(status: Optional[StepStatus | str]) -> str:
     return "pending"
 
 
-def _get_job_timing(job: Any) -> Tuple[Optional[datetime], Optional[datetime]]:
+def _get_job_timing(job: Any) -> tuple[datetime | None, datetime | None]:
     timing = getattr(job, "timing", None)
     started_at = getattr(timing, "start_time", None) if timing else None
     ended_at = getattr(timing, "end_time", None) if timing else None
     if started_at is None:
-        started_at = getattr(job, "started_at", None) or getattr(job, "created_at", None)
+        started_at = getattr(job, "started_at", None) or getattr(
+            job, "created_at", None
+        )
     if ended_at is None:
-        ended_at = getattr(job, "completed_at", None) or getattr(job, "finished_at", None)
+        ended_at = getattr(job, "completed_at", None) or getattr(
+            job, "finished_at", None
+        )
     return started_at, ended_at
 
 
-def _get_step_timing(step: Any) -> Tuple[Optional[datetime], Optional[datetime], Optional[int]]:
+def _get_step_timing(
+    step: Any,
+) -> tuple[datetime | None, datetime | None, int | None]:
     timing = getattr(step, "timing", None)
     started_at = getattr(timing, "start_time", None) if timing else None
     ended_at = getattr(timing, "end_time", None) if timing else None
@@ -58,14 +64,16 @@ def _get_step_timing(step: Any) -> Tuple[Optional[datetime], Optional[datetime],
     return started_at, ended_at, duration_ms
 
 
-def _get_step_dependencies(step: Any) -> List[str]:
+def _get_step_dependencies(step: Any) -> list[str]:
     depends_on = getattr(step, "depends_on", None)
-    if isinstance(depends_on, (list, tuple)):
+    if isinstance(depends_on, list | tuple):
         return [str(dep) for dep in depends_on if dep]
     return []
 
 
-def build_job_graph_snapshot(job: Optional[Job], *, job_id: Optional[str] = None) -> Dict[str, Any]:
+def build_job_graph_snapshot(
+    job: Job | None, *, job_id: str | None = None
+) -> dict[str, Any]:
     resolved_job_id = job_id or (job.id if job else "unknown")
     generated_at = datetime.utcnow().isoformat()
 
@@ -82,13 +90,15 @@ def build_job_graph_snapshot(job: Optional[Job], *, job_id: Optional[str] = None
             "edges": [],
         }
 
-    nodes: List[Dict[str, Any]] = []
-    edges: List[Dict[str, Any]] = []
-    previous_id: Optional[str] = None
-    dependency_edges: List[Tuple[str, str]] = []
+    nodes: list[dict[str, Any]] = []
+    edges: list[dict[str, Any]] = []
+    previous_id: str | None = None
+    dependency_edges: list[tuple[str, str]] = []
 
     for step in job.steps:
-        step_id = getattr(step, "id", None) or getattr(step, "step_id", None) or "unknown"
+        step_id = (
+            getattr(step, "id", None) or getattr(step, "step_id", None) or "unknown"
+        )
         node_id = f"step:{step_id}"
         started_at, ended_at, duration_ms = _get_step_timing(step)
         progress = getattr(step, "progress", None)
@@ -102,9 +112,11 @@ def build_job_graph_snapshot(job: Optional[Job], *, job_id: Optional[str] = None
                 "id": node_id,
                 "kind": "step",
                 "type": "process",
-                "label": getattr(step, "name", None) or getattr(step, "tool", None) or str(step_id),
+                "label": getattr(step, "name", None)
+                or getattr(step, "tool", None)
+                or str(step_id),
                 "status": _map_step_status(step.status),
-                "progress": progress if isinstance(progress, (int, float)) else None,
+                "progress": progress if isinstance(progress, int | float) else None,
                 "timing": {
                     "created_at": None,
                     "started_at": started_at.isoformat() if started_at else None,
@@ -112,7 +124,11 @@ def build_job_graph_snapshot(job: Optional[Job], *, job_id: Optional[str] = None
                     "duration_ms": duration_ms,
                 },
                 "resources": {},
-                "error": {"code": None, "message": error_message} if error_message else {"code": None, "message": None},
+                "error": (
+                    {"code": None, "message": error_message}
+                    if error_message
+                    else {"code": None, "message": None}
+                ),
                 "meta": {"tool": meta_tool} if meta_tool else {},
             }
         )

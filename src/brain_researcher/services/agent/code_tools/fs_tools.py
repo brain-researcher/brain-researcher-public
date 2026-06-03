@@ -15,10 +15,12 @@ import subprocess
 import tempfile
 from glob import glob
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from brain_researcher.services.agent.code_tool_registry import CodeTool
-from brain_researcher.services.agent.code_tools.utils import validate_path as _validate_path
+from brain_researcher.services.agent.code_tools.utils import (
+    validate_path as _validate_path,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +29,11 @@ class ReadFileTool(CodeTool):
     """Read file content with optional line range."""
 
     name = "code.fs.read_file"
-    description = "Read file content with optional line range. Returns the content as text."
+    description = (
+        "Read file content with optional line range. Returns the content as text."
+    )
 
-    def get_parameters_schema(self) -> Dict[str, Any]:
+    def get_parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -58,11 +62,11 @@ class ReadFileTool(CodeTool):
         self,
         path: str,
         max_bytes: int = 50000,
-        start_line: Optional[int] = None,
-        end_line: Optional[int] = None,
-        repo_root: Optional[str] = None,
+        start_line: int | None = None,
+        end_line: int | None = None,
+        repo_root: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             # Resolve path
             file_path = Path(path)
@@ -95,7 +99,9 @@ class ReadFileTool(CodeTool):
 
             # Truncate if too long
             if len(content) > max_bytes:
-                content = content[:max_bytes] + f"\n... (truncated at {max_bytes} bytes)"
+                content = (
+                    content[:max_bytes] + f"\n... (truncated at {max_bytes} bytes)"
+                )
 
             return {
                 "status": "success",
@@ -115,7 +121,7 @@ class ReadDirTool(CodeTool):
     name = "code.fs.read_dir"
     description = "List files matching a glob pattern with optional content preview."
 
-    def get_parameters_schema(self) -> Dict[str, Any]:
+    def get_parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -148,9 +154,9 @@ class ReadDirTool(CodeTool):
         max_files: int = 20,
         max_bytes_per_file: int = 2000,
         include_content: bool = False,
-        repo_root: Optional[str] = None,
+        repo_root: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             # Resolve base path
             base_path = Path(repo_root) if repo_root else Path.cwd()
@@ -178,7 +184,11 @@ class ReadDirTool(CodeTool):
 
                 file_info = {
                     "path": str(path),
-                    "relative_path": str(path.relative_to(base_path)) if path.is_relative_to(base_path) else str(path),
+                    "relative_path": (
+                        str(path.relative_to(base_path))
+                        if path.is_relative_to(base_path)
+                        else str(path)
+                    ),
                     "size": path.stat().st_size,
                 }
 
@@ -186,7 +196,7 @@ class ReadDirTool(CodeTool):
                     try:
                         content = path.read_text(encoding="utf-8", errors="replace")
                         if len(content) > max_bytes_per_file:
-                            content = content[:max_bytes_per_file] + f"\n... (truncated)"
+                            content = content[:max_bytes_per_file] + "\n... (truncated)"
                         file_info["content"] = content
                     except Exception as exc:
                         file_info["content"] = f"(error reading: {exc})"
@@ -206,7 +216,7 @@ class ReadDirTool(CodeTool):
             return {"status": "error", "error": str(exc)}
 
 
-def _extract_patch_targets(patch: str) -> List[str]:
+def _extract_patch_targets(patch: str) -> list[str]:
     """Extract target file paths from a unified diff patch.
 
     Looks for lines starting with:
@@ -238,9 +248,11 @@ class ApplyPatchTool(CodeTool):
     """Apply unified diff patch to files."""
 
     name = "code.fs.apply_patch"
-    description = "Apply a unified diff patch to files. Supports dry-run mode to preview changes."
+    description = (
+        "Apply a unified diff patch to files. Supports dry-run mode to preview changes."
+    )
 
-    def get_parameters_schema(self) -> Dict[str, Any]:
+    def get_parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -261,9 +273,9 @@ class ApplyPatchTool(CodeTool):
         self,
         patch: str,
         dry_run: bool = True,
-        repo_root: Optional[str] = None,
+        repo_root: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             cwd = Path(repo_root) if repo_root else Path.cwd()
 
@@ -278,7 +290,9 @@ class ApplyPatchTool(CodeTool):
                     }
 
             # Write patch to temp file
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".patch", delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".patch", delete=False
+            ) as f:
                 f.write(patch)
                 patch_file = f.name
 
@@ -302,7 +316,11 @@ class ApplyPatchTool(CodeTool):
                     return {
                         "status": "success",
                         "dry_run": dry_run,
-                        "message": "Patch applied successfully" if not dry_run else "Patch would apply cleanly",
+                        "message": (
+                            "Patch applied successfully"
+                            if not dry_run
+                            else "Patch would apply cleanly"
+                        ),
                         "stdout": result.stdout,
                     }
                 else:

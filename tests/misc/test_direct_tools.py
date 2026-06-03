@@ -3,16 +3,16 @@
 Direct test of the reorganized Nilearn tools.
 """
 
-import sys
 
 from brain_researcher.services.tools.tool_registry import ToolRegistry
+
 
 def test_tools_registration():
     """Test if new Nilearn tools are properly registered."""
 
-    print("="*70)
+    print("=" * 70)
     print("TESTING NILEARN TOOLS REGISTRATION")
-    print("="*70)
+    print("=" * 70)
 
     # Initialize registry
     registry = ToolRegistry()
@@ -33,12 +33,12 @@ def test_tools_registration():
         "roi_extraction",
         "clean_confounds",
         # From nilearn_mvpa.py
-        "decoding_classifier"
+        "decoding_classifier",
     ]
 
     print(f"\nTotal tools registered: {len(registry.tools)}")
     print("\nChecking for Nilearn tools:")
-    print("-"*50)
+    print("-" * 50)
 
     found_tools = []
     missing_tools = []
@@ -50,17 +50,17 @@ def test_tools_registration():
             found_tools.append(tool_name)
 
             # Check if tool has proper schema
-            if hasattr(tool, 'args_model'):
+            if hasattr(tool, "args_model"):
                 schema = tool.args_model.schema()
-                params = list(schema.get('properties', {}).keys())[:3]
+                params = list(schema.get("properties", {}).keys())[:3]
                 print(f"  └─ Schema params: {', '.join(params)}...")
         else:
             print(f"✗ {tool_name:25} - NOT FOUND")
             missing_tools.append(tool_name)
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("SUMMARY")
-    print("="*70)
+    print("=" * 70)
     print(f"Found: {len(found_tools)}/{len(expected_tools)} tools")
 
     if missing_tools:
@@ -69,9 +69,9 @@ def test_tools_registration():
         print("\n✓ All expected Nilearn tools are registered!")
 
     # Test one tool execution
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TESTING TOOL EXECUTION")
-    print("="*70)
+    print("=" * 70)
 
     if "connectivity_matrix" in registry.tools:
         print("\nTesting connectivity_matrix tool...")
@@ -79,6 +79,7 @@ def test_tools_registration():
 
         # Create test data
         import numpy as np
+
         test_data = np.random.randn(100, 10)  # 100 timepoints, 10 regions
         np.save("/tmp/test_timeseries.npy", test_data)
 
@@ -87,11 +88,11 @@ def test_tools_registration():
                 timeseries="/tmp/test_timeseries.npy",
                 kind="correlation",
                 fisher_z=True,
-                output_file="/tmp/test_connectivity.npy"
+                output_file="/tmp/test_connectivity.npy",
             )
 
             if result.get("status") == "success":
-                print(f"✓ Tool execution successful!")
+                print("✓ Tool execution successful!")
                 print(f"  Shape: {result.get('shape')}")
                 print(f"  Kind: {result.get('kind')}")
             else:
@@ -99,6 +100,7 @@ def test_tools_registration():
 
         except Exception as e:
             print(f"✗ Error executing tool: {str(e)}")
+
 
 if __name__ == "__main__":
     test_tools_registration()

@@ -1,15 +1,15 @@
 """Metrics collection for A/B testing and RL feedback."""
 
-import logging
-import time
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict
-from enum import Enum
-from collections import defaultdict
-import redis
 import json
+import logging
+from collections import defaultdict
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any
+
 import numpy as np
+import redis
 
 logger = logging.getLogger(__name__)
 
@@ -26,21 +26,21 @@ class EventType(Enum):
 class Event:
     user_id: str
     event_type: EventType
-    experiment_id: Optional[str]
-    variant: Optional[str]
+    experiment_id: str | None
+    variant: str | None
     timestamp: datetime
-    metadata: Dict[str, Any]
-    value: Optional[float] = None
-    session_id: Optional[str] = None
+    metadata: dict[str, Any]
+    value: float | None = None
+    session_id: str | None = None
 
 
 @dataclass
 class MetricDefinition:
     name: str
     description: str
-    event_types: List[EventType]
+    event_types: list[EventType]
     aggregation: str  # sum, count, avg, conversion_rate, etc.
-    conditions: Dict[str, Any]
+    conditions: dict[str, Any]
     time_window_hours: int = 24
 
 
@@ -48,9 +48,9 @@ class MetricDefinition:
 class ExperimentMetrics:
     experiment_id: str
     variant: str
-    metrics: Dict[str, float]
+    metrics: dict[str, float]
     sample_size: int
-    time_range: Tuple[datetime, datetime]
+    time_range: tuple[datetime, datetime]
     last_updated: datetime
 
 
@@ -58,7 +58,7 @@ class MetricsAggregator:
     """Aggregates raw events into metrics."""
 
     @staticmethod
-    def calculate_conversion_rate(events: List[Event]) -> float:
+    def calculate_conversion_rate(events: list[Event]) -> float:
         """Calculate conversion rate from events."""
         impressions = sum(1 for e in events if e.event_type == EventType.IMPRESSION)
         conversions = sum(1 for e in events if e.event_type == EventType.CONVERSION)
@@ -69,7 +69,7 @@ class MetricsAggregator:
         return conversions / impressions
 
     @staticmethod
-    def calculate_click_through_rate(events: List[Event]) -> float:
+    def calculate_click_through_rate(events: list[Event]) -> float:
         """Calculate click-through rate."""
         impressions = sum(1 for e in events if e.event_type == EventType.IMPRESSION)
         clicks = sum(1 for e in events if e.event_type == EventType.CLICK)
@@ -80,18 +80,18 @@ class MetricsAggregator:
         return clicks / impressions
 
     @staticmethod
-    def calculate_average_value(events: List[Event]) -> float:
+    def calculate_average_value(events: list[Event]) -> float:
         """Calculate average event value."""
         values = [e.value for e in events if e.value is not None]
         return np.mean(values) if values else 0.0
 
     @staticmethod
-    def calculate_total_value(events: List[Event]) -> float:
+    def calculate_total_value(events: list[Event]) -> float:
         """Calculate total event value."""
         return sum(e.value for e in events if e.value is not None)
 
     @staticmethod
-    def calculate_error_rate(events: List[Event]) -> float:
+    def calculate_error_rate(events: list[Event]) -> float:
         """Calculate error rate."""
         total_events = len(events)
         error_events = sum(1 for e in events if e.event_type == EventType.ERROR)
@@ -102,7 +102,7 @@ class MetricsAggregator:
         return error_events / total_events
 
     @staticmethod
-    def calculate_user_engagement(events: List[Event]) -> Dict[str, float]:
+    def calculate_user_engagement(events: list[Event]) -> dict[str, float]:
         """Calculate user engagement metrics."""
         if not events:
             return {"sessions": 0, "avg_session_length": 0, "events_per_session": 0}
@@ -131,16 +131,18 @@ class MetricsAggregator:
         return {
             "sessions": len(sessions),
             "avg_session_length": np.mean(session_lengths) if session_lengths else 0,
-            "events_per_session": np.mean(events_per_session) if events_per_session else 0
+            "events_per_session": (
+                np.mean(events_per_session) if events_per_session else 0
+            ),
         }
 
 
 class MetricsCollector:
     """Main metrics collection system."""
 
-    def __init__(self, redis_client: Optional[redis.Redis] = None):
+    def __init__(self, redis_client: redis.Redis | None = None):
         self.redis_client = redis_client or redis.Redis(decode_responses=True)
-        self.metric_definitions: Dict[str, MetricDefinition] = {}
+        self.metric_definitions: dict[str, MetricDefinition] = {}
         self.aggregator = MetricsAggregator()
 
         # Initialize default metrics
@@ -150,11 +152,11 @@ class MetricsCollector:
         self,
         user_id: str,
         event_type: str,
-        experiment_id: Optional[str] = None,
-        variant: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        value: Optional[float] = None,
-        session_id: Optional[str] = None
+        experiment_id: str | None = None,
+        variant: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        value: float | None = None,
+        session_id: str | None = None,
     ) -> None:
         """Track a user event."""
         try:
@@ -170,7 +172,7 @@ class MetricsCollector:
             timestamp=datetime.utcnow(),
             metadata=metadata or {},
             value=value,
-            session_id=session_id
+            session_id=session_id,
         )
 
         self._store_event(event)
@@ -184,8 +186,8 @@ class MetricsCollector:
         experiment_id: str,
         variant: str,
         event_type: str,
-        metadata: Optional[Dict[str, Any]] = None,
-        value: Optional[float] = None
+        metadata: dict[str, Any] | None = None,
+        value: float | None = None,
     ) -> None:
         """Track an event for a specific experiment."""
         self.track_event(
@@ -194,7 +196,7 @@ class MetricsCollector:
             experiment_id=experiment_id,
             variant=variant,
             metadata=metadata,
-            value=value
+            value=value,
         )
 
         # Also update experiment-specific counters
@@ -203,9 +205,9 @@ class MetricsCollector:
     def get_experiment_metrics(
         self,
         experiment_id: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None
-    ) -> Dict[str, ExperimentMetrics]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> dict[str, ExperimentMetrics]:
         """Get metrics for all variants of an experiment."""
         end_time = end_time or datetime.utcnow()
         start_time = start_time or (end_time - timedelta(days=7))
@@ -223,10 +225,8 @@ class MetricsCollector:
         return metrics
 
     def get_real_time_metrics(
-        self,
-        experiment_id: str,
-        time_window_minutes: int = 60
-    ) -> Dict[str, Dict[str, float]]:
+        self, experiment_id: str, time_window_minutes: int = 60
+    ) -> dict[str, dict[str, float]]:
         """Get real-time metrics for an experiment."""
         cutoff_time = datetime.utcnow() - timedelta(minutes=time_window_minutes)
 
@@ -238,9 +238,7 @@ class MetricsCollector:
 
             # Get recent events for this variant
             events = self._get_events(
-                experiment_id=experiment_id,
-                variant=variant,
-                start_time=cutoff_time
+                experiment_id=experiment_id, variant=variant, start_time=cutoff_time
             )
 
             # Calculate metrics
@@ -259,9 +257,15 @@ class MetricsCollector:
 
             # Rates
             if variant_metrics["impressions"] > 0:
-                variant_metrics["ctr"] = variant_metrics["clicks"] / variant_metrics["impressions"]
-                variant_metrics["conversion_rate"] = variant_metrics["conversions"] / variant_metrics["impressions"]
-                variant_metrics["error_rate"] = variant_metrics["errors"] / variant_metrics["impressions"]
+                variant_metrics["ctr"] = (
+                    variant_metrics["clicks"] / variant_metrics["impressions"]
+                )
+                variant_metrics["conversion_rate"] = (
+                    variant_metrics["conversions"] / variant_metrics["impressions"]
+                )
+                variant_metrics["error_rate"] = (
+                    variant_metrics["errors"] / variant_metrics["impressions"]
+                )
             else:
                 variant_metrics["ctr"] = 0.0
                 variant_metrics["conversion_rate"] = 0.0
@@ -271,8 +275,8 @@ class MetricsCollector:
             variant_metrics["total_revenue"] = sum(
                 e.value for e in events if e.value is not None
             )
-            variant_metrics["avg_order_value"] = (
-                variant_metrics["total_revenue"] / max(variant_metrics["conversions"], 1)
+            variant_metrics["avg_order_value"] = variant_metrics["total_revenue"] / max(
+                variant_metrics["conversions"], 1
             )
 
             metrics[variant] = variant_metrics
@@ -283,10 +287,10 @@ class MetricsCollector:
         self,
         name: str,
         description: str,
-        event_types: List[str],
+        event_types: list[str],
         aggregation: str,
-        conditions: Optional[Dict[str, Any]] = None,
-        time_window_hours: int = 24
+        conditions: dict[str, Any] | None = None,
+        time_window_hours: int = 24,
     ) -> None:
         """Create a custom metric definition."""
         try:
@@ -294,7 +298,13 @@ class MetricsCollector:
         except ValueError as e:
             raise ValueError(f"Invalid event type: {e}")
 
-        if aggregation not in ["sum", "count", "avg", "conversion_rate", "click_through_rate"]:
+        if aggregation not in [
+            "sum",
+            "count",
+            "avg",
+            "conversion_rate",
+            "click_through_rate",
+        ]:
             raise ValueError(f"Invalid aggregation: {aggregation}")
 
         metric_def = MetricDefinition(
@@ -303,7 +313,7 @@ class MetricsCollector:
             event_types=event_type_enums,
             aggregation=aggregation,
             conditions=conditions or {},
-            time_window_hours=time_window_hours
+            time_window_hours=time_window_hours,
         )
 
         self.metric_definitions[name] = metric_def
@@ -316,8 +326,8 @@ class MetricsCollector:
         metric_name: str,
         experiment_id: str,
         variant: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> float:
         """Get value for a custom metric."""
         if metric_name not in self.metric_definitions:
@@ -326,7 +336,9 @@ class MetricsCollector:
         metric_def = self.metric_definitions[metric_name]
 
         end_time = end_time or datetime.utcnow()
-        start_time = start_time or (end_time - timedelta(hours=metric_def.time_window_hours))
+        start_time = start_time or (
+            end_time - timedelta(hours=metric_def.time_window_hours)
+        )
 
         # Get relevant events
         events = self._get_events(
@@ -335,7 +347,7 @@ class MetricsCollector:
             start_time=start_time,
             end_time=end_time,
             event_types=metric_def.event_types,
-            conditions=metric_def.conditions
+            conditions=metric_def.conditions,
         )
 
         # Apply aggregation
@@ -353,7 +365,7 @@ class MetricsCollector:
         else:
             return 0.0
 
-    def get_metrics_dashboard_data(self, experiment_id: str) -> Dict:
+    def get_metrics_dashboard_data(self, experiment_id: str) -> dict:
         """Get comprehensive dashboard data for an experiment."""
         current_time = datetime.utcnow()
 
@@ -363,7 +375,9 @@ class MetricsCollector:
         # Daily metrics (last 7 days)
         daily_metrics = {}
         for days_back in range(7):
-            day_start = current_time.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days_back)
+            day_start = current_time.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            ) - timedelta(days=days_back)
             day_end = day_start + timedelta(days=1)
 
             day_key = day_start.strftime("%Y-%m-%d")
@@ -375,19 +389,23 @@ class MetricsCollector:
                     experiment_id=experiment_id,
                     variant=variant,
                     start_time=day_start,
-                    end_time=day_end
+                    end_time=day_end,
                 )
 
                 daily_metrics[day_key][variant] = {
-                    "impressions": sum(1 for e in events if e.event_type == EventType.IMPRESSION),
-                    "conversions": sum(1 for e in events if e.event_type == EventType.CONVERSION),
-                    "revenue": sum(e.value for e in events if e.value is not None)
+                    "impressions": sum(
+                        1 for e in events if e.event_type == EventType.IMPRESSION
+                    ),
+                    "conversions": sum(
+                        1 for e in events if e.event_type == EventType.CONVERSION
+                    ),
+                    "revenue": sum(e.value for e in events if e.value is not None),
                 }
 
         return {
             "real_time": real_time,
             "daily": daily_metrics,
-            "last_updated": current_time.isoformat()
+            "last_updated": current_time.isoformat(),
         }
 
     # Private Methods
@@ -399,26 +417,26 @@ class MetricsCollector:
                 "name": "conversion_rate",
                 "description": "Percentage of impressions that convert",
                 "event_types": ["impression", "conversion"],
-                "aggregation": "conversion_rate"
+                "aggregation": "conversion_rate",
             },
             {
                 "name": "click_through_rate",
                 "description": "Percentage of impressions that get clicked",
                 "event_types": ["impression", "click"],
-                "aggregation": "click_through_rate"
+                "aggregation": "click_through_rate",
             },
             {
                 "name": "revenue_per_visitor",
                 "description": "Average revenue per visitor",
                 "event_types": ["conversion"],
-                "aggregation": "avg"
+                "aggregation": "avg",
             },
             {
                 "name": "error_rate",
                 "description": "Percentage of events that are errors",
                 "event_types": ["impression", "error"],
-                "aggregation": "conversion_rate"
-            }
+                "aggregation": "conversion_rate",
+            },
         ]
 
         for metric_config in default_metrics:
@@ -436,10 +454,13 @@ class MetricsCollector:
         event_data["timestamp"] = event.timestamp.isoformat()
         event_data["event_type"] = event.event_type.value
 
-        self.redis_client.hset(event_key, mapping={
-            k: json.dumps(v) if isinstance(v, dict) else str(v)
-            for k, v in event_data.items()
-        })
+        self.redis_client.hset(
+            event_key,
+            mapping={
+                k: json.dumps(v) if isinstance(v, dict) else str(v)
+                for k, v in event_data.items()
+            },
+        )
 
         # Set expiration (30 days)
         self.redis_client.expire(event_key, 30 * 24 * 3600)
@@ -462,17 +483,15 @@ class MetricsCollector:
         self.redis_client.hincrby(counter_key, f"{event.event_type.value}_count", 1)
 
         if event.value is not None:
-            self.redis_client.hincrbyfloat(counter_key, f"{event.event_type.value}_value", event.value)
+            self.redis_client.hincrbyfloat(
+                counter_key, f"{event.event_type.value}_value", event.value
+            )
 
         # Set expiration
         self.redis_client.expire(counter_key, 7 * 24 * 3600)
 
     def _update_experiment_counters(
-        self,
-        experiment_id: str,
-        variant: str,
-        event_type: str,
-        value: Optional[float]
+        self, experiment_id: str, variant: str, event_type: str, value: float | None
     ) -> None:
         """Update experiment-level counters for A/B testing framework."""
         counter_key = f"metrics:{experiment_id}:{variant}"
@@ -489,13 +508,13 @@ class MetricsCollector:
         if value is not None:
             self.redis_client.hincrbyfloat(counter_key, "revenue", value)
 
-    def _get_experiment_variants(self, experiment_id: str) -> List[str]:
+    def _get_experiment_variants(self, experiment_id: str) -> list[str]:
         """Get all variants for an experiment."""
         pattern = f"timeline:{experiment_id}:*"
         variants = set()
 
         for key in self.redis_client.scan_iter(match=pattern):
-            variant = key.split(':')[-1]
+            variant = key.split(":")[-1]
             variants.add(variant)
 
         return list(variants)
@@ -505,10 +524,10 @@ class MetricsCollector:
         experiment_id: str,
         variant: str,
         start_time: datetime,
-        end_time: Optional[datetime] = None,
-        event_types: Optional[List[EventType]] = None,
-        conditions: Optional[Dict[str, Any]] = None
-    ) -> List[Event]:
+        end_time: datetime | None = None,
+        event_types: list[EventType] | None = None,
+        conditions: dict[str, Any] | None = None,
+    ) -> list[Event]:
         """Get events for a specific experiment variant and time range."""
         end_time = end_time or datetime.utcnow()
 
@@ -530,7 +549,9 @@ class MetricsCollector:
                     continue
 
                 # Parse event data
-                event_data["timestamp"] = datetime.fromisoformat(event_data["timestamp"])
+                event_data["timestamp"] = datetime.fromisoformat(
+                    event_data["timestamp"]
+                )
                 event_data["event_type"] = EventType(event_data["event_type"])
                 event_data["metadata"] = json.loads(event_data["metadata"])
 
@@ -556,7 +577,9 @@ class MetricsCollector:
 
         return events
 
-    def _event_matches_conditions(self, event: Event, conditions: Dict[str, Any]) -> bool:
+    def _event_matches_conditions(
+        self, event: Event, conditions: dict[str, Any]
+    ) -> bool:
         """Check if an event matches the given conditions."""
         for condition_key, condition_value in conditions.items():
             if condition_key == "metadata":
@@ -573,20 +596,20 @@ class MetricsCollector:
         return True
 
     def _calculate_variant_metrics(
-        self,
-        experiment_id: str,
-        variant: str,
-        start_time: datetime,
-        end_time: datetime
+        self, experiment_id: str, variant: str, start_time: datetime, end_time: datetime
     ) -> ExperimentMetrics:
         """Calculate comprehensive metrics for a variant."""
         events = self._get_events(experiment_id, variant, start_time, end_time)
 
         # Basic metrics
         metrics = {
-            "impressions": sum(1 for e in events if e.event_type == EventType.IMPRESSION),
+            "impressions": sum(
+                1 for e in events if e.event_type == EventType.IMPRESSION
+            ),
             "clicks": sum(1 for e in events if e.event_type == EventType.CLICK),
-            "conversions": sum(1 for e in events if e.event_type == EventType.CONVERSION),
+            "conversions": sum(
+                1 for e in events if e.event_type == EventType.CONVERSION
+            ),
             "errors": sum(1 for e in events if e.event_type == EventType.ERROR),
             "total_revenue": sum(e.value for e in events if e.value is not None),
         }
@@ -602,7 +625,9 @@ class MetricsCollector:
             metrics["error_rate"] = 0.0
 
         if metrics["conversions"] > 0:
-            metrics["average_order_value"] = metrics["total_revenue"] / metrics["conversions"]
+            metrics["average_order_value"] = (
+                metrics["total_revenue"] / metrics["conversions"]
+            )
         else:
             metrics["average_order_value"] = 0.0
 
@@ -611,7 +636,7 @@ class MetricsCollector:
         metrics.update(engagement)
 
         # Unique users
-        unique_users = len(set(e.user_id for e in events))
+        unique_users = len({e.user_id for e in events})
         metrics["unique_users"] = unique_users
 
         return ExperimentMetrics(
@@ -620,7 +645,7 @@ class MetricsCollector:
             metrics=metrics,
             sample_size=unique_users,
             time_range=(start_time, end_time),
-            last_updated=datetime.utcnow()
+            last_updated=datetime.utcnow(),
         )
 
     def _save_metric_definition(self, metric_def: MetricDefinition) -> None:
@@ -629,7 +654,10 @@ class MetricsCollector:
         data = asdict(metric_def)
         data["event_types"] = [et.value for et in metric_def.event_types]
 
-        self.redis_client.hset(key, mapping={
-            k: json.dumps(v) if isinstance(v, (dict, list)) else str(v)
-            for k, v in data.items()
-        })
+        self.redis_client.hset(
+            key,
+            mapping={
+                k: json.dumps(v) if isinstance(v, dict | list) else str(v)
+                for k, v in data.items()
+            },
+        )

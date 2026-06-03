@@ -14,7 +14,6 @@ from brain_researcher.core.analysis.value_domain_contracts import (
     validate_well_conditioned,
 )
 
-
 # --- validate_finite --------------------------------------------------------
 
 

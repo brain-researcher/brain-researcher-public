@@ -6,12 +6,11 @@ Connects AGENT-005 (Parameter Inference) with AGENT-008 (Parameter Validation).
 
 import logging
 import time
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from brain_researcher.services.agent.parameter_inference import (
-    ParameterInferenceEngine,
     InferredParameters,
+    ParameterInferenceEngine,
 )
 from brain_researcher.services.agent.parameter_validation import ParameterValidator
 
@@ -51,12 +50,12 @@ class InferenceAwareValidator:
     def validate_with_inference(
         self,
         tool_name: str,
-        parameters: Dict[str, Any],
-        query: Optional[str] = None,
-        file_paths: Optional[List[str]] = None,
-        previous_results: Optional[List[Dict[str, Any]]] = None,
+        parameters: dict[str, Any],
+        query: str | None = None,
+        file_paths: list[str] | None = None,
+        previous_results: list[dict[str, Any]] | None = None,
         auto_complete: bool = True,
-    ) -> Tuple[Dict[str, Any], Dict[str, str], List[str]]:
+    ) -> tuple[dict[str, Any], dict[str, str], list[str]]:
         """
         Validate parameters with automatic inference for missing values.
 
@@ -142,10 +141,10 @@ class InferenceAwareValidator:
     def _infer_parameters(
         self,
         tool_name: str,
-        existing_params: Dict[str, Any],
-        query: Optional[str] = None,
-        file_paths: Optional[List[str]] = None,
-        previous_results: Optional[List[Dict[str, Any]]] = None,
+        existing_params: dict[str, Any],
+        query: str | None = None,
+        file_paths: list[str] | None = None,
+        previous_results: list[dict[str, Any]] | None = None,
     ) -> InferredParameters:
         """Internal method to infer parameters."""
         if not self.inference_engine:
@@ -173,9 +172,9 @@ class InferenceAwareValidator:
     def suggest_parameters(
         self,
         tool_name: str,
-        query: Optional[str] = None,
-        file_paths: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        query: str | None = None,
+        file_paths: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Suggest parameters for a tool based on context.
 
@@ -213,9 +212,9 @@ class InferenceAwareValidator:
     def explain_inference(
         self,
         tool_name: str,
-        parameters: Dict[str, Any],
-        query: Optional[str] = None,
-        file_paths: Optional[List[str]] = None,
+        parameters: dict[str, Any],
+        query: str | None = None,
+        file_paths: list[str] | None = None,
     ) -> str:
         """
         Explain how parameters would be inferred.
@@ -285,14 +284,14 @@ class SmartParameterHandler:
     def __init__(self):
         """Initialize the smart parameter handler."""
         self.validator = InferenceAwareValidator(enable_inference=True)
-        self.history: List[Dict[str, Any]] = []
+        self.history: list[dict[str, Any]] = []
 
     def process_parameters(
         self,
         tool_name: str,
-        user_params: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        user_params: dict[str, Any],
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Process parameters with full inference and validation.
 
@@ -347,9 +346,9 @@ class SmartParameterHandler:
     def suggest_missing(
         self,
         tool_name: str,
-        current_params: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        current_params: dict[str, Any],
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Suggest values for missing parameters.
 
@@ -378,8 +377,8 @@ class SmartParameterHandler:
     def explain(
         self,
         tool_name: str,
-        parameters: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None,
+        parameters: dict[str, Any],
+        context: dict[str, Any] | None = None,
     ) -> str:
         """
         Explain parameter inference and validation.

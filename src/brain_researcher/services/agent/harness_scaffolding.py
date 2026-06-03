@@ -162,7 +162,9 @@ def _family_defaults(motif_family: str) -> dict[str, Any]:
     return defaults
 
 
-def _candidate_motif_summary(motif_family: str, *, autoresearch_root: Path | None) -> dict[str, Any]:
+def _candidate_motif_summary(
+    motif_family: str, *, autoresearch_root: Path | None
+) -> dict[str, Any]:
     if autoresearch_root is None:
         return {}
     try:
@@ -449,8 +451,8 @@ def _harbor_entry_for_scaffold(
     placeholder_case_id = family["placeholder_case_id"]
     solve_sha = sha256(
         (
-            f"#!/bin/bash\n\nset -euo pipefail\n\necho \"HARNESS scaffold {task_id} is not implemented yet.\" >&2\n"
-            "echo \"Replace solution/solve.sh with deterministic probe logic before activation.\" >&2\n"
+            f'#!/bin/bash\n\nset -euo pipefail\n\necho "HARNESS scaffold {task_id} is not implemented yet." >&2\n'
+            'echo "Replace solution/solve.sh with deterministic probe logic before activation." >&2\n'
             "exit 2\n"
         ).encode()
     ).hexdigest()
@@ -638,11 +640,19 @@ def _update_motif_slice_config(
         raise ValueError(f"Invalid motif entry for {motif_family}")
     task_key = "task_ids" if activate else "scaffold_task_ids"
     canary_key = "canary_task_ids" if activate else "scaffold_canary_task_ids"
-    task_ids = [str(item).strip() for item in list(entry.get(task_key) or []) if str(item).strip()]
+    task_ids = [
+        str(item).strip()
+        for item in list(entry.get(task_key) or [])
+        if str(item).strip()
+    ]
     if task_id in task_ids:
         task_ids.remove(task_id)
     entry[task_key] = [task_id, *task_ids]
-    canary_ids = [str(item).strip() for item in list(entry.get(canary_key) or []) if str(item).strip()]
+    canary_ids = [
+        str(item).strip()
+        for item in list(entry.get(canary_key) or [])
+        if str(item).strip()
+    ]
     if task_id in canary_ids:
         canary_ids.remove(task_id)
     entry[canary_key] = [task_id, *canary_ids]
@@ -659,7 +669,9 @@ def _update_canary_slice_config(
     path = benchmark_root / "configs" / "autoresearch" / "canary_slice.yaml"
     payload = _load_yaml(path)
     key = "task_ids" if activate else "scaffold_task_ids"
-    task_ids = [str(item).strip() for item in list(payload.get(key) or []) if str(item).strip()]
+    task_ids = [
+        str(item).strip() for item in list(payload.get(key) or []) if str(item).strip()
+    ]
     if task_id in task_ids:
         task_ids.remove(task_id)
     payload[key] = [task_id, *task_ids]
@@ -743,7 +755,11 @@ def scaffold_harness_task(
         else None
     )
     family = _family_defaults(motif_family)
-    chosen_task_id = task_id.strip().upper() if task_id else _next_harness_task_id(benchmark_root_path)
+    chosen_task_id = (
+        task_id.strip().upper()
+        if task_id
+        else _next_harness_task_id(benchmark_root_path)
+    )
     if not _TASK_ID_RE.match(chosen_task_id):
         raise ValueError("task_id must match HARNESS-XXX")
     chosen_title = str(title or family["title"]).strip()
@@ -759,7 +775,9 @@ def scaffold_harness_task(
         autoresearch_root=autoresearch_root_path,
     )
     if not source_summary:
-        warnings.append("No recent persisted failure motif card found for this motif_family.")
+        warnings.append(
+            "No recent persisted failure motif card found for this motif_family."
+        )
     if not activate:
         warnings.append(
             "Scaffold was registered in draft fields only. Promote scaffold_task_ids to task_ids after implementing the native probe."

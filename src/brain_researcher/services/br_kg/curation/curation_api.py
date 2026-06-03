@@ -4,14 +4,14 @@ This module provides API endpoints for expert curation workflows including
 validation, batch operations, change tracking, and review queues.
 """
 
-import logging
-from typing import Dict, List, Any, Optional, Set
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from enum import Enum
 import json
-from collections import defaultdict
+import logging
 import uuid
+from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +51,8 @@ class ValidationIssue:
     severity: ValidationSeverity
     field: str
     message: str
-    suggested_value: Optional[Any] = None
-    rule_id: Optional[str] = None
+    suggested_value: Any | None = None
+    rule_id: str | None = None
 
 
 @dataclass
@@ -61,16 +61,16 @@ class CurationItem:
 
     item_id: str
     entity_type: str  # Task, Concept, Region, etc.
-    entity_id: Optional[str]  # None for new entities
-    changes: Dict[str, Any]
+    entity_id: str | None  # None for new entities
+    changes: dict[str, Any]
     status: CurationStatus
     submitted_by: str
     submitted_at: datetime
-    reviewed_by: Optional[str] = None
-    reviewed_at: Optional[datetime] = None
-    validation_issues: List[ValidationIssue] = field(default_factory=list)
-    comments: List[Dict[str, Any]] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    reviewed_by: str | None = None
+    reviewed_at: datetime | None = None
+    validation_issues: list[ValidationIssue] = field(default_factory=list)
+    comments: list[dict[str, Any]] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -80,11 +80,11 @@ class ReviewQueue:
     queue_id: str
     name: str
     description: str
-    criteria: Dict[str, Any]  # Filter criteria for items
-    reviewers: List[str]
+    criteria: dict[str, Any]  # Filter criteria for items
+    reviewers: list[str]
     priority: int = 0
-    auto_approve_threshold: Optional[float] = None
-    items: List[str] = field(default_factory=list)  # Item IDs
+    auto_approve_threshold: float | None = None
+    items: list[str] = field(default_factory=list)  # Item IDs
 
 
 @dataclass
@@ -93,12 +93,12 @@ class BatchOperation:
 
     batch_id: str
     operation_type: str
-    items: List[CurationItem]
+    items: list[CurationItem]
     status: str
     progress: float = 0.0
-    results: Dict[str, Any] = field(default_factory=dict)
+    results: dict[str, Any] = field(default_factory=dict)
     started_at: datetime = field(default_factory=datetime.now)
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
 
 class CurationAPI:
@@ -119,43 +119,45 @@ class CurationAPI:
         self.batch_operations = {}
         self.change_history = defaultdict(list)
 
-    def _load_validation_rules(self) -> Dict[str, Any]:
+    def _load_validation_rules(self) -> dict[str, Any]:
         """Load validation rules for different entity types."""
         return {
             "Task": {
                 "required_fields": ["name", "description"],
                 "field_validators": {
                     "name": lambda x: len(x) >= 3 and len(x) <= 100,
-                    "description": lambda x: len(x) >= 10
+                    "description": lambda x: len(x) >= 10,
                 },
                 "custom_rules": [
                     {
                         "id": "task_naming",
-                        "check": lambda item: not item.get("name", "").startswith("test_"),
-                        "message": "Task names should not start with 'test_'"
+                        "check": lambda item: not item.get("name", "").startswith(
+                            "test_"
+                        ),
+                        "message": "Task names should not start with 'test_'",
                     }
-                ]
+                ],
             },
             "Concept": {
                 "required_fields": ["name", "definition"],
                 "field_validators": {
                     "name": lambda x: len(x) >= 2 and len(x) <= 50,
-                    "definition": lambda x: len(x) >= 20
+                    "definition": lambda x: len(x) >= 20,
                 },
                 "custom_rules": [
                     {
                         "id": "concept_ontology",
-                        "check": lambda item: "ontology_id" in item or "parent_concept" in item,
-                        "message": "Concepts should have ontology reference or parent"
+                        "check": lambda item: "ontology_id" in item
+                        or "parent_concept" in item,
+                        "message": "Concepts should have ontology reference or parent",
                     }
-                ]
+                ],
             },
             "Region": {
                 "required_fields": ["name", "coordinates"],
                 "field_validators": {
-                    "coordinates": lambda x: isinstance(x, dict) and all(
-                        k in x for k in ["x", "y", "z"]
-                    )
+                    "coordinates": lambda x: isinstance(x, dict)
+                    and all(k in x for k in ["x", "y", "z"])
                 },
                 "custom_rules": [
                     {
@@ -164,19 +166,19 @@ class CurationAPI:
                             -100 <= item["coordinates"][axis] <= 100
                             for axis in ["x", "y", "z"]
                         ),
-                        "message": "Coordinates should be within MNI space bounds"
+                        "message": "Coordinates should be within MNI space bounds",
                     }
-                ]
-            }
+                ],
+            },
         }
 
     def submit_for_curation(
         self,
         entity_type: str,
-        entity_id: Optional[str],
-        changes: Dict[str, Any],
+        entity_id: str | None,
+        changes: dict[str, Any],
         submitted_by: str,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """Submit an item for curation.
 
@@ -205,7 +207,7 @@ class CurationAPI:
             submitted_by=submitted_by,
             submitted_at=datetime.now(),
             validation_issues=validation_issues,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         self.curation_items[item_id] = item
@@ -220,10 +222,8 @@ class CurationAPI:
         return item_id
 
     def validate_entity(
-        self,
-        entity_type: str,
-        data: Dict[str, Any]
-    ) -> List[ValidationIssue]:
+        self, entity_type: str, data: dict[str, Any]
+    ) -> list[ValidationIssue]:
         """Validate entity data.
 
         Args:
@@ -244,49 +244,54 @@ class CurationAPI:
         # Check required fields
         for field in rules.get("required_fields", []):
             if field not in data or data[field] is None:
-                issues.append(ValidationIssue(
-                    severity=ValidationSeverity.ERROR,
-                    field=field,
-                    message=f"Required field '{field}' is missing"
-                ))
+                issues.append(
+                    ValidationIssue(
+                        severity=ValidationSeverity.ERROR,
+                        field=field,
+                        message=f"Required field '{field}' is missing",
+                    )
+                )
 
         # Validate field values
         for field, validator in rules.get("field_validators", {}).items():
             if field in data:
                 try:
                     if not validator(data[field]):
-                        issues.append(ValidationIssue(
-                            severity=ValidationSeverity.WARNING,
-                            field=field,
-                            message=f"Field '{field}' failed validation"
-                        ))
+                        issues.append(
+                            ValidationIssue(
+                                severity=ValidationSeverity.WARNING,
+                                field=field,
+                                message=f"Field '{field}' failed validation",
+                            )
+                        )
                 except Exception as e:
-                    issues.append(ValidationIssue(
-                        severity=ValidationSeverity.ERROR,
-                        field=field,
-                        message=f"Error validating '{field}': {str(e)}"
-                    ))
+                    issues.append(
+                        ValidationIssue(
+                            severity=ValidationSeverity.ERROR,
+                            field=field,
+                            message=f"Error validating '{field}': {str(e)}",
+                        )
+                    )
 
         # Apply custom rules
         for rule in rules.get("custom_rules", []):
             try:
                 if not rule["check"](data):
-                    issues.append(ValidationIssue(
-                        severity=ValidationSeverity.WARNING,
-                        field="",
-                        message=rule["message"],
-                        rule_id=rule["id"]
-                    ))
+                    issues.append(
+                        ValidationIssue(
+                            severity=ValidationSeverity.WARNING,
+                            field="",
+                            message=rule["message"],
+                            rule_id=rule["id"],
+                        )
+                    )
             except Exception as e:
                 logger.error(f"Error applying rule {rule['id']}: {e}")
 
         return issues
 
     def create_batch_operation(
-        self,
-        operation_type: str,
-        items_data: List[Dict[str, Any]],
-        submitted_by: str
+        self, operation_type: str, items_data: list[dict[str, Any]], submitted_by: str
     ) -> str:
         """Create a batch curation operation.
 
@@ -308,7 +313,7 @@ class CurationAPI:
                 entity_id=data.get("entity_id"),
                 changes=data["changes"],
                 submitted_by=submitted_by,
-                metadata={"batch_id": batch_id}
+                metadata={"batch_id": batch_id},
             )
             items.append(self.curation_items[item_id])
 
@@ -317,7 +322,7 @@ class CurationAPI:
             batch_id=batch_id,
             operation_type=operation_type,
             items=items,
-            status="pending"
+            status="pending",
         )
 
         self.batch_operations[batch_id] = batch
@@ -325,7 +330,7 @@ class CurationAPI:
         logger.info(f"Created batch operation {batch_id} with {len(items)} items")
         return batch_id
 
-    def process_batch(self, batch_id: str) -> Dict[str, Any]:
+    def process_batch(self, batch_id: str) -> dict[str, Any]:
         """Process a batch operation.
 
         Args:
@@ -340,11 +345,7 @@ class CurationAPI:
         batch = self.batch_operations[batch_id]
         batch.status = "processing"
 
-        results = {
-            "succeeded": [],
-            "failed": [],
-            "warnings": []
-        }
+        results = {"succeeded": [], "failed": [], "warnings": []}
 
         for i, item in enumerate(batch.items):
             batch.progress = (i + 1) / len(batch.items)
@@ -353,24 +354,29 @@ class CurationAPI:
             try:
                 if item.validation_issues:
                     # Has validation issues
-                    if any(issue.severity == ValidationSeverity.ERROR
-                           for issue in item.validation_issues):
-                        results["failed"].append({
-                            "item_id": item.item_id,
-                            "errors": [
-                                issue.message
-                                for issue in item.validation_issues
-                                if issue.severity == ValidationSeverity.ERROR
-                            ]
-                        })
+                    if any(
+                        issue.severity == ValidationSeverity.ERROR
+                        for issue in item.validation_issues
+                    ):
+                        results["failed"].append(
+                            {
+                                "item_id": item.item_id,
+                                "errors": [
+                                    issue.message
+                                    for issue in item.validation_issues
+                                    if issue.severity == ValidationSeverity.ERROR
+                                ],
+                            }
+                        )
                     else:
-                        results["warnings"].append({
-                            "item_id": item.item_id,
-                            "warnings": [
-                                issue.message
-                                for issue in item.validation_issues
-                            ]
-                        })
+                        results["warnings"].append(
+                            {
+                                "item_id": item.item_id,
+                                "warnings": [
+                                    issue.message for issue in item.validation_issues
+                                ],
+                            }
+                        )
 
                 # Apply changes if no errors
                 if item.item_id not in [f["item_id"] for f in results["failed"]]:
@@ -378,10 +384,7 @@ class CurationAPI:
                     results["succeeded"].append(item.item_id)
 
             except Exception as e:
-                results["failed"].append({
-                    "item_id": item.item_id,
-                    "error": str(e)
-                })
+                results["failed"].append({"item_id": item.item_id, "error": str(e)})
 
         batch.status = "completed"
         batch.completed_at = datetime.now()
@@ -403,10 +406,9 @@ class CurationAPI:
                 SET n += $changes
                 RETURN n
                 """
-                session.run(query, {
-                    "entity_id": item.entity_id,
-                    "changes": item.changes
-                })
+                session.run(
+                    query, {"entity_id": item.entity_id, "changes": item.changes}
+                )
             else:
                 # Create new entity
                 query = f"""
@@ -421,10 +423,10 @@ class CurationAPI:
         self,
         name: str,
         description: str,
-        criteria: Dict[str, Any],
-        reviewers: List[str],
+        criteria: dict[str, Any],
+        reviewers: list[str],
         priority: int = 0,
-        auto_approve_threshold: Optional[float] = None
+        auto_approve_threshold: float | None = None,
     ) -> str:
         """Create a review queue.
 
@@ -448,7 +450,7 @@ class CurationAPI:
             criteria=criteria,
             reviewers=reviewers,
             priority=priority,
-            auto_approve_threshold=auto_approve_threshold
+            auto_approve_threshold=auto_approve_threshold,
         )
 
         self.review_queues[queue_id] = queue
@@ -461,7 +463,7 @@ class CurationAPI:
         logger.info(f"Created review queue {name} with {len(queue.items)} items")
         return queue_id
 
-    def _matches_criteria(self, item: CurationItem, criteria: Dict[str, Any]) -> bool:
+    def _matches_criteria(self, item: CurationItem, criteria: dict[str, Any]) -> bool:
         """Check if item matches queue criteria.
 
         Args:
@@ -502,9 +504,9 @@ class CurationAPI:
     def get_review_queue_items(
         self,
         queue_id: str,
-        status_filter: Optional[CurationStatus] = None,
-        limit: int = 50
-    ) -> List[CurationItem]:
+        status_filter: CurationStatus | None = None,
+        limit: int = 50,
+    ) -> list[CurationItem]:
         """Get items from a review queue.
 
         Args:
@@ -534,7 +536,7 @@ class CurationAPI:
         item_id: str,
         reviewer: str,
         decision: CurationStatus,
-        comments: Optional[str] = None
+        comments: str | None = None,
     ) -> bool:
         """Review a curation item.
 
@@ -559,12 +561,14 @@ class CurationAPI:
 
         # Add comments
         if comments:
-            item.comments.append({
-                "author": reviewer,
-                "text": comments,
-                "timestamp": datetime.now().isoformat(),
-                "type": "review"
-            })
+            item.comments.append(
+                {
+                    "author": reviewer,
+                    "text": comments,
+                    "timestamp": datetime.now().isoformat(),
+                    "type": "review",
+                }
+            )
 
         # Apply changes if approved
         if decision == CurationStatus.APPROVED:
@@ -590,7 +594,7 @@ class CurationAPI:
             "entity_id": item.entity_id,
             "changes": item.changes,
             "submitted_by": item.submitted_by,
-            "timestamp": item.submitted_at.isoformat()
+            "timestamp": item.submitted_at.isoformat(),
         }
 
         # Store by entity
@@ -608,11 +612,8 @@ class CurationAPI:
             self.redis.expire(redis_key, 86400 * 30)  # 30 days
 
     def get_change_history(
-        self,
-        entity_type: str,
-        entity_id: str,
-        limit: int = 10
-    ) -> List[Dict[str, Any]]:
+        self, entity_type: str, entity_id: str, limit: int = 10
+    ) -> list[dict[str, Any]]:
         """Get change history for an entity.
 
         Args:
@@ -634,7 +635,7 @@ class CurationAPI:
         # Fall back to in-memory
         return self.change_history.get(key, [])[:limit]
 
-    def auto_approve(self, confidence_threshold: float = 0.95) -> Dict[str, Any]:
+    def auto_approve(self, confidence_threshold: float = 0.95) -> dict[str, Any]:
         """Auto-approve high-confidence items.
 
         Args:
@@ -643,10 +644,7 @@ class CurationAPI:
         Returns:
             Results of auto-approval
         """
-        results = {
-            "approved": [],
-            "skipped": []
-        }
+        results = {"approved": [], "skipped": []}
 
         for item in self.curation_items.values():
             if item.status != CurationStatus.PENDING:
@@ -657,11 +655,13 @@ class CurationAPI:
                 confidence = 1.0
             else:
                 error_count = sum(
-                    1 for issue in item.validation_issues
+                    1
+                    for issue in item.validation_issues
                     if issue.severity == ValidationSeverity.ERROR
                 )
                 warning_count = sum(
-                    1 for issue in item.validation_issues
+                    1
+                    for issue in item.validation_issues
                     if issue.severity == ValidationSeverity.WARNING
                 )
 
@@ -675,22 +675,18 @@ class CurationAPI:
                     item.item_id,
                     "auto-approver",
                     CurationStatus.APPROVED,
-                    f"Auto-approved with confidence {confidence:.2f}"
+                    f"Auto-approved with confidence {confidence:.2f}",
                 )
                 results["approved"].append(item.item_id)
             else:
-                results["skipped"].append({
-                    "item_id": item.item_id,
-                    "confidence": confidence
-                })
+                results["skipped"].append(
+                    {"item_id": item.item_id, "confidence": confidence}
+                )
 
         return results
 
     def merge_duplicates(
-        self,
-        entity_type: str,
-        entity_ids: List[str],
-        merge_strategy: str = "latest"
+        self, entity_type: str, entity_ids: list[str], merge_strategy: str = "latest"
     ) -> str:
         """Merge duplicate entities.
 
@@ -740,10 +736,13 @@ class CurationAPI:
             SET r2 = properties(r)
             DELETE r
             """
-            session.run(query, {
-                "old_ids": [id for id in entity_ids if id != merged_id],
-                "new_id": merged_id
-            })
+            session.run(
+                query,
+                {
+                    "old_ids": [id for id in entity_ids if id != merged_id],
+                    "new_id": merged_id,
+                },
+            )
 
             # Delete old entities
             query = f"""
@@ -751,15 +750,12 @@ class CurationAPI:
             WHERE n.id IN $ids AND n.id <> $merged_id
             DELETE n
             """
-            session.run(query, {
-                "ids": entity_ids,
-                "merged_id": merged_id
-            })
+            session.run(query, {"ids": entity_ids, "merged_id": merged_id})
 
             logger.info(f"Merged {len(entity_ids)} entities into {merged_id}")
             return merged_id
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get curation statistics.
 
         Returns:
@@ -769,17 +765,14 @@ class CurationAPI:
             "total_items": len(self.curation_items),
             "by_status": defaultdict(int),
             "by_entity_type": defaultdict(int),
-            "validation_issues": {
-                "errors": 0,
-                "warnings": 0,
-                "info": 0
-            },
+            "validation_issues": {"errors": 0, "warnings": 0, "info": 0},
             "review_queues": len(self.review_queues),
             "active_batches": sum(
-                1 for batch in self.batch_operations.values()
+                1
+                for batch in self.batch_operations.values()
                 if batch.status == "processing"
             ),
-            "recent_activity": []
+            "recent_activity": [],
         }
 
         for item in self.curation_items.values():
@@ -796,9 +789,7 @@ class CurationAPI:
 
         # Recent activity
         recent = sorted(
-            self.curation_items.values(),
-            key=lambda x: x.submitted_at,
-            reverse=True
+            self.curation_items.values(), key=lambda x: x.submitted_at, reverse=True
         )[:10]
 
         stats["recent_activity"] = [
@@ -807,7 +798,7 @@ class CurationAPI:
                 "entity_type": item.entity_type,
                 "status": item.status.value,
                 "submitted_by": item.submitted_by,
-                "submitted_at": item.submitted_at.isoformat()
+                "submitted_at": item.submitted_at.isoformat(),
             }
             for item in recent
         ]

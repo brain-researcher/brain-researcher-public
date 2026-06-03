@@ -6,7 +6,6 @@ Following Biomni's pattern for clean LLM abstraction.
 
 import logging
 import os
-from typing import Optional
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models import BaseChatModel
@@ -29,15 +28,17 @@ DEEPSEEK_API_URL = os.environ.get(
 DEEPSEEK_API_BASE = os.environ.get(
     "DEEPSEEK_API_BASE",
     # Derive base from URL if provided (strip path like /v1/chat/completions)
-    DEEPSEEK_API_URL.split("/v1")[0]
-    if "/v1" in DEEPSEEK_API_URL
-    else "https://api.deepseek.com",
+    (
+        DEEPSEEK_API_URL.split("/v1")[0]
+        if "/v1" in DEEPSEEK_API_URL
+        else "https://api.deepseek.com"
+    ),
 )
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL")
 
 
-def _infer_model_from_available_keys() -> Optional[str]:
+def _infer_model_from_available_keys() -> str | None:
     """Heuristically pick a model based on which API keys are present."""
 
     key_priority = [

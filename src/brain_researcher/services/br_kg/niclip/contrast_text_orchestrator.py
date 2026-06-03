@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 def _safe_slug(text: str) -> str:
-    cleaned = "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in text.strip())
+    cleaned = "".join(
+        ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in text.strip()
+    )
     cleaned = "_".join(part for part in cleaned.split("_") if part)
     return cleaned or "term"
 
@@ -52,7 +54,9 @@ class ContrastTextToPredictedMapOrchestrator:
                     "score": score,
                     "source": row.get("source", "unknown"),
                 }
-        ranked = sorted(merged.values(), key=lambda item: float(item["score"]), reverse=True)
+        ranked = sorted(
+            merged.values(), key=lambda item: float(item["score"]), reverse=True
+        )
         return ranked[:top_k]
 
     def _predict_tasks(
@@ -184,7 +188,9 @@ class ContrastTextToPredictedMapOrchestrator:
 
                     nib.save(maps[0], map_path)
                 except Exception as exc:
-                    logger.warning("Failed to save predicted map for term '%s': %s", term, exc)
+                    logger.warning(
+                        "Failed to save predicted map for term '%s': %s", term, exc
+                    )
                     map_path = None
 
             return {

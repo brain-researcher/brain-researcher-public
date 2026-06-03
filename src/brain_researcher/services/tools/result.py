@@ -2,11 +2,12 @@
 
 This module provides consistent result types used across all tools.
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ToolResult(BaseModel):
@@ -24,9 +25,9 @@ class ToolResult(BaseModel):
     """
 
     status: Literal["success", "error"]
-    data: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None
+    error: str | None = None
+    metadata: dict[str, Any] | None = None
 
     model_config = {"extra": "allow"}
 
@@ -52,9 +53,9 @@ class ExecutionResult(BaseModel):
     command: str = ""
     execution_time: float = 0.0
     mode: str = "unknown"
-    artifact_path: Optional[str] = None
-    run_dir: Optional[str] = None
-    provenance: Optional[Dict[str, Any]] = None
+    artifact_path: str | None = None
+    run_dir: str | None = None
+    provenance: dict[str, Any] | None = None
 
     model_config = {"extra": "allow"}
 

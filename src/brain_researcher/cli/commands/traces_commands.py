@@ -1,16 +1,15 @@
 """Trace export commands."""
 
+import asyncio
 import json
 import tarfile
-import asyncio
 from pathlib import Path
-from typing import List, Optional
 
 import typer
 from rich.console import Console
 
-from brain_researcher.services.orchestrator.sqlite_job_store import SqliteJobStore
 from brain_researcher.services.orchestrator.job_store import JobState
+from brain_researcher.services.orchestrator.sqlite_job_store import SqliteJobStore
 
 app = typer.Typer(help="Export learnable traces")
 console = Console()
@@ -23,7 +22,7 @@ def _copy_if_exists(src: Path, dst: Path) -> bool:
     return True
 
 
-def _collect_run(run_dir: Path, out_dir: Path) -> Optional[dict]:
+def _collect_run(run_dir: Path, out_dir: Path) -> dict | None:
     obs = run_dir / "observation.json"
     trace = run_dir / "trace.jsonl"
     trajectory = run_dir / "trajectory.json"
@@ -59,8 +58,8 @@ def _collect_run(run_dir: Path, out_dir: Path) -> Optional[dict]:
     return info
 
 
-def _find_runs(root: Path, pattern: str) -> List[Path]:
-    out: List[Path] = []
+def _find_runs(root: Path, pattern: str) -> list[Path]:
+    out: list[Path] = []
     for p in root.glob(pattern):
         if not (p / "observation.json").exists():
             continue
@@ -71,17 +70,18 @@ def _find_runs(root: Path, pattern: str) -> List[Path]:
 
 def _deid(value: str) -> str:
     import hashlib
+
     return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
 
 
-async def _runs_from_sqlite(db_path: Path, state: Optional[str], limit: int) -> List[Path]:
+async def _runs_from_sqlite(db_path: Path, state: str | None, limit: int) -> list[Path]:
     store = SqliteJobStore(db_path=str(db_path), total_gpu_slots=0)
     await store.initialize()
     if state:
         jobs = await store.list_by_state(JobState(state), limit=limit)
     else:
         jobs = await store.list_all(limit=limit)
-    run_dirs: List[Path] = []
+    run_dirs: list[Path] = []
     for job in jobs:
         if job.run_dir:
             rd = Path(job.run_dir)
@@ -96,18 +96,30 @@ async def _runs_from_sqlite(db_path: Path, state: Optional[str], limit: int) -> 
 
 @app.command("export")
 def export_traces(
-    run_dirs: List[Path] = typer.Argument(
+    run_dirs: list[Path] = typer.Argument(
         None,
         help="Explicit run dirs (each containing observation.json and trace.jsonl and/or trajectory.json)",
     ),
-    from_root: Optional[Path] = typer.Option(None, "--from-root", help="Root to scan for runs"),
+    from_root: Path | None = typer.Option(
+        None, "--from-root", help="Root to scan for runs"
+    ),
     glob: str = typer.Option("*", "--glob", help="Glob under from-root to find runs"),
-    sqlite_jobstore: Optional[Path] = typer.Option(None, "--sqlite-jobstore", help="Sqlite job store to pull run_dirs from"),
-    state: Optional[str] = typer.Option(None, "--state", help="Filter by job state when using job store"),
-    limit: int = typer.Option(500, "--limit", help="Max runs to pull from job store or glob scan"),
-    output: Path = typer.Option(Path("traces_export.tar.gz"), "--out", "-o", help="Output tar.gz"),
+    sqlite_jobstore: Path | None = typer.Option(
+        None, "--sqlite-jobstore", help="Sqlite job store to pull run_dirs from"
+    ),
+    state: str | None = typer.Option(
+        None, "--state", help="Filter by job state when using job store"
+    ),
+    limit: int = typer.Option(
+        500, "--limit", help="Max runs to pull from job store or glob scan"
+    ),
+    output: Path = typer.Option(
+        Path("traces_export.tar.gz"), "--out", "-o", help="Output tar.gz"
+    ),
     version: str = typer.Option("trace-export-v1", "--version"),
-    deid: bool = typer.Option(False, "--deid", help="Hash run_ids for de-identification"),
+    deid: bool = typer.Option(
+        False, "--deid", help="Hash run_ids for de-identification"
+    ),
 ):
     """
     Export traces/observations into a tar.gz bundle. You can pass run dirs directly or scan a root with --from-root.
@@ -123,7 +135,7 @@ def export_traces(
         "runs": [],
     }
     try:
-        targets: List[Path] = []
+        targets: list[Path] = []
         if run_dirs:
             targets.extend(run_dirs)
         if from_root:
@@ -160,14 +172,21 @@ def export_traces(
                 manifest["runs"].append(info)
 
         if not manifest["runs"]:
-            console.print("[yellow]No runs with observation.json + trace/trajectory found[/yellow]")
+            console.print(
+                "[yellow]No runs with observation.json + trace/trajectory found[/yellow]"
+            )
             return
-        (temp_out / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+        (temp_out / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         with tarfile.open(output, "w:gz") as tar:
             tar.add(temp_out, arcname="traces")
-        console.print(f"[green]Exported {len(manifest['runs'])} runs → {output}[/green]")
+        console.print(
+            f"[green]Exported {len(manifest['runs'])} runs → {output}[/green]"
+        )
     finally:
         import shutil
+
         shutil.rmtree(temp_out, ignore_errors=True)
 
 

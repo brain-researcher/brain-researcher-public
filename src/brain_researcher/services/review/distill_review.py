@@ -567,6 +567,10 @@ def distill_scientific_review_records(
         peak_cluster_membership_consistency_check,
         peak_table_semantics_check,
     )
+    from brain_researcher.services.review.checks.circularity_confound import (
+        demographic_confound_uncontrolled_check,
+        double_dipping_check,
+    )
     from brain_researcher.services.review.checks.claim_validity import (
         claim_inflation_check,
         construct_validity_confound_check,
@@ -602,6 +606,11 @@ def distill_scientific_review_records(
         directional_claim_contradiction_check,
         epistemic_claim_policy_check,
     )
+    from brain_researcher.services.review.checks.leakage_extra import (
+        brainmap_correlation_spatial_null_check,
+        leakage_preprocessing_fit_scope_check,
+        leakage_pseudoreplication_check,
+    )
     from brain_researcher.services.review.checks.method_appropriateness import (
         method_appropriateness_check,
     )
@@ -631,19 +640,10 @@ def distill_scientific_review_records(
         spatial_null_validity_check,
         surface_volume_correction_domain_mismatch_check,
     )
-    from brain_researcher.services.review.checks.leakage_extra import (
-        brainmap_correlation_spatial_null_check,
-        leakage_preprocessing_fit_scope_check,
-        leakage_pseudoreplication_check,
-    )
     from brain_researcher.services.review.checks.predictive_integrity import (
         predictive_cv_leakage_check,
         predictive_fisher_z_input_domain_check,
         predictive_split_integrity_check,
-    )
-    from brain_researcher.services.review.checks.circularity_confound import (
-        demographic_confound_uncontrolled_check,
-        double_dipping_check,
     )
     from brain_researcher.services.review.checks.review_context_validity import (
         external_evidence_path_integrity_check,
@@ -657,13 +657,13 @@ def distill_scientific_review_records(
         graph_atlas_hrf_sensitivity_package_check,
         gsr_sensitivity_package_check,
     )
-    from brain_researcher.services.review.checks.value_domain import (
-        value_domain_contract_violation_check,
-    )
     from brain_researcher.services.review.checks.task_construct_validity import (
         behavioral_imbalance_not_modeled_check,
         stimulus_fixed_effect_risk_check,
         task_fc_ppi_evoked_response_control_check,
+    )
+    from brain_researcher.services.review.checks.value_domain import (
+        value_domain_contract_violation_check,
     )
     from brain_researcher.services.review.kg_rule_registry import (
         evaluate_kg_review_registry,

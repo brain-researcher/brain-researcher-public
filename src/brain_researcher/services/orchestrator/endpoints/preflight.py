@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 from collections.abc import Iterable
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 import httpx
@@ -15,19 +14,14 @@ from pydantic import BaseModel, Field, model_validator
 
 from brain_researcher.config.paths import resolve_from_config
 from brain_researcher.services.tools.runtime_profiles import get_tool_recipe_override
+
 from ..env import AGENT_URL
 
 router = APIRouter(prefix="/api/preflight", tags=["preflight"])
 
-_WORKFLOW_CATALOG_PATH = (
-    resolve_from_config("workflows", "workflow_catalog.yaml")
-)
-_STUDIO_TOOL_MAPPINGS_PATH = (
-    resolve_from_config("catalog", "studio_tool_mappings.yaml")
-)
-_CHAT_TOOLS_PATH = (
-    resolve_from_config("catalog", "chat_tools.yaml")
-)
+_WORKFLOW_CATALOG_PATH = resolve_from_config("workflows", "workflow_catalog.yaml")
+_STUDIO_TOOL_MAPPINGS_PATH = resolve_from_config("catalog", "studio_tool_mappings.yaml")
+_CHAT_TOOLS_PATH = resolve_from_config("catalog", "chat_tools.yaml")
 _NEURODESK_PLAY_URL = "https://play.neurodesk.org/"
 _NEURODESK_APP_URL = "https://neurodesk.org/getting-started/local/neurodeskapp/"
 _NEURODESK_HPC_URL = "https://neurodesk.org/getting-started/installations/ubuntu2404/"
@@ -182,7 +176,12 @@ def _canonicalize_tool_ids(
         if raw != resolved:
             aliases = canonical_to_raw_aliases.setdefault(resolved, [])
             aliases.append(raw)
-        elif alias_map and canonical_ids and raw not in canonical_ids and raw not in alias_map:
+        elif (
+            alias_map
+            and canonical_ids
+            and raw not in canonical_ids
+            and raw not in alias_map
+        ):
             unknown_tool_aliases.add(raw)
         if resolved in canonical_seen:
             continue
@@ -231,9 +230,7 @@ def _workflow_tool_ids(workflow_id: str) -> list[str]:
     if not isinstance(steps, list):
         return []
     return _normalize_tool_ids(
-        str(step.get("tool") or "").strip()
-        for step in steps
-        if isinstance(step, dict)
+        str(step.get("tool") or "").strip() for step in steps if isinstance(step, dict)
     )
 
 
@@ -369,7 +366,9 @@ def _build_environment_guidance(
         if container_images:
             detail_parts.append(
                 "Container images: "
-                + ", ".join(f"{name}={image}" for name, image in container_images.items())
+                + ", ".join(
+                    f"{name}={image}" for name, image in container_images.items()
+                )
             )
 
         runtime_target = (

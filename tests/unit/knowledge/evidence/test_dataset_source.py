@@ -1,8 +1,7 @@
 """Tests for dataset evidence source adapter."""
 
-import pytest
-from unittest.mock import MagicMock, patch
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from brain_researcher.services.knowledge.evidence.base import (
     EvidenceQuery,
@@ -306,28 +305,32 @@ class TestDatasetEvidenceSource:
 class TestSearchDatasetsFunction:
     """Test search_datasets convenience function."""
 
-    @patch("brain_researcher.services.knowledge.evidence.dataset_source.DatasetEvidenceSource")
+    @patch(
+        "brain_researcher.services.knowledge.evidence.dataset_source.DatasetEvidenceSource"
+    )
     def test_search_datasets_basic(self, mock_source_class):
         """Test basic search_datasets call."""
         mock_source = MagicMock()
         mock_source.query_sync.return_value = []
         mock_source_class.return_value = mock_source
 
-        results = search_datasets("motor fmri", limit=5)
+        search_datasets("motor fmri", limit=5)
 
         mock_source.query_sync.assert_called_once()
         query = mock_source.query_sync.call_args[0][0]
         assert query.text == "motor fmri"
         assert query.limit == 5
 
-    @patch("brain_researcher.services.knowledge.evidence.dataset_source.DatasetEvidenceSource")
+    @patch(
+        "brain_researcher.services.knowledge.evidence.dataset_source.DatasetEvidenceSource"
+    )
     def test_search_datasets_with_filters(self, mock_source_class):
         """Test search_datasets with filters."""
         mock_source = MagicMock()
         mock_source.query_sync.return_value = []
         mock_source_class.return_value = mock_source
 
-        results = search_datasets(
+        search_datasets(
             "resting state",
             modality="fmri",
             min_subjects=50,

@@ -10,13 +10,13 @@ This module handles:
 import json
 import logging
 import re
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
-import yaml
 import numpy as np
+import yaml
 from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
@@ -32,17 +32,17 @@ class Memory:
     confidence: float
     title: str
     content: str
-    tags: List[str] = field(default_factory=list)
-    applies_when: List[str] = field(default_factory=list)
-    avoid_when: List[str] = field(default_factory=list)
-    related: List[str] = field(default_factory=list)
-    provenance: List[str] = field(default_factory=list)
-    created: Optional[datetime] = None
-    updated: Optional[datetime] = None
-    owner: Optional[str] = None
+    tags: list[str] = field(default_factory=list)
+    applies_when: list[str] = field(default_factory=list)
+    avoid_when: list[str] = field(default_factory=list)
+    related: list[str] = field(default_factory=list)
+    provenance: list[str] = field(default_factory=list)
+    created: datetime | None = None
+    updated: datetime | None = None
+    owner: str | None = None
     decay_half_life_days: int = 180
-    llm_prompt: Optional[str] = None
-    file_path: Optional[Path] = None
+    llm_prompt: str | None = None
+    file_path: Path | None = None
 
     @property
     def decay_factor(self) -> float:
@@ -70,10 +70,10 @@ class MemoryStore:
             root_path: Path to memory directory
         """
         self.root_path = Path(root_path)
-        self.memories: List[Memory] = []
-        self.keyword_index: Dict[str, List[int]] = {}
-        self.tag_index: Dict[str, List[int]] = {}
-        self.scope_index: Dict[str, List[int]] = {}
+        self.memories: list[Memory] = []
+        self.keyword_index: dict[str, list[int]] = {}
+        self.tag_index: dict[str, list[int]] = {}
+        self.scope_index: dict[str, list[int]] = {}
 
         # Initialize embedding model for semantic search
         self._init_embedding_model()
@@ -85,7 +85,7 @@ class MemoryStore:
     def _init_embedding_model(self):
         """Initialize the sentence transformer model."""
         try:
-            self.encoder = SentenceTransformer('all-MiniLM-L6-v2')
+            self.encoder = SentenceTransformer("all-MiniLM-L6-v2")
             self.embeddings = None
             logger.info("Initialized embedding model: all-MiniLM-L6-v2")
         except Exception as e:
@@ -93,7 +93,7 @@ class MemoryStore:
             self.encoder = None
             self.embeddings = None
 
-    def load(self) -> List[Memory]:
+    def load(self) -> list[Memory]:
         """
         Load all memory files from the root directory.
 
@@ -124,7 +124,7 @@ class MemoryStore:
         logger.info(f"Loaded {len(self.memories)} memories from {self.root_path}")
         return self.memories
 
-    def _parse_memory_file(self, file_path: Path) -> Optional[Memory]:
+    def _parse_memory_file(self, file_path: Path) -> Memory | None:
         """
         Parse a single memory file with YAML frontmatter and markdown content.
 
@@ -134,10 +134,10 @@ class MemoryStore:
         Returns:
             Parsed Memory object or None if parsing fails
         """
-        content = file_path.read_text(encoding='utf-8')
+        content = file_path.read_text(encoding="utf-8")
 
         # Extract YAML frontmatter
-        yaml_match = re.match(r'^---\n(.*?)\n---\n(.*)', content, re.DOTALL)
+        yaml_match = re.match(r"^---\n(.*?)\n---\n(.*)", content, re.DOTALL)
         if not yaml_match:
             logger.warning(f"No YAML frontmatter found in {file_path}")
             return None
@@ -152,40 +152,42 @@ class MemoryStore:
             return None
 
         # Extract title from first markdown heading
-        title_match = re.search(r'^#\s+(.+)$', markdown_content, re.MULTILINE)
+        title_match = re.search(r"^#\s+(.+)$", markdown_content, re.MULTILINE)
         title = title_match.group(1) if title_match else file_path.stem
 
         # Extract LLM prompt fragment
         llm_prompt = None
-        prompt_match = re.search(r'>\s*House Rule:\s*(.+?)(?:\n\n|$)', markdown_content, re.DOTALL)
+        prompt_match = re.search(
+            r">\s*House Rule:\s*(.+?)(?:\n\n|$)", markdown_content, re.DOTALL
+        )
         if prompt_match:
             llm_prompt = prompt_match.group(1).strip()
 
         # Parse dates
-        created = self._parse_date(metadata.get('created'))
-        updated = self._parse_date(metadata.get('updated'))
+        created = self._parse_date(metadata.get("created"))
+        updated = self._parse_date(metadata.get("updated"))
 
         return Memory(
-            id=metadata.get('id', file_path.stem),
-            type=metadata.get('type', 'memory'),
-            scope=metadata.get('scope', 'codebase'),
-            confidence=metadata.get('confidence', 0.5),
+            id=metadata.get("id", file_path.stem),
+            type=metadata.get("type", "memory"),
+            scope=metadata.get("scope", "codebase"),
+            confidence=metadata.get("confidence", 0.5),
             title=title,
             content=markdown_content,
-            tags=metadata.get('tags', []),
-            applies_when=metadata.get('applies_when', []),
-            avoid_when=metadata.get('avoid_when', []),
-            related=metadata.get('related', []),
-            provenance=metadata.get('provenance', []),
+            tags=metadata.get("tags", []),
+            applies_when=metadata.get("applies_when", []),
+            avoid_when=metadata.get("avoid_when", []),
+            related=metadata.get("related", []),
+            provenance=metadata.get("provenance", []),
             created=created,
             updated=updated,
-            owner=metadata.get('owner'),
-            decay_half_life_days=metadata.get('decay_half_life_days', 180),
+            owner=metadata.get("owner"),
+            decay_half_life_days=metadata.get("decay_half_life_days", 180),
             llm_prompt=llm_prompt,
-            file_path=file_path
+            file_path=file_path,
         )
 
-    def _parse_date(self, date_str: Any) -> Optional[datetime]:
+    def _parse_date(self, date_str: Any) -> datetime | None:
         """Parse date from various formats."""
         if not date_str:
             return None
@@ -224,7 +226,7 @@ class MemoryStore:
 
             # Build keyword index from title and content
             text = f"{memory.title} {memory.content}".lower()
-            words = re.findall(r'\w+', text)
+            words = re.findall(r"\w+", text)
             for word in set(words):
                 if len(word) > 2:  # Skip very short words
                     if word not in self.keyword_index:
@@ -237,12 +239,14 @@ class MemoryStore:
             self.embeddings = self.encoder.encode(texts)
             logger.info(f"Built embeddings for {len(self.memories)} memories")
 
-    def search(self,
-               query: str = "",
-               tags: Optional[List[str]] = None,
-               scope: Optional[str] = None,
-               min_confidence: float = 0.0,
-               limit: int = 10) -> List[Memory]:
+    def search(
+        self,
+        query: str = "",
+        tags: list[str] | None = None,
+        scope: str | None = None,
+        min_confidence: float = 0.0,
+        limit: int = 10,
+    ) -> list[Memory]:
         """
         Search memories using multiple criteria.
 
@@ -270,7 +274,8 @@ class MemoryStore:
 
         # Filter by confidence
         candidates = {
-            idx for idx in candidates
+            idx
+            for idx in candidates
             if self.memories[idx].effective_confidence >= min_confidence
         }
 
@@ -282,8 +287,10 @@ class MemoryStore:
 
             # Keyword matching
             if query:
-                query_words = set(re.findall(r'\w+', query.lower()))
-                text_words = set(re.findall(r'\w+', f"{memory.title} {memory.content}".lower()))
+                query_words = set(re.findall(r"\w+", query.lower()))
+                text_words = set(
+                    re.findall(r"\w+", f"{memory.title} {memory.content}".lower())
+                )
                 overlap = len(query_words & text_words)
                 score += overlap * 0.1
 
@@ -300,14 +307,14 @@ class MemoryStore:
         sorted_indices = sorted(scores.keys(), key=lambda x: scores[x], reverse=True)
         return [self.memories[idx] for idx in sorted_indices[:limit]]
 
-    def get_by_id(self, memory_id: str) -> Optional[Memory]:
+    def get_by_id(self, memory_id: str) -> Memory | None:
         """Get a specific memory by ID."""
         for memory in self.memories:
             if memory.id == memory_id:
                 return memory
         return None
 
-    def get_related(self, memory: Memory, max_depth: int = 2) -> List[Memory]:
+    def get_related(self, memory: Memory, max_depth: int = 2) -> list[Memory]:
         """
         Get related memories following the relationship graph.
 
@@ -330,7 +337,7 @@ class MemoryStore:
 
             for rel in current.related:
                 # Extract memory reference from [[...]] syntax
-                match = re.search(r'\[\[([^\]]+)\]\]', rel)
+                match = re.search(r"\[\[([^\]]+)\]\]", rel)
                 if match:
                     ref_title = match.group(1)
                     # Find memory by title
@@ -342,7 +349,7 @@ class MemoryStore:
 
         return related
 
-    def save_index(self, index_path: Optional[Path] = None):
+    def save_index(self, index_path: Path | None = None):
         """Save the index to a JSON file for faster loading."""
         if index_path is None:
             index_path = self.root_path / "index.json"
@@ -355,17 +362,17 @@ class MemoryStore:
                     "tags": m.tags,
                     "scope": m.scope,
                     "confidence": m.confidence,
-                    "file_path": str(m.file_path) if m.file_path else None
+                    "file_path": str(m.file_path) if m.file_path else None,
                 }
                 for m in self.memories
             ],
             "keyword_index": self.keyword_index,
             "tag_index": self.tag_index,
             "scope_index": self.scope_index,
-            "generated": datetime.now().isoformat()
+            "generated": datetime.now().isoformat(),
         }
 
-        with open(index_path, 'w') as f:
+        with open(index_path, "w") as f:
             json.dump(index_data, f, indent=2)
 
         logger.info(f"Saved index to {index_path}")

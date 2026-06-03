@@ -6,12 +6,13 @@ including layout algorithms, filtering, and aggregation.
 
 import json
 import logging
-from typing import Dict, List, Any, Optional, Tuple, Set
+import math
+from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
+
 import numpy as np
-from collections import defaultdict
-import math
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +58,10 @@ class EdgeStyle:
 class GraphView:
     """Represents a view of the graph."""
 
-    nodes: List[Dict[str, Any]]
-    edges: List[Dict[str, Any]]
-    layout: Dict[str, Tuple[float, float]]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    nodes: list[dict[str, Any]]
+    edges: list[dict[str, Any]]
+    layout: dict[str, tuple[float, float]]
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class GraphVisualizer:
@@ -71,7 +72,7 @@ class GraphVisualizer:
         self.default_node_styles = self._get_default_node_styles()
         self.default_edge_styles = self._get_default_edge_styles()
 
-    def _get_default_node_styles(self) -> Dict[str, NodeStyle]:
+    def _get_default_node_styles(self) -> dict[str, NodeStyle]:
         """Get default styles for different node types."""
         return {
             "Task": NodeStyle(color="#FF6B6B", shape="circle", size=12),
@@ -79,10 +80,10 @@ class GraphVisualizer:
             "Region": NodeStyle(color="#45B7D1", shape="square", size=14),
             "Dataset": NodeStyle(color="#96CEB4", shape="triangle", size=11),
             "Publication": NodeStyle(color="#DDA0DD", shape="circle", size=8),
-            "default": NodeStyle()
+            "default": NodeStyle(),
         }
 
-    def _get_default_edge_styles(self) -> Dict[str, EdgeStyle]:
+    def _get_default_edge_styles(self) -> dict[str, EdgeStyle]:
         """Get default styles for different edge types."""
         return {
             "INVOLVES": EdgeStyle(color="#FF6B6B", width=2.0),
@@ -90,15 +91,15 @@ class GraphVisualizer:
             "LOCATED_IN": EdgeStyle(color="#45B7D1", width=1.5),
             "HAS_ACTIVATION": EdgeStyle(color="#96CEB4", curve_style="curved"),
             "CITES": EdgeStyle(color="#DDA0DD", style="dotted"),
-            "default": EdgeStyle()
+            "default": EdgeStyle(),
         }
 
     def create_view(
         self,
-        graph_data: Dict[str, Any],
+        graph_data: dict[str, Any],
         layout_algorithm: LayoutAlgorithm = LayoutAlgorithm.FORCE_DIRECTED,
-        filters: Optional[Dict[str, Any]] = None,
-        aggregation: Optional[Dict[str, Any]] = None
+        filters: dict[str, Any] | None = None,
+        aggregation: dict[str, Any] | None = None,
     ) -> GraphView:
         """Create a visualization view of the graph.
 
@@ -134,15 +135,13 @@ class GraphVisualizer:
                 "node_count": len(styled_nodes),
                 "edge_count": len(styled_edges),
                 "filters": filters,
-                "aggregation": aggregation
-            }
+                "aggregation": aggregation,
+            },
         )
 
     def _apply_filters(
-        self,
-        graph_data: Dict[str, Any],
-        filters: Optional[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, graph_data: dict[str, Any], filters: dict[str, Any] | None
+    ) -> dict[str, Any]:
         """Apply filters to graph data.
 
         Args:
@@ -203,10 +202,8 @@ class GraphVisualizer:
         return {"nodes": filtered_nodes, "edges": filtered_edges}
 
     def _apply_aggregation(
-        self,
-        graph_data: Dict[str, Any],
-        aggregation: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, graph_data: dict[str, Any], aggregation: dict[str, Any]
+    ) -> dict[str, Any]:
         """Apply aggregation to graph data.
 
         Args:
@@ -227,11 +224,7 @@ class GraphVisualizer:
 
         return graph_data
 
-    def _group_nodes(
-        self,
-        graph_data: Dict[str, Any],
-        group_by: str
-    ) -> Dict[str, Any]:
+    def _group_nodes(self, graph_data: dict[str, Any], group_by: str) -> dict[str, Any]:
         """Group nodes by a property.
 
         Args:
@@ -268,28 +261,32 @@ class GraphVisualizer:
         # Create aggregated nodes and edges
         agg_nodes = []
         for group_key, nodes in groups.items():
-            agg_nodes.append({
-                "id": f"group_{group_key}",
-                "label": str(group_key),
-                "type": "group",
-                "size": len(nodes),
-                "members": [n["id"] for n in nodes]
-            })
+            agg_nodes.append(
+                {
+                    "id": f"group_{group_key}",
+                    "label": str(group_key),
+                    "type": "group",
+                    "size": len(nodes),
+                    "members": [n["id"] for n in nodes],
+                }
+            )
 
         agg_edges = []
         for source, targets in group_edges.items():
             for target, weight in targets.items():
                 if source != target:  # Skip self-loops for now
-                    agg_edges.append({
-                        "source": f"group_{source}",
-                        "target": f"group_{target}",
-                        "weight": weight,
-                        "type": "aggregated"
-                    })
+                    agg_edges.append(
+                        {
+                            "source": f"group_{source}",
+                            "target": f"group_{target}",
+                            "weight": weight,
+                            "type": "aggregated",
+                        }
+                    )
 
         return {"nodes": agg_nodes, "edges": agg_edges}
 
-    def _collapse_chains(self, graph_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _collapse_chains(self, graph_data: dict[str, Any]) -> dict[str, Any]:
         """Collapse linear chains of nodes.
 
         Args:
@@ -301,7 +298,9 @@ class GraphVisualizer:
         # Find nodes with degree 2 (chain nodes)
         degrees = {}
         for node in graph_data["nodes"]:
-            degrees[node["id"]] = self._calculate_degree(node["id"], graph_data["edges"])
+            degrees[node["id"]] = self._calculate_degree(
+                node["id"], graph_data["edges"]
+            )
 
         chains = []
         visited = set()
@@ -319,12 +318,14 @@ class GraphVisualizer:
 
         for chain in chains:
             chain_id = f"chain_{chain[0]}_{chain[-1]}"
-            collapsed_nodes.append({
-                "id": chain_id,
-                "type": "chain",
-                "label": f"Chain ({len(chain)} nodes)",
-                "members": chain
-            })
+            collapsed_nodes.append(
+                {
+                    "id": chain_id,
+                    "type": "chain",
+                    "label": f"Chain ({len(chain)} nodes)",
+                    "members": chain,
+                }
+            )
             for node_id in chain:
                 chain_map[node_id] = chain_id
 
@@ -339,15 +340,11 @@ class GraphVisualizer:
             target = chain_map.get(edge["target"], edge["target"])
 
             if source != target:  # Skip internal chain edges
-                collapsed_edges.append({
-                    **edge,
-                    "source": source,
-                    "target": target
-                })
+                collapsed_edges.append({**edge, "source": source, "target": target})
 
         return {"nodes": collapsed_nodes, "edges": collapsed_edges}
 
-    def _detect_communities(self, graph_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _detect_communities(self, graph_data: dict[str, Any]) -> dict[str, Any]:
         """Detect communities using Louvain algorithm.
 
         Args:
@@ -366,10 +363,8 @@ class GraphVisualizer:
         return graph_data
 
     def _calculate_layout(
-        self,
-        graph_data: Dict[str, Any],
-        algorithm: LayoutAlgorithm
-    ) -> Dict[str, Tuple[float, float]]:
+        self, graph_data: dict[str, Any], algorithm: LayoutAlgorithm
+    ) -> dict[str, tuple[float, float]]:
         """Calculate node positions using specified algorithm.
 
         Args:
@@ -394,7 +389,9 @@ class GraphVisualizer:
         else:
             return self._force_directed_layout(graph_data)
 
-    def _force_directed_layout(self, graph_data: Dict[str, Any]) -> Dict[str, Tuple[float, float]]:
+    def _force_directed_layout(
+        self, graph_data: dict[str, Any]
+    ) -> dict[str, tuple[float, float]]:
         """Force-directed layout using Fruchterman-Reingold algorithm."""
         nodes = graph_data["nodes"]
         edges = graph_data["edges"]
@@ -407,7 +404,7 @@ class GraphVisualizer:
         for node in nodes:
             positions[node["id"]] = (
                 np.random.uniform(-100, 100),
-                np.random.uniform(-100, 100)
+                np.random.uniform(-100, 100),
             )
 
         # Parameters
@@ -415,15 +412,15 @@ class GraphVisualizer:
         iterations = 50
         temperature = 100
 
-        for iteration in range(iterations):
+        for _iteration in range(iterations):
             # Calculate repulsive forces
             forces = defaultdict(lambda: [0.0, 0.0])
 
             for i, node1 in enumerate(nodes):
-                for node2 in nodes[i+1:]:
+                for node2 in nodes[i + 1 :]:
                     dx = positions[node2["id"]][0] - positions[node1["id"]][0]
                     dy = positions[node2["id"]][1] - positions[node1["id"]][1]
-                    distance = max(math.sqrt(dx*dx + dy*dy), 0.01)
+                    distance = max(math.sqrt(dx * dx + dy * dy), 0.01)
 
                     repulsion = k * k / distance
                     fx = repulsion * dx / distance
@@ -442,7 +439,7 @@ class GraphVisualizer:
                 if source in positions and target in positions:
                     dx = positions[target][0] - positions[source][0]
                     dy = positions[target][1] - positions[source][1]
-                    distance = max(math.sqrt(dx*dx + dy*dy), 0.01)
+                    distance = max(math.sqrt(dx * dx + dy * dy), 0.01)
 
                     attraction = distance * distance / k
                     fx = attraction * dx / distance
@@ -459,7 +456,7 @@ class GraphVisualizer:
                 fx, fy = forces[node_id]
 
                 # Limit displacement by temperature
-                displacement = math.sqrt(fx*fx + fy*fy)
+                displacement = math.sqrt(fx * fx + fy * fy)
                 if displacement > 0:
                     limited = min(displacement, temperature)
                     fx = fx / displacement * limited
@@ -467,7 +464,7 @@ class GraphVisualizer:
 
                 positions[node_id] = (
                     positions[node_id][0] + fx,
-                    positions[node_id][1] + fy
+                    positions[node_id][1] + fy,
                 )
 
             # Cool down
@@ -475,7 +472,9 @@ class GraphVisualizer:
 
         return positions
 
-    def _hierarchical_layout(self, graph_data: Dict[str, Any]) -> Dict[str, Tuple[float, float]]:
+    def _hierarchical_layout(
+        self, graph_data: dict[str, Any]
+    ) -> dict[str, tuple[float, float]]:
         """Hierarchical layout for directed graphs."""
         # Assign layers using topological sort
         layers = self._assign_layers(graph_data)
@@ -505,7 +504,9 @@ class GraphVisualizer:
 
         return positions
 
-    def _circular_layout(self, graph_data: Dict[str, Any]) -> Dict[str, Tuple[float, float]]:
+    def _circular_layout(
+        self, graph_data: dict[str, Any]
+    ) -> dict[str, tuple[float, float]]:
         """Circular layout."""
         nodes = graph_data["nodes"]
         n = len(nodes)
@@ -524,12 +525,16 @@ class GraphVisualizer:
 
         return positions
 
-    def _radial_layout(self, graph_data: Dict[str, Any]) -> Dict[str, Tuple[float, float]]:
+    def _radial_layout(
+        self, graph_data: dict[str, Any]
+    ) -> dict[str, tuple[float, float]]:
         """Radial layout with central node."""
         # Find most connected node as center
         degrees = {}
         for node in graph_data["nodes"]:
-            degrees[node["id"]] = self._calculate_degree(node["id"], graph_data["edges"])
+            degrees[node["id"]] = self._calculate_degree(
+                node["id"], graph_data["edges"]
+            )
 
         if not degrees:
             return {}
@@ -569,12 +574,14 @@ class GraphVisualizer:
             if node["id"] not in positions:
                 positions[node["id"]] = (
                     np.random.uniform(-100, 100),
-                    np.random.uniform(-100, 100)
+                    np.random.uniform(-100, 100),
                 )
 
         return positions
 
-    def _spectral_layout(self, graph_data: Dict[str, Any]) -> Dict[str, Tuple[float, float]]:
+    def _spectral_layout(
+        self, graph_data: dict[str, Any]
+    ) -> dict[str, tuple[float, float]]:
         """Spectral layout using graph Laplacian."""
         nodes = graph_data["nodes"]
         n = len(nodes)
@@ -615,7 +622,9 @@ class GraphVisualizer:
 
         return positions
 
-    def _geographic_layout(self, graph_data: Dict[str, Any]) -> Dict[str, Tuple[float, float]]:
+    def _geographic_layout(
+        self, graph_data: dict[str, Any]
+    ) -> dict[str, tuple[float, float]]:
         """Geographic layout for brain regions."""
         positions = {}
 
@@ -630,7 +639,7 @@ class GraphVisualizer:
             "hippocampus": (-15, -10),
             "amygdala": (-20, -5),
             "thalamus": (0, 0),
-            "default": (0, 0)
+            "default": (0, 0),
         }
 
         for node in graph_data["nodes"]:
@@ -649,20 +658,22 @@ class GraphVisualizer:
                 # Add some randomness for unique positions
                 position = (
                     brain_positions["default"][0] + np.random.uniform(-10, 10),
-                    brain_positions["default"][1] + np.random.uniform(-10, 10)
+                    brain_positions["default"][1] + np.random.uniform(-10, 10),
                 )
 
             positions[node_id] = position
 
         return positions
 
-    def _style_nodes(self, nodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _style_nodes(self, nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Apply visual styles to nodes."""
         styled_nodes = []
 
         for node in nodes:
             node_type = node.get("type", "default")
-            style = self.default_node_styles.get(node_type, self.default_node_styles["default"])
+            style = self.default_node_styles.get(
+                node_type, self.default_node_styles["default"]
+            )
 
             styled_node = {
                 **node,
@@ -674,20 +685,22 @@ class GraphVisualizer:
                     "label_color": style.label_color,
                     "opacity": style.opacity,
                     "border_width": style.border_width,
-                    "border_color": style.border_color
-                }
+                    "border_color": style.border_color,
+                },
             }
             styled_nodes.append(styled_node)
 
         return styled_nodes
 
-    def _style_edges(self, edges: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _style_edges(self, edges: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Apply visual styles to edges."""
         styled_edges = []
 
         for edge in edges:
             edge_type = edge.get("type", "default")
-            style = self.default_edge_styles.get(edge_type, self.default_edge_styles["default"])
+            style = self.default_edge_styles.get(
+                edge_type, self.default_edge_styles["default"]
+            )
 
             styled_edge = {
                 **edge,
@@ -697,14 +710,14 @@ class GraphVisualizer:
                     "style": style.style,
                     "opacity": style.opacity,
                     "arrow_size": style.arrow_size,
-                    "curve_style": style.curve_style
-                }
+                    "curve_style": style.curve_style,
+                },
             }
             styled_edges.append(styled_edge)
 
         return styled_edges
 
-    def _calculate_degree(self, node_id: str, edges: List[Dict[str, Any]]) -> int:
+    def _calculate_degree(self, node_id: str, edges: list[dict[str, Any]]) -> int:
         """Calculate degree of a node."""
         degree = 0
         for edge in edges:
@@ -715,10 +728,10 @@ class GraphVisualizer:
     def _find_chain(
         self,
         start_id: str,
-        graph_data: Dict[str, Any],
-        degrees: Dict[str, int],
-        visited: Set[str]
-    ) -> List[str]:
+        graph_data: dict[str, Any],
+        degrees: dict[str, int],
+        visited: set[str],
+    ) -> list[str]:
         """Find a linear chain starting from a node."""
         chain = [start_id]
         visited.add(start_id)
@@ -747,7 +760,7 @@ class GraphVisualizer:
 
         return chain
 
-    def _assign_layers(self, graph_data: Dict[str, Any]) -> Dict[str, int]:
+    def _assign_layers(self, graph_data: dict[str, Any]) -> dict[str, int]:
         """Assign layers to nodes for hierarchical layout."""
         layers = {}
 
@@ -787,7 +800,7 @@ class GraphVisualizer:
 
         return layers
 
-    def _louvain_communities(self, graph_data: Dict[str, Any]) -> Dict[str, int]:
+    def _louvain_communities(self, graph_data: dict[str, Any]) -> dict[str, int]:
         """Simple Louvain community detection."""
         # Initialize each node in its own community
         communities = {}
@@ -807,14 +820,22 @@ class GraphVisualizer:
                 neighbor_communities = defaultdict(float)
                 for edge in graph_data["edges"]:
                     if edge["source"] == node_id:
-                        neighbor_communities[communities[edge["target"]]] += edge.get("weight", 1.0)
+                        neighbor_communities[communities[edge["target"]]] += edge.get(
+                            "weight", 1.0
+                        )
                     elif edge["target"] == node_id:
-                        neighbor_communities[communities[edge["source"]]] += edge.get("weight", 1.0)
+                        neighbor_communities[communities[edge["source"]]] += edge.get(
+                            "weight", 1.0
+                        )
 
                 # Move to best community
                 if neighbor_communities:
-                    best_community = max(neighbor_communities, key=neighbor_communities.get)
-                    if best_community != current_community and neighbor_communities[best_community] > neighbor_communities.get(current_community, 0):
+                    best_community = max(
+                        neighbor_communities, key=neighbor_communities.get
+                    )
+                    if best_community != current_community and neighbor_communities[
+                        best_community
+                    ] > neighbor_communities.get(current_community, 0):
                         communities[node_id] = best_community
                         improved = True
 
@@ -840,7 +861,7 @@ class GraphVisualizer:
                     "label": node.get("label", node["id"]),
                     "x": view.layout[node["id"]][0],
                     "y": view.layout[node["id"]][1],
-                    **node.get("style", {})
+                    **node.get("style", {}),
                 }
                 for node in view.nodes
             ],
@@ -849,10 +870,10 @@ class GraphVisualizer:
                     "source": edge["source"],
                     "target": edge["target"],
                     "value": edge.get("weight", 1.0),
-                    **edge.get("style", {})
+                    **edge.get("style", {}),
                 }
                 for edge in view.edges
-            ]
+            ],
         }
 
         return json.dumps(d3_data, indent=2)
@@ -870,40 +891,52 @@ class GraphVisualizer:
 
         # Add nodes
         for node in view.nodes:
-            elements.append({
-                "data": {
-                    "id": node["id"],
-                    "label": node.get("label", node["id"]),
-                    **{k: v for k, v in node.items() if k not in ["id", "label", "style"]}
-                },
-                "position": {
-                    "x": view.layout[node["id"]][0],
-                    "y": view.layout[node["id"]][1]
-                },
-                "style": node.get("style", {})
-            })
+            elements.append(
+                {
+                    "data": {
+                        "id": node["id"],
+                        "label": node.get("label", node["id"]),
+                        **{
+                            k: v
+                            for k, v in node.items()
+                            if k not in ["id", "label", "style"]
+                        },
+                    },
+                    "position": {
+                        "x": view.layout[node["id"]][0],
+                        "y": view.layout[node["id"]][1],
+                    },
+                    "style": node.get("style", {}),
+                }
+            )
 
         # Add edges
         for edge in view.edges:
-            elements.append({
-                "data": {
-                    "id": f"{edge['source']}-{edge['target']}",
-                    "source": edge["source"],
-                    "target": edge["target"],
-                    **{k: v for k, v in edge.items() if k not in ["source", "target", "style"]}
-                },
-                "style": edge.get("style", {})
-            })
+            elements.append(
+                {
+                    "data": {
+                        "id": f"{edge['source']}-{edge['target']}",
+                        "source": edge["source"],
+                        "target": edge["target"],
+                        **{
+                            k: v
+                            for k, v in edge.items()
+                            if k not in ["source", "target", "style"]
+                        },
+                    },
+                    "style": edge.get("style", {}),
+                }
+            )
 
         cytoscape_data = {
             "elements": elements,
             "style": self._get_cytoscape_stylesheet(),
-            "layout": {"name": "preset"}
+            "layout": {"name": "preset"},
         }
 
         return json.dumps(cytoscape_data, indent=2)
 
-    def _get_cytoscape_stylesheet(self) -> List[Dict[str, Any]]:
+    def _get_cytoscape_stylesheet(self) -> list[dict[str, Any]]:
         """Get Cytoscape stylesheet."""
         return [
             {
@@ -914,8 +947,8 @@ class GraphVisualizer:
                     "text-halign": "center",
                     "background-color": "data(color)",
                     "width": "data(size)",
-                    "height": "data(size)"
-                }
+                    "height": "data(size)",
+                },
             },
             {
                 "selector": "edge",
@@ -924,7 +957,7 @@ class GraphVisualizer:
                     "line-color": "data(color)",
                     "target-arrow-color": "data(color)",
                     "target-arrow-shape": "triangle",
-                    "curve-style": "bezier"
-                }
-            }
+                    "curve-style": "bezier",
+                },
+            },
         ]

@@ -15,9 +15,7 @@ import json
 import os
 import sys
 import uuid
-from collections import defaultdict
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -63,10 +61,7 @@ class MockRedis:
 
     async def publish(self, channel, message):
         """Mock publish method."""
-        self.published_messages.append({
-            "channel": channel,
-            "message": message
-        })
+        self.published_messages.append({"channel": channel, "message": message})
 
     def pubsub(self):
         """Mock pubsub method."""
@@ -161,9 +156,7 @@ class TestSubscriptionSystem:
     async def test_connect_websocket(self, subscription_system, mock_websocket):
         """Test WebSocket connection."""
         connection_id = await subscription_system.connect(
-            mock_websocket,
-            user_id="test_user",
-            metadata={"client": "test"}
+            mock_websocket, user_id="test_user", metadata={"client": "test"}
         )
 
         assert connection_id is not None
@@ -185,7 +178,7 @@ class TestSubscriptionSystem:
     async def test_connect_max_connections_exceeded(self, subscription_system):
         """Test connection limit enforcement."""
         # Fill up to max connections
-        for i in range(subscription_system.max_connections):
+        for _i in range(subscription_system.max_connections):
             await subscription_system.connect(MockWebSocket())
 
         # Try to add one more connection
@@ -198,7 +191,9 @@ class TestSubscriptionSystem:
         connection_id = await subscription_system.connect(mock_websocket)
 
         # Create a subscription
-        await subscription_system.subscribe(connection_id, "subscription { nodeCreated }")
+        await subscription_system.subscribe(
+            connection_id, "subscription { nodeCreated }"
+        )
 
         # Verify subscription exists
         assert len(subscription_system.subscriptions) == 1
@@ -221,11 +216,9 @@ class TestSubscriptionSystem:
         """Test basic subscription creation."""
         connection_id = await subscription_system.connect(mock_websocket)
 
-        query = "subscription { nodeCreated(entityTypes: [\"Study\"]) { eventId entityType } }"
+        query = 'subscription { nodeCreated(entityTypes: ["Study"]) { eventId entityType } }'
         subscription_id = await subscription_system.subscribe(
-            connection_id,
-            query,
-            variables={"entityTypes": ["Study"]}
+            connection_id, query, variables={"entityTypes": ["Study"]}
         )
 
         assert subscription_id is not None
@@ -235,12 +228,17 @@ class TestSubscriptionSystem:
         assert subscription.connection_id == connection_id
         assert subscription.query == query
         assert subscription.variables["entityTypes"] == ["Study"]
-        assert subscription_id in subscription_system.connections[connection_id].subscriptions
+        assert (
+            subscription_id
+            in subscription_system.connections[connection_id].subscriptions
+        )
         assert subscription_system.stats["total_subscriptions"] == 1
 
         # Verify subscription confirmation was sent
         messages_sent = [json.loads(msg) for msg in mock_websocket.messages_sent]
-        success_messages = [msg for msg in messages_sent if msg.get("type") == "subscription_success"]
+        success_messages = [
+            msg for msg in messages_sent if msg.get("type") == "subscription_success"
+        ]
         assert len(success_messages) == 1
         assert success_messages[0]["id"] == subscription_id
 
@@ -248,18 +246,25 @@ class TestSubscriptionSystem:
     async def test_subscribe_nonexistent_connection(self, subscription_system):
         """Test subscribing with non-existent connection."""
         with pytest.raises(Exception, match="Connection not found"):
-            await subscription_system.subscribe("nonexistent_id", "subscription { nodeCreated }")
+            await subscription_system.subscribe(
+                "nonexistent_id", "subscription { nodeCreated }"
+            )
 
     @pytest.mark.asyncio
     async def test_unsubscribe(self, subscription_system, mock_websocket):
         """Test subscription cancellation."""
         connection_id = await subscription_system.connect(mock_websocket)
-        subscription_id = await subscription_system.subscribe(connection_id, "subscription { nodeCreated }")
+        subscription_id = await subscription_system.subscribe(
+            connection_id, "subscription { nodeCreated }"
+        )
 
         await subscription_system.unsubscribe(subscription_id)
 
         assert subscription_id not in subscription_system.subscriptions
-        assert subscription_id not in subscription_system.connections[connection_id].subscriptions
+        assert (
+            subscription_id
+            not in subscription_system.connections[connection_id].subscriptions
+        )
 
     @pytest.mark.asyncio
     async def test_unsubscribe_nonexistent(self, subscription_system):
@@ -276,7 +281,7 @@ class TestSubscriptionSystem:
             entity_type="Study",
             entity_id="study_123",
             data={"title": "Test Study"},
-            user_id="test_user"
+            user_id="test_user",
         )
 
         await started_system.publish_event(event)
@@ -296,7 +301,7 @@ class TestSubscriptionSystem:
         filters = SubscriptionFilter(
             event_types=[EventType.NODE_CREATED],
             entity_types=["Study"],
-            entity_ids=["study_123"]
+            entity_ids=["study_123"],
         )
 
         subscription = Subscription(
@@ -304,7 +309,7 @@ class TestSubscriptionSystem:
             connection_id="conn_1",
             query="subscription { nodeCreated }",
             variables={},
-            filters=filters
+            filters=filters,
         )
         subscription_system.subscriptions["sub_1"] = subscription
 
@@ -315,7 +320,7 @@ class TestSubscriptionSystem:
             entity_type="Study",
             entity_id="study_123",
             data={},
-            user_id=None
+            user_id=None,
         )
 
         matches = subscription_system._find_matching_subscriptions(event)
@@ -328,7 +333,7 @@ class TestSubscriptionSystem:
             entity_type="Study",
             entity_id="study_123",
             data={},
-            user_id=None
+            user_id=None,
         )
 
         matches2 = subscription_system._find_matching_subscriptions(event2)
@@ -339,7 +344,7 @@ class TestSubscriptionSystem:
         """Test event matching with property filters."""
         filters = SubscriptionFilter(
             event_types=[EventType.NODE_CREATED],
-            properties={"status": "published", "score": {"$gte": 5}}
+            properties={"status": "published", "score": {"$gte": 5}},
         )
 
         subscription = Subscription(
@@ -347,7 +352,7 @@ class TestSubscriptionSystem:
             connection_id="conn_1",
             query="subscription { nodeCreated }",
             variables={},
-            filters=filters
+            filters=filters,
         )
         subscription_system.subscriptions["sub_1"] = subscription
 
@@ -358,7 +363,7 @@ class TestSubscriptionSystem:
             entity_type="Study",
             entity_id="study_123",
             data={"status": "published", "score": 8},
-            user_id=None
+            user_id=None,
         )
 
         matches = subscription_system._find_matching_subscriptions(event)
@@ -371,7 +376,7 @@ class TestSubscriptionSystem:
             entity_type="Study",
             entity_id="study_456",
             data={"status": "published", "score": 3},
-            user_id=None
+            user_id=None,
         )
 
         matches2 = subscription_system._find_matching_subscriptions(event2)
@@ -410,7 +415,7 @@ class TestSubscriptionSystem:
 
     def test_subscription_filter_parsing(self, subscription_system):
         """Test subscription filter parsing from GraphQL queries."""
-        query = "subscription { nodeCreated(entityTypes: [\"Study\"]) }"
+        query = 'subscription { nodeCreated(entityTypes: ["Study"]) }'
         variables = {"entityTypes": ["Study"], "userId": "user_123"}
 
         filters = subscription_system._parse_subscription_filters(query, variables)
@@ -442,7 +447,7 @@ class TestSubscriptionSystem:
             entity_id="study_123",
             data={"title": "Test Study"},
             user_id="user_123",
-            metadata={"source": "import"}
+            metadata={"source": "import"},
         )
 
         subscription = Subscription(
@@ -450,7 +455,7 @@ class TestSubscriptionSystem:
             connection_id="conn_1",
             query="subscription { nodeCreated { eventId metadata user_id } }",
             variables={},
-            filters=SubscriptionFilter()
+            filters=SubscriptionFilter(),
         )
 
         formatted = subscription_system._format_event_data(event, subscription)
@@ -476,7 +481,9 @@ class TestSubscriptionSystem:
         assert sent_message == test_message
 
     @pytest.mark.asyncio
-    async def test_send_message_failure(self, subscription_system, mock_failing_websocket):
+    async def test_send_message_failure(
+        self, subscription_system, mock_failing_websocket
+    ):
         """Test message sending failure and disconnect handling."""
         connection_id = await subscription_system.connect(mock_failing_websocket)
 
@@ -495,8 +502,7 @@ class TestSubscriptionSystem:
         # Connect and subscribe
         connection_id = await started_system.connect(mock_websocket)
         subscription_id = await started_system.subscribe(
-            connection_id,
-            "subscription { nodeCreated }"
+            connection_id, "subscription { nodeCreated }"
         )
 
         # Publish matching event
@@ -506,7 +512,7 @@ class TestSubscriptionSystem:
             entity_type="Study",
             entity_id="study_123",
             data={"title": "Test Study"},
-            user_id=None
+            user_id=None,
         )
 
         await started_system.publish_event(event)
@@ -534,9 +540,7 @@ class TestSubscriptionSystem:
 
         # Add active connections
         connection = Connection(
-            connection_id="conn_1",
-            websocket=mock_websocket,
-            user_id="user_1"
+            connection_id="conn_1", websocket=mock_websocket, user_id="user_1"
         )
         subscription_system.connections["conn_1"] = connection
 
@@ -571,6 +575,7 @@ class TestSubscriptionSystem:
 
     def test_register_handler(self, subscription_system):
         """Test handler registration."""
+
         def test_handler(subscription):
             return "handled"
 
@@ -587,7 +592,7 @@ class TestSubscriptionSystem:
             entity_type="Study",
             entity_id="study_123",
             data={"title": "Test Study"},
-            user_id="user_123"
+            user_id="user_123",
         )
 
         await subscription_system._publish_to_redis(event)
@@ -611,7 +616,7 @@ class TestSubscriptionSystem:
             entity_type="Study",
             entity_id="study_123",
             data={},
-            user_id=None
+            user_id=None,
         )
 
         # Should not raise an error
@@ -635,15 +640,16 @@ class TestSubscriptionSystem:
 
         # Disconnect all
         disconnect_tasks = [
-            subscription_system.disconnect(conn_id)
-            for conn_id in connection_ids
+            subscription_system.disconnect(conn_id) for conn_id in connection_ids
         ]
         await asyncio.gather(*disconnect_tasks)
 
         assert len(subscription_system.connections) == 0
 
     @pytest.mark.asyncio
-    async def test_subscription_cleanup_on_disconnect(self, subscription_system, mock_websocket):
+    async def test_subscription_cleanup_on_disconnect(
+        self, subscription_system, mock_websocket
+    ):
         """Test that subscriptions are cleaned up when connection is lost."""
         connection_id = await subscription_system.connect(mock_websocket)
 
@@ -651,8 +657,7 @@ class TestSubscriptionSystem:
         sub_ids = []
         for i in range(3):
             sub_id = await subscription_system.subscribe(
-                connection_id,
-                f"subscription {{ nodeCreated_{i} }}"
+                connection_id, f"subscription {{ nodeCreated_{i} }}"
             )
             sub_ids.append(sub_id)
 

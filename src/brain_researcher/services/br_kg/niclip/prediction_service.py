@@ -513,7 +513,8 @@ async def health_check():
     payload = engine.status()
     payload.update(
         {
-            "niclip_model_path": _RESOLVED_MODEL_PATH or payload.get("niclip_model_path"),
+            "niclip_model_path": _RESOLVED_MODEL_PATH
+            or payload.get("niclip_model_path"),
             "timestamp": datetime.now().isoformat(),
         }
     )
@@ -660,9 +661,7 @@ async def search_similar_concepts(request: SearchRequest):
         )
 
         try:
-            vocab, _, _ = engine.get_vocabulary_index(
-                request.vocabulary_type
-            )
+            vocab, _, _ = engine.get_vocabulary_index(request.vocabulary_type)
             total_vocab = len(vocab)
         except Exception:
             total_vocab = 0
@@ -729,9 +728,9 @@ async def analyze_uploaded_image(
             "filename": file.filename,
             "predictions": predictions_df.to_dict(orient="records"),
             "embedding_shape": list(embedding.shape),
-            "top_prediction": predictions_df.iloc[0].to_dict()
-            if len(predictions_df) > 0
-            else None,
+            "top_prediction": (
+                predictions_df.iloc[0].to_dict() if len(predictions_df) > 0 else None
+            ),
             "analysis_parameters": {
                 "top_k": top_k,
                 "use_bayes": use_bayes,
@@ -764,9 +763,11 @@ async def get_model_info():
         "device": str(model.device),
         "vocabulary_loaded": model.vocabulary is not None,
         "vocabulary_size": len(model.vocabulary) if model.vocabulary else 0,
-        "embedding_service_stats": engine.get_embedding_service().get_stats()
-        if engine.get_embedding_service()
-        else {},
+        "embedding_service_stats": (
+            engine.get_embedding_service().get_stats()
+            if engine.get_embedding_service()
+            else {}
+        ),
     }
 
 

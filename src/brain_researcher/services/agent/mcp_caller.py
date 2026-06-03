@@ -11,12 +11,12 @@ import json
 import logging
 import os
 import shutil
-from typing import Callable, Optional, Tuple
+from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
 
-def _resolve_env(new_key: str, legacy_key: str) -> Tuple[Optional[str], bool]:
+def _resolve_env(new_key: str, legacy_key: str) -> tuple[str | None, bool]:
     """Resolve env with one-release compatibility.
 
     Returns:
@@ -41,13 +41,13 @@ def _resolve_env(new_key: str, legacy_key: str) -> Tuple[Optional[str], bool]:
 class LazyStdioMCPCaller:
     """Per-call MCP stdio client."""
 
-    def __init__(self, server_command: Optional[list[str]] = None):
+    def __init__(self, server_command: list[str] | None = None):
         if server_command is not None:
             self.server_command = server_command
         else:
             raise ValueError("server_command is required for LazyStdioMCPCaller")
 
-    async def __call__(self, tool_name: str, params: dict) -> Optional[dict]:
+    async def __call__(self, tool_name: str, params: dict) -> dict | None:
         """Execute an MCP tool call with a per-call connection."""
         try:
             from mcp import ClientSession
@@ -74,7 +74,9 @@ class LazyStdioMCPCaller:
                         try:
                             return json.loads(content)
                         except json.JSONDecodeError:
-                            logger.warning(f"Failed to parse MCP response for {tool_name}: {content[:200]}")
+                            logger.warning(
+                                f"Failed to parse MCP response for {tool_name}: {content[:200]}"
+                            )
                             return None
                     return {"success": True}
         except asyncio.TimeoutError:
@@ -87,8 +89,10 @@ class LazyStdioMCPCaller:
 class LazyLinearMCPCaller(LazyStdioMCPCaller):
     """Backward-compatible Linear caller."""
 
-    def __init__(self, server_command: Optional[list[str]] = None):
-        super().__init__(server_command=server_command or _default_linear_server_command())
+    def __init__(self, server_command: list[str] | None = None):
+        super().__init__(
+            server_command=server_command or _default_linear_server_command()
+        )
 
 
 def _default_linear_server_command() -> list[str]:
@@ -98,7 +102,7 @@ def _default_linear_server_command() -> list[str]:
     return ["npx", "-y", "linear-mcp-server"]
 
 
-def create_linear_mcp_caller() -> Optional[Callable]:
+def create_linear_mcp_caller() -> Callable | None:
     """Return a Linear MCP caller if required env is configured."""
     team_id, _ = _resolve_env("BR_PLAN_TRACKER_LINEAR_TEAM_ID", "LINEAR_TEAM_ID")
     api_key, _ = _resolve_env("BR_PLAN_TRACKER_LINEAR_API_KEY", "LINEAR_API_KEY")
@@ -113,7 +117,7 @@ def create_linear_mcp_caller() -> Optional[Callable]:
     return LazyLinearMCPCaller()
 
 
-def create_mcp_caller() -> Optional[Callable]:
+def create_mcp_caller() -> Callable | None:
     """Compatibility wrapper for legacy imports.
 
     Deprecated:

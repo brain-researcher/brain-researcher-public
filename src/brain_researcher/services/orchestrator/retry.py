@@ -6,12 +6,11 @@ This module provides the retry decision engine that:
 - Determines if a job should be retried
 """
 
-import random
 import hashlib
 import logging
-from datetime import datetime, timedelta
+import random
 from dataclasses import dataclass
-from typing import Optional
+from datetime import datetime, timedelta
 
 from brain_researcher.config.retry_settings import RetrySettings, get_retry_settings
 
@@ -52,7 +51,7 @@ class RetryDecision:
     reason: str
     category: str
     delay_seconds: int
-    next_retry_at: Optional[datetime]
+    next_retry_at: datetime | None
     attempt: int
     max_attempts: int
     metadata: dict
@@ -64,9 +63,9 @@ class RetryDecision:
             "reason": self.reason,
             "category": self.category,
             "delay_seconds": self.delay_seconds,
-            "next_retry_at": self.next_retry_at.isoformat()
-            if self.next_retry_at
-            else None,
+            "next_retry_at": (
+                self.next_retry_at.isoformat() if self.next_retry_at else None
+            ),
             "attempt": self.attempt,
             "max_attempts": self.max_attempts,
             "metadata": self.metadata,
@@ -74,7 +73,7 @@ class RetryDecision:
 
 
 def classify_failure(
-    exit_code: int, stderr: str, settings: Optional[RetrySettings] = None
+    exit_code: int, stderr: str, settings: RetrySettings | None = None
 ) -> str:
     """Classify a failure into a retry category.
 
@@ -110,7 +109,7 @@ def compute_backoff(
     base_delay: int,
     max_delay: int,
     jitter_percent: int,
-    seed: Optional[str] = None,
+    seed: str | None = None,
 ) -> int:
     """Compute exponential backoff delay with jitter.
 
@@ -166,8 +165,8 @@ def should_retry(
     exit_code: int,
     stderr: str,
     attempt: int,
-    job_id: Optional[str] = None,
-    settings: Optional[RetrySettings] = None,
+    job_id: str | None = None,
+    settings: RetrySettings | None = None,
 ) -> RetryDecision:
     """Determine if a failed job should be retried and compute backoff.
 

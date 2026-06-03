@@ -4,26 +4,24 @@ NiCLIP API Client Examples
 Shows different ways to call the Brain Researcher service
 """
 
-import requests
 import json
 
+import requests
+
 BASE_URL = "http://localhost:8000"
+
 
 def example_1_direct_tool_call():
     """Direct tool invocation - fastest for single queries"""
     print("1️⃣ Direct Tool Call:")
     response = requests.post(
         f"{BASE_URL}/debug/tool/task_to_concept_mapping",
-        json={
-            "args": {
-                "task_name": "n-back task",
-                "include_synonyms": True
-            }
-        }
+        json={"args": {"task_name": "n-back task", "include_synonyms": True}},
     )
     result = response.json()
     print(json.dumps(result, indent=2))
     return result
+
 
 def example_2_chat_interface():
     """Chat interface - for natural language queries"""
@@ -32,14 +30,15 @@ def example_2_chat_interface():
         f"{BASE_URL}/chat",
         json={
             "message": "What are the concepts for n-back task?",
-            "thread_id": "test_thread_123"
-        }
+            "thread_id": "test_thread_123",
+        },
     )
     if response.status_code == 200:
         result = response.json()
         print(f"Response: {result.get('response', 'No response')}")
     else:
         print(f"Error: {response.status_code}")
+
 
 def example_3_langgraph_api():
     """LangGraph-compatible API - for stateful conversations"""
@@ -53,19 +52,13 @@ def example_3_langgraph_api():
     # Add message
     requests.post(
         f"{BASE_URL}/threads/{thread_id}/messages",
-        json={
-            "role": "user",
-            "content": "Compare n-back and stroop tasks"
-        }
+        json={"role": "user", "content": "Compare n-back and stroop tasks"},
     )
 
     # Run agent
     run_resp = requests.post(
         f"{BASE_URL}/threads/{thread_id}/runs",
-        json={
-            "assistant_id": "brain-researcher",
-            "stream": False
-        }
+        json={"assistant_id": "brain-researcher", "stream": False},
     )
 
     if run_resp.status_code == 200:
@@ -74,6 +67,7 @@ def example_3_langgraph_api():
         for msg in result.get("messages", []):
             if msg["role"] == "assistant":
                 print(f"Assistant: {msg['content'][:200]}...")
+
 
 def example_4_batch_processing():
     """Batch processing multiple tasks"""
@@ -84,14 +78,14 @@ def example_4_batch_processing():
         "stroop task",
         "emotional faces task",
         "language processing fMRI task paradigm",
-        "finger tapping"
+        "finger tapping",
     ]
 
     results = {}
     for task in tasks:
         response = requests.post(
             f"{BASE_URL}/debug/tool/task_to_concept_mapping",
-            json={"args": {"task_name": task}}
+            json={"args": {"task_name": task}},
         )
         if response.status_code == 200:
             data = response.json()
@@ -100,7 +94,7 @@ def example_4_batch_processing():
                 results[task] = {
                     "concepts": task_data.get("concepts", []),
                     "process": task_data.get("primary_process", "N/A"),
-                    "source": task_data.get("source", "unknown")
+                    "source": task_data.get("source", "unknown"),
                 }
 
     # Display results
@@ -110,10 +104,12 @@ def example_4_batch_processing():
         print(f"  Process: {info['process']}")
         print(f"  Source: {info['source']}")
 
+
 def example_5_websocket_streaming():
     """Example of streaming responses (if implemented)"""
     print("\n5️⃣ Streaming (WebSocket) - Not implemented yet")
     print("  This would allow real-time streaming of agent responses")
+
 
 if __name__ == "__main__":
     print("🧠 NiCLIP API Client Examples")

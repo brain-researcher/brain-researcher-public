@@ -22,10 +22,15 @@ import pandas as pd
 # Add parent directory to path to fix imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from brain_researcher.services.br_kg.etl.loaders.enhanced_neurosynth_loader import EnhancedNeurosynthLoader
-from brain_researcher.services.br_kg.etl.loaders.neurovault_loader import fetch_neurovault_data
-from brain_researcher.services.br_kg.etl.strength_calculator import StrengthCalculator
 from graph.graph_database import BRKGGraphDB
+
+from brain_researcher.services.br_kg.etl.loaders.enhanced_neurosynth_loader import (
+    EnhancedNeurosynthLoader,
+)
+from brain_researcher.services.br_kg.etl.loaders.neurovault_loader import (
+    fetch_neurovault_data,
+)
+from brain_researcher.services.br_kg.etl.strength_calculator import StrengthCalculator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

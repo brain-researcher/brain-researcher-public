@@ -8,8 +8,9 @@ import json
 import logging
 import math
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Optional, Sequence
+from typing import Any
 
 from brain_researcher.core.literature.gfs_store import search_gfs_auto
 from brain_researcher.services.br_kg.scoring.confidence_v2 import (
@@ -112,16 +113,16 @@ _GUIDELINE_HINTS = (
 
 @dataclass
 class EvidenceHit:
-    title: Optional[str]
-    pmcid: Optional[str]
-    pmid: Optional[str]
-    doi: Optional[str]
-    doc_id: Optional[str]
+    title: str | None
+    pmcid: str | None
+    pmid: str | None
+    doi: str | None
+    doc_id: str | None
     snippet: str
     score: float
     normalized_score: float
     doc_role: str
-    year: Optional[int]
+    year: int | None
     decay: float
     matched_aliases: list[str]
     match_strength: str
@@ -241,7 +242,7 @@ def _extract_aliases(properties: dict[str, Any]) -> dict[str, list[str]]:
     return alias_map
 
 
-def _extract_year(text: str) -> Optional[int]:
+def _extract_year(text: str) -> int | None:
     if not text:
         return None
     header_match = re.search(
@@ -264,7 +265,7 @@ def _infer_doc_role(title: str, snippet: str) -> str:
     return "empirical"
 
 
-def _decay_factor(role: str, year: Optional[int]) -> float:
+def _decay_factor(role: str, year: int | None) -> float:
     if role == "foundation":
         return 1.0
     if not year:
@@ -323,11 +324,11 @@ class SearchOrchestrator:
         self,
         query: str,
         *,
-        node_types: Optional[Sequence[str]] = None,
+        node_types: Sequence[str] | None = None,
         limit: int = 20,
         gfs_top_k: int = 10,
-        gfs_store: Optional[str] = None,
-        gfs_model: Optional[str] = None,
+        gfs_store: str | None = None,
+        gfs_model: str | None = None,
         include_score_breakdown: bool = False,
         confidence_scoring_version: str = "v2",
     ) -> tuple[list[OrchestratedResult], dict[str, Any]]:
@@ -381,9 +382,11 @@ class SearchOrchestrator:
                     base_score=base_norms[idx],
                     evidence_score=0.0,
                     properties=node.properties or {},
-                    score_breakdown={"base_norm": base_norms[idx], "evidence_norm": 0.0}
-                    if include_score_breakdown
-                    else None,
+                    score_breakdown=(
+                        {"base_norm": base_norms[idx], "evidence_norm": 0.0}
+                        if include_score_breakdown
+                        else None
+                    ),
                 )
                 for idx, node in enumerate(kg_nodes)
             ]

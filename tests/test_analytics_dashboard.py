@@ -4,16 +4,17 @@ Comprehensive Test Suite for Advanced Analytics Dashboard (UI-040)
 Tests all components, backend endpoints, and functionality.
 """
 
-import requests
 import json
+import sys
 import time
 from datetime import datetime, timedelta
-from typing import Dict, Any
-import sys
+
+import requests
 
 # Test configuration
 BASE_URL = "http://localhost:8081"  # Orchestrator URL
 ANALYTICS_BASE = f"{BASE_URL}/api/analytics"
+
 
 def test_analytics_endpoints():
     """Test all analytics backend endpoints."""
@@ -31,7 +32,7 @@ def test_analytics_endpoints():
         f"/performance?start={start_str}&end={end_str}",
         f"/research?start={start_str}&end={end_str}",
         f"/system?start={start_str}&end={end_str}",
-        f"/engagement?start={start_str}&end={end_str}"
+        f"/engagement?start={start_str}&end={end_str}",
     ]
 
     results = {}
@@ -47,30 +48,37 @@ def test_analytics_endpoints():
                 results[endpoint] = {
                     "status": "✅ PASS",
                     "response_time": response.elapsed.total_seconds(),
-                    "data_keys": list(data.keys()) if isinstance(data, dict) else "non-dict",
-                    "sample_data": str(data)[:200] + "..." if len(str(data)) > 200 else str(data)
+                    "data_keys": (
+                        list(data.keys()) if isinstance(data, dict) else "non-dict"
+                    ),
+                    "sample_data": (
+                        str(data)[:200] + "..." if len(str(data)) > 200 else str(data)
+                    ),
                 }
                 print(f"    ✅ Status: {response.status_code}")
                 print(f"    ⏱️  Response time: {response.elapsed.total_seconds():.3f}s")
-                print(f"    📊 Data keys: {list(data.keys()) if isinstance(data, dict) else 'non-dict'}")
+                print(
+                    f"    📊 Data keys: {list(data.keys()) if isinstance(data, dict) else 'non-dict'}"
+                )
             else:
                 results[endpoint] = {
                     "status": f"❌ FAIL - HTTP {response.status_code}",
-                    "error": response.text
+                    "error": response.text,
                 }
                 print(f"    ❌ Failed with status: {response.status_code}")
                 print(f"    📄 Error: {response.text}")
 
         except requests.exceptions.RequestException as e:
             results[endpoint] = {
-                "status": f"❌ FAIL - Connection Error",
-                "error": str(e)
+                "status": "❌ FAIL - Connection Error",
+                "error": str(e),
             }
             print(f"    ❌ Connection error: {e}")
 
         print()
 
     return results
+
 
 def test_export_functionality():
     """Test analytics export functionality."""
@@ -79,16 +87,16 @@ def test_export_functionality():
     end_date = datetime.now()
     start_date = end_date - timedelta(days=7)
 
-    formats = ['json', 'csv']  # Skip PDF for now as it's mock
+    formats = ["json", "csv"]  # Skip PDF for now as it's mock
 
     results = {}
 
     for format_type in formats:
         url = f"{ANALYTICS_BASE}/export"
         params = {
-            'format': format_type,
-            'start': start_date.isoformat(),
-            'end': end_date.isoformat()
+            "format": format_type,
+            "start": start_date.isoformat(),
+            "end": end_date.isoformat(),
         }
 
         try:
@@ -96,47 +104,56 @@ def test_export_functionality():
             response = requests.get(url, params=params, timeout=15)
 
             if response.status_code == 200:
-                if format_type == 'json':
+                if format_type == "json":
                     try:
                         data = response.json()
                         results[format_type] = {
                             "status": "✅ PASS",
-                            "content_type": response.headers.get('content-type'),
-                            "data_sections": list(data.keys()) if isinstance(data, dict) else "non-dict"
+                            "content_type": response.headers.get("content-type"),
+                            "data_sections": (
+                                list(data.keys())
+                                if isinstance(data, dict)
+                                else "non-dict"
+                            ),
                         }
-                        print(f"    ✅ JSON export successful")
-                        print(f"    📊 Sections: {list(data.keys()) if isinstance(data, dict) else 'non-dict'}")
+                        print("    ✅ JSON export successful")
+                        print(
+                            f"    📊 Sections: {list(data.keys()) if isinstance(data, dict) else 'non-dict'}"
+                        )
                     except json.JSONDecodeError:
                         results[format_type] = {"status": "❌ FAIL - Invalid JSON"}
-                        print(f"    ❌ Invalid JSON response")
-                elif format_type == 'csv':
+                        print("    ❌ Invalid JSON response")
+                elif format_type == "csv":
                     csv_content = response.text
-                    lines = csv_content.split('\n')
+                    lines = csv_content.split("\n")
                     results[format_type] = {
                         "status": "✅ PASS",
-                        "content_type": response.headers.get('content-type'),
+                        "content_type": response.headers.get("content-type"),
                         "line_count": len(lines),
-                        "header": lines[0] if lines else "no header"
+                        "header": lines[0] if lines else "no header",
                     }
-                    print(f"    ✅ CSV export successful")
-                    print(f"    📄 Lines: {len(lines)}, Header: {lines[0] if lines else 'no header'}")
+                    print("    ✅ CSV export successful")
+                    print(
+                        f"    📄 Lines: {len(lines)}, Header: {lines[0] if lines else 'no header'}"
+                    )
             else:
                 results[format_type] = {
                     "status": f"❌ FAIL - HTTP {response.status_code}",
-                    "error": response.text
+                    "error": response.text,
                 }
                 print(f"    ❌ Failed with status: {response.status_code}")
 
         except requests.exceptions.RequestException as e:
             results[format_type] = {
-                "status": f"❌ FAIL - Connection Error",
-                "error": str(e)
+                "status": "❌ FAIL - Connection Error",
+                "error": str(e),
             }
             print(f"    ❌ Connection error: {e}")
 
         print()
 
     return results
+
 
 def test_custom_reports():
     """Test custom reports functionality."""
@@ -153,11 +170,15 @@ def test_custom_reports():
             reports = response.json()
             results["get_reports"] = {
                 "status": "✅ PASS",
-                "count": len(reports) if isinstance(reports, list) else "non-list"
+                "count": len(reports) if isinstance(reports, list) else "non-list",
             }
-            print(f"    ✅ Retrieved {len(reports) if isinstance(reports, list) else 'non-list'} reports")
+            print(
+                f"    ✅ Retrieved {len(reports) if isinstance(reports, list) else 'non-list'} reports"
+            )
         else:
-            results["get_reports"] = {"status": f"❌ FAIL - HTTP {response.status_code}"}
+            results["get_reports"] = {
+                "status": f"❌ FAIL - HTTP {response.status_code}"
+            }
             print(f"    ❌ Failed with status: {response.status_code}")
 
     except requests.exceptions.RequestException as e:
@@ -173,32 +194,30 @@ def test_custom_reports():
                 "type": "line",
                 "title": "User Growth",
                 "data": [],
-                "options": {"xAxis": "date", "yAxis": "users"}
+                "options": {"xAxis": "date", "yAxis": "users"},
             }
         ],
         "filters": {
             "timeRange": {
                 "start": (datetime.now() - timedelta(days=7)).isoformat(),
-                "end": datetime.now().isoformat()
+                "end": datetime.now().isoformat(),
             }
-        }
+        },
     }
 
     try:
         print("  Testing POST /reports...")
         response = requests.post(
-            f"{ANALYTICS_BASE}/reports",
-            json=sample_report,
-            timeout=10
+            f"{ANALYTICS_BASE}/reports", json=sample_report, timeout=10
         )
 
         if response.status_code == 200:
             created_report = response.json()
-            report_id = created_report.get('id')
+            report_id = created_report.get("id")
             results["create_report"] = {
                 "status": "✅ PASS",
                 "report_id": report_id,
-                "name": created_report.get('name')
+                "name": created_report.get("name"),
             }
             print(f"    ✅ Created report with ID: {report_id}")
 
@@ -210,15 +229,19 @@ def test_custom_reports():
                     response = requests.patch(
                         f"{ANALYTICS_BASE}/reports/{report_id}",
                         json=update_data,
-                        timeout=10
+                        timeout=10,
                     )
 
                     if response.status_code == 200:
                         results["update_report"] = {"status": "✅ PASS"}
-                        print(f"    ✅ Updated report successfully")
+                        print("    ✅ Updated report successfully")
                     else:
-                        results["update_report"] = {"status": f"❌ FAIL - HTTP {response.status_code}"}
-                        print(f"    ❌ Update failed with status: {response.status_code}")
+                        results["update_report"] = {
+                            "status": f"❌ FAIL - HTTP {response.status_code}"
+                        }
+                        print(
+                            f"    ❌ Update failed with status: {response.status_code}"
+                        )
 
                 except requests.exceptions.RequestException as e:
                     results["update_report"] = {"status": f"❌ FAIL - {e}"}
@@ -227,16 +250,20 @@ def test_custom_reports():
                 # Clean up - delete the test report
                 try:
                     print("  Cleaning up test report...")
-                    response = requests.delete(f"{ANALYTICS_BASE}/reports/{report_id}", timeout=10)
+                    response = requests.delete(
+                        f"{ANALYTICS_BASE}/reports/{report_id}", timeout=10
+                    )
                     if response.status_code == 200:
-                        print(f"    ✅ Test report deleted")
+                        print("    ✅ Test report deleted")
                     else:
-                        print(f"    ⚠️  Failed to delete test report")
+                        print("    ⚠️  Failed to delete test report")
                 except:
-                    print(f"    ⚠️  Error deleting test report")
+                    print("    ⚠️  Error deleting test report")
 
         else:
-            results["create_report"] = {"status": f"❌ FAIL - HTTP {response.status_code}"}
+            results["create_report"] = {
+                "status": f"❌ FAIL - HTTP {response.status_code}"
+            }
             print(f"    ❌ Failed with status: {response.status_code}")
 
     except requests.exceptions.RequestException as e:
@@ -245,6 +272,7 @@ def test_custom_reports():
 
     print()
     return results
+
 
 def test_alerts():
     """Test alerts functionality."""
@@ -261,9 +289,11 @@ def test_alerts():
             alerts = response.json()
             results["get_alerts"] = {
                 "status": "✅ PASS",
-                "count": len(alerts) if isinstance(alerts, list) else "non-list"
+                "count": len(alerts) if isinstance(alerts, list) else "non-list",
             }
-            print(f"    ✅ Retrieved {len(alerts) if isinstance(alerts, list) else 'non-list'} alerts")
+            print(
+                f"    ✅ Retrieved {len(alerts) if isinstance(alerts, list) else 'non-list'} alerts"
+            )
         else:
             results["get_alerts"] = {"status": f"❌ FAIL - HTTP {response.status_code}"}
             print(f"    ❌ Failed with status: {response.status_code}")
@@ -280,28 +310,28 @@ def test_alerts():
         "condition": "above",
         "severity": "warning",
         "enabled": True,
-        "recipients": ["admin@example.com"]
+        "recipients": ["admin@example.com"],
     }
 
     try:
         print("  Testing POST /alerts...")
         response = requests.post(
-            f"{ANALYTICS_BASE}/alerts",
-            json=sample_alert,
-            timeout=10
+            f"{ANALYTICS_BASE}/alerts", json=sample_alert, timeout=10
         )
 
         if response.status_code == 200:
             created_alert = response.json()
-            alert_id = created_alert.get('id')
+            alert_id = created_alert.get("id")
             results["create_alert"] = {
                 "status": "✅ PASS",
                 "alert_id": alert_id,
-                "name": created_alert.get('name')
+                "name": created_alert.get("name"),
             }
             print(f"    ✅ Created alert with ID: {alert_id}")
         else:
-            results["create_alert"] = {"status": f"❌ FAIL - HTTP {response.status_code}"}
+            results["create_alert"] = {
+                "status": f"❌ FAIL - HTTP {response.status_code}"
+            }
             print(f"    ❌ Failed with status: {response.status_code}")
 
     except requests.exceptions.RequestException as e:
@@ -310,6 +340,7 @@ def test_alerts():
 
     print()
     return results
+
 
 def test_data_accuracy():
     """Test data accuracy and calculations."""
@@ -323,10 +354,7 @@ def test_data_accuracy():
         start_date = end_date - timedelta(days=7)
 
         url = f"{ANALYTICS_BASE}/usage"
-        params = {
-            'start': start_date.isoformat(),
-            'end': end_date.isoformat()
-        }
+        params = {"start": start_date.isoformat(), "end": end_date.isoformat()}
 
         response = requests.get(url, params=params, timeout=10)
 
@@ -335,8 +363,12 @@ def test_data_accuracy():
 
             # Test data structure and types
             required_fields = [
-                'totalUsers', 'activeUsers', 'newUsers',
-                'avgSessionDuration', 'bounceRate', 'topPages'
+                "totalUsers",
+                "activeUsers",
+                "newUsers",
+                "avgSessionDuration",
+                "bounceRate",
+                "topPages",
             ]
 
             missing_fields = []
@@ -348,29 +380,46 @@ def test_data_accuracy():
                 else:
                     # Check data types
                     value = data[field]
-                    if field in ['totalUsers', 'activeUsers', 'newUsers'] and not isinstance(value, int):
+                    if field in [
+                        "totalUsers",
+                        "activeUsers",
+                        "newUsers",
+                    ] and not isinstance(value, int):
                         type_errors.append(f"{field}: expected int, got {type(value)}")
-                    elif field in ['avgSessionDuration', 'bounceRate'] and not isinstance(value, (int, float)):
-                        type_errors.append(f"{field}: expected number, got {type(value)}")
-                    elif field == 'topPages' and not isinstance(value, list):
+                    elif field in [
+                        "avgSessionDuration",
+                        "bounceRate",
+                    ] and not isinstance(value, int | float):
+                        type_errors.append(
+                            f"{field}: expected number, got {type(value)}"
+                        )
+                    elif field == "topPages" and not isinstance(value, list):
                         type_errors.append(f"{field}: expected list, got {type(value)}")
 
             # Test data ranges (reasonable values)
             range_errors = []
-            if 'bounceRate' in data and (data['bounceRate'] < 0 or data['bounceRate'] > 100):
+            if "bounceRate" in data and (
+                data["bounceRate"] < 0 or data["bounceRate"] > 100
+            ):
                 range_errors.append(f"bounceRate: {data['bounceRate']} should be 0-100")
 
-            if 'avgSessionDuration' in data and data['avgSessionDuration'] < 0:
-                range_errors.append(f"avgSessionDuration: {data['avgSessionDuration']} should be positive")
+            if "avgSessionDuration" in data and data["avgSessionDuration"] < 0:
+                range_errors.append(
+                    f"avgSessionDuration: {data['avgSessionDuration']} should be positive"
+                )
 
-            if 'activeUsers' in data and 'totalUsers' in data and data['activeUsers'] > data['totalUsers']:
+            if (
+                "activeUsers" in data
+                and "totalUsers" in data
+                and data["activeUsers"] > data["totalUsers"]
+            ):
                 range_errors.append("activeUsers cannot exceed totalUsers")
 
             # Compile results
             if not missing_fields and not type_errors and not range_errors:
                 results["data_accuracy"] = {
                     "status": "✅ PASS",
-                    "message": "All data validation checks passed"
+                    "message": "All data validation checks passed",
                 }
                 print("    ✅ All data validation checks passed")
             else:
@@ -378,7 +427,7 @@ def test_data_accuracy():
                     "status": "⚠️  PARTIAL",
                     "missing_fields": missing_fields,
                     "type_errors": type_errors,
-                    "range_errors": range_errors
+                    "range_errors": range_errors,
                 }
                 if missing_fields:
                     print(f"    ⚠️  Missing fields: {missing_fields}")
@@ -387,8 +436,8 @@ def test_data_accuracy():
                 if range_errors:
                     print(f"    ⚠️  Range errors: {range_errors}")
         else:
-            results["data_accuracy"] = {"status": f"❌ FAIL - Could not retrieve data"}
-            print(f"    ❌ Could not retrieve data for testing")
+            results["data_accuracy"] = {"status": "❌ FAIL - Could not retrieve data"}
+            print("    ❌ Could not retrieve data for testing")
 
     except requests.exceptions.RequestException as e:
         results["data_accuracy"] = {"status": f"❌ FAIL - {e}"}
@@ -396,6 +445,7 @@ def test_data_accuracy():
 
     print()
     return results
+
 
 def test_performance():
     """Test response time performance."""
@@ -410,7 +460,7 @@ def test_performance():
     endpoints = [
         f"/usage?start={start_date.isoformat()}&end={end_date.isoformat()}",
         f"/performance?start={start_date.isoformat()}&end={end_date.isoformat()}",
-        f"/system?start={start_date.isoformat()}&end={end_date.isoformat()}"
+        f"/system?start={start_date.isoformat()}&end={end_date.isoformat()}",
     ]
 
     response_times = []
@@ -420,7 +470,7 @@ def test_performance():
 
         try:
             start_time = time.time()
-            response = requests.get(url, timeout=10)
+            requests.get(url, timeout=10)
             end_time = time.time()
 
             response_time = end_time - start_time
@@ -440,22 +490,27 @@ def test_performance():
             results["performance"] = {
                 "status": "✅ PASS",
                 "avg_response_time": avg_response_time,
-                "max_response_time": max_response_time
+                "max_response_time": max_response_time,
             }
-            print(f"    ✅ Performance PASS - Avg: {avg_response_time:.3f}s, Max: {max_response_time:.3f}s")
+            print(
+                f"    ✅ Performance PASS - Avg: {avg_response_time:.3f}s, Max: {max_response_time:.3f}s"
+            )
         else:
             results["performance"] = {
                 "status": "⚠️  SLOW",
                 "avg_response_time": avg_response_time,
-                "max_response_time": max_response_time
+                "max_response_time": max_response_time,
             }
-            print(f"    ⚠️  Performance SLOW - Avg: {avg_response_time:.3f}s, Max: {max_response_time:.3f}s")
+            print(
+                f"    ⚠️  Performance SLOW - Avg: {avg_response_time:.3f}s, Max: {max_response_time:.3f}s"
+            )
     else:
         results["performance"] = {"status": "❌ FAIL - No valid responses"}
-        print(f"    ❌ No valid responses received")
+        print("    ❌ No valid responses received")
 
     print()
     return results
+
 
 def generate_test_report(all_results):
     """Generate a comprehensive test report."""
@@ -475,23 +530,23 @@ def generate_test_report(all_results):
         if isinstance(tests, dict):
             for test_name, result in tests.items():
                 total_tests += 1
-                status = result.get('status', 'Unknown')
+                status = result.get("status", "Unknown")
 
-                if '✅ PASS' in status:
+                if "✅ PASS" in status:
                     passed_tests += 1
-                elif '❌ FAIL' in status:
+                elif "❌ FAIL" in status:
                     failed_tests += 1
-                elif '⚠️' in status:
+                elif "⚠️" in status:
                     partial_tests += 1
 
                 print(f"  {test_name}: {status}")
 
                 # Show additional details
                 for key, value in result.items():
-                    if key != 'status' and not key.startswith('error'):
+                    if key != "status" and not key.startswith("error"):
                         print(f"    {key}: {value}")
 
-                if 'error' in result:
+                if "error" in result:
                     print(f"    Error: {result['error']}")
 
     print("\n" + "=" * 80)
@@ -502,7 +557,11 @@ def generate_test_report(all_results):
     print(f"⚠️  Partial: {partial_tests}")
     print(f"❌ Failed: {failed_tests}")
 
-    success_rate = (passed_tests + partial_tests * 0.5) / total_tests * 100 if total_tests > 0 else 0
+    success_rate = (
+        (passed_tests + partial_tests * 0.5) / total_tests * 100
+        if total_tests > 0
+        else 0
+    )
     print(f"📊 Success Rate: {success_rate:.1f}%")
 
     if success_rate >= 90:
@@ -516,6 +575,7 @@ def generate_test_report(all_results):
 
     print("=" * 80)
 
+
 def main():
     """Run all tests."""
     print("🚀 Starting Advanced Analytics Dashboard Test Suite...")
@@ -527,12 +587,12 @@ def main():
 
     # Run all test suites
     try:
-        all_results['endpoints'] = test_analytics_endpoints()
-        all_results['exports'] = test_export_functionality()
-        all_results['custom_reports'] = test_custom_reports()
-        all_results['alerts'] = test_alerts()
-        all_results['data_accuracy'] = test_data_accuracy()
-        all_results['performance'] = test_performance()
+        all_results["endpoints"] = test_analytics_endpoints()
+        all_results["exports"] = test_export_functionality()
+        all_results["custom_reports"] = test_custom_reports()
+        all_results["alerts"] = test_alerts()
+        all_results["data_accuracy"] = test_data_accuracy()
+        all_results["performance"] = test_performance()
 
     except KeyboardInterrupt:
         print("\n⚠️  Tests interrupted by user")
@@ -543,6 +603,7 @@ def main():
 
     # Generate final report
     generate_test_report(all_results)
+
 
 if __name__ == "__main__":
     main()

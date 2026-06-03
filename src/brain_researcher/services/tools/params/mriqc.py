@@ -4,11 +4,12 @@ Shared helpers for MRIQC configuration and command building.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, Mapping, Sequence, Tuple
+from typing import Any
 
 
-def _tupleize(values: Iterable[str] | str | None) -> Tuple[str, ...]:
+def _tupleize(values: Iterable[str] | str | None) -> tuple[str, ...]:
     if values is None:
         return ()
     if isinstance(values, str):
@@ -24,10 +25,10 @@ class MRIQCParameters:
     bids_dir: str
     output_dir: str
     analysis_level: str = "participant"
-    participant_label: Tuple[str, ...] = field(default_factory=tuple)
-    session_id: Tuple[str, ...] = field(default_factory=tuple)
-    run_id: Tuple[str, ...] = field(default_factory=tuple)
-    modalities: Tuple[str, ...] = field(default_factory=tuple)
+    participant_label: tuple[str, ...] = field(default_factory=tuple)
+    session_id: tuple[str, ...] = field(default_factory=tuple)
+    run_id: tuple[str, ...] = field(default_factory=tuple)
+    modalities: tuple[str, ...] = field(default_factory=tuple)
     work_dir: str | None = None
     bids_filter_file: str | None = None
     dsname: str | None = None
@@ -38,7 +39,7 @@ class MRIQCParameters:
     verbose_reports: bool = False
     no_sub: bool = False
     random_seed: int | None = None
-    extra_args: Tuple[str, ...] = field(default_factory=tuple)
+    extra_args: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "participant_label", _tupleize(self.participant_label))
@@ -87,15 +88,17 @@ class MRIQCParameters:
 
         return cmd
 
-    def env(self) -> Dict[str, str]:
+    def env(self) -> dict[str, str]:
         return {}
 
 
-def build_mriqc_command(params: MRIQCParameters, *, include_executable: bool = True) -> list[str]:
+def build_mriqc_command(
+    params: MRIQCParameters, *, include_executable: bool = True
+) -> list[str]:
     return params.command(include_executable=include_executable)
 
 
-def build_mriqc_env(params: MRIQCParameters) -> Dict[str, str]:
+def build_mriqc_env(params: MRIQCParameters) -> dict[str, str]:
     return params.env()
 
 
@@ -104,12 +107,12 @@ def mriqc_from_payload(payload: Mapping[str, Any]) -> MRIQCParameters:
         value = payload.get(name, default)
         if value is None:
             return ()
-        if isinstance(value, (list, tuple, set)):
+        if isinstance(value, list | tuple | set):
             return tuple(str(v) for v in value)
         return (str(value),)
 
     extra_args = payload.get("extra_args") or ()
-    if isinstance(extra_args, (list, tuple, set)):
+    if isinstance(extra_args, list | tuple | set):
         extra_args_tuple = tuple(str(v) for v in extra_args)
     else:
         extra_args_tuple = (str(extra_args),)

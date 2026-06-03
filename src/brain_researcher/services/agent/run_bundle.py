@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 import threading
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -448,7 +447,6 @@ def persist_agent_trajectory(
     path = run_dir / "trajectory.json"
     _atomic_write_json(path, trajectory.to_json_dict())
     return path
-
 
 
 __all__ = [

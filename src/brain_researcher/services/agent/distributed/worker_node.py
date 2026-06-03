@@ -7,20 +7,18 @@ for distributed brain researcher agent nodes.
 import asyncio
 import json
 import logging
-import time
-import psutil
-import traceback
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Callable, Set
-from dataclasses import dataclass, asdict
-from enum import Enum
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-import threading
 import queue
+import threading
+import time
+import traceback
+from collections.abc import Callable
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
-import redis.asyncio as redis
-from pydantic import BaseModel
-
+import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -43,18 +41,19 @@ class TaskPriority(str, Enum):
 @dataclass
 class Task:
     """Represents a task to be executed"""
+
     task_id: str
     task_type: str
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     priority: TaskPriority = TaskPriority.MEDIUM
-    created_at: Optional[datetime] = None
-    assigned_node: Optional[str] = None
+    created_at: datetime | None = None
+    assigned_node: str | None = None
     timeout_seconds: int = 300
     retry_count: int = 0
     max_retries: int = 3
-    dependencies: List[str] = None
-    estimated_duration: Optional[float] = None
-    resource_requirements: Optional[Dict] = None
+    dependencies: list[str] = None
+    estimated_duration: float | None = None
+    resource_requirements: dict | None = None
 
     def __post_init__(self):
         if self.created_at is None:
@@ -62,55 +61,63 @@ class Task:
         if self.dependencies is None:
             self.dependencies = []
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary for serialization"""
         data = asdict(self)
         if self.created_at:
-            data['created_at'] = self.created_at.isoformat()
+            data["created_at"] = self.created_at.isoformat()
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict) -> 'Task':
+    def from_dict(cls, data: dict) -> "Task":
         """Create from dictionary"""
-        if 'created_at' in data and data['created_at']:
-            data['created_at'] = datetime.fromisoformat(data['created_at'])
+        if "created_at" in data and data["created_at"]:
+            data["created_at"] = datetime.fromisoformat(data["created_at"])
         return cls(**data)
 
 
 @dataclass
 class TaskResult:
     """Result of task execution"""
+
     task_id: str
     status: TaskStatus
-    result: Optional[Any] = None
-    error: Optional[str] = None
-    execution_time: Optional[float] = None
-    memory_used: Optional[float] = None
-    node_id: Optional[str] = None
-    completed_at: Optional[datetime] = None
-    result_data: Optional[Dict[str, Any]] = None
-    error_message: Optional[str] = None
-    error_traceback: Optional[str] = None
-    resource_usage: Optional[Dict[str, Any]] = None
+    result: Any | None = None
+    error: str | None = None
+    execution_time: float | None = None
+    memory_used: float | None = None
+    node_id: str | None = None
+    completed_at: datetime | None = None
+    result_data: dict[str, Any] | None = None
+    error_message: str | None = None
+    error_traceback: str | None = None
+    resource_usage: dict[str, Any] | None = None
 
     def __post_init__(self):
-        if self.completed_at is None and self.status in [TaskStatus.COMPLETED, TaskStatus.FAILED]:
+        if self.completed_at is None and self.status in [
+            TaskStatus.COMPLETED,
+            TaskStatus.FAILED,
+        ]:
             self.completed_at = datetime.utcnow()
         # Keep aliases in sync for tests
         if self.result_data is None and self.result is not None:
-            self.result_data = self.result if isinstance(self.result, dict) else {"result": self.result}
+            self.result_data = (
+                self.result
+                if isinstance(self.result, dict)
+                else {"result": self.result}
+            )
         if self.error_message is None and self.error is not None:
             self.error_message = self.error
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary for serialization"""
         data = asdict(self)
         if self.completed_at:
-            data['completed_at'] = self.completed_at.isoformat()
+            data["completed_at"] = self.completed_at.isoformat()
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TaskResult":
+    def from_dict(cls, data: dict[str, Any]) -> "TaskResult":
         completed_at = data.get("completed_at")
         if completed_at:
             data["completed_at"] = datetime.fromisoformat(completed_at)
@@ -122,22 +129,26 @@ class TaskResult:
 class TaskRequest:
     task_id: str
     task_type: str
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     priority: TaskPriority = TaskPriority.MEDIUM
     timeout_seconds: int = 300
-    resource_requirements: Dict[str, Any] = None
+    resource_requirements: dict[str, Any] = None
 
     def __post_init__(self):
         if self.resource_requirements is None:
             self.resource_requirements = {}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
-        data["priority"] = int(self.priority) if isinstance(self.priority, TaskPriority) else self.priority
+        data["priority"] = (
+            int(self.priority)
+            if isinstance(self.priority, TaskPriority)
+            else self.priority
+        )
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TaskRequest":
+    def from_dict(cls, data: dict[str, Any]) -> "TaskRequest":
         return cls(
             task_id=data["task_id"],
             task_type=data["task_type"],
@@ -152,9 +163,9 @@ class TaskRequest:
 class TaskExecutionResult:
     task_id: str
     status: TaskStatus
-    result_data: Optional[Dict[str, Any]] = None
-    error_message: Optional[str] = None
-    error_traceback: Optional[str] = None
+    result_data: dict[str, Any] | None = None
+    error_message: str | None = None
+    error_traceback: str | None = None
     execution_time: float = 0.0
 
 
@@ -163,9 +174,9 @@ class TaskExecutor:
 
     def __init__(self, max_concurrent_tasks: int = 4):
         self.max_concurrent_tasks = max_concurrent_tasks
-        self.running_tasks: Set[str] = set()
-        self.task_results: Dict[str, TaskExecutionResult] = {}
-        self.task_functions: Dict[str, Callable[..., Any]] = {}
+        self.running_tasks: set[str] = set()
+        self.task_results: dict[str, TaskExecutionResult] = {}
+        self.task_functions: dict[str, Callable[..., Any]] = {}
 
     def register_task_function(self, task_type: str, fn: Callable[..., Any]):
         self.task_functions[task_type] = fn
@@ -225,8 +236,8 @@ class ResourceMonitor:
         self.memory_threshold = 90.0
         self.disk_threshold = 95.0
         self._running = False
-        self._monitor_task: Optional[asyncio.Task] = None
-        self.usage_history: List[Dict[str, float]] = []
+        self._monitor_task: asyncio.Task | None = None
+        self.usage_history: list[dict[str, float]] = []
 
     async def start(self):
         self._running = True
@@ -247,12 +258,14 @@ class ResourceMonitor:
             self.usage_history.append(usage)
             await asyncio.sleep(self.monitoring_interval)
 
-    def set_alert_thresholds(self, cpu_threshold: float, memory_threshold: float, disk_threshold: float):
+    def set_alert_thresholds(
+        self, cpu_threshold: float, memory_threshold: float, disk_threshold: float
+    ):
         self.cpu_threshold = cpu_threshold
         self.memory_threshold = memory_threshold
         self.disk_threshold = disk_threshold
 
-    def get_resource_usage(self) -> Dict[str, float]:
+    def get_resource_usage(self) -> dict[str, float]:
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage("/")
         return {
@@ -261,7 +274,7 @@ class ResourceMonitor:
             "disk_usage_percent": disk.percent,
         }
 
-    def check_alerts(self, usage: Dict[str, float]) -> List[str]:
+    def check_alerts(self, usage: dict[str, float]) -> list[str]:
         alerts = []
         if usage.get("cpu_percent", 0) > self.cpu_threshold:
             alerts.append(f"CPU usage high: {usage['cpu_percent']:.1f}%")
@@ -289,7 +302,7 @@ class WorkQueue:
             if self._current_size >= self.max_size:
                 return False
 
-            priority_value = self._get_priority_value(task.priority)
+            self._get_priority_value(task.priority)
 
             try:
                 if task.priority == TaskPriority.CRITICAL:
@@ -307,7 +320,7 @@ class WorkQueue:
             except queue.Full:
                 return False
 
-    def get(self, timeout: Optional[float] = None) -> Optional[Task]:
+    def get(self, timeout: float | None = None) -> Task | None:
         """Get next task from queue (priority order)"""
         with self._lock:
             # Try high priority first
@@ -350,7 +363,7 @@ class WorkQueue:
             TaskPriority.CRITICAL: 0,
             TaskPriority.HIGH: 1,
             TaskPriority.MEDIUM: 2,
-            TaskPriority.LOW: 3
+            TaskPriority.LOW: 3,
         }
         return priority_map.get(priority, 2)
 
@@ -358,10 +371,9 @@ class WorkQueue:
 class ParallelExecutor:
     """Manages parallel task execution with resource limits"""
 
-    def __init__(self,
-                 max_threads: int = 4,
-                 max_processes: int = 2,
-                 memory_limit_gb: float = 4.0):
+    def __init__(
+        self, max_threads: int = 4, max_processes: int = 2, memory_limit_gb: float = 4.0
+    ):
         self.max_threads = max_threads
         self.max_processes = max_processes
         self.memory_limit_gb = memory_limit_gb
@@ -369,8 +381,8 @@ class ParallelExecutor:
         self.thread_pool = ThreadPoolExecutor(max_workers=max_threads)
         self.process_pool = ProcessPoolExecutor(max_workers=max_processes)
 
-        self.running_tasks: Set[str] = set()
-        self.task_futures: Dict[str, asyncio.Future] = {}
+        self.running_tasks: set[str] = set()
+        self.task_futures: dict[str, asyncio.Future] = {}
 
         # Resource monitoring
         self.current_memory_usage = 0.0
@@ -392,7 +404,9 @@ class ParallelExecutor:
             start_memory = self._get_memory_usage()
 
             # Choose execution method based on task type
-            if task.resource_requirements and task.resource_requirements.get('needs_process', False):
+            if task.resource_requirements and task.resource_requirements.get(
+                "needs_process", False
+            ):
                 # CPU-intensive task - use process pool
                 future = asyncio.create_task(
                     self._execute_in_process(task, executor_func)
@@ -417,7 +431,7 @@ class ParallelExecutor:
                     status=TaskStatus.COMPLETED,
                     result=result,
                     execution_time=execution_time,
-                    memory_used=memory_used
+                    memory_used=memory_used,
                 )
 
             except asyncio.TimeoutError:
@@ -425,15 +439,13 @@ class ParallelExecutor:
                 return TaskResult(
                     task_id=task.task_id,
                     status=TaskStatus.FAILED,
-                    error=f"Task timed out after {task.timeout_seconds} seconds"
+                    error=f"Task timed out after {task.timeout_seconds} seconds",
                 )
 
         except Exception as e:
             logger.error(f"Task {task.task_id} execution failed: {e}")
             return TaskResult(
-                task_id=task.task_id,
-                status=TaskStatus.FAILED,
-                error=str(e)
+                task_id=task.task_id, status=TaskStatus.FAILED, error=str(e)
             )
 
         finally:
@@ -443,26 +455,22 @@ class ParallelExecutor:
     async def _execute_in_thread(self, task: Task, executor_func: Callable) -> Any:
         """Execute task in thread pool"""
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            self.thread_pool,
-            executor_func,
-            task
-        )
+        return await loop.run_in_executor(self.thread_pool, executor_func, task)
 
     async def _execute_in_process(self, task: Task, executor_func: Callable) -> Any:
         """Execute task in process pool"""
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            self.process_pool,
-            executor_func,
-            task
-        )
+        return await loop.run_in_executor(self.process_pool, executor_func, task)
 
     def _can_execute_task(self, task: Task) -> bool:
         """Check if task can be executed given resource constraints"""
         # Check memory limit
         current_memory = self._get_memory_usage()
-        required_memory = task.resource_requirements.get('memory_gb', 0.5) if task.resource_requirements else 0.5
+        required_memory = (
+            task.resource_requirements.get("memory_gb", 0.5)
+            if task.resource_requirements
+            else 0.5
+        )
 
         if current_memory + required_memory > self.memory_limit_gb:
             return False
@@ -476,7 +484,7 @@ class ParallelExecutor:
     def _get_memory_usage(self) -> float:
         """Get current memory usage in GB"""
         process = psutil.Process()
-        return process.memory_info().rss / (1024 ** 3)
+        return process.memory_info().rss / (1024**3)
 
     async def cancel_task(self, task_id: str) -> bool:
         """Cancel a running task"""
@@ -486,13 +494,13 @@ class ParallelExecutor:
             return True
         return False
 
-    def get_resource_usage(self) -> Dict:
+    def get_resource_usage(self) -> dict:
         """Get current resource usage"""
         return {
-            'running_tasks': len(self.running_tasks),
-            'memory_usage_gb': self._get_memory_usage(),
-            'cpu_usage_percent': psutil.cpu_percent(),
-            'available_slots': self.max_threads - len(self.running_tasks)
+            "running_tasks": len(self.running_tasks),
+            "memory_usage_gb": self._get_memory_usage(),
+            "cpu_usage_percent": psutil.cpu_percent(),
+            "available_slots": self.max_threads - len(self.running_tasks),
         }
 
 
@@ -500,10 +508,10 @@ class HealthMonitor:
     """Monitors node health and performance metrics"""
 
     def __init__(self):
-        self.metrics_history: List[Dict] = []
+        self.metrics_history: list[dict] = []
         self.max_history_size = 1000
         self._monitoring = False
-        self._monitor_task: Optional[asyncio.Task] = None
+        self._monitor_task: asyncio.Task | None = None
 
     async def start_monitoring(self, interval: int = 30):
         """Start health monitoring"""
@@ -529,7 +537,9 @@ class HealthMonitor:
 
                 # Trim history if needed
                 if len(self.metrics_history) > self.max_history_size:
-                    self.metrics_history = self.metrics_history[-self.max_history_size:]
+                    self.metrics_history = self.metrics_history[
+                        -self.max_history_size :
+                    ]
 
                 await asyncio.sleep(interval)
 
@@ -539,52 +549,50 @@ class HealthMonitor:
                 logger.error(f"Health monitoring error: {e}")
                 await asyncio.sleep(5)
 
-    def _collect_metrics(self) -> Dict:
+    def _collect_metrics(self) -> dict:
         """Collect current system metrics"""
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
         network = psutil.net_io_counters()
 
         return {
-            'timestamp': datetime.utcnow().isoformat(),
-            'cpu_percent': psutil.cpu_percent(),
-            'memory_percent': memory.percent,
-            'memory_available_gb': memory.available / (1024 ** 3),
-            'disk_percent': disk.percent,
-            'disk_free_gb': disk.free / (1024 ** 3),
-            'network_bytes_sent': network.bytes_sent,
-            'network_bytes_recv': network.bytes_recv,
-            'load_average': psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0.0
+            "timestamp": datetime.utcnow().isoformat(),
+            "cpu_percent": psutil.cpu_percent(),
+            "memory_percent": memory.percent,
+            "memory_available_gb": memory.available / (1024**3),
+            "disk_percent": disk.percent,
+            "disk_free_gb": disk.free / (1024**3),
+            "network_bytes_sent": network.bytes_sent,
+            "network_bytes_recv": network.bytes_recv,
+            "load_average": (
+                psutil.getloadavg()[0] if hasattr(psutil, "getloadavg") else 0.0
+            ),
         }
 
-    def get_health_status(self) -> Dict:
+    def get_health_status(self) -> dict:
         """Get current health status"""
         if not self.metrics_history:
-            return {'status': 'unknown', 'metrics': {}}
+            return {"status": "unknown", "metrics": {}}
 
         latest_metrics = self.metrics_history[-1]
 
         # Determine health status
-        status = 'healthy'
+        status = "healthy"
         warnings = []
 
-        if latest_metrics['cpu_percent'] > 90:
-            status = 'warning'
-            warnings.append('High CPU usage')
+        if latest_metrics["cpu_percent"] > 90:
+            status = "warning"
+            warnings.append("High CPU usage")
 
-        if latest_metrics['memory_percent'] > 90:
-            status = 'warning'
-            warnings.append('High memory usage')
+        if latest_metrics["memory_percent"] > 90:
+            status = "warning"
+            warnings.append("High memory usage")
 
-        if latest_metrics['disk_percent'] > 90:
-            status = 'critical'
-            warnings.append('Low disk space')
+        if latest_metrics["disk_percent"] > 90:
+            status = "critical"
+            warnings.append("Low disk space")
 
-        return {
-            'status': status,
-            'warnings': warnings,
-            'metrics': latest_metrics
-        }
+        return {"status": status, "warnings": warnings, "metrics": latest_metrics}
 
 
 class WorkerNode:
@@ -598,7 +606,9 @@ class WorkerNode:
             self.node_id = self.config.node_id
             self.coordinator_url = self.config.coordinator_url
             self.task_executor = TaskExecutor(self.config.max_concurrent_tasks)
-            self.resource_monitor = ResourceMonitor(self.config.resource_monitoring_interval)
+            self.resource_monitor = ResourceMonitor(
+                self.config.resource_monitoring_interval
+            )
             # simple queue for TaskRequest objects
             self._task_queue: asyncio.Queue[TaskRequest] = asyncio.Queue()
             self.status = NodeStatus.JOINING
@@ -611,20 +621,26 @@ class WorkerNode:
             self.coordinator = coordinator
             self.redis = coordinator.redis if coordinator else redis_client
             self.work_queue = WorkQueue()
-            self.executor = ParallelExecutor(kwargs.get("max_threads", 4), kwargs.get("max_processes", 2))
+            self.executor = ParallelExecutor(
+                kwargs.get("max_threads", 4), kwargs.get("max_processes", 2)
+            )
             self.health_monitor = HealthMonitor()
-            self.task_executors: Dict[str, Callable] = {}
+            self.task_executors: dict[str, Callable] = {}
             self.work_steal_enabled = kwargs.get("work_steal_enabled", True)
             self.steal_threshold = 0.5
             self._running = False
-            self._worker_task: Optional[asyncio.Task] = None
-            self._steal_task: Optional[asyncio.Task] = None
+            self._worker_task: asyncio.Task | None = None
+            self._steal_task: asyncio.Task | None = None
             self.status = NodeStatus.JOINING
             self.is_running = False
             # Compatibility helpers
             self.task_executor = TaskExecutor()
             self.resource_monitor = ResourceMonitor()
-            self.config = WorkerNodeConfig(node_id=node_id, coordinator_url="", max_concurrent_tasks=self.executor.max_threads)
+            self.config = WorkerNodeConfig(
+                node_id=node_id,
+                coordinator_url="",
+                max_concurrent_tasks=self.executor.max_threads,
+            )
         logger.info(f"Initialized worker node {self.node_id}")
 
     async def start(self):
@@ -679,8 +695,7 @@ class WorkerNode:
         if self.work_queue.put(task):
             # Also add to Redis for work stealing
             await self.redis.lpush(
-                f"task_queue:{self.node_id}",
-                json.dumps(task.to_dict())
+                f"task_queue:{self.node_id}", json.dumps(task.to_dict())
             )
 
             logger.info(f"Submitted task {task.task_id}")
@@ -699,7 +714,7 @@ class WorkerNode:
                 task_id=task.task_id,
                 status=TaskStatus.FAILED,
                 error=f"No executor registered for task type: {task.task_type}",
-                node_id=self.node_id
+                node_id=self.node_id,
             )
 
         try:
@@ -712,7 +727,7 @@ class WorkerNode:
             await self.redis.setex(
                 f"task_result:{task.task_id}",
                 3600,  # 1 hour TTL
-                json.dumps(result.to_dict())
+                json.dumps(result.to_dict()),
             )
 
             logger.info(f"Completed task {task.task_id}: {result.status}")
@@ -724,19 +739,17 @@ class WorkerNode:
                 task_id=task.task_id,
                 status=TaskStatus.FAILED,
                 error=str(e),
-                node_id=self.node_id
+                node_id=self.node_id,
             )
 
             # Store error result
             await self.redis.setex(
-                f"task_result:{task.task_id}",
-                3600,
-                json.dumps(result.to_dict())
+                f"task_result:{task.task_id}", 3600, json.dumps(result.to_dict())
             )
 
             return result
 
-    async def steal_work(self) -> Optional[Task]:
+    async def steal_work(self) -> Task | None:
         """Attempt to steal work from other nodes"""
         if not self.work_steal_enabled:
             return None
@@ -745,16 +758,14 @@ class WorkerNode:
             # Get list of other nodes
             cluster_status = await self.coordinator.get_cluster_status()
             other_nodes = [
-                node['node_id'] for node in cluster_status['nodes']
-                if node['node_id'] != self.node_id and node['status'] == 'active'
+                node["node_id"]
+                for node in cluster_status["nodes"]
+                if node["node_id"] != self.node_id and node["status"] == "active"
             ]
 
             # Try to steal from nodes with work
             for node_id in other_nodes:
-                task_data = await self.redis.brpop(
-                    f"task_queue:{node_id}",
-                    timeout=1
-                )
+                task_data = await self.redis.brpop(f"task_queue:{node_id}", timeout=1)
 
                 if task_data:
                     _, task_json = task_data
@@ -801,7 +812,9 @@ class WorkerNode:
             try:
                 # Check our current utilization
                 resource_usage = self.executor.get_resource_usage()
-                utilization = resource_usage['running_tasks'] / self.executor.max_threads
+                utilization = (
+                    resource_usage["running_tasks"] / self.executor.max_threads
+                )
 
                 # If utilization is low, try to steal work
                 if utilization < self.steal_threshold:
@@ -818,18 +831,18 @@ class WorkerNode:
                 logger.error(f"Work steal loop error: {e}")
                 await asyncio.sleep(5)
 
-    def get_node_metrics(self) -> Dict:
+    def get_node_metrics(self) -> dict:
         """Get comprehensive node metrics"""
         health_status = self.health_monitor.get_health_status()
         resource_usage = self.executor.get_resource_usage()
 
         return {
-            'node_id': self.node_id,
-            'queue_size': self.work_queue.size(),
-            'health': health_status,
-            'resources': resource_usage,
-            'registered_executors': list(self.task_executors.keys()),
-            'work_steal_enabled': self.work_steal_enabled
+            "node_id": self.node_id,
+            "queue_size": self.work_queue.size(),
+            "health": health_status,
+            "resources": resource_usage,
+            "registered_executors": list(self.task_executors.keys()),
+            "work_steal_enabled": self.work_steal_enabled,
         }
 
     # --- Lightweight overrides for config-based usage used in unit tests ---
@@ -840,7 +853,13 @@ class WorkerNode:
             self.status = NodeStatus.ACTIVE
             # record heartbeat once
             if self.redis and hasattr(self.redis, "hset"):
-                await self.redis.hset(f"heartbeat:{self.config.node_id}", mapping={"status": self.status.value, "ts": datetime.utcnow().isoformat()})
+                await self.redis.hset(
+                    f"heartbeat:{self.config.node_id}",
+                    mapping={
+                        "status": self.status.value,
+                        "ts": datetime.utcnow().isoformat(),
+                    },
+                )
         else:
             return await super().start() if hasattr(super(), "start") else None
 
@@ -852,11 +871,13 @@ class WorkerNode:
         else:
             return await super().stop() if hasattr(super(), "stop") else None
 
-    async def handle_task_assignment(self, task_request: TaskRequest) -> TaskExecutionResult:
+    async def handle_task_assignment(
+        self, task_request: TaskRequest
+    ) -> TaskExecutionResult:
         result = await self.task_executor.execute_task(task_request)
         return result
 
-    def get_current_resource_usage(self) -> Dict[str, Any]:
+    def get_current_resource_usage(self) -> dict[str, Any]:
         usage = self.resource_monitor.get_resource_usage()
         usage["node_id"] = self.node_id
         return usage
@@ -864,7 +885,7 @@ class WorkerNode:
     async def queue_task(self, task_request: TaskRequest):
         await self._task_queue.put(task_request)
 
-    async def dequeue_task(self) -> Optional[TaskRequest]:
+    async def dequeue_task(self) -> TaskRequest | None:
         try:
             return self._task_queue.get_nowait()
         except asyncio.QueueEmpty:
@@ -887,7 +908,7 @@ class WorkerNode:
         self.status = NodeStatus.ACTIVE
         self.is_running = True
 
-    def get_load_balancing_metrics(self) -> Dict[str, Any]:
+    def get_load_balancing_metrics(self) -> dict[str, Any]:
         return {
             "node_id": self.node_id,
             "running_tasks": len(self.task_executor.running_tasks),

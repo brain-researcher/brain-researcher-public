@@ -54,9 +54,7 @@ for subpkg in ("encoding_model_tools", "preprocessing"):
         globals()[subpkg] = importlib.import_module(f".{subpkg}", package=__name__)
         optional_subpackages.append(subpkg)
     except Exception as e:
-        warnings.warn(
-            f"Could not import {subpkg}: {e}", ImportWarning, stacklevel=2
-        )
+        warnings.warn(f"Could not import {subpkg}: {e}", ImportWarning, stacklevel=2)
         globals()[subpkg] = None
 
 __all__ = [

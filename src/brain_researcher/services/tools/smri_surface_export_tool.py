@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -18,7 +17,7 @@ class SMRISurfaceExportArgs(BaseModel):
     surface_type: str = Field(
         default="pial", description="Surface type (pial, inflated, white, midthickness)"
     )
-    output_dir: Optional[str] = Field(
+    output_dir: str | None = Field(
         default=None, description="Directory for exported surface meshes"
     )
 
@@ -49,7 +48,9 @@ class SMRISurfaceExportTool(NeuroToolWrapper):
             "surface_type": args.surface_type,
         }
 
-        return ToolResult(status="success", data={"outputs": outputs, "summary": summary})
+        return ToolResult(
+            status="success", data={"outputs": outputs, "summary": summary}
+        )
 
 
 class SMRISurfaceExportTools:

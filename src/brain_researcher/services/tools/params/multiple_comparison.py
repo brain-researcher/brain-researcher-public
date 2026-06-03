@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
 
 
-def _as_array(values: Optional[Any]) -> Optional[np.ndarray]:
+def _as_array(values: Any | None) -> np.ndarray | None:
     if values is None:
         return None
     array = np.asarray(values, dtype=float)
@@ -23,16 +23,16 @@ def _as_array(values: Optional[Any]) -> Optional[np.ndarray]:
 class MultipleComparisonParameters:
     """Configuration for lightweight multiple-comparison correction."""
 
-    p_values_file: Optional[str] = None
-    p_values_array: Optional[Any] = None
-    statistic_file: Optional[str] = None
+    p_values_file: str | None = None
+    p_values_array: Any | None = None
+    statistic_file: str | None = None
     method: str = "fdr_bh"
     alpha: float = 0.05
     fdr_method: str = "indep"
     two_stage: bool = False
-    mask_file: Optional[str] = None
-    smoothness: Optional[float] = None
-    cluster_threshold: Optional[float] = None
+    mask_file: str | None = None
+    smoothness: float | None = None
+    cluster_threshold: float | None = None
     connectivity: str = "faces"
     min_cluster_size: int = 1
     tfce_e: float = 0.5
@@ -45,7 +45,9 @@ class MultipleComparisonParameters:
     verbose: bool = True
 
 
-def multiple_comparison_from_payload(payload: Dict[str, Any]) -> MultipleComparisonParameters:
+def multiple_comparison_from_payload(
+    payload: dict[str, Any],
+) -> MultipleComparisonParameters:
     return MultipleComparisonParameters(
         p_values_file=payload.get("p_values_file"),
         p_values_array=_as_array(payload.get("p_values_array")),
@@ -61,7 +63,11 @@ def multiple_comparison_from_payload(payload: Dict[str, Any]) -> MultipleCompari
         min_cluster_size=int(payload.get("min_cluster_size", 1)),
         tfce_e=float(payload.get("tfce_e", 0.5)),
         tfce_h=float(payload.get("tfce_h", 2.0)),
-        output_dir=str(payload["output_dir"]) if payload.get("output_dir") else str(Path.cwd() / "multiple_comparison"),
+        output_dir=(
+            str(payload["output_dir"])
+            if payload.get("output_dir")
+            else str(Path.cwd() / "multiple_comparison")
+        ),
         save_corrected=bool(payload.get("save_corrected", True)),
         save_mask=bool(payload.get("save_mask", True)),
         save_report=bool(payload.get("save_report", True)),
@@ -86,10 +92,14 @@ def _load_p_values(params: MultipleComparisonParameters) -> np.ndarray:
             return np.asarray(data, dtype=float)
         return np.loadtxt(path)
 
-    raise ValueError("Multiple-comparison correction requires 'p_values_file' or 'p_values_array'.")
+    raise ValueError(
+        "Multiple-comparison correction requires 'p_values_file' or 'p_values_array'."
+    )
 
 
-def _apply_method(p_values: np.ndarray, method: str, alpha: float) -> Tuple[np.ndarray, np.ndarray]:
+def _apply_method(
+    p_values: np.ndarray, method: str, alpha: float
+) -> tuple[np.ndarray, np.ndarray]:
     flat = p_values.ravel()
     n_tests = len(flat)
     method_key = method.lower()
@@ -112,7 +122,7 @@ def _apply_method(p_values: np.ndarray, method: str, alpha: float) -> Tuple[np.n
     return corrected, mask
 
 
-def _summarise(values: np.ndarray) -> Dict[str, float]:
+def _summarise(values: np.ndarray) -> dict[str, float]:
     return {
         "min": float(np.min(values)),
         "max": float(np.max(values)),
@@ -121,14 +131,14 @@ def _summarise(values: np.ndarray) -> Dict[str, float]:
     }
 
 
-def run_multiple_comparison(params: MultipleComparisonParameters) -> Dict[str, Any]:
+def run_multiple_comparison(params: MultipleComparisonParameters) -> dict[str, Any]:
     p_values = _load_p_values(params)
     corrected_p, mask = _apply_method(p_values, params.method, params.alpha)
 
     output_dir = Path(params.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {
+    outputs: dict[str, str | None] = {
         "summary": None,
         "corrected_p_values": None,
         "significance_mask": None,
@@ -158,7 +168,7 @@ def run_multiple_comparison(params: MultipleComparisonParameters) -> Dict[str, A
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     outputs["summary"] = str(summary_path)
 
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "outputs": outputs,
         "summary": summary,
         "message": "Multiple comparison correction completed (fallback).",

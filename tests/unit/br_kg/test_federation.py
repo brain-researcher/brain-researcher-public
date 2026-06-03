@@ -5,10 +5,10 @@ Tests federation connectors for Wikidata, DBpedia, and result merging
 for enhanced knowledge retrieval in BR-KG.
 """
 
-import pytest
 import time
-from unittest.mock import Mock, MagicMock, patch
-import json
+from unittest.mock import Mock, patch
+
+import pytest
 
 from brain_researcher.services.br_kg.federation.wikidata import WikidataConnector
 
@@ -36,24 +36,27 @@ class TestWikidataConnector:
         assert "PREFIX wdt:" in connector.prefixes
 
         # Check neuroimaging entity mappings
-        assert 'brain' in connector.neuro_entities
-        assert 'fmri' in connector.neuro_entities
-        assert 'neuroimaging' in connector.neuro_entities
-        assert connector.neuro_entities['brain'] == 'Q1073'
-        assert connector.neuro_entities['fmri'] == 'Q207921'
+        assert "brain" in connector.neuro_entities
+        assert "fmri" in connector.neuro_entities
+        assert "neuroimaging" in connector.neuro_entities
+        assert connector.neuro_entities["brain"] == "Q1073"
+        assert connector.neuro_entities["fmri"] == "Q207921"
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.SPARQLWrapper')
+    @patch("brain_researcher.services.br_kg.federation.wikidata.SPARQLWrapper")
     def test_execute_query_success(self, mock_sparql_wrapper, connector):
         """Test successful SPARQL query execution"""
         # Mock SPARQLWrapper
         mock_sparql = Mock()
         mock_result = Mock()
         mock_result.convert.return_value = {
-            'results': {
-                'bindings': [
+            "results": {
+                "bindings": [
                     {
-                        'item': {'type': 'uri', 'value': 'http://www.wikidata.org/entity/Q1073'},
-                        'itemLabel': {'type': 'literal', 'value': 'brain'}
+                        "item": {
+                            "type": "uri",
+                            "value": "http://www.wikidata.org/entity/Q1073",
+                        },
+                        "itemLabel": {"type": "literal", "value": "brain"},
                     }
                 ]
             }
@@ -66,9 +69,9 @@ class TestWikidataConnector:
 
         assert isinstance(result, list)
         assert len(result) == 1
-        assert 'item' in result[0]
-        assert result[0]['item']['type'] == 'entity'
-        assert result[0]['item']['id'] == 'Q1073'
+        assert "item" in result[0]
+        assert result[0]["item"]["type"] == "entity"
+        assert result[0]["item"]["id"] == "Q1073"
 
         # Verify SPARQLWrapper was configured correctly
         mock_sparql.setQuery.assert_called_once_with(query)
@@ -76,13 +79,13 @@ class TestWikidataConnector:
         mock_sparql.setTimeout.assert_called_once_with(30)
         mock_sparql.addCustomHttpHeader.assert_called_once()
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.SPARQLWrapper')
+    @patch("brain_researcher.services.br_kg.federation.wikidata.SPARQLWrapper")
     def test_execute_query_with_caching(self, mock_sparql_wrapper, connector):
         """Test query execution with result caching"""
         # Mock successful query
         mock_sparql = Mock()
         mock_result = Mock()
-        mock_result.convert.return_value = {'results': {'bindings': []}}
+        mock_result.convert.return_value = {"results": {"bindings": []}}
         mock_sparql.query.return_value = mock_result
         mock_sparql_wrapper.return_value = mock_sparql
 
@@ -101,7 +104,7 @@ class TestWikidataConnector:
         # Results should be identical
         assert result1 == result2
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.SPARQLWrapper')
+    @patch("brain_researcher.services.br_kg.federation.wikidata.SPARQLWrapper")
     def test_execute_query_exception_handling(self, mock_sparql_wrapper, connector):
         """Test exception handling in query execution"""
         # Mock SPARQLWrapper to raise exception
@@ -152,7 +155,7 @@ class TestWikidataConnector:
     def test_cache_result_and_retrieval(self, connector):
         """Test caching and retrieving results"""
         cache_key = "test_cache_key"
-        test_results = [{'item': {'type': 'uri', 'value': 'test'}}]
+        test_results = [{"item": {"type": "uri", "value": "test"}}]
 
         # Cache the results
         connector._cache_result(cache_key, test_results)
@@ -168,7 +171,7 @@ class TestWikidataConnector:
         connector.cache_ttl = 0.1
 
         cache_key = "test_expiring_cache"
-        test_results = [{'item': 'test'}]
+        test_results = [{"item": "test"}]
 
         # Cache results
         connector._cache_result(cache_key, test_results)
@@ -191,9 +194,12 @@ class TestWikidataConnector:
         """Test processing of Wikidata URI results"""
         bindings = [
             {
-                'item': {'type': 'uri', 'value': 'http://www.wikidata.org/entity/Q1073'},
-                'itemLabel': {'type': 'literal', 'value': 'brain'},
-                'property': {'type': 'uri', 'value': 'http://example.org/property'}
+                "item": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q1073",
+                },
+                "itemLabel": {"type": "literal", "value": "brain"},
+                "property": {"type": "uri", "value": "http://example.org/property"},
             }
         ]
 
@@ -203,31 +209,28 @@ class TestWikidataConnector:
         result = processed[0]
 
         # Wikidata entity URI should be processed to extract ID
-        assert result['item']['type'] == 'entity'
-        assert result['item']['id'] == 'Q1073'
-        assert result['item']['uri'] == 'http://www.wikidata.org/entity/Q1073'
+        assert result["item"]["type"] == "entity"
+        assert result["item"]["id"] == "Q1073"
+        assert result["item"]["uri"] == "http://www.wikidata.org/entity/Q1073"
 
         # Literal should be processed correctly
-        assert result['itemLabel']['type'] == 'literal'
-        assert result['itemLabel']['value'] == 'brain'
+        assert result["itemLabel"]["type"] == "literal"
+        assert result["itemLabel"]["value"] == "brain"
 
         # External URI should be processed as URI
-        assert result['property']['type'] == 'uri'
-        assert result['property']['uri'] == 'http://example.org/property'
+        assert result["property"]["type"] == "uri"
+        assert result["property"]["uri"] == "http://example.org/property"
 
     def test_process_wikidata_results_literals(self, connector):
         """Test processing of literal values with datatypes"""
         bindings = [
             {
-                'count': {
-                    'type': 'literal',
-                    'value': '42',
-                    'datatype': 'http://www.w3.org/2001/XMLSchema#integer'
+                "count": {
+                    "type": "literal",
+                    "value": "42",
+                    "datatype": "http://www.w3.org/2001/XMLSchema#integer",
                 },
-                'description': {
-                    'type': 'literal',
-                    'value': 'Test description'
-                }
+                "description": {"type": "literal", "value": "Test description"},
             }
         ]
 
@@ -237,31 +240,42 @@ class TestWikidataConnector:
         result = processed[0]
 
         # Integer literal with datatype
-        assert result['count']['type'] == 'literal'
-        assert result['count']['value'] == '42'
-        assert result['count']['datatype'] == 'http://www.w3.org/2001/XMLSchema#integer'
+        assert result["count"]["type"] == "literal"
+        assert result["count"]["value"] == "42"
+        assert result["count"]["datatype"] == "http://www.w3.org/2001/XMLSchema#integer"
 
         # String literal without explicit datatype
-        assert result['description']['type'] == 'literal'
-        assert result['description']['value'] == 'Test description'
-        assert result['description']['datatype'] == 'string'
+        assert result["description"]["type"] == "literal"
+        assert result["description"]["value"] == "Test description"
+        assert result["description"]["datatype"] == "string"
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query')
+    @patch(
+        "brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query"
+    )
     def test_search_brain_regions(self, mock_execute, connector):
         """Test brain regions search functionality"""
         # Mock query results
         mock_execute.return_value = [
             {
-                'item': {'type': 'entity', 'id': 'Q1073', 'uri': 'http://www.wikidata.org/entity/Q1073'},
-                'itemLabel': {'type': 'literal', 'value': 'brain'},
-                'description': {'type': 'literal', 'value': 'organ of central nervous system'}
+                "item": {
+                    "type": "entity",
+                    "id": "Q1073",
+                    "uri": "http://www.wikidata.org/entity/Q1073",
+                },
+                "itemLabel": {"type": "literal", "value": "brain"},
+                "description": {
+                    "type": "literal",
+                    "value": "organ of central nervous system",
+                },
             }
         ]
 
-        results = connector.search_brain_regions("brain", limit=10, include_anatomy=True)
+        results = connector.search_brain_regions(
+            "brain", limit=10, include_anatomy=True
+        )
 
         assert len(results) == 1
-        assert results[0]['item']['id'] == 'Q1073'
+        assert results[0]["item"]["id"] == "Q1073"
 
         # Verify query construction
         mock_execute.assert_called_once()
@@ -273,7 +287,9 @@ class TestWikidataConnector:
         assert "LIMIT 10" in query
         assert "wdt:P1995" in query  # Anatomy property included
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query')
+    @patch(
+        "brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query"
+    )
     def test_search_brain_regions_no_anatomy(self, mock_execute, connector):
         """Test brain regions search without anatomy"""
         mock_execute.return_value = []
@@ -286,22 +302,31 @@ class TestWikidataConnector:
         assert "LIMIT 20" in query
         assert "wdt:P1995" not in query  # Anatomy property excluded
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query')
+    @patch(
+        "brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query"
+    )
     def test_search_neurological_conditions(self, mock_execute, connector):
         """Test neurological conditions search"""
         mock_execute.return_value = [
             {
-                'item': {'type': 'entity', 'id': 'Q8007', 'uri': 'http://www.wikidata.org/entity/Q8007'},
-                'itemLabel': {'type': 'literal', 'value': 'Alzheimer\'s disease'},
-                'icd10': {'type': 'literal', 'value': 'F00'},
-                'description': {'type': 'literal', 'value': 'neurodegenerative disease'}
+                "item": {
+                    "type": "entity",
+                    "id": "Q8007",
+                    "uri": "http://www.wikidata.org/entity/Q8007",
+                },
+                "itemLabel": {"type": "literal", "value": "Alzheimer's disease"},
+                "icd10": {"type": "literal", "value": "F00"},
+                "description": {
+                    "type": "literal",
+                    "value": "neurodegenerative disease",
+                },
             }
         ]
 
         results = connector.search_neurological_conditions("alzheimer", limit=25)
 
         assert len(results) == 1
-        assert results[0]['item']['id'] == 'Q8007'
+        assert results[0]["item"]["id"] == "Q8007"
 
         # Verify query construction
         call_args = mock_execute.call_args
@@ -315,23 +340,28 @@ class TestWikidataConnector:
         assert "wdt:P780" in query  # Symptoms
         assert "wdt:P2176" in query  # Medical treatment
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query')
+    @patch(
+        "brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query"
+    )
     def test_search_neuroimaging_methods(self, mock_execute, connector):
         """Test neuroimaging methods search"""
         mock_execute.return_value = [
             {
-                'item': {'type': 'entity', 'id': 'Q207921'},
-                'itemLabel': {'type': 'literal', 'value': 'functional magnetic resonance imaging'},
-                'inventor': {'type': 'entity', 'id': 'Q123456'},
-                'inventorLabel': {'type': 'literal', 'value': 'Seiji Ogawa'},
-                'year': {'type': 'literal', 'value': '1990'}
+                "item": {"type": "entity", "id": "Q207921"},
+                "itemLabel": {
+                    "type": "literal",
+                    "value": "functional magnetic resonance imaging",
+                },
+                "inventor": {"type": "entity", "id": "Q123456"},
+                "inventorLabel": {"type": "literal", "value": "Seiji Ogawa"},
+                "year": {"type": "literal", "value": "1990"},
             }
         ]
 
         results = connector.search_neuroimaging_methods("fMRI", limit=15)
 
         assert len(results) == 1
-        assert results[0]['item']['id'] == 'Q207921'
+        assert results[0]["item"]["id"] == "Q207921"
 
         # Verify query construction
         call_args = mock_execute.call_args
@@ -345,24 +375,29 @@ class TestWikidataConnector:
         assert "wdt:P571" in query  # Inception year
         assert "ORDER BY ?year" in query
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query')
+    @patch(
+        "brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query"
+    )
     def test_search_neuroscientists(self, mock_execute, connector):
         """Test neuroscientists search"""
         mock_execute.return_value = [
             {
-                'item': {'type': 'entity', 'id': 'Q44448'},
-                'itemLabel': {'type': 'literal', 'value': 'Santiago Ramón y Cajal'},
-                'birthDate': {'type': 'literal', 'value': '1852-05-01'},
-                'deathDate': {'type': 'literal', 'value': '1934-10-17'},
-                'affiliation': {'type': 'entity', 'id': 'Q12345'},
-                'affiliationLabel': {'type': 'literal', 'value': 'Universidad Complutense Madrid'}
+                "item": {"type": "entity", "id": "Q44448"},
+                "itemLabel": {"type": "literal", "value": "Santiago Ramón y Cajal"},
+                "birthDate": {"type": "literal", "value": "1852-05-01"},
+                "deathDate": {"type": "literal", "value": "1934-10-17"},
+                "affiliation": {"type": "entity", "id": "Q12345"},
+                "affiliationLabel": {
+                    "type": "literal",
+                    "value": "Universidad Complutense Madrid",
+                },
             }
         ]
 
         results = connector.search_neuroscientists("Cajal", limit=20)
 
         assert len(results) == 1
-        assert results[0]['item']['id'] == 'Q44448'
+        assert results[0]["item"]["id"] == "Q44448"
 
         call_args = mock_execute.call_args
         query = call_args[0][0]
@@ -378,36 +413,38 @@ class TestWikidataConnector:
         assert "wdt:P1416" in query  # Affiliation
         assert "ORDER BY DESC(?birthDate)" in query
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query')
+    @patch(
+        "brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query"
+    )
     def test_get_brain_region_hierarchy(self, mock_execute, connector):
         """Test brain region hierarchy retrieval"""
         mock_execute.return_value = [
             {
-                'item': {'type': 'entity', 'id': 'Q1073'},
-                'itemLabel': {'type': 'literal', 'value': 'brain'},
-                'level': {'type': 'literal', 'value': '0'},
-                'parent': {'type': 'entity', 'id': 'Q23413'},
-                'parentLabel': {'type': 'literal', 'value': 'central nervous system'}
+                "item": {"type": "entity", "id": "Q1073"},
+                "itemLabel": {"type": "literal", "value": "brain"},
+                "level": {"type": "literal", "value": "0"},
+                "parent": {"type": "entity", "id": "Q23413"},
+                "parentLabel": {"type": "literal", "value": "central nervous system"},
             },
             {
-                'item': {'type': 'entity', 'id': 'Q5713'},
-                'itemLabel': {'type': 'literal', 'value': 'cerebral cortex'},
-                'level': {'type': 'literal', 'value': '-1'},
-                'parent': {'type': 'entity', 'id': 'Q1073'},
-                'parentLabel': {'type': 'literal', 'value': 'brain'}
-            }
+                "item": {"type": "entity", "id": "Q5713"},
+                "itemLabel": {"type": "literal", "value": "cerebral cortex"},
+                "level": {"type": "literal", "value": "-1"},
+                "parent": {"type": "entity", "id": "Q1073"},
+                "parentLabel": {"type": "literal", "value": "brain"},
+            },
         ]
 
         hierarchy = connector.get_brain_region_hierarchy("Q1073", max_depth=2)
 
         assert isinstance(hierarchy, dict)
-        assert 'levels' in hierarchy
-        assert 'children' in hierarchy
-        assert 'parents' in hierarchy
+        assert "levels" in hierarchy
+        assert "children" in hierarchy
+        assert "parents" in hierarchy
 
         # Verify hierarchy structure was built
-        assert 'Q1073' in hierarchy['levels']
-        assert 'Q5713' in hierarchy['levels']
+        assert "Q1073" in hierarchy["levels"]
+        assert "Q5713" in hierarchy["levels"]
 
         call_args = mock_execute.call_args
         query = call_args[0][0]
@@ -421,49 +458,56 @@ class TestWikidataConnector:
         """Test building hierarchical structure from results"""
         results = [
             {
-                'item': {'type': 'entity', 'id': 'Q1073'},
-                'itemLabel': {'type': 'literal', 'value': 'brain'},
-                'level': {'type': 'literal', 'value': '0'},
-                'parent': {'type': 'entity', 'id': 'Q23413'},
-                'parentLabel': {'type': 'literal', 'value': 'central nervous system'}
+                "item": {"type": "entity", "id": "Q1073"},
+                "itemLabel": {"type": "literal", "value": "brain"},
+                "level": {"type": "literal", "value": "0"},
+                "parent": {"type": "entity", "id": "Q23413"},
+                "parentLabel": {"type": "literal", "value": "central nervous system"},
             },
             {
-                'item': {'type': 'entity', 'id': 'Q5713'},
-                'itemLabel': {'type': 'literal', 'value': 'cerebral cortex'},
-                'level': {'type': 'literal', 'value': '-1'},
-                'parent': {'type': 'entity', 'id': 'Q1073'},
-                'parentLabel': {'type': 'literal', 'value': 'brain'}
-            }
+                "item": {"type": "entity", "id": "Q5713"},
+                "itemLabel": {"type": "literal", "value": "cerebral cortex"},
+                "level": {"type": "literal", "value": "-1"},
+                "parent": {"type": "entity", "id": "Q1073"},
+                "parentLabel": {"type": "literal", "value": "brain"},
+            },
         ]
 
         hierarchy = connector._build_hierarchy_structure(results)
 
-        assert 'Q1073' in hierarchy['levels']
-        assert 'Q5713' in hierarchy['levels']
-        assert hierarchy['levels']['Q1073']['level'] == 0
-        assert hierarchy['levels']['Q5713']['level'] == -1
+        assert "Q1073" in hierarchy["levels"]
+        assert "Q5713" in hierarchy["levels"]
+        assert hierarchy["levels"]["Q1073"]["level"] == 0
+        assert hierarchy["levels"]["Q5713"]["level"] == -1
 
         # Check parent-child relationships
-        assert hierarchy['parents']['Q1073'] == 'Q23413'
-        assert hierarchy['parents']['Q5713'] == 'Q1073'
-        assert 'Q1073' in hierarchy['children']['Q23413']
+        assert hierarchy["parents"]["Q1073"] == "Q23413"
+        assert hierarchy["parents"]["Q5713"] == "Q1073"
+        assert "Q1073" in hierarchy["children"]["Q23413"]
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query')
+    @patch(
+        "brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query"
+    )
     def test_find_related_concepts(self, mock_execute, connector):
         """Test finding related concepts"""
         mock_execute.return_value = [
             {
-                'related': {'type': 'entity', 'id': 'Q5713'},
-                'relatedLabel': {'type': 'literal', 'value': 'cerebral cortex'},
-                'relation': {'type': 'uri', 'value': 'http://www.wikidata.org/prop/direct/P527'},
-                'relationLabel': {'type': 'literal', 'value': 'has part'}
+                "related": {"type": "entity", "id": "Q5713"},
+                "relatedLabel": {"type": "literal", "value": "cerebral cortex"},
+                "relation": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/prop/direct/P527",
+                },
+                "relationLabel": {"type": "literal", "value": "has part"},
             }
         ]
 
-        results = connector.find_related_concepts("Q1073", relation_types=['P527'], limit=30)
+        results = connector.find_related_concepts(
+            "Q1073", relation_types=["P527"], limit=30
+        )
 
         assert len(results) == 1
-        assert results[0]['related']['id'] == 'Q5713'
+        assert results[0]["related"]["id"] == "Q5713"
 
         call_args = mock_execute.call_args
         query = call_args[0][0]
@@ -475,24 +519,28 @@ class TestWikidataConnector:
         assert "wd:Q864805" in query  # Brain regions
         assert "wd:Q1575726" in query  # Neuroimaging
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query')
+    @patch(
+        "brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query"
+    )
     def test_search_publications(self, mock_execute, connector):
         """Test publications search"""
         mock_execute.return_value = [
             {
-                'item': {'type': 'entity', 'id': 'Q123456'},
-                'itemLabel': {'type': 'literal', 'value': 'Functional brain networks'},
-                'journal': {'type': 'entity', 'id': 'Q567890'},
-                'journalLabel': {'type': 'literal', 'value': 'Nature Neuroscience'},
-                'year': {'type': 'literal', 'value': '2020'},
-                'doi': {'type': 'literal', 'value': '10.1038/nn.2020.123'}
+                "item": {"type": "entity", "id": "Q123456"},
+                "itemLabel": {"type": "literal", "value": "Functional brain networks"},
+                "journal": {"type": "entity", "id": "Q567890"},
+                "journalLabel": {"type": "literal", "value": "Nature Neuroscience"},
+                "year": {"type": "literal", "value": "2020"},
+                "doi": {"type": "literal", "value": "10.1038/nn.2020.123"},
             }
         ]
 
-        results = connector.search_publications("brain networks", publication_type="scientific_article", limit=25)
+        results = connector.search_publications(
+            "brain networks", publication_type="scientific_article", limit=25
+        )
 
         assert len(results) == 1
-        assert results[0]['item']['id'] == 'Q123456'
+        assert results[0]["item"]["id"] == "Q123456"
 
         call_args = mock_execute.call_args
         query = call_args[0][0]
@@ -511,7 +559,7 @@ class TestWikidataConnector:
 
     def test_search_publications_different_types(self, connector):
         """Test publications search with different publication types"""
-        with patch.object(connector, '_execute_query') as mock_execute:
+        with patch.object(connector, "_execute_query") as mock_execute:
             mock_execute.return_value = []
 
             # Test review article
@@ -529,30 +577,38 @@ class TestWikidataConnector:
             call_args = mock_execute.call_args[0][0]
             assert "wd:Q1266946" in call_args  # Thesis type
 
-    @patch('brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query')
+    @patch(
+        "brain_researcher.services.br_kg.federation.wikidata.WikidataConnector._execute_query"
+    )
     def test_get_entity_details(self, mock_execute, connector):
         """Test getting detailed entity information"""
         mock_execute.return_value = [
             {
-                'property': {'type': 'uri', 'value': 'http://www.wikidata.org/prop/direct/P31'},
-                'propertyLabel': {'type': 'literal', 'value': 'instance of'},
-                'value': {'type': 'entity', 'id': 'Q864805'},
-                'valueLabel': {'type': 'literal', 'value': 'brain region'}
+                "property": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/prop/direct/P31",
+                },
+                "propertyLabel": {"type": "literal", "value": "instance of"},
+                "value": {"type": "entity", "id": "Q864805"},
+                "valueLabel": {"type": "literal", "value": "brain region"},
             },
             {
-                'property': {'type': 'uri', 'value': 'http://www.wikidata.org/prop/direct/P361'},
-                'propertyLabel': {'type': 'literal', 'value': 'part of'},
-                'value': {'type': 'entity', 'id': 'Q1073'},
-                'valueLabel': {'type': 'literal', 'value': 'brain'}
-            }
+                "property": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/prop/direct/P361",
+                },
+                "propertyLabel": {"type": "literal", "value": "part of"},
+                "value": {"type": "entity", "id": "Q1073"},
+                "valueLabel": {"type": "literal", "value": "brain"},
+            },
         ]
 
         details = connector.get_entity_details("Q5713")
 
         assert isinstance(details, dict)
-        assert 'properties' in details
-        assert 'classifications' in details
-        assert 'relationships' in details
+        assert "properties" in details
+        assert "classifications" in details
+        assert "relationships" in details
 
         call_args = mock_execute.call_args
         query = call_args[0][0]
@@ -567,40 +623,49 @@ class TestWikidataConnector:
         """Test structuring entity details into organized format"""
         results = [
             {
-                'property': {'type': 'uri', 'value': 'http://www.wikidata.org/prop/direct/P31'},
-                'value': {'type': 'entity', 'id': 'Q864805'}
+                "property": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/prop/direct/P31",
+                },
+                "value": {"type": "entity", "id": "Q864805"},
             },
             {
-                'property': {'type': 'uri', 'value': 'http://www.wikidata.org/prop/direct/P361'},
-                'value': {'type': 'entity', 'id': 'Q1073'}
+                "property": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/prop/direct/P361",
+                },
+                "value": {"type": "entity", "id": "Q1073"},
             },
             {
-                'property': {'type': 'uri', 'value': 'http://www.wikidata.org/prop/direct/P571'},
-                'value': {'type': 'literal', 'value': '1990'}
-            }
+                "property": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/prop/direct/P571",
+                },
+                "value": {"type": "literal", "value": "1990"},
+            },
         ]
 
         structured = connector._structure_entity_details(results)
 
         # P31 should be in classifications
-        assert len(structured['classifications']) == 1
-        assert structured['classifications'][0]['property'] == 'P31'
+        assert len(structured["classifications"]) == 1
+        assert structured["classifications"][0]["property"] == "P31"
 
         # P361 should be in relationships/structure
-        assert 'structure' in structured['relationships']
-        assert len(structured['relationships']['structure']) == 1
-        assert structured['relationships']['structure'][0]['property'] == 'P361'
+        assert "structure" in structured["relationships"]
+        assert len(structured["relationships"]["structure"]) == 1
+        assert structured["relationships"]["structure"][0]["property"] == "P361"
 
         # P571 should be in properties
-        assert 'P571' in structured['properties']
-        assert len(structured['properties']['P571']) == 1
+        assert "P571" in structured["properties"]
+        assert len(structured["properties"]["P571"]) == 1
 
     def test_cache_size_limit(self, connector):
         """Test cache size limitation"""
         # Fill cache beyond limit
         for i in range(1100):  # Exceeds default limit of 1000
             cache_key = f"test_key_{i}"
-            connector._cache_result(cache_key, [{'test': f'data_{i}'}])
+            connector._cache_result(cache_key, [{"test": f"data_{i}"}])
 
         # Cache should be limited
         assert len(connector.query_cache) <= 1000
@@ -614,7 +679,7 @@ class TestWikidataConnector:
         # Set low limit for testing
         connector.max_results = 5
 
-        with patch.object(connector, '_execute_query') as mock_execute:
+        with patch.object(connector, "_execute_query") as mock_execute:
             connector.search_brain_regions("test", limit=10)
 
             call_args = mock_execute.call_args[0][0]
@@ -631,7 +696,7 @@ class TestWikidataConnectorEdgeCases:
 
     def test_empty_search_query(self, connector):
         """Test handling of empty search queries"""
-        with patch.object(connector, '_execute_query') as mock_execute:
+        with patch.object(connector, "_execute_query") as mock_execute:
             mock_execute.return_value = []
 
             results = connector.search_brain_regions("", limit=10)
@@ -642,7 +707,7 @@ class TestWikidataConnectorEdgeCases:
 
     def test_special_characters_in_query(self, connector):
         """Test handling of special characters in search queries"""
-        with patch.object(connector, '_execute_query') as mock_execute:
+        with patch.object(connector, "_execute_query") as mock_execute:
             mock_execute.return_value = []
 
             # Query with quotes and special characters
@@ -654,7 +719,7 @@ class TestWikidataConnectorEdgeCases:
 
     def test_unicode_query_handling(self, connector):
         """Test handling of Unicode characters in queries"""
-        with patch.object(connector, '_execute_query') as mock_execute:
+        with patch.object(connector, "_execute_query") as mock_execute:
             mock_execute.return_value = []
 
             # Unicode query
@@ -667,11 +732,11 @@ class TestWikidataConnectorEdgeCases:
         """Test handling of malformed results from Wikidata"""
         bindings = [
             # Missing required fields
-            {'item': {'type': 'uri'}},  # Missing 'value'
+            {"item": {"type": "uri"}},  # Missing 'value'
             # Invalid URI format
-            {'item': {'type': 'uri', 'value': 'not-a-valid-uri'}},
+            {"item": {"type": "uri", "value": "not-a-valid-uri"}},
             # Unknown type
-            {'item': {'type': 'unknown', 'value': 'test'}}
+            {"item": {"type": "unknown", "value": "test"}},
         ]
 
         # Should not crash on malformed data
@@ -695,7 +760,7 @@ class TestWikidataConnectorEdgeCases:
 
     def test_zero_results_limit(self, connector):
         """Test handling of zero results limit"""
-        with patch.object(connector, '_execute_query') as mock_execute:
+        with patch.object(connector, "_execute_query") as mock_execute:
             mock_execute.return_value = []
 
             connector.search_brain_regions("test", limit=0)
@@ -706,7 +771,7 @@ class TestWikidataConnectorEdgeCases:
 
     def test_negative_limit_handling(self, connector):
         """Test handling of negative limit values"""
-        with patch.object(connector, '_execute_query') as mock_execute:
+        with patch.object(connector, "_execute_query") as mock_execute:
             mock_execute.return_value = []
 
             connector.search_brain_regions("test", limit=-5)
@@ -717,7 +782,7 @@ class TestWikidataConnectorEdgeCases:
 
     def test_very_large_limit(self, connector):
         """Test handling of very large limit values"""
-        with patch.object(connector, '_execute_query') as mock_execute:
+        with patch.object(connector, "_execute_query") as mock_execute:
             mock_execute.return_value = []
 
             connector.search_brain_regions("test", limit=999999)
@@ -727,5 +792,5 @@ class TestWikidataConnectorEdgeCases:
             assert f"LIMIT {connector.max_results}" in call_args
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

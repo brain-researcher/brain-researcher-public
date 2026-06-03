@@ -90,15 +90,13 @@ class AgentStreamProcessor(StreamProcessor):
                 message_id=message.message_id,
                 success=True,
                 processing_time_ms=result.get("processing_time", 0),
-                output_data=result
+                output_data=result,
             )
 
         except Exception as e:
             logger.error(f"Error processing agent stream message: {e}", exc_info=True)
             return ProcessingResult(
-                message_id=message.message_id,
-                success=False,
-                error=str(e)
+                message_id=message.message_id, success=False, error=str(e)
             )
 
     def _convert_to_agent_message(self, message: StreamMessage) -> AgentStreamMessage:
@@ -110,7 +108,7 @@ class AgentStreamProcessor(StreamProcessor):
             message_type=AgentStreamType(message.value.get("type", "user_queries")),
             payload=message.value.get("payload", {}),
             timestamp=message.timestamp,
-            priority=message.value.get("priority", 0)
+            priority=message.value.get("priority", 0),
         )
 
     async def _process_user_query(self, message: AgentStreamMessage) -> dict[str, Any]:
@@ -124,9 +122,7 @@ class AgentStreamProcessor(StreamProcessor):
             try:
                 # Use the agent's run method to process the query
                 result = await asyncio.to_thread(
-                    self.agent.run,
-                    query,
-                    thread_id=message.thread_id
+                    self.agent.run, query, thread_id=message.thread_id
                 )
 
                 processing_time = (datetime.now() - start_time).total_seconds() * 1000
@@ -135,7 +131,7 @@ class AgentStreamProcessor(StreamProcessor):
                     "type": "query_response",
                     "thread_id": message.thread_id,
                     "response": result,
-                    "processing_time": processing_time
+                    "processing_time": processing_time,
                 }
 
             except Exception as e:
@@ -143,17 +139,19 @@ class AgentStreamProcessor(StreamProcessor):
                 return {
                     "type": "error",
                     "error": str(e),
-                    "thread_id": message.thread_id
+                    "thread_id": message.thread_id,
                 }
         else:
             # Fallback processing without agent
             return {
                 "type": "acknowledgment",
                 "message": f"Received query: {query[:100]}...",
-                "thread_id": message.thread_id
+                "thread_id": message.thread_id,
             }
 
-    async def _process_analysis_request(self, message: AgentStreamMessage) -> dict[str, Any]:
+    async def _process_analysis_request(
+        self, message: AgentStreamMessage
+    ) -> dict[str, Any]:
         """Process analysis request from stream."""
         analysis_type = message.payload.get("analysis_type", "unknown")
         parameters = message.payload.get("parameters", {})
@@ -168,10 +166,12 @@ class AgentStreamProcessor(StreamProcessor):
             "analysis_type": analysis_type,
             "analysis_id": f"analysis_{message.message_id}",
             "thread_id": message.thread_id,
-            "parameters": parameters
+            "parameters": parameters,
         }
 
-    async def _process_tool_execution(self, message: AgentStreamMessage) -> dict[str, Any]:
+    async def _process_tool_execution(
+        self, message: AgentStreamMessage
+    ) -> dict[str, Any]:
         """Process tool execution from stream."""
         tool_name = message.payload.get("tool_name", "unknown")
         tool_args = message.payload.get("tool_args", {})
@@ -179,7 +179,7 @@ class AgentStreamProcessor(StreamProcessor):
         logger.info(f"Processing tool execution: {tool_name}")
 
         # If agent is available, execute the tool
-        if self.agent and hasattr(self.agent, 'tool_registry'):
+        if self.agent and hasattr(self.agent, "tool_registry"):
             try:
                 tool = self.agent.tool_registry.get_tool(tool_name)
                 if tool:
@@ -189,13 +189,13 @@ class AgentStreamProcessor(StreamProcessor):
                         "type": "tool_result",
                         "tool_name": tool_name,
                         "result": result,
-                        "thread_id": message.thread_id
+                        "thread_id": message.thread_id,
                     }
                 else:
                     return {
                         "type": "error",
                         "error": f"Tool {tool_name} not found",
-                        "thread_id": message.thread_id
+                        "thread_id": message.thread_id,
                     }
 
             except Exception as e:
@@ -203,22 +203,24 @@ class AgentStreamProcessor(StreamProcessor):
                 return {
                     "type": "error",
                     "error": str(e),
-                    "thread_id": message.thread_id
+                    "thread_id": message.thread_id,
                 }
         else:
             return {
                 "type": "acknowledgment",
                 "message": f"Received tool execution request for {tool_name}",
-                "thread_id": message.thread_id
+                "thread_id": message.thread_id,
             }
 
-    async def _process_generic_message(self, message: AgentStreamMessage) -> dict[str, Any]:
+    async def _process_generic_message(
+        self, message: AgentStreamMessage
+    ) -> dict[str, Any]:
         """Process generic message from stream."""
         return {
             "type": "processed",
             "message_type": message.message_type.value,
             "thread_id": message.thread_id,
-            "payload": message.payload
+            "payload": message.payload,
         }
 
 
@@ -246,7 +248,7 @@ class AgentStreamingManager:
         self.stats = {
             "streams_configured": 0,
             "messages_processed": 0,
-            "processing_errors": 0
+            "processing_errors": 0,
         }
 
     async def setup_streams(self):
@@ -279,7 +281,7 @@ class AgentStreamingManager:
             stream_type=StreamType.BEHAVIORAL,  # Closest match
             consumer_group="agent-service",
             batch_size=50,
-            batch_timeout_ms=500
+            batch_timeout_ms=500,
         )
 
         self.stream_configs["queries"] = config
@@ -292,7 +294,7 @@ class AgentStreamingManager:
             stream_type=StreamType.NEUROIMAGING,
             consumer_group="agent-service",
             batch_size=20,
-            batch_timeout_ms=1000
+            batch_timeout_ms=1000,
         )
 
         self.stream_configs["analysis"] = config
@@ -305,7 +307,7 @@ class AgentStreamingManager:
             stream_type=StreamType.ANNOTATION,
             consumer_group="agent-service",
             batch_size=30,
-            batch_timeout_ms=800
+            batch_timeout_ms=800,
         )
 
         self.stream_configs["tools"] = config
@@ -318,7 +320,7 @@ class AgentStreamingManager:
             stream_type=StreamType.NEUROIMAGING,
             consumer_group="agent-service",
             batch_size=25,
-            batch_timeout_ms=1200
+            batch_timeout_ms=1200,
         )
 
         self.stream_configs["results"] = config
@@ -331,7 +333,11 @@ class AgentStreamingManager:
         processor = AgentStreamProcessor(self.agent)
 
         # Register for all stream types
-        for stream_type in [StreamType.BEHAVIORAL, StreamType.NEUROIMAGING, StreamType.ANNOTATION]:
+        for stream_type in [
+            StreamType.BEHAVIORAL,
+            StreamType.NEUROIMAGING,
+            StreamType.ANNOTATION,
+        ]:
             self.streaming.register_processor(stream_type, processor)
 
         logger.info("Registered agent stream processors")
@@ -341,7 +347,7 @@ class AgentStreamingManager:
         thread_id: str,
         query: str,
         user_id: str | None = None,
-        metadata: dict[str, Any] | None = None
+        metadata: dict[str, Any] | None = None,
     ):
         """Publish a user query to the stream.
 
@@ -351,15 +357,12 @@ class AgentStreamingManager:
             user_id: Optional user ID
             metadata: Additional metadata
         """
-        message_data = {
+        {
             "thread_id": thread_id,
             "user_id": user_id,
             "type": "user_queries",
-            "payload": {
-                "query": query,
-                "metadata": metadata or {}
-            },
-            "timestamp": datetime.now().isoformat()
+            "payload": {"query": query, "metadata": metadata or {}},
+            "timestamp": datetime.now().isoformat(),
         }
 
         # In production, would publish to Kafka
@@ -371,7 +374,7 @@ class AgentStreamingManager:
         thread_id: str,
         analysis_type: str,
         parameters: dict[str, Any],
-        user_id: str | None = None
+        user_id: str | None = None,
     ):
         """Publish an analysis request to the stream.
 
@@ -381,15 +384,12 @@ class AgentStreamingManager:
             parameters: Analysis parameters
             user_id: Optional user ID
         """
-        message_data = {
+        {
             "thread_id": thread_id,
             "user_id": user_id,
             "type": "analysis_requests",
-            "payload": {
-                "analysis_type": analysis_type,
-                "parameters": parameters
-            },
-            "timestamp": datetime.now().isoformat()
+            "payload": {"analysis_type": analysis_type, "parameters": parameters},
+            "timestamp": datetime.now().isoformat(),
         }
 
         logger.info(f"Would publish analysis request: {analysis_type}")
@@ -400,7 +400,7 @@ class AgentStreamingManager:
         thread_id: str,
         tool_name: str,
         tool_args: dict[str, Any],
-        user_id: str | None = None
+        user_id: str | None = None,
     ):
         """Publish a tool execution request to the stream.
 
@@ -410,24 +410,19 @@ class AgentStreamingManager:
             tool_args: Tool arguments
             user_id: Optional user ID
         """
-        message_data = {
+        {
             "thread_id": thread_id,
             "user_id": user_id,
             "type": "tool_executions",
-            "payload": {
-                "tool_name": tool_name,
-                "tool_args": tool_args
-            },
-            "timestamp": datetime.now().isoformat()
+            "payload": {"tool_name": tool_name, "tool_args": tool_args},
+            "timestamp": datetime.now().isoformat(),
         }
 
         logger.info(f"Would publish tool execution: {tool_name}")
         self.stats["messages_processed"] += 1
 
     def register_message_handler(
-        self,
-        message_type: AgentStreamType,
-        handler: Callable
+        self, message_type: AgentStreamType, handler: Callable
     ):
         """Register a custom message handler.
 
@@ -447,17 +442,12 @@ class AgentStreamingManager:
         """Get streaming statistics."""
         streaming_stats = self.streaming.get_statistics()
 
-        return {
-            "agent_stats": self.stats,
-            "streaming_stats": streaming_stats
-        }
+        return {"agent_stats": self.stats, "streaming_stats": streaming_stats}
 
 
 # Integration helper functions
 async def setup_agent_streaming(
-    agent_state_machine,
-    kafka_config=None,
-    redis_client=None
+    agent_state_machine, kafka_config=None, redis_client=None
 ) -> AgentStreamingManager:
     """Set up agent streaming integration.
 
@@ -506,9 +496,7 @@ class StreamingToolWrapper:
 
         # Publish tool execution to stream
         await self.streaming_manager.publish_tool_execution(
-            thread_id=thread_id,
-            tool_name=self.tool.get_tool_name(),
-            tool_args=kwargs
+            thread_id=thread_id, tool_name=self.tool.get_tool_name(), tool_args=kwargs
         )
 
         # Execute original tool
@@ -519,10 +507,7 @@ class StreamingToolWrapper:
         return result
 
 
-def wrap_tools_for_streaming(
-    tool_registry,
-    streaming_manager: AgentStreamingManager
-):
+def wrap_tools_for_streaming(tool_registry, streaming_manager: AgentStreamingManager):
     """Wrap all tools in registry for streaming.
 
     Args:
@@ -530,7 +515,7 @@ def wrap_tools_for_streaming(
         streaming_manager: Streaming manager
     """
     for tool_name, tool in tool_registry.tools.items():
-        wrapper = StreamingToolWrapper(tool, streaming_manager)
+        StreamingToolWrapper(tool, streaming_manager)
         logger.debug(f"Wrapped tool {tool_name} for streaming")
 
     logger.info(f"Wrapped {len(tool_registry.tools)} tools for streaming")

@@ -22,8 +22,6 @@ import json
 import os
 import time
 from dataclasses import dataclass
-from typing import Any, Optional
-
 
 POR_TOKEN_PREFIX = "por_v1"
 
@@ -40,7 +38,7 @@ def is_signed_por_token(token: str) -> bool:
     return isinstance(token, str) and token.startswith(f"{POR_TOKEN_PREFIX}.")
 
 
-def get_por_token_secret() -> Optional[str]:
+def get_por_token_secret() -> str | None:
     return (
         os.getenv("BR_POR_TOKEN_SECRET")
         or os.getenv("POR_TOKEN_SECRET")
@@ -77,7 +75,9 @@ def _b64url_decode(raw: str) -> bytes:
 
 
 def _sign(secret: str, payload_b64: str) -> str:
-    digest = hmac.new(secret.encode("utf-8"), payload_b64.encode("ascii"), hashlib.sha256).digest()
+    digest = hmac.new(
+        secret.encode("utf-8"), payload_b64.encode("ascii"), hashlib.sha256
+    ).digest()
     return _b64url_encode(digest)
 
 
@@ -87,12 +87,19 @@ def issue_por_token(
     version: int,
     secret: str,
     ttl_seconds: int,
-    now: Optional[int] = None,
+    now: int | None = None,
 ) -> str:
     issued_at = int(time.time() if now is None else now)
     exp = issued_at + max(60, int(ttl_seconds))
-    payload = {"plan_id": plan_id, "version": int(version), "iat": issued_at, "exp": exp}
-    payload_b64 = _b64url_encode(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8"))
+    payload = {
+        "plan_id": plan_id,
+        "version": int(version),
+        "iat": issued_at,
+        "exp": exp,
+    }
+    payload_b64 = _b64url_encode(
+        json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    )
     sig_b64 = _sign(secret, payload_b64)
     return f"{POR_TOKEN_PREFIX}.{payload_b64}.{sig_b64}"
 
@@ -103,7 +110,7 @@ def verify_por_token(
     plan_id: str,
     version: int,
     secret: str,
-    now: Optional[int] = None,
+    now: int | None = None,
 ) -> PorTokenClaims:
     if not is_signed_por_token(token):
         raise ValueError("POR token is not signed (expected por_v1.*)")
@@ -139,14 +146,18 @@ def verify_por_token(
     if exp < now_ts:
         raise ValueError("POR token expired")
 
-    return PorTokenClaims(plan_id=str(token_plan_id), version=int(token_version), iat=iat, exp=exp)
+    return PorTokenClaims(
+        plan_id=str(token_plan_id), version=int(token_version), iat=iat, exp=exp
+    )
 
 
 def issue_por_token_from_env(*, plan_id: str, version: int) -> str:
     secret = get_por_token_secret()
     if not secret:
         if por_token_enforced():
-            raise RuntimeError("BR_POR_TOKEN_SECRET is required when POR tokens are enforced")
+            raise RuntimeError(
+                "BR_POR_TOKEN_SECRET is required when POR tokens are enforced"
+            )
         # Fallback: unsigned token (dev only)
         return _b64url_encode(os.urandom(18))
     return issue_por_token(
@@ -157,13 +168,19 @@ def issue_por_token_from_env(*, plan_id: str, version: int) -> str:
     )
 
 
-def verify_por_token_from_env(*, token: str, plan_id: str, version: int) -> Optional[PorTokenClaims]:
+def verify_por_token_from_env(
+    *, token: str, plan_id: str, version: int
+) -> PorTokenClaims | None:
     secret = get_por_token_secret()
     if not secret:
         if por_token_enforced():
-            raise RuntimeError("BR_POR_TOKEN_SECRET is required when POR tokens are enforced")
+            raise RuntimeError(
+                "BR_POR_TOKEN_SECRET is required when POR tokens are enforced"
+            )
         return None
-    return verify_por_token(token=token, plan_id=plan_id, version=version, secret=secret)
+    return verify_por_token(
+        token=token, plan_id=plan_id, version=version, secret=secret
+    )
 
 
 __all__ = [

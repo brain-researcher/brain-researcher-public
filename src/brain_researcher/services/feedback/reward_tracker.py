@@ -1,15 +1,15 @@
 """Reward tracking for reinforcement learning training."""
 
+import json
 import logging
-import time
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Any, Union
-from dataclasses import dataclass, asdict
-from enum import Enum
 from collections import deque
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any
+
 import numpy as np
 import redis
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -28,25 +28,27 @@ class RewardType(Enum):
 @dataclass
 class RewardSignal:
     """Individual reward signal from user interaction."""
+
     user_id: str
     session_id: str
-    state: Dict[str, Any]
+    state: dict[str, Any]
     action: str
     reward: float
-    next_state: Optional[Dict[str, Any]]
+    next_state: dict[str, Any] | None
     timestamp: datetime
     reward_type: RewardType
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     terminal: bool = False
 
 
 @dataclass
 class TrainingExample:
     """Formatted training example for RL algorithms."""
+
     state_vector: np.ndarray
     action_index: int
     reward: float
-    next_state_vector: Optional[np.ndarray]
+    next_state_vector: np.ndarray | None
     done: bool
     importance_weight: float = 1.0
 
@@ -59,52 +61,62 @@ class RewardModel:
         self.weights = {
             "success": 1.0,
             "time_penalty": -0.01,  # per second
-            "cost_penalty": -0.1,   # per unit cost
+            "cost_penalty": -0.1,  # per unit cost
             "quality_bonus": 2.0,
             "error_penalty": -0.5,
-            "user_satisfaction": 3.0
+            "user_satisfaction": 3.0,
         }
 
         # Baseline expectations
         self.baselines = {
             "execution_time": 300,  # 5 minutes expected
             "quality_threshold": 0.7,
-            "cost_threshold": 1.0
+            "cost_threshold": 1.0,
         }
 
     def calculate_reward(
         self,
-        execution_result: Dict[str, Any],
+        execution_result: dict[str, Any],
         execution_time: float,
         execution_cost: float,
-        quality_metrics: Dict[str, float],
-        user_feedback: Optional[Dict[str, Any]] = None
-    ) -> Tuple[float, Dict[str, float]]:
+        quality_metrics: dict[str, float],
+        user_feedback: dict[str, Any] | None = None,
+    ) -> tuple[float, dict[str, float]]:
         """Calculate comprehensive reward signal."""
         reward_components = {}
 
         # Success/failure reward
         success = execution_result.get("success", False)
-        reward_components["success"] = self.weights["success"] if success else -self.weights["success"]
+        reward_components["success"] = (
+            self.weights["success"] if success else -self.weights["success"]
+        )
 
         # Time penalty (relative to baseline)
         time_ratio = execution_time / self.baselines["execution_time"]
         if time_ratio > 1.0:
-            reward_components["time"] = self.weights["time_penalty"] * (time_ratio - 1.0) * 100
+            reward_components["time"] = (
+                self.weights["time_penalty"] * (time_ratio - 1.0) * 100
+            )
         else:
             reward_components["time"] = 0.0
 
         # Cost penalty
         cost_ratio = execution_cost / self.baselines["cost_threshold"]
         if cost_ratio > 1.0:
-            reward_components["cost"] = self.weights["cost_penalty"] * (cost_ratio - 1.0)
+            reward_components["cost"] = self.weights["cost_penalty"] * (
+                cost_ratio - 1.0
+            )
         else:
             reward_components["cost"] = 0.0
 
         # Quality bonus
-        avg_quality = np.mean(list(quality_metrics.values())) if quality_metrics else 0.0
+        avg_quality = (
+            np.mean(list(quality_metrics.values())) if quality_metrics else 0.0
+        )
         if avg_quality > self.baselines["quality_threshold"]:
-            quality_bonus = (avg_quality - self.baselines["quality_threshold"]) * self.weights["quality_bonus"]
+            quality_bonus = (
+                avg_quality - self.baselines["quality_threshold"]
+            ) * self.weights["quality_bonus"]
             reward_components["quality"] = quality_bonus
         else:
             reward_components["quality"] = 0.0
@@ -116,7 +128,9 @@ class RewardModel:
         # User satisfaction
         if user_feedback:
             satisfaction = user_feedback.get("satisfaction_score", 0.0)
-            reward_components["user_satisfaction"] = self.weights["user_satisfaction"] * (satisfaction - 0.5)
+            reward_components["user_satisfaction"] = self.weights[
+                "user_satisfaction"
+            ] * (satisfaction - 0.5)
         else:
             reward_components["user_satisfaction"] = 0.0
 
@@ -124,14 +138,18 @@ class RewardModel:
 
         return total_reward, reward_components
 
-    def update_baselines(self, recent_data: List[Dict]) -> None:
+    def update_baselines(self, recent_data: list[dict]) -> None:
         """Update baseline expectations based on recent performance."""
         if not recent_data:
             return
 
-        times = [d.get("execution_time", 0) for d in recent_data if d.get("execution_time")]
+        times = [
+            d.get("execution_time", 0) for d in recent_data if d.get("execution_time")
+        ]
         if times:
-            self.baselines["execution_time"] = np.percentile(times, 75)  # 75th percentile
+            self.baselines["execution_time"] = np.percentile(
+                times, 75
+            )  # 75th percentile
 
         qualities = []
         for d in recent_data:
@@ -140,7 +158,9 @@ class RewardModel:
                 qualities.append(avg_quality)
 
         if qualities:
-            self.baselines["quality_threshold"] = np.percentile(qualities, 25)  # 25th percentile
+            self.baselines["quality_threshold"] = np.percentile(
+                qualities, 25
+            )  # 25th percentile
 
 
 class StateActionEncoder:
@@ -148,20 +168,30 @@ class StateActionEncoder:
 
     def __init__(self):
         self.state_features = [
-            "task_type", "data_size", "complexity_score", "user_expertise",
-            "available_memory", "cpu_cores", "time_constraints", "quality_requirements"
+            "task_type",
+            "data_size",
+            "complexity_score",
+            "user_expertise",
+            "available_memory",
+            "cpu_cores",
+            "time_constraints",
+            "quality_requirements",
         ]
 
         self.action_features = [
-            "tool_name", "parameter_count", "estimated_time", "estimated_cost",
-            "confidence_score", "complexity_level"
+            "tool_name",
+            "parameter_count",
+            "estimated_time",
+            "estimated_cost",
+            "confidence_score",
+            "complexity_level",
         ]
 
         # Feature encoders (would be learned or predefined)
         self.state_dim = 64
         self.action_dim = 32
 
-    def encode_state(self, state: Dict[str, Any]) -> np.ndarray:
+    def encode_state(self, state: dict[str, Any]) -> np.ndarray:
         """Encode state dictionary to fixed-size vector."""
         # Initialize with zeros
         vector = np.zeros(self.state_dim)
@@ -176,9 +206,13 @@ class StateActionEncoder:
         vector[4] = self._normalize(state.get("data_size", 0), 0, 10000)  # MB
         vector[5] = self._normalize(state.get("complexity_score", 0.5), 0, 1)
         vector[6] = self._normalize(state.get("user_expertise", 0.5), 0, 1)
-        vector[7] = self._normalize(state.get("available_memory", 8000), 1000, 32000)  # MB
+        vector[7] = self._normalize(
+            state.get("available_memory", 8000), 1000, 32000
+        )  # MB
         vector[8] = self._normalize(state.get("cpu_cores", 4), 1, 32)
-        vector[9] = self._normalize(state.get("time_constraints", 3600), 60, 86400)  # seconds
+        vector[9] = self._normalize(
+            state.get("time_constraints", 3600), 60, 86400
+        )  # seconds
         vector[10] = self._normalize(state.get("quality_requirements", 0.7), 0, 1)
 
         # Context features
@@ -194,12 +228,18 @@ class StateActionEncoder:
 
         return vector
 
-    def encode_action(self, action: str, action_metadata: Optional[Dict] = None) -> int:
+    def encode_action(self, action: str, action_metadata: dict | None = None) -> int:
         """Encode action to integer index."""
         # Predefined action vocabulary
         action_vocab = [
-            "preprocess_fmri", "run_glm", "create_contrast", "visualize_results",
-            "statistical_test", "quality_check", "export_data", "optimize_parameters"
+            "preprocess_fmri",
+            "run_glm",
+            "create_contrast",
+            "visualize_results",
+            "statistical_test",
+            "quality_check",
+            "export_data",
+            "optimize_parameters",
         ]
 
         try:
@@ -217,7 +257,9 @@ class StateActionEncoder:
 class RewardTracker:
     """Main reward tracking system for RL training data collection."""
 
-    def __init__(self, redis_client: Optional[redis.Redis] = None, buffer_size: int = 10000):
+    def __init__(
+        self, redis_client: redis.Redis | None = None, buffer_size: int = 10000
+    ):
         self.redis_client = redis_client or redis.Redis(decode_responses=True)
         self.buffer_size = buffer_size
         self.reward_model = RewardModel()
@@ -233,18 +275,18 @@ class RewardTracker:
         self,
         user_id: str,
         session_id: str,
-        state: Dict[str, Any],
+        state: dict[str, Any],
         action: str,
-        reward: Optional[float] = None,
-        next_state: Optional[Dict[str, Any]] = None,
+        reward: float | None = None,
+        next_state: dict[str, Any] | None = None,
         reward_type: str = "custom",
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         terminal: bool = False,
-        execution_result: Optional[Dict[str, Any]] = None,
-        execution_time: Optional[float] = None,
-        execution_cost: Optional[float] = None,
-        quality_metrics: Optional[Dict[str, float]] = None,
-        user_feedback: Optional[Dict[str, Any]] = None
+        execution_result: dict[str, Any] | None = None,
+        execution_time: float | None = None,
+        execution_cost: float | None = None,
+        quality_metrics: dict[str, float] | None = None,
+        user_feedback: dict[str, Any] | None = None,
     ) -> float:
         """Track a reward signal and store for RL training."""
 
@@ -255,7 +297,7 @@ class RewardTracker:
                 execution_time=execution_time or 0.0,
                 execution_cost=execution_cost or 0.0,
                 quality_metrics=quality_metrics or {},
-                user_feedback=user_feedback
+                user_feedback=user_feedback,
             )
             reward = calculated_reward
             metadata = metadata or {}
@@ -279,24 +321,26 @@ class RewardTracker:
             timestamp=datetime.utcnow(),
             reward_type=reward_type_enum,
             metadata=metadata or {},
-            terminal=terminal
+            terminal=terminal,
         )
 
         # Store in buffer and Redis
         self.experience_buffer.append(reward_signal)
         self._store_reward_signal(reward_signal)
 
-        logger.debug(f"Tracked reward: {reward:.3f} for action {action} (user: {user_id})")
+        logger.debug(
+            f"Tracked reward: {reward:.3f} for action {action} (user: {user_id})"
+        )
 
         return reward
 
     def get_training_data(
         self,
-        batch_size: Optional[int] = None,
-        min_reward: Optional[float] = None,
+        batch_size: int | None = None,
+        min_reward: float | None = None,
         max_age_hours: int = 24,
-        balance_actions: bool = True
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        balance_actions: bool = True,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Get formatted training data for RL algorithms."""
 
         # Filter experiences
@@ -318,7 +362,7 @@ class RewardTracker:
                 np.zeros((0,)),
                 np.zeros((0, self.encoder.state_dim)),
                 np.zeros((0,), dtype=bool),
-                np.zeros((0,))
+                np.zeros((0,)),
             )
 
         # Balance actions if requested
@@ -327,7 +371,9 @@ class RewardTracker:
 
         # Sample batch if specified
         if batch_size and len(filtered_experiences) > batch_size:
-            indices = np.random.choice(len(filtered_experiences), batch_size, replace=False)
+            indices = np.random.choice(
+                len(filtered_experiences), batch_size, replace=False
+            )
             filtered_experiences = [filtered_experiences[i] for i in indices]
 
         # Convert to training format
@@ -365,15 +411,15 @@ class RewardTracker:
             np.array(rewards),
             np.array(next_states),
             np.array(dones),
-            np.array(importance_weights)
+            np.array(importance_weights),
         )
 
     def get_reward_statistics(
         self,
-        user_id: Optional[str] = None,
-        action: Optional[str] = None,
-        hours_back: int = 24
-    ) -> Dict[str, float]:
+        user_id: str | None = None,
+        action: str | None = None,
+        hours_back: int = 24,
+    ) -> dict[str, float]:
         """Get reward statistics for analysis."""
         cutoff_time = datetime.utcnow() - timedelta(hours=hours_back)
 
@@ -399,10 +445,10 @@ class RewardTracker:
             "min_reward": float(np.min(rewards)),
             "max_reward": float(np.max(rewards)),
             "median_reward": float(np.median(rewards)),
-            "positive_rate": sum(1 for r in rewards if r > 0) / len(rewards)
+            "positive_rate": sum(1 for r in rewards if r > 0) / len(rewards),
         }
 
-    def get_action_performance(self, hours_back: int = 24) -> Dict[str, Dict]:
+    def get_action_performance(self, hours_back: int = 24) -> dict[str, dict]:
         """Get performance statistics by action."""
         cutoff_time = datetime.utcnow() - timedelta(hours=hours_back)
 
@@ -423,25 +469,24 @@ class RewardTracker:
         for action, data in action_stats.items():
             rewards = data["rewards"]
             if rewards:
-                action_stats[action].update({
-                    "mean_reward": float(np.mean(rewards)),
-                    "std_reward": float(np.std(rewards)),
-                    "success_rate": sum(1 for r in rewards if r > 0) / len(rewards),
-                    "total_reward": sum(rewards)
-                })
+                action_stats[action].update(
+                    {
+                        "mean_reward": float(np.mean(rewards)),
+                        "std_reward": float(np.std(rewards)),
+                        "success_rate": sum(1 for r in rewards if r > 0) / len(rewards),
+                        "total_reward": sum(rewards),
+                    }
+                )
 
         return action_stats
 
-    def update_reward_model(self, performance_data: List[Dict]) -> None:
+    def update_reward_model(self, performance_data: list[dict]) -> None:
         """Update reward model baselines based on recent performance."""
         self.reward_model.update_baselines(performance_data)
         logger.info("Updated reward model baselines")
 
     def export_training_data(
-        self,
-        file_path: str,
-        format: str = "numpy",
-        max_samples: Optional[int] = None
+        self, file_path: str, format: str = "numpy", max_samples: int | None = None
     ) -> None:
         """Export training data to file."""
         states, actions, rewards, next_states, dones, weights = self.get_training_data(
@@ -456,7 +501,7 @@ class RewardTracker:
                 rewards=rewards,
                 next_states=next_states,
                 dones=dones,
-                importance_weights=weights
+                importance_weights=weights,
             )
         elif format == "json":
             data = {
@@ -465,10 +510,10 @@ class RewardTracker:
                 "rewards": rewards.tolist(),
                 "next_states": next_states.tolist(),
                 "dones": dones.tolist(),
-                "importance_weights": weights.tolist()
+                "importance_weights": weights.tolist(),
             }
 
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 json.dump(data, f)
 
         logger.info(f"Exported {len(states)} training samples to {file_path}")
@@ -481,7 +526,7 @@ class RewardTracker:
         original_size = len(self.experience_buffer)
         self.experience_buffer = deque(
             [s for s in self.experience_buffer if s.timestamp >= cutoff_time],
-            maxlen=self.buffer_size
+            maxlen=self.buffer_size,
         )
 
         # Clear from Redis
@@ -500,7 +545,9 @@ class RewardTracker:
                 logger.warning(f"Error checking timestamp for {key}: {e}")
 
         cleared_count = original_size - len(self.experience_buffer)
-        logger.info(f"Cleared {cleared_count} old reward signals from buffer and {deleted_count} from Redis")
+        logger.info(
+            f"Cleared {cleared_count} old reward signals from buffer and {deleted_count} from Redis"
+        )
 
         return cleared_count + deleted_count
 
@@ -516,17 +563,24 @@ class RewardTracker:
 
         # Convert numpy arrays to lists for JSON serialization
         if isinstance(data["state"], dict):
-            data["state"] = {k: v.tolist() if isinstance(v, np.ndarray) else v
-                           for k, v in data["state"].items()}
+            data["state"] = {
+                k: v.tolist() if isinstance(v, np.ndarray) else v
+                for k, v in data["state"].items()
+            }
 
         if data["next_state"] and isinstance(data["next_state"], dict):
-            data["next_state"] = {k: v.tolist() if isinstance(v, np.ndarray) else v
-                                for k, v in data["next_state"].items()}
+            data["next_state"] = {
+                k: v.tolist() if isinstance(v, np.ndarray) else v
+                for k, v in data["next_state"].items()
+            }
 
-        self.redis_client.hset(key, mapping={
-            k: json.dumps(v) if isinstance(v, dict) else str(v)
-            for k, v in data.items()
-        })
+        self.redis_client.hset(
+            key,
+            mapping={
+                k: json.dumps(v) if isinstance(v, dict) else str(v)
+                for k, v in data.items()
+            },
+        )
 
         # Set expiration (30 days)
         self.redis_client.expire(key, 30 * 24 * 3600)
@@ -562,7 +616,7 @@ class RewardTracker:
 
         logger.info(f"Loaded {len(self.experience_buffer)} recent reward signals")
 
-    def _balance_actions(self, experiences: List[RewardSignal]) -> List[RewardSignal]:
+    def _balance_actions(self, experiences: list[RewardSignal]) -> list[RewardSignal]:
         """Balance action distribution in training data."""
         action_groups = {}
 

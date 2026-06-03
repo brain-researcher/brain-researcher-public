@@ -15,11 +15,12 @@ import json
 import os
 import time
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, Dict, Iterator, Optional
+from typing import Any
 
 from brain_researcher.config.paths import get_data_root
 
@@ -35,22 +36,33 @@ def _init_otlp_tracer():
     try:
         from opentelemetry import trace
         from opentelemetry.sdk.resources import Resource
-        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace import (  # type: ignore
+            Status,
+            StatusCode,
+            TracerProvider,
+        )
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
-        from opentelemetry.sdk.trace import Status, StatusCode  # type: ignore
 
         if endpoint_grpc:
-            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter  # type: ignore
+            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+                OTLPSpanExporter,  # type: ignore
+            )
 
-            insecure = os.getenv("BRAIN_RESEARCHER_OTLP_INSECURE", "true").lower() == "true"
+            insecure = (
+                os.getenv("BRAIN_RESEARCHER_OTLP_INSECURE", "true").lower() == "true"
+            )
             exporter = OTLPSpanExporter(endpoint=endpoint_grpc, insecure=insecure)
         else:
-            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter  # type: ignore
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+                OTLPSpanExporter,  # type: ignore
+            )
 
             exporter = OTLPSpanExporter(endpoint=endpoint_http)
 
         service_name = os.getenv("BRAIN_RESEARCHER_SERVICE_NAME", "brain-researcher")
-        provider = TracerProvider(resource=Resource.create({"service.name": service_name}))
+        provider = TracerProvider(
+            resource=Resource.create({"service.name": service_name})
+        )
         processor = BatchSpanProcessor(exporter)
         provider.add_span_processor(processor)
         trace.set_tracer_provider(provider)
@@ -75,7 +87,7 @@ def new_run_id() -> str:
     return uuid.uuid4().hex
 
 
-def prompt_hash(text: Optional[str]) -> str:
+def prompt_hash(text: str | None) -> str:
     """Hash user-visible prompts so raw content never leaves the process."""
     if not text:
         return ""
@@ -106,7 +118,7 @@ def _prune(obj: Any) -> Any:
     return obj
 
 
-def record_event(payload: Dict[str, Any], *, event_type: str = "agent") -> Path:
+def record_event(payload: dict[str, Any], *, event_type: str = "agent") -> Path:
     """
     Persist a telemetry event as a single NDJSON line.
 
@@ -130,12 +142,12 @@ class TelemetrySpan:
 
     name: str
     start_ns: int
-    attributes: Dict[str, Any] = field(default_factory=dict)
-    _otel_cm: Optional[Any] = field(default=None, repr=False)
-    _otel_span: Optional[Any] = field(default=None, repr=False)
+    attributes: dict[str, Any] = field(default_factory=dict)
+    _otel_cm: Any | None = field(default=None, repr=False)
+    _otel_span: Any | None = field(default=None, repr=False)
     _closed: bool = field(default=False, repr=False)
 
-    def finish(self, **extra: Any) -> Dict[str, Any]:
+    def finish(self, **extra: Any) -> dict[str, Any]:
         """Return a dictionary representing the completed span."""
         if self._closed:
             return {
@@ -152,7 +164,11 @@ class TelemetrySpan:
             if _OTEL_STATUS:
                 status_cls, status_code_cls = _OTEL_STATUS
                 if status_cls and status_code_cls:
-                    status_val = status_code_cls.ERROR if extra.get("status") == "error" or extra.get("error") else status_code_cls.OK
+                    status_val = (
+                        status_code_cls.ERROR
+                        if extra.get("status") == "error" or extra.get("error")
+                        else status_code_cls.OK
+                    )
                     self._otel_span.set_status(status_cls(status_val))
         if self._otel_cm:
             try:
@@ -169,7 +185,7 @@ class TelemetrySpan:
         }
 
 
-def start_span(name: str, attributes: Optional[Dict[str, Any]] = None) -> TelemetrySpan:
+def start_span(name: str, attributes: dict[str, Any] | None = None) -> TelemetrySpan:
     """Create a span capture that callers can finish() when work completes."""
     attributes = attributes or {}
     otel_cm = None
@@ -191,7 +207,9 @@ def start_span(name: str, attributes: Optional[Dict[str, Any]] = None) -> Teleme
 
 
 @contextlib.contextmanager
-def span_context(name: str, attributes: Optional[Dict[str, Any]] = None) -> Iterator[TelemetrySpan]:
+def span_context(
+    name: str, attributes: dict[str, Any] | None = None
+) -> Iterator[TelemetrySpan]:
     """
     Context-manager wrapper over start_span for convenience.
 

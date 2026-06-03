@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 from brain_researcher.config.paths import get_data_root
 from brain_researcher.services.shared.brkg_atlas_paths import default_atlas_output_root
@@ -33,7 +33,7 @@ class NiCLIPEvidenceSource(BaseEvidenceSource):
     brain-text aligned embeddings.
     """
 
-    def __init__(self, niclip_data_path: Optional[str] = None):
+    def __init__(self, niclip_data_path: str | None = None):
         """Initialize the NiCLIP source.
 
         Args:
@@ -46,7 +46,7 @@ class NiCLIPEvidenceSource(BaseEvidenceSource):
         )
         self._service = None
         self._engine = None
-        self._available: Optional[bool] = None
+        self._available: bool | None = None
 
     @property
     def source_id(self) -> str:
@@ -119,7 +119,7 @@ class NiCLIPEvidenceSource(BaseEvidenceSource):
         query: str,
         *,
         limit: int = 10,
-        filters: Optional[dict] = None,
+        filters: dict | None = None,
     ) -> Sequence[KnowledgeItem]:
         """Search NiCLIP vocabulary for matching concepts.
 
@@ -198,9 +198,9 @@ class NiCLIPEvidenceSource(BaseEvidenceSource):
                         metadata={
                             "vocabulary_type": vocab_type,
                             "vocabulary_index": idx,
-                            "prior_probability": float(priors[idx])
-                            if idx < len(priors)
-                            else 0.5,
+                            "prior_probability": (
+                                float(priors[idx]) if idx < len(priors) else 0.5
+                            ),
                         },
                     )
                 )
@@ -242,7 +242,7 @@ class NiCLIPEvidenceSource(BaseEvidenceSource):
 
             # Convert to KnowledgeItem
             items = []
-            for i, (dist, idx) in enumerate(zip(distances, indices)):
+            for _i, (dist, idx) in enumerate(zip(distances, indices, strict=False)):
                 if idx < 0 or idx >= len(vocab):
                     continue
 
@@ -261,9 +261,9 @@ class NiCLIPEvidenceSource(BaseEvidenceSource):
                             "vocabulary_type": vocabulary_type,
                             "vocabulary_index": int(idx),
                             "cosine_similarity": score,
-                            "prior_probability": float(priors[idx])
-                            if idx < len(priors)
-                            else 0.5,
+                            "prior_probability": (
+                                float(priors[idx]) if idx < len(priors) else 0.5
+                            ),
                         },
                     )
                 )

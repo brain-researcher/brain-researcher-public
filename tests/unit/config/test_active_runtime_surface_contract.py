@@ -20,7 +20,6 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
         '"port": 5000,',
         '"port": 3001,',
     ),
-    "tests/integration/test_e2e_workflow.py": ('return "http://localhost:3000"',),
     "tests/test_knowledge_graph_integration.js": (
         "http://localhost:5000",
         "port: 5000,",
@@ -40,12 +39,6 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
     "tests/performance/k6/IMPLEMENTATION_SUMMARY.md": (
         "BR-KG Service (Port 5000)",
         'export BR_KG_URL="http://localhost:5000"',
-    ),
-    "tests/k8s/test_deployment_validation.py": (
-        '("br_kg-service", "brain-researcher-core", 5000)',
-    ),
-    "tests/k8s/smoke/test_smoke_tests.py": (
-        "http://br_kg-service.brain-researcher-core.svc.cluster.local:5000",
     ),
     "src/brain_researcher/services/orchestrator/health_monitor.py": (
         'url="http://localhost:3000"',
@@ -128,7 +121,6 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
     "infrastructure/deployment/gcp/GKE_QUICKSTART.md": (
         "infrastructure/docker/Dockerfile.orchestrator",
     ),
-    "scripts/ops/mcp_docker_stdio.sh": ("infrastructure/docker/Dockerfile.mcp",),
 }
 
 ACTIVE_FORBIDDEN_SUBSTRINGS = {
@@ -145,7 +137,6 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
         '"port": 8050,',
         '"port": 8080,',
     ),
-    "tests/integration/test_e2e_workflow.py": ('return "http://localhost:8050"',),
     "tests/test_knowledge_graph_integration.js": (
         "http://localhost:5001",
         "port: 5001,",
@@ -163,12 +154,6 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
     "tests/performance/k6/IMPLEMENTATION_SUMMARY.md": (
         "Port 5001",
         "http://localhost:5001",
-    ),
-    "tests/k8s/test_deployment_validation.py": (
-        '("br_kg-service", "brain-researcher-core", 5001)',
-    ),
-    "tests/k8s/smoke/test_smoke_tests.py": (
-        "http://br_kg-service.brain-researcher-core.svc.cluster.local:5001",
     ),
     "src/brain_researcher/services/orchestrator/health_monitor.py": (
         'url="http://localhost:8050"',
@@ -212,7 +197,6 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
     "infrastructure/deployment/gcp/GKE_QUICKSTART.md": (
         "src/brain_researcher/services/orchestrator/Dockerfile",
     ),
-    "scripts/ops/mcp_docker_stdio.sh": ("-f docker/Dockerfile.mcp",),
     "Dockerfile": (
         "EXPOSE 5000 8050",
         "brain_researcher.services.gateway.asgi_app:app",
@@ -241,21 +225,10 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
         "NEXT_PUBLIC_DEV_ORCH_COMPAT",
     ),
     "infrastructure/docker/Dockerfile.agent": ("web_service_langgraph",),
-    "infrastructure/deployment/gce_k3s/values.prod.yaml": ("AGENT_USE_ASGI",),
     "infrastructure/autoscaling/autoscaler.py": ("'name': 'api-gateway'",),
 }
 
 LEGACY_REQUIRED_SUBSTRINGS = {
-    "tests/integration/test_service_integration.py": (
-        "Legacy full-stack integration suite",
-        "pytest.skip(",
-        "retired from active runtime coverage",
-    ),
-    "tests/e2e/browser_tests.py": (
-        "Legacy browser automation scaffold",
-        "pytest.skip(",
-        "retired from active runtime coverage",
-    ),
 }
 
 

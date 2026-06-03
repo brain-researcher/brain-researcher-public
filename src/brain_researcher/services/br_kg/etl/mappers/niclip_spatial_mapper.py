@@ -13,11 +13,9 @@ This module provides:
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
 
-import numpy as np
 import nibabel as nib
-from scipy.spatial.distance import cdist
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +23,18 @@ logger = logging.getLogger(__name__)
 class NiCLIPSpatialMapper:
     """Maps brain coordinates to concepts using NiCLIP brain-language alignment."""
 
-    def __init__(self, niclip_path: Optional[Path] = None):
+    def __init__(self, niclip_path: Path | None = None):
         """Initialize spatial mapper with NiCLIP data."""
         # Default to standard NiCLIP data path
         if niclip_path is None:
             niclip_path = (
                 Path(__file__).parent.parent.parent.parent.parent.parent
-                / "data" / "niclip" / "dsj56" / "osfstorage" / "osfstorage" / "data"
+                / "data"
+                / "niclip"
+                / "dsj56"
+                / "osfstorage"
+                / "osfstorage"
+                / "data"
             )
 
         self.niclip_path = Path(niclip_path)
@@ -79,17 +82,19 @@ class NiCLIPSpatialMapper:
         """Load vocabulary priors (task/concept scores)."""
         # Use BrainGPT-7B-v0.2 as it's the latest
         prior_file = (
-            self.niclip_path / "vocabulary" /
-            "vocabulary-cogatlas_task-combined_embedding-BrainGPT-7B-v0.2_section-abstract_prior.csv"
+            self.niclip_path
+            / "vocabulary"
+            / "vocabulary-cogatlas_task-combined_embedding-BrainGPT-7B-v0.2_section-abstract_prior.csv"
         )
 
         self.task_priors = {}
         if prior_file.exists():
             import csv
+
             with open(prior_file) as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    self.task_priors[row['name']] = float(row['prior'])
+                    self.task_priors[row["name"]] = float(row["prior"])
             logger.info(f"Loaded {len(self.task_priors)} task priors")
         else:
             logger.warning("Task priors file not found")
@@ -98,8 +103,9 @@ class NiCLIPSpatialMapper:
         """Load DiFuMo brain embeddings."""
         # Load standardized MKDA embeddings
         embed_file = (
-            self.niclip_path / "image" /
-            "image-standardized_coord-MKDA_embedding-DiFuMo.npy"
+            self.niclip_path
+            / "image"
+            / "image-standardized_coord-MKDA_embedding-DiFuMo.npy"
         )
 
         if embed_file.exists():
@@ -117,14 +123,15 @@ class NiCLIPSpatialMapper:
 
         if tasks_file.exists():
             import csv
+
             with open(tasks_file) as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    task = row['task']
+                    task = row["task"]
                     concepts = [
-                        row.get('concept_1', '').strip(),
-                        row.get('concept_2', '').strip(),
-                        row.get('concept_3', '').strip()
+                        row.get("concept_1", "").strip(),
+                        row.get("concept_2", "").strip(),
+                        row.get("concept_3", "").strip(),
                     ]
                     self.task_concepts[task] = [c for c in concepts if c]
 
@@ -138,10 +145,10 @@ class NiCLIPSpatialMapper:
 
     def coordinate_to_concepts(
         self,
-        coordinates: List[Tuple[float, float, float]],
+        coordinates: list[tuple[float, float, float]],
         radius: float = 10.0,
-        top_k: int = 5
-    ) -> List[Dict]:
+        top_k: int = 5,
+    ) -> list[dict]:
         """
         Map MNI coordinates to cognitive concepts.
 
@@ -154,22 +161,23 @@ class NiCLIPSpatialMapper:
             List of mappings for each coordinate
         """
         if not self._loaded:
-            return [{
-                "coordinate": coord,
-                "concepts": [],
-                "error": "NiCLIP data not loaded"
-            } for coord in coordinates]
+            return [
+                {"coordinate": coord, "concepts": [], "error": "NiCLIP data not loaded"}
+                for coord in coordinates
+            ]
 
         results = []
 
         for coord in coordinates:
             # Validate coordinate is in brain
             if self.brain_mask and not self._is_in_brain(coord):
-                results.append({
-                    "coordinate": coord,
-                    "concepts": [],
-                    "warning": "Coordinate outside brain mask"
-                })
+                results.append(
+                    {
+                        "coordinate": coord,
+                        "concepts": [],
+                        "warning": "Coordinate outside brain mask",
+                    }
+                )
                 continue
 
             # Find nearby parcels/regions
@@ -180,59 +188,56 @@ class NiCLIPSpatialMapper:
 
             # Sort by score and take top k
             sorted_concepts = sorted(
-                concept_scores.items(),
-                key=lambda x: x[1],
-                reverse=True
+                concept_scores.items(), key=lambda x: x[1], reverse=True
             )[:top_k]
 
-            results.append({
-                "coordinate": coord,
-                "concepts": [
-                    {
-                        "name": concept,
-                        "score": score,
-                        "process": self.concept_process.get(concept, "unmapped")
-                    }
-                    for concept, score in sorted_concepts
-                ],
-                "radius_mm": radius
-            })
+            results.append(
+                {
+                    "coordinate": coord,
+                    "concepts": [
+                        {
+                            "name": concept,
+                            "score": score,
+                            "process": self.concept_process.get(concept, "unmapped"),
+                        }
+                        for concept, score in sorted_concepts
+                    ],
+                    "radius_mm": radius,
+                }
+            )
 
         return results
 
-    def _is_in_brain(self, coord: Tuple[float, float, float]) -> bool:
+    def _is_in_brain(self, coord: tuple[float, float, float]) -> bool:
         """Check if coordinate is within brain mask."""
         if self.brain_mask is None:
             return True  # Assume valid if no mask
 
         # Convert MNI to voxel coordinates
-        voxel_coord = nib.affines.apply_affine(
-            np.linalg.inv(self.brain_affine),
-            coord
-        )
+        voxel_coord = nib.affines.apply_affine(np.linalg.inv(self.brain_affine), coord)
 
         # Check bounds
         x, y, z = [int(round(c)) for c in voxel_coord]
-        if (0 <= x < self.brain_data.shape[0] and
-            0 <= y < self.brain_data.shape[1] and
-            0 <= z < self.brain_data.shape[2]):
+        if (
+            0 <= x < self.brain_data.shape[0]
+            and 0 <= y < self.brain_data.shape[1]
+            and 0 <= z < self.brain_data.shape[2]
+        ):
             return self.brain_data[x, y, z] > 0
         return False
 
     def _find_nearby_regions(
-        self,
-        coord: Tuple[float, float, float],
-        radius: float
-    ) -> List[Dict]:
+        self, coord: tuple[float, float, float], radius: float
+    ) -> list[dict]:
         """Find brain regions within radius of coordinate."""
         # For now, return mock regions
         # In full implementation, this would use DiFuMo atlas
         return [
             {"region": "dlPFC", "distance": 5.0, "weight": 0.8},
-            {"region": "ACC", "distance": 8.0, "weight": 0.6}
+            {"region": "ACC", "distance": 8.0, "weight": 0.6},
         ]
 
-    def _regions_to_concepts(self, regions: List[Dict]) -> Dict[str, float]:
+    def _regions_to_concepts(self, regions: list[dict]) -> dict[str, float]:
         """Map brain regions to cognitive concepts with scores."""
         concept_scores = {}
 
@@ -245,7 +250,7 @@ class NiCLIPSpatialMapper:
             # For now, use task priors as proxy
             for task, prior in self.task_priors.items():
                 # Weight by region proximity
-                score = prior * region['weight']
+                score = prior * region["weight"]
 
                 # Get concepts for this task
                 if task in self.task_concepts:
@@ -257,17 +262,17 @@ class NiCLIPSpatialMapper:
 
         return concept_scores
 
-    def get_task_brain_alignment(self, task_name: str) -> Optional[float]:
+    def get_task_brain_alignment(self, task_name: str) -> float | None:
         """Get brain-language alignment score for a task."""
         return self.task_priors.get(task_name, None)
 
-    def get_concept_process(self, concept: str) -> Optional[str]:
+    def get_concept_process(self, concept: str) -> str | None:
         """Get cognitive process for a concept."""
         return self.concept_process.get(concept, None)
 
 
 # Convenience function
-def get_spatial_mapper() -> Optional[NiCLIPSpatialMapper]:
+def get_spatial_mapper() -> NiCLIPSpatialMapper | None:
     """Get or create the global spatial mapper instance."""
     try:
         return NiCLIPSpatialMapper()

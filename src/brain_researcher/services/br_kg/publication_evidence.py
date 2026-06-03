@@ -352,7 +352,8 @@ def _collect_publication_evidence_for_entity(
                     "claim": claim,
                     "claim_edge_props": _rec_get(record, "claim_edge_props", {}) or {},
                     "evidence_span": evidence_span,
-                    "support_edge_props": _rec_get(record, "support_edge_props", {}) or {},
+                    "support_edge_props": _rec_get(record, "support_edge_props", {})
+                    or {},
                     "evidence_anchor_scope": "dataset_mediated",
                 }
             )
@@ -366,9 +367,9 @@ def _collect_publication_evidence_for_entity(
             str(row.get("mention_type") or ""),
         )
         existing = deduped_rows.get(key)
-        if existing is None or _publication_row_priority(row) < _publication_row_priority(
-            existing
-        ):
+        if existing is None or _publication_row_priority(
+            row
+        ) < _publication_row_priority(existing):
             deduped_rows[key] = row
     ordered_rows = list(deduped_rows.values())
     if ordered_rows or not _is_dataset_like_entity(entity):

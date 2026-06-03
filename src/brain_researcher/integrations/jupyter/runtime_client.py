@@ -204,7 +204,10 @@ async def ensure_session(
                 )
     existing_sessions = await list_sessions(target, timeout_seconds=timeout_seconds)
     for item in existing_sessions:
-        if item.get("path") != target.session_path and item.get("name") != target.session_name:
+        if (
+            item.get("path") != target.session_path
+            and item.get("name") != target.session_name
+        ):
             continue
         kernel = dict(item.get("kernel") or {})
         kernel_id = str(kernel.get("id") or "").strip()

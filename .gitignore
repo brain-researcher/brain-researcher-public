@@ -235,18 +235,30 @@ model_weights/
 !docs/architecture/codegraph_baseline.json
 !apps/web-ui/public/benchmarks/
 !apps/web-ui/public/benchmarks/*.json
+!apps/web-ui/public/understand-br/
+!apps/web-ui/public/understand-br/**/*.png
+!apps/web-ui/public/demo-volumes/
+!apps/web-ui/public/demo-volumes/*.nii
+!apps/web-ui/public/demo-volumes/*.nii.gz
 !benchmarks/**/*.schema.json
 !configs/demo/run_bundles/**/run_bundle.json
-!brain_researcher/services/web_ui/package.json
-!brain_researcher/services/web_ui/package-lock.json
-!brain_researcher/services/web_ui/tsconfig.json
-!brain_researcher/services/web_ui/.eslintrc.json
-!brain_researcher/services/web_ui/messages/*.json
-!brain_researcher/services/web_ui/src/config/chat_scenarios.json
+!configs/demo/**/*.json
+!apps/web-ui/package.json
+!apps/web-ui/package-lock.json
+!apps/web-ui/tsconfig.json
+!apps/web-ui/.eslintrc.json
+!apps/web-ui/messages/
+!apps/web-ui/messages/**/*.json
+!apps/web-ui/src/config/chat_scenarios.json
 !docs/mcp_tools.schema.json
+!docs/use_cases/**/*.json
+!docs/use_cases/**/*.csv
+!docs/use_cases/**/*.pdf
 !configs/schemas/brain_researcher_case_package.schema.json
 !contracts/**/*.json
 !contracts/*.json
+!src/brain_researcher/core/contracts/**/*.json
+!infrastructure/monitoring/**/*.json
 
 # Cache directories
 .cache/

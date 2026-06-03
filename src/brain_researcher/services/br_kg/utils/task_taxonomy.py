@@ -117,7 +117,9 @@ class TaskTaxonomyResolver:
             fallback_match["match_method"] = "name_lookup"
             fallback_node = fallback_match.pop("_fallback_node_id", None)
             return TaskMatchResult(
-                match=fallback_match, method="name_lookup", fallback_node_id=fallback_node
+                match=fallback_match,
+                method="name_lookup",
+                fallback_node_id=fallback_node,
             )
 
         return None
@@ -252,7 +254,9 @@ class TaskTaxonomyResolver:
             or subfamily_id
         ).strip()
         family_description = str(
-            match.get("family_description") or entity_payload.get("family_description") or ""
+            match.get("family_description")
+            or entity_payload.get("family_description")
+            or ""
         ).strip()
 
         return {
@@ -263,7 +267,9 @@ class TaskTaxonomyResolver:
             "family_description": family_description,
         }
 
-    def _ensure_task_family_link(self, task_node_id: str, family_payload: dict[str, str]) -> None:
+    def _ensure_task_family_link(
+        self, task_node_id: str, family_payload: dict[str, str]
+    ) -> None:
         family_id = family_payload["family_id"]
 
         existing_family = self.db.find_nodes(

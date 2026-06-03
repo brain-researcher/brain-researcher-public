@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from collections import defaultdict
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from collections.abc import Iterable, Sequence
 
 from brain_researcher.semantics.taxonomy.matcher import (
     ConceptMatcher,
@@ -19,7 +19,7 @@ MEASURES_THRESHOLD = 0.90
 SUGGESTS_THRESHOLD = 0.75
 
 
-def _safe_iter(value: Optional[Iterable[str]]) -> Iterable[str]:
+def _safe_iter(value: Iterable[str] | None) -> Iterable[str]:
     if not value:
         return []
     return value
@@ -30,8 +30,8 @@ class ConstructManager:
 
     def __init__(self, db) -> None:
         self.db = db
-        self._process_index: Dict[str, Set[str]] = defaultdict(set)
-        self._concept_process_index: Dict[str, Set[str]] = defaultdict(set)
+        self._process_index: dict[str, set[str]] = defaultdict(set)
+        self._concept_process_index: dict[str, set[str]] = defaultdict(set)
         self._load_process_index()
         self._load_concept_process_index()
 
@@ -54,13 +54,13 @@ class ConstructManager:
                 process_id = record.get("id") or record.get("name")
                 if not process_id:
                     continue
-                names: List[str] = []
+                names: list[str] = []
                 primary = record.get("name")
                 if primary:
                     names.append(primary)
                 for field in ("aliases", "alt_labels"):
                     entries = record.get(field) or []
-                    if isinstance(entries, (list, tuple, set)):
+                    if isinstance(entries, list | tuple | set):
                         names.extend(str(item) for item in entries if item)
                 names.append(process_id)
                 for name in names:
@@ -100,9 +100,11 @@ class ConstructManager:
                 pass
 
     # ------------------------------------------------------------------ lookups
-    def process_ids_for_names(self, domains: Sequence[str]) -> Tuple[Set[str], List[str]]:
-        matches: Set[str] = set()
-        misses: List[str] = []
+    def process_ids_for_names(
+        self, domains: Sequence[str]
+    ) -> tuple[set[str], list[str]]:
+        matches: set[str] = set()
+        misses: list[str] = []
         for domain in domains:
             if not domain:
                 continue
@@ -116,8 +118,8 @@ class ConstructManager:
                 misses.append(domain)
         return matches, misses
 
-    def process_ids_for_concepts(self, concept_ids: Iterable[str]) -> Set[str]:
-        matches: Set[str] = set()
+    def process_ids_for_concepts(self, concept_ids: Iterable[str]) -> set[str]:
+        matches: set[str] = set()
         for concept_id in concept_ids:
             if not concept_id:
                 continue
@@ -147,7 +149,9 @@ class ConstructManager:
                 "confidence": float(confidence),
             }
             try:
-                if self.db.create_relationship(entity_id, process_id, relationship, rel_props):
+                if self.db.create_relationship(
+                    entity_id, process_id, relationship, rel_props
+                ):
                     created += 1
             except Exception as exc:  # pragma: no cover - defensive
                 logger.debug(
@@ -188,9 +192,9 @@ class NeurostoreTaskLinker:
     # ------------------------------------------------------------------ public
     def link_tasks(
         self,
-        tasks: Sequence[Dict[str, object]],
-        node_map: Dict[str, str],
-    ) -> Dict[str, int]:
+        tasks: Sequence[dict[str, object]],
+        node_map: dict[str, str],
+    ) -> dict[str, int]:
         stats = {
             "concept_links": 0,
             "domain_links": 0,
@@ -215,7 +219,7 @@ class NeurostoreTaskLinker:
             stats["concept_links"] += concept_created
             stats["concept_misses"] += concept_misses
 
-            process_ids: Set[str] = set()
+            process_ids: set[str] = set()
             if matched_concepts:
                 process_ids.update(
                     self._construct_manager.process_ids_for_concepts(matched_concepts)
@@ -223,8 +227,10 @@ class NeurostoreTaskLinker:
 
             domains = task.get("domains_original") or []
             if domains:
-                domain_matches, domain_misses = self._construct_manager.process_ids_for_names(
-                    [str(domain) for domain in domains if domain]
+                domain_matches, domain_misses = (
+                    self._construct_manager.process_ids_for_names(
+                        [str(domain) for domain in domains if domain]
+                    )
                 )
                 process_ids.update(domain_matches)
                 stats["domain_misses"] += len(domain_misses)
@@ -246,8 +252,8 @@ class NeurostoreTaskLinker:
         self,
         task_node_id: str,
         concept_names: Iterable[object],
-    ) -> Tuple[Set[str], int, int]:
-        matched_concepts: Set[str] = set()
+    ) -> tuple[set[str], int, int]:
+        matched_concepts: set[str] = set()
         created = 0
         misses = 0
 
@@ -320,8 +326,8 @@ class NeurostoreTaskLinker:
 
         return matched_concepts, created, misses
 
-    def _resolve_concept_candidate(self, candidate: MatchCandidate) -> Optional[str]:
-        candidate_ids: List[str] = []
+    def _resolve_concept_candidate(self, candidate: MatchCandidate) -> str | None:
+        candidate_ids: list[str] = []
         if candidate.canonical_id:
             candidate_ids.extend(
                 {
@@ -350,7 +356,7 @@ class NeurostoreTaskLinker:
 
         return None
 
-    def _find_concept_node_by_id(self, candidate_id: str) -> Optional[str]:
+    def _find_concept_node_by_id(self, candidate_id: str) -> str | None:
         if not candidate_id:
             return None
         try:
@@ -379,7 +385,7 @@ class NeurostoreTaskLinker:
 
         return None
 
-    def _find_concept_node_by_name(self, label: str) -> Optional[str]:
+    def _find_concept_node_by_name(self, label: str) -> str | None:
         if not label:
             return None
         lowered = label.casefold()

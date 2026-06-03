@@ -23,7 +23,9 @@ class ExperimentConfigV1(BaseModel):
 
     schema_version: Literal["experiment-config-v1"] = "experiment-config-v1"
     experiment_id: str
-    comparison_type: str = Field(description="Comparison label, e.g. integrated_vs_isolated.")
+    comparison_type: str = Field(
+        description="Comparison label, e.g. integrated_vs_isolated."
+    )
     commit_sha: str | None = None
     seeds: dict[str, int] = Field(default_factory=dict)
     environment: dict[str, Any] = Field(default_factory=dict)

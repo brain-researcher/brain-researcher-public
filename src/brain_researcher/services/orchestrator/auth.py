@@ -8,21 +8,21 @@ there; this module is intentionally simple and side-effect free.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class User(BaseModel):
     id: str
     username: str
-    email: Optional[str] = None
+    email: str | None = None
     roles: list[str] = []
 
 
 async def get_current_user() -> User:
     """Return a minimal test user."""
-    return User(id="test-user", username="test", email="test@example.com", roles=["tester"])
+    return User(
+        id="test-user", username="test", email="test@example.com", roles=["tester"]
+    )
 
 
 async def get_current_active_user() -> User:

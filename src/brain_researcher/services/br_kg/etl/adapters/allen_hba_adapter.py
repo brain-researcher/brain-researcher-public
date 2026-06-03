@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 from .base import EvidenceAdapter
 
@@ -8,15 +8,19 @@ from .base import EvidenceAdapter
 class AllenHBAAdapter(EvidenceAdapter):
     """Adapter providing Allen Human Brain Atlas gene expression summaries."""
 
-    def __init__(self, *, data_path: Optional[str] = None) -> None:
-        super().__init__(data_path=data_path, default_source="allen_hba", default_score_key="expression")
+    def __init__(self, *, data_path: str | None = None) -> None:
+        super().__init__(
+            data_path=data_path,
+            default_source="allen_hba",
+            default_score_key="expression",
+        )
 
     def fetch(
         self,
         *,
-        region_ids: Optional[Iterable[str]] = None,
-        gene_symbols: Optional[Iterable[str]] = None,
-    ) -> List[dict]:
+        region_ids: Iterable[str] | None = None,
+        gene_symbols: Iterable[str] | None = None,
+    ) -> list[dict]:
         region_set = frozenset(region_ids or [])
         gene_set = frozenset(gene_symbols or [])
         payload = []

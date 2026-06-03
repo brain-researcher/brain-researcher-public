@@ -27,7 +27,9 @@ def _generate_checklist_from_spec(bundle: CodeReviewBundle) -> list[str]:
     checklist.append(f"Plan has {len(bundle.plan_steps)} step(s)")
 
     if bundle.declared_modalities:
-        checklist.append(f"Declared modalities: {', '.join(bundle.declared_modalities)}")
+        checklist.append(
+            f"Declared modalities: {', '.join(bundle.declared_modalities)}"
+        )
     if bundle.declared_spaces:
         checklist.append(f"Declared spaces: {', '.join(bundle.declared_spaces)}")
     if bundle.workflow_id:
@@ -35,23 +37,41 @@ def _generate_checklist_from_spec(bundle: CodeReviewBundle) -> list[str]:
 
     # Check expected structural properties
     has_registration = any(
-        t in {
-            "coreg_register", "coreg_apply_xfm", "fsl_flirt", "fsl_fnirt",
-            "ants_registration", "antsregistration", "mri_robust_register",
+        t
+        in {
+            "coreg_register",
+            "coreg_apply_xfm",
+            "fsl_flirt",
+            "fsl_fnirt",
+            "ants_registration",
+            "antsregistration",
+            "mri_robust_register",
         }
         for t in tools_lower
     )
     has_glm = any(
-        t in {
-            "glm_fit", "glm_first_level", "spm_glm", "nilearn_first_level_model",
-            "first_level_model", "fsl_feat", "fsl_film_gls",
+        t
+        in {
+            "glm_fit",
+            "glm_first_level",
+            "spm_glm",
+            "nilearn_first_level_model",
+            "first_level_model",
+            "fsl_feat",
+            "fsl_film_gls",
         }
         for t in tools_lower
     )
     has_confound = any(
-        t in {
-            "confound_regression", "regress_confounds", "nilearn_clean_img",
-            "fsl_regfilt", "aroma_denoise", "fmriprep_confounds", "extract_confounds",
+        t
+        in {
+            "confound_regression",
+            "regress_confounds",
+            "nilearn_clean_img",
+            "fsl_regfilt",
+            "aroma_denoise",
+            "fmriprep_confounds",
+            "extract_confounds",
         }
         for t in tools_lower
     )

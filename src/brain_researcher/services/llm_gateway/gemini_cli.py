@@ -16,8 +16,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
-
+from typing import Any
 
 # Limits and defaults
 MAX_INPUT_CHARS = 1_000_000
@@ -51,9 +50,9 @@ class GeminiProcessError(GeminiCLIError):
 @dataclass
 class GeminiResult:
     text: str
-    usage: Dict[str, Any]
-    raw: Optional[str] = None
-    model: Optional[str] = None
+    usage: dict[str, Any]
+    raw: str | None = None
+    model: str | None = None
 
 
 def sanitize_input(text: str) -> str:
@@ -111,7 +110,7 @@ def get_gemini_executable() -> str:
     )
 
 
-def check_gemini_version(timeout_sec: int = 5) -> Optional[str]:
+def check_gemini_version(timeout_sec: int = 5) -> str | None:
     """Return the gemini CLI version string if available, else None."""
     try:
         exe = get_gemini_executable()
@@ -199,7 +198,7 @@ def quick_health_check(timeout_sec: int = 3) -> bool:
         return False
 
 
-def parse_gemini_response(output: str) -> Dict[str, Any]:
+def parse_gemini_response(output: str) -> dict[str, Any]:
     """Parse Gemini CLI output into a normalized dict with fallbacks."""
     if not output:
         return {"text": "", "usage": {"total_tokens": 0}}
@@ -264,11 +263,11 @@ def execute_chat(
     prompt: str,
     model: str = "gemini-3-flash-preview",
     *,
-    max_output_tokens: Optional[int] = None,
-    thinking_budget: Optional[int] = None,
-    strict_json: Optional[bool] = None,
-    task_type: Optional[str] = None,
-    ctx_tokens: Optional[int] = None,
+    max_output_tokens: int | None = None,
+    thinking_budget: int | None = None,
+    strict_json: bool | None = None,
+    task_type: str | None = None,
+    ctx_tokens: int | None = None,
     timeout_sec: int = DEFAULT_TIMEOUT_SEC,
 ) -> GeminiResult:
     """Execute a single-turn chat via local gemini CLI.
@@ -349,11 +348,6 @@ def execute_chat(
     parsed = parse_gemini_response(stdout)
     # CLI v0.22+ returns the model output under "response"; older/alt schemas
     # use "text" or "output". Check all three so both transport versions work.
-    text = (
-        parsed.get("response")
-        or parsed.get("text")
-        or parsed.get("output")
-        or ""
-    )
+    text = parsed.get("response") or parsed.get("text") or parsed.get("output") or ""
     usage = parsed.get("usage") or parsed.get("stats", {}).get("models", {}) or {}
     return GeminiResult(text=text, usage=usage, raw=proc.stdout, model=model)

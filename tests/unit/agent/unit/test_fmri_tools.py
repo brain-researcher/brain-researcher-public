@@ -7,7 +7,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from brain_researcher.services.tools.tool_base import ToolResult
 from brain_researcher.services.tools.fmri_tools import (
     BrainSimilarityArgs,
     BrainSimilarityTool,
@@ -19,6 +18,7 @@ from brain_researcher.services.tools.fmri_tools import (
     GLMAnalysisArgs,
     GLMAnalysisTool,
 )
+from brain_researcher.services.tools.tool_base import ToolResult
 
 
 class TestGLMAnalysisTool:
@@ -433,9 +433,7 @@ class TestFMRITools:
         assert lc_tool.args_schema == GLMAnalysisArgs
 
         # Test it can be called
-        with patch(
-            "brain_researcher.services.br_kg.api.glmfitlins_api.GLMFitlinsAPI"
-        ):
+        with patch("brain_researcher.services.br_kg.api.glmfitlins_api.GLMFitlinsAPI"):
             result = lc_tool.func(dataset_id="ds000001", contrasts={"test": [1, -1]})
             assert isinstance(result, dict)
             assert "status" in result

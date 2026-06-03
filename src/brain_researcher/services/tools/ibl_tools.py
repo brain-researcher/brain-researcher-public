@@ -103,7 +103,9 @@ def _resolve_ibl_aggregate_release(local_path: str | None) -> Path | None:
     if not aggregate_root.exists() or not aggregate_root.is_dir():
         return None
     releases = [
-        child for child in _sorted_child_dirs(aggregate_root) if "IBL_et_al_BWM" in child.name
+        child
+        for child in _sorted_child_dirs(aggregate_root)
+        if "IBL_et_al_BWM" in child.name
     ]
     if not releases:
         return None
@@ -111,7 +113,9 @@ def _resolve_ibl_aggregate_release(local_path: str | None) -> Path | None:
 
 
 def _ibl_aggregate_summary(release_dir: Path) -> dict[str, Any]:
-    aggregate_files = sorted(child.name for child in release_dir.iterdir() if child.is_file())
+    aggregate_files = sorted(
+        child.name for child in release_dir.iterdir() if child.is_file()
+    )
     required_files = {
         name: (release_dir / name).exists() for name in _IBL_BWM_AGGREGATE_FILES
     }
@@ -273,12 +277,14 @@ def _resolve_local_session_context(
         "session_path": str(session_path),
         "session_summary": session_summary,
         "raw_ephys_dir": str(raw_ephys_dir) if raw_ephys_dir.exists() else None,
-        "raw_ephys_probe_dir": str(probe_path) if probe_path and probe_path.exists() else None,
+        "raw_ephys_probe_dir": (
+            str(probe_path) if probe_path and probe_path.exists() else None
+        ),
         "raw_video_dir": str(raw_video_dir) if raw_video_dir.exists() else None,
-        "video_files": _list_files(raw_video_dir, limit=12) if raw_video_dir.exists() else [],
+        "video_files": (
+            _list_files(raw_video_dir, limit=12) if raw_video_dir.exists() else []
+        ),
     }
-
-
 
 
 def _pick_pose_camera(video_path: str | None) -> str | None:
@@ -300,7 +306,9 @@ def _find_alf_pose_file(alf_dir: Path, prefix: str, extension: str) -> Path | No
             return matches[0]
 
     revision_dirs = sorted(
-        child for child in alf_dir.iterdir() if child.is_dir() and child.name.startswith("#")
+        child
+        for child in alf_dir.iterdir()
+        if child.is_dir() and child.name.startswith("#")
     )
     for revision_dir in reversed(revision_dirs):
         for pattern in direct_patterns:
@@ -323,7 +331,8 @@ def _resolve_precomputed_pose_files(
     backend_token = "lightningPose" if backend == "lightning_pose" else "dlc"
     preferred_camera = _pick_pose_camera(video_path)
     search_order = (
-        (preferred_camera,) + tuple(c for c in _POSE_CAMERA_PRIORITY if c != preferred_camera)
+        (preferred_camera,)
+        + tuple(c for c in _POSE_CAMERA_PRIORITY if c != preferred_camera)
         if preferred_camera
         else _POSE_CAMERA_PRIORITY
     )
@@ -340,8 +349,12 @@ def _resolve_precomputed_pose_files(
         times_path = _find_alf_pose_file(alf_dir, f"_ibl_{camera}.times", "npy")
         features_path = _find_alf_pose_file(alf_dir, f"_ibl_{camera}.features", "pqt")
         if features_path is None:
-            features_path = _find_alf_pose_file(alf_dir, f"_ibl_{camera}.features", "parquet")
-        roi_motion_path = _find_alf_pose_file(alf_dir, f"{camera}.ROIMotionEnergy", "npy")
+            features_path = _find_alf_pose_file(
+                alf_dir, f"_ibl_{camera}.features", "parquet"
+            )
+        roi_motion_path = _find_alf_pose_file(
+            alf_dir, f"{camera}.ROIMotionEnergy", "npy"
+        )
         return {
             "camera": camera,
             "coord_path": str(coord_path),
@@ -380,7 +393,9 @@ def _materialize_pose_tables(
     if pose_files.get("features_path"):
         metrics_df = pd.read_parquet(pose_files["features_path"]).copy()
     else:
-        likelihood_cols = [col for col in coord_df.columns if col.endswith("_likelihood")]
+        likelihood_cols = [
+            col for col in coord_df.columns if col.endswith("_likelihood")
+        ]
         summary = {
             "camera": pose_files["camera"],
             "backend": backend,
@@ -469,7 +484,9 @@ def _resolve_requested_session_paths(
     seen: set[str] = set()
     resolved: list[Path] = []
     for requested_id in requested:
-        path = _resolve_session_path(data_root, session_id=requested_id, subject_id=None)
+        path = _resolve_session_path(
+            data_root, session_id=requested_id, subject_id=None
+        )
         if path is None:
             continue
         key = str(path)
@@ -532,22 +549,33 @@ class IBLOneArgs(_IBLBaseArgs):
         default=None,
         description="Optional search/query string to narrow the dataset or session scope.",
     )
-    limit: int = Field(default=25, ge=1, le=500, description="Maximum results to plan for.")
+    limit: int = Field(
+        default=25, ge=1, le=500, description="Maximum results to plan for."
+    )
 
 
 class IBLBrainboxSessionEphysArgs(_IBLBaseArgs):
     session_id: str | None = Field(default=None, description="IBL session identifier.")
     subject_id: str | None = Field(default=None, description="IBL subject identifier.")
-    dataset_ref: str | None = Field(default=None, description="Dataset reference for the session.")
+    dataset_ref: str | None = Field(
+        default=None, description="Dataset reference for the session."
+    )
     probe_label: str | None = Field(default=None, description="Optional probe label.")
-    load_trials: bool = Field(default=True, description="Whether trial tables should be planned.")
-    load_wheel: bool = Field(default=True, description="Whether wheel tables should be extracted.")
-    load_spikes: bool = Field(default=True, description="Whether spike tables should be planned.")
+    load_trials: bool = Field(
+        default=True, description="Whether trial tables should be planned."
+    )
+    load_wheel: bool = Field(
+        default=True, description="Whether wheel tables should be extracted."
+    )
+    load_spikes: bool = Field(
+        default=True, description="Whether spike tables should be planned."
+    )
     load_regions: bool = Field(
         default=True, description="Whether cluster-region tables should be extracted."
     )
     load_channels: bool = Field(
-        default=True, description="Whether channel-coordinate tables should be extracted."
+        default=True,
+        description="Whether channel-coordinate tables should be extracted.",
     )
     load_electrode_sites: bool = Field(
         default=True, description="Whether electrode-site tables should be extracted."
@@ -568,7 +596,9 @@ class IBLBrainboxSessionEphysArgs(_IBLBaseArgs):
 
 
 class IBLAtlasRegionMappingArgs(_IBLBaseArgs):
-    atlas_name: str = Field(default="AllenCCFv3", description="Atlas identifier to map against.")
+    atlas_name: str = Field(
+        default="AllenCCFv3", description="Atlas identifier to map against."
+    )
     coordinates: list[str] = Field(
         default_factory=list,
         description="Optional coordinate strings or identifiers to map.",
@@ -580,7 +610,9 @@ class IBLRigTaskLayerArgs(_IBLBaseArgs):
         default="visual decision-making",
         description="Task name to stage or inspect.",
     )
-    subject_id: str | None = Field(default=None, description="Optional subject identifier.")
+    subject_id: str | None = Field(
+        default=None, description="Optional subject identifier."
+    )
     n_trials: int | None = Field(
         default=None,
         ge=1,
@@ -590,7 +622,9 @@ class IBLRigTaskLayerArgs(_IBLBaseArgs):
 
 class IBLSpikeSorterArgs(_IBLBaseArgs):
     sorter: str = Field(default="ibl-sorter", description="Sorter name to plan for.")
-    session_id: str | None = Field(default=None, description="Optional session identifier.")
+    session_id: str | None = Field(
+        default=None, description="Optional session identifier."
+    )
     probe_label: str | None = Field(default=None, description="Optional probe label.")
 
 
@@ -599,12 +633,20 @@ class IBLKilosortArgs(_IBLBaseArgs):
         default=None,
         description="Raw electrophysiology directory or probe folder for Kilosort input.",
     )
-    dataset_ref: str | None = Field(default=None, description="Optional IBL dataset reference.")
-    session_id: str | None = Field(default=None, description="Optional IBL session identifier.")
-    subject_id: str | None = Field(default=None, description="Optional subject identifier.")
+    dataset_ref: str | None = Field(
+        default=None, description="Optional IBL dataset reference."
+    )
+    session_id: str | None = Field(
+        default=None, description="Optional IBL session identifier."
+    )
+    subject_id: str | None = Field(
+        default=None, description="Optional subject identifier."
+    )
     probe_label: str | None = Field(default=None, description="Optional probe label.")
     sorter: str = Field(default="kilosort4", description="Spike sorting backend.")
-    output_dir: str | None = Field(default=None, description="Optional output directory.")
+    output_dir: str | None = Field(
+        default=None, description="Optional output directory."
+    )
     max_duration_s: float | None = Field(
         default=None,
         gt=0,
@@ -613,11 +655,21 @@ class IBLKilosortArgs(_IBLBaseArgs):
 
 
 class IBLPoseToolArgs(_IBLBaseArgs):
-    video_path: str | None = Field(default=None, description="Input video file or directory.")
-    dataset_ref: str | None = Field(default=None, description="Optional IBL dataset reference.")
-    session_id: str | None = Field(default=None, description="Optional IBL session identifier.")
-    subject_id: str | None = Field(default=None, description="Optional subject identifier.")
-    output_dir: str | None = Field(default=None, description="Optional output directory.")
+    video_path: str | None = Field(
+        default=None, description="Input video file or directory."
+    )
+    dataset_ref: str | None = Field(
+        default=None, description="Optional IBL dataset reference."
+    )
+    session_id: str | None = Field(
+        default=None, description="Optional IBL session identifier."
+    )
+    subject_id: str | None = Field(
+        default=None, description="Optional subject identifier."
+    )
+    output_dir: str | None = Field(
+        default=None, description="Optional output directory."
+    )
     keypoint_schema: list[str] = Field(
         default_factory=list,
         description="Optional keypoint names or schema hints.",
@@ -625,17 +677,29 @@ class IBLPoseToolArgs(_IBLBaseArgs):
 
 
 class IBLSpikeBehaviorAlignmentArgs(_IBLBaseArgs):
-    spike_times_path: str | None = Field(default=None, description="Spike-times table path.")
-    events_path: str | None = Field(default=None, description="Behavior/events table path.")
+    spike_times_path: str | None = Field(
+        default=None, description="Spike-times table path."
+    )
+    events_path: str | None = Field(
+        default=None, description="Behavior/events table path."
+    )
     pose_coordinates_path: str | None = Field(
         default=None,
         description="Optional pose/keypoint coordinate table path.",
     )
-    dataset_ref: str | None = Field(default=None, description="Optional IBL dataset reference.")
-    session_id: str | None = Field(default=None, description="Optional IBL session identifier.")
-    subject_id: str | None = Field(default=None, description="Optional subject identifier.")
+    dataset_ref: str | None = Field(
+        default=None, description="Optional IBL dataset reference."
+    )
+    session_id: str | None = Field(
+        default=None, description="Optional IBL session identifier."
+    )
+    subject_id: str | None = Field(
+        default=None, description="Optional subject identifier."
+    )
     probe_label: str | None = Field(default=None, description="Optional probe label.")
-    output_dir: str | None = Field(default=None, description="Optional output directory.")
+    output_dir: str | None = Field(
+        default=None, description="Optional output directory."
+    )
     spike_limit: int | None = Field(
         default=None,
         ge=1,
@@ -652,14 +716,22 @@ class IBLNeuropixelsWorkflowArgs(_IBLBaseArgs):
         default=None,
         description="Raw electrophysiology directory override for Kilosort.",
     )
-    video_path: str | None = Field(default=None, description="Optional video input path.")
+    video_path: str | None = Field(
+        default=None, description="Optional video input path."
+    )
     behavior_events_path: str | None = Field(
         default=None,
         description="Optional behavior/events table path.",
     )
-    dataset_ref: str | None = Field(default=None, description="Optional IBL dataset reference.")
-    session_id: str | None = Field(default=None, description="Optional IBL session identifier.")
-    subject_id: str | None = Field(default=None, description="Optional subject identifier.")
+    dataset_ref: str | None = Field(
+        default=None, description="Optional IBL dataset reference."
+    )
+    session_id: str | None = Field(
+        default=None, description="Optional IBL session identifier."
+    )
+    subject_id: str | None = Field(
+        default=None, description="Optional subject identifier."
+    )
     probe_label: str | None = Field(default=None, description="Optional probe label.")
     pose_backend: str = Field(
         default="lightning_pose",
@@ -669,7 +741,9 @@ class IBLNeuropixelsWorkflowArgs(_IBLBaseArgs):
         default=True,
         description="Whether the workflow should include a pose-tracking stage.",
     )
-    output_dir: str | None = Field(default=None, description="Optional output directory root.")
+    output_dir: str | None = Field(
+        default=None, description="Optional output directory root."
+    )
     spike_limit: int | None = Field(
         default=None,
         ge=1,
@@ -699,13 +773,19 @@ class IBLDecodingDatasetArgs(_IBLBaseArgs):
         default=None,
         description="Optional region lookup table path, typically regions_<probe>.parquet.",
     )
-    dataset_ref: str | None = Field(default=None, description="Optional IBL dataset reference.")
-    session_id: str | None = Field(default=None, description="Optional IBL session identifier.")
+    dataset_ref: str | None = Field(
+        default=None, description="Optional IBL dataset reference."
+    )
+    session_id: str | None = Field(
+        default=None, description="Optional IBL session identifier."
+    )
     session_ids: list[str] = Field(
         default_factory=list,
         description="Optional list of IBL session identifiers for multi-session builders.",
     )
-    subject_id: str | None = Field(default=None, description="Optional IBL subject identifier.")
+    subject_id: str | None = Field(
+        default=None, description="Optional IBL subject identifier."
+    )
     probe_label: str | None = Field(default=None, description="Optional probe label.")
     label_field: str = Field(
         default="choice",
@@ -736,7 +816,9 @@ class IBLDecodingDatasetArgs(_IBLBaseArgs):
         ge=1,
         description="Minimum total spike count required to keep a feature column.",
     )
-    output_dir: str | None = Field(default=None, description="Optional output directory.")
+    output_dir: str | None = Field(
+        default=None, description="Optional output directory."
+    )
     spike_limit: int | None = Field(
         default=None,
         ge=1,
@@ -847,7 +929,9 @@ class IBLOneTool(_IBLToolBase):
             if aggregate_release:
                 outputs = {
                     "dataset_ref": args.dataset_ref or _DEFAULT_IBL_DATASET_REF,
-                    "resolved_dataset_id": getattr(resources, "resolved_dataset_id", None),
+                    "resolved_dataset_id": getattr(
+                        resources, "resolved_dataset_id", None
+                    ),
                     "local_path": getattr(resources, "local_path", None),
                     "mount_status": dict(getattr(resources, "mount_status", {}) or {}),
                     "aggregate_summary": _ibl_aggregate_summary(aggregate_release),
@@ -861,11 +945,15 @@ class IBLOneTool(_IBLToolBase):
                 )
             data_root = _resolve_ibl_data_root(getattr(resources, "local_path", None))
             if data_root:
-                sample_sessions = _discover_ibl_sessions(data_root, limit=min(args.limit, 5))
+                sample_sessions = _discover_ibl_sessions(
+                    data_root, limit=min(args.limit, 5)
+                )
                 labs = _list_ibl_labs(data_root)
                 outputs = {
                     "dataset_ref": args.dataset_ref or _DEFAULT_IBL_DATASET_REF,
-                    "resolved_dataset_id": getattr(resources, "resolved_dataset_id", None),
+                    "resolved_dataset_id": getattr(
+                        resources, "resolved_dataset_id", None
+                    ),
                     "local_path": getattr(resources, "local_path", None),
                     "data_root": str(data_root),
                     "mount_status": dict(getattr(resources, "mount_status", {}) or {}),
@@ -969,9 +1057,11 @@ class IBLBrainboxSessionEphysTool(_IBLToolBase):
                         )
                     except FileNotFoundError as exc:
                         extracted = {
-                            "output_dir": str(Path(args.output_dir).expanduser())
-                            if args.output_dir
-                            else None,
+                            "output_dir": (
+                                str(Path(args.output_dir).expanduser())
+                                if args.output_dir
+                                else None
+                            ),
                             "alf_path": str(session_path / "alf"),
                             "probes": session_summary["probe_labels"],
                             "notes": [str(exc)],
@@ -1160,13 +1250,10 @@ class IBLKilosortTool(_IBLToolBase):
                     or local_context.get("raw_ephys_dir")
                     or resolved_data_dir
                 )
-                resolved_probe_label = (
-                    args.probe_label
-                    or (
-                        Path(local_context["raw_ephys_probe_dir"]).name
-                        if local_context.get("raw_ephys_probe_dir")
-                        else None
-                    )
+                resolved_probe_label = args.probe_label or (
+                    Path(local_context["raw_ephys_probe_dir"]).name
+                    if local_context.get("raw_ephys_probe_dir")
+                    else None
                 )
 
         planned_command = None
@@ -1182,7 +1269,12 @@ class IBLKilosortTool(_IBLToolBase):
             "output_dir": args.output_dir,
             "max_duration_s": args.max_duration_s,
             "planned_command": planned_command,
-            "planned_outputs": ["spike_times", "qc_report", "features_table", "metadata"],
+            "planned_outputs": [
+                "spike_times",
+                "qc_report",
+                "features_table",
+                "metadata",
+            ],
         }
         if args.dry_run:
             if local_context:
@@ -1223,9 +1315,11 @@ class IBLKilosortTool(_IBLToolBase):
             import spikeinterface.full as si
             import torch
 
-            recording, normalized_inputs, original_duration_s = _load_spikeglx_recording(
-                probe_dir,
-                normalized_dir=normalized_dir,
+            recording, normalized_inputs, original_duration_s = (
+                _load_spikeglx_recording(
+                    probe_dir,
+                    normalized_dir=normalized_dir,
+                )
             )
             start_time_s = _suggest_active_window_start(
                 local_context["session_path"] if local_context else None,
@@ -1239,9 +1333,12 @@ class IBLKilosortTool(_IBLToolBase):
                 start_frame = int(recording.get_sampling_frequency() * clipped_start_s)
                 end_frame = min(
                     recording.get_num_frames(),
-                    start_frame + int(recording.get_sampling_frequency() * args.max_duration_s),
+                    start_frame
+                    + int(recording.get_sampling_frequency() * args.max_duration_s),
                 )
-                recording = recording.frame_slice(start_frame=start_frame, end_frame=end_frame)
+                recording = recording.frame_slice(
+                    start_frame=start_frame, end_frame=end_frame
+                )
                 start_time_s = clipped_start_s
             executed_duration_s = float(
                 recording.get_num_frames() / recording.get_sampling_frequency()
@@ -1252,7 +1349,9 @@ class IBLKilosortTool(_IBLToolBase):
             )
 
             sorter_params = si.get_default_sorter_params(args.sorter)
-            sorter_params["torch_device"] = "cuda" if torch.cuda.is_available() else "cpu"
+            sorter_params["torch_device"] = (
+                "cuda" if torch.cuda.is_available() else "cpu"
+            )
             smoke_mode = bool(args.max_duration_s and args.max_duration_s <= 120)
             if smoke_mode:
                 sorter_params.update(
@@ -1293,11 +1392,12 @@ class IBLKilosortTool(_IBLToolBase):
                 spike_df["unit_id"] = unit_ids[spike_df["unit_index"].to_numpy()]
             else:
                 spike_df["unit_id"] = spike_df["unit_index"]
-            spike_df["time_s"] = (
-                spike_df["sample_index"].to_numpy(dtype=float)
-                / float(recording.get_sampling_frequency())
+            spike_df["time_s"] = spike_df["sample_index"].to_numpy(dtype=float) / float(
+                recording.get_sampling_frequency()
             )
-            spike_df["probe_label"] = _infer_probe_label_from_dir(probe_dir, resolved_probe_label)
+            spike_df["probe_label"] = _infer_probe_label_from_dir(
+                probe_dir, resolved_probe_label
+            )
             spike_df["sorter"] = args.sorter
 
             features_df = (
@@ -1309,20 +1409,28 @@ class IBLKilosortTool(_IBLToolBase):
                 )
                 .reset_index()
             )
-            features_df["firing_rate_hz"] = (
-                features_df["spike_count"].to_numpy(dtype=float) / max(executed_duration_s, 1e-6)
+            features_df["firing_rate_hz"] = features_df["spike_count"].to_numpy(
+                dtype=float
+            ) / max(executed_duration_s, 1e-6)
+            features_df["probe_label"] = _infer_probe_label_from_dir(
+                probe_dir, resolved_probe_label
             )
-            features_df["probe_label"] = _infer_probe_label_from_dir(probe_dir, resolved_probe_label)
 
             spike_output = _write_table_output(spike_df, output_root, "spike_times")
-            features_output = _write_table_output(features_df, output_root, "unit_features")
+            features_output = _write_table_output(
+                features_df, output_root, "unit_features"
+            )
             qc_payload = {
                 "sorter": args.sorter,
                 "probe_dir": str(probe_dir),
-                "probe_label": _infer_probe_label_from_dir(probe_dir, resolved_probe_label),
+                "probe_label": _infer_probe_label_from_dir(
+                    probe_dir, resolved_probe_label
+                ),
                 "n_units": int(len(features_df)),
                 "n_spikes": int(len(spike_df)),
-                "sampling_frequency_hz": float(sorter_recording.get_sampling_frequency()),
+                "sampling_frequency_hz": float(
+                    sorter_recording.get_sampling_frequency()
+                ),
                 "executed_duration_s": executed_duration_s,
                 "original_duration_s": original_duration_s,
                 "max_duration_s": args.max_duration_s,
@@ -1339,7 +1447,9 @@ class IBLKilosortTool(_IBLToolBase):
                     "dataset_ref": args.dataset_ref,
                     "session_id": args.session_id,
                     "subject_id": args.subject_id,
-                    "probe_label": _infer_probe_label_from_dir(probe_dir, resolved_probe_label),
+                    "probe_label": _infer_probe_label_from_dir(
+                        probe_dir, resolved_probe_label
+                    ),
                     "probe_dir": str(probe_dir),
                     "output_dir": str(output_root),
                     "normalized_inputs": normalized_inputs,
@@ -1356,7 +1466,9 @@ class IBLKilosortTool(_IBLToolBase):
             outputs.update(
                 {
                     "data_dir": str(probe_dir),
-                    "probe_label": _infer_probe_label_from_dir(probe_dir, resolved_probe_label),
+                    "probe_label": _infer_probe_label_from_dir(
+                        probe_dir, resolved_probe_label
+                    ),
                     "output_dir": str(output_root),
                     "sorter_output_dir": str(sorter_output),
                     "sorter_recording_dir": str(sorter_recording_dir),
@@ -1395,9 +1507,11 @@ class IBLKilosortTool(_IBLToolBase):
                     "summary": {
                         "tool_id": self.tool_id,
                         "mode": "local_mount" if local_context else "configured",
-                        "dependency_mode": "available"
-                        if dependency_info["all_available"]
-                        else "fallback",
+                        "dependency_mode": (
+                            "available"
+                            if dependency_info["all_available"]
+                            else "fallback"
+                        ),
                         "dependency_summary": dependency_info,
                     },
                 },
@@ -1648,9 +1762,9 @@ class IBLSpikeBehaviorAlignmentTool(_IBLToolBase):
                 )
                 extracted_tables = extracted["tables"]
                 if not args.events_path:
-                    args.events_path = (
-                        extracted_tables.get("trials", {}) or {}
-                    ).get("path")
+                    args.events_path = (extracted_tables.get("trials", {}) or {}).get(
+                        "path"
+                    )
                 if not args.spike_times_path:
                     spike_table_key = (
                         f"spikes_{args.probe_label}"
@@ -1705,7 +1819,9 @@ class IBLSpikeBehaviorAlignmentTool(_IBLToolBase):
 
                 if "trial_index" not in trials_df.columns:
                     trials_df = trials_df.copy()
-                    trials_df.insert(0, "trial_index", np.arange(len(trials_df), dtype=int))
+                    trials_df.insert(
+                        0, "trial_index", np.arange(len(trials_df), dtype=int)
+                    )
 
                 aligned_spikes_df = _append_trial_membership(
                     spikes_df,
@@ -1714,7 +1830,10 @@ class IBLSpikeBehaviorAlignmentTool(_IBLToolBase):
                 )
 
                 aligned_behavior_df = None
-                if wheel_moves_df is not None and "interval_start" in wheel_moves_df.columns:
+                if (
+                    wheel_moves_df is not None
+                    and "interval_start" in wheel_moves_df.columns
+                ):
                     wheel_moves_aligned = _append_trial_membership(
                         wheel_moves_df.rename(columns={"interval_start": "time_s"}),
                         time_column="time_s",
@@ -1734,9 +1853,11 @@ class IBLSpikeBehaviorAlignmentTool(_IBLToolBase):
                 unit_column = (
                     "unit_id"
                     if "unit_id" in aligned_spikes_df.columns
-                    else "cluster_id"
-                    if "cluster_id" in aligned_spikes_df.columns
-                    else None
+                    else (
+                        "cluster_id"
+                        if "cluster_id" in aligned_spikes_df.columns
+                        else None
+                    )
                 )
                 spike_summary = (
                     aligned_spikes_df.loc[aligned_spikes_df["trial_index"] >= 0]
@@ -1758,7 +1879,9 @@ class IBLSpikeBehaviorAlignmentTool(_IBLToolBase):
                         .rename("mean_spike_amp_uV")
                         .reset_index()
                     )
-                    spike_summary = spike_summary.merge(amp_summary, on="trial_index", how="left")
+                    spike_summary = spike_summary.merge(
+                        amp_summary, on="trial_index", how="left"
+                    )
                 trial_features_df = trial_features_df.merge(
                     spike_summary,
                     on="trial_index",
@@ -1774,13 +1897,17 @@ class IBLSpikeBehaviorAlignmentTool(_IBLToolBase):
                     )
                     if "peakAmplitude" in aligned_behavior_df.columns:
                         amp_sum = (
-                            aligned_behavior_df.loc[aligned_behavior_df["trial_index"] >= 0]
+                            aligned_behavior_df.loc[
+                                aligned_behavior_df["trial_index"] >= 0
+                            ]
                             .groupby("trial_index")["peakAmplitude"]
                             .sum()
                             .rename("wheel_peakAmplitude_sum")
                             .reset_index()
                         )
-                        wheel_summary = wheel_summary.merge(amp_sum, on="trial_index", how="left")
+                        wheel_summary = wheel_summary.merge(
+                            amp_sum, on="trial_index", how="left"
+                        )
                     trial_features_df = trial_features_df.merge(
                         wheel_summary,
                         on="trial_index",
@@ -1799,7 +1926,11 @@ class IBLSpikeBehaviorAlignmentTool(_IBLToolBase):
                         .agg(pose_frame_count=("frame_index", "count"))
                         .reset_index()
                     )
-                    likelihood_cols = [col for col in pose_aligned.columns if col.endswith("_likelihood")]
+                    likelihood_cols = [
+                        col
+                        for col in pose_aligned.columns
+                        if col.endswith("_likelihood")
+                    ]
                     if likelihood_cols:
                         pose_quality = (
                             pose_aligned.loc[pose_aligned["trial_index"] >= 0]
@@ -1825,7 +1956,11 @@ class IBLSpikeBehaviorAlignmentTool(_IBLToolBase):
                     output_root,
                     "aligned_spikes",
                 )
-                timeseries_df = aligned_behavior_df if aligned_behavior_df is not None else trials_df
+                timeseries_df = (
+                    aligned_behavior_df
+                    if aligned_behavior_df is not None
+                    else trials_df
+                )
                 timeseries_output = _write_table_output(
                     timeseries_df,
                     output_root,
@@ -1880,9 +2015,11 @@ class IBLSpikeBehaviorAlignmentTool(_IBLToolBase):
                         "summary": {
                             "tool_id": self.tool_id,
                             "mode": "local_mount" if local_context else "configured",
-                            "dependency_mode": "available"
-                            if dependency_info["all_available"]
-                            else "fallback",
+                            "dependency_mode": (
+                                "available"
+                                if dependency_info["all_available"]
+                                else "fallback"
+                            ),
                             "dependency_summary": dependency_info,
                         },
                     },
@@ -2011,7 +2148,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
         local_mode = False
         resources = None
 
-        use_direct_inputs = bool(args.spike_times_path and (args.trials_path or args.trial_features_path))
+        use_direct_inputs = bool(
+            args.spike_times_path and (args.trials_path or args.trial_features_path)
+        )
         if use_direct_inputs:
             spikes_df = _load_table(args.spike_times_path)
             trials_df = _load_table(args.trials_path)
@@ -2027,7 +2166,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
             if trials_df is None:
                 trials_df = _fallback_trials_from_spikes(spikes_df)
                 if trials_df is not None:
-                    notes.append("trial_table_inferred_from_spikes_only; zero-spike trials may be absent")
+                    notes.append(
+                        "trial_table_inferred_from_spikes_only; zero-spike trials may be absent"
+                    )
             if trials_df is None:
                 return ToolResult(
                     status="error",
@@ -2040,7 +2181,10 @@ class IBLDecodingDatasetTool(_IBLToolBase):
             trials_df = _prepare_ibl_trial_metadata(trials_df)
             if args.trial_features_path:
                 trial_features_df = _load_table(args.trial_features_path)
-                if trial_features_df is not None and "trial_index" in trial_features_df.columns:
+                if (
+                    trial_features_df is not None
+                    and "trial_index" in trial_features_df.columns
+                ):
                     merge_cols = [
                         column
                         for column in trial_features_df.columns
@@ -2051,13 +2195,10 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                         on="trial_index",
                         how="left",
                     )
-            actual_probe_label = (
-                args.probe_label
-                or (
-                    str(spikes_df["probe_label"].iloc[0])
-                    if "probe_label" in spikes_df.columns and not spikes_df.empty
-                    else "probe00"
-                )
+            actual_probe_label = args.probe_label or (
+                str(spikes_df["probe_label"].iloc[0])
+                if "probe_label" in spikes_df.columns and not spikes_df.empty
+                else "probe00"
             )
             if "session_id" not in trials_df.columns:
                 trials_df["session_id"] = session_key
@@ -2078,7 +2219,14 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                 }
             )
             prepared_sessions = [
-                (session_key, subject_key, actual_probe_label, trials_df, spikes_df, regions_df)
+                (
+                    session_key,
+                    subject_key,
+                    actual_probe_label,
+                    trials_df,
+                    spikes_df,
+                    regions_df,
+                )
             ]
         else:
             resources = _resolve_ibl_resources(args.dataset_ref)
@@ -2109,7 +2257,11 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                 session_summary = _session_summary_from_path(session_path)
                 extract_output = extract_session_tables(
                     session_path,
-                    output_dir=str(output_root / "inputs" / _safe_session_stem(session_summary["session_id"])),
+                    output_dir=str(
+                        output_root
+                        / "inputs"
+                        / _safe_session_stem(session_summary["session_id"])
+                    ),
                     include_trials=True,
                     include_wheel=False,
                     include_spikes=True,
@@ -2131,14 +2283,22 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                     )
                 )
                 if spike_table_key is None:
-                    notes.append(f"No spike table available for session {session_summary['session_id']}")
+                    notes.append(
+                        f"No spike table available for session {session_summary['session_id']}"
+                    )
                     continue
 
                 actual_probe_label = spike_table_key.removeprefix("spikes_")
-                trials_df = _load_table((extracted_tables.get("trials") or {}).get("path"))
-                spikes_df = _load_table((extracted_tables.get(spike_table_key) or {}).get("path"))
+                trials_df = _load_table(
+                    (extracted_tables.get("trials") or {}).get("path")
+                )
+                spikes_df = _load_table(
+                    (extracted_tables.get(spike_table_key) or {}).get("path")
+                )
                 regions_df = _load_table(
-                    (extracted_tables.get(f"regions_{actual_probe_label}") or {}).get("path")
+                    (extracted_tables.get(f"regions_{actual_probe_label}") or {}).get(
+                        "path"
+                    )
                 )
                 if trials_df is None or spikes_df is None:
                     notes.append(
@@ -2158,8 +2318,12 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                         "source": "mounted_alf",
                         "session_path": str(session_path),
                         "alf_path": extract_output.get("alf_path"),
-                        "trials_path": (extracted_tables.get("trials") or {}).get("path"),
-                        "spike_times_path": (extracted_tables.get(spike_table_key) or {}).get("path"),
+                        "trials_path": (extracted_tables.get("trials") or {}).get(
+                            "path"
+                        ),
+                        "spike_times_path": (
+                            extracted_tables.get(spike_table_key) or {}
+                        ).get("path"),
                         "regions_path": (
                             extracted_tables.get(f"regions_{actual_probe_label}") or {}
                         ).get("path"),
@@ -2203,23 +2367,35 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                 sample_frames.append(trials_df.copy())
 
                 spikes_session = spikes_df.copy()
-                if "trial_index" not in spikes_session.columns or spikes_session["trial_index"].isna().all():
+                if (
+                    "trial_index" not in spikes_session.columns
+                    or spikes_session["trial_index"].isna().all()
+                ):
                     spikes_session = _append_trial_membership(
                         spikes_session,
                         time_column="time_s",
                         trials=trials_df,
                     )
                 if "trial_index" not in spikes_session.columns:
-                    raise ValueError(f"Spike table for {session_key} lacks trial_index and could not be aligned.")
+                    raise ValueError(
+                        f"Spike table for {session_key} lacks trial_index and could not be aligned."
+                    )
 
-                spikes_session = spikes_session.loc[spikes_session["trial_index"] >= 0].copy()
+                spikes_session = spikes_session.loc[
+                    spikes_session["trial_index"] >= 0
+                ].copy()
                 sample_lookup = trials_df.set_index("trial_index")["sample_id"]
-                spikes_session["sample_id"] = spikes_session["trial_index"].map(sample_lookup)
+                spikes_session["sample_id"] = spikes_session["trial_index"].map(
+                    sample_lookup
+                )
                 if "probe_label" not in spikes_session.columns:
                     spikes_session["probe_label"] = actual_probe_label
 
                 relative_time = None
-                if args.anchor_field == "stimOn_times" and "time_from_stimOn_s" in spikes_session.columns:
+                if (
+                    args.anchor_field == "stimOn_times"
+                    and "time_from_stimOn_s" in spikes_session.columns
+                ):
                     relative_time = pd.to_numeric(
                         spikes_session["time_from_stimOn_s"], errors="coerce"
                     )
@@ -2240,7 +2416,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                 if relative_time is not None:
                     spikes_session["relative_time_s"] = relative_time
                     spikes_window = spikes_session.loc[
-                        relative_time.between(args.window_start_s, args.window_end_s, inclusive="both")
+                        relative_time.between(
+                            args.window_start_s, args.window_end_s, inclusive="both"
+                        )
                     ].copy()
                 else:
                     notes.append(
@@ -2248,16 +2426,20 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                     )
                     spikes_window = spikes_session.copy()
 
-                session_index = pd.Index(trials_df["sample_id"].astype(str), name="sample_id")
+                session_index = pd.Index(
+                    trials_df["sample_id"].astype(str), name="sample_id"
+                )
                 counts = pd.DataFrame(index=session_index)
                 if not spikes_window.empty:
                     if feature_level_value == "unit":
                         unit_column = (
                             "unit_id"
                             if "unit_id" in spikes_window.columns
-                            else "cluster_id"
-                            if "cluster_id" in spikes_window.columns
-                            else None
+                            else (
+                                "cluster_id"
+                                if "cluster_id" in spikes_window.columns
+                                else None
+                            )
                         )
                         if unit_column is None:
                             raise ValueError(
@@ -2279,7 +2461,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                         )
                         counts = grouped.reindex(session_index, fill_value=0)
 
-                        unit_features = spikes_window[[unit_column, "feature_name"]].drop_duplicates()
+                        unit_features = spikes_window[
+                            [unit_column, "feature_name"]
+                        ].drop_duplicates()
                         if (
                             regions_df is not None
                             and "cluster_id" in unit_features.columns
@@ -2290,7 +2474,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                                 on="cluster_id",
                                 how="left",
                             )
-                        unit_features = unit_features.rename(columns={unit_column: "unit_identifier"})
+                        unit_features = unit_features.rename(
+                            columns={unit_column: "unit_identifier"}
+                        )
                         unit_features["feature_level"] = "unit"
                         unit_features["session_id"] = session_key
                         unit_features["subject_id"] = subject_key
@@ -2305,7 +2491,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                             raise ValueError(
                                 f"Region table unavailable for {session_key} region-level decoding."
                             )
-                        region_lookup = regions_df.drop_duplicates(subset=["cluster_id"]).copy()
+                        region_lookup = regions_df.drop_duplicates(
+                            subset=["cluster_id"]
+                        ).copy()
                         spikes_region = spikes_window.merge(
                             region_lookup,
                             on="cluster_id",
@@ -2313,7 +2501,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                         )
                         feature_values = spikes_region.get("region_acronym")
                         if feature_values is None or feature_values.isna().all():
-                            feature_values = "region_" + spikes_region["region_id"].astype(str)
+                            feature_values = "region_" + spikes_region[
+                                "region_id"
+                            ].astype(str)
                         else:
                             feature_values = feature_values.fillna(
                                 "region_" + spikes_region["region_id"].astype(str)
@@ -2326,7 +2516,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                         )
                         counts = grouped.reindex(session_index, fill_value=0)
                         region_features = (
-                            spikes_region[["feature_name", "region_acronym", "region_id"]]
+                            spikes_region[
+                                ["feature_name", "region_acronym", "region_id"]
+                            ]
                             .drop_duplicates()
                             .copy()
                         )
@@ -2336,7 +2528,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                 count_frames.append(counts)
 
             sample_metadata_df = pd.concat(sample_frames, ignore_index=True)
-            sample_metadata_df = sample_metadata_df.drop_duplicates(subset=["sample_id"])
+            sample_metadata_df = sample_metadata_df.drop_duplicates(
+                subset=["sample_id"]
+            )
             sample_metadata_df = sample_metadata_df.sort_values(
                 ["session_id", "trial_index"],
                 kind="stable",
@@ -2347,9 +2541,13 @@ class IBLDecodingDatasetTool(_IBLToolBase):
             if not bool(valid_label_mask.any()):
                 raise ValueError(f"No valid labels found for {args.label_field}")
 
-            sample_metadata_df = sample_metadata_df.loc[valid_label_mask].reset_index(drop=True)
+            sample_metadata_df = sample_metadata_df.loc[valid_label_mask].reset_index(
+                drop=True
+            )
             label_values = label_values.loc[valid_label_mask].reset_index(drop=True)
-            y_array, label_info = _encode_label_array(label_values, label_field=args.label_field)
+            y_array, label_info = _encode_label_array(
+                label_values, label_field=args.label_field
+            )
             sample_metadata_df["label_value"] = label_values.tolist()
             if label_info["label_type"] == "categorical":
                 sample_metadata_df["label_code"] = y_array
@@ -2357,36 +2555,48 @@ class IBLDecodingDatasetTool(_IBLToolBase):
             group_values = sample_metadata_df["session_id"]
             if group_by_value == "subject":
                 group_values = sample_metadata_df["subject_id"]
-            groups_array, group_info = _encode_group_array(group_values, group_by=group_by_value)
+            groups_array, group_info = _encode_group_array(
+                group_values, group_by=group_by_value
+            )
             sample_metadata_df["group_value"] = group_values.astype(str).tolist()
             sample_metadata_df["group_code"] = groups_array
 
-            X_df = pd.concat(count_frames, axis=0, sort=True) if count_frames else pd.DataFrame()
+            X_df = (
+                pd.concat(count_frames, axis=0, sort=True)
+                if count_frames
+                else pd.DataFrame()
+            )
             X_df = X_df.reindex(sample_metadata_df["sample_id"].astype(str)).fillna(0.0)
             if X_df.shape[1] == 0:
-                raise ValueError("No spike-derived features were available for decoding.")
+                raise ValueError(
+                    "No spike-derived features were available for decoding."
+                )
 
             feature_totals = X_df.sum(axis=0)
             keep_columns = feature_totals.loc[
                 feature_totals >= float(args.min_feature_count)
             ].index.tolist()
             if not keep_columns:
-                raise ValueError("All decoding features were filtered out by min_feature_count.")
+                raise ValueError(
+                    "All decoding features were filtered out by min_feature_count."
+                )
             X_df = X_df.loc[:, keep_columns].astype(np.float32)
 
             feature_metadata_df = pd.DataFrame(feature_rows)
             if feature_metadata_df.empty:
                 feature_metadata_df = pd.DataFrame({"feature_name": keep_columns})
-            feature_metadata_df = feature_metadata_df.drop_duplicates(subset=["feature_name"])
+            feature_metadata_df = feature_metadata_df.drop_duplicates(
+                subset=["feature_name"]
+            )
             feature_metadata_df = feature_metadata_df.loc[
                 feature_metadata_df["feature_name"].isin(keep_columns)
             ].copy()
             if feature_metadata_df.empty:
                 feature_metadata_df = pd.DataFrame({"feature_name": keep_columns})
             feature_order = {name: index for index, name in enumerate(keep_columns)}
-            feature_metadata_df["feature_index"] = feature_metadata_df["feature_name"].map(
-                feature_order
-            )
+            feature_metadata_df["feature_index"] = feature_metadata_df[
+                "feature_name"
+            ].map(feature_order)
             feature_metadata_df["feature_level"] = feature_level_value
             feature_metadata_df = feature_metadata_df.sort_values(
                 "feature_index", kind="stable"
@@ -2398,7 +2608,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                 "X",
             )
             labels_output = _write_npy_output(np.asarray(y_array), output_root, "y")
-            groups_output = _write_npy_output(np.asarray(groups_array, dtype=np.int64), output_root, "groups")
+            groups_output = _write_npy_output(
+                np.asarray(groups_array, dtype=np.int64), output_root, "groups"
+            )
             sample_metadata_output = _write_table_output(
                 sample_metadata_df,
                 output_root,
@@ -2414,9 +2626,11 @@ class IBLDecodingDatasetTool(_IBLToolBase):
                 {
                     "tool_id": self.tool_id,
                     "dataset_ref": args.dataset_ref,
-                    "resolved_dataset_id": getattr(resources, "resolved_dataset_id", None)
-                    if resources is not None
-                    else None,
+                    "resolved_dataset_id": (
+                        getattr(resources, "resolved_dataset_id", None)
+                        if resources is not None
+                        else None
+                    ),
                     "label_field": args.label_field,
                     "feature_level": feature_level_value,
                     "group_by": group_by_value,
@@ -2467,7 +2681,9 @@ class IBLDecodingDatasetTool(_IBLToolBase):
             )
 
         if local_mode:
-            outputs["local_path"] = getattr(resources, "local_path", None) if resources else None
+            outputs["local_path"] = (
+                getattr(resources, "local_path", None) if resources else None
+            )
             outputs["resolved_dataset_id"] = (
                 getattr(resources, "resolved_dataset_id", None) if resources else None
             )
@@ -2635,15 +2851,15 @@ class IBLNeuropixelsWorkflowTool(_IBLToolBase):
                     allow_missing_dependencies=args.allow_missing_dependencies,
                 )
                 if pose_result.status == "success":
-                    pose_path = (
-                        ((pose_result.data or {}).get("outputs") or {}).get("coord_table_path")
+                    pose_path = ((pose_result.data or {}).get("outputs") or {}).get(
+                        "coord_table_path"
                     )
 
             spike_times_path = None
             if kilosort_result.status == "success":
                 spike_times_path = (
-                    ((kilosort_result.data or {}).get("outputs") or {}).get("spike_times_path")
-                )
+                    (kilosort_result.data or {}).get("outputs") or {}
+                ).get("spike_times_path")
 
             alignment_tool = IBLSpikeBehaviorAlignmentTool()
             alignment_result = alignment_tool._run(
@@ -2665,8 +2881,12 @@ class IBLNeuropixelsWorkflowTool(_IBLToolBase):
                 workflow_notes.append(
                     "kilosort_failed_alignment_used_local_spike_fallback_if_available"
                 )
-            if args.include_pose and (pose_result is None or pose_result.status != "success"):
-                workflow_notes.append("pose_stage_unavailable_or_missing_precomputed_outputs")
+            if args.include_pose and (
+                pose_result is None or pose_result.status != "success"
+            ):
+                workflow_notes.append(
+                    "pose_stage_unavailable_or_missing_precomputed_outputs"
+                )
 
             summary_payload = {
                 "tool_id": self.tool_id,
@@ -2680,7 +2900,9 @@ class IBLNeuropixelsWorkflowTool(_IBLToolBase):
                 "notes": workflow_notes,
                 "step_status": {
                     "kilosort": kilosort_result.status,
-                    "pose": pose_result.status if pose_result is not None else "skipped",
+                    "pose": (
+                        pose_result.status if pose_result is not None else "skipped"
+                    ),
                     "alignment": alignment_result.status,
                 },
             }

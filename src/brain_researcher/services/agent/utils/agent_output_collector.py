@@ -6,13 +6,14 @@ agent execution outputs for performance analysis and model training.
 """
 
 import json
-import uuid
 import time
 import traceback
+import uuid
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, asdict
+from typing import Any
+
 import numpy as np
 
 from brain_researcher.config.paths import get_data_root
@@ -26,13 +27,13 @@ class ToolExecution:
     session_id: str
     tool_name: str
     tool_category: str
-    input_params: Dict[str, Any]
-    output_data: Dict[str, Any]
+    input_params: dict[str, Any]
+    output_data: dict[str, Any]
     execution_time: float
-    memory_usage: Optional[float]
+    memory_usage: float | None
     success: bool
-    error_message: Optional[str]
-    user_feedback: Optional[Dict[str, Any]]
+    error_message: str | None
+    user_feedback: dict[str, Any] | None
 
     def to_jsonl(self) -> str:
         """Convert to JSONL format for training datasets."""
@@ -45,9 +46,9 @@ class ToolExecution:
         """Recursively convert numpy types to Python types."""
         if isinstance(obj, np.ndarray):
             return obj.tolist()
-        elif isinstance(obj, (np.integer, np.int64)):
+        elif isinstance(obj, np.integer | np.int64):
             return int(obj)
-        elif isinstance(obj, (np.floating, np.float64)):
+        elif isinstance(obj, np.floating | np.float64):
             return float(obj)
         elif isinstance(obj, dict):
             return {k: self._convert_numpy_types(v) for k, v in obj.items()}
@@ -89,10 +90,10 @@ class AgentOutputCollector:
         self,
         tool_name: str,
         tool_category: str,
-        input_params: Dict[str, Any],
+        input_params: dict[str, Any],
         execute_fn: callable,
-        **kwargs
-    ) -> Dict[str, Any]:
+        **kwargs,
+    ) -> dict[str, Any]:
         """
         Collect data from a tool execution.
 
@@ -135,7 +136,7 @@ class AgentOutputCollector:
             memory_usage=None,  # TODO: Implement memory tracking
             success=success,
             error_message=error_message,
-            user_feedback=None
+            user_feedback=None,
         )
 
         # Save to appropriate location
@@ -160,10 +161,7 @@ class AgentOutputCollector:
             f.write(execution.to_jsonl() + "\n")
 
     def add_user_feedback(
-        self,
-        tool_name: str,
-        timestamp: str,
-        feedback: Dict[str, Any]
+        self, tool_name: str, timestamp: str, feedback: dict[str, Any]
     ):
         """
         Add user feedback for a specific tool execution.
@@ -179,17 +177,14 @@ class AgentOutputCollector:
             "timestamp": timestamp,
             "tool_name": tool_name,
             "feedback": feedback,
-            "session_id": self.session_id
+            "session_id": self.session_id,
         }
 
         with open(feedback_file, "a") as f:
             f.write(json.dumps(feedback_record) + "\n")
 
     def save_test_run(
-        self,
-        test_name: str,
-        test_results: Dict[str, Any],
-        artifacts: List[Path] = None
+        self, test_name: str, test_results: dict[str, Any], artifacts: list[Path] = None
     ):
         """
         Save a complete test run with metadata and artifacts.
@@ -213,21 +208,27 @@ class AgentOutputCollector:
             for artifact in artifacts:
                 if artifact.exists():
                     import shutil
+
                     dest = test_dir / artifact.name
                     if artifact.is_file():
                         shutil.copy2(artifact, dest)
                     else:
                         shutil.copytree(artifact, dest)
 
-    def get_session_summary(self) -> Dict[str, Any]:
+    def get_session_summary(self) -> dict[str, Any]:
         """Get summary statistics for the current session."""
-        session_file = self.base_path / "metadata" / "sessions" / f"{datetime.now().strftime('%Y-%m-%d')}.jsonl"
+        session_file = (
+            self.base_path
+            / "metadata"
+            / "sessions"
+            / f"{datetime.now().strftime('%Y-%m-%d')}.jsonl"
+        )
 
         if not session_file.exists():
             return {"message": "No executions in current session"}
 
         executions = []
-        with open(session_file, "r") as f:
+        with open(session_file) as f:
             for line in f:
                 if line.strip():
                     exec_data = json.loads(line)
@@ -254,15 +255,15 @@ class AgentOutputCollector:
             "total_executions": total_executions,
             "successful": successful,
             "failed": failed,
-            "success_rate": successful / total_executions if total_executions > 0 else 0,
+            "success_rate": (
+                successful / total_executions if total_executions > 0 else 0
+            ),
             "total_execution_time": total_time,
-            "tools_used": tools_used
+            "tools_used": tools_used,
         }
 
     def export_training_dataset(
-        self,
-        output_file: str,
-        filters: Dict[str, Any] = None
+        self, output_file: str, filters: dict[str, Any] = None
     ) -> int:
         """
         Export collected data as a training dataset.
@@ -281,20 +282,35 @@ class AgentOutputCollector:
             if category_dir.name not in ["metadata", "test_runs"]:
                 exec_file = category_dir / "executions.jsonl"
                 if exec_file.exists():
-                    with open(exec_file, "r") as f:
+                    with open(exec_file) as f:
                         for line in f:
                             if line.strip():
                                 record = json.loads(line)
 
                                 # Apply filters if provided
                                 if filters:
-                                    if "tool_category" in filters and record.get("tool_category") != filters["tool_category"]:
+                                    if (
+                                        "tool_category" in filters
+                                        and record.get("tool_category")
+                                        != filters["tool_category"]
+                                    ):
                                         continue
-                                    if "success" in filters and record.get("success") != filters["success"]:
+                                    if (
+                                        "success" in filters
+                                        and record.get("success") != filters["success"]
+                                    ):
                                         continue
-                                    if "start_date" in filters and record.get("timestamp") < filters["start_date"]:
+                                    if (
+                                        "start_date" in filters
+                                        and record.get("timestamp")
+                                        < filters["start_date"]
+                                    ):
                                         continue
-                                    if "end_date" in filters and record.get("timestamp") > filters["end_date"]:
+                                    if (
+                                        "end_date" in filters
+                                        and record.get("timestamp")
+                                        > filters["end_date"]
+                                    ):
                                         continue
 
                                 records.append(record)
@@ -326,7 +342,7 @@ if __name__ == "__main__":
         input_params={"data_path": "/path/to/data", "param1": 42},
         execute_fn=example_tool,
         data_path="/path/to/data",
-        param1=42
+        param1=42,
     )
 
     # Get session summary
@@ -336,6 +352,6 @@ if __name__ == "__main__":
     # Export training dataset
     num_exported = collector.export_training_dataset(
         output_file="/tmp/training_data.jsonl",
-        filters={"tool_category": "test", "success": True}
+        filters={"tool_category": "test", "success": True},
     )
     print(f"Exported {num_exported} records for training")

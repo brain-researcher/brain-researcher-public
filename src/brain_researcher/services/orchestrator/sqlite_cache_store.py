@@ -10,19 +10,20 @@ Provides persistent cache storage with:
 import asyncio
 import json
 import logging
-import time
-from pathlib import Path
-from typing import Optional, Dict, Any
-
 import os
 import sqlite3
+import time
+from pathlib import Path
+from typing import Any
 
 try:
     import aiosqlite
 except ImportError:
-    raise ImportError("aiosqlite is required for SQLite backend. Install with: pip install aiosqlite")
+    raise ImportError(
+        "aiosqlite is required for SQLite backend. Install with: pip install aiosqlite"
+    )
 
-from .cache_store import CacheStore, CacheEntry, CacheStats
+from .cache_store import CacheEntry, CacheStats, CacheStore
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ class _SyncCursor:
     def __await__(self):
         async def _noop():
             return self
+
         return _noop().__await__()
 
     async def fetchone(self):
@@ -109,11 +111,7 @@ class SqliteCacheStore(CacheStore):
         busy_timeout_ms: SQLite busy timeout in milliseconds (default: 5000)
     """
 
-    def __init__(
-        self,
-        db_path: str | Path,
-        busy_timeout_ms: int = 5000
-    ):
+    def __init__(self, db_path: str | Path, busy_timeout_ms: int = 5000):
         self._db_path = Path(db_path)
         self._busy_timeout_ms = busy_timeout_ms
         self._lock = asyncio.Lock()
@@ -165,7 +163,7 @@ class SqliteCacheStore(CacheStore):
         await db.execute("PRAGMA journal_mode = WAL")
         await db.execute("PRAGMA synchronous = NORMAL")
 
-    async def lookup(self, cache_key: str) -> Optional[CacheEntry]:
+    async def lookup(self, cache_key: str) -> CacheEntry | None:
         """Look up cache entry and update last_accessed_at."""
         async with self._connect() as db:
             await self._configure_connection(db)
@@ -179,7 +177,7 @@ class SqliteCacheStore(CacheStore):
                 FROM run_cache
                 WHERE cache_key = ?
                 """,
-                (cache_key,)
+                (cache_key,),
             )
             row = await cursor.fetchone()
 
@@ -190,7 +188,7 @@ class SqliteCacheStore(CacheStore):
             # Update last_accessed_at
             await db.execute(
                 "UPDATE run_cache SET last_accessed_at = ? WHERE cache_key = ?",
-                (int(time.time()), cache_key)
+                (int(time.time()), cache_key),
             )
             await db.commit()
 
@@ -213,9 +211,9 @@ class SqliteCacheStore(CacheStore):
         self,
         cache_key: str,
         run_id: str,
-        meta: Dict[str, Any],
-        tool_version: Optional[str] = None,
-        git_sha: Optional[str] = None,
+        meta: dict[str, Any],
+        tool_version: str | None = None,
+        git_sha: str | None = None,
     ) -> bool:
         """Ensure a cache entry exists in pending state.
 
@@ -251,7 +249,7 @@ class SqliteCacheStore(CacheStore):
                         now,
                         tool_version,
                         git_sha,
-                    )
+                    ),
                 )
                 await db.commit()
                 if cursor.rowcount > 0:
@@ -271,7 +269,7 @@ class SqliteCacheStore(CacheStore):
         cache_key: str,
         run_id: str,
         run_dir: str,
-        size_bytes: Optional[int] = None,
+        size_bytes: int | None = None,
     ) -> bool:
         """Mark a pending entry as completed."""
         async with self._connect() as db:
@@ -287,7 +285,7 @@ class SqliteCacheStore(CacheStore):
                     last_accessed_at = ?
                 WHERE cache_key = ? AND state = 'pending'
                 """,
-                (run_id, run_dir, size_bytes, int(time.time()), cache_key)
+                (run_id, run_dir, size_bytes, int(time.time()), cache_key),
             )
             await db.commit()
 
@@ -317,7 +315,7 @@ class SqliteCacheStore(CacheStore):
                 """
                 SELECT state, meta_json FROM run_cache WHERE cache_key = ?
                 """,
-                (cache_key,)
+                (cache_key,),
             )
             row = await cursor.fetchone()
 
@@ -347,7 +345,7 @@ class SqliteCacheStore(CacheStore):
                     last_accessed_at = ?
                 WHERE cache_key = ? AND state = 'pending'
                 """,
-                (run_id, json.dumps(meta), int(time.time()), cache_key)
+                (run_id, json.dumps(meta), int(time.time()), cache_key),
             )
             await db.commit()
 
@@ -400,8 +398,7 @@ class SqliteCacheStore(CacheStore):
             await self._configure_connection(db)
 
             cursor = await db.execute(
-                "DELETE FROM run_cache WHERE tool_version = ?",
-                (tool_version,)
+                "DELETE FROM run_cache WHERE tool_version = ?", (tool_version,)
             )
             await db.commit()
 
@@ -415,8 +412,7 @@ class SqliteCacheStore(CacheStore):
             await self._configure_connection(db)
 
             cursor = await db.execute(
-                "DELETE FROM run_cache WHERE git_sha = ?",
-                (git_sha,)
+                "DELETE FROM run_cache WHERE git_sha = ?", (git_sha,)
             )
             await db.commit()
 
@@ -452,7 +448,7 @@ class SqliteCacheStore(CacheStore):
                     LIMIT ?
                 )
                 """,
-                (to_delete,)
+                (to_delete,),
             )
             await db.commit()
 

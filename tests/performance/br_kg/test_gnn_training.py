@@ -6,15 +6,15 @@ Tests evaluate training performance for GCN, GraphSAGE, GAT models and measure
 GPU utilization, training throughput, and memory efficiency under various loads.
 """
 
-import pytest
-import time
 import gc
-import psutil
 import statistics
-from typing import List, Dict, Any, Tuple
+import time
 from dataclasses import dataclass
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+
 import numpy as np
+import psutil
+import pytest
 
 # Import PyTorch with graceful fallback
 try:
@@ -22,6 +22,7 @@ try:
     import torch.nn as nn
     import torch.nn.functional as F
     import torch.optim as optim
+
     PYTORCH_AVAILABLE = True
 except ImportError:
     PYTORCH_AVAILABLE = False
@@ -33,16 +34,18 @@ except ImportError:
 
 # Import the modules under test
 from brain_researcher.services.br_kg.ml.gnn_models import (
-    GCN, GraphSAGE, GAT, GNNPredictor, ModelConfig
-)
-from brain_researcher.services.br_kg.ml.graph_embeddings import (
-    GraphEmbeddings, EmbeddingConfig
+    GAT,
+    GCN,
+    GNNPredictor,
+    GraphSAGE,
+    ModelConfig,
 )
 
 
 @dataclass
 class TrainingPerformanceMetrics:
     """Container for GNN training performance metrics"""
+
     training_time_seconds: float
     epochs_per_second: float
     samples_per_second: float
@@ -51,8 +54,8 @@ class TrainingPerformanceMetrics:
     gpu_memory_mb: float
     convergence_epochs: int
     final_accuracy: float
-    training_loss_curve: List[float]
-    validation_accuracy_curve: List[float]
+    training_loss_curve: list[float]
+    validation_accuracy_curve: list[float]
     gpu_utilization_percent: float
     cpu_utilization_percent: float
 
@@ -87,28 +90,40 @@ class GNNPerformanceMonitor:
         if PYTORCH_AVAILABLE and torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-    def stop_monitoring(self, final_accuracy: float, convergence_epochs: int) -> TrainingPerformanceMetrics:
+    def stop_monitoring(
+        self, final_accuracy: float, convergence_epochs: int
+    ) -> TrainingPerformanceMetrics:
         """Stop monitoring and return performance metrics"""
         self.end_time = time.time()
         self.monitoring = False
 
         duration = self.end_time - self.start_time
         epochs_processed = len(self.training_losses)
-        samples_processed = epochs_processed * 1000  # Assume 1000 samples per epoch average
+        samples_processed = (
+            epochs_processed * 1000
+        )  # Assume 1000 samples per epoch average
 
         return TrainingPerformanceMetrics(
             training_time_seconds=duration,
             epochs_per_second=epochs_processed / duration if duration > 0 else 0,
             samples_per_second=samples_processed / duration if duration > 0 else 0,
             peak_memory_mb=max(self.memory_samples) if self.memory_samples else 0,
-            avg_memory_mb=statistics.mean(self.memory_samples) if self.memory_samples else 0,
-            gpu_memory_mb=max(self.gpu_memory_samples) if self.gpu_memory_samples else 0,
+            avg_memory_mb=(
+                statistics.mean(self.memory_samples) if self.memory_samples else 0
+            ),
+            gpu_memory_mb=(
+                max(self.gpu_memory_samples) if self.gpu_memory_samples else 0
+            ),
             convergence_epochs=convergence_epochs,
             final_accuracy=final_accuracy,
             training_loss_curve=self.training_losses.copy(),
             validation_accuracy_curve=self.validation_accuracies.copy(),
-            gpu_utilization_percent=statistics.mean(self.gpu_util_samples) if self.gpu_util_samples else 0,
-            cpu_utilization_percent=statistics.mean(self.cpu_samples) if self.cpu_samples else 0
+            gpu_utilization_percent=(
+                statistics.mean(self.gpu_util_samples) if self.gpu_util_samples else 0
+            ),
+            cpu_utilization_percent=(
+                statistics.mean(self.cpu_samples) if self.cpu_samples else 0
+            ),
         )
 
     def record_epoch(self, epoch: int, loss: float, val_accuracy: float):
@@ -144,8 +159,13 @@ class MockGraphDataset:
     """Generate mock graph datasets of various sizes for performance testing"""
 
     @staticmethod
-    def generate_graph_data(num_nodes: int, num_edges: int, num_features: int,
-                          num_classes: int, device: str = 'cpu'):
+    def generate_graph_data(
+        num_nodes: int,
+        num_edges: int,
+        num_features: int,
+        num_classes: int,
+        device: str = "cpu",
+    ):
         """Generate synthetic graph data for performance testing"""
 
         if PYTORCH_AVAILABLE:
@@ -154,7 +174,7 @@ class MockGraphDataset:
 
             # Generate edge indices (ensuring valid connections)
             edge_list = []
-            for i in range(num_edges):
+            for _i in range(num_edges):
                 src = np.random.randint(0, num_nodes)
                 dst = np.random.randint(0, num_nodes)
                 edge_list.append([src, dst])
@@ -174,21 +194,25 @@ class MockGraphDataset:
             val_size = int(0.2 * num_nodes)
 
             train_mask[:train_size] = True
-            val_mask[train_size:train_size + val_size] = True
-            test_mask[train_size + val_size:] = True
+            val_mask[train_size : train_size + val_size] = True
+            test_mask[train_size + val_size :] = True
 
-            return type('GraphData', (), {
-                'x': x,
-                'edge_index': edge_index,
-                'y': y,
-                'train_mask': train_mask,
-                'val_mask': val_mask,
-                'test_mask': test_mask,
-                'num_nodes': num_nodes,
-                'num_edges': num_edges,
-                'num_features': num_features,
-                'num_classes': num_classes
-            })()
+            return type(
+                "GraphData",
+                (),
+                {
+                    "x": x,
+                    "edge_index": edge_index,
+                    "y": y,
+                    "train_mask": train_mask,
+                    "val_mask": val_mask,
+                    "test_mask": test_mask,
+                    "num_nodes": num_nodes,
+                    "num_edges": num_edges,
+                    "num_features": num_features,
+                    "num_classes": num_classes,
+                },
+            )()
         else:
             # Return mock data if PyTorch not available
             return Mock(
@@ -201,7 +225,7 @@ class MockGraphDataset:
                 num_nodes=num_nodes,
                 num_edges=num_edges,
                 num_features=num_features,
-                num_classes=num_classes
+                num_classes=num_classes,
             )
 
 
@@ -215,10 +239,7 @@ def performance_monitor():
 def small_graph_data():
     """Small graph dataset for quick testing"""
     return MockGraphDataset.generate_graph_data(
-        num_nodes=1000,
-        num_edges=3000,
-        num_features=64,
-        num_classes=5
+        num_nodes=1000, num_edges=3000, num_features=64, num_classes=5
     )
 
 
@@ -226,10 +247,7 @@ def small_graph_data():
 def medium_graph_data():
     """Medium graph dataset for standard performance testing"""
     return MockGraphDataset.generate_graph_data(
-        num_nodes=5000,
-        num_edges=15000,
-        num_features=128,
-        num_classes=10
+        num_nodes=5000, num_edges=15000, num_features=128, num_classes=10
     )
 
 
@@ -237,10 +255,7 @@ def medium_graph_data():
 def large_graph_data():
     """Large graph dataset for scalability testing"""
     return MockGraphDataset.generate_graph_data(
-        num_nodes=20000,
-        num_edges=60000,
-        num_features=256,
-        num_classes=20
+        num_nodes=20000, num_edges=60000, num_features=256, num_classes=20
     )
 
 
@@ -254,7 +269,7 @@ def standard_model_config():
         num_layers=2,
         dropout=0.1,
         learning_rate=0.01,
-        weight_decay=1e-4
+        weight_decay=1e-4,
     )
 
 
@@ -263,13 +278,14 @@ class TestGNNTrainingPerformance:
 
     @pytest.mark.performance
     @pytest.mark.skipif(not PYTORCH_AVAILABLE, reason="PyTorch not available")
-    async def test_gcn_training_performance(self, performance_monitor, medium_graph_data,
-                                           standard_model_config):
+    async def test_gcn_training_performance(
+        self, performance_monitor, medium_graph_data, standard_model_config
+    ):
         """Test GCN training performance on medium-sized graph"""
 
         # Initialize GCN model
         model = GCN(standard_model_config)
-        gnn_predictor = GNNPredictor()
+        GNNPredictor()
 
         # Start performance monitoring
         performance_monitor.start_monitoring()
@@ -288,14 +304,16 @@ class TestGNNTrainingPerformance:
 
                 # Forward pass (mocked)
                 out = model(medium_graph_data.x, medium_graph_data.edge_index)
-                train_out = out[medium_graph_data.train_mask]
-                train_y = medium_graph_data.y[medium_graph_data.train_mask]
+                out[medium_graph_data.train_mask]
+                medium_graph_data.y[medium_graph_data.train_mask]
 
                 # Mock loss calculation
                 loss = 2.5 * np.exp(-epoch * 0.1) + 0.1  # Simulated decreasing loss
 
                 # Mock validation accuracy
-                val_accuracy = min(0.95, 0.3 + epoch * 0.03)  # Simulated improving accuracy
+                val_accuracy = min(
+                    0.95, 0.3 + epoch * 0.03
+                )  # Simulated improving accuracy
                 final_accuracy = val_accuracy
 
                 # Check for early convergence
@@ -313,7 +331,9 @@ class TestGNNTrainingPerformance:
 
             # Simulate epoch duration
             epoch_duration = time.time() - epoch_start
-            if epoch_duration < 0.1:  # Ensure minimum epoch time for realistic simulation
+            if (
+                epoch_duration < 0.1
+            ):  # Ensure minimum epoch time for realistic simulation
                 await asyncio.sleep(0.1 - epoch_duration)
 
         # Stop monitoring and get metrics
@@ -325,10 +345,12 @@ class TestGNNTrainingPerformance:
         assert metrics.samples_per_second > 500  # At least 500 samples per second
         assert metrics.peak_memory_mb < 1000  # Peak memory under 1GB
         assert metrics.final_accuracy > 0.8  # Good final accuracy
-        assert metrics.convergence_epochs <= epochs  # Should converge within epoch limit
+        assert (
+            metrics.convergence_epochs <= epochs
+        )  # Should converge within epoch limit
         assert len(metrics.training_loss_curve) == epochs
 
-        print(f"GCN Training Performance:")
+        print("GCN Training Performance:")
         print(f"  Training Time: {metrics.training_time_seconds:.2f}s")
         print(f"  Epochs/Second: {metrics.epochs_per_second:.2f}")
         print(f"  Samples/Second: {metrics.samples_per_second:.0f}")
@@ -338,11 +360,12 @@ class TestGNNTrainingPerformance:
 
     @pytest.mark.performance
     @pytest.mark.skipif(not PYTORCH_AVAILABLE, reason="PyTorch not available")
-    async def test_graphsage_training_performance(self, performance_monitor, medium_graph_data,
-                                                 standard_model_config):
+    async def test_graphsage_training_performance(
+        self, performance_monitor, medium_graph_data, standard_model_config
+    ):
         """Test GraphSAGE training performance"""
 
-        model = GraphSAGE(standard_model_config)
+        GraphSAGE(standard_model_config)
         performance_monitor.start_monitoring()
 
         epochs = 25
@@ -352,7 +375,9 @@ class TestGNNTrainingPerformance:
         for epoch in range(epochs):
             # Simulate GraphSAGE training (typically slower than GCN due to sampling)
             loss = 3.0 * np.exp(-epoch * 0.08) + 0.15  # Slightly higher initial loss
-            val_accuracy = min(0.93, 0.25 + epoch * 0.027)  # Slightly different convergence pattern
+            val_accuracy = min(
+                0.93, 0.25 + epoch * 0.027
+            )  # Slightly different convergence pattern
             final_accuracy = val_accuracy
 
             if val_accuracy > 0.82 and convergence_epoch == epochs:
@@ -371,7 +396,7 @@ class TestGNNTrainingPerformance:
         assert metrics.peak_memory_mb < 1200  # May use more memory for sampling
         assert metrics.final_accuracy > 0.75
 
-        print(f"GraphSAGE Training Performance:")
+        print("GraphSAGE Training Performance:")
         print(f"  Training Time: {metrics.training_time_seconds:.2f}s")
         print(f"  Epochs/Second: {metrics.epochs_per_second:.2f}")
         print(f"  Peak Memory: {metrics.peak_memory_mb:.2f}MB")
@@ -379,11 +404,12 @@ class TestGNNTrainingPerformance:
 
     @pytest.mark.performance
     @pytest.mark.skipif(not PYTORCH_AVAILABLE, reason="PyTorch not available")
-    async def test_gat_training_performance(self, performance_monitor, medium_graph_data,
-                                           standard_model_config):
+    async def test_gat_training_performance(
+        self, performance_monitor, medium_graph_data, standard_model_config
+    ):
         """Test GAT (Graph Attention) training performance"""
 
-        model = GAT(standard_model_config)
+        GAT(standard_model_config)
         performance_monitor.start_monitoring()
 
         epochs = 30  # GAT may need more epochs
@@ -409,10 +435,12 @@ class TestGNNTrainingPerformance:
         # Performance assertions for GAT (slowest due to attention mechanism)
         assert metrics.epochs_per_second > 0.3  # Slower due to attention computation
         assert metrics.samples_per_second > 300
-        assert metrics.peak_memory_mb < 1500  # May use more memory for attention weights
+        assert (
+            metrics.peak_memory_mb < 1500
+        )  # May use more memory for attention weights
         assert metrics.final_accuracy > 0.75
 
-        print(f"GAT Training Performance:")
+        print("GAT Training Performance:")
         print(f"  Training Time: {metrics.training_time_seconds:.2f}s")
         print(f"  Epochs/Second: {metrics.epochs_per_second:.2f}")
         print(f"  Peak Memory: {metrics.peak_memory_mb:.2f}MB")
@@ -423,10 +451,14 @@ class TestGNNTrainingPerformance:
         """Compare training performance across different GNN models"""
 
         # Test data
-        test_graph = MockGraphDataset.generate_graph_data(3000, 9000, 64, 7)
+        MockGraphDataset.generate_graph_data(3000, 9000, 64, 7)
         config = ModelConfig(
-            input_dim=64, hidden_dim=32, output_dim=7,
-            num_layers=2, dropout=0.1, learning_rate=0.01
+            input_dim=64,
+            hidden_dim=32,
+            output_dim=7,
+            num_layers=2,
+            dropout=0.1,
+            learning_rate=0.01,
         )
 
         model_results = {}
@@ -438,9 +470,9 @@ class TestGNNTrainingPerformance:
             print(f"Testing {model_name} performance...")
 
             if PYTORCH_AVAILABLE:
-                model = model_class(config)
+                model_class(config)
             else:
-                model = Mock()
+                Mock()
 
             performance_monitor.start_monitoring()
 
@@ -470,8 +502,10 @@ class TestGNNTrainingPerformance:
             metrics = performance_monitor.stop_monitoring(final_accuracy, epochs)
             model_results[model_name] = metrics
 
-            print(f"  {model_name}: {metrics.epochs_per_second:.2f} epochs/s, "
-                  f"{metrics.peak_memory_mb:.0f}MB peak memory")
+            print(
+                f"  {model_name}: {metrics.epochs_per_second:.2f} epochs/s, "
+                f"{metrics.peak_memory_mb:.0f}MB peak memory"
+            )
 
         # Compare results
         gcn_metrics = model_results["GCN"]
@@ -488,7 +522,7 @@ class TestGNNTrainingPerformance:
             assert metrics.peak_memory_mb < 2000
             assert metrics.final_accuracy > 0.7
 
-        print(f"\nModel Performance Comparison:")
+        print("\nModel Performance Comparison:")
         for model_name, metrics in model_results.items():
             print(f"  {model_name}:")
             print(f"    Speed: {metrics.epochs_per_second:.2f} epochs/s")
@@ -496,27 +530,28 @@ class TestGNNTrainingPerformance:
             print(f"    Accuracy: {metrics.final_accuracy:.3f}")
 
     @pytest.mark.performance
-    async def test_scalability_across_graph_sizes(self, performance_monitor, standard_model_config):
+    async def test_scalability_across_graph_sizes(
+        self, performance_monitor, standard_model_config
+    ):
         """Test training performance scalability across different graph sizes"""
 
         # Test different graph sizes
         graph_sizes = [
             (500, 1500, "small"),
             (2000, 6000, "medium"),
-            (8000, 24000, "large")
+            (8000, 24000, "large"),
         ]
 
         scalability_results = {}
 
         for num_nodes, num_edges, size_name in graph_sizes:
-            print(f"Testing scalability on {size_name} graph ({num_nodes} nodes, {num_edges} edges)")
+            print(
+                f"Testing scalability on {size_name} graph ({num_nodes} nodes, {num_edges} edges)"
+            )
 
             # Generate graph data
-            graph_data = MockGraphDataset.generate_graph_data(
-                num_nodes=num_nodes,
-                num_edges=num_edges,
-                num_features=64,
-                num_classes=5
+            MockGraphDataset.generate_graph_data(
+                num_nodes=num_nodes, num_edges=num_edges, num_features=64, num_classes=5
             )
 
             # Update model config for this graph size
@@ -526,17 +561,19 @@ class TestGNNTrainingPerformance:
                 output_dim=5,
                 num_layers=2,
                 dropout=0.1,
-                learning_rate=0.01
+                learning_rate=0.01,
             )
 
-            model = GCN(config) if PYTORCH_AVAILABLE else Mock()
+            GCN(config) if PYTORCH_AVAILABLE else Mock()
             performance_monitor.start_monitoring()
 
             # Scale epochs based on graph size (larger graphs may need fewer epochs for testing)
             epochs = max(10, 20 - (num_nodes // 2000))
 
             # Simulate training with size-dependent performance
-            base_epoch_time = 0.05 + (num_nodes / 20000)  # Longer epochs for larger graphs
+            base_epoch_time = 0.05 + (
+                num_nodes / 20000
+            )  # Longer epochs for larger graphs
 
             final_accuracy = 0.0
 
@@ -552,33 +589,46 @@ class TestGNNTrainingPerformance:
             scalability_results[size_name] = {
                 "metrics": metrics,
                 "num_nodes": num_nodes,
-                "num_edges": num_edges
+                "num_edges": num_edges,
             }
 
-            print(f"  {size_name}: {metrics.samples_per_second:.0f} samples/s, "
-                  f"{metrics.peak_memory_mb:.0f}MB")
+            print(
+                f"  {size_name}: {metrics.samples_per_second:.0f} samples/s, "
+                f"{metrics.peak_memory_mb:.0f}MB"
+            )
 
         # Analyze scalability
         small_result = scalability_results["small"]
-        medium_result = scalability_results["medium"]
+        scalability_results["medium"]
         large_result = scalability_results["large"]
 
         # Memory should scale reasonably with graph size
-        memory_ratio = large_result["metrics"].peak_memory_mb / small_result["metrics"].peak_memory_mb
+        memory_ratio = (
+            large_result["metrics"].peak_memory_mb
+            / small_result["metrics"].peak_memory_mb
+        )
         size_ratio = large_result["num_nodes"] / small_result["num_nodes"]
 
         # Memory growth should be sub-quadratic
-        assert memory_ratio < size_ratio * 1.5, f"Memory scaling too steep: {memory_ratio:.2f}x for {size_ratio:.2f}x size"
+        assert (
+            memory_ratio < size_ratio * 1.5
+        ), f"Memory scaling too steep: {memory_ratio:.2f}x for {size_ratio:.2f}x size"
 
         # All sizes should maintain reasonable performance
         for size_name, result in scalability_results.items():
             metrics = result["metrics"]
-            assert metrics.samples_per_second > 100, f"{size_name} graph too slow: {metrics.samples_per_second:.0f} samples/s"
-            assert metrics.peak_memory_mb < 3000, f"{size_name} graph uses too much memory: {metrics.peak_memory_mb:.0f}MB"
+            assert (
+                metrics.samples_per_second > 100
+            ), f"{size_name} graph too slow: {metrics.samples_per_second:.0f} samples/s"
+            assert (
+                metrics.peak_memory_mb < 3000
+            ), f"{size_name} graph uses too much memory: {metrics.peak_memory_mb:.0f}MB"
 
-        print(f"\nScalability Analysis:")
-        print(f"  Memory scaling ratio: {memory_ratio:.2f}x for {size_ratio:.2f}x graph size")
-        print(f"  Performance maintained across all sizes: ✓")
+        print("\nScalability Analysis:")
+        print(
+            f"  Memory scaling ratio: {memory_ratio:.2f}x for {size_ratio:.2f}x graph size"
+        )
+        print("  Performance maintained across all sizes: ✓")
 
     @pytest.mark.performance
     async def test_batch_training_performance(self, performance_monitor):
@@ -594,11 +644,15 @@ class TestGNNTrainingPerformance:
             print(f"Testing batch size {batch_size}")
 
             config = ModelConfig(
-                input_dim=128, hidden_dim=64, output_dim=8,
-                num_layers=2, dropout=0.1, learning_rate=0.01
+                input_dim=128,
+                hidden_dim=64,
+                output_dim=8,
+                num_layers=2,
+                dropout=0.1,
+                learning_rate=0.01,
             )
 
-            model = GCN(config) if PYTORCH_AVAILABLE else Mock()
+            GCN(config) if PYTORCH_AVAILABLE else Mock()
             performance_monitor.start_monitoring()
 
             # Simulate batch training
@@ -611,7 +665,7 @@ class TestGNNTrainingPerformance:
                 epoch_loss = 0.0
 
                 # Process batches within epoch
-                for batch_idx in range(num_batches):
+                for _batch_idx in range(num_batches):
                     # Simulate batch processing time (scales with batch size)
                     batch_time = 0.01 + (batch_size / 10000)
                     await asyncio.sleep(batch_time)
@@ -635,21 +689,28 @@ class TestGNNTrainingPerformance:
             batch_results[batch_size] = {
                 "metrics": metrics,
                 "batch_throughput": batch_throughput,
-                "memory_per_sample": metrics.peak_memory_mb / batch_size
+                "memory_per_sample": metrics.peak_memory_mb / batch_size,
             }
 
-            print(f"  Batch {batch_size}: {batch_throughput:.0f} samples/s, "
-                  f"{metrics.peak_memory_mb:.0f}MB peak memory")
+            print(
+                f"  Batch {batch_size}: {batch_throughput:.0f} samples/s, "
+                f"{metrics.peak_memory_mb:.0f}MB peak memory"
+            )
 
         # Analyze batch performance
         for batch_size, result in batch_results.items():
             assert result["batch_throughput"] > 500, f"Batch {batch_size} too slow"
-            assert result["metrics"].peak_memory_mb < 2000, f"Batch {batch_size} uses too much memory"
+            assert (
+                result["metrics"].peak_memory_mb < 2000
+            ), f"Batch {batch_size} uses too much memory"
 
         # Larger batches should generally be more efficient (up to a point)
-        assert batch_results[128]["batch_throughput"] > batch_results[32]["batch_throughput"]
+        assert (
+            batch_results[128]["batch_throughput"]
+            > batch_results[32]["batch_throughput"]
+        )
 
-        print(f"\nBatch Training Performance Summary:")
+        print("\nBatch Training Performance Summary:")
         for batch_size, result in batch_results.items():
             print(f"  Batch {batch_size}: {result['batch_throughput']:.0f} samples/s")
 
@@ -658,10 +719,10 @@ class TestGNNTrainingPerformance:
         """Test memory efficiency and leak detection during extended training"""
 
         # Setup for memory efficiency testing
-        graph_data = MockGraphDataset.generate_graph_data(3000, 9000, 96, 6)
+        MockGraphDataset.generate_graph_data(3000, 9000, 96, 6)
         config = ModelConfig(input_dim=96, hidden_dim=48, output_dim=6, num_layers=2)
 
-        model = GCN(config) if PYTORCH_AVAILABLE else Mock()
+        GCN(config) if PYTORCH_AVAILABLE else Mock()
 
         # Baseline memory measurement
         gc.collect()
@@ -695,23 +756,37 @@ class TestGNNTrainingPerformance:
 
             await asyncio.sleep(0.05)  # Shorter epochs for extended test
 
-        metrics = performance_monitor.stop_monitoring(val_accuracy, extended_epochs)
+        performance_monitor.stop_monitoring(val_accuracy, extended_epochs)
 
         # Analyze memory efficiency
-        initial_growth = memory_measurements[1] - memory_measurements[0] if len(memory_measurements) > 1 else 0
-        final_growth = memory_measurements[-1] - memory_measurements[0] if len(memory_measurements) > 1 else 0
+        initial_growth = (
+            memory_measurements[1] - memory_measurements[0]
+            if len(memory_measurements) > 1
+            else 0
+        )
+        final_growth = (
+            memory_measurements[-1] - memory_measurements[0]
+            if len(memory_measurements) > 1
+            else 0
+        )
         max_memory_growth = max(memory_measurements) if memory_measurements else 0
 
         # Memory efficiency assertions
-        assert max_memory_growth < 800, f"Peak memory growth {max_memory_growth:.0f}MB too high"
-        assert final_growth < 200, f"Final memory growth {final_growth:.0f}MB suggests memory leak"
+        assert (
+            max_memory_growth < 800
+        ), f"Peak memory growth {max_memory_growth:.0f}MB too high"
+        assert (
+            final_growth < 200
+        ), f"Final memory growth {final_growth:.0f}MB suggests memory leak"
 
         # Memory growth should stabilize (final growth not much more than initial)
         if initial_growth > 0:
             growth_ratio = final_growth / initial_growth
-            assert growth_ratio < 3.0, f"Memory continues growing: {growth_ratio:.1f}x initial growth"
+            assert (
+                growth_ratio < 3.0
+            ), f"Memory continues growing: {growth_ratio:.1f}x initial growth"
 
-        print(f"Memory Efficiency Analysis:")
+        print("Memory Efficiency Analysis:")
         print(f"  Baseline Memory: {baseline_memory:.0f}MB")
         print(f"  Peak Growth: {max_memory_growth:.0f}MB")
         print(f"  Final Growth: {final_growth:.0f}MB")
@@ -725,14 +800,21 @@ class TestGNNTrainingPerformance:
             pytest.skip("CUDA not available for GPU performance testing")
 
         # Test both CPU and GPU performance for comparison
-        graph_data_cpu = MockGraphDataset.generate_graph_data(2000, 6000, 64, 5, device='cpu')
-        graph_data_gpu = MockGraphDataset.generate_graph_data(2000, 6000, 64, 5, device='cuda')
+        graph_data_cpu = MockGraphDataset.generate_graph_data(
+            2000, 6000, 64, 5, device="cpu"
+        )
+        graph_data_gpu = MockGraphDataset.generate_graph_data(
+            2000, 6000, 64, 5, device="cuda"
+        )
 
         config = ModelConfig(input_dim=64, hidden_dim=32, output_dim=5, num_layers=2)
 
         results = {}
 
-        for device_name, graph_data in [("CPU", graph_data_cpu), ("GPU", graph_data_gpu)]:
+        for device_name, _graph_data in [
+            ("CPU", graph_data_cpu),
+            ("GPU", graph_data_gpu),
+        ]:
             print(f"Testing {device_name} performance")
 
             model = GCN(config)
@@ -768,7 +850,7 @@ class TestGNNTrainingPerformance:
             speedup = gpu_metrics.epochs_per_second / cpu_metrics.epochs_per_second
             assert speedup > 1.2, f"GPU speedup {speedup:.1f}x too low"
 
-            print(f"GPU Performance:")
+            print("GPU Performance:")
             print(f"  GPU Speedup: {speedup:.1f}x")
             print(f"  GPU Memory: {gpu_metrics.gpu_memory_mb:.0f}MB")
 
@@ -783,22 +865,22 @@ def test_gnn_training_benchmark_summary():
             "samples_per_second": 1000,
             "peak_memory_mb": 800,
             "convergence_epochs": 20,
-            "final_accuracy": 0.85
+            "final_accuracy": 0.85,
         },
         "GraphSAGE": {
             "epochs_per_second": 0.8,
             "samples_per_second": 800,
             "peak_memory_mb": 1000,
             "convergence_epochs": 25,
-            "final_accuracy": 0.82
+            "final_accuracy": 0.82,
         },
         "GAT": {
             "epochs_per_second": 0.6,
             "samples_per_second": 600,
             "peak_memory_mb": 1200,
             "convergence_epochs": 30,
-            "final_accuracy": 0.84
-        }
+            "final_accuracy": 0.84,
+        },
     }
 
     print("GNN Training Performance Benchmark Summary:")

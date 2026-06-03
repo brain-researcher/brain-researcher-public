@@ -6,7 +6,7 @@ import json
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -24,12 +24,16 @@ def get_openneuro_mount_root() -> Path:
 
 
 OPENNEURO_MOUNT_ROOT = get_openneuro_mount_root()
-OPENNEURO_METADATA_ROOT = Path(os.getenv("OPENNEURO_METADATA_ROOT", "/app/data/openneuro_metadata"))
-OPENNEURO_DERIV_ROOT = Path(os.getenv("OPENNEURO_DERIV_ROOT", "/app/data/OpenNeuroDerivatives"))
+OPENNEURO_METADATA_ROOT = Path(
+    os.getenv("OPENNEURO_METADATA_ROOT", "/app/data/openneuro_metadata")
+)
+OPENNEURO_DERIV_ROOT = Path(
+    os.getenv("OPENNEURO_DERIV_ROOT", "/app/data/OpenNeuroDerivatives")
+)
 
 
 @lru_cache(maxsize=1)
-def _load_openneuro_catalog() -> List[Dict[str, Any]]:
+def _load_openneuro_catalog() -> list[dict[str, Any]]:
     """Load and cache the OpenNeuro catalog from JSONL file."""
     if not OPENNEURO_CATALOG_PATH.exists():
         return []
@@ -46,7 +50,7 @@ def _normalize_dataset_id(dataset_id: str) -> str:
     return dataset_id.split(":")[-1].lower()
 
 
-def _path_available(path_value: Optional[str]) -> bool:
+def _path_available(path_value: str | None) -> bool:
     """Return True if a given path exists on disk."""
     if not path_value:
         return False
@@ -71,32 +75,32 @@ def _dataset_root_exists(dataset_id: str) -> bool:
 class OpenNeuroSearchArgs(BaseModel):
     """Arguments for searching OpenNeuro datasets."""
 
-    query: Optional[str] = Field(
+    query: str | None = Field(
         default=None,
         description="Free-text search across dataset names, tasks, and authors",
     )
-    modality: Optional[str] = Field(
+    modality: str | None = Field(
         default=None,
         description="Filter by modality: fMRI, MRI, DWI, EEG, MEG, iEEG, PET",
     )
-    task: Optional[str] = Field(
+    task: str | None = Field(
         default=None,
         description="Filter by task name (partial match supported)",
     )
-    min_subjects: Optional[int] = Field(
+    min_subjects: int | None = Field(
         default=None,
         ge=1,
         description="Minimum number of subjects",
     )
-    has_fmriprep: Optional[bool] = Field(
+    has_fmriprep: bool | None = Field(
         default=None,
         description="Filter for datasets with fMRIPrep derivatives available",
     )
-    has_mriqc: Optional[bool] = Field(
+    has_mriqc: bool | None = Field(
         default=None,
         description="Filter for datasets with MRIQC derivatives available",
     )
-    has_glmfitlins: Optional[bool] = Field(
+    has_glmfitlins: bool | None = Field(
         default=None,
         description="Filter for datasets with GLM/FitLins stat maps available",
     )
@@ -148,13 +152,13 @@ class OpenNeuroSearchTool(NeuroToolWrapper):
 
     def _run(
         self,
-        query: Optional[str] = None,
-        modality: Optional[str] = None,
-        task: Optional[str] = None,
-        min_subjects: Optional[int] = None,
-        has_fmriprep: Optional[bool] = None,
-        has_mriqc: Optional[bool] = None,
-        has_glmfitlins: Optional[bool] = None,
+        query: str | None = None,
+        modality: str | None = None,
+        task: str | None = None,
+        min_subjects: int | None = None,
+        has_fmriprep: bool | None = None,
+        has_mriqc: bool | None = None,
+        has_glmfitlins: bool | None = None,
         limit: int = 20,
     ) -> ToolResult:
         catalog = _load_openneuro_catalog()
@@ -211,16 +215,20 @@ class OpenNeuroSearchTool(NeuroToolWrapper):
                     continue
 
             # Build result entry (compact format)
-            results.append({
-                "dataset_id": rec.get("dataset_id"),
-                "name": rec.get("name"),
-                "modalities": rec.get("modalities"),
-                "tasks": (rec.get("tasks") or [])[:5],  # Limit tasks for readability
-                "subjects_count": rec.get("subjects_count"),
-                "has_fmriprep": _path_available(rec.get("path_fmriprep")),
-                "has_mriqc": _path_available(rec.get("path_mriqc")),
-                "has_glmfitlins": _path_available(rec.get("path_glmfitlins")),
-            })
+            results.append(
+                {
+                    "dataset_id": rec.get("dataset_id"),
+                    "name": rec.get("name"),
+                    "modalities": rec.get("modalities"),
+                    "tasks": (rec.get("tasks") or [])[
+                        :5
+                    ],  # Limit tasks for readability
+                    "subjects_count": rec.get("subjects_count"),
+                    "has_fmriprep": _path_available(rec.get("path_fmriprep")),
+                    "has_mriqc": _path_available(rec.get("path_mriqc")),
+                    "has_glmfitlins": _path_available(rec.get("path_glmfitlins")),
+                }
+            )
 
         total = len(results)
         return ToolResult(
@@ -267,9 +275,9 @@ class OpenNeuroGetDatasetTool(NeuroToolWrapper):
             if rec_id == norm_id or source_id == norm_id:
                 # Enrich with live availability checks
                 enriched = dict(rec)
-                enriched["available_locally"] = (
-                    _path_available(rec.get("path_dataset")) or _dataset_root_exists(rec_id)
-                )
+                enriched["available_locally"] = _path_available(
+                    rec.get("path_dataset")
+                ) or _dataset_root_exists(rec_id)
                 enriched["has_fmriprep"] = _path_available(rec.get("path_fmriprep"))
                 enriched["has_mriqc"] = _path_available(rec.get("path_mriqc"))
                 enriched["has_glmfitlins"] = _path_available(rec.get("path_glmfitlins"))
@@ -317,7 +325,9 @@ class OpenNeuroGetSummaryTool(NeuroToolWrapper):
                 has_fmriprep = _path_available(rec.get("path_fmriprep"))
                 has_mriqc = _path_available(rec.get("path_mriqc"))
                 has_glm = _path_available(rec.get("path_glmfitlins"))
-                available = _path_available(rec.get("path_dataset")) or _dataset_root_exists(rec_id)
+                available = _path_available(
+                    rec.get("path_dataset")
+                ) or _dataset_root_exists(rec_id)
                 summary = {
                     "dataset_id": rec.get("dataset_id"),
                     "name": rec.get("name"),

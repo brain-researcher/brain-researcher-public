@@ -5,7 +5,9 @@ from brain_researcher.services.shared import failure_mode_registry as shared_reg
 
 
 def test_review_failure_mode_registry_reexports_shared_registry() -> None:
-    assert review_registry.DEFAULT_REGISTRY_PATH is shared_registry.DEFAULT_REGISTRY_PATH
+    assert (
+        review_registry.DEFAULT_REGISTRY_PATH is shared_registry.DEFAULT_REGISTRY_PATH
+    )
     assert review_registry.FailureModeRegistry is shared_registry.FailureModeRegistry
     assert review_registry.FailureModeRule is shared_registry.FailureModeRule
     assert (

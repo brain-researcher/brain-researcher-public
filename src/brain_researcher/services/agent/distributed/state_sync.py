@@ -7,23 +7,22 @@ for the distributed brain researcher agent system.
 import asyncio
 import json
 import logging
-import time
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Set, Tuple, Union, Callable
-from dataclasses import dataclass, asdict, field
-from enum import Enum
-from collections import defaultdict
-import hashlib
 import uuid
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 import redis.asyncio as redis
-
 
 logger = logging.getLogger(__name__)
 
 
 class CRDTType(str, Enum):
     """Types of CRDTs supported"""
+
     G_COUNTER = "g_counter"  # Grow-only counter
     PN_COUNTER = "pn_counter"  # Positive-negative counter
     G_SET = "g_set"  # Grow-only set
@@ -34,6 +33,7 @@ class CRDTType(str, Enum):
 
 class OperationType(str, Enum):
     """Types of operations on CRDTs"""
+
     INCREMENT = "increment"
     DECREMENT = "decrement"
     ADD = "add"
@@ -45,18 +45,19 @@ class OperationType(str, Enum):
 @dataclass
 class VectorClock:
     """Vector clock for tracking causality in distributed systems"""
-    clocks: Dict[str, int] = field(default_factory=dict)
+
+    clocks: dict[str, int] = field(default_factory=dict)
 
     def tick(self, node_id: str):
         """Increment the clock for a node"""
         self.clocks[node_id] = self.clocks.get(node_id, 0) + 1
 
-    def update(self, other: 'VectorClock'):
+    def update(self, other: "VectorClock"):
         """Update this clock with another clock (take maximum)"""
         for node_id, clock_value in other.clocks.items():
             self.clocks[node_id] = max(self.clocks.get(node_id, 0), clock_value)
 
-    def compare(self, other: 'VectorClock') -> str:
+    def compare(self, other: "VectorClock") -> str:
         """Compare two vector clocks"""
         all_nodes = set(self.clocks.keys()) | set(other.clocks.keys())
 
@@ -81,17 +82,18 @@ class VectorClock:
         else:
             return "concurrent"
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {"clocks": self.clocks}
 
     @classmethod
-    def from_dict(cls, data: Dict) -> 'VectorClock':
+    def from_dict(cls, data: dict) -> "VectorClock":
         return cls(clocks=data.get("clocks", {}))
 
 
 @dataclass
 class Operation:
     """Represents an operation on a CRDT"""
+
     operation_id: str
     node_id: str
     operation_type: OperationType
@@ -104,7 +106,7 @@ class Operation:
         if isinstance(self.timestamp, str):
             self.timestamp = datetime.fromisoformat(self.timestamp)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "operation_id": self.operation_id,
             "node_id": self.node_id,
@@ -112,11 +114,11 @@ class Operation:
             "key": self.key,
             "value": self.value,
             "timestamp": self.timestamp.isoformat(),
-            "vector_clock": self.vector_clock.to_dict()
+            "vector_clock": self.vector_clock.to_dict(),
         }
 
     @classmethod
-    def from_dict(cls, data: Dict) -> 'Operation':
+    def from_dict(cls, data: dict) -> "Operation":
         return cls(
             operation_id=data["operation_id"],
             node_id=data["node_id"],
@@ -124,7 +126,7 @@ class Operation:
             key=data["key"],
             value=data["value"],
             timestamp=data["timestamp"],
-            vector_clock=VectorClock.from_dict(data["vector_clock"])
+            vector_clock=VectorClock.from_dict(data["vector_clock"]),
         )
 
 
@@ -133,7 +135,7 @@ class GCounterCRDT:
 
     def __init__(self, node_id: str):
         self.node_id = node_id
-        self.counters: Dict[str, int] = {}
+        self.counters: dict[str, int] = {}
 
     def increment(self, amount: int = 1):
         """Increment counter for this node"""
@@ -145,16 +147,16 @@ class GCounterCRDT:
         """Get current counter value"""
         return sum(self.counters.values())
 
-    def merge(self, other: 'GCounterCRDT'):
+    def merge(self, other: "GCounterCRDT"):
         """Merge with another GCounter"""
         for node_id, count in other.counters.items():
             self.counters[node_id] = max(self.counters.get(node_id, 0), count)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {"counters": self.counters}
 
     @classmethod
-    def from_dict(cls, node_id: str, data: Dict) -> 'GCounterCRDT':
+    def from_dict(cls, node_id: str, data: dict) -> "GCounterCRDT":
         counter = cls(node_id)
         counter.counters = data.get("counters", {})
         return counter
@@ -183,19 +185,19 @@ class PNCounterCRDT:
         """Get current counter value"""
         return self.positive.value() - self.negative.value()
 
-    def merge(self, other: 'PNCounterCRDT'):
+    def merge(self, other: "PNCounterCRDT"):
         """Merge with another PNCounter"""
         self.positive.merge(other.positive)
         self.negative.merge(other.negative)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "positive": self.positive.to_dict(),
-            "negative": self.negative.to_dict()
+            "negative": self.negative.to_dict(),
         }
 
     @classmethod
-    def from_dict(cls, node_id: str, data: Dict) -> 'PNCounterCRDT':
+    def from_dict(cls, node_id: str, data: dict) -> "PNCounterCRDT":
         counter = cls(node_id)
         if "positive" in data:
             counter.positive = GCounterCRDT.from_dict(node_id, data["positive"])
@@ -209,8 +211,12 @@ class ORSetCRDT:
 
     def __init__(self, node_id: str):
         self.node_id = node_id
-        self.added: Dict[Any, Set[str]] = defaultdict(set)  # element -> set of unique tags
-        self.removed: Dict[Any, Set[str]] = defaultdict(set)  # element -> set of unique tags
+        self.added: dict[Any, set[str]] = defaultdict(
+            set
+        )  # element -> set of unique tags
+        self.removed: dict[Any, set[str]] = defaultdict(
+            set
+        )  # element -> set of unique tags
 
     def add(self, element: Any) -> str:
         """Add element to set, returns unique tag"""
@@ -230,7 +236,7 @@ class ORSetCRDT:
             return False
         return bool(self.added[element] - self.removed[element])
 
-    def value(self) -> Set[Any]:
+    def value(self) -> set[Any]:
         """Get current set value"""
         result = set()
         for element in self.added:
@@ -238,7 +244,7 @@ class ORSetCRDT:
                 result.add(element)
         return result
 
-    def merge(self, other: 'ORSetCRDT'):
+    def merge(self, other: "ORSetCRDT"):
         """Merge with another ORSet"""
         # Merge added elements
         for element, tags in other.added.items():
@@ -248,14 +254,14 @@ class ORSetCRDT:
         for element, tags in other.removed.items():
             self.removed[element].update(tags)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "added": {k: list(v) for k, v in self.added.items()},
-            "removed": {k: list(v) for k, v in self.removed.items()}
+            "removed": {k: list(v) for k, v in self.removed.items()},
         }
 
     @classmethod
-    def from_dict(cls, node_id: str, data: Dict) -> 'ORSetCRDT':
+    def from_dict(cls, node_id: str, data: dict) -> "ORSetCRDT":
         or_set = cls(node_id)
 
         if "added" in data:
@@ -278,9 +284,9 @@ class LWWRegisterCRDT:
         self.node_id = node_id
         self.value: Any = None
         self.timestamp: datetime = datetime.min
-        self.writer_node: Optional[str] = None
+        self.writer_node: str | None = None
 
-    def set(self, value: Any, timestamp: Optional[datetime] = None):
+    def set(self, value: Any, timestamp: datetime | None = None):
         """Set register value"""
         if timestamp is None:
             timestamp = datetime.utcnow()
@@ -295,27 +301,31 @@ class LWWRegisterCRDT:
         """Get register value"""
         return self.value
 
-    def merge(self, other: 'LWWRegisterCRDT'):
+    def merge(self, other: "LWWRegisterCRDT"):
         """Merge with another LWWRegister"""
         if other.timestamp > self.timestamp:
             self.value = other.value
             self.timestamp = other.timestamp
             self.writer_node = other.writer_node
-        elif other.timestamp == self.timestamp and other.writer_node and self.writer_node:
+        elif (
+            other.timestamp == self.timestamp and other.writer_node and self.writer_node
+        ):
             # Tie-breaking: use lexicographically smaller node ID
             if other.writer_node < self.writer_node:
                 self.value = other.value
                 self.writer_node = other.writer_node
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "value": self.value,
-            "timestamp": self.timestamp.isoformat() if self.timestamp != datetime.min else None,
-            "writer_node": self.writer_node
+            "timestamp": (
+                self.timestamp.isoformat() if self.timestamp != datetime.min else None
+            ),
+            "writer_node": self.writer_node,
         }
 
     @classmethod
-    def from_dict(cls, node_id: str, data: Dict) -> 'LWWRegisterCRDT':
+    def from_dict(cls, node_id: str, data: dict) -> "LWWRegisterCRDT":
         register = cls(node_id)
         register.value = data.get("value")
         if data.get("timestamp"):
@@ -328,7 +338,7 @@ class ConflictResolver:
     """Handles conflict resolution for different merge strategies"""
 
     @staticmethod
-    def last_write_wins(states: List[Dict], timestamp_key: str = "timestamp") -> Dict:
+    def last_write_wins(states: list[dict], timestamp_key: str = "timestamp") -> dict:
         """Resolve conflict using last-writer-wins strategy"""
         if not states:
             return {}
@@ -346,7 +356,7 @@ class ConflictResolver:
         return latest_state
 
     @staticmethod
-    def merge_sets(states: List[Dict], key: str) -> Set:
+    def merge_sets(states: list[dict], key: str) -> set:
         """Merge sets from multiple states"""
         merged_set = set()
         for state in states:
@@ -355,7 +365,7 @@ class ConflictResolver:
         return merged_set
 
     @staticmethod
-    def max_value(states: List[Dict], key: str) -> Any:
+    def max_value(states: list[dict], key: str) -> Any:
         """Take maximum value across states"""
         max_val = None
         for state in states:
@@ -366,7 +376,7 @@ class ConflictResolver:
         return max_val
 
     @staticmethod
-    def manual_resolution(states: List[Dict], resolution_func: callable) -> Dict:
+    def manual_resolution(states: list[dict], resolution_func: callable) -> dict:
         """Use custom resolution function"""
         return resolution_func(states)
 
@@ -374,10 +384,9 @@ class ConflictResolver:
 class StateSync:
     """Main state synchronization manager"""
 
-    def __init__(self,
-                 redis_client: redis.Redis,
-                 node_id: str,
-                 sync_interval: int = 30):
+    def __init__(
+        self, redis_client: redis.Redis, node_id: str, sync_interval: int = 30
+    ):
         self.redis = redis_client
         self.node_id = node_id
         self.sync_interval = sync_interval
@@ -386,18 +395,18 @@ class StateSync:
         self.vector_clock = VectorClock()
 
         # CRDT instances
-        self.crdts: Dict[str, Any] = {}
+        self.crdts: dict[str, Any] = {}
 
         # Conflict resolver
         self.conflict_resolver = ConflictResolver()
 
         # Operation log
-        self.operation_log: List[Operation] = []
+        self.operation_log: list[Operation] = []
         self.max_log_size = 10000
 
         # Sync state
         self._syncing = False
-        self._sync_task: Optional[asyncio.Task] = None
+        self._sync_task: asyncio.Task | None = None
 
         logger.info(f"Initialized StateSync for node {node_id}")
 
@@ -436,7 +445,7 @@ class StateSync:
 
         logger.info(f"Created CRDT {key} of type {crdt_type}")
 
-    def get_crdt(self, key: str) -> Optional[Any]:
+    def get_crdt(self, key: str) -> Any | None:
         """Get CRDT by key"""
         return self.crdts.get(key)
 
@@ -454,23 +463,23 @@ class StateSync:
 
             # Apply operation based on type
             if operation.operation_type == OperationType.INCREMENT:
-                if hasattr(crdt, 'increment'):
+                if hasattr(crdt, "increment"):
                     crdt.increment(operation.value)
 
             elif operation.operation_type == OperationType.DECREMENT:
-                if hasattr(crdt, 'decrement'):
+                if hasattr(crdt, "decrement"):
                     crdt.decrement(operation.value)
 
             elif operation.operation_type == OperationType.ADD:
-                if hasattr(crdt, 'add'):
+                if hasattr(crdt, "add"):
                     crdt.add(operation.value)
 
             elif operation.operation_type == OperationType.REMOVE:
-                if hasattr(crdt, 'remove'):
+                if hasattr(crdt, "remove"):
                     crdt.remove(operation.value)
 
             elif operation.operation_type == OperationType.SET:
-                if hasattr(crdt, 'set'):
+                if hasattr(crdt, "set"):
                     crdt.set(operation.value)
 
             # Add to operation log
@@ -478,14 +487,14 @@ class StateSync:
 
             # Trim log if needed
             if len(self.operation_log) > self.max_log_size:
-                self.operation_log = self.operation_log[-self.max_log_size // 2:]
+                self.operation_log = self.operation_log[-self.max_log_size // 2 :]
 
             logger.debug(f"Applied operation {operation.operation_id}")
 
         except Exception as e:
             logger.error(f"Failed to apply operation {operation.operation_id}: {e}")
 
-    async def sync_state(self, target_node: Optional[str] = None):
+    async def sync_state(self, target_node: str | None = None):
         """Synchronize state with other nodes"""
         try:
             # Get list of nodes to sync with
@@ -534,7 +543,9 @@ class StateSync:
         except Exception as e:
             logger.error(f"Failed to sync with node {node_id}: {e}")
 
-    async def _merge_states(self, our_state: Dict, other_state: Dict, other_node_id: str):
+    async def _merge_states(
+        self, our_state: dict, other_state: dict, other_node_id: str
+    ):
         """Merge state from another node"""
         try:
             # Merge vector clocks
@@ -573,29 +584,29 @@ class StateSync:
         except Exception as e:
             logger.error(f"Failed to merge states from {other_node_id}: {e}")
 
-    async def _get_node_state(self) -> Dict:
+    async def _get_node_state(self) -> dict:
         """Get current node state for synchronization"""
         state = {
             "node_id": self.node_id,
             "timestamp": datetime.utcnow().isoformat(),
             "vector_clock": self.vector_clock.to_dict(),
-            "crdts": {}
+            "crdts": {},
         }
 
         # Serialize CRDTs
         for key, crdt in self.crdts.items():
-            if hasattr(crdt, 'to_dict'):
+            if hasattr(crdt, "to_dict"):
                 state["crdts"][key] = crdt.to_dict()
 
         return state
 
-    async def _send_state_to_node(self, node_id: str, state: Dict):
+    async def _send_state_to_node(self, node_id: str, state: dict):
         """Send our state to another node"""
         try:
             # Store state in Redis for the other node to read
             await self.redis.hset(
                 f"node_state:{self.node_id}",
-                mapping={k: json.dumps(v) for k, v in state.items()}
+                mapping={k: json.dumps(v) for k, v in state.items()},
             )
 
             # Set expiration
@@ -604,24 +615,26 @@ class StateSync:
             # Notify the other node
             await self.redis.publish(
                 f"sync_channel:{node_id}",
-                json.dumps({
-                    "type": "state_update",
-                    "from_node": self.node_id,
-                    "timestamp": datetime.utcnow().isoformat()
-                })
+                json.dumps(
+                    {
+                        "type": "state_update",
+                        "from_node": self.node_id,
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                ),
             )
 
         except Exception as e:
             logger.error(f"Failed to send state to node {node_id}: {e}")
 
-    async def _get_active_nodes(self) -> List[str]:
+    async def _get_active_nodes(self) -> list[str]:
         """Get list of active nodes for synchronization"""
         nodes = []
 
         async for key in self.redis.scan_iter(match="node:*"):
             node_data = await self.redis.hgetall(key)
-            if node_data and node_data.get(b'status') == b'active':
-                node_id = node_data.get(b'node_id')
+            if node_data and node_data.get(b"status") == b"active":
+                node_id = node_data.get(b"node_id")
                 if node_id:
                     nodes.append(node_id.decode())
 
@@ -640,9 +653,9 @@ class StateSync:
                 logger.error(f"Sync loop error: {e}")
                 await asyncio.sleep(5)
 
-    def resolve_conflicts(self,
-                         states: List[Dict],
-                         strategy: str = "last_write_wins") -> Dict:
+    def resolve_conflicts(
+        self, states: list[dict], strategy: str = "last_write_wins"
+    ) -> dict:
         """Resolve conflicts between states"""
         if not states:
             return {}
@@ -661,22 +674,26 @@ class StateSync:
                 for key, value in state.items():
                     if key not in merged_state:
                         merged_state[key] = value
-                    elif isinstance(value, dict) and isinstance(merged_state[key], dict):
+                    elif isinstance(value, dict) and isinstance(
+                        merged_state[key], dict
+                    ):
                         merged_state[key].update(value)
 
             return merged_state
         else:
             raise ValueError(f"Unknown conflict resolution strategy: {strategy}")
 
-    def get_sync_status(self) -> Dict:
+    def get_sync_status(self) -> dict:
         """Get current synchronization status"""
         return {
             "node_id": self.node_id,
             "vector_clock": self.vector_clock.to_dict(),
             "crdt_count": len(self.crdts),
             "operation_log_size": len(self.operation_log),
-            "syncing": self._syncing
+            "syncing": self._syncing,
         }
+
+
 # ----------------------------
 # Additional high-level state sync primitives (lightweight shim for tests)
 # ----------------------------
@@ -687,21 +704,22 @@ class StateSync:
 # below are intentionally lightweight and self-contained so they can run
 # without a live Redis/cluster while keeping the rest of the module intact.
 
+
 class VectorClock:
     """Minimal vector clock with node-centric helpers."""
 
     def __init__(self, node_id: str):
         self.node_id = node_id
-        self.clock: Dict[str, int] = {node_id: 0}
+        self.clock: dict[str, int] = {node_id: 0}
 
     def increment(self):
         self.clock[self.node_id] = self.clock.get(self.node_id, 0) + 1
 
-    def update(self, peer_clock: Dict[str, int]):
+    def update(self, peer_clock: dict[str, int]):
         for n, v in peer_clock.items():
             self.clock[n] = max(self.clock.get(n, 0), v)
 
-    def compare(self, peer_clock: Dict[str, int]) -> str:
+    def compare(self, peer_clock: dict[str, int]) -> str:
         """Return 'before'/'after'/'concurrent'."""
         before = True
         after = True
@@ -719,11 +737,11 @@ class VectorClock:
             return "after"
         return "concurrent"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"node_id": self.node_id, "clock": dict(self.clock)}
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "VectorClock":
+    def from_dict(cls, data: dict[str, Any]) -> "VectorClock":
         node_id = data.get("node_id") or "unknown"
         vc = cls(node_id)
         vc.clock = dict(data.get("clock", {}))
@@ -754,8 +772,8 @@ class StateChange:
         value: Any,
         vector_clock: VectorClock,
         node_id: str,
-        metadata: Optional[Dict[str, Any]] = None,
-        timestamp: Optional[datetime] = None,
+        metadata: dict[str, Any] | None = None,
+        timestamp: datetime | None = None,
     ):
         self.change_id = change_id
         self.change_type = change_type
@@ -772,7 +790,7 @@ class StateChange:
     def is_concurrent_with(self, other: "StateChange") -> bool:
         return self.vector_clock.compare(other.vector_clock.clock) == "concurrent"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "change_id": self.change_id,
             "change_type": self.change_type.value,
@@ -785,7 +803,7 @@ class StateChange:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "StateChange":
+    def from_dict(cls, data: dict[str, Any]) -> "StateChange":
         return cls(
             change_id=data["change_id"],
             change_type=ChangeType(data["change_type"]),
@@ -794,9 +812,11 @@ class StateChange:
             vector_clock=VectorClock(data["node_id"]),
             node_id=data["node_id"],
             metadata=data.get("metadata", {}),
-            timestamp=datetime.fromisoformat(data["timestamp"])
-            if "timestamp" in data
-            else None,
+            timestamp=(
+                datetime.fromisoformat(data["timestamp"])
+                if "timestamp" in data
+                else None
+            ),
         )
 
 
@@ -804,17 +824,23 @@ class ConflictResolver:
     """Resolves conflicts between concurrent StateChange objects."""
 
     def __init__(self):
-        self.node_priorities: Dict[str, int] = {}
-        self.custom_resolvers: Dict[str, Callable[[List[StateChange]], StateChange]] = {}
+        self.node_priorities: dict[str, int] = {}
+        self.custom_resolvers: dict[str, Callable[[list[StateChange]], StateChange]] = (
+            {}
+        )
 
-    def set_node_priorities(self, priorities: Dict[str, int]):
+    def set_node_priorities(self, priorities: dict[str, int]):
         self.node_priorities = priorities
 
-    def register_custom_resolver(self, name: str, fn: Callable[[List[StateChange]], StateChange]):
+    def register_custom_resolver(
+        self, name: str, fn: Callable[[list[StateChange]], StateChange]
+    ):
         self.custom_resolvers[name] = fn
 
     def resolve_conflict(
-        self, changes: List[StateChange], strategy: Union[MergeStrategy, str] = MergeStrategy.LAST_WRITER_WINS
+        self,
+        changes: list[StateChange],
+        strategy: MergeStrategy | str = MergeStrategy.LAST_WRITER_WINS,
     ) -> StateChange:
         if isinstance(strategy, str) and strategy in self.custom_resolvers:
             return self.custom_resolvers[strategy](changes)
@@ -823,7 +849,7 @@ class ConflictResolver:
             return max(changes, key=lambda c: self.node_priorities.get(c.node_id, 0))
 
         if strategy == MergeStrategy.MERGE_LISTS:
-            merged: List[Any] = []
+            merged: list[Any] = []
             for ch in changes:
                 merged.extend(ch.value or [])
             result = changes[-1]
@@ -831,7 +857,7 @@ class ConflictResolver:
             return result
 
         if strategy == MergeStrategy.MERGE_DICTS:
-            merged: Dict[Any, Any] = {}
+            merged: dict[Any, Any] = {}
             for ch in changes:
                 if isinstance(ch.value, dict):
                     merged.update(ch.value)
@@ -849,11 +875,11 @@ class ConflictResolver:
 class StateNode:
     """Local node state plus vector clock and change log."""
 
-    def __init__(self, node_id: str, initial_state: Optional[Dict[str, Any]] = None):
+    def __init__(self, node_id: str, initial_state: dict[str, Any] | None = None):
         self.node_id = node_id
-        self.state: Dict[str, Any] = initial_state or {}
+        self.state: dict[str, Any] = initial_state or {}
         self.vector_clock = VectorClock(node_id)
-        self.change_log: List[StateChange] = []
+        self.change_log: list[StateChange] = []
 
     def update_local_state(self, key: str, value: Any) -> StateChange:
         self.vector_clock.increment()
@@ -879,17 +905,19 @@ class StateNode:
         self.change_log.append(change)
         return True
 
-    def get_state_snapshot(self) -> Dict[str, Any]:
+    def get_state_snapshot(self) -> dict[str, Any]:
         return {
             "state": dict(self.state),
             "vector_clock": dict(self.vector_clock.clock),
             "change_log": [c.to_dict() for c in self.change_log],
         }
 
-    def restore_from_snapshot(self, snapshot: Dict[str, Any]):
+    def restore_from_snapshot(self, snapshot: dict[str, Any]):
         self.state = dict(snapshot.get("state", {}))
         self.vector_clock.clock = dict(snapshot.get("vector_clock", {}))
-        self.change_log = [StateChange.from_dict(c) for c in snapshot.get("change_log", [])]
+        self.change_log = [
+            StateChange.from_dict(c) for c in snapshot.get("change_log", [])
+        ]
 
     def prune_change_log(self, max_size: int):
         if len(self.change_log) > max_size:
@@ -898,6 +926,7 @@ class StateNode:
 
 class SyncProtocol(str, Enum):
     """Placeholder for sync protocol types."""
+
     PUBSUB = "pubsub"
 
 
@@ -925,7 +954,7 @@ class StateManager:
         await self._persist_state()
         await self._publish_change(change)
 
-    async def handle_remote_change(self, change_data: Dict[str, Any]):
+    async def handle_remote_change(self, change_data: dict[str, Any]):
         change = StateChange.from_dict(change_data)
         self.state_node.apply_remote_change(change)
         await self._persist_state()
@@ -942,7 +971,9 @@ class StateManager:
 
     async def _persist_state(self):
         if hasattr(self.redis, "set"):
-            await self.redis.set(f"state:{self.node_id}", json.dumps(self.state_node.state))
+            await self.redis.set(
+                f"state:{self.node_id}", json.dumps(self.state_node.state)
+            )
 
     async def _publish_change(self, change: StateChange):
         if hasattr(self.redis, "publish"):

@@ -210,7 +210,9 @@ def _summarize_group_audit(
             continue
 
         observed[participant_column] = observed[participant_column].astype(str)
-        row_counter = Counter(str(value).strip() for value in observed[resolved_name].tolist())
+        row_counter = Counter(
+            str(value).strip() for value in observed[resolved_name].tolist()
+        )
         participant_counts = (
             observed.groupby(resolved_name, dropna=True)[participant_column]
             .nunique()
@@ -227,7 +229,9 @@ def _summarize_group_audit(
             "row_counts": {key: int(value) for key, value in row_counter.items()},
             "participant_counts": participant_counts,
             "missing_rows": int((~observed_mask).sum()),
-            "missing_participants": int(max(0, all_participants - observed_participants)),
+            "missing_participants": int(
+                max(0, all_participants - observed_participants)
+            ),
             "underpowered_groups": {
                 key: int(value)
                 for key, value in participant_counts.items()
@@ -243,12 +247,16 @@ def _summarize_group_audit(
     }
 
 
-def _summarize_sample_weights(frame: Any, *, sample_weight_column: str | None) -> dict[str, Any] | None:
+def _summarize_sample_weights(
+    frame: Any, *, sample_weight_column: str | None
+) -> dict[str, Any] | None:
     column_name = _coerce_text(sample_weight_column)
     if not column_name:
         return None
 
-    resolved_name = _resolve_column_name(list(getattr(frame, "columns", [])), [column_name])
+    resolved_name = _resolve_column_name(
+        list(getattr(frame, "columns", [])), [column_name]
+    )
     if resolved_name is None:
         return {
             "status": "missing_column",
@@ -330,7 +338,9 @@ def _extract_splits(payload: Mapping[str, Any]) -> tuple[Psych101SplitInfo, ...]
     for item in split_items:
         if not isinstance(item, Mapping):
             continue
-        split = _coerce_text(_first_present(item, ("split", "name", "config", "dataset_split")))
+        split = _coerce_text(
+            _first_present(item, ("split", "name", "config", "dataset_split"))
+        )
         if not split:
             continue
         num_rows = _coerce_int(
@@ -351,7 +361,9 @@ def _extract_parquet_files(
         for item in parquet_items:
             if not isinstance(item, Mapping):
                 continue
-            url = _coerce_text(_first_present(item, ("url", "path", "file", "download_url")))
+            url = _coerce_text(
+                _first_present(item, ("url", "path", "file", "download_url"))
+            )
             if not url:
                 continue
             filename = _coerce_text(
@@ -432,11 +444,14 @@ def fetch_psych101_dataset_metadata(
     card_data = hf_payload.get("cardData")
     title = None
     if isinstance(card_data, Mapping):
-        title = _coerce_text(_first_present(card_data, ("pretty_name", "dataset_name", "title")))
+        title = _coerce_text(
+            _first_present(card_data, ("pretty_name", "dataset_name", "title"))
+        )
     title = title or _coerce_text(_first_present(hf_payload, ("title", "name")))
 
     return Psych101DatasetMetadata(
-        dataset_id=_coerce_text(_first_present(hf_payload, ("id", "datasetId"))) or dataset_id,
+        dataset_id=_coerce_text(_first_present(hf_payload, ("id", "datasetId")))
+        or dataset_id,
         title=title,
         license=_extract_license(hf_payload),
         tags=_extract_tags(hf_payload),
@@ -447,7 +462,9 @@ def fetch_psych101_dataset_metadata(
     )
 
 
-def _resolve_column_name(columns: Sequence[str], candidates: Sequence[str]) -> str | None:
+def _resolve_column_name(
+    columns: Sequence[str], candidates: Sequence[str]
+) -> str | None:
     lowered = {column.lower(): column for column in columns}
     for candidate in candidates:
         match = lowered.get(candidate.lower())
@@ -504,7 +521,11 @@ def aggregate_psych101_experiments(
             raise KeyError(
                 f"Missing participant column {participant_column!r} in {source_name}"
             )
-        text_name = _resolve_column_name(columns, [sample_text_column]) if sample_text_column else None
+        text_name = (
+            _resolve_column_name(columns, [sample_text_column])
+            if sample_text_column
+            else None
+        )
 
         selected = frame[[experiment_name, participant_name]].copy()
         selected.columns = ["experiment", "participant"]
@@ -607,7 +628,9 @@ def _summary_to_experiment_row(
             },
         }
         if summary.group_audit:
-            row["audit_group_keys"] = list(summary.group_audit.get("resolved_group_keys") or [])
+            row["audit_group_keys"] = list(
+                summary.group_audit.get("resolved_group_keys") or []
+            )
     return row
 
 
@@ -644,7 +667,9 @@ def psych101_hf_snapshot_to_graph_inputs(
         if include_experiments
         else []
     )
-    experiment_rows = [_summary_to_experiment_row(summary) for summary in experiment_summaries]
+    experiment_rows = [
+        _summary_to_experiment_row(summary) for summary in experiment_summaries
+    ]
 
     dataset_metadata = {
         "dataset_id": dataset_id,

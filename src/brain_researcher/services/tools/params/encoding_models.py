@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 
@@ -21,13 +20,13 @@ class EncodingModelParameters:
     n_folds: int
     standardize: bool
     add_derivatives: bool
-    random_state: Optional[int]
+    random_state: int | None
     save_models: bool
     save_predictions: bool
     save_weights: bool
 
 
-def encoding_model_from_payload(payload: Dict[str, object]) -> EncodingModelParameters:
+def encoding_model_from_payload(payload: dict[str, object]) -> EncodingModelParameters:
     """Create parameters from payload."""
 
     return EncodingModelParameters(
@@ -65,7 +64,7 @@ def _prepare_design_matrix(stimulus: np.ndarray, add_derivatives: bool) -> np.nd
 
 def _fit_ridge(
     design: np.ndarray, responses: np.ndarray, alpha: float = 1.0
-) -> Tuple[np.ndarray, bool, str]:
+) -> tuple[np.ndarray, bool, str]:
     # Closed-form ridge solution.
     XtX = design.T @ design
     penalty = alpha * np.eye(XtX.shape[0])
@@ -85,7 +84,7 @@ def _fit_ridge(
     return weights, False, "numpy_fallback"
 
 
-def run_encoding_model(params: EncodingModelParameters) -> Dict[str, object]:
+def run_encoding_model(params: EncodingModelParameters) -> dict[str, object]:
     """Execute encoding model fitting with lightweight calculations."""
 
     brain_data = _load_array(params.brain_data_file)
@@ -102,14 +101,16 @@ def run_encoding_model(params: EncodingModelParameters) -> Dict[str, object]:
 
     predicted = design @ weights
     residuals = brain_data - predicted
-    r2_scores = 1.0 - np.sum(residuals ** 2, axis=0) / (np.sum((brain_data - np.mean(brain_data, axis=0)) ** 2, axis=0) + 1e-8)
+    r2_scores = 1.0 - np.sum(residuals**2, axis=0) / (
+        np.sum((brain_data - np.mean(brain_data, axis=0)) ** 2, axis=0) + 1e-8
+    )
     # Handle potential numerical issues
     r2_scores = np.clip(r2_scores, -1.0, 1.0)
 
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {
+    outputs: dict[str, str | None] = {
         "summary": None,
         "weights": None,
         "predictions": None,
@@ -143,7 +144,9 @@ def run_encoding_model(params: EncodingModelParameters) -> Dict[str, object]:
 
     if params.save_models:
         model_path = out_dir / "encoding_model.json"
-        model_path.write_text(json.dumps({"alpha": 1.0, "type": params.model_type}), encoding="utf-8")
+        model_path.write_text(
+            json.dumps({"alpha": 1.0, "type": params.model_type}), encoding="utf-8"
+        )
         outputs["model"] = str(model_path)
 
     return {

@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -19,15 +18,17 @@ class TemporalDecodingParameters:
     output_dir: str
     method: str
     classifier: str
-    window_size: Optional[int]
+    window_size: int | None
     window_step: int
     n_folds: int
-    random_state: Optional[int]
+    random_state: int | None
     save_accuracies: bool
     save_patterns: bool
 
 
-def temporal_decoding_from_payload(payload: Dict[str, object]) -> TemporalDecodingParameters:
+def temporal_decoding_from_payload(
+    payload: dict[str, object],
+) -> TemporalDecodingParameters:
     """Create parameters from payload."""
 
     return TemporalDecodingParameters(
@@ -96,8 +97,10 @@ def _majority_accuracy(labels: np.ndarray) -> float:
     return float(np.max(counts) / labels.size)
 
 
-def _deterministic_stratified_folds(labels: np.ndarray, n_splits: int) -> List[np.ndarray]:
-    folds: List[List[int]] = [[] for _ in range(n_splits)]
+def _deterministic_stratified_folds(
+    labels: np.ndarray, n_splits: int
+) -> list[np.ndarray]:
+    folds: list[list[int]] = [[] for _ in range(n_splits)]
     for cls in np.unique(labels):
         cls_idx = np.where(labels == cls)[0]
         for i, idx in enumerate(cls_idx):
@@ -116,17 +119,21 @@ def _nearest_centroid_predict(
     return classes[np.argmin(dists, axis=1)]
 
 
-def _nearest_centroid_cv_accuracy(data: np.ndarray, labels: np.ndarray, n_splits: int) -> float:
+def _nearest_centroid_cv_accuracy(
+    data: np.ndarray, labels: np.ndarray, n_splits: int
+) -> float:
     fold_indices = _deterministic_stratified_folds(labels, n_splits)
     all_idx = np.arange(labels.size)
-    fold_accuracies: List[float] = []
+    fold_accuracies: list[float] = []
 
     for test_idx in fold_indices:
         train_idx = np.setdiff1d(all_idx, test_idx)
         train_labels = labels[train_idx]
         if np.unique(train_labels).size < 2:
             continue
-        predictions = _nearest_centroid_predict(data[train_idx], train_labels, data[test_idx])
+        predictions = _nearest_centroid_predict(
+            data[train_idx], train_labels, data[test_idx]
+        )
         fold_accuracies.append(float(np.mean(predictions == labels[test_idx])))
 
     if not fold_accuracies:
@@ -139,8 +146,8 @@ def _run_sklearn_cv(
     labels: np.ndarray,
     classifier_name: str,
     n_splits: int,
-    random_state: Optional[int],
-) -> Tuple[float, str]:
+    random_state: int | None,
+) -> tuple[float, str]:
     try:
         from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
         from sklearn.linear_model import LogisticRegression, RidgeClassifier
@@ -178,8 +185,8 @@ def _decode_window(
     labels: np.ndarray,
     classifier_name: str,
     requested_folds: int,
-    random_state: Optional[int],
-) -> Tuple[float, str, str]:
+    random_state: int | None,
+) -> tuple[float, str, str]:
     n_splits = _compute_cv_folds(labels, requested_folds)
     if labels.size < 2:
         return 0.0, "insufficient_trials", "not_enough_trials"
@@ -206,7 +213,7 @@ def _decode_window(
         return score, "numpy_nearest_centroid_cv", "sklearn_failed_or_unavailable"
 
 
-def run_temporal_decoding(params: TemporalDecodingParameters) -> Dict[str, object]:
+def run_temporal_decoding(params: TemporalDecodingParameters) -> dict[str, object]:
     """Execute temporal decoding analysis with deterministic classifiers."""
 
     data = _load_timeseries(params.data_file)
@@ -227,7 +234,9 @@ def run_temporal_decoding(params: TemporalDecodingParameters) -> Dict[str, objec
             time, _ = data.shape
             timeseries = data[np.newaxis, ...]
     else:
-        raise ValueError("Data must be either (time x features) or (time x features x trials).")
+        raise ValueError(
+            "Data must be either (time x features) or (time x features x trials)."
+        )
 
     n_trials = timeseries.shape[0]
     if labels.size < n_trials:
@@ -236,10 +245,10 @@ def run_temporal_decoding(params: TemporalDecodingParameters) -> Dict[str, objec
 
     window_size = params.window_size or max(1, time // 10)
     windows = _generate_windows(np.arange(time), window_size, params.window_step)
-    accuracies: List[float] = []
-    patterns: List[np.ndarray] = []
-    window_backends: List[str] = []
-    backend_reasons: List[str] = []
+    accuracies: list[float] = []
+    patterns: list[np.ndarray] = []
+    window_backends: list[str] = []
+    backend_reasons: list[str] = []
 
     for window in windows:
         start, end = int(window[0]), int(window[-1] + 1)
@@ -273,7 +282,11 @@ def run_temporal_decoding(params: TemporalDecodingParameters) -> Dict[str, objec
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {"summary": None, "accuracies": None, "patterns": None}
+    outputs: dict[str, str | None] = {
+        "summary": None,
+        "accuracies": None,
+        "patterns": None,
+    }
 
     summary = {
         "method": params.method,

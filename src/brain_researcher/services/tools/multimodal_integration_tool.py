@@ -4,18 +4,14 @@ Multimodal Integration tool for combining different neuroimaging modalities.
 Integrates fMRI, sMRI, DTI, EEG/MEG, and PET data using various fusion techniques.
 """
 
-import logging
 import json
-import numpy as np
+import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Tuple
-from scipy import stats
-from scipy.linalg import eigh
-from sklearn.decomposition import PCA, FastICA, NMF
-from sklearn.cross_decomposition import CCA, PLSRegression
-import warnings
 
-from pydantic import BaseModel, Field, ConfigDict
+import numpy as np
+from pydantic import BaseModel, ConfigDict, Field
+from sklearn.cross_decomposition import CCA, PLSRegression
+from sklearn.decomposition import NMF, PCA, FastICA
 
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
@@ -27,143 +23,100 @@ logger = logging.getLogger(__name__)
 
 class MultimodalIntegrationArgs(BaseModel):
     """Arguments for multimodal integration analysis."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Input modalities
-    modality_files: Dict[str, str] = Field(
+    modality_files: dict[str, str] = Field(
         description="Dictionary mapping modality names to file paths"
     )
 
     # Modality types
-    modality_types: Dict[str, str] = Field(
+    modality_types: dict[str, str] = Field(
         default_factory=dict,
-        description="Dictionary mapping modality names to types (fmri, smri, dti, eeg, meg, pet)"
+        description="Dictionary mapping modality names to types (fmri, smri, dti, eeg, meg, pet)",
     )
 
     # Integration method
     method: str = Field(
         default="cca",
-        description="Integration method: 'cca', 'pls', 'ica', 'nmf', 'tensor', 'deep_fusion', 'graph_fusion'"
+        description="Integration method: 'cca', 'pls', 'ica', 'nmf', 'tensor', 'deep_fusion', 'graph_fusion'",
     )
 
     # Preprocessing
-    standardize: bool = Field(
-        default=True,
-        description="Standardize each modality"
-    )
+    standardize: bool = Field(default=True, description="Standardize each modality")
     align_samples: bool = Field(
-        default=True,
-        description="Align samples across modalities"
+        default=True, description="Align samples across modalities"
     )
     reduce_dims: bool = Field(
-        default=False,
-        description="Reduce dimensions before fusion"
+        default=False, description="Reduce dimensions before fusion"
     )
-    n_components: Optional[int] = Field(
-        default=None,
-        description="Number of components for dimension reduction"
+    n_components: int | None = Field(
+        default=None, description="Number of components for dimension reduction"
     )
 
     # CCA/PLS parameters
-    n_canonical: int = Field(
-        default=5,
-        description="Number of canonical components"
-    )
-    regularization: float = Field(
-        default=0.1,
-        description="Regularization parameter"
-    )
+    n_canonical: int = Field(default=5, description="Number of canonical components")
+    regularization: float = Field(default=0.1, description="Regularization parameter")
 
     # ICA parameters
-    n_ica_components: int = Field(
-        default=20,
-        description="Number of ICA components"
-    )
-    max_iter: int = Field(
-        default=200,
-        description="Maximum iterations for ICA"
-    )
+    n_ica_components: int = Field(default=20, description="Number of ICA components")
+    max_iter: int = Field(default=200, description="Maximum iterations for ICA")
 
     # Tensor decomposition parameters
-    tensor_rank: int = Field(
-        default=10,
-        description="Rank for tensor decomposition"
-    )
+    tensor_rank: int = Field(default=10, description="Rank for tensor decomposition")
     tensor_method: str = Field(
-        default="parafac",
-        description="Tensor method: 'parafac', 'tucker', 'tensorly'"
+        default="parafac", description="Tensor method: 'parafac', 'tucker', 'tensorly'"
     )
 
     # Deep fusion parameters
     fusion_architecture: str = Field(
         default="autoencoder",
-        description="Deep fusion architecture: 'autoencoder', 'dbn', 'multimodal_vae'"
+        description="Deep fusion architecture: 'autoencoder', 'dbn', 'multimodal_vae'",
     )
-    hidden_dims: List[int] = Field(
+    hidden_dims: list[int] = Field(
         default_factory=lambda: [128, 64, 32],
-        description="Hidden dimensions for deep models"
+        description="Hidden dimensions for deep models",
     )
 
     # Graph fusion parameters
     similarity_metric: str = Field(
-        default="correlation",
-        description="Similarity metric for graph construction"
+        default="correlation", description="Similarity metric for graph construction"
     )
     fusion_strategy: str = Field(
         default="average",
-        description="Graph fusion strategy: 'average', 'max', 'similarity_network'"
+        description="Graph fusion strategy: 'average', 'max', 'similarity_network'",
     )
 
     # Feature selection
     select_features: bool = Field(
-        default=False,
-        description="Perform feature selection"
+        default=False, description="Perform feature selection"
     )
     feature_selection_method: str = Field(
-        default="mutual_info",
-        description="Feature selection method"
+        default="mutual_info", description="Feature selection method"
     )
-    n_features: Optional[int] = Field(
-        default=None,
-        description="Number of features to select"
+    n_features: int | None = Field(
+        default=None, description="Number of features to select"
     )
 
     # Validation
     validation_method: str = Field(
         default="cross_modal",
-        description="Validation: 'cross_modal', 'reconstruction', 'prediction'"
+        description="Validation: 'cross_modal', 'reconstruction', 'prediction'",
     )
-    n_folds: int = Field(
-        default=5,
-        description="Number of cross-validation folds"
-    )
+    n_folds: int = Field(default=5, description="Number of cross-validation folds")
 
     # Output options
-    output_dir: str = Field(
-        description="Output directory for results"
-    )
+    output_dir: str = Field(description="Output directory for results")
     save_integrated: bool = Field(
-        default=True,
-        description="Save integrated representation"
+        default=True, description="Save integrated representation"
     )
-    save_weights: bool = Field(
-        default=True,
-        description="Save modality weights"
-    )
-    save_components: bool = Field(
-        default=True,
-        description="Save extracted components"
-    )
-    visualize: bool = Field(
-        default=True,
-        description="Generate visualizations"
-    )
+    save_weights: bool = Field(default=True, description="Save modality weights")
+    save_components: bool = Field(default=True, description="Save extracted components")
+    visualize: bool = Field(default=True, description="Generate visualizations")
 
     # Advanced options
-    verbose: bool = Field(
-        default=True,
-        description="Verbose output"
-    )
+    verbose: bool = Field(default=True, description="Verbose output")
 
 
 class MultimodalIntegrationTool(NeuroToolWrapper):
@@ -181,6 +134,7 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
 
         try:
             import sklearn
+
             self.sklearn_available = True
             logger.info("Scikit-learn available")
         except ImportError:
@@ -188,6 +142,7 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
 
         try:
             import tensorly
+
             self.tensorly_available = True
             logger.info("TensorLy available for tensor decomposition")
         except ImportError:
@@ -211,10 +166,12 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
 
     def _load_modality(self, file_path, modality_type=None):
         """Load data for a single modality."""
-        if file_path.endswith('.npy'):
+        if file_path.endswith(".npy"):
             data = np.load(file_path)
-        elif file_path.endswith('.txt') or file_path.endswith('.csv'):
-            data = np.loadtxt(file_path, delimiter=',' if file_path.endswith('.csv') else None)
+        elif file_path.endswith(".txt") or file_path.endswith(".csv"):
+            data = np.loadtxt(
+                file_path, delimiter="," if file_path.endswith(".csv") else None
+            )
         else:
             # Try numpy load
             data = np.load(file_path)
@@ -262,8 +219,6 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         if not self.sklearn_available:
             return None, {}
 
-        from sklearn.cross_decomposition import CCA
-
         # For now, handle two modalities
         if len(modalities) != 2:
             # Concatenate all into two groups
@@ -283,13 +238,14 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         integrated = np.concatenate([X_c, Y_c], axis=1)
 
         # Calculate canonical correlations
-        cancorr = np.array([np.corrcoef(X_c[:, i], Y_c[:, i])[0, 1]
-                           for i in range(n_components)])
+        cancorr = np.array(
+            [np.corrcoef(X_c[:, i], Y_c[:, i])[0, 1] for i in range(n_components)]
+        )
 
         weights = {
-            'X_weights': cca.x_weights_,
-            'Y_weights': cca.y_weights_,
-            'canonical_correlations': cancorr
+            "X_weights": cca.x_weights_,
+            "Y_weights": cca.y_weights_,
+            "canonical_correlations": cancorr,
         }
 
         return integrated, weights
@@ -299,7 +255,7 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         if not self.sklearn_available:
             return None, {}
 
-        from sklearn.cross_decomposition import PLSRegression, PLSSVD
+        from sklearn.cross_decomposition import PLSSVD
 
         # Concatenate modalities
         X = np.concatenate(list(modalities.values()), axis=1)
@@ -313,7 +269,9 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
             keys = list(modalities.keys())
             if len(modalities) == 2:
                 pls = PLSSVD(n_components=n_components)
-                X_transformed, _ = pls.fit_transform(modalities[keys[0]], modalities[keys[1]])
+                X_transformed, _ = pls.fit_transform(
+                    modalities[keys[0]], modalities[keys[1]]
+                )
             else:
                 # Use first modality vs rest
                 X1 = modalities[keys[0]]
@@ -322,8 +280,8 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
                 X_transformed, _ = pls.fit_transform(X1, X2)
 
         weights = {
-            'x_weights': pls.x_weights_ if hasattr(pls, 'x_weights_') else None,
-            'y_weights': pls.y_weights_ if hasattr(pls, 'y_weights_') else None
+            "x_weights": pls.x_weights_ if hasattr(pls, "x_weights_") else None,
+            "y_weights": pls.y_weights_ if hasattr(pls, "y_weights_") else None,
         }
 
         return X_transformed, weights
@@ -333,8 +291,6 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         if not self.sklearn_available:
             return None, {}
 
-        from sklearn.decomposition import FastICA
-
         # Concatenate modalities
         X = np.concatenate(list(modalities.values()), axis=1)
 
@@ -342,10 +298,7 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         ica = FastICA(n_components=n_components, max_iter=max_iter, random_state=42)
         integrated = ica.fit_transform(X)
 
-        weights = {
-            'mixing_matrix': ica.mixing_,
-            'components': ica.components_
-        }
+        weights = {"mixing_matrix": ica.mixing_, "components": ica.components_}
 
         return integrated, weights
 
@@ -353,8 +306,6 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         """Non-negative Matrix Factorization fusion."""
         if not self.sklearn_available:
             return None, {}
-
-        from sklearn.decomposition import NMF
 
         # Concatenate modalities
         X = np.concatenate(list(modalities.values()), axis=1)
@@ -367,20 +318,20 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         integrated = nmf.fit_transform(X)
 
         weights = {
-            'components': nmf.components_,
-            'reconstruction_error': nmf.reconstruction_err_
+            "components": nmf.components_,
+            "reconstruction_error": nmf.reconstruction_err_,
         }
 
         return integrated, weights
 
-    def _tensor_fusion(self, modalities, rank=10, method='parafac'):
+    def _tensor_fusion(self, modalities, rank=10, method="parafac"):
         """Tensor decomposition fusion."""
         if not self.tensorly_available:
             # Fallback: stack and reshape
             tensor = np.stack(list(modalities.values()), axis=0)
             # Simple unfolding
             integrated = tensor.reshape(tensor.shape[0], -1).T
-            weights = {'method': 'fallback'}
+            weights = {"method": "fallback"}
             return integrated, weights
 
         import tensorly as tl
@@ -392,7 +343,7 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         aligned = [m[:, :min_features] for m in modalities.values()]
         tensor = np.stack(aligned, axis=0)
 
-        if method == 'parafac':
+        if method == "parafac":
             # PARAFAC/CP decomposition
             factors = parafac(tensor, rank=rank)
             # Reconstruct integrated representation
@@ -400,19 +351,16 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
             integrated = integrated.mean(axis=0)  # Average over modalities
 
             weights = {
-                'factors': [f.tolist() for f in factors[1]],
-                'weights': factors[0].tolist()
+                "factors": [f.tolist() for f in factors[1]],
+                "weights": factors[0].tolist(),
             }
-        elif method == 'tucker':
+        elif method == "tucker":
             # Tucker decomposition
             core, factors = tucker(tensor, rank=[rank, rank, rank])
             integrated = tl.tucker_to_tensor((core, factors))
             integrated = integrated.mean(axis=0)
 
-            weights = {
-                'core': core.tolist(),
-                'factors': [f.tolist() for f in factors]
-            }
+            weights = {"core": core.tolist(), "factors": [f.tolist() for f in factors]}
         else:
             # Default unfolding
             integrated = tensor.reshape(tensor.shape[0], -1).T
@@ -420,30 +368,34 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
 
         return integrated, weights
 
-    def _graph_fusion(self, modalities, similarity_metric='correlation', strategy='average'):
+    def _graph_fusion(
+        self, modalities, similarity_metric="correlation", strategy="average"
+    ):
         """Graph-based fusion of modalities."""
         graphs = []
 
-        for name, data in modalities.items():
+        for _name, data in modalities.items():
             # Compute similarity matrix
-            if similarity_metric == 'correlation':
+            if similarity_metric == "correlation":
                 sim = np.corrcoef(data)
-            elif similarity_metric == 'cosine':
+            elif similarity_metric == "cosine":
                 from sklearn.metrics.pairwise import cosine_similarity
+
                 sim = cosine_similarity(data)
             else:
                 # Euclidean
                 from scipy.spatial.distance import pdist, squareform
-                sim = 1 / (1 + squareform(pdist(data, metric='euclidean')))
+
+                sim = 1 / (1 + squareform(pdist(data, metric="euclidean")))
 
             graphs.append(sim)
 
         # Fuse graphs
-        if strategy == 'average':
+        if strategy == "average":
             integrated = np.mean(graphs, axis=0)
-        elif strategy == 'max':
+        elif strategy == "max":
             integrated = np.max(graphs, axis=0)
-        elif strategy == 'similarity_network':
+        elif strategy == "similarity_network":
             # SNF-like fusion
             integrated = graphs[0]
             for g in graphs[1:]:
@@ -453,18 +405,15 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         else:
             integrated = np.mean(graphs, axis=0)
 
-        weights = {
-            'n_graphs': len(graphs),
-            'fusion_strategy': strategy
-        }
+        weights = {"n_graphs": len(graphs), "fusion_strategy": strategy}
 
         return integrated, weights
 
-    def _validate_integration(self, integrated, modalities, method='cross_modal'):
+    def _validate_integration(self, integrated, modalities, method="cross_modal"):
         """Validate integration quality."""
         metrics = {}
 
-        if method == 'cross_modal':
+        if method == "cross_modal":
             # Compute correlation with each modality
             for name, data in modalities.items():
                 # Sample correlation
@@ -472,16 +421,18 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
                     corr = np.corrcoef(integrated[:, 0], data[:, 0])[0, 1]
                 else:
                     corr = 0
-                metrics[f'correlation_{name}'] = float(corr)
+                metrics[f"correlation_{name}"] = float(corr)
 
-        elif method == 'reconstruction':
+        elif method == "reconstruction":
             # Compute reconstruction error
             for name, data in modalities.items():
                 if integrated.shape[0] == data.shape[0]:
                     # Simple reconstruction via projection
-                    proj = integrated @ integrated.T @ data / (integrated.T @ integrated)
+                    proj = (
+                        integrated @ integrated.T @ data / (integrated.T @ integrated)
+                    )
                     error = np.mean((data - proj) ** 2)
-                    metrics[f'reconstruction_error_{name}'] = float(error)
+                    metrics[f"reconstruction_error_{name}"] = float(error)
 
         return metrics
 
@@ -494,52 +445,62 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         # Plot 1: Integrated representation (first 2 components)
         if integrated.shape[1] >= 2:
             axes[0, 0].scatter(integrated[:, 0], integrated[:, 1], alpha=0.6)
-            axes[0, 0].set_xlabel('Component 1')
-            axes[0, 0].set_ylabel('Component 2')
-            axes[0, 0].set_title('Integrated Representation')
+            axes[0, 0].set_xlabel("Component 1")
+            axes[0, 0].set_ylabel("Component 2")
+            axes[0, 0].set_title("Integrated Representation")
 
         # Plot 2: Modality contributions
         n_modalities = len(modalities)
-        axes[0, 1].bar(range(n_modalities), [1/n_modalities] * n_modalities)
+        axes[0, 1].bar(range(n_modalities), [1 / n_modalities] * n_modalities)
         axes[0, 1].set_xticks(range(n_modalities))
         axes[0, 1].set_xticklabels(list(modalities.keys()), rotation=45)
-        axes[0, 1].set_ylabel('Contribution')
-        axes[0, 1].set_title('Modality Contributions')
+        axes[0, 1].set_ylabel("Contribution")
+        axes[0, 1].set_title("Modality Contributions")
 
         # Plot 3: Component variance
         if integrated.shape[1] > 1:
             var_explained = np.var(integrated, axis=0)
             var_explained = var_explained / var_explained.sum()
-            axes[1, 0].plot(var_explained[:20], 'o-')
-            axes[1, 0].set_xlabel('Component')
-            axes[1, 0].set_ylabel('Variance Explained')
-            axes[1, 0].set_title('Component Variance')
+            axes[1, 0].plot(var_explained[:20], "o-")
+            axes[1, 0].set_xlabel("Component")
+            axes[1, 0].set_ylabel("Variance Explained")
+            axes[1, 0].set_title("Component Variance")
 
         # Plot 4: Canonical correlations or weights
-        if 'canonical_correlations' in weights:
-            axes[1, 1].bar(range(len(weights['canonical_correlations'])),
-                          weights['canonical_correlations'])
-            axes[1, 1].set_xlabel('Canonical Variable')
-            axes[1, 1].set_ylabel('Correlation')
-            axes[1, 1].set_title('Canonical Correlations')
+        if "canonical_correlations" in weights:
+            axes[1, 1].bar(
+                range(len(weights["canonical_correlations"])),
+                weights["canonical_correlations"],
+            )
+            axes[1, 1].set_xlabel("Canonical Variable")
+            axes[1, 1].set_ylabel("Correlation")
+            axes[1, 1].set_title("Canonical Correlations")
         else:
-            axes[1, 1].text(0.5, 0.5, 'Weights/Correlations\nNot Available',
-                           ha='center', va='center', transform=axes[1, 1].transAxes)
-            axes[1, 1].set_title('Integration Weights')
+            axes[1, 1].text(
+                0.5,
+                0.5,
+                "Weights/Correlations\nNot Available",
+                ha="center",
+                va="center",
+                transform=axes[1, 1].transAxes,
+            )
+            axes[1, 1].set_title("Integration Weights")
 
         plt.tight_layout()
-        plt.savefig(output_path / 'integration_visualization.png', dpi=150, bbox_inches='tight')
+        plt.savefig(
+            output_path / "integration_visualization.png", dpi=150, bbox_inches="tight"
+        )
         plt.close()
 
     def _run(
         self,
-        modality_files: Dict[str, str],
-        modality_types: Dict[str, str] = None,
+        modality_files: dict[str, str],
+        modality_types: dict[str, str] = None,
         method: str = "cca",
         standardize: bool = True,
         align_samples: bool = True,
         reduce_dims: bool = False,
-        n_components: Optional[int] = None,
+        n_components: int | None = None,
         n_canonical: int = 5,
         regularization: float = 0.1,
         n_ica_components: int = 20,
@@ -547,12 +508,12 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         tensor_rank: int = 10,
         tensor_method: str = "parafac",
         fusion_architecture: str = "autoencoder",
-        hidden_dims: List[int] = None,
+        hidden_dims: list[int] = None,
         similarity_metric: str = "correlation",
         fusion_strategy: str = "average",
         select_features: bool = False,
         feature_selection_method: str = "mutual_info",
-        n_features: Optional[int] = None,
+        n_features: int | None = None,
         validation_method: str = "cross_modal",
         n_folds: int = 5,
         output_dir: str = None,
@@ -561,7 +522,7 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
         save_components: bool = True,
         visualize: bool = True,
         verbose: bool = True,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Execute multimodal integration analysis."""
         try:
@@ -620,9 +581,7 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
                     modalities, n_ica_components, max_iter
                 )
             elif method == "nmf":
-                integrated, weights = self._nmf_fusion(
-                    modalities, n_ica_components
-                )
+                integrated, weights = self._nmf_fusion(modalities, n_ica_components)
             elif method == "tensor":
                 integrated, weights = self._tensor_fusion(
                     modalities, tensor_rank, tensor_method
@@ -634,14 +593,10 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
             else:
                 # Default: concatenation
                 integrated = np.concatenate(list(modalities.values()), axis=1)
-                weights = {'method': 'concatenation'}
+                weights = {"method": "concatenation"}
 
             if integrated is None:
-                return ToolResult(
-                    status="error",
-                    error="Integration failed",
-                    data={}
-                )
+                return ToolResult(status="error", error="Integration failed", data={})
 
             # Validation
             if verbose:
@@ -656,7 +611,9 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
                 integrated_file = output_path / "integrated_representation.npy"
                 np.save(integrated_file, integrated)
                 if verbose:
-                    logger.info(f"Saved integrated representation: shape {integrated.shape}")
+                    logger.info(
+                        f"Saved integrated representation: shape {integrated.shape}"
+                    )
 
             if save_weights and weights:
                 weights_file = output_path / "integration_weights.json"
@@ -668,25 +625,27 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
                     else:
                         json_weights[key] = value
 
-                with open(weights_file, 'w') as f:
+                with open(weights_file, "w") as f:
                     json.dump(json_weights, f, indent=2)
 
             # Visualize
             if visualize:
-                self._visualize_integration(integrated, modalities, weights, output_path)
+                self._visualize_integration(
+                    integrated, modalities, weights, output_path
+                )
 
             # Prepare results
             results = {
-                'method': method,
-                'n_modalities': len(modalities),
-                'modality_names': list(modalities.keys()),
-                'integrated_shape': integrated.shape,
-                'validation_metrics': validation_metrics
+                "method": method,
+                "n_modalities": len(modalities),
+                "modality_names": list(modalities.keys()),
+                "integrated_shape": integrated.shape,
+                "validation_metrics": validation_metrics,
             }
 
             # Save results
             results_file = output_path / "integration_results.json"
-            with open(results_file, 'w') as f:
+            with open(results_file, "w") as f:
                 json.dump(results, f, indent=2)
 
             return ToolResult(
@@ -696,28 +655,26 @@ class MultimodalIntegrationTool(NeuroToolWrapper):
                         "integrated": str(integrated_file) if save_integrated else None,
                         "weights": str(weights_file) if save_weights else None,
                         "results": str(results_file),
-                        "visualization": str(output_path / "integration_visualization.png") if visualize else None
+                        "visualization": (
+                            str(output_path / "integration_visualization.png")
+                            if visualize
+                            else None
+                        ),
                     },
                     "summary": results,
-                    "message": f"Multimodal integration using {method} completed successfully"
-                }
+                    "message": f"Multimodal integration using {method} completed successfully",
+                },
             )
 
         except Exception as e:
             logger.error(f"Multimodal integration failed: {str(e)}")
-            return ToolResult(
-                status="error",
-                error=str(e),
-                data={}
-            )
+            return ToolResult(status="error", error=str(e), data={})
 
 
 class MultimodalIntegrationTools:
     """Collection of multimodal integration tools."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         """Get all multimodal integration tools."""
-        return [
-            MultimodalIntegrationTool()
-        ]
+        return [MultimodalIntegrationTool()]

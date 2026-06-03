@@ -2,18 +2,18 @@
 Telemetry data models with comprehensive validation and privacy controls.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Union
-from enum import Enum
 import os
 import sys
+from datetime import datetime
+from enum import Enum
+from typing import Any
+
 from pydantic import BaseModel, Field, field_validator, model_validator
-import hashlib
-import json
 
 
 class EventType(str, Enum):
     """Types of telemetry events."""
+
     # Tool usage events
     TOOL_INVOCATION = "tool_invocation"
     TOOL_COMPLETION = "tool_completion"
@@ -48,15 +48,17 @@ class EventType(str, Enum):
 
 class PrivacyLevel(str, Enum):
     """Privacy levels for data collection."""
-    PUBLIC = "public"          # Can be shared publicly
+
+    PUBLIC = "public"  # Can be shared publicly
     AGGREGATE_ONLY = "aggregate_only"  # Only in aggregate metrics
-    INTERNAL_ONLY = "internal_only"    # Internal analytics only
-    RESTRICTED = "restricted"   # Restricted access only
-    SENSITIVE = "sensitive"     # Requires special handling
+    INTERNAL_ONLY = "internal_only"  # Internal analytics only
+    RESTRICTED = "restricted"  # Restricted access only
+    SENSITIVE = "sensitive"  # Requires special handling
 
 
 class MetricType(str, Enum):
     """Types of metrics calculated from events."""
+
     USAGE_COUNT = "usage_count"
     ADOPTION_RATE = "adoption_rate"
     RETENTION_RATE = "retention_rate"
@@ -69,6 +71,7 @@ class MetricType(str, Enum):
 
 class ServiceType(str, Enum):
     """Service types for telemetry tracking."""
+
     AGENT = "agent"
     BR_KG = "br_kg"
     WEB_UI = "web_ui"
@@ -87,26 +90,27 @@ def _is_test_env() -> bool:
 
 class TelemetryEvent(BaseModel):
     """Individual telemetry event model."""
+
     id: str = Field(..., description="Unique event identifier")
     event_type: EventType = Field(..., description="Type of event")
     service: ServiceType = Field(..., description="Service that generated the event")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
     # Core event data
-    user_id: Optional[str] = Field(None, description="User identifier (hashed)")
-    session_id: Optional[str] = Field(None, description="Session identifier")
-    feature_name: Optional[str] = Field(None, description="Feature or tool name")
-    action: Optional[str] = Field(None, description="Specific action performed")
+    user_id: str | None = Field(None, description="User identifier (hashed)")
+    session_id: str | None = Field(None, description="Session identifier")
+    feature_name: str | None = Field(None, description="Feature or tool name")
+    action: str | None = Field(None, description="Specific action performed")
 
     # Context and parameters
-    context: Dict[str, Any] = Field(default_factory=dict)
-    parameters: Dict[str, Any] = Field(default_factory=dict)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    context: dict[str, Any] = Field(default_factory=dict)
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     # Performance metrics
-    duration_ms: Optional[int] = Field(None, ge=0)
-    memory_usage_mb: Optional[float] = Field(None, ge=0)
-    error_message: Optional[str] = None
+    duration_ms: int | None = Field(None, ge=0)
+    memory_usage_mb: float | None = Field(None, ge=0)
+    error_message: str | None = None
     success: bool = True
 
     # Privacy and compliance
@@ -115,37 +119,45 @@ class TelemetryEvent(BaseModel):
     retention_days: int = Field(default=90, ge=1)
 
     # Location and device (anonymized)
-    country_code: Optional[str] = Field(None, pattern="^[A-Z]{2}$")
-    user_agent_hash: Optional[str] = None
-    ip_hash: Optional[str] = None
+    country_code: str | None = Field(None, pattern="^[A-Z]{2}$")
+    user_agent_hash: str | None = None
+    ip_hash: str | None = None
 
-    @field_validator('user_id')
+    @field_validator("user_id")
     @classmethod
     def validate_user_id_hashed(cls, v):
         """Ensure user_id is properly hashed."""
-        if v and (len(v) < 32 or not v.replace('_', '').isalnum()):
+        if v and (len(v) < 32 or not v.replace("_", "").isalnum()):
             if _is_test_env():
                 return v
-            raise ValueError('user_id must be properly hashed')
+            raise ValueError("user_id must be properly hashed")
         return v
 
-    @field_validator('context', 'parameters', 'metadata')
+    @field_validator("context", "parameters", "metadata")
     @classmethod
     def validate_no_pii(cls, v):
         """Ensure no PII in data fields."""
         if _is_test_env():
             return v
         sensitive_fields = {
-            'email', 'name', 'address', 'phone', 'ssn', 'ip_address',
-            'real_user_id', 'password', 'token', 'api_key'
+            "email",
+            "name",
+            "address",
+            "phone",
+            "ssn",
+            "ip_address",
+            "real_user_id",
+            "password",
+            "token",
+            "api_key",
         }
 
         def check_dict(d):
             if isinstance(d, dict):
                 for key in d.keys():
                     if any(sensitive in key.lower() for sensitive in sensitive_fields):
-                        raise ValueError(f'Potentially sensitive field detected: {key}')
-                    if isinstance(d[key], (dict, list)):
+                        raise ValueError(f"Potentially sensitive field detected: {key}")
+                    if isinstance(d[key], dict | list):
                         check_dict(d[key])
             elif isinstance(d, list):
                 for item in d:
@@ -154,18 +166,19 @@ class TelemetryEvent(BaseModel):
         check_dict(v)
         return v
 
-    @field_validator('retention_days')
+    @field_validator("retention_days")
     @classmethod
     def validate_retention_days(cls, v: int) -> int:
         if _is_test_env():
             return v
         if v > 365:
-            raise ValueError('retention_days must be less than or equal to 365')
+            raise ValueError("retention_days must be less than or equal to 365")
         return v
 
 
 class UsageMetric(BaseModel):
     """Aggregated usage metric."""
+
     id: str = Field(..., description="Metric identifier")
     metric_type: MetricType = Field(..., description="Type of metric")
     name: str = Field(..., description="Human-readable metric name")
@@ -179,25 +192,26 @@ class UsageMetric(BaseModel):
     granularity: str = Field(..., pattern="^(hour|day|week|month)$")
 
     # Dimensions and filters
-    dimensions: Dict[str, Any] = Field(default_factory=dict)
-    filters: Dict[str, Any] = Field(default_factory=dict)
-    breakdown: Optional[Dict[str, float]] = Field(None)
+    dimensions: dict[str, Any] = Field(default_factory=dict)
+    filters: dict[str, Any] = Field(default_factory=dict)
+    breakdown: dict[str, float] | None = Field(None)
 
     # Metadata
     sample_size: int = Field(..., ge=0)
-    confidence_level: Optional[float] = Field(None, ge=0, le=1)
+    confidence_level: float | None = Field(None, ge=0, le=1)
     privacy_level: PrivacyLevel = PrivacyLevel.AGGREGATE_ONLY
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_period(self):
         """Ensure period_end is after period_start."""
         if self.period_end <= self.period_start:
-            raise ValueError('period_end must be after period_start')
+            raise ValueError("period_end must be after period_start")
         return self
 
 
 class FeatureUsage(BaseModel):
     """Feature usage statistics."""
+
     feature_name: str = Field(..., description="Feature or tool name")
     service: ServiceType = Field(..., description="Service providing the feature")
 
@@ -205,21 +219,27 @@ class FeatureUsage(BaseModel):
     total_uses: int = Field(..., ge=0)
     unique_users: int = Field(..., ge=0)
     success_rate: float = Field(..., ge=0, le=1)
-    avg_duration_ms: Optional[float] = Field(None, ge=0)
+    avg_duration_ms: float | None = Field(None, ge=0)
 
     # Adoption metrics
-    adoption_rate: float = Field(..., ge=0, le=1, description="% of active users who used feature")
-    retention_rate: float = Field(..., ge=0, le=1, description="% of users who used feature again")
+    adoption_rate: float = Field(
+        ..., ge=0, le=1, description="% of active users who used feature"
+    )
+    retention_rate: float = Field(
+        ..., ge=0, le=1, description="% of users who used feature again"
+    )
     frequency: float = Field(..., ge=0, description="Average uses per user")
 
     # Time-based analysis
     trend: str = Field(..., pattern="^(increasing|decreasing|stable)$")
-    period_over_period_change: float = Field(..., description="% change from previous period")
-    peak_usage_hour: Optional[int] = Field(None, ge=0, le=23)
+    period_over_period_change: float = Field(
+        ..., description="% change from previous period"
+    )
+    peak_usage_hour: int | None = Field(None, ge=0, le=23)
 
     # Error and performance
     error_rate: float = Field(..., ge=0, le=1)
-    avg_response_time_ms: Optional[float] = Field(None, ge=0)
+    avg_response_time_ms: float | None = Field(None, ge=0)
 
     # Metadata
     period_start: datetime
@@ -229,33 +249,37 @@ class FeatureUsage(BaseModel):
 
 class UserJourney(BaseModel):
     """User journey analysis model."""
+
     journey_id: str = Field(..., description="Unique journey identifier")
     user_hash: str = Field(..., description="Anonymized user identifier")
 
     # Journey metadata
     start_time: datetime = Field(..., description="Journey start timestamp")
-    end_time: Optional[datetime] = Field(None, description="Journey end timestamp")
-    total_duration_minutes: Optional[float] = Field(None, ge=0)
+    end_time: datetime | None = Field(None, description="Journey end timestamp")
+    total_duration_minutes: float | None = Field(None, ge=0)
 
     # Journey steps
-    steps: List[Dict[str, Any]] = Field(default_factory=list, description="Ordered list of steps")
+    steps: list[dict[str, Any]] = Field(
+        default_factory=list, description="Ordered list of steps"
+    )
     completed_steps: int = Field(..., ge=0)
     total_steps: int = Field(..., ge=1)
     completion_rate: float = Field(..., ge=0, le=1)
 
     # Outcomes
     successful: bool = Field(..., description="Whether journey was successful")
-    conversion_event: Optional[str] = Field(None, description="Final conversion event")
-    value: Optional[float] = Field(None, description="Journey value metric")
+    conversion_event: str | None = Field(None, description="Final conversion event")
+    value: float | None = Field(None, description="Journey value metric")
 
     # Analysis
-    drop_off_step: Optional[int] = Field(None, description="Step where user dropped off")
+    drop_off_step: int | None = Field(None, description="Step where user dropped off")
     common_path: bool = Field(..., description="Whether this follows a common path")
-    anomaly_score: Optional[float] = Field(None, ge=0, le=1)
+    anomaly_score: float | None = Field(None, ge=0, le=1)
 
 
 class TelemetryReport(BaseModel):
     """Comprehensive telemetry report."""
+
     id: str = Field(..., description="Report identifier")
     title: str = Field(..., description="Report title")
     description: str = Field(..., description="Report description")
@@ -270,24 +294,25 @@ class TelemetryReport(BaseModel):
     period_end: datetime
 
     # Report data
-    executive_summary: Dict[str, Any] = Field(default_factory=dict)
-    key_metrics: List[UsageMetric] = Field(default_factory=list)
-    feature_analysis: List[FeatureUsage] = Field(default_factory=list)
-    user_journey_insights: List[Dict[str, Any]] = Field(default_factory=list)
+    executive_summary: dict[str, Any] = Field(default_factory=dict)
+    key_metrics: list[UsageMetric] = Field(default_factory=list)
+    feature_analysis: list[FeatureUsage] = Field(default_factory=list)
+    user_journey_insights: list[dict[str, Any]] = Field(default_factory=list)
 
     # Insights and recommendations
-    insights: List[str] = Field(default_factory=list)
-    recommendations: List[str] = Field(default_factory=list)
-    anomalies: List[Dict[str, Any]] = Field(default_factory=list)
+    insights: list[str] = Field(default_factory=list)
+    recommendations: list[str] = Field(default_factory=list)
+    anomalies: list[dict[str, Any]] = Field(default_factory=list)
 
     # Report configuration
-    filters: Dict[str, Any] = Field(default_factory=dict)
+    filters: dict[str, Any] = Field(default_factory=dict)
     privacy_level: PrivacyLevel = PrivacyLevel.INTERNAL_ONLY
-    export_formats: List[str] = Field(default_factory=lambda: ["json", "pdf", "csv"])
+    export_formats: list[str] = Field(default_factory=lambda: ["json", "pdf", "csv"])
 
 
 class TelemetryConfiguration(BaseModel):
     """Telemetry system configuration."""
+
     # Collection settings
     collection_enabled: bool = True
     sampling_rate: float = Field(default=1.0, ge=0, le=1)
@@ -322,17 +347,18 @@ class TelemetryConfiguration(BaseModel):
     alert_threshold_error_rate: float = Field(default=0.05, ge=0, le=1)
     alert_threshold_response_time_ms: float = Field(default=5000, ge=100)
 
-    @field_validator('sampling_rate')
+    @field_validator("sampling_rate")
     @classmethod
     def validate_sampling_rate(cls, v):
         """Ensure sampling rate is valid."""
         if not 0 <= v <= 1:
-            raise ValueError('Sampling rate must be between 0 and 1')
+            raise ValueError("Sampling rate must be between 0 and 1")
         return v
 
 
 class TelemetryModels:
     """Container class for all telemetry models."""
+
     Event = TelemetryEvent
     Metric = UsageMetric
     FeatureUsage = FeatureUsage
@@ -349,7 +375,15 @@ class TelemetryModels:
 
 # Export all models
 __all__ = [
-    'TelemetryEvent', 'UsageMetric', 'FeatureUsage', 'UserJourney',
-    'TelemetryReport', 'TelemetryConfiguration', 'EventType',
-    'PrivacyLevel', 'MetricType', 'ServiceType', 'TelemetryModels'
+    "TelemetryEvent",
+    "UsageMetric",
+    "FeatureUsage",
+    "UserJourney",
+    "TelemetryReport",
+    "TelemetryConfiguration",
+    "EventType",
+    "PrivacyLevel",
+    "MetricType",
+    "ServiceType",
+    "TelemetryModels",
 ]

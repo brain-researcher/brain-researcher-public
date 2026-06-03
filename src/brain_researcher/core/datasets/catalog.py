@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Iterable
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Iterable, List, Optional
+from typing import Any
 
+from pydantic import field_validator  # Pydantic v2
 from pydantic import (
     BaseModel,
     Field,
     HttpUrl,
-    field_validator,  # Pydantic v2
 )
 
 from brain_researcher.config.paths import get_repo_root
@@ -96,7 +97,7 @@ class DatasetAcquisition(str, Enum):
 class DatasetPreview(BaseModel):
     kind: str = Field(..., description="preview type: nifti_thumbnail/png/plot")
     uri: HttpUrl
-    label: Optional[str] = None
+    label: str | None = None
 
 
 class AgeRange(BaseModel):
@@ -116,48 +117,48 @@ class AgeRange(BaseModel):
 class DatasetRecord(BaseModel):
     dataset_id: str = Field(..., description="Stable dataset identifier")
     name: str
-    short_name: Optional[str] = None
-    alias: Optional[List[str]] = None
-    description: Optional[str] = None
-    category: Optional[str] = Field(None, description="High-level dataset grouping")
-    modalities: List[DatasetModality]
-    acquisitions: List[DatasetAcquisition] = Field(default_factory=list)
-    subjects_count: Optional[int] = Field(None, ge=0)
-    sessions_count: Optional[int] = Field(None, ge=0)
-    species: List[str] = Field(default_factory=lambda: ["human"])
-    age_range: Optional[AgeRange] = None
-    disease_flags: List[str] = Field(default_factory=list)
-    subject_labels: List[str] = Field(default_factory=list)
-    phenotype_summary: List[dict[str, Any]] = Field(default_factory=list)
-    annotation_sources: List[str] = Field(default_factory=list)
-    annotation_updated_at: Optional[str] = None
-    center: Optional[str] = None
-    principal_investigator: Optional[str] = None
-    consortium: Optional[str] = None
+    short_name: str | None = None
+    alias: list[str] | None = None
+    description: str | None = None
+    category: str | None = Field(None, description="High-level dataset grouping")
+    modalities: list[DatasetModality]
+    acquisitions: list[DatasetAcquisition] = Field(default_factory=list)
+    subjects_count: int | None = Field(None, ge=0)
+    sessions_count: int | None = Field(None, ge=0)
+    species: list[str] = Field(default_factory=lambda: ["human"])
+    age_range: AgeRange | None = None
+    disease_flags: list[str] = Field(default_factory=list)
+    subject_labels: list[str] = Field(default_factory=list)
+    phenotype_summary: list[dict[str, Any]] = Field(default_factory=list)
+    annotation_sources: list[str] = Field(default_factory=list)
+    annotation_updated_at: str | None = None
+    center: str | None = None
+    principal_investigator: str | None = None
+    consortium: str | None = None
     source_repo: str
-    source_repo_id: Optional[str] = None
+    source_repo_id: str | None = None
     primary_url: HttpUrl
     access_type: DatasetAccessType
     license: DatasetLicense = DatasetLicense.CC0
-    approx_size_bytes: Optional[int] = Field(None, ge=0)
-    size_human: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
-    tasks: List[str] = Field(default_factory=list)
-    modalities_notes: Optional[str] = None
+    approx_size_bytes: int | None = Field(None, ge=0)
+    size_human: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    tasks: list[str] = Field(default_factory=list)
+    modalities_notes: str | None = None
     has_derivatives: bool = False
-    preview_media: List[DatasetPreview] = Field(default_factory=list)
-    created_from: Optional[str] = Field(
+    preview_media: list[DatasetPreview] = Field(default_factory=list)
+    created_from: str | None = Field(
         None, description="Source file path or system that produced this row"
     )
-    source_version: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    source_version: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
-    model_config = dict(use_enum_values=True)
+    model_config = {"use_enum_values": True}
 
     @property
     def search_blob(self) -> str:
-        parts: List[str] = [self.name]
+        parts: list[str] = [self.name]
         for maybe in (
             self.short_name,
             self.description,
@@ -192,7 +193,7 @@ class DatasetRecord(BaseModel):
         return " \n".join(parts)
 
 
-def _load_schema(schema_path: Path) -> Optional[dict[str, Any]]:
+def _load_schema(schema_path: Path) -> dict[str, Any] | None:
     if not schema_path.exists() or jsonschema is None:
         return None
     with schema_path.open("r", encoding="utf-8") as handle:
@@ -200,7 +201,7 @@ def _load_schema(schema_path: Path) -> Optional[dict[str, Any]]:
 
 
 @lru_cache(maxsize=1)
-def _get_compiled_schema() -> Optional[Any]:
+def _get_compiled_schema() -> Any | None:
     schema = _load_schema(DEFAULT_SCHEMA_PATH)
     if not schema or jsonschema is None:
         return None
@@ -253,7 +254,7 @@ def _load_catalog_cached(resolved: Path) -> tuple[DatasetRecord, ...]:
     return tuple(DatasetRecord(**row) for row in raw_rows)
 
 
-def load_catalog(path: Optional[Path | str] = None) -> List[DatasetRecord]:
+def load_catalog(path: Path | str | None = None) -> list[DatasetRecord]:
     """Load and validate the canonical dataset catalog."""
 
     resolved = (Path(path) if path else DEFAULT_CATALOG_PATH).resolve()

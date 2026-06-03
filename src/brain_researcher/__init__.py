@@ -9,8 +9,8 @@ __version__ = "0.1.0"
 # Keep the compatibility hook available as an explicit opt-in for CLI/debug
 # sessions that truly need it.
 try:  # pragma: no cover
-    import os
     import importlib
+    import os
 
     if os.getenv("BR_ENABLE_TOOL_RUNNER_IMPORT", "").lower() in {
         "1",

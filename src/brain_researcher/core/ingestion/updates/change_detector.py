@@ -8,10 +8,11 @@ import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Set, Tuple
+from typing import Any
 
 try:
     import orjson
+
     HAS_ORJSON = True
 except ImportError:
     HAS_ORJSON = False
@@ -19,7 +20,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def stable_hash(obj: Dict[str, Any]) -> str:
+def stable_hash(obj: dict[str, Any]) -> str:
     """Create a stable hash for a dictionary.
 
     Args:
@@ -42,8 +43,8 @@ class ChangeDetector:
 
     def __init__(
         self,
-        state_file: Optional[str | Path] = "artifacts/change_state.json",
-        ttl_days: int = 30
+        state_file: str | Path | None = "artifacts/change_state.json",
+        ttl_days: int = 30,
     ):
         """Initialize change detector.
 
@@ -55,7 +56,7 @@ class ChangeDetector:
         self.ttl_days = ttl_days
 
         # State: source -> item_id -> (hash, timestamp)
-        self.state: Dict[str, Dict[str, Tuple[str, str]]] = {}
+        self.state: dict[str, dict[str, tuple[str, str]]] = {}
 
         # Load existing state
         if self.state_file:
@@ -88,10 +89,14 @@ class ChangeDetector:
             self.state_file.parent.mkdir(parents=True, exist_ok=True)
 
             with open(self.state_file, "w") as f:
-                json.dump({
-                    "state": self.state,
-                    "updated": datetime.now().isoformat(),
-                }, f, indent=2)
+                json.dump(
+                    {
+                        "state": self.state,
+                        "updated": datetime.now().isoformat(),
+                    },
+                    f,
+                    indent=2,
+                )
 
             logger.debug(f"Saved change state for {len(self.state)} sources")
 
@@ -108,7 +113,8 @@ class ChangeDetector:
 
         for source in self.state:
             old_items = [
-                item_id for item_id, (_, timestamp) in self.state[source].items()
+                item_id
+                for item_id, (_, timestamp) in self.state[source].items()
                 if timestamp < cutoff_str
             ]
 
@@ -118,12 +124,7 @@ class ChangeDetector:
             if old_items:
                 logger.debug(f"Cleaned {len(old_items)} old entries from {source}")
 
-    def has_changed(
-        self,
-        source: str,
-        item_id: str,
-        content: Dict[str, Any]
-    ) -> bool:
+    def has_changed(self, source: str, item_id: str, content: dict[str, Any]) -> bool:
         """Check if an item has changed.
 
         Args:
@@ -144,12 +145,7 @@ class ChangeDetector:
         # New item
         return True
 
-    def update(
-        self,
-        source: str,
-        item_id: str,
-        content: Dict[str, Any]
-    ):
+    def update(self, source: str, item_id: str, content: dict[str, Any]):
         """Update the hash for an item.
 
         Args:
@@ -166,10 +162,8 @@ class ChangeDetector:
         self.state[source][item_id] = (current_hash, timestamp)
 
     def detect_changes(
-        self,
-        source: str,
-        items: List[Tuple[str, Dict[str, Any]]]
-    ) -> Tuple[List[Tuple[str, Dict[str, Any]]], List[str], List[str]]:
+        self, source: str, items: list[tuple[str, dict[str, Any]]]
+    ) -> tuple[list[tuple[str, dict[str, Any]]], list[str], list[str]]:
         """Detect changes in a batch of items.
 
         Args:
@@ -206,11 +200,7 @@ class ChangeDetector:
 
         return changed_items, new_ids, deleted_ids
 
-    def update_batch(
-        self,
-        source: str,
-        items: List[Tuple[str, Dict[str, Any]]]
-    ):
+    def update_batch(self, source: str, items: list[tuple[str, dict[str, Any]]]):
         """Update hashes for a batch of items.
 
         Args:
@@ -220,7 +210,7 @@ class ChangeDetector:
         for item_id, content in items:
             self.update(source, item_id, content)
 
-    def get_source_stats(self, source: str) -> Dict[str, Any]:
+    def get_source_stats(self, source: str) -> dict[str, Any]:
         """Get statistics for a source.
 
         Args:
@@ -245,7 +235,7 @@ class ChangeDetector:
             "newest": max(timestamps),
         }
 
-    def get_all_stats(self) -> Dict[str, Any]:
+    def get_all_stats(self) -> dict[str, Any]:
         """Get statistics for all sources.
 
         Returns:
@@ -265,14 +255,14 @@ class ChangeDetector:
 class ETagTracker:
     """Track ETags for HTTP resources."""
 
-    def __init__(self, cache_file: Optional[str | Path] = "artifacts/etags.json"):
+    def __init__(self, cache_file: str | Path | None = "artifacts/etags.json"):
         """Initialize ETag tracker.
 
         Args:
             cache_file: Path to store ETags
         """
         self.cache_file = Path(cache_file) if cache_file else None
-        self.etags: Dict[str, str] = {}
+        self.etags: dict[str, str] = {}
 
         if self.cache_file:
             self.load_etags()
@@ -301,7 +291,7 @@ class ETagTracker:
         except Exception as e:
             logger.error(f"Failed to save ETags: {e}")
 
-    def get_etag(self, url: str) -> Optional[str]:
+    def get_etag(self, url: str) -> str | None:
         """Get stored ETag for URL.
 
         Args:

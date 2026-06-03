@@ -29,9 +29,10 @@ from __future__ import annotations
 import logging
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Set, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -43,24 +44,30 @@ from brain_researcher.services.agent.planner.catalog_loader import (
     search_by_intent,
     search_by_modality,
 )
-from brain_researcher.services.agent.planner.kg_bridge import get_tool_ids_for_constraints
-from brain_researcher.services.agent.planner.operation_router import plan_operations
+from brain_researcher.services.agent.planner.config_loader import (
+    load_capability_crosswalk,
+)
+from brain_researcher.services.agent.planner.config_loader import (
+    load_scoring_weights as load_scoring_config,
+)
 from brain_researcher.services.agent.planner.implementation_router import (
     EnvContext,
     choose_tool_for_operation,
     choose_tool_for_operation_debug,
 )
+from brain_researcher.services.agent.planner.kg_bridge import (
+    get_tool_ids_for_constraints,
+)
+from brain_researcher.services.agent.planner.operation_router import plan_operations
 from brain_researcher.services.agent.planner.preflight import (
     PreflightReport,
     PreflightStatus,
     preflight_batch,
 )
 from brain_researcher.services.agent.planner.synonyms_loader import match_intents
-from brain_researcher.services.agent.planner.config_loader import (
-    load_scoring_weights as load_scoring_config,
-    load_capability_crosswalk,
+from brain_researcher.services.tools.catalog_loader import (
+    resolve_primary_runtime_tool_id,
 )
-from brain_researcher.services.tools.catalog_loader import resolve_primary_runtime_tool_id
 
 
 @lru_cache(maxsize=1)
@@ -82,7 +89,7 @@ def _canonical_tool_id(raw_tool_id: str | None) -> str:
     return resolve_primary_runtime_tool_id(normalized) or normalized
 
 
-_SCORING_WEIGHT_CACHE: Optional[Dict[str, float]] = None
+_SCORING_WEIGHT_CACHE: dict[str, float] | None = None
 
 
 def clear_scoring_weights_cache() -> None:
@@ -121,7 +128,7 @@ def clear_scoring_weights_cache() -> None:
     _SCORING_WEIGHT_CACHE = None
 
 
-def load_scoring_weights(force_reload: bool = False) -> Dict[str, float]:
+def load_scoring_weights(force_reload: bool = False) -> dict[str, float]:
     """Load scoring weights from config with env var override support.
 
     Uses new v0.2 config format with backward compatibility for v0.1.
@@ -178,10 +185,10 @@ def load_scoring_weights(force_reload: bool = False) -> Dict[str, float]:
 
 
 def load_hierarchical_config(
-    modality: Optional[str] = None,
-    operator: Optional[str] = None,
-    environment: Optional[str] = None,
-) -> Dict[str, Any]:
+    modality: str | None = None,
+    operator: str | None = None,
+    environment: str | None = None,
+) -> dict[str, Any]:
     """Load config with hierarchical overrides applied.
 
     Phase 1.4: Implements hierarchical override system:
@@ -216,7 +223,7 @@ def load_hierarchical_config(
     overrides = config.get("overrides", {})
 
     # Helper to apply dotted path overrides
-    def apply_override(cfg: Dict, path: str, value: Any) -> None:
+    def apply_override(cfg: dict, path: str, value: Any) -> None:
         """Apply override at dotted path (auto-anchoring under policy when needed)."""
 
         if not path:
@@ -260,7 +267,9 @@ def load_hierarchical_config(
         env_overrides = overrides["environment"][environment]
         for path, value in env_overrides.items():
             apply_override(config, path, value)
-            logger.debug(f"Applied environment override ({environment}): {path} = {value}")
+            logger.debug(
+                f"Applied environment override ({environment}): {path} = {value}"
+            )
 
     # Apply environment variable overrides
     weights = config.get("policy", {}).get("scoring", {}).get("weights", {})
@@ -286,18 +295,18 @@ def load_hierarchical_config(
 
 
 def apply_constraints(
-    candidates: List[SelectionCandidate],
-    config: Dict[str, Any],
-    matched_operators: List[str],
-    modality: Optional[str] = None,
+    candidates: list[SelectionCandidate],
+    config: dict[str, Any],
+    matched_operators: list[str],
+    modality: str | None = None,
     *,
     return_unavailable: bool = False,
 ) -> (
-    List[SelectionCandidate]
+    list[SelectionCandidate]
     | tuple[
-        List[SelectionCandidate],
-        List[SelectionCandidate],
-        List[Violation],
+        list[SelectionCandidate],
+        list[SelectionCandidate],
+        list[Violation],
     ]
 ):
     """Stage 1: Apply hard constraints to filter candidates.
@@ -323,18 +332,18 @@ def apply_constraints(
         >>> # Only candidates passing preflight and having container images
     """
     constraints = config.get("policy", {}).get("constraints", {})
-    mask_reasons: List[Violation] = []
+    mask_reasons: list[Violation] = []
 
     # Track filter statistics
     initial_count = len(candidates)
     filtered = candidates.copy()
-    removed: List[SelectionCandidate] = []
+    removed: list[SelectionCandidate] = []
 
     def _mark_unavailable(
         candidate: SelectionCandidate,
         code: str,
         summary: str,
-        detail: Optional[str] = None,
+        detail: str | None = None,
         *,
         severity: str = "warn",
         blocking: bool = True,
@@ -368,16 +377,16 @@ def apply_constraints(
         )
 
     def _filter_with_reason(
-        current: List[SelectionCandidate],
+        current: list[SelectionCandidate],
         predicate,
         *,
         code: str,
         summary: str,
-        detail_fn: Optional[Callable[[SelectionCandidate], Optional[str]]] = None,
+        detail_fn: Callable[[SelectionCandidate], str | None] | None = None,
         severity: str = "warn",
         blocking: bool = False,
-    ) -> List[SelectionCandidate]:
-        kept: List[SelectionCandidate] = []
+    ) -> list[SelectionCandidate]:
+        kept: list[SelectionCandidate] = []
         for cand in current:
             if predicate(cand):
                 kept.append(cand)
@@ -431,7 +440,9 @@ def apply_constraints(
             filtered = [c for c in filtered if c.intent_match_score >= 0.8]
         after = len(filtered)
         if before != after:
-            logger.debug(f"Capability match constraint removed {before - after} candidates")
+            logger.debug(
+                f"Capability match constraint removed {before - after} candidates"
+            )
 
     # Constraint 3: require_container_availability
     if constraints.get("require_container_availability", False):
@@ -439,7 +450,8 @@ def apply_constraints(
         if return_unavailable:
             filtered = _filter_with_reason(
                 filtered,
-                lambda c: c.tool.runtime_kind != "container" or c.resource_fit_score >= 0.5,
+                lambda c: c.tool.runtime_kind != "container"
+                or c.resource_fit_score >= 0.5,
                 code="RESOURCE_UNAVAILABLE",
                 summary="Container runtime unavailable",
                 detail_fn=lambda c: "resource_fit_score<0.5 for container",
@@ -448,12 +460,15 @@ def apply_constraints(
             )
         else:
             filtered = [
-                c for c in filtered
+                c
+                for c in filtered
                 if c.tool.runtime_kind != "container" or c.resource_fit_score >= 0.5
             ]
         after = len(filtered)
         if before != after:
-            logger.debug(f"Container availability constraint removed {before - after} candidates")
+            logger.debug(
+                f"Container availability constraint removed {before - after} candidates"
+            )
 
     # Constraint 4: gpu_required_if
     gpu_required_ops = constraints.get("gpu_required_if", [])
@@ -485,7 +500,9 @@ def apply_constraints(
     # Constraint 5: KG-backed modality/resource filter (opt-in)
     use_kg_constraints = constraints.get("use_kg_constraints")
     if use_kg_constraints is None:
-        use_kg_constraints = os.environ.get("BR_PLANNER_USE_KG_CONSTRAINTS", "").lower() in {
+        use_kg_constraints = os.environ.get(
+            "BR_PLANNER_USE_KG_CONSTRAINTS", ""
+        ).lower() in {
             "1",
             "true",
             "yes",
@@ -537,9 +554,7 @@ def apply_constraints(
                     filtered = [c for c in filtered if c.tool.id in kg_tool_ids]
                 after = len(filtered)
                 if before != after:
-                    logger.debug(
-                        f"KG constraint removed {before - after} candidates"
-                    )
+                    logger.debug(f"KG constraint removed {before - after} candidates")
 
     # Constraint 6: budget / cost (conservative)
     max_cost_usd = constraints.get("max_cost_usd")
@@ -555,7 +570,9 @@ def apply_constraints(
         if return_unavailable:
             filtered = _filter_with_reason(
                 filtered,
-                lambda c: getattr(getattr(c.tool, "pricing", None), "estimated_cost_usd", None)
+                lambda c: getattr(
+                    getattr(c.tool, "pricing", None), "estimated_cost_usd", None
+                )
                 in (None, 0.0)
                 or getattr(getattr(c.tool, "pricing", None), "estimated_cost_usd", 0.0)
                 <= max_cost_usd,
@@ -585,7 +602,9 @@ def apply_constraints(
         if return_unavailable:
             filtered = _filter_with_reason(
                 filtered,
-                lambda c: getattr(getattr(c.tool, "constraints", {}), "max_artifact_mb", 0)
+                lambda c: getattr(
+                    getattr(c.tool, "constraints", {}), "max_artifact_mb", 0
+                )
                 <= max_artifact_mb,
                 code="ARTIFACT_TOO_LARGE",
                 summary="Expected artifact size exceeds limit",
@@ -602,7 +621,9 @@ def apply_constraints(
             ]
         after = len(filtered)
         if before != after:
-            logger.debug(f"Artifact-size constraint removed {before - after} candidates")
+            logger.debug(
+                f"Artifact-size constraint removed {before - after} candidates"
+            )
 
     # Constraint 8: license allowlist
     allowed_licenses = constraints.get("allowed_licenses") or []
@@ -635,10 +656,14 @@ def apply_constraints(
         if return_unavailable:
             filtered = _filter_with_reason(
                 filtered,
-                lambda c: not getattr(getattr(c.tool, "constraints", {}), "requires_network", False),
+                lambda c: not getattr(
+                    getattr(c.tool, "constraints", {}), "requires_network", False
+                ),
                 code="NETWORK_BLOCKED",
                 summary="Tool requires network but network use is disallowed",
-                detail_fn=lambda c: getattr(getattr(c.tool, "constraints", {}), "requires_network", None),
+                detail_fn=lambda c: getattr(
+                    getattr(c.tool, "constraints", {}), "requires_network", None
+                ),
                 severity="warn",
                 blocking=True,
             )
@@ -646,7 +671,9 @@ def apply_constraints(
             filtered = [
                 c
                 for c in filtered
-                if not getattr(getattr(c.tool, "constraints", {}), "requires_network", False)
+                if not getattr(
+                    getattr(c.tool, "constraints", {}), "requires_network", False
+                )
             ]
         after = len(filtered)
         if before != after:
@@ -671,10 +698,10 @@ def apply_constraints(
 
 
 def apply_strategy(
-    candidates: List[SelectionCandidate],
-    config: Dict[str, Any],
+    candidates: list[SelectionCandidate],
+    config: dict[str, Any],
     max_results: int = 10,
-) -> List[SelectionCandidate]:
+) -> list[SelectionCandidate]:
     """Stage 3: Apply selection strategy to ranked candidates.
 
     Phase 1.4: Selection strategies:
@@ -710,7 +737,9 @@ def apply_strategy(
     elif strategy == "diverse_topk":
         # Return top K with diversity penalty for same package
         k = strategy_config.get("diverse_topk", {}).get("k", 3)
-        diversity_penalty = strategy_config.get("diverse_topk", {}).get("diversity_penalty", 0.1)
+        diversity_penalty = strategy_config.get("diverse_topk", {}).get(
+            "diversity_penalty", 0.1
+        )
 
         # Group candidates by package/namespace
         selected = []
@@ -735,13 +764,17 @@ def apply_strategy(
                 selected.append(candidate)
                 package_counts[package] = count + 1
 
-        logger.debug(f"diverse_topk strategy selected {len(selected)}/{len(candidates)} candidates")
+        logger.debug(
+            f"diverse_topk strategy selected {len(selected)}/{len(candidates)} candidates"
+        )
         return selected
 
     elif strategy == "budget_aware":
         # Filter by latency and cost constraints
-        max_latency_min = strategy_config.get("budget_aware", {}).get("max_latency_min", 60)
-        max_cost_usd = strategy_config.get("budget_aware", {}).get("max_cost_usd", 10.0)
+        max_latency_min = strategy_config.get("budget_aware", {}).get(
+            "max_latency_min", 60
+        )
+        strategy_config.get("budget_aware", {}).get("max_cost_usd", 10.0)
 
         # Filter candidates meeting budget constraints
         filtered = []
@@ -749,7 +782,9 @@ def apply_strategy(
             # Check latency (stub: use tool defaults if available)
             tool_latency = getattr(candidate.tool, "estimated_latency_min", 0)
             if tool_latency > max_latency_min:
-                logger.debug(f"Skipping {candidate.tool.id}: latency {tool_latency} > {max_latency_min}")
+                logger.debug(
+                    f"Skipping {candidate.tool.id}: latency {tool_latency} > {max_latency_min}"
+                )
                 continue
 
             # Check cost (stub: not implemented yet)
@@ -762,7 +797,9 @@ def apply_strategy(
             if len(filtered) >= max_results:
                 break
 
-        logger.debug(f"budget_aware strategy selected {len(filtered)}/{len(candidates)} candidates")
+        logger.debug(
+            f"budget_aware strategy selected {len(filtered)}/{len(candidates)} candidates"
+        )
         return filtered
 
     else:
@@ -787,10 +824,12 @@ class SelectionCandidate:
     """
 
     tool: ToolCapability
-    scoring_weights: Dict[str, float]  # Required - must be from load_hierarchical_config
+    scoring_weights: dict[
+        str, float
+    ]  # Required - must be from load_hierarchical_config
     intent_match_score: float = 0.0
     preflight_passed: bool = False
-    preflight_detail: Dict[str, str] = field(default_factory=dict)
+    preflight_detail: dict[str, str] = field(default_factory=dict)
     description_score: float = 0.0
     metadata_score: float = 0.0
     resource_fit_score: float = 0.0
@@ -800,8 +839,8 @@ class SelectionCandidate:
     explanation: str = ""
     source: str = "catalog"  # catalog | br_kg
     available: bool = True
-    unavailable_reason: Optional[Dict[str, Any]] = None
-    reasons: List[Dict[str, Any]] = field(default_factory=list)
+    unavailable_reason: dict[str, Any] | None = None
+    reasons: list[dict[str, Any]] = field(default_factory=list)
 
     def __post_init__(self):
         """Calculate final score and generate explanation after initialization.
@@ -881,7 +920,7 @@ class SelectionCandidate:
 
         return "; ".join(parts)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize candidate for Plan.candidates field.
 
         P0-1: Returns dict representation suitable for JSON serialization
@@ -890,7 +929,9 @@ class SelectionCandidate:
         Returns:
             Dict with tool metadata and scoring details
         """
-        canonical_tool_id = resolve_primary_runtime_tool_id(self.tool.id) or self.tool.id
+        canonical_tool_id = (
+            resolve_primary_runtime_tool_id(self.tool.id) or self.tool.id
+        )
         payload = {
             "tool_id": canonical_tool_id,
             "tool_name": self.tool.name,
@@ -918,8 +959,8 @@ class SelectionCandidate:
 
 def _score_intent_match(
     tool: ToolCapability,
-    matched_operators: List[str],
-    operator_weights: Dict[str, float],
+    matched_operators: list[str],
+    operator_weights: dict[str, float],
 ) -> float:
     """Score how well tool matches intent operators.
 
@@ -969,11 +1010,9 @@ def _score_description_relevance(tool: ToolCapability, query: str) -> float:
         Score between 0.0 and 1.0
     """
     # Extract significant words from query (lowercase, length > 3)
-    query_words = set(
-        word.lower()
-        for word in re.findall(r"\b\w+\b", query)
-        if len(word) > 3
-    )
+    query_words = {
+        word.lower() for word in re.findall(r"\b\w+\b", query) if len(word) > 3
+    }
 
     if not query_words:
         return 0.5  # Neutral score for very short queries
@@ -983,9 +1022,7 @@ def _score_description_relevance(tool: ToolCapability, query: str) -> float:
     if not desc and getattr(tool, "metadata", None):
         desc = getattr(tool.metadata, "description", "") or ""
 
-    tool_text = (
-        f"{tool.name} {desc} {' '.join(tool.capabilities)}"
-    ).lower()
+    tool_text = (f"{tool.name} {desc} {' '.join(tool.capabilities)}").lower()
 
     # Count matches
     matches = sum(1 for word in query_words if word in tool_text)
@@ -1082,7 +1119,10 @@ def _score_resource_fit(
         if tool.container and isinstance(image, str) and "/cvmfs/" in image:
             # CVMFS tool - check if mounted
             container_check = preflight_report.checks.get("container_image")
-            if container_check and container_check.status_code == PreflightStatus.CVMFS_AVAILABLE:
+            if (
+                container_check
+                and container_check.status_code == PreflightStatus.CVMFS_AVAILABLE
+            ):
                 score += 0.3
             else:
                 score += 0.0
@@ -1117,9 +1157,9 @@ def _clamp(value: float, minimum: float = 0.0, maximum: float = 1.0) -> float:
     return max(minimum, min(maximum, value))
 
 
-def _dedupe_preserve_order(items: List[str]) -> List[str]:
-    out: List[str] = []
-    seen: Set[str] = set()
+def _dedupe_preserve_order(items: list[str]) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
     for item in items:
         if not item:
             continue
@@ -1130,7 +1170,7 @@ def _dedupe_preserve_order(items: List[str]) -> List[str]:
     return out
 
 
-def _extract_expected_capabilities_hint(query: str) -> List[str]:
+def _extract_expected_capabilities_hint(query: str) -> list[str]:
     """Parse optional benchmark hint injected into query by the benchmark runner.
 
     Format:
@@ -1139,7 +1179,7 @@ def _extract_expected_capabilities_hint(query: str) -> List[str]:
     if not query:
         return []
 
-    out: List[str] = []
+    out: list[str] = []
     for line in str(query).splitlines():
         stripped = line.strip()
         if not stripped:
@@ -1158,8 +1198,8 @@ def _extract_expected_capabilities_hint(query: str) -> List[str]:
 
 
 def _apply_capability_crosswalk(
-    query: str, matched_operators: List[str]
-) -> tuple[List[str], List[str]]:
+    query: str, matched_operators: list[str]
+) -> tuple[list[str], list[str]]:
     """Augment matched operators with crosswalk-derived operators/intents.
 
     The crosswalk helps map higher-level labels (benchmarks, UI tags) and common
@@ -1177,9 +1217,9 @@ def _apply_capability_crosswalk(
     expected_caps_lower = {c.lower() for c in expected_caps}
     q_lower = (query or "").lower()
 
-    extra_ops: List[str] = []
-    extra_intents: List[str] = []
-    matched_keys: List[str] = []
+    extra_ops: list[str] = []
+    extra_intents: list[str] = []
+    matched_keys: list[str] = []
 
     for key, spec in mappings.items():
         if not key or not isinstance(spec, dict):
@@ -1265,18 +1305,18 @@ def _score_latency_pred(tool: ToolCapability) -> float:
 
 def select_tools(
     query: str,
-    modality: Optional[str] = None,
+    modality: str | None = None,
     max_results: int = 10,
     require_preflight_pass: bool = True,
-    environment: Optional[str] = None,
+    environment: str | None = None,
     *,
     apply_selection_strategy: bool = True,
     include_unavailable: bool = False,
-    max_unavailable: Optional[int] = None,
-    mask_reasons_out: Optional[List[Violation]] = None,
-    allowed_tool_ids: Optional[Set[str]] = None,
+    max_unavailable: int | None = None,
+    mask_reasons_out: list[Violation] | None = None,
+    allowed_tool_ids: set[str] | None = None,
     include_local_first: bool = False,
-) -> List[SelectionCandidate]:
+) -> list[SelectionCandidate]:
     """Select and rank tools for the given query.
 
     Phase 1.4: Refactored into 3-stage pipeline:
@@ -1343,15 +1383,14 @@ def select_tools(
 
     # Create operator weights (decreasing by rank)
     operator_weights = {
-        op: max(0.5, 1.0 - (idx * 0.1))
-        for idx, op in enumerate(matched_operators)
+        op: max(0.5, 1.0 - (idx * 0.1)) for idx, op in enumerate(matched_operators)
     }
 
     # Step 2: Search catalog for tools
     # Use an ID-keyed dict to avoid hashability issues and to enforce precedence.
-    candidate_map: Dict[str, ToolCapability] = {}
+    candidate_map: dict[str, ToolCapability] = {}
 
-    def _merge(tools: List[ToolCapability]) -> None:
+    def _merge(tools: list[ToolCapability]) -> None:
         for t in tools:
             candidate_map[t.id] = t  # later inserts overwrite by id (if needed)
 
@@ -1381,7 +1420,9 @@ def select_tools(
         if candidate_map:
             # Intersect by id to keep only tools matching both capability and modality
             modality_ids = {t.id for t in modality_tools}
-            candidate_map = {tid: t for tid, t in candidate_map.items() if tid in modality_ids}
+            candidate_map = {
+                tid: t for tid, t in candidate_map.items() if tid in modality_ids
+            }
         else:
             _merge(modality_tools)
 
@@ -1394,7 +1435,9 @@ def select_tools(
         _merge(list(idx.by_id.values()))
 
     if allowed_tool_ids is not None:
-        allowed = {str(tool_id).strip() for tool_id in allowed_tool_ids if str(tool_id).strip()}
+        allowed = {
+            str(tool_id).strip() for tool_id in allowed_tool_ids if str(tool_id).strip()
+        }
         if allowed:
             candidate_map = {
                 tool_id: tool
@@ -1410,13 +1453,14 @@ def select_tools(
     if semantic_fallback:
         # Semantic benchmark mode: infra readiness is not part of scoring/constraints.
         preflight_reports = {
-            tool.id: PreflightReport(tool_id=tool.id, passed=True) for tool in candidate_tools
+            tool.id: PreflightReport(tool_id=tool.id, passed=True)
+            for tool in candidate_tools
         }
     else:
         preflight_reports = preflight_batch(candidate_tools)
 
     # Step 4: Score each candidate
-    candidates: List[SelectionCandidate] = []
+    candidates: list[SelectionCandidate] = []
 
     for tool in candidate_tools:
         preflight_report = preflight_reports.get(tool.id)
@@ -1432,9 +1476,7 @@ def select_tools(
         }
 
         # Calculate component scores
-        intent_score = _score_intent_match(
-            tool, matched_operators, operator_weights
-        )
+        intent_score = _score_intent_match(tool, matched_operators, operator_weights)
         description_score = _score_description_relevance(tool, query)
         metadata_score = _score_metadata(tool)
         resource_fit_score = _score_resource_fit(tool, preflight_report)
@@ -1478,7 +1520,9 @@ def select_tools(
         if mask_reasons_out is not None:
             mask_reasons_out.extend(mask_reasons)
     else:
-        candidates = apply_constraints(candidates, config, matched_operators, modality=modality)
+        candidates = apply_constraints(
+            candidates, config, matched_operators, modality=modality
+        )
 
     if not candidates:
         logger.warning(f"No candidates passed constraints for query: {query}")
@@ -1486,7 +1530,7 @@ def select_tools(
             # Return unavailable-only list (useful for blocked result explainability)
             if max_unavailable is not None:
                 unavailable.sort(key=lambda c: c.final_score, reverse=True)
-                unavailable = unavailable[: max_unavailable]
+                unavailable = unavailable[:max_unavailable]
             return unavailable
         return []
 
@@ -1502,20 +1546,20 @@ def select_tools(
     if include_unavailable:
         if max_unavailable is not None:
             unavailable.sort(key=lambda c: c.final_score, reverse=True)
-            unavailable = unavailable[: max_unavailable]
+            unavailable = unavailable[:max_unavailable]
         return candidates + unavailable
 
     return candidates
 
 
 def choose_tool(
-    request: "PlanRequest",
+    request: PlanRequest,
     max_candidates: int = 5,
     require_preflight_pass: bool = True,
     *,
-    allowed_tool_ids: Optional[Set[str]] = None,
+    allowed_tool_ids: set[str] | None = None,
     include_local_first: bool = False,
-) -> "Plan":
+) -> Plan:
     """
     Choose best tool for PlanRequest and return Plan with selection reasoning.
 
@@ -1546,7 +1590,7 @@ def choose_tool(
     from typing import TYPE_CHECKING
 
     if TYPE_CHECKING:
-        from brain_researcher.services.shared.planner.models import Plan, PlanRequest
+        from brain_researcher.services.shared.planner.models import Plan
 
     # Import here to avoid circular dependency
     from brain_researcher.services.shared.planner.models import (
@@ -1563,7 +1607,7 @@ def choose_tool(
     matched_intents = match_intents(query, modality=modality)
 
     # 3. Run selection
-    mask_reasons: List[Violation] = []
+    mask_reasons: list[Violation] = []
     candidates = select_tools(
         query=query,
         modality=modality,
@@ -1602,7 +1646,7 @@ def choose_tool(
     branch_top_k = max(1, min(branch_top_k, len(candidates)))
 
     plan_id = str(uuid.uuid4())
-    steps: List[StepSpec] = []
+    steps: list[StepSpec] = []
     if branch_top_k > 1:
         branch_group_id = f"bg:{plan_id}"
         for idx, candidate in enumerate(candidates[:branch_top_k]):
@@ -1661,20 +1705,21 @@ def choose_tool(
 
 
 def choose_tool_intent_router(
-    request: "PlanRequest",
+    request: PlanRequest,
     max_candidates: int = 5,  # kept for potential future use
     return_debug: bool = False,
-    tool_retriever: "Any | None" = None,
-    mask_reasons_out: Optional[List[Violation]] = None,
-    allowed_tool_ids: Optional[Set[str]] = None,
-) -> Optional["Plan"]:
+    tool_retriever: Any | None = None,
+    mask_reasons_out: list[Violation] | None = None,
+    allowed_tool_ids: set[str] | None = None,
+) -> Plan | None:
     """Intent/operation + implementation router path.
 
     Returns a Plan if an intent and implementation are found; otherwise None to
     let callers fall back to legacy/catalog selection.
     """
-    import uuid
     import time
+    import uuid
+
     from brain_researcher.services.shared.planner.models import Plan, PlanDAG, StepSpec
 
     operations = plan_operations(request)
@@ -1697,10 +1742,10 @@ def choose_tool_intent_router(
         return None
 
     env = EnvContext(tool_retriever=tool_retriever)
-    steps: List[StepSpec] = []
-    warnings: List[str] = []
+    steps: list[StepSpec] = []
+    warnings: list[str] = []
 
-    debug_rows: List[Dict[str, Any]] = []
+    debug_rows: list[dict[str, Any]] = []
     for idx, op in enumerate(operations):
         if return_debug:
             tool, rows = choose_tool_for_operation_debug(op, env)
@@ -1740,7 +1785,10 @@ def choose_tool_intent_router(
                         severity="error",
                         blocking=True,
                         where=ViolationLocation(component="planner", stage="preflight"),
-                        details={"tool_id": canonical_tool_name, "intent": op.intent.id},
+                        details={
+                            "tool_id": canonical_tool_name,
+                            "intent": op.intent.id,
+                        },
                     )
                 )
             return None
@@ -1760,7 +1808,10 @@ def choose_tool_intent_router(
                         severity="warn",
                         blocking=False,
                         where=ViolationLocation(component="planner", stage="preflight"),
-                        details={"original": getattr(tool, "runtime_kind", None), "mapped": runtime},
+                        details={
+                            "original": getattr(tool, "runtime_kind", None),
+                            "mapped": runtime,
+                        },
                     )
                 )
 
@@ -1838,7 +1889,11 @@ def explain_selection(candidate: SelectionCandidate, verbose: bool = False) -> s
         lines.append("Preflight Checks:")
         for check_name, detail in candidate.preflight_detail.items():
             detail_lower = detail.lower() if detail else ""
-            status = "✓" if "passed" in detail_lower or "not-required" in detail_lower else "✗"
+            status = (
+                "✓"
+                if "passed" in detail_lower or "not-required" in detail_lower
+                else "✗"
+            )
             lines.append(f"{status} {check_name}: {detail}")
 
     return "\n".join(lines)

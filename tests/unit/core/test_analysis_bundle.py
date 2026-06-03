@@ -188,7 +188,7 @@ def test_save_analysis_bundle_includes_user_distribution_files(
     tmp_path: Path, monkeypatch
 ):
     repo_root = tmp_path / "repo"
-    docs_dir = repo_root / "docs" / "getting-started"
+    docs_dir = repo_root / "docs"
     docs_dir.mkdir(parents=True)
     (repo_root / "environment.yml").write_text("name: br\n", encoding="utf-8")
     (repo_root / "docker-compose.yml").write_text(
@@ -196,8 +196,9 @@ def test_save_analysis_bundle_includes_user_distribution_files(
         encoding="utf-8",
     )
     (repo_root / ".env.example").write_text("OPENAI_API_KEY=\n", encoding="utf-8")
-    (docs_dir / "quickstart.md").write_text("# Quickstart\n", encoding="utf-8")
-    (docs_dir / "installation.md").write_text("# Installation\n", encoding="utf-8")
+    (docs_dir / "index.md").write_text("# Docs\n", encoding="utf-8")
+    (docs_dir / "mcp.md").write_text("# MCP\n", encoding="utf-8")
+    (docs_dir / "OPERATIONS.md").write_text("# Operations\n", encoding="utf-8")
     monkeypatch.setattr(analysis_bundle, "_find_repo_root", lambda: repo_root)
 
     run_dir = tmp_path / "run-2"
@@ -227,15 +228,17 @@ def test_save_analysis_bundle_includes_user_distribution_files(
     assert files["user_environment_yml"] == ".bundle_support/environment.yml"
     assert files["user_docker_compose_yml"] == ".bundle_support/docker-compose.yml"
     assert files["user_env_example"] == ".bundle_support/.env.example"
-    assert files["user_quickstart_md"] == ".bundle_support/quickstart.md"
-    assert files["user_installation_md"] == ".bundle_support/installation.md"
+    assert files["user_docs_index_md"] == ".bundle_support/docs_index.md"
+    assert files["user_mcp_md"] == ".bundle_support/mcp.md"
+    assert files["user_operations_md"] == ".bundle_support/operations.md"
 
     for relpath in (
         files["user_environment_yml"],
         files["user_docker_compose_yml"],
         files["user_env_example"],
-        files["user_quickstart_md"],
-        files["user_installation_md"],
+        files["user_docs_index_md"],
+        files["user_mcp_md"],
+        files["user_operations_md"],
     ):
         assert (run_dir / relpath).exists()
 
@@ -243,8 +246,9 @@ def test_save_analysis_bundle_includes_user_distribution_files(
     assert "user_environment" in roles
     assert "user_docker_compose" in roles
     assert "user_env_example" in roles
-    assert "user_quickstart" in roles
-    assert "user_installation" in roles
+    assert "user_docs_index" in roles
+    assert "user_mcp" in roles
+    assert "user_operations" in roles
 
 
 def test_save_analysis_bundle_deduplicates_artifacts_before_checksums(tmp_path: Path):

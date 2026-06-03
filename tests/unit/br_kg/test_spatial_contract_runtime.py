@@ -126,7 +126,7 @@ class _FakeSession:
     def __init__(self, queries: list[tuple[str, dict[str, object]]]):
         self._queries = queries
 
-    def __enter__(self) -> "_FakeSession":
+    def __enter__(self) -> _FakeSession:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
@@ -168,4 +168,7 @@ def test_performance_optimizer_covers_canonical_spatial_paths() -> None:
         "MATCH (child:BrainRegion)-[:PART_OF]->(parent:BrainRegion)" in query
         for query in explain_queries
     )
-    assert any("[:ACTIVATES]" in query and "r:BrainRegion OR r:Region" in query for query in explain_queries)
+    assert any(
+        "[:ACTIVATES]" in query and "r:BrainRegion OR r:Region" in query
+        for query in explain_queries
+    )

@@ -3,16 +3,13 @@
 import pytest
 
 from brain_researcher.services.br_kg.evidence.aggregator import (
-    gather_evidence,
     _infer_sources_from_qur,
+    gather_evidence,
 )
 from brain_researcher.services.br_kg.evidence.models import (
     EvidenceBundle,
-    EvidenceItem,
     EvidenceSource,
-    EvidenceType,
 )
-from brain_researcher.services.br_kg.evidence.protocols import ConnectorError
 
 
 class TestGatherEvidence:

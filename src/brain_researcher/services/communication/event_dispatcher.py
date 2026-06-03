@@ -6,16 +6,15 @@ event routing, filtering, transformation, and delivery guarantees.
 """
 
 import asyncio
-import json
-import time
-from typing import Dict, List, Optional, Any, Callable, Set, Union, Type
-from datetime import datetime, timedelta
-from enum import Enum
-from dataclasses import dataclass, field
-from abc import ABC, abstractmethod
 import logging
+import time
 import uuid
-import inspect
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +31,9 @@ class EventPriority(int, Enum):
 class DeliveryMode(str, Enum):
     """Event delivery modes."""
 
-    AT_MOST_ONCE = "at_most_once"    # Fire and forget
+    AT_MOST_ONCE = "at_most_once"  # Fire and forget
     AT_LEAST_ONCE = "at_least_once"  # Retry until success
-    EXACTLY_ONCE = "exactly_once"    # Idempotent delivery
+    EXACTLY_ONCE = "exactly_once"  # Idempotent delivery
 
 
 @dataclass
@@ -44,16 +43,16 @@ class Event:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     type: str = ""
     source: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, str] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, str] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    correlation_id: Optional[str] = None
-    causation_id: Optional[str] = None
+    correlation_id: str | None = None
+    causation_id: str | None = None
     version: str = "1.0"
     priority: EventPriority = EventPriority.NORMAL
-    ttl_seconds: Optional[int] = None
+    ttl_seconds: int | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary."""
         return {
             "id": self.id,
@@ -66,11 +65,11 @@ class Event:
             "causation_id": self.causation_id,
             "version": self.version,
             "priority": self.priority.value,
-            "ttl_seconds": self.ttl_seconds
+            "ttl_seconds": self.ttl_seconds,
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Event':
+    def from_dict(cls, data: dict[str, Any]) -> "Event":
         """Create event from dictionary."""
         event_data = data.copy()
 
@@ -97,9 +96,9 @@ class Event:
 class EventHandlerConfig:
     """Configuration for event handler."""
 
-    event_types: List[str] = field(default_factory=list)
-    source_patterns: List[str] = field(default_factory=list)
-    priority_filter: Optional[EventPriority] = None
+    event_types: list[str] = field(default_factory=list)
+    source_patterns: list[str] = field(default_factory=list)
+    priority_filter: EventPriority | None = None
     async_processing: bool = True
     max_retries: int = 3
     retry_delay_seconds: float = 1.0
@@ -127,7 +126,7 @@ class EventFilter(ABC):
 class TypeFilter(EventFilter):
     """Filter events by type."""
 
-    def __init__(self, event_types: List[str]):
+    def __init__(self, event_types: list[str]):
         """Initialize type filter.
 
         Args:
@@ -143,7 +142,7 @@ class TypeFilter(EventFilter):
 class SourceFilter(EventFilter):
     """Filter events by source pattern."""
 
-    def __init__(self, source_patterns: List[str]):
+    def __init__(self, source_patterns: list[str]):
         """Initialize source filter.
 
         Args:
@@ -182,7 +181,7 @@ class PriorityFilter(EventFilter):
 class CompositeFilter(EventFilter):
     """Combine multiple filters."""
 
-    def __init__(self, filters: List[EventFilter], operator: str = "AND"):
+    def __init__(self, filters: list[EventFilter], operator: str = "AND"):
         """Initialize composite filter.
 
         Args:
@@ -227,7 +226,7 @@ class EventTransformer(ABC):
 class DataTransformer(EventTransformer):
     """Transform event data using function."""
 
-    def __init__(self, transform_func: Callable[[Dict[str, Any]], Dict[str, Any]]):
+    def __init__(self, transform_func: Callable[[dict[str, Any]], dict[str, Any]]):
         """Initialize data transformer.
 
         Args:
@@ -245,7 +244,7 @@ class DataTransformer(EventTransformer):
 class MetadataTransformer(EventTransformer):
     """Transform event metadata."""
 
-    def __init__(self, metadata_updates: Dict[str, str]):
+    def __init__(self, metadata_updates: dict[str, str]):
         """Initialize metadata transformer.
 
         Args:
@@ -267,8 +266,8 @@ class EventHandler:
         name: str,
         handler_func: Callable,
         config: EventHandlerConfig,
-        filters: Optional[List[EventFilter]] = None,
-        transformers: Optional[List[EventTransformer]] = None
+        filters: list[EventFilter] | None = None,
+        transformers: list[EventTransformer] | None = None,
     ):
         """Initialize event handler.
 
@@ -306,8 +305,8 @@ class EventHandler:
         self.processed_events = 0
         self.failed_events = 0
         self.filtered_events = 0
-        self.last_processed: Optional[datetime] = None
-        self.processing_times: List[float] = []
+        self.last_processed: datetime | None = None
+        self.processing_times: list[float] = []
 
     async def can_handle(self, event: Event) -> bool:
         """Check if handler can process event."""
@@ -340,11 +339,13 @@ class EventHandler:
                 start_time = time.time()
 
                 # Call handler function
-                if self.config.async_processing and asyncio.iscoroutinefunction(self.handler_func):
+                if self.config.async_processing and asyncio.iscoroutinefunction(
+                    self.handler_func
+                ):
                     if self.config.timeout_seconds:
                         await asyncio.wait_for(
                             self.handler_func(transformed_event),
-                            timeout=self.config.timeout_seconds
+                            timeout=self.config.timeout_seconds,
                         )
                     else:
                         await self.handler_func(transformed_event)
@@ -356,11 +357,15 @@ class EventHandler:
                         loop = asyncio.get_event_loop()
                         if self.config.timeout_seconds:
                             await asyncio.wait_for(
-                                loop.run_in_executor(None, self.handler_func, transformed_event),
-                                timeout=self.config.timeout_seconds
+                                loop.run_in_executor(
+                                    None, self.handler_func, transformed_event
+                                ),
+                                timeout=self.config.timeout_seconds,
                             )
                         else:
-                            await loop.run_in_executor(None, self.handler_func, transformed_event)
+                            await loop.run_in_executor(
+                                None, self.handler_func, transformed_event
+                            )
                     else:
                         self.handler_func(transformed_event)
 
@@ -373,11 +378,15 @@ class EventHandler:
                 self.processed_events += 1
                 self.last_processed = datetime.utcnow()
 
-                logger.debug(f"Handler '{self.name}' processed event {event.id} in {processing_time:.3f}s")
+                logger.debug(
+                    f"Handler '{self.name}' processed event {event.id} in {processing_time:.3f}s"
+                )
                 return True
 
             except Exception as e:
-                logger.error(f"Handler '{self.name}' failed to process event {event.id}: {e}")
+                logger.error(
+                    f"Handler '{self.name}' failed to process event {event.id}: {e}"
+                )
 
                 # If this was the last attempt, record failure
                 if attempt == self.config.max_retries:
@@ -390,16 +399,16 @@ class EventHandler:
 
         return False
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get handler metrics."""
         avg_processing_time = (
             sum(self.processing_times) / len(self.processing_times)
-            if self.processing_times else 0.0
+            if self.processing_times
+            else 0.0
         )
 
         success_rate = (
-            self.processed_events / self.total_events
-            if self.total_events > 0 else 0.0
+            self.processed_events / self.total_events if self.total_events > 0 else 0.0
         )
 
         return {
@@ -410,14 +419,16 @@ class EventHandler:
             "filtered_events": self.filtered_events,
             "success_rate": success_rate,
             "average_processing_time_seconds": avg_processing_time,
-            "last_processed": self.last_processed.isoformat() if self.last_processed else None,
+            "last_processed": (
+                self.last_processed.isoformat() if self.last_processed else None
+            ),
             "config": {
                 "event_types": self.config.event_types,
                 "async_processing": self.config.async_processing,
                 "max_retries": self.config.max_retries,
                 "timeout_seconds": self.config.timeout_seconds,
-                "delivery_mode": self.config.delivery_mode.value
-            }
+                "delivery_mode": self.config.delivery_mode.value,
+            },
         }
 
 
@@ -431,27 +442,27 @@ class EventDispatcher:
             name: Dispatcher name
         """
         self.name = name
-        self.handlers: List[EventHandler] = []
-        self.middleware: List[Callable] = []
+        self.handlers: list[EventHandler] = []
+        self.middleware: list[Callable] = []
         self.event_queue: asyncio.Queue = asyncio.Queue()
         self.dead_letter_queue: asyncio.Queue = asyncio.Queue()
         self.running = False
-        self.worker_tasks: List[asyncio.Task] = []
+        self.worker_tasks: list[asyncio.Task] = []
         self.num_workers = 4
 
         # Dispatcher metrics
         self.total_events_dispatched = 0
         self.total_events_processed = 0
         self.total_events_failed = 0
-        self.start_time: Optional[datetime] = None
+        self.start_time: datetime | None = None
 
     def add_handler(
         self,
         name: str,
         handler_func: Callable,
-        config: Optional[EventHandlerConfig] = None,
-        filters: Optional[List[EventFilter]] = None,
-        transformers: Optional[List[EventTransformer]] = None
+        config: EventHandlerConfig | None = None,
+        filters: list[EventFilter] | None = None,
+        transformers: list[EventTransformer] | None = None,
     ) -> EventHandler:
         """Add event handler.
 
@@ -466,7 +477,9 @@ class EventDispatcher:
             Event handler instance
         """
         handler_config = config or EventHandlerConfig()
-        handler = EventHandler(name, handler_func, handler_config, filters, transformers)
+        handler = EventHandler(
+            name, handler_func, handler_config, filters, transformers
+        )
         self.handlers.append(handler)
 
         logger.info(f"Added event handler '{name}' to dispatcher '{self.name}'")
@@ -484,7 +497,9 @@ class EventDispatcher:
         for i, handler in enumerate(self.handlers):
             if handler.name == name:
                 del self.handlers[i]
-                logger.info(f"Removed event handler '{name}' from dispatcher '{self.name}'")
+                logger.info(
+                    f"Removed event handler '{name}' from dispatcher '{self.name}'"
+                )
                 return True
 
         return False
@@ -543,7 +558,9 @@ class EventDispatcher:
             task = asyncio.create_task(self._worker_loop(f"worker-{i}"))
             self.worker_tasks.append(task)
 
-        logger.info(f"Event dispatcher '{self.name}' started with {self.num_workers} workers")
+        logger.info(
+            f"Event dispatcher '{self.name}' started with {self.num_workers} workers"
+        )
 
     async def stop(self):
         """Stop event dispatcher."""
@@ -624,11 +641,12 @@ class EventDispatcher:
                 await self.dead_letter_queue.put(event)
                 logger.debug(f"Event {event.id} sent to dead letter queue")
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get dispatcher metrics."""
         uptime_seconds = (
             (datetime.utcnow() - self.start_time).total_seconds()
-            if self.start_time else 0
+            if self.start_time
+            else 0
         )
 
         handler_metrics = [handler.get_metrics() for handler in self.handlers]
@@ -644,15 +662,15 @@ class EventDispatcher:
             "total_events_failed": self.total_events_failed,
             "queue_size": self.event_queue.qsize(),
             "dead_letter_queue_size": self.dead_letter_queue.qsize(),
-            "handler_metrics": handler_metrics
+            "handler_metrics": handler_metrics,
         }
 
 
 def event_handler(
-    event_types: Optional[List[str]] = None,
-    source_patterns: Optional[List[str]] = None,
-    priority_filter: Optional[EventPriority] = None,
-    **config_kwargs
+    event_types: list[str] | None = None,
+    source_patterns: list[str] | None = None,
+    priority_filter: EventPriority | None = None,
+    **config_kwargs,
 ):
     """Decorator for registering event handlers.
 
@@ -665,12 +683,13 @@ def event_handler(
     Returns:
         Decorated function
     """
+
     def decorator(func):
         config = EventHandlerConfig(
             event_types=event_types or [],
             source_patterns=source_patterns or [],
             priority_filter=priority_filter,
-            **config_kwargs
+            **config_kwargs,
         )
 
         # Store configuration on function for later registration
@@ -698,5 +717,5 @@ __all__ = [
     "CompositeFilter",
     "DataTransformer",
     "MetadataTransformer",
-    "event_handler"
+    "event_handler",
 ]

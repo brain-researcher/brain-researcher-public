@@ -6,32 +6,34 @@ including content conversion, validation, and custom transformations.
 """
 
 import json
-import yaml
-import base64
-import gzip
-from typing import Dict, List, Optional, Any, Callable, Union, Type
-from datetime import datetime
-from enum import Enum
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
 import logging
 import re
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any
+
+import yaml
 
 try:
-    import xmltodict
     import dicttoxml
+    import xmltodict
+
     XML_AVAILABLE = True
 except ImportError:
     XML_AVAILABLE = False
 
 try:
-    from jsonschema import validate, ValidationError
+    from jsonschema import ValidationError, validate
+
     JSONSCHEMA_AVAILABLE = True
 except ImportError:
     JSONSCHEMA_AVAILABLE = False
 
 try:
-    from jinja2 import Template, Environment, BaseLoader
+    from jinja2 import BaseLoader, Environment, Template
+
     JINJA2_AVAILABLE = True
 except ImportError:
     JINJA2_AVAILABLE = False
@@ -70,12 +72,12 @@ class TransformationRule:
 
     name: str
     type: TransformationType
-    input_path: Optional[str] = None
-    output_path: Optional[str] = None
-    template: Optional[str] = None
-    function: Optional[Callable] = None
-    parameters: Dict[str, Any] = None
-    condition: Optional[str] = None
+    input_path: str | None = None
+    output_path: str | None = None
+    template: str | None = None
+    function: Callable | None = None
+    parameters: dict[str, Any] = None
+    condition: str | None = None
     enabled: bool = True
 
     def __post_init__(self):
@@ -90,8 +92,8 @@ class ValidationRule:
     name: str
     field_path: str
     rule_type: str  # required, type, format, range, regex, custom
-    parameters: Dict[str, Any] = None
-    error_message: Optional[str] = None
+    parameters: dict[str, Any] = None
+    error_message: str | None = None
     enabled: bool = True
 
     def __post_init__(self):
@@ -102,7 +104,12 @@ class ValidationRule:
 class TransformationError(Exception):
     """Exception raised during transformation."""
 
-    def __init__(self, message: str, rule_name: Optional[str] = None, original_error: Optional[Exception] = None):
+    def __init__(
+        self,
+        message: str,
+        rule_name: str | None = None,
+        original_error: Exception | None = None,
+    ):
         super().__init__(message)
         self.rule_name = rule_name
         self.original_error = original_error
@@ -134,20 +141,25 @@ class ContentConverter:
             return ContentConverter._serialize(parsed_data, to_format)
 
         except Exception as e:
-            raise TransformationError(f"Format conversion failed: {from_format} -> {to_format}", original_error=e)
+            raise TransformationError(
+                f"Format conversion failed: {from_format} -> {to_format}",
+                original_error=e,
+            )
 
     @staticmethod
     def _parse(data: Any, format_type: ContentFormat) -> Any:
         """Parse data from specific format."""
         if isinstance(data, bytes):
-            data = data.decode('utf-8')
+            data = data.decode("utf-8")
 
         if format_type == ContentFormat.JSON:
             return json.loads(data) if isinstance(data, str) else data
 
         elif format_type == ContentFormat.XML:
             if not XML_AVAILABLE:
-                raise TransformationError("XML support not available (install xmltodict)")
+                raise TransformationError(
+                    "XML support not available (install xmltodict)"
+                )
             return xmltodict.parse(data) if isinstance(data, str) else data
 
         elif format_type == ContentFormat.YAML:
@@ -156,6 +168,7 @@ class ContentConverter:
         elif format_type == ContentFormat.CSV:
             import csv
             import io
+
             if isinstance(data, str):
                 reader = csv.DictReader(io.StringIO(data))
                 return list(reader)
@@ -163,6 +176,7 @@ class ContentConverter:
 
         elif format_type == ContentFormat.FORM_ENCODED:
             import urllib.parse
+
             if isinstance(data, str):
                 return dict(urllib.parse.parse_qsl(data))
             return data
@@ -181,9 +195,13 @@ class ContentConverter:
 
         elif format_type == ContentFormat.XML:
             if not XML_AVAILABLE:
-                raise TransformationError("XML support not available (install dicttoxml)")
+                raise TransformationError(
+                    "XML support not available (install dicttoxml)"
+                )
             if isinstance(data, dict):
-                return dicttoxml.dicttoxml(data, custom_root='root', attr_type=False).decode('utf-8')
+                return dicttoxml.dicttoxml(
+                    data, custom_root="root", attr_type=False
+                ).decode("utf-8")
             return str(data)
 
         elif format_type == ContentFormat.YAML:
@@ -192,6 +210,7 @@ class ContentConverter:
         elif format_type == ContentFormat.CSV:
             import csv
             import io
+
             if isinstance(data, list) and data and isinstance(data[0], dict):
                 output = io.StringIO()
                 writer = csv.DictWriter(output, fieldnames=data[0].keys())
@@ -202,6 +221,7 @@ class ContentConverter:
 
         elif format_type == ContentFormat.FORM_ENCODED:
             import urllib.parse
+
             if isinstance(data, dict):
                 return urllib.parse.urlencode(data)
             return str(data)
@@ -211,7 +231,7 @@ class ContentConverter:
 
         elif format_type == ContentFormat.BINARY:
             if isinstance(data, str):
-                return data.encode('utf-8')
+                return data.encode("utf-8")
             return data
 
         else:
@@ -224,16 +244,16 @@ class DataValidator:
     def __init__(self):
         """Initialize validator."""
         self.validators = {
-            'required': self._validate_required,
-            'type': self._validate_type,
-            'format': self._validate_format,
-            'range': self._validate_range,
-            'regex': self._validate_regex,
-            'length': self._validate_length,
-            'enum': self._validate_enum
+            "required": self._validate_required,
+            "type": self._validate_type,
+            "format": self._validate_format,
+            "range": self._validate_range,
+            "regex": self._validate_regex,
+            "length": self._validate_length,
+            "enum": self._validate_enum,
         }
 
-    def validate(self, data: Dict[str, Any], rules: List[ValidationRule]) -> List[str]:
+    def validate(self, data: dict[str, Any], rules: list[ValidationRule]) -> list[str]:
         """Validate data against rules.
 
         Args:
@@ -263,12 +283,17 @@ class DataValidator:
                     logger.warning(f"Unknown validation rule type: {rule.rule_type}")
 
             except Exception as e:
-                error_msg = rule.error_message or f"Validation failed for {rule.field_path}: {e}"
+                error_msg = (
+                    rule.error_message
+                    or f"Validation failed for {rule.field_path}: {e}"
+                )
                 errors.append(error_msg)
 
         return errors
 
-    def validate_schema(self, data: Dict[str, Any], schema: Dict[str, Any]) -> List[str]:
+    def validate_schema(
+        self, data: dict[str, Any], schema: dict[str, Any]
+    ) -> list[str]:
         """Validate data against JSON schema.
 
         Args:
@@ -289,9 +314,9 @@ class DataValidator:
         except Exception as e:
             return [f"Schema validation error: {e}"]
 
-    def _get_field_value(self, data: Dict[str, Any], field_path: str) -> Any:
+    def _get_field_value(self, data: dict[str, Any], field_path: str) -> Any:
         """Get field value using dot notation path."""
-        keys = field_path.split('.')
+        keys = field_path.split(".")
         current = data
 
         for key in keys:
@@ -302,65 +327,76 @@ class DataValidator:
 
         return current
 
-    def _validate_required(self, value: Any, rule: ValidationRule) -> Optional[str]:
+    def _validate_required(self, value: Any, rule: ValidationRule) -> str | None:
         """Validate required field."""
         if value is None or value == "":
             return rule.error_message or f"Field {rule.field_path} is required"
         return None
 
-    def _validate_type(self, value: Any, rule: ValidationRule) -> Optional[str]:
+    def _validate_type(self, value: Any, rule: ValidationRule) -> str | None:
         """Validate field type."""
         if value is None:
             return None
 
-        expected_type = rule.parameters.get('type')
+        expected_type = rule.parameters.get("type")
         type_map = {
-            'string': str,
-            'number': (int, float),
-            'integer': int,
-            'boolean': bool,
-            'array': list,
-            'object': dict
+            "string": str,
+            "number": (int, float),
+            "integer": int,
+            "boolean": bool,
+            "array": list,
+            "object": dict,
         }
 
         expected_python_type = type_map.get(expected_type)
         if expected_python_type and not isinstance(value, expected_python_type):
-            return rule.error_message or f"Field {rule.field_path} must be of type {expected_type}"
+            return (
+                rule.error_message
+                or f"Field {rule.field_path} must be of type {expected_type}"
+            )
 
         return None
 
-    def _validate_format(self, value: Any, rule: ValidationRule) -> Optional[str]:
+    def _validate_format(self, value: Any, rule: ValidationRule) -> str | None:
         """Validate field format."""
         if value is None or not isinstance(value, str):
             return None
 
-        format_type = rule.parameters.get('format')
+        format_type = rule.parameters.get("format")
 
-        if format_type == 'email':
-            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if format_type == "email":
+            email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
             if not re.match(email_pattern, value):
-                return rule.error_message or f"Field {rule.field_path} must be a valid email"
+                return (
+                    rule.error_message
+                    or f"Field {rule.field_path} must be a valid email"
+                )
 
-        elif format_type == 'url':
-            url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
+        elif format_type == "url":
+            url_pattern = r"^https?://[^\s/$.?#].[^\s]*$"
             if not re.match(url_pattern, value):
-                return rule.error_message or f"Field {rule.field_path} must be a valid URL"
+                return (
+                    rule.error_message or f"Field {rule.field_path} must be a valid URL"
+                )
 
-        elif format_type == 'date':
+        elif format_type == "date":
             try:
-                datetime.fromisoformat(value.replace('Z', '+00:00'))
+                datetime.fromisoformat(value.replace("Z", "+00:00"))
             except ValueError:
-                return rule.error_message or f"Field {rule.field_path} must be a valid date"
+                return (
+                    rule.error_message
+                    or f"Field {rule.field_path} must be a valid date"
+                )
 
         return None
 
-    def _validate_range(self, value: Any, rule: ValidationRule) -> Optional[str]:
+    def _validate_range(self, value: Any, rule: ValidationRule) -> str | None:
         """Validate numeric range."""
-        if value is None or not isinstance(value, (int, float)):
+        if value is None or not isinstance(value, int | float):
             return None
 
-        min_val = rule.parameters.get('min')
-        max_val = rule.parameters.get('max')
+        min_val = rule.parameters.get("min")
+        max_val = rule.parameters.get("max")
 
         if min_val is not None and value < min_val:
             return rule.error_message or f"Field {rule.field_path} must be >= {min_val}"
@@ -370,45 +406,57 @@ class DataValidator:
 
         return None
 
-    def _validate_length(self, value: Any, rule: ValidationRule) -> Optional[str]:
+    def _validate_length(self, value: Any, rule: ValidationRule) -> str | None:
         """Validate string/array length."""
         if value is None:
             return None
 
-        if not hasattr(value, '__len__'):
+        if not hasattr(value, "__len__"):
             return None
 
         length = len(value)
-        min_length = rule.parameters.get('min')
-        max_length = rule.parameters.get('max')
+        min_length = rule.parameters.get("min")
+        max_length = rule.parameters.get("max")
 
         if min_length is not None and length < min_length:
-            return rule.error_message or f"Field {rule.field_path} must have at least {min_length} items"
+            return (
+                rule.error_message
+                or f"Field {rule.field_path} must have at least {min_length} items"
+            )
 
         if max_length is not None and length > max_length:
-            return rule.error_message or f"Field {rule.field_path} must have at most {max_length} items"
+            return (
+                rule.error_message
+                or f"Field {rule.field_path} must have at most {max_length} items"
+            )
 
         return None
 
-    def _validate_regex(self, value: Any, rule: ValidationRule) -> Optional[str]:
+    def _validate_regex(self, value: Any, rule: ValidationRule) -> str | None:
         """Validate against regex pattern."""
         if value is None or not isinstance(value, str):
             return None
 
-        pattern = rule.parameters.get('pattern')
+        pattern = rule.parameters.get("pattern")
         if pattern and not re.match(pattern, value):
-            return rule.error_message or f"Field {rule.field_path} does not match required pattern"
+            return (
+                rule.error_message
+                or f"Field {rule.field_path} does not match required pattern"
+            )
 
         return None
 
-    def _validate_enum(self, value: Any, rule: ValidationRule) -> Optional[str]:
+    def _validate_enum(self, value: Any, rule: ValidationRule) -> str | None:
         """Validate against allowed values."""
         if value is None:
             return None
 
-        allowed_values = rule.parameters.get('values', [])
+        allowed_values = rule.parameters.get("values", [])
         if allowed_values and value not in allowed_values:
-            return rule.error_message or f"Field {rule.field_path} must be one of: {allowed_values}"
+            return (
+                rule.error_message
+                or f"Field {rule.field_path} must be one of: {allowed_values}"
+            )
 
         return None
 
@@ -423,7 +471,7 @@ class TemplateProcessor:
         else:
             self.env = None
 
-    def process_template(self, template_str: str, context: Dict[str, Any]) -> str:
+    def process_template(self, template_str: str, context: dict[str, Any]) -> str:
         """Process Jinja2 template.
 
         Args:
@@ -434,15 +482,21 @@ class TemplateProcessor:
             Rendered template
         """
         if not JINJA2_AVAILABLE:
-            raise TransformationError("Template processing not available (install jinja2)")
+            raise TransformationError(
+                "Template processing not available (install jinja2)"
+            )
 
         try:
             template = self.env.from_string(template_str)
             return template.render(**context)
         except Exception as e:
-            raise TransformationError(f"Template processing failed: {e}", original_error=e)
+            raise TransformationError(
+                f"Template processing failed: {e}", original_error=e
+            )
 
-    def process_field_template(self, data: Dict[str, Any], field_path: str, template_str: str) -> Dict[str, Any]:
+    def process_field_template(
+        self, data: dict[str, Any], field_path: str, template_str: str
+    ) -> dict[str, Any]:
         """Process template for specific field.
 
         Args:
@@ -454,9 +508,9 @@ class TemplateProcessor:
             Updated data
         """
         context = {
-            'data': data,
-            'field_value': self._get_field_value(data, field_path),
-            'timestamp': datetime.utcnow().isoformat()
+            "data": data,
+            "field_value": self._get_field_value(data, field_path),
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
         rendered_value = self.process_template(template_str, context)
@@ -470,9 +524,9 @@ class TemplateProcessor:
         self._set_field_value(data, field_path, rendered_value)
         return data
 
-    def _get_field_value(self, data: Dict[str, Any], field_path: str) -> Any:
+    def _get_field_value(self, data: dict[str, Any], field_path: str) -> Any:
         """Get field value using dot notation."""
-        keys = field_path.split('.')
+        keys = field_path.split(".")
         current = data
 
         for key in keys:
@@ -483,9 +537,9 @@ class TemplateProcessor:
 
         return current
 
-    def _set_field_value(self, data: Dict[str, Any], field_path: str, value: Any):
+    def _set_field_value(self, data: dict[str, Any], field_path: str, value: Any):
         """Set field value using dot notation."""
-        keys = field_path.split('.')
+        keys = field_path.split(".")
         current = data
 
         for key in keys[:-1]:
@@ -508,8 +562,8 @@ class DataTransformer:
     def transform(
         self,
         data: Any,
-        rules: List[TransformationRule],
-        context: Optional[Dict[str, Any]] = None
+        rules: list[TransformationRule],
+        context: dict[str, Any] | None = None,
     ) -> Any:
         """Apply transformation rules to data.
 
@@ -529,7 +583,9 @@ class DataTransformer:
                 continue
 
             # Check condition if specified
-            if rule.condition and not self._evaluate_condition(rule.condition, result, context):
+            if rule.condition and not self._evaluate_condition(
+                rule.condition, result, context
+            ):
                 continue
 
             try:
@@ -538,16 +594,13 @@ class DataTransformer:
                 raise TransformationError(
                     f"Transformation rule '{rule.name}' failed: {e}",
                     rule_name=rule.name,
-                    original_error=e
+                    original_error=e,
                 )
 
         return result
 
     def _apply_rule(
-        self,
-        data: Any,
-        rule: TransformationRule,
-        context: Dict[str, Any]
+        self, data: Any, rule: TransformationRule, context: dict[str, Any]
     ) -> Any:
         """Apply single transformation rule."""
         if rule.type == TransformationType.FORMAT_CONVERSION:
@@ -571,8 +624,8 @@ class DataTransformer:
 
     def _apply_format_conversion(self, data: Any, rule: TransformationRule) -> Any:
         """Apply format conversion."""
-        from_format = ContentFormat(rule.parameters.get('from_format', 'json'))
-        to_format = ContentFormat(rule.parameters.get('to_format', 'json'))
+        from_format = ContentFormat(rule.parameters.get("from_format", "json"))
+        to_format = ContentFormat(rule.parameters.get("to_format", "json"))
 
         return self.converter.convert(data, from_format, to_format)
 
@@ -590,37 +643,34 @@ class DataTransformer:
                 self._set_nested_value(result, rule.output_path, input_value)
 
                 # Remove original field if it's a move operation
-                if rule.parameters.get('move', False):
+                if rule.parameters.get("move", False):
                     self._delete_nested_value(result, rule.input_path)
 
         return result
 
     def _apply_template_transformation(
-        self,
-        data: Any,
-        rule: TransformationRule,
-        context: Dict[str, Any]
+        self, data: Any, rule: TransformationRule, context: dict[str, Any]
     ) -> Any:
         """Apply template-based transformation."""
         if not isinstance(data, dict):
             return data
 
         template_context = {
-            'data': data,
+            "data": data,
             **context,
-            'timestamp': datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
         if rule.template and rule.output_path:
             # Apply template to specific field
             return self.template_processor.process_field_template(
-                data.copy(),
-                rule.output_path,
-                rule.template
+                data.copy(), rule.output_path, rule.template
             )
         elif rule.template:
             # Apply template to entire data
-            rendered = self.template_processor.process_template(rule.template, template_context)
+            rendered = self.template_processor.process_template(
+                rule.template, template_context
+            )
             try:
                 return json.loads(rendered)
             except json.JSONDecodeError:
@@ -633,23 +683,20 @@ class DataTransformer:
         if not isinstance(data, dict):
             return data
 
-        filter_type = rule.parameters.get('type', 'include')
-        fields = rule.parameters.get('fields', [])
+        filter_type = rule.parameters.get("type", "include")
+        fields = rule.parameters.get("fields", [])
 
-        if filter_type == 'include':
+        if filter_type == "include":
             # Include only specified fields
             return {key: value for key, value in data.items() if key in fields}
-        elif filter_type == 'exclude':
+        elif filter_type == "exclude":
             # Exclude specified fields
             return {key: value for key, value in data.items() if key not in fields}
 
         return data
 
     def _apply_custom_transformation(
-        self,
-        data: Any,
-        rule: TransformationRule,
-        context: Dict[str, Any]
+        self, data: Any, rule: TransformationRule, context: dict[str, Any]
     ) -> Any:
         """Apply custom transformation function."""
         if rule.function and callable(rule.function):
@@ -658,26 +705,20 @@ class DataTransformer:
         return data
 
     def _evaluate_condition(
-        self,
-        condition: str,
-        data: Any,
-        context: Dict[str, Any]
+        self, condition: str, data: Any, context: dict[str, Any]
     ) -> bool:
         """Evaluate transformation condition."""
         try:
             # Simple condition evaluation
             # In production, use a safer evaluation method
-            eval_context = {
-                'data': data,
-                **context
-            }
+            eval_context = {"data": data, **context}
             return eval(condition, {"__builtins__": {}}, eval_context)
         except Exception:
             return False
 
-    def _get_nested_value(self, data: Dict[str, Any], path: str) -> Any:
+    def _get_nested_value(self, data: dict[str, Any], path: str) -> Any:
         """Get nested value using dot notation."""
-        keys = path.split('.')
+        keys = path.split(".")
         current = data
 
         for key in keys:
@@ -688,9 +729,9 @@ class DataTransformer:
 
         return current
 
-    def _set_nested_value(self, data: Dict[str, Any], path: str, value: Any):
+    def _set_nested_value(self, data: dict[str, Any], path: str, value: Any):
         """Set nested value using dot notation."""
-        keys = path.split('.')
+        keys = path.split(".")
         current = data
 
         for key in keys[:-1]:
@@ -700,9 +741,9 @@ class DataTransformer:
 
         current[keys[-1]] = value
 
-    def _delete_nested_value(self, data: Dict[str, Any], path: str):
+    def _delete_nested_value(self, data: dict[str, Any], path: str):
         """Delete nested value using dot notation."""
-        keys = path.split('.')
+        keys = path.split(".")
         current = data
 
         for key in keys[:-1]:
@@ -725,5 +766,5 @@ __all__ = [
     "ValidationRule",
     "ContentFormat",
     "TransformationType",
-    "TransformationError"
+    "TransformationError",
 ]

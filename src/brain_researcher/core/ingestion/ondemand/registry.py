@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any
 
 
 @dataclass
@@ -15,15 +16,17 @@ class OnDemandRegistry:
     """Lightweight registry for on-demand data fetches (e.g., Crossref, NIDM)."""
 
     def __init__(self) -> None:
-        self._adapters: Dict[str, Callable[..., Any]] = {}
-        self._ttl: Dict[str, Optional[float]] = {}
-        self._cache: Dict[Tuple[str, Tuple[Tuple[str, Any], ...]], CachedResult] = {}
+        self._adapters: dict[str, Callable[..., Any]] = {}
+        self._ttl: dict[str, float | None] = {}
+        self._cache: dict[tuple[str, tuple[tuple[str, Any], ...]], CachedResult] = {}
 
-    def register(self, name: str, adapter: Callable[..., Any], ttl_seconds: Optional[int] = None) -> None:
+    def register(
+        self, name: str, adapter: Callable[..., Any], ttl_seconds: int | None = None
+    ) -> None:
         self._adapters[name] = adapter
         self._ttl[name] = float(ttl_seconds) if ttl_seconds else None
 
-    def available(self) -> Dict[str, Callable[..., Any]]:
+    def available(self) -> dict[str, Callable[..., Any]]:
         return dict(self._adapters)
 
     def fetch(self, name: str, **kwargs: Any) -> Any:

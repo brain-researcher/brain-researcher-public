@@ -28,7 +28,10 @@ class TimeFreqTFRTool(NeuroToolWrapper):
             status="success",
             data={
                 "outputs": {"power_spectra": power_path},
-                "summary": {"method": method, "freq_range": kwargs.get("freq_range", [1, 40])},
+                "summary": {
+                    "method": method,
+                    "freq_range": kwargs.get("freq_range", [1, 40]),
+                },
             },
         )
 

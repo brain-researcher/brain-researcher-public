@@ -9,17 +9,17 @@ Design goals:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
 import threading
 import time
-import hashlib
 import uuid
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from flask import Request
 
@@ -29,16 +29,18 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CurrentUser:
     """Authenticated user information extracted from JWT or debug headers."""
+
     id: str
-    email: Optional[str] = None
-    name: Optional[str] = None
-    role: Optional[str] = None
-    provider: Optional[str] = None
+    email: str | None = None
+    name: str | None = None
+    role: str | None = None
+    provider: str | None = None
     tenant_id: str = "default"  # Multi-tenancy foundation
 
 
 class AuthError(Exception):
     """Raised when authentication fails."""
+
     def __init__(self, code: str, detail: str = ""):
         self.code = code
         self.detail = detail
@@ -51,13 +53,13 @@ _JWKS_CACHE_KEYS_BY_KID: dict[str, dict[str, Any]] = {}
 _JWKS_CACHE_TTL_SECONDS = int(os.getenv("BR_AUTH_JWKS_CACHE_TTL_SECONDS", "300"))
 
 
-def _parse_csv_list(value: Optional[str]) -> list[str]:
+def _parse_csv_list(value: str | None) -> list[str]:
     if not value:
         return []
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-def _resolve_supabase_url() -> Optional[str]:
+def _resolve_supabase_url() -> str | None:
     return (
         os.getenv("SUPABASE_URL")
         or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
@@ -65,7 +67,7 @@ def _resolve_supabase_url() -> Optional[str]:
     )
 
 
-def _resolve_supabase_anon_key() -> Optional[str]:
+def _resolve_supabase_anon_key() -> str | None:
     return (
         os.getenv("SUPABASE_ANON_KEY")
         or os.getenv("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
@@ -76,7 +78,7 @@ def _resolve_supabase_anon_key() -> Optional[str]:
     )
 
 
-def _resolve_jwks_url() -> Optional[str]:
+def _resolve_jwks_url() -> str | None:
     explicit = (
         os.getenv("BR_AGENT_JWKS_URL")
         or os.getenv("BR_AUTH_JWKS_URL")
@@ -91,7 +93,7 @@ def _resolve_jwks_url() -> Optional[str]:
     return None
 
 
-def _resolve_jwt_issuer() -> Optional[str]:
+def _resolve_jwt_issuer() -> str | None:
     explicit = (
         os.getenv("BR_AGENT_JWT_ISSUER")
         or os.getenv("BR_AUTH_JWT_ISSUER")
@@ -144,7 +146,9 @@ def issue_pat_jwt(subject: str, ttl_seconds: int = 3600) -> str:
 
     secret = get_jwt_secret()
     if not secret:
-        raise AuthError("missing_jwt_secret", "JWT_SECRET_KEY is required for PAT exchange")
+        raise AuthError(
+            "missing_jwt_secret", "JWT_SECRET_KEY is required for PAT exchange"
+        )
 
     now = int(time.time())
     payload = {
@@ -209,9 +213,8 @@ def _get_cached_jwks_keys_by_kid(jwks_url: str) -> dict[str, dict[str, Any]]:
     global _JWKS_CACHE_FETCHED_AT, _JWKS_CACHE_KEYS_BY_KID
     now = time.time()
     with _JWKS_CACHE_LOCK:
-        if (
-            _JWKS_CACHE_KEYS_BY_KID
-            and now - _JWKS_CACHE_FETCHED_AT < max(1, _JWKS_CACHE_TTL_SECONDS)
+        if _JWKS_CACHE_KEYS_BY_KID and now - _JWKS_CACHE_FETCHED_AT < max(
+            1, _JWKS_CACHE_TTL_SECONDS
         ):
             return _JWKS_CACHE_KEYS_BY_KID
         _JWKS_CACHE_KEYS_BY_KID = _fetch_jwks_keys_by_kid(jwks_url)
@@ -219,7 +222,7 @@ def _get_cached_jwks_keys_by_kid(jwks_url: str) -> dict[str, dict[str, Any]]:
         return _JWKS_CACHE_KEYS_BY_KID
 
 
-def _extract_bearer_token(req: Request) -> Optional[str]:
+def _extract_bearer_token(req: Request) -> str | None:
     """Extract Bearer token from Authorization header."""
     auth = req.headers.get("Authorization") or req.headers.get("authorization")
     if not auth or not auth.lower().startswith("bearer "):
@@ -227,7 +230,7 @@ def _extract_bearer_token(req: Request) -> Optional[str]:
     return auth.split(" ", 1)[1].strip()
 
 
-def _extract_cookie_token(req: Request) -> Optional[str]:
+def _extract_cookie_token(req: Request) -> str | None:
     """Extract JWT from NextAuth session cookies.
 
     NextAuth (JWT strategy) stores the signed token in either
@@ -247,11 +250,11 @@ def _extract_cookie_token(req: Request) -> Optional[str]:
     return None
 
 
-def _is_truthy(value: Optional[str]) -> bool:
+def _is_truthy(value: str | None) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
-def _extract_workspace_id(req: Request) -> Optional[str]:
+def _extract_workspace_id(req: Request) -> str | None:
     raw = (
         req.headers.get("X-Workspace-Id")
         or req.headers.get("x-workspace-id")
@@ -289,7 +292,9 @@ def _allow_missing_workspace_id(user: CurrentUser) -> bool:
     return role == "dev"
 
 
-def _supabase_preflight(workspace_id: str, required_role: str, token: str) -> dict[str, Any]:
+def _supabase_preflight(
+    workspace_id: str, required_role: str, token: str
+) -> dict[str, Any]:
     import urllib.error
     import urllib.request
 
@@ -332,7 +337,9 @@ def _supabase_preflight(workspace_id: str, required_role: str, token: str) -> di
             detail or f"Supabase preflight failed (HTTP {status})",
         ) from exc
     except urllib.error.URLError as exc:
-        raise AuthError("workspace_preflight_failed", "Unable to reach Supabase") from exc
+        raise AuthError(
+            "workspace_preflight_failed", "Unable to reach Supabase"
+        ) from exc
 
     if isinstance(data, list):
         data = data[0] if data else {}
@@ -346,7 +353,9 @@ def _supabase_preflight(workspace_id: str, required_role: str, token: str) -> di
     raise AuthError("workspace_forbidden", "Workspace membership/role check failed")
 
 
-def _apply_workspace_context(req: Request, user: CurrentUser, token: Optional[str]) -> CurrentUser:
+def _apply_workspace_context(
+    req: Request, user: CurrentUser, token: str | None
+) -> CurrentUser:
     workspace_id = _extract_workspace_id(req)
     if workspace_id:
         user.tenant_id = workspace_id
@@ -368,7 +377,9 @@ def _apply_workspace_context(req: Request, user: CurrentUser, token: Optional[st
             "x-workspace-id header or br_workspace_id cookie is required",
         )
 
-    required_role = str(os.getenv("BR_WORKSPACE_REQUIRED_ROLE") or "member").strip().lower()
+    required_role = (
+        str(os.getenv("BR_WORKSPACE_REQUIRED_ROLE") or "member").strip().lower()
+    )
     if not token:
         raise AuthError(
             "missing_bearer_token",
@@ -390,13 +401,13 @@ def _apply_workspace_context(req: Request, user: CurrentUser, token: Optional[st
 
 def _decode_jwt(
     token: str,
-    secret: Optional[str],
-    algorithms: Optional[list[str]] = None,
+    secret: str | None,
+    algorithms: list[str] | None = None,
     *,
-    jwks_url: Optional[str] = None,
-    issuer: Optional[str] = None,
-    audiences: Optional[list[str]] = None,
-) -> Dict[str, Any]:
+    jwks_url: str | None = None,
+    issuer: str | None = None,
+    audiences: list[str] | None = None,
+) -> dict[str, Any]:
     """Decode and verify a JWT token.
 
     Args:
@@ -413,7 +424,7 @@ def _decode_jwt(
     Raises:
         AuthError: If token is invalid, expired, or verification fails
     """
-    from jose import JWTError, ExpiredSignatureError
+    from jose import ExpiredSignatureError, JWTError
     from jose import jwk as jose_jwk
     from jose import jwt as jose_jwt
 
@@ -534,13 +545,15 @@ def _decode_jwt(
     except JWTError as exc:
         message = str(exc).lower()
         if "signature verification failed" in message:
-            raise AuthError("invalid_signature", "JWT signature verification failed") from exc
+            raise AuthError(
+                "invalid_signature", "JWT signature verification failed"
+            ) from exc
         if "not enough segments" in message:
             raise AuthError("decode_error", "Failed to decode JWT") from exc
         raise AuthError("invalid_token", f"Invalid JWT token: {exc}") from exc
 
 
-def _extract_user_from_jwt(payload: Dict[str, Any]) -> CurrentUser:
+def _extract_user_from_jwt(payload: dict[str, Any]) -> CurrentUser:
     """Extract user information from JWT payload.
 
     Supports common claim names from NextAuth and standard JWT:
@@ -551,14 +564,16 @@ def _extract_user_from_jwt(payload: Dict[str, Any]) -> CurrentUser:
     - provider
     """
     user_id = (
-        payload.get("sub") or
-        payload.get("userId") or
-        payload.get("user_id") or
-        payload.get("id")
+        payload.get("sub")
+        or payload.get("userId")
+        or payload.get("user_id")
+        or payload.get("id")
     )
 
     if not user_id:
-        raise AuthError("missing_user_id", "JWT payload missing user identifier (sub/userId)")
+        raise AuthError(
+            "missing_user_id", "JWT payload missing user identifier (sub/userId)"
+        )
 
     return CurrentUser(
         id=str(user_id),
@@ -570,7 +585,7 @@ def _extract_user_from_jwt(payload: Dict[str, Any]) -> CurrentUser:
     )
 
 
-def get_jwt_secret() -> Optional[str]:
+def get_jwt_secret() -> str | None:
     """Get JWT secret from environment.
 
     Checks multiple env vars for flexibility:
@@ -630,14 +645,11 @@ def get_jwt_secret_candidates() -> list[str]:
 
 def _is_test_env() -> bool:
     """Return True only for explicit test execution contexts."""
-    return bool(
-        os.getenv("PYTEST_CURRENT_TEST")
-        or os.getenv("BR_TESTING")
-    )
+    return bool(os.getenv("PYTEST_CURRENT_TEST") or os.getenv("BR_TESTING"))
 
 
 @lru_cache(maxsize=3)
-def _get_repo_dotenv_value(key: str) -> Optional[str]:
+def _get_repo_dotenv_value(key: str) -> str | None:
     """Best-effort lookup for <key> in the repo root dotenv files.
 
     This is a dev convenience so the Agent can verify NextAuth JWTs when it is
@@ -673,9 +685,8 @@ def _get_repo_dotenv_value(key: str) -> Optional[str]:
                     continue
 
                 v = trimmed[eq + 1 :].strip()
-                if (
-                    (v.startswith('"') and v.endswith('"'))
-                    or (v.startswith("'") and v.endswith("'"))
+                if (v.startswith('"') and v.endswith('"')) or (
+                    v.startswith("'") and v.endswith("'")
                 ):
                     v = v[1:-1]
                 return v or None
@@ -715,7 +726,10 @@ def get_current_user(req: Request) -> CurrentUser:
     # Extract token
     token = _extract_bearer_token(req) or _extract_cookie_token(req)
     if not token:
-        raise AuthError("missing_bearer_token", "Authorization header or NextAuth session cookie required")
+        raise AuthError(
+            "missing_bearer_token",
+            "Authorization header or NextAuth session cookie required",
+        )
 
     # Resolve verification config (HS256 shared secret + optional JWKS for RS256)
     jwt_secret = get_jwt_secret()
@@ -757,7 +771,7 @@ def require_auth(req: Request) -> CurrentUser:
     return get_current_user(req)
 
 
-def optional_auth(req: Request) -> Optional[CurrentUser]:
+def optional_auth(req: Request) -> CurrentUser | None:
     """Get current user if authenticated, None otherwise.
 
     Use for routes that work both authenticated and anonymously.

@@ -7,7 +7,7 @@ various LLM providers, enabling budget tracking and optimization.
 
 import json
 import re
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Any
 
 
 class TokenCounter:
@@ -88,7 +88,7 @@ class TokenCounter:
     @classmethod
     def estimate_cost(
         cls, input_tokens: int, output_tokens: int, provider: str, model: str
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Estimate cost for token usage.
 
@@ -187,7 +187,7 @@ class UsageTracker:
         input_text: str,
         output_text: str,
         timestamp: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Track token usage for a session.
 
@@ -258,7 +258,7 @@ class UsageTracker:
 
         return usage
 
-    def get_session_summary(self, session_id: str) -> Optional[Dict[str, Any]]:
+    def get_session_summary(self, session_id: str) -> dict[str, Any] | None:
         """
         Get usage summary for a session.
 
@@ -284,7 +284,7 @@ class UsageTracker:
             ),
         }
 
-    def get_daily_summary(self, date: str) -> Optional[Dict[str, Any]]:
+    def get_daily_summary(self, date: str) -> dict[str, Any] | None:
         """
         Get usage summary for a specific date.
 
@@ -299,7 +299,7 @@ class UsageTracker:
 
         return self.daily_usage[date]
 
-    def estimate_monthly_cost(self, current_date: str) -> Dict[str, float]:
+    def estimate_monthly_cost(self, current_date: str) -> dict[str, float]:
         """
         Estimate monthly cost based on current usage.
 
@@ -339,7 +339,7 @@ class CostOptimizer:
     """Suggest cost optimization strategies."""
 
     @staticmethod
-    def analyze_usage(tracker: UsageTracker) -> List[Dict[str, Any]]:
+    def analyze_usage(tracker: UsageTracker) -> list[dict[str, Any]]:
         """
         Analyze usage patterns and suggest optimizations.
 
@@ -407,12 +407,12 @@ class CostOptimizer:
 
 # Example integration with RunRecorder
 def enhance_log_with_tokens(
-    log: Dict[str, Any],
+    log: dict[str, Any],
     query: str,
     response: str,
     provider: str = "google",
     model: str = "gemini-3-flash-preview",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Enhance log entry with token counts and cost estimates.
 

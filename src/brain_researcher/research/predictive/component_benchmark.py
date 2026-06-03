@@ -93,7 +93,9 @@ def validate_component_csv(
             missing_columns.append(target.target_column)
 
     if missing_columns:
-        raise ValueError(f"Missing required columns in component CSV: {sorted(set(missing_columns))}")
+        raise ValueError(
+            f"Missing required columns in component CSV: {sorted(set(missing_columns))}"
+        )
 
     return {
         "csv_path": str(csv_path),
@@ -101,7 +103,9 @@ def validate_component_csv(
         "column_count": len(fieldnames),
         "fieldnames": fieldnames,
         "subject_id_column": subject_id_column,
-        "target_columns": [target.target_column for target in component_targets_from_manifest(manifest)],
+        "target_columns": [
+            target.target_column for target in component_targets_from_manifest(manifest)
+        ],
         "sha256": _sha256(csv_path),
         "validated_at_utc": _utc_now(),
     }
@@ -165,15 +169,21 @@ def compute_component_line_score(
                 "best_gold_r2": None if best_r2 is None else round(best_r2, 6),
                 "reference_mean_r": target.reference_mean_r,
                 "reference_best_r": target.reference_best_r,
-                "ratio_vs_mean_reference": None if ratio_vs_mean is None else round(ratio_vs_mean, 4),
-                "ratio_vs_best_reference": None if ratio_vs_best is None else round(ratio_vs_best, 4),
+                "ratio_vs_mean_reference": (
+                    None if ratio_vs_mean is None else round(ratio_vs_mean, 4)
+                ),
+                "ratio_vs_best_reference": (
+                    None if ratio_vs_best is None else round(ratio_vs_best, 4)
+                ),
                 "best_run_id": best_run_id,
                 "primary_metric_names_seen": sorted(primary_metric_names),
                 "notes": target.notes,
             }
         )
 
-    coverage_fraction = len([item for item in target_summaries if item["run_count"] > 0]) / len(component_targets)
+    coverage_fraction = len(
+        [item for item in target_summaries if item["run_count"] > 0]
+    ) / len(component_targets)
     score_vs_mean = coverage_fraction * (sum(mean_ref_ratios) / len(component_targets))
     score_vs_best = coverage_fraction * (sum(best_ref_ratios) / len(component_targets))
 

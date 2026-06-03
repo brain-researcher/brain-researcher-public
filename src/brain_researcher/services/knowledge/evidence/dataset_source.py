@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 from brain_researcher.services.knowledge.evidence.base import (
     EvidenceQuery,
@@ -32,7 +31,7 @@ class DatasetEvidenceSource(SyncEvidenceSourceAdapter):
 
     def __init__(
         self,
-        catalog_path: Optional[Path] = None,
+        catalog_path: Path | None = None,
         use_kg: bool = True,
         db=None,
     ):
@@ -55,7 +54,7 @@ class DatasetEvidenceSource(SyncEvidenceSourceAdapter):
     def source_id(self) -> str:
         return "dataset_catalog"
 
-    def query_sync(self, query: EvidenceQuery) -> List[EvidenceResult]:
+    def query_sync(self, query: EvidenceQuery) -> list[EvidenceResult]:
         """Query the dataset catalog for matching datasets.
 
         Args:
@@ -65,7 +64,7 @@ class DatasetEvidenceSource(SyncEvidenceSourceAdapter):
         Returns:
             List of EvidenceResult objects for matching datasets.
         """
-        results: List[EvidenceResult] = []
+        results: list[EvidenceResult] = []
         seen_ids: set[str] = set()
 
         # Strategy 1: Local catalog search
@@ -93,7 +92,7 @@ class DatasetEvidenceSource(SyncEvidenceSourceAdapter):
         results.sort(key=lambda x: x.relevance_score, reverse=True)
         return results[: query.limit]
 
-    def _search_catalog(self, query: EvidenceQuery) -> List[EvidenceResult]:
+    def _search_catalog(self, query: EvidenceQuery) -> list[EvidenceResult]:
         """Search the local dataset catalog."""
         from brain_researcher.core.datasets.catalog import (
             DEFAULT_CATALOG_PATH,
@@ -104,7 +103,7 @@ class DatasetEvidenceSource(SyncEvidenceSourceAdapter):
         catalog = load_catalog(catalog_path)
 
         query_lower = query.text.lower()
-        results: List[EvidenceResult] = []
+        results: list[EvidenceResult] = []
 
         for record in catalog:
             # Text matching on search_blob
@@ -115,8 +114,7 @@ class DatasetEvidenceSource(SyncEvidenceSourceAdapter):
             # Apply filters
             if query.modality:
                 modality_match = any(
-                    query.modality.lower() in str(m).lower()
-                    for m in record.modalities
+                    query.modality.lower() in str(m).lower() for m in record.modalities
                 )
                 if not modality_match:
                     continue
@@ -151,7 +149,7 @@ class DatasetEvidenceSource(SyncEvidenceSourceAdapter):
 
         return results
 
-    def _search_kg(self, query: EvidenceQuery) -> List[EvidenceResult]:
+    def _search_kg(self, query: EvidenceQuery) -> list[EvidenceResult]:
         """Search the KG for datasets."""
         from brain_researcher.services.br_kg import query_service
 
@@ -163,7 +161,7 @@ class DatasetEvidenceSource(SyncEvidenceSourceAdapter):
             db=self._db,
         )
 
-        results: List[EvidenceResult] = []
+        results: list[EvidenceResult] = []
         for ds in datasets:
             results.append(
                 EvidenceResult(
@@ -223,10 +221,10 @@ class DatasetEvidenceSource(SyncEvidenceSourceAdapter):
 
 def search_datasets(
     query_text: str,
-    modality: Optional[str] = None,
-    min_subjects: Optional[int] = None,
+    modality: str | None = None,
+    min_subjects: int | None = None,
     limit: int = 10,
-) -> List[EvidenceResult]:
+) -> list[EvidenceResult]:
     """Convenience function to search for dataset evidence.
 
     Args:

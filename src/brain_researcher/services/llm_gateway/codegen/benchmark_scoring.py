@@ -8,7 +8,6 @@ from typing import Any
 
 import yaml
 
-
 REPO_ROOT = Path(__file__).resolve().parents[5]
 DEFAULT_BENCHMARK_POLICY_PATH = (
     REPO_ROOT / "configs" / "codegen" / "benchmark_policy.yaml"
@@ -69,9 +68,7 @@ def score_codegen_benchmark(
     weights = cfg.get("weights", {})
     penalties_cfg = cfg.get("penalties", {})
     scale = float(cfg.get("score_scale", 100.0))
-    multiplier = float(
-        cfg.get("case_multipliers", {}).get(signals.case_type, 1.0)
-    )
+    multiplier = float(cfg.get("case_multipliers", {}).get(signals.case_type, 1.0))
 
     dimensions = {
         "failure_detection": _ratio(
@@ -93,7 +90,9 @@ def score_codegen_benchmark(
             signals.domain_checks,
             signals.domain_checks_expected,
         ),
-        "failed_case_priority": _failed_case_priority(signals.case_type, signals.failed_case_covered),
+        "failed_case_priority": _failed_case_priority(
+            signals.case_type, signals.failed_case_covered
+        ),
     }
 
     weighted_fraction = sum(
@@ -102,19 +101,21 @@ def score_codegen_benchmark(
     raw_score = scale * weighted_fraction
 
     penalties = {
-        "silent_failure": float(penalties_cfg.get("silent_failure", 0.0))
-        if signals.silent_failure
-        else 0.0,
-        "claimed_success_without_evidence": float(
-            penalties_cfg.get("claimed_success_without_evidence", 0.0)
-        )
-        if signals.claimed_success_without_evidence
-        else 0.0,
-        "incomplete_artifacts": float(
-            penalties_cfg.get("incomplete_artifacts", 0.0)
-        )
-        if signals.incomplete_artifacts
-        else 0.0,
+        "silent_failure": (
+            float(penalties_cfg.get("silent_failure", 0.0))
+            if signals.silent_failure
+            else 0.0
+        ),
+        "claimed_success_without_evidence": (
+            float(penalties_cfg.get("claimed_success_without_evidence", 0.0))
+            if signals.claimed_success_without_evidence
+            else 0.0
+        ),
+        "incomplete_artifacts": (
+            float(penalties_cfg.get("incomplete_artifacts", 0.0))
+            if signals.incomplete_artifacts
+            else 0.0
+        ),
     }
 
     total = max(0.0, min(scale, raw_score * multiplier - sum(penalties.values())))

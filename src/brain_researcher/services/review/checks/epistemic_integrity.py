@@ -206,15 +206,16 @@ def _normalized_columns(node: Any) -> set[str]:
 def _node_mentions_group_difference_coordinate_table(node: Any) -> bool:
     if isinstance(node, str):
         lowered = _normalize_token(node)
-        return (
-            any(label in lowered for label in _GROUP_DIFFERENCE_COLUMNS)
-            and any(label in lowered for label in ("mni", "coordinate", "coordinates"))
+        return any(label in lowered for label in _GROUP_DIFFERENCE_COLUMNS) and any(
+            label in lowered for label in ("mni", "coordinate", "coordinates")
         )
 
     columns = _normalized_columns(node)
     if not columns:
         return False
-    return bool(columns & _GROUP_DIFFERENCE_COLUMNS) and bool(columns & _COORDINATE_COLUMNS)
+    return bool(columns & _GROUP_DIFFERENCE_COLUMNS) and bool(
+        columns & _COORDINATE_COLUMNS
+    )
 
 
 def find_cross_study_coordinate_comparison_paths(
@@ -421,67 +422,157 @@ _TRAILING_DOI_PUNCTUATION = ".,;:!?)]}"
 # Domain construct categories for alignment checking.
 # Each key is a canonical category; values are lowercase phrases that signal it.
 _CONSTRUCT_CATEGORIES: dict[str, frozenset[str]] = {
-    "trust": frozenset({
-        "trust", "trustworthiness", "distrust", "trust game",
-        "cooperation", "defection", "reciprocity",
-    }),
-    "empathy": frozenset({
-        "empathy", "empathic", "compassion", "pain observation",
-        "vicarious pain", "perspective taking",
-    }),
-    "self_referential": frozenset({
-        "self-referential", "self referential", "self-concept",
-        "self concept", "self-reflection", "self reflection",
-        "self-other distinction",
-    }),
-    "fear": frozenset({
-        "fear", "threat", "fear conditioning", "anxiety", "aversive",
-    }),
-    "reward": frozenset({
-        "reward", "reinforcement", "incentive", "monetary",
-        "gambling", "reward processing",
-    }),
-    "memory": frozenset({
-        "memory", "encoding", "retrieval", "recognition memory",
-        "recall", "working memory",
-    }),
-    "attention": frozenset({
-        "attention", "attentional", "vigilance", "alerting", "orienting",
-    }),
-    "language": frozenset({
-        "language", "semantic processing", "syntactic", "reading",
-        "speech", "sentence comprehension",
-    }),
-    "motor": frozenset({
-        "motor", "movement", "action execution", "grasping", "saccade",
-    }),
-    "emotion_regulation": frozenset({
-        "emotion regulation", "reappraisal", "suppression",
-        "cognitive control of emotion",
-    }),
-    "face_processing": frozenset({
-        "face perception", "face recognition", "other-race",
-        "other race", "own-race", "own race", "face processing",
-    }),
-    "decision_making": frozenset({
-        "decision making", "decision-making", "choice",
-        "risk taking", "risk-taking", "gambling task",
-    }),
+    "trust": frozenset(
+        {
+            "trust",
+            "trustworthiness",
+            "distrust",
+            "trust game",
+            "cooperation",
+            "defection",
+            "reciprocity",
+        }
+    ),
+    "empathy": frozenset(
+        {
+            "empathy",
+            "empathic",
+            "compassion",
+            "pain observation",
+            "vicarious pain",
+            "perspective taking",
+        }
+    ),
+    "self_referential": frozenset(
+        {
+            "self-referential",
+            "self referential",
+            "self-concept",
+            "self concept",
+            "self-reflection",
+            "self reflection",
+            "self-other distinction",
+        }
+    ),
+    "fear": frozenset(
+        {
+            "fear",
+            "threat",
+            "fear conditioning",
+            "anxiety",
+            "aversive",
+        }
+    ),
+    "reward": frozenset(
+        {
+            "reward",
+            "reinforcement",
+            "incentive",
+            "monetary",
+            "gambling",
+            "reward processing",
+        }
+    ),
+    "memory": frozenset(
+        {
+            "memory",
+            "encoding",
+            "retrieval",
+            "recognition memory",
+            "recall",
+            "working memory",
+        }
+    ),
+    "attention": frozenset(
+        {
+            "attention",
+            "attentional",
+            "vigilance",
+            "alerting",
+            "orienting",
+        }
+    ),
+    "language": frozenset(
+        {
+            "language",
+            "semantic processing",
+            "syntactic",
+            "reading",
+            "speech",
+            "sentence comprehension",
+        }
+    ),
+    "motor": frozenset(
+        {
+            "motor",
+            "movement",
+            "action execution",
+            "grasping",
+            "saccade",
+        }
+    ),
+    "emotion_regulation": frozenset(
+        {
+            "emotion regulation",
+            "reappraisal",
+            "suppression",
+            "cognitive control of emotion",
+        }
+    ),
+    "face_processing": frozenset(
+        {
+            "face perception",
+            "face recognition",
+            "other-race",
+            "other race",
+            "own-race",
+            "own race",
+            "face processing",
+        }
+    ),
+    "decision_making": frozenset(
+        {
+            "decision making",
+            "decision-making",
+            "choice",
+            "risk taking",
+            "risk-taking",
+            "gambling task",
+        }
+    ),
 }
 
-_POPULATION_CROSS_CULTURAL_TERMS = frozenset({
-    "cross-cultural", "cross cultural", "cultural comparison",
-    "cultural differences", "intercultural", "cultural neuroscience",
-})
+_POPULATION_CROSS_CULTURAL_TERMS = frozenset(
+    {
+        "cross-cultural",
+        "cross cultural",
+        "cultural comparison",
+        "cultural differences",
+        "intercultural",
+        "cultural neuroscience",
+    }
+)
 _POPULATION_GROUP_TERMS: dict[str, frozenset[str]] = {
-    "east_asian": frozenset({
-        "east asian", "chinese", "japanese", "korean", "asian participants",
-    }),
-    "european_american": frozenset({
-        "european american", "caucasian", "white american",
-    }),
+    "east_asian": frozenset(
+        {
+            "east asian",
+            "chinese",
+            "japanese",
+            "korean",
+            "asian participants",
+        }
+    ),
+    "european_american": frozenset(
+        {
+            "european american",
+            "caucasian",
+            "white american",
+        }
+    ),
     "danish": frozenset({"danish", "denmark"}),
-    "western": frozenset({"western participants", "western subjects", "western adults"}),
+    "western": frozenset(
+        {"western participants", "western subjects", "western adults"}
+    ),
 }
 
 
@@ -489,7 +580,8 @@ def _extract_construct_categories(text: str) -> set[str]:
     """Return the set of construct category names mentioned in *text*."""
     lowered = text.lower()
     return {
-        cat for cat, keywords in _CONSTRUCT_CATEGORIES.items()
+        cat
+        for cat, keywords in _CONSTRUCT_CATEGORIES.items()
         if any(kw in lowered for kw in keywords)
     }
 
@@ -551,14 +643,16 @@ def _extract_pmids_from_evidence(
                 continue
             seen_pairs.add(pair_key)
 
-            results.append({
-                "pmid": pmid,
-                "doi": doi,
-                "claim_id": claim.claim_id,
-                "claim_text": claim.claim_text,
-                "evidence_id": eid,
-                "claim_extra": claim.extra if isinstance(claim.extra, dict) else {},
-            })
+            results.append(
+                {
+                    "pmid": pmid,
+                    "doi": doi,
+                    "claim_id": claim.claim_id,
+                    "claim_text": claim.claim_text,
+                    "evidence_id": eid,
+                    "claim_extra": claim.extra if isinstance(claim.extra, dict) else {},
+                }
+            )
 
     return results
 
@@ -618,7 +712,13 @@ def _neighbor_text_candidates(value: Any) -> list[str]:
                 if text:
                     texts.append(text)
 
-        for nested_key in ("properties", "target_properties", "neighbor", "node", "target"):
+        for nested_key in (
+            "properties",
+            "target_properties",
+            "neighbor",
+            "node",
+            "target",
+        ):
             nested = value.get(nested_key)
             if isinstance(nested, dict):
                 texts.extend(_neighbor_text_candidates(nested))
@@ -673,7 +773,9 @@ def _resolve_publication_from_kg(
                 timeout_s=10.0,
             )
         except Exception:
-            logger.debug("KG search_nodes unavailable for citation check", exc_info=True)
+            logger.debug(
+                "KG search_nodes unavailable for citation check", exc_info=True
+            )
             return None
         if hits:
             break
@@ -780,9 +882,7 @@ def citation_construct_mismatch_check(
     return ReviewFinding(
         rule_id="REVIEW_CITATION_CONSTRUCT_MISMATCH",
         severity="error",
-        message=(
-            f"Cited publication construct does not match claim: {mismatches[0]}"
-        ),
+        message=(f"Cited publication construct does not match claim: {mismatches[0]}"),
         suggested_fix=(
             "Replace the citation with a paper that actually studies the "
             "claimed construct, or rewrite the claim to match what the "
@@ -853,9 +953,7 @@ def citation_population_mismatch_check(
     return ReviewFinding(
         rule_id="REVIEW_CITATION_POPULATION_MISMATCH",
         severity="error",
-        message=(
-            f"Cited publication population does not match claim: {mismatches[0]}"
-        ),
+        message=(f"Cited publication population does not match claim: {mismatches[0]}"),
         suggested_fix=(
             "Acknowledge the population mismatch explicitly or replace the "
             "citation with a study that matches the claimed population."

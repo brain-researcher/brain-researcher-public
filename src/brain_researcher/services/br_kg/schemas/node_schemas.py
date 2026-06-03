@@ -7,9 +7,9 @@ in the knowledge graph, ensuring data consistency and type safety.
 
 import hashlib
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field, constr, field_validator, validator
+from pydantic import BaseModel, Field, field_validator, validator
 
 
 class ProvenanceInfo(BaseModel):
@@ -25,19 +25,19 @@ class ProvenanceInfo(BaseModel):
 class BaseNode(BaseModel):
     """Base class for all node types."""
 
-    id: Optional[str] = Field(
+    id: str | None = Field(
         None, description="Unique identifier (auto-generated if not provided)"
     )
-    canonical_id: Optional[str] = Field(
+    canonical_id: str | None = Field(
         None, description="Canonical ID for merged entities"
     )
-    labels: List[str] = Field(default_factory=list)
-    aliases: List[str] = Field(default_factory=list)
+    labels: list[str] = Field(default_factory=list)
+    aliases: list[str] = Field(default_factory=list)
     prov: ProvenanceInfo
     valid_from: datetime = Field(default_factory=datetime.now)
-    valid_to: Optional[datetime] = None
+    valid_to: datetime | None = None
 
-    def compute_id_hash(self, type_label: str, key_fields: Dict[str, Any]) -> str:
+    def compute_id_hash(self, type_label: str, key_fields: dict[str, Any]) -> str:
         """Compute deterministic ID hash."""
         id_string = f"{type_label}-{str(key_fields)}"
         return hashlib.md5(id_string.encode()).hexdigest()
@@ -58,15 +58,15 @@ def _normalize_identifier(value: Any) -> str:
 class Publication(BaseNode):
     """Scientific publication node."""
 
-    pmid: Optional[str] = Field(None, pattern="^[0-9]+$")
-    doi: Optional[str] = Field(None, pattern="^10\\.[0-9]+/.+$")
+    pmid: str | None = Field(None, pattern="^[0-9]+$")
+    doi: str | None = Field(None, pattern="^10\\.[0-9]+/.+$")
     title: str = Field(..., min_length=1)
-    abstract: Optional[str] = None
-    authors: List[str] = Field(default_factory=list)
-    year: Optional[int] = Field(None, ge=1900, le=2100)
-    journal: Optional[str] = None
-    volume: Optional[str] = None
-    pages: Optional[str] = None
+    abstract: str | None = None
+    authors: list[str] = Field(default_factory=list)
+    year: int | None = Field(None, ge=1900, le=2100)
+    journal: str | None = None
+    volume: str | None = None
+    pages: str | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -89,24 +89,24 @@ class Publication(BaseNode):
 class Study(BaseNode):
     """Study node for curated study-level metadata."""
 
-    name: Optional[str] = None
-    title: Optional[str] = None
-    study_id: Optional[str] = None
-    study_type: Optional[str] = None
-    source: Optional[str] = None
-    pmid: Optional[str] = Field(None, pattern="^[0-9]+$")
-    doi: Optional[str] = Field(None, pattern="^10\\.[0-9]+/.+$")
-    url: Optional[str] = None
-    year: Optional[int] = Field(None, ge=1900, le=2100)
-    consortium: Optional[str] = None
-    gwas_catalog_id: Optional[str] = None
-    pgc_study_id: Optional[str] = None
-    trait_name: Optional[str] = None
-    ancestries: List[str] = Field(default_factory=list)
-    sample_size: Optional[int] = Field(None, ge=0)
-    n_cases: Optional[int] = Field(None, ge=0)
-    n_controls: Optional[int] = Field(None, ge=0)
-    description: Optional[str] = None
+    name: str | None = None
+    title: str | None = None
+    study_id: str | None = None
+    study_type: str | None = None
+    source: str | None = None
+    pmid: str | None = Field(None, pattern="^[0-9]+$")
+    doi: str | None = Field(None, pattern="^10\\.[0-9]+/.+$")
+    url: str | None = None
+    year: int | None = Field(None, ge=1900, le=2100)
+    consortium: str | None = None
+    gwas_catalog_id: str | None = None
+    pgc_study_id: str | None = None
+    trait_name: str | None = None
+    ancestries: list[str] = Field(default_factory=list)
+    sample_size: int | None = Field(None, ge=0)
+    n_cases: int | None = Field(None, ge=0)
+    n_controls: int | None = Field(None, ge=0)
+    description: str | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -146,10 +146,10 @@ class Task(BaseNode):
     """Cognitive/behavioral task node."""
 
     name: str = Field(..., min_length=1)
-    description: Optional[str] = None
-    cognitive_atlas_id: Optional[str] = Field(None, pattern="^cogat:.*")
-    paradigm_class: Optional[str] = None
-    implementation_details: Optional[Dict[str, Any]] = None
+    description: str | None = None
+    cognitive_atlas_id: str | None = Field(None, pattern="^cogat:.*")
+    paradigm_class: str | None = None
+    implementation_details: dict[str, Any] | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -166,10 +166,10 @@ class Concept(BaseNode):
     """Cognitive concept or construct node."""
 
     label: str = Field(..., min_length=1)
-    definition: Optional[str] = None
-    cognitive_atlas_id: Optional[str] = Field(None, pattern="^cogat:.*")
-    category: Optional[str] = None
-    parent_concepts: List[str] = Field(default_factory=list)
+    definition: str | None = None
+    cognitive_atlas_id: str | None = Field(None, pattern="^cogat:.*")
+    category: str | None = None
+    parent_concepts: list[str] = Field(default_factory=list)
 
     @field_validator("id", mode="before")
     @classmethod
@@ -187,11 +187,11 @@ class Region(BaseNode):
 
     name: str = Field(..., min_length=1)
     atlas: str = Field(..., description="Atlas name (e.g., schaefer400-7n)")
-    hemisphere: Optional[Literal["left", "right", "bilateral"]] = None
-    network: Optional[str] = None
-    parent_region: Optional[str] = None
-    mni_centroid: Optional[Dict[str, float]] = None  # {"x": 0, "y": 0, "z": 0}
-    volume_mm3: Optional[float] = None
+    hemisphere: Literal["left", "right", "bilateral"] | None = None
+    network: str | None = None
+    parent_region: str | None = None
+    mni_centroid: dict[str, float] | None = None  # {"x": 0, "y": 0, "z": 0}
+    volume_mm3: float | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -210,9 +210,9 @@ class Coordinate(BaseNode):
     y: float = Field(..., ge=-150, le=150)
     z: float = Field(..., ge=-100, le=100)
     space: str = Field(default="MNI152_2009c")
-    statistic_type: Optional[str] = None
-    statistic_value: Optional[float] = None
-    cluster_size: Optional[int] = None
+    statistic_type: str | None = None
+    statistic_value: float | None = None
+    cluster_size: int | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -243,11 +243,11 @@ class StatisticalMap(BaseNode):
     space: str = Field(default="MNI152_2009c")
     modality: str = Field(..., description="Imaging modality (e.g., fMRI, PET)")
     map_type: str = Field(..., description="Map type (e.g., T, Z, beta)")
-    contrast_definition: Optional[str] = None
-    threshold: Optional[float] = None
-    correction_method: Optional[str] = None
-    neurovault_id: Optional[str] = None
-    file_path: Optional[str] = None
+    contrast_definition: str | None = None
+    threshold: float | None = None
+    correction_method: str | None = None
+    neurovault_id: str | None = None
+    file_path: str | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -265,14 +265,14 @@ class Dataset(BaseNode):
     """Neuroimaging dataset node."""
 
     name: str = Field(..., min_length=1)
-    accession: Optional[str] = None
+    accession: str | None = None
     source: str = Field(..., description="Data source (e.g., openneuro, hcp)")
-    modalities: List[str] = Field(default_factory=list)
-    n_subjects: Optional[int] = Field(None, ge=0)
-    tasks: List[str] = Field(default_factory=list)
-    phenotypes: List[str] = Field(default_factory=list)
-    description: Optional[str] = None
-    license: Optional[str] = None
+    modalities: list[str] = Field(default_factory=list)
+    n_subjects: int | None = Field(None, ge=0)
+    tasks: list[str] = Field(default_factory=list)
+    phenotypes: list[str] = Field(default_factory=list)
+    description: str | None = None
+    license: str | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -290,14 +290,14 @@ class Dataset(BaseNode):
 class DiseaseTrait(BaseNode):
     """Disease or trait node for GWAS metadata."""
 
-    name: Optional[str] = None
-    phenotype_id: Optional[str] = None
-    efo_id: Optional[str] = None
-    mondo_id: Optional[str] = None
-    mesh_id: Optional[str] = None
-    category: Optional[str] = None
-    description: Optional[str] = None
-    study_count: Optional[int] = Field(None, ge=0)
+    name: str | None = None
+    phenotype_id: str | None = None
+    efo_id: str | None = None
+    mondo_id: str | None = None
+    mesh_id: str | None = None
+    category: str | None = None
+    description: str | None = None
+    study_count: int | None = Field(None, ge=0)
 
     @field_validator("id", mode="before")
     @classmethod
@@ -321,14 +321,14 @@ class DiseaseTrait(BaseNode):
 class Population(BaseNode):
     """Population or ancestry cohort node."""
 
-    name: Optional[str] = None
-    population_id: Optional[str] = None
-    ancestry: Optional[str] = None
-    ancestry_code: Optional[str] = None
-    super_population: Optional[str] = None
-    cohort: Optional[str] = None
-    sample_size: Optional[int] = Field(None, ge=0)
-    description: Optional[str] = None
+    name: str | None = None
+    population_id: str | None = None
+    ancestry: str | None = None
+    ancestry_code: str | None = None
+    super_population: str | None = None
+    cohort: str | None = None
+    sample_size: int | None = Field(None, ge=0)
+    description: str | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -352,14 +352,14 @@ class Population(BaseNode):
 class Gene(BaseNode):
     """Gene node used to anchor locus-to-gene mappings."""
 
-    symbol: Optional[str] = None
-    gene_id: Optional[str] = None
-    hgnc_id: Optional[str] = None
-    entrez_id: Optional[str] = None
-    ensembl_id: Optional[str] = None
-    name: Optional[str] = None
-    chromosome: Optional[str] = None
-    description: Optional[str] = None
+    symbol: str | None = None
+    gene_id: str | None = None
+    hgnc_id: str | None = None
+    entrez_id: str | None = None
+    ensembl_id: str | None = None
+    name: str | None = None
+    chromosome: str | None = None
+    description: str | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -383,22 +383,22 @@ class Gene(BaseNode):
 class RiskLocus(BaseNode):
     """Risk locus node representing a lead locus or sentinel variant region."""
 
-    name: Optional[str] = None
-    locus_id: Optional[str] = None
-    rsid: Optional[str] = None
-    sentinel_variant_id: Optional[str] = None
-    chromosome: Optional[str] = None
-    position: Optional[int] = Field(None, ge=0)
-    start: Optional[int] = Field(None, ge=0)
-    end: Optional[int] = Field(None, ge=0)
-    p_value: Optional[float] = Field(None, ge=0.0, le=1.0)
-    nearest_gene: Optional[str] = None
-    ancestries: List[str] = Field(default_factory=list)
-    study_id: Optional[str] = None
-    trait_name: Optional[str] = None
-    lead_variant_count: Optional[int] = Field(None, ge=0)
-    credible_set_size: Optional[int] = Field(None, ge=0)
-    description: Optional[str] = None
+    name: str | None = None
+    locus_id: str | None = None
+    rsid: str | None = None
+    sentinel_variant_id: str | None = None
+    chromosome: str | None = None
+    position: int | None = Field(None, ge=0)
+    start: int | None = Field(None, ge=0)
+    end: int | None = Field(None, ge=0)
+    p_value: float | None = Field(None, ge=0.0, le=1.0)
+    nearest_gene: str | None = None
+    ancestries: list[str] = Field(default_factory=list)
+    study_id: str | None = None
+    trait_name: str | None = None
+    lead_variant_count: int | None = Field(None, ge=0)
+    credible_set_size: int | None = Field(None, ge=0)
+    description: str | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -424,8 +424,8 @@ class Subject(BaseNode):
 
     participant_id: str = Field(..., description="Anonymized participant ID")
     dataset_id: str = Field(..., description="Parent dataset ID")
-    group: Optional[str] = None
-    phenotypes: Dict[str, Any] = Field(default_factory=dict)
+    group: str | None = None
+    phenotypes: dict[str, Any] = Field(default_factory=dict)
     # Note: No direct PII fields
 
     @field_validator("id", mode="before")
@@ -446,8 +446,8 @@ class SubjectGroup(BaseNode):
     name: str = Field(..., min_length=1)
     dataset_id: str = Field(..., description="Parent dataset ID")
     n_subjects: int = Field(..., ge=1)
-    criteria: Dict[str, Any] = Field(default_factory=dict)
-    demographics: Dict[str, Any] = Field(default_factory=dict)
+    criteria: dict[str, Any] = Field(default_factory=dict)
+    demographics: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("id", mode="before")
     @classmethod
@@ -464,10 +464,10 @@ class Phenotype(BaseNode):
 
     name: str = Field(..., min_length=1)
     category: str = Field(..., description="Category (e.g., cognitive, clinical)")
-    measurement_type: Optional[str] = None
-    units: Optional[str] = None
-    range_min: Optional[float] = None
-    range_max: Optional[float] = None
+    measurement_type: str | None = None
+    units: str | None = None
+    range_min: float | None = None
+    range_max: float | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -483,9 +483,9 @@ class Contrast(BaseNode):
 
     name: str = Field(..., min_length=1)
     dataset_id: str = Field(..., description="Parent dataset ID")
-    task_name: Optional[str] = None
-    conditions: List[str] = Field(..., min_length=2)
-    weights: List[float] = Field(...)
+    task_name: str | None = None
+    conditions: list[str] = Field(..., min_length=2)
+    weights: list[float] = Field(...)
     contrast_type: Literal["t", "f"] = "t"
 
     @validator("weights")
@@ -510,10 +510,10 @@ class Assumption(BaseNode):
     """Field-level assumption extracted from a claim or publication."""
 
     text: str = Field(..., min_length=1)
-    paper_id: Optional[str] = Field(default=None, min_length=1)
-    source_claim_id: Optional[str] = None
-    assumption_type: Optional[str] = None
-    domain_scope: Optional[str] = None
+    paper_id: str | None = Field(default=None, min_length=1)
+    source_claim_id: str | None = None
+    assumption_type: str | None = None
+    domain_scope: str | None = None
     defaultness_score: float = Field(default=0.0, ge=0.0, le=1.0)
     challengeability_score: float = Field(default=0.0, ge=0.0, le=1.0)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -542,7 +542,7 @@ class Claim(BaseNode):
 
     text: str = Field(..., min_length=1)
     paper_id: str = Field(..., min_length=1)
-    target_id: Optional[str] = None
+    target_id: str | None = None
     claim_kind: Literal[
         "claim",
         "null_result",
@@ -550,18 +550,18 @@ class Claim(BaseNode):
         "failed_replication",
         "contradiction",
     ] = "claim"
-    related_claim_id: Optional[str] = None
+    related_claim_id: str | None = None
     claim_polarity: Literal["supports", "refutes", "mixed", "uncertain"] = "uncertain"
     claim_strength: float = Field(default=0.0, ge=0.0, le=1.0)
     method_rigor: float = Field(default=0.0, ge=0.0, le=1.0)
-    main_assumption_text: Optional[str] = None
-    main_assumption_id: Optional[str] = None
-    assumption_type: Optional[str] = None
-    assumption_scope: Optional[str] = None
+    main_assumption_text: str | None = None
+    main_assumption_id: str | None = None
+    assumption_type: str | None = None
+    assumption_scope: str | None = None
     defaultness_score: float = Field(default=0.0, ge=0.0, le=1.0)
     challengeability_score: float = Field(default=0.0, ge=0.0, le=1.0)
     assumption_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
-    assumption_status: Optional[Literal["default", "challenged", "unknown"]] = None
+    assumption_status: Literal["default", "challenged", "unknown"] | None = None
     provenance_completeness: float = Field(default=1.0, ge=0.0, le=1.0)
 
     @validator("related_claim_id")
@@ -592,10 +592,10 @@ class EvidenceSpan(BaseNode):
     paper_id: str = Field(..., min_length=1)
     claim_id: str = Field(..., min_length=1)
     quote: str = Field(..., min_length=1)
-    section: Optional[str] = None
-    page: Optional[int] = Field(None, ge=0)
-    char_start: Optional[int] = Field(None, ge=0)
-    char_end: Optional[int] = Field(None, ge=0)
+    section: str | None = None
+    page: int | None = Field(None, ge=0)
+    char_start: int | None = Field(None, ge=0)
+    char_end: int | None = Field(None, ge=0)
     mention_strength: float = Field(default=0.0, ge=0.0, le=1.0)
     evidence_quality: Literal["low", "medium", "high"] = "medium"
     evidence_quality_score: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -648,18 +648,18 @@ class AgentSession(BaseNode):
     """Agent work-session summary derived from BR research logging."""
 
     session_id: str = Field(..., min_length=1)
-    run_id: Optional[str] = None
-    source_client: Optional[str] = None
-    status: Optional[str] = None
+    run_id: str | None = None
+    source_client: str | None = None
+    status: str | None = None
     has_snapshot: bool = False
-    goal: Optional[str] = None
-    task_surfaces: List[str] = Field(default_factory=list)
-    open_risk_labels: List[str] = Field(default_factory=list)
+    goal: str | None = None
+    task_surfaces: list[str] = Field(default_factory=list)
+    open_risk_labels: list[str] = Field(default_factory=list)
     validation_evidence_count: int = Field(default=0, ge=0)
-    raw_session_json: Dict[str, Any] = Field(default_factory=dict)
-    last_event_at: Optional[str] = None
-    created_at: Optional[str] = None
-    finished_at: Optional[str] = None
+    raw_session_json: dict[str, Any] = Field(default_factory=dict)
+    last_event_at: str | None = None
+    created_at: str | None = None
+    finished_at: str | None = None
 
     def model_post_init(self, __context) -> None:  # type: ignore[override]
         if not self.id:
@@ -670,11 +670,13 @@ class TaskSurface(BaseNode):
     """Coarse task surface inferred from a session."""
 
     name: str = Field(..., min_length=1)
-    surface_id: Optional[str] = None
+    surface_id: str | None = None
 
     def model_post_init(self, __context) -> None:  # type: ignore[override]
         if not self.id:
-            self.id = f"task_surface:{_normalize_identifier(self.surface_id or self.name)}"
+            self.id = (
+                f"task_surface:{_normalize_identifier(self.surface_id or self.name)}"
+            )
 
 
 class ValidationEvidence(BaseNode):
@@ -686,7 +688,9 @@ class ValidationEvidence(BaseNode):
 
     def model_post_init(self, __context) -> None:  # type: ignore[override]
         if not self.id:
-            digest = hashlib.md5(f"{self.evidence_type}:{self.text}".encode()).hexdigest()
+            digest = hashlib.md5(
+                f"{self.evidence_type}:{self.text}".encode()
+            ).hexdigest()
             self.id = f"validation_evidence:{digest[:12]}"
 
 
@@ -725,8 +729,8 @@ class Lesson(BaseNode):
 class NextAction(BaseNode):
     """Concrete next command or remediation action from a session handoff."""
 
-    command: Optional[str] = None
-    action_type: Optional[str] = None
+    command: str | None = None
+    action_type: str | None = None
 
     @validator("action_type", always=True)
     def validate_action_or_command(cls, v, values):
@@ -767,7 +771,7 @@ NODE_TYPES = {
 }
 
 
-def validate_node(node_type: str, data: Dict[str, Any]) -> BaseNode:
+def validate_node(node_type: str, data: dict[str, Any]) -> BaseNode:
     """Validate node data against schema.
 
     Args:

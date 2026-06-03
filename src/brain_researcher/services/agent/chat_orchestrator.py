@@ -512,9 +512,11 @@ class ChatOrchestrator:
             ),
             "selection_latency_ms": round(selection_latency_ms, 3),
             "routing_latency_ms": round(total_routing_latency_ms, 3),
-            "preflight_candidate_generation_latency_ms": None
-            if effective_preflight_latency_ms is None
-            else round(float(effective_preflight_latency_ms), 3),
+            "preflight_candidate_generation_latency_ms": (
+                None
+                if effective_preflight_latency_ms is None
+                else round(float(effective_preflight_latency_ms), 3)
+            ),
             "router_candidate_generation_latency_ms": round(
                 router_candidate_latency_ms, 3
             ),
@@ -1155,18 +1157,20 @@ class ChatOrchestrator:
                         response_text=res_body.get("response", ""),
                         patches=res_body.get("patches") or [],
                         files_touched=res_body.get("files_touched") or [],
-                        exec_result=ExecutionResult(
-                            success=(
-                                res_body.get("exec_stdout") is not None
-                                and not res_body.get("exec_stderr")
-                            ),
-                            stdout=res_body.get("exec_stdout") or "",
-                            stderr=res_body.get("exec_stderr") or "",
-                            exit_code=None,
-                        )
-                        if res_body.get("exec_stdout") is not None
-                        or res_body.get("exec_stderr") is not None
-                        else None,
+                        exec_result=(
+                            ExecutionResult(
+                                success=(
+                                    res_body.get("exec_stdout") is not None
+                                    and not res_body.get("exec_stderr")
+                                ),
+                                stdout=res_body.get("exec_stdout") or "",
+                                stderr=res_body.get("exec_stderr") or "",
+                                exit_code=None,
+                            )
+                            if res_body.get("exec_stdout") is not None
+                            or res_body.get("exec_stderr") is not None
+                            else None
+                        ),
                         errors=tool_result.get("error"),
                         provider=res_body.get("provider"),
                         model=res_body.get("model"),

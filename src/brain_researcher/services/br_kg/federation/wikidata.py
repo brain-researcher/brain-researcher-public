@@ -4,15 +4,12 @@ Wikidata Connector for External Graph Federation
 Provides integration with Wikidata SPARQL endpoint for neuroimaging-related entities.
 """
 
+import hashlib
 import logging
 import time
-import hashlib
-from typing import Dict, Any, List, Optional, Set
-from urllib.parse import quote
-import requests
+from typing import Any
 
-from SPARQLWrapper import SPARQLWrapper, JSON
-from .merger import FederationResultMerger
+from SPARQLWrapper import JSON, SPARQLWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +32,7 @@ class WikidataConnector:
         self.max_results = max_results
 
         # Query cache
-        self.query_cache: Dict[str, Dict[str, Any]] = {}
+        self.query_cache: dict[str, dict[str, Any]] = {}
 
         # Rate limiting
         self.last_request_time = 0
@@ -53,26 +50,23 @@ class WikidataConnector:
 
         # Neuroimaging-specific entity mappings
         self.neuro_entities = {
-            'brain': 'Q1073',
-            'neuroscience': 'Q9281',
-            'brain_region': 'Q864805',
-            'neurological_disorder': 'Q10737',
-            'fmri': 'Q207921',
-            'neuroimaging': 'Q1575726',
-            'cognitive_science': 'Q207011',
-            'neurology': 'Q83353',
-            'psychiatry': 'Q39201',
-            'human_brain': 'Q1073'
+            "brain": "Q1073",
+            "neuroscience": "Q9281",
+            "brain_region": "Q864805",
+            "neurological_disorder": "Q10737",
+            "fmri": "Q207921",
+            "neuroimaging": "Q1575726",
+            "cognitive_science": "Q207011",
+            "neurology": "Q83353",
+            "psychiatry": "Q39201",
+            "human_brain": "Q1073",
         }
 
         logger.info("Wikidata connector initialized")
 
     def search_brain_regions(
-        self,
-        query: str,
-        limit: int = 50,
-        include_anatomy: bool = True
-    ) -> List[Dict[str, Any]]:
+        self, query: str, limit: int = 50, include_anatomy: bool = True
+    ) -> list[dict[str, Any]]:
         """Search for brain regions and anatomical structures"""
 
         sparql_query = f"""
@@ -97,10 +91,8 @@ class WikidataConnector:
         return self._execute_query(sparql_query, "brain_regions")
 
     def search_neurological_conditions(
-        self,
-        query: str,
-        limit: int = 50
-    ) -> List[Dict[str, Any]]:
+        self, query: str, limit: int = 50
+    ) -> list[dict[str, Any]]:
         """Search for neurological conditions and diseases"""
 
         sparql_query = f"""
@@ -131,10 +123,8 @@ class WikidataConnector:
         return self._execute_query(sparql_query, "neurological_conditions")
 
     def search_neuroimaging_methods(
-        self,
-        query: str,
-        limit: int = 30
-    ) -> List[Dict[str, Any]]:
+        self, query: str, limit: int = 30
+    ) -> list[dict[str, Any]]:
         """Search for neuroimaging techniques and methods"""
 
         sparql_query = f"""
@@ -165,10 +155,8 @@ class WikidataConnector:
         return self._execute_query(sparql_query, "neuroimaging_methods")
 
     def search_neuroscientists(
-        self,
-        query: str,
-        limit: int = 30
-    ) -> List[Dict[str, Any]]:
+        self, query: str, limit: int = 30
+    ) -> list[dict[str, Any]]:
         """Search for neuroscientists and researchers"""
 
         sparql_query = f"""
@@ -201,10 +189,8 @@ class WikidataConnector:
         return self._execute_query(sparql_query, "neuroscientists")
 
     def get_brain_region_hierarchy(
-        self,
-        region_id: str,
-        max_depth: int = 3
-    ) -> Dict[str, Any]:
+        self, region_id: str, max_depth: int = 3
+    ) -> dict[str, Any]:
         """Get hierarchical structure of brain regions"""
 
         sparql_query = f"""
@@ -239,15 +225,22 @@ class WikidataConnector:
     def find_related_concepts(
         self,
         concept_id: str,
-        relation_types: Optional[List[str]] = None,
-        limit: int = 50
-    ) -> List[Dict[str, Any]]:
+        relation_types: list[str] | None = None,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
         """Find concepts related to a given concept"""
 
         if not relation_types:
-            relation_types = ['P361', 'P527', 'P31', 'P279', 'P1542', 'P828']  # Common relations
+            relation_types = [
+                "P361",
+                "P527",
+                "P31",
+                "P279",
+                "P1542",
+                "P828",
+            ]  # Common relations
 
-        relation_filter = ' '.join([f'wdt:{rel}' for rel in relation_types])
+        relation_filter = " ".join([f"wdt:{rel}" for rel in relation_types])
 
         sparql_query = f"""
         {self.prefixes}
@@ -275,21 +268,18 @@ class WikidataConnector:
         return self._execute_query(sparql_query, f"related_{concept_id}")
 
     def search_publications(
-        self,
-        query: str,
-        publication_type: str = "scientific_article",
-        limit: int = 30
-    ) -> List[Dict[str, Any]]:
+        self, query: str, publication_type: str = "scientific_article", limit: int = 30
+    ) -> list[dict[str, Any]]:
         """Search for scientific publications"""
 
         type_mapping = {
-            'scientific_article': 'Q13442814',
-            'review': 'Q7318358',
-            'book': 'Q571',
-            'thesis': 'Q1266946'
+            "scientific_article": "Q13442814",
+            "review": "Q7318358",
+            "book": "Q571",
+            "thesis": "Q1266946",
         }
 
-        type_id = type_mapping.get(publication_type, 'Q13442814')
+        type_id = type_mapping.get(publication_type, "Q13442814")
 
         sparql_query = f"""
         {self.prefixes}
@@ -324,7 +314,7 @@ class WikidataConnector:
 
         return self._execute_query(sparql_query, "publications")
 
-    def get_entity_details(self, entity_id: str) -> Dict[str, Any]:
+    def get_entity_details(self, entity_id: str) -> dict[str, Any]:
         """Get detailed information about a specific entity"""
 
         sparql_query = f"""
@@ -354,11 +344,8 @@ class WikidataConnector:
         return self._structure_entity_details(results)
 
     def _execute_query(
-        self,
-        query: str,
-        cache_key: str,
-        timeout: int = 30
-    ) -> List[Dict[str, Any]]:
+        self, query: str, cache_key: str, timeout: int = 30
+    ) -> list[dict[str, Any]]:
         """Execute SPARQL query with caching and rate limiting"""
 
         # Check cache
@@ -381,7 +368,7 @@ class WikidataConnector:
             result = sparql.query().convert()
 
             # Extract bindings
-            bindings = result.get('results', {}).get('bindings', [])
+            bindings = result.get("results", {}).get("bindings", [])
 
             # Process results
             processed_results = self._process_wikidata_results(bindings)
@@ -396,7 +383,9 @@ class WikidataConnector:
             logger.error("Wikidata query failed: %s", str(e))
             return []
 
-    def _process_wikidata_results(self, bindings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _process_wikidata_results(
+        self, bindings: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Process Wikidata SPARQL results"""
 
         processed = []
@@ -405,26 +394,19 @@ class WikidataConnector:
             result = {}
 
             for var, value in binding.items():
-                if value.get('type') == 'uri':
+                if value.get("type") == "uri":
                     # Extract entity ID from URI
-                    uri = value['value']
-                    if 'wikidata.org/entity/' in uri:
-                        entity_id = uri.split('/')[-1]
-                        result[var] = {
-                            'id': entity_id,
-                            'uri': uri,
-                            'type': 'entity'
-                        }
+                    uri = value["value"]
+                    if "wikidata.org/entity/" in uri:
+                        entity_id = uri.split("/")[-1]
+                        result[var] = {"id": entity_id, "uri": uri, "type": "entity"}
                     else:
-                        result[var] = {
-                            'uri': uri,
-                            'type': 'uri'
-                        }
-                elif value.get('type') == 'literal':
+                        result[var] = {"uri": uri, "type": "uri"}
+                elif value.get("type") == "literal":
                     result[var] = {
-                        'value': value['value'],
-                        'type': 'literal',
-                        'datatype': value.get('datatype', 'string')
+                        "value": value["value"],
+                        "type": "literal",
+                        "datatype": value.get("datatype", "string"),
                     }
                 else:
                     result[var] = value
@@ -433,73 +415,67 @@ class WikidataConnector:
 
         return processed
 
-    def _build_hierarchy_structure(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _build_hierarchy_structure(
+        self, results: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Build hierarchical structure from flat results"""
 
-        hierarchy = {
-            'root': None,
-            'children': {},
-            'parents': {},
-            'levels': {}
-        }
+        hierarchy = {"root": None, "children": {}, "parents": {}, "levels": {}}
 
         for result in results:
-            item_data = result.get('item', {})
-            level = result.get('level', {}).get('value', 0)
+            item_data = result.get("item", {})
+            level = result.get("level", {}).get("value", 0)
 
-            if item_data and 'id' in item_data:
-                item_id = item_data['id']
-                hierarchy['levels'][item_id] = {
-                    'level': int(level),
-                    'data': result
-                }
+            if item_data and "id" in item_data:
+                item_id = item_data["id"]
+                hierarchy["levels"][item_id] = {"level": int(level), "data": result}
 
                 # Build parent-child relationships
-                parent_data = result.get('parent', {})
-                if parent_data and 'id' in parent_data:
-                    parent_id = parent_data['id']
-                    if parent_id not in hierarchy['children']:
-                        hierarchy['children'][parent_id] = []
-                    hierarchy['children'][parent_id].append(item_id)
-                    hierarchy['parents'][item_id] = parent_id
+                parent_data = result.get("parent", {})
+                if parent_data and "id" in parent_data:
+                    parent_id = parent_data["id"]
+                    if parent_id not in hierarchy["children"]:
+                        hierarchy["children"][parent_id] = []
+                    hierarchy["children"][parent_id].append(item_id)
+                    hierarchy["parents"][item_id] = parent_id
 
         return hierarchy
 
-    def _structure_entity_details(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _structure_entity_details(
+        self, results: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Structure entity details into organized format"""
 
         details = {
-            'properties': {},
-            'classifications': [],
-            'relationships': {},
-            'attributes': {}
+            "properties": {},
+            "classifications": [],
+            "relationships": {},
+            "attributes": {},
         }
 
         for result in results:
-            prop_data = result.get('property', {})
-            value_data = result.get('value', {})
+            prop_data = result.get("property", {})
+            value_data = result.get("value", {})
 
-            if prop_data and 'uri' in prop_data:
-                prop_uri = prop_data['uri']
-                prop_id = prop_uri.split('/')[-1] if '/' in prop_uri else prop_uri
+            if prop_data and "uri" in prop_data:
+                prop_uri = prop_data["uri"]
+                prop_id = prop_uri.split("/")[-1] if "/" in prop_uri else prop_uri
 
                 # Categorize properties
-                if prop_id in ['P31', 'P279']:  # Instance of, Subclass of
-                    details['classifications'].append({
-                        'property': prop_id,
-                        'value': value_data
-                    })
-                elif prop_id in ['P361', 'P527']:  # Part of, Has parts
-                    if 'structure' not in details['relationships']:
-                        details['relationships']['structure'] = []
-                    details['relationships']['structure'].append({
-                        'property': prop_id,
-                        'value': value_data
-                    })
+                if prop_id in ["P31", "P279"]:  # Instance of, Subclass of
+                    details["classifications"].append(
+                        {"property": prop_id, "value": value_data}
+                    )
+                elif prop_id in ["P361", "P527"]:  # Part of, Has parts
+                    if "structure" not in details["relationships"]:
+                        details["relationships"]["structure"] = []
+                    details["relationships"]["structure"].append(
+                        {"property": prop_id, "value": value_data}
+                    )
                 else:
-                    if prop_id not in details['properties']:
-                        details['properties'][prop_id] = []
-                    details['properties'][prop_id].append(value_data)
+                    if prop_id not in details["properties"]:
+                        details["properties"][prop_id] = []
+                    details["properties"][prop_id].append(value_data)
 
         return details
 
@@ -518,29 +494,25 @@ class WikidataConnector:
         """Generate cache key for query"""
         return hashlib.md5(query.encode()).hexdigest()
 
-    def _get_cached_result(self, cache_key: str) -> Optional[List[Dict[str, Any]]]:
+    def _get_cached_result(self, cache_key: str) -> list[dict[str, Any]] | None:
         """Get cached query result"""
         if cache_key in self.query_cache:
             cached = self.query_cache[cache_key]
-            if time.time() - cached['timestamp'] < self.cache_ttl:
-                return cached['results']
+            if time.time() - cached["timestamp"] < self.cache_ttl:
+                return cached["results"]
             else:
                 del self.query_cache[cache_key]
         return None
 
-    def _cache_result(self, cache_key: str, results: List[Dict[str, Any]]):
+    def _cache_result(self, cache_key: str, results: list[dict[str, Any]]):
         """Cache query results"""
-        self.query_cache[cache_key] = {
-            'results': results,
-            'timestamp': time.time()
-        }
+        self.query_cache[cache_key] = {"results": results, "timestamp": time.time()}
 
         # Limit cache size
         if len(self.query_cache) > 1000:
             # Remove oldest entries
             oldest_keys = sorted(
-                self.query_cache.keys(),
-                key=lambda k: self.query_cache[k]['timestamp']
+                self.query_cache.keys(), key=lambda k: self.query_cache[k]["timestamp"]
             )[:100]
             for key in oldest_keys:
                 del self.query_cache[key]

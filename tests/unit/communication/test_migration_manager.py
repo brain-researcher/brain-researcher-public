@@ -5,13 +5,11 @@ Tests the migration logic for transitioning services to Istio service mesh,
 including canary deployments, rollback mechanisms, and compatibility checks.
 """
 
-import pytest
-import asyncio
-import json
 import time
-from unittest.mock import Mock, patch, AsyncMock, MagicMock, call
-from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Test markers
 pytestmark = [pytest.mark.unit, pytest.mark.migration]
@@ -66,9 +64,11 @@ class TestMigrationPlanner:
     @pytest.fixture
     def migration_planner(self, mock_k8s_client):
         """Create a migration planner instance."""
-        from brain_researcher.infrastructure.istio.migration_planner import MigrationPlanner
+        from brain_researcher.infrastructure.istio.migration_planner import (
+            MigrationPlanner,
+        )
 
-        with patch('kubernetes.client', return_value=mock_k8s_client):
+        with patch("kubernetes.client", return_value=mock_k8s_client):
             planner = MigrationPlanner(namespace="brain-researcher")
 
         return planner
@@ -78,20 +78,17 @@ class TestMigrationPlanner:
         services = {
             "web-ui": {
                 "dependencies": ["orchestrator", "auth-service"],
-                "dependents": []
+                "dependents": [],
             },
             "orchestrator": {
                 "dependencies": ["br_kg", "agent"],
-                "dependents": ["web-ui"]
+                "dependents": ["web-ui"],
             },
             "br_kg": {
                 "dependencies": ["neo4j", "redis"],
-                "dependents": ["orchestrator", "agent"]
+                "dependents": ["orchestrator", "agent"],
             },
-            "agent": {
-                "dependencies": ["br_kg"],
-                "dependents": ["orchestrator"]
-            }
+            "agent": {"dependencies": ["br_kg"], "dependents": ["orchestrator"]},
         }
 
         migration_order = migration_planner.calculate_migration_order(services)
@@ -109,7 +106,7 @@ class TestMigrationPlanner:
             "protocols": ["HTTP", "gRPC"],
             "health_endpoint": "/health",
             "readiness_endpoint": "/ready",
-            "metrics_endpoint": "/metrics"
+            "metrics_endpoint": "/metrics",
         }
 
         compatibility = migration_planner.check_istio_compatibility(service_specs)
@@ -125,10 +122,12 @@ class TestMigrationPlanner:
             "cpu_request": "100m",
             "memory_request": "128Mi",
             "cpu_limit": "500m",
-            "memory_limit": "512Mi"
+            "memory_limit": "512Mi",
         }
 
-        estimated_resources = migration_planner.estimate_migration_resources(service_config)
+        estimated_resources = migration_planner.estimate_migration_resources(
+            service_config
+        )
 
         # Should account for sidecar overhead
         assert estimated_resources["cpu_overhead"] > 0
@@ -142,7 +141,7 @@ class TestMigrationPlanner:
             "criticality": "high",
             "traffic_volume": "medium",
             "dependencies": 3,
-            "external_traffic": True
+            "external_traffic": True,
         }
 
         strategy = migration_planner.select_migration_strategy(service_profile)
@@ -156,7 +155,7 @@ class TestMigrationPlanner:
             "service": "br_kg-service",
             "strategy": "canary",
             "traffic_splits": [10, 50, 100],
-            "validation_steps": ["health_check", "smoke_test", "load_test"]
+            "validation_steps": ["health_check", "smoke_test", "load_test"],
         }
 
         rollback_plan = migration_planner.generate_rollback_plan(migration_config)
@@ -174,10 +173,9 @@ class TestCanaryDeployment:
         """Create a canary deployer instance."""
         from brain_researcher.infrastructure.istio.canary_deployer import CanaryDeployer
 
-        with patch('kubernetes.client', return_value=mock_k8s_client):
+        with patch("kubernetes.client", return_value=mock_k8s_client):
             deployer = CanaryDeployer(
-                namespace="brain-researcher",
-                istio_client=mock_istio_client
+                namespace="brain-researcher", istio_client=mock_istio_client
             )
 
         return deployer
@@ -192,8 +190,8 @@ class TestCanaryDeployment:
             "step_duration": "5m",
             "success_criteria": {
                 "error_rate_threshold": 0.05,
-                "latency_p99_threshold": 1000
-            }
+                "latency_p99_threshold": 1000,
+            },
         }
 
         deployment_id = canary_deployer.initialize_canary(canary_config)
@@ -212,12 +210,12 @@ class TestCanaryDeployment:
         # Initialize canary
         canary_config = {
             "service_name": "br_kg-service",
-            "traffic_splits": [10, 50, 100]
+            "traffic_splits": [10, 50, 100],
         }
         canary_deployer.deployments[deployment_id] = {
             "config": canary_config,
             "current_step": 0,
-            "phase": "initialized"
+            "phase": "initialized",
         }
 
         # Progress through traffic splits
@@ -233,12 +231,12 @@ class TestCanaryDeployment:
         deployment_id = "test-canary-002"
 
         # Mock health metrics
-        with patch.object(canary_deployer, 'collect_canary_metrics') as mock_metrics:
+        with patch.object(canary_deployer, "collect_canary_metrics") as mock_metrics:
             mock_metrics.return_value = {
                 "error_rate": 0.02,  # Below threshold
                 "latency_p99": 800,  # Below threshold
                 "request_count": 1000,
-                "success_rate": 0.98
+                "success_rate": 0.98,
             }
 
             health_status = canary_deployer.validate_canary_health(deployment_id)
@@ -252,11 +250,11 @@ class TestCanaryDeployment:
         deployment_id = "test-canary-003"
 
         # Mock failing metrics
-        with patch.object(canary_deployer, 'collect_canary_metrics') as mock_metrics:
+        with patch.object(canary_deployer, "collect_canary_metrics") as mock_metrics:
             mock_metrics.return_value = {
                 "error_rate": 0.15,  # Above threshold
                 "latency_p99": 2000,  # Above threshold
-                "request_count": 500
+                "request_count": 500,
             }
 
             health_status = canary_deployer.validate_canary_health(deployment_id)
@@ -272,14 +270,16 @@ class TestCanaryDeployment:
             "config": {
                 "service_name": "br_kg-service",
                 "stable_version": "v1",
-                "canary_version": "v2"
+                "canary_version": "v2",
             },
             "current_step": 2,
             "current_traffic": 50,
-            "phase": "rolling_out"
+            "phase": "rolling_out",
         }
 
-        rollback_result = canary_deployer.execute_rollback(deployment_id, reason="high_error_rate")
+        rollback_result = canary_deployer.execute_rollback(
+            deployment_id, reason="high_error_rate"
+        )
 
         assert rollback_result["success"] is True
         assert rollback_result["rollback_time"] < 300  # Should complete quickly
@@ -295,15 +295,15 @@ class TestCanaryDeployment:
         canary_deployer.deployments[deployment_id] = {
             "config": {
                 "service_name": "br_kg-service",
-                "traffic_splits": [10, 50, 100]
+                "traffic_splits": [10, 50, 100],
             },
             "current_step": 2,  # Last step
             "current_traffic": 50,
-            "phase": "rolling_out"
+            "phase": "rolling_out",
         }
 
         # Mock successful metrics for final step
-        with patch.object(canary_deployer, 'validate_canary_health') as mock_validation:
+        with patch.object(canary_deployer, "validate_canary_health") as mock_validation:
             mock_validation.return_value = {"healthy": True}
 
             # Complete final step
@@ -321,12 +321,13 @@ class TestBlueGreenDeployment:
     @pytest.fixture
     def blue_green_deployer(self, mock_k8s_client, mock_istio_client):
         """Create a blue-green deployer instance."""
-        from brain_researcher.infrastructure.istio.blue_green_deployer import BlueGreenDeployer
+        from brain_researcher.infrastructure.istio.blue_green_deployer import (
+            BlueGreenDeployer,
+        )
 
-        with patch('kubernetes.client', return_value=mock_k8s_client):
+        with patch("kubernetes.client", return_value=mock_k8s_client):
             deployer = BlueGreenDeployer(
-                namespace="brain-researcher",
-                istio_client=mock_istio_client
+                namespace="brain-researcher", istio_client=mock_istio_client
             )
 
         return deployer
@@ -338,10 +339,7 @@ class TestBlueGreenDeployment:
             "blue_version": "v1",
             "green_version": "v2",
             "replicas": 3,
-            "resources": {
-                "cpu": "500m",
-                "memory": "1Gi"
-            }
+            "resources": {"cpu": "500m", "memory": "1Gi"},
         }
 
         deployment_id = blue_green_deployer.setup_green_environment(deployment_config)
@@ -360,10 +358,10 @@ class TestBlueGreenDeployment:
             "config": {
                 "service_name": "br_kg-service",
                 "blue_version": "v1",
-                "green_version": "v2"
+                "green_version": "v2",
             },
             "green_ready": True,
-            "traffic_on_green": False
+            "traffic_on_green": False,
         }
 
         switch_result = blue_green_deployer.switch_traffic_to_green(deployment_id)
@@ -382,7 +380,7 @@ class TestBlueGreenDeployment:
             "config": {"service_name": "br_kg-service"},
             "green_ready": True,
             "traffic_on_green": True,
-            "blue_preserved": True
+            "blue_preserved": True,
         }
 
         rollback_result = blue_green_deployer.rollback_to_blue(deployment_id)
@@ -400,7 +398,7 @@ class TestBlueGreenDeployment:
             "config": {"service_name": "br_kg-service"},
             "traffic_on_green": True,
             "deployment_successful": True,
-            "grace_period_expired": True
+            "grace_period_expired": True,
         }
 
         cleanup_result = blue_green_deployer.cleanup_old_version(deployment_id)
@@ -413,14 +411,17 @@ class TestMigrationOrchestrator:
     """Test migration orchestrator functionality."""
 
     @pytest.fixture
-    def migration_orchestrator(self, mock_k8s_client, mock_istio_client, mock_migration_state):
+    def migration_orchestrator(
+        self, mock_k8s_client, mock_istio_client, mock_migration_state
+    ):
         """Create a migration orchestrator instance."""
-        from brain_researcher.infrastructure.istio.migration_orchestrator import MigrationOrchestrator
+        from brain_researcher.infrastructure.istio.migration_orchestrator import (
+            MigrationOrchestrator,
+        )
 
-        with patch('kubernetes.client', return_value=mock_k8s_client):
+        with patch("kubernetes.client", return_value=mock_k8s_client):
             orchestrator = MigrationOrchestrator(
-                namespace="brain-researcher",
-                istio_client=mock_istio_client
+                namespace="brain-researcher", istio_client=mock_istio_client
             )
             orchestrator.state = mock_migration_state
 
@@ -432,7 +433,7 @@ class TestMigrationOrchestrator:
             "services": ["br_kg", "agent", "orchestrator", "web-ui"],
             "strategy": "phased",
             "validation_steps": ["health_check", "integration_test"],
-            "rollback_policy": "auto_on_failure"
+            "rollback_policy": "auto_on_failure",
         }
 
         migration_id = migration_orchestrator.start_migration(migration_plan)
@@ -451,13 +452,13 @@ class TestMigrationOrchestrator:
             "web-ui": {"dependencies": ["orchestrator"]},
             "orchestrator": {"dependencies": ["br_kg", "agent"]},
             "agent": {"dependencies": ["br_kg"]},
-            "br_kg": {"dependencies": []}
+            "br_kg": {"dependencies": []},
         }
 
         migration_orchestrator.migrations[migration_id] = {
             "services": services,
             "current_service": None,
-            "completed_services": []
+            "completed_services": [],
         }
 
         next_service = migration_orchestrator.get_next_service_to_migrate(migration_id)
@@ -470,11 +471,13 @@ class TestMigrationOrchestrator:
         migration_id = "migration-002"
         service_name = "br_kg"
 
-        with patch.object(migration_orchestrator, 'run_validation_tests') as mock_validation:
+        with patch.object(
+            migration_orchestrator, "run_validation_tests"
+        ) as mock_validation:
             mock_validation.return_value = {
                 "health_check": {"passed": True, "duration": 5.2},
                 "integration_test": {"passed": True, "duration": 12.8},
-                "smoke_test": {"passed": True, "duration": 8.1}
+                "smoke_test": {"passed": True, "duration": 8.1},
             }
 
             validation_result = migration_orchestrator.validate_service_migration(
@@ -492,14 +495,16 @@ class TestMigrationOrchestrator:
             "services": ["br_kg", "agent"],
             "completed_services": ["br_kg"],
             "current_service": "agent",
-            "rollback_policy": "auto_on_failure"
+            "rollback_policy": "auto_on_failure",
         }
 
         # Simulate migration failure
-        with patch.object(migration_orchestrator, 'migrate_service') as mock_migrate:
+        with patch.object(migration_orchestrator, "migrate_service") as mock_migrate:
             mock_migrate.return_value = {"success": False, "error": "Deployment failed"}
 
-            result = migration_orchestrator.handle_migration_failure(migration_id, "agent")
+            result = migration_orchestrator.handle_migration_failure(
+                migration_id, "agent"
+            )
 
             assert result["action"] == "rollback_initiated"
             assert result["rollback_scope"] == "full_migration"
@@ -510,7 +515,7 @@ class TestMigrationOrchestrator:
 
         migration_orchestrator.migrations[migration_id] = {
             "status": "in_progress",
-            "current_service": "agent"
+            "current_service": "agent",
         }
 
         # Pause migration
@@ -535,7 +540,7 @@ class TestMigrationOrchestrator:
             "services": ["br_kg", "agent", "orchestrator", "web-ui"],
             "completed_services": ["br_kg", "agent"],
             "current_service": "orchestrator",
-            "start_time": datetime.now() - timedelta(minutes=30)
+            "start_time": datetime.now() - timedelta(minutes=30),
         }
 
         progress = migration_orchestrator.get_migration_progress(migration_id)
@@ -551,7 +556,9 @@ class TestMigrationValidator:
     @pytest.fixture
     def migration_validator(self):
         """Create a migration validator instance."""
-        from brain_researcher.infrastructure.istio.migration_validator import MigrationValidator
+        from brain_researcher.infrastructure.istio.migration_validator import (
+            MigrationValidator,
+        )
 
         return MigrationValidator(namespace="brain-researcher")
 
@@ -564,8 +571,8 @@ class TestMigrationValidator:
             "env": [{"name": "DB_HOST", "value": "neo4j"}],
             "resources": {
                 "requests": {"cpu": "100m", "memory": "256Mi"},
-                "limits": {"cpu": "500m", "memory": "1Gi"}
-            }
+                "limits": {"cpu": "500m", "memory": "1Gi"},
+            },
         }
 
         validation_result = migration_validator.run_pre_migration_checks(service_config)
@@ -577,28 +584,27 @@ class TestMigrationValidator:
 
     def test_istio_readiness_check(self, migration_validator):
         """Test Istio readiness validation."""
-        with patch.object(migration_validator, 'check_istio_components') as mock_check:
+        with patch.object(migration_validator, "check_istio_components") as mock_check:
             mock_check.return_value = {
                 "pilot": {"ready": True, "version": "1.18.0"},
                 "proxy": {"ready": True, "version": "1.18.0"},
-                "citadel": {"ready": True, "version": "1.18.0"}
+                "citadel": {"ready": True, "version": "1.18.0"},
             }
 
             readiness = migration_validator.validate_istio_readiness()
 
             assert readiness["ready"] is True
-            assert all(component["ready"] for component in readiness["components"].values())
+            assert all(
+                component["ready"] for component in readiness["components"].values()
+            )
 
     def test_service_mesh_compatibility(self, migration_validator):
         """Test service mesh compatibility validation."""
         service_spec = {
             "protocols": ["HTTP/1.1", "HTTP/2", "gRPC"],
-            "health_endpoints": {
-                "liveness": "/health",
-                "readiness": "/ready"
-            },
+            "health_endpoints": {"liveness": "/health", "readiness": "/ready"},
             "metrics_endpoint": "/metrics",
-            "observability_ready": True
+            "observability_ready": True,
         }
 
         compatibility = migration_validator.validate_mesh_compatibility(service_spec)
@@ -615,33 +621,47 @@ class TestMigrationValidator:
                 "name": "allow-ingress",
                 "spec": {
                     "podSelector": {"matchLabels": {"app": "br_kg"}},
-                    "ingress": [{
-                        "from": [{"podSelector": {"matchLabels": {"app": "orchestrator"}}}]
-                    }]
-                }
+                    "ingress": [
+                        {
+                            "from": [
+                                {
+                                    "podSelector": {
+                                        "matchLabels": {"app": "orchestrator"}
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                },
             }
         ]
 
         validation = migration_validator.validate_network_policies(network_policies)
 
         assert validation["compatible"] is True
-        assert validation["migration_required"] is True  # Will need Istio AuthorizationPolicy
+        assert (
+            validation["migration_required"] is True
+        )  # Will need Istio AuthorizationPolicy
 
 
 @pytest.mark.parametrize("deployment_strategy", ["canary", "blue-green", "rolling"])
 def test_deployment_strategy_selection(deployment_strategy):
     """Test different deployment strategies."""
-    from brain_researcher.infrastructure.istio.strategy_selector import DeploymentStrategySelector
+    from brain_researcher.infrastructure.istio.strategy_selector import (
+        DeploymentStrategySelector,
+    )
 
     selector = DeploymentStrategySelector()
 
     service_profile = {
         "criticality": "high" if deployment_strategy != "rolling" else "medium",
         "traffic_volume": "high",
-        "rollback_tolerance": "low"
+        "rollback_tolerance": "low",
     }
 
-    selected_strategy = selector.select_strategy(service_profile, preferred=deployment_strategy)
+    selected_strategy = selector.select_strategy(
+        service_profile, preferred=deployment_strategy
+    )
 
     if deployment_strategy == "rolling" and service_profile["criticality"] == "high":
         # Should override rolling with safer strategy for high criticality
@@ -653,7 +673,9 @@ def test_deployment_strategy_selection(deployment_strategy):
 @pytest.mark.asyncio
 async def test_concurrent_migrations():
     """Test concurrent migration handling."""
-    from brain_researcher.infrastructure.istio.concurrent_migrator import ConcurrentMigrator
+    from brain_researcher.infrastructure.istio.concurrent_migrator import (
+        ConcurrentMigrator,
+    )
 
     migrator = ConcurrentMigrator(max_concurrent=2)
 
@@ -679,7 +701,9 @@ class TestMigrationMetrics:
     @pytest.fixture
     def metrics_collector(self):
         """Create a metrics collector instance."""
-        from brain_researcher.infrastructure.istio.metrics_collector import MigrationMetricsCollector
+        from brain_researcher.infrastructure.istio.metrics_collector import (
+            MigrationMetricsCollector,
+        )
 
         return MigrationMetricsCollector()
 
@@ -719,7 +743,7 @@ class TestMigrationMetrics:
             "service": "br_kg",
             "reason": "high_error_rate",
             "rollback_duration": 45.2,
-            "rollback_strategy": "immediate"
+            "rollback_strategy": "immediate",
         }
 
         metrics_collector.record_rollback_event(rollback_event)

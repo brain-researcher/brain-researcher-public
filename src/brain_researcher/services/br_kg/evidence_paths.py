@@ -22,6 +22,7 @@ from typing import Any
 
 def _evidence_path_templates(include_mediated: bool) -> list[dict[str, Any]]:
     from brain_researcher.services.br_kg.app import GENERIC_EVIDENCE_LABELS
+
     templates: list[dict[str, Any]] = [
         {
             "path_type": "direct_dataset",
@@ -119,6 +120,7 @@ def _coerce_path_relationship(rel: Mapping[str, Any]) -> dict[str, Any]:
         _coerce_float_optional,
         _normalize_confidence_metadata,
     )
+
     rel_type = rel.get("type")
     rel_conf = _coerce_float_optional(rel.get("confidence"))
     canonical_meta = _canonical_relation_metadata(rel_type)

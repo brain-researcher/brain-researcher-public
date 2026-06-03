@@ -11,9 +11,10 @@ import logging
 import os
 import subprocess
 import traceback
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any
 
 from langchain_core.exceptions import LangChainException
 
@@ -84,14 +85,14 @@ class ErrorContext:
 
     category: ErrorCategory
     severity: ErrorSeverity
-    error_type: Type[Exception]
+    error_type: type[Exception]
     message: str
-    details: Dict[str, Any] = field(default_factory=dict)
-    stack_trace: Optional[str] = None
-    timestamp: Optional[str] = None
-    user_message: Optional[str] = None
-    recovery_suggestions: List[str] = field(default_factory=list)
-    retry_info: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] = field(default_factory=dict)
+    stack_trace: str | None = None
+    timestamp: str | None = None
+    user_message: str | None = None
+    recovery_suggestions: list[str] = field(default_factory=list)
+    retry_info: dict[str, Any] | None = None
 
 
 @dataclass
@@ -103,8 +104,8 @@ class RecoveryStrategy:
     max_retries: int = 3
     retry_delay: float = 1.0
     exponential_backoff: bool = True
-    fallback_action: Optional[Callable] = None
-    cleanup_action: Optional[Callable] = None
+    fallback_action: Callable | None = None
+    cleanup_action: Callable | None = None
     user_notification: bool = True
 
 
@@ -113,9 +114,9 @@ class ErrorHandler:
 
     def __init__(self):
         """Initialize the error handler."""
-        self.error_history: List[ErrorContext] = []
-        self.recovery_strategies: Dict[ErrorCategory, RecoveryStrategy] = {}
-        self.error_translators: Dict[ErrorCategory, Callable] = {}
+        self.error_history: list[ErrorContext] = []
+        self.recovery_strategies: dict[ErrorCategory, RecoveryStrategy] = {}
+        self.error_translators: dict[ErrorCategory, Callable] = {}
         self._initialize_default_strategies()
         self._initialize_error_translators()
 
@@ -265,11 +266,13 @@ class ErrorHandler:
         Returns:
             The error category
         """
-        error_type = type(error).__name__
+        type(error).__name__
         error_msg = str(error).lower()
 
         # Check for Neurodesk/CVMFS specific errors first
-        if "module" in error_msg and ("not found" in error_msg or "unknown" in error_msg):
+        if "module" in error_msg and (
+            "not found" in error_msg or "unknown" in error_msg
+        ):
             return ErrorCategory.NEURODESK_MODULE_NOT_FOUND
         elif "module" in error_msg and ("load" in error_msg or "failed" in error_msg):
             return ErrorCategory.NEURODESK_MODULE_LOAD_FAILED
@@ -364,7 +367,7 @@ class ErrorHandler:
     def create_error_context(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> ErrorContext:
         """
         Create an error context from an exception.
@@ -411,113 +414,143 @@ class ErrorHandler:
         self,
         category: ErrorCategory,
         error: Exception,
-    ) -> List[str]:
+    ) -> list[str]:
         """Get recovery suggestions for an error."""
         suggestions = []
 
         if category == ErrorCategory.INVALID_INPUT:
-            suggestions.extend([
-                "Check your input format and try again",
-                "Ensure all required parameters are provided",
-                "Verify that input values are within expected ranges",
-            ])
+            suggestions.extend(
+                [
+                    "Check your input format and try again",
+                    "Ensure all required parameters are provided",
+                    "Verify that input values are within expected ranges",
+                ]
+            )
         elif category == ErrorCategory.TOOL_NOT_FOUND:
-            suggestions.extend([
-                "Verify the tool name is correct",
-                "Check if the tool is installed and available",
-                "Try using a different tool for this task",
-            ])
+            suggestions.extend(
+                [
+                    "Verify the tool name is correct",
+                    "Check if the tool is installed and available",
+                    "Try using a different tool for this task",
+                ]
+            )
         elif category == ErrorCategory.TOOL_EXECUTION_FAILED:
-            suggestions.extend([
-                "Check the tool parameters and try again",
-                "Verify that input data is in the correct format",
-                "Try running the tool with simpler parameters first",
-            ])
+            suggestions.extend(
+                [
+                    "Check the tool parameters and try again",
+                    "Verify that input data is in the correct format",
+                    "Try running the tool with simpler parameters first",
+                ]
+            )
         elif category == ErrorCategory.NEURODESK_MODULE_NOT_FOUND:
-            suggestions.extend([
-                "Run 'module avail' to see available neuroimaging tools",
-                "Check the exact module name and version",
-                "Try 'module spider <tool>' to search for variations",
-                "Example: 'module load fsl/6.0.7.16' for FSL",
-            ])
+            suggestions.extend(
+                [
+                    "Run 'module avail' to see available neuroimaging tools",
+                    "Check the exact module name and version",
+                    "Try 'module spider <tool>' to search for variations",
+                    "Example: 'module load fsl/6.0.7.16' for FSL",
+                ]
+            )
         elif category == ErrorCategory.NEURODESK_MODULE_LOAD_FAILED:
-            suggestions.extend([
-                "Try 'module purge' then reload the module",
-                "Check if CVMFS is properly mounted: 'ls /cvmfs/neurodesk.ardc.edu.au/'",
-                "Verify the module path: 'module show <module-name>'",
-                "Check for conflicting modules with 'module list'",
-            ])
+            suggestions.extend(
+                [
+                    "Try 'module purge' then reload the module",
+                    "Check if CVMFS is properly mounted: 'ls /cvmfs/neurodesk.ardc.edu.au/'",
+                    "Verify the module path: 'module show <module-name>'",
+                    "Check for conflicting modules with 'module list'",
+                ]
+            )
         elif category == ErrorCategory.CVMFS_NOT_MOUNTED:
-            suggestions.extend([
-                "Check CVMFS status: 'cvmfs_config probe'",
-                "Verify mount: 'ls /cvmfs/neurodesk.ardc.edu.au/'",
-                "Try remounting: 'sudo cvmfs_config reload'",
-                "Check network connectivity to CVMFS servers",
-            ])
+            suggestions.extend(
+                [
+                    "Check CVMFS status: 'cvmfs_config probe'",
+                    "Verify mount: 'ls /cvmfs/neurodesk.ardc.edu.au/'",
+                    "Try remounting: 'sudo cvmfs_config reload'",
+                    "Check network connectivity to CVMFS servers",
+                ]
+            )
         elif category == ErrorCategory.CVMFS_CACHE_FULL:
-            suggestions.extend([
-                "Check cache usage: 'cvmfs_config stat neurodesk.ardc.edu.au'",
-                "Clean cache: 'sudo cvmfs_config wipecache'",
-                "Increase cache quota in /etc/cvmfs/default.local",
-                "Current quota should be 300GB for optimal performance",
-            ])
+            suggestions.extend(
+                [
+                    "Check cache usage: 'cvmfs_config stat neurodesk.ardc.edu.au'",
+                    "Clean cache: 'sudo cvmfs_config wipecache'",
+                    "Increase cache quota in /etc/cvmfs/default.local",
+                    "Current quota should be 300GB for optimal performance",
+                ]
+            )
         elif category == ErrorCategory.CONTAINER_EXECUTION_FAILED:
-            suggestions.extend([
-                "Check container path exists",
-                "Verify input files are accessible",
-                "Try running with simpler parameters",
-                "Check available memory and disk space",
-            ])
+            suggestions.extend(
+                [
+                    "Check container path exists",
+                    "Verify input files are accessible",
+                    "Try running with simpler parameters",
+                    "Check available memory and disk space",
+                ]
+            )
         elif category == ErrorCategory.APPTAINER_ERROR:
-            suggestions.extend([
-                "Check Apptainer cache: 'echo $APPTAINER_CACHEDIR'",
-                "Clear cache if needed: 'rm -rf /var/tmp/.apptainer-cache/*'",
-                "Verify Apptainer installation: 'apptainer --version'",
-                "Check permissions on cache directory",
-            ])
+            suggestions.extend(
+                [
+                    "Check Apptainer cache: 'echo $APPTAINER_CACHEDIR'",
+                    "Clear cache if needed: 'rm -rf /var/tmp/.apptainer-cache/*'",
+                    "Verify Apptainer installation: 'apptainer --version'",
+                    "Check permissions on cache directory",
+                ]
+            )
         elif category == ErrorCategory.NETWORK_ERROR:
-            suggestions.extend([
-                "Check your internet connection",
-                "Verify that the service endpoint is correct",
-                "Wait a moment and try again",
-            ])
+            suggestions.extend(
+                [
+                    "Check your internet connection",
+                    "Verify that the service endpoint is correct",
+                    "Wait a moment and try again",
+                ]
+            )
         elif category == ErrorCategory.SERVICE_UNAVAILABLE:
-            suggestions.extend([
-                "The service may be temporarily down, please try again later",
-                "Check the service status page for updates",
-                "Consider using an alternative service if available",
-            ])
+            suggestions.extend(
+                [
+                    "The service may be temporarily down, please try again later",
+                    "Check the service status page for updates",
+                    "Consider using an alternative service if available",
+                ]
+            )
         elif category == ErrorCategory.RATE_LIMIT_EXCEEDED:
-            suggestions.extend([
-                "You've exceeded the rate limit, please wait before trying again",
-                "Consider batching your requests",
-                "Upgrade your plan for higher rate limits",
-            ])
+            suggestions.extend(
+                [
+                    "You've exceeded the rate limit, please wait before trying again",
+                    "Consider batching your requests",
+                    "Upgrade your plan for higher rate limits",
+                ]
+            )
         elif category == ErrorCategory.RESOURCE_EXHAUSTED:
-            suggestions.extend([
-                "Free up system resources and try again",
-                "Consider processing smaller batches of data",
-                "Check system resource usage",
-            ])
+            suggestions.extend(
+                [
+                    "Free up system resources and try again",
+                    "Consider processing smaller batches of data",
+                    "Check system resource usage",
+                ]
+            )
         elif category == ErrorCategory.DATA_NOT_FOUND:
-            suggestions.extend([
-                "Verify the data path or identifier is correct",
-                "Check if the data exists in the expected location",
-                "Ensure you have access permissions to the data",
-            ])
+            suggestions.extend(
+                [
+                    "Verify the data path or identifier is correct",
+                    "Check if the data exists in the expected location",
+                    "Ensure you have access permissions to the data",
+                ]
+            )
         elif category == ErrorCategory.AUTHENTICATION_FAILED:
-            suggestions.extend([
-                "Check your credentials are correct",
-                "Verify your API key or token is valid",
-                "Ensure your account has the necessary permissions",
-            ])
+            suggestions.extend(
+                [
+                    "Check your credentials are correct",
+                    "Verify your API key or token is valid",
+                    "Ensure your account has the necessary permissions",
+                ]
+            )
 
         return suggestions
 
     def _translate_invalid_input(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate invalid input error to user-friendly message."""
         return (
@@ -528,10 +561,12 @@ class ErrorHandler:
     def _translate_tool_not_found(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate tool not found error to user-friendly message."""
-        tool_name = details.get("tool_name", "requested tool") if details else "requested tool"
+        tool_name = (
+            details.get("tool_name", "requested tool") if details else "requested tool"
+        )
         return (
             f"The {tool_name} could not be found. "
             "Please verify the tool name is correct and that it's available in your environment."
@@ -540,7 +575,7 @@ class ErrorHandler:
     def _translate_tool_execution_failed(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate tool execution failed error to user-friendly message."""
         tool_name = details.get("tool_name", "tool") if details else "tool"
@@ -553,10 +588,14 @@ class ErrorHandler:
     def _translate_neurodesk_module_not_found(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate Neurodesk module not found error."""
-        module_name = details.get("module_name", "neuroimaging tool") if details else "neuroimaging tool"
+        module_name = (
+            details.get("module_name", "neuroimaging tool")
+            if details
+            else "neuroimaging tool"
+        )
         return (
             f"The {module_name} module could not be found in Neurodesk. "
             "Run 'module avail' to see available tools, or 'module spider <tool>' to search. "
@@ -566,7 +605,7 @@ class ErrorHandler:
     def _translate_neurodesk_module_load_failed(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate Neurodesk module load failed error."""
         module_name = details.get("module_name", "module") if details else "module"
@@ -579,7 +618,7 @@ class ErrorHandler:
     def _translate_cvmfs_not_mounted(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate CVMFS not mounted error."""
         return (
@@ -591,7 +630,7 @@ class ErrorHandler:
     def _translate_cvmfs_cache_full(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate CVMFS cache full error."""
         return (
@@ -603,10 +642,14 @@ class ErrorHandler:
     def _translate_container_execution_failed(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate container execution failed error."""
-        container_name = details.get("container", "neuroimaging container") if details else "neuroimaging container"
+        container_name = (
+            details.get("container", "neuroimaging container")
+            if details
+            else "neuroimaging container"
+        )
         return (
             f"The {container_name} failed to execute properly. "
             "This might be due to missing inputs, insufficient resources, or parameter issues. "
@@ -616,7 +659,7 @@ class ErrorHandler:
     def _translate_apptainer_error(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate Apptainer/Singularity error."""
         return (
@@ -628,7 +671,7 @@ class ErrorHandler:
     def _translate_plan_generation_failed(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate plan generation failed error to user-friendly message."""
         return (
@@ -640,7 +683,7 @@ class ErrorHandler:
     def _translate_network_error(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate network error to user-friendly message."""
         return (
@@ -651,7 +694,7 @@ class ErrorHandler:
     def _translate_service_unavailable(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate service unavailable error to user-friendly message."""
         service_name = details.get("service", "service") if details else "service"
@@ -663,7 +706,7 @@ class ErrorHandler:
     def _translate_rate_limit(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate rate limit error to user-friendly message."""
         return (
@@ -674,7 +717,7 @@ class ErrorHandler:
     def _translate_resource_exhausted(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate resource exhausted error to user-friendly message."""
         return (
@@ -685,10 +728,12 @@ class ErrorHandler:
     def _translate_data_not_found(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate data not found error to user-friendly message."""
-        data_id = details.get("data_id", "requested data") if details else "requested data"
+        data_id = (
+            details.get("data_id", "requested data") if details else "requested data"
+        )
         return (
             f"The {data_id} could not be found. "
             "Please verify the identifier is correct and that you have access to this data."
@@ -697,7 +742,7 @@ class ErrorHandler:
     def _translate_auth_failed(
         self,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Translate authentication failed error to user-friendly message."""
         return (
@@ -709,7 +754,7 @@ class ErrorHandler:
         self,
         category: ErrorCategory,
         error: Exception,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """
         Translate an error to a user-friendly message.
@@ -735,11 +780,17 @@ class ErrorHandler:
     def _log_error(self, context: ErrorContext):
         """Log an error based on its severity."""
         if context.severity == ErrorSeverity.LOW:
-            logger.debug(f"Low severity error: {context.category.value} - {context.message}")
+            logger.debug(
+                f"Low severity error: {context.category.value} - {context.message}"
+            )
         elif context.severity == ErrorSeverity.MEDIUM:
-            logger.info(f"Medium severity error: {context.category.value} - {context.message}")
+            logger.info(
+                f"Medium severity error: {context.category.value} - {context.message}"
+            )
         elif context.severity == ErrorSeverity.HIGH:
-            logger.warning(f"High severity error: {context.category.value} - {context.message}")
+            logger.warning(
+                f"High severity error: {context.category.value} - {context.message}"
+            )
         elif context.severity == ErrorSeverity.CRITICAL:
             logger.error(
                 f"Critical error: {context.category.value} - {context.message}\n"
@@ -765,10 +816,7 @@ class ErrorHandler:
         logger.info("Checking CVMFS status")
         try:
             result = subprocess.run(
-                ["cvmfs_config", "probe"],
-                check=False,
-                capture_output=True,
-                text=True
+                ["cvmfs_config", "probe"], check=False, capture_output=True, text=True
             )
             if result.returncode != 0:
                 logger.warning(f"CVMFS probe failed: {result.stderr}")
@@ -806,8 +854,8 @@ class ErrorHandler:
         error: Exception,
         operation: Callable,
         operation_args: tuple = (),
-        operation_kwargs: Optional[Dict[str, Any]] = None,
-        details: Optional[Dict[str, Any]] = None,
+        operation_kwargs: dict[str, Any] | None = None,
+        details: dict[str, Any] | None = None,
     ) -> Any:
         """
         Handle an error with recovery strategy.
@@ -851,7 +899,7 @@ class ErrorHandler:
                 # Calculate retry delay with exponential backoff
                 delay = strategy.retry_delay
                 if strategy.exponential_backoff:
-                    delay *= (2 ** attempt)
+                    delay *= 2**attempt
 
                 # Wait before retry
                 if attempt > 0:
@@ -883,9 +931,13 @@ class ErrorHandler:
             try:
                 logger.info("Attempting fallback action")
                 if asyncio.iscoroutinefunction(strategy.fallback_action):
-                    result = await strategy.fallback_action(*operation_args, **operation_kwargs)
+                    result = await strategy.fallback_action(
+                        *operation_args, **operation_kwargs
+                    )
                 else:
-                    result = strategy.fallback_action(*operation_args, **operation_kwargs)
+                    result = strategy.fallback_action(
+                        *operation_args, **operation_kwargs
+                    )
                 return result
             except Exception as e:
                 logger.error(f"Fallback action failed: {str(e)}")
@@ -906,7 +958,7 @@ class ErrorHandler:
         await self._clear_module_cache()
         # Additional cleanup as needed
 
-    def get_error_summary(self) -> Dict[str, Any]:
+    def get_error_summary(self) -> dict[str, Any]:
         """
         Get a summary of error history.
 
@@ -920,8 +972,12 @@ class ErrorHandler:
         severity_counts = {}
 
         for error in self.error_history:
-            category_counts[error.category.value] = category_counts.get(error.category.value, 0) + 1
-            severity_counts[error.severity.value] = severity_counts.get(error.severity.value, 0) + 1
+            category_counts[error.category.value] = (
+                category_counts.get(error.category.value, 0) + 1
+            )
+            severity_counts[error.severity.value] = (
+                severity_counts.get(error.severity.value, 0) + 1
+            )
 
         return {
             "total_errors": len(self.error_history),
@@ -952,8 +1008,8 @@ class AgentError(Exception):
         message: str,
         category: ErrorCategory,
         severity: ErrorSeverity,
-        suggestions: Optional[List[str]] = None,
-        original_error: Optional[Exception] = None,
+        suggestions: list[str] | None = None,
+        original_error: Exception | None = None,
     ):
         """
         Initialize the agent error.
@@ -972,7 +1028,7 @@ class AgentError(Exception):
         self.suggestions = suggestions or []
         self.original_error = original_error
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary representation."""
         return {
             "message": self.message,
@@ -984,9 +1040,9 @@ class AgentError(Exception):
 
 
 def with_error_handling(
-    category: Optional[ErrorCategory] = None,
-    severity: Optional[ErrorSeverity] = None,
-    user_message: Optional[str] = None,
+    category: ErrorCategory | None = None,
+    severity: ErrorSeverity | None = None,
+    user_message: str | None = None,
 ):
     """
     Decorator for adding error handling to functions.
@@ -996,6 +1052,7 @@ def with_error_handling(
         severity: Override error severity
         user_message: Custom user message
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):

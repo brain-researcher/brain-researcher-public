@@ -42,13 +42,29 @@ def fetch_atlas(atlas: str, label_map: str | None, label_names: str | None):
         labels = sch.labels
     elif name == "yeo17" and img is None:
         yeo = datasets.fetch_atlas_yeo_2011()
-        map_key = next((k for k in ["thick_17", "thin_17", "thick_17net", "thin_17net", "anat_17"] if hasattr(yeo, k)), None)
-        labels_key = next((k for k in ["thick_17_labels", "thin_17_labels", "labels_17"] if hasattr(yeo, k)), None)
+        map_key = next(
+            (
+                k
+                for k in ["thick_17", "thin_17", "thick_17net", "thin_17net", "anat_17"]
+                if hasattr(yeo, k)
+            ),
+            None,
+        )
+        labels_key = next(
+            (
+                k
+                for k in ["thick_17_labels", "thin_17_labels", "labels_17"]
+                if hasattr(yeo, k)
+            ),
+            None,
+        )
         if map_key and labels_key:
             img = image.load_img(getattr(yeo, map_key))
             labels = getattr(yeo, labels_key)
     if img is None or labels is None:
-        raise RuntimeError(f"Could not load atlas {atlas}; supply --label-map/--label-names")
+        raise RuntimeError(
+            f"Could not load atlas {atlas}; supply --label-map/--label-names"
+        )
     return img, labels
 
 
@@ -62,7 +78,12 @@ def voxel_label(img, xyz_mm):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--atlas", required=True, choices=["AAL", "Schaefer400", "Yeo17"], help="Atlas name")
+    ap.add_argument(
+        "--atlas",
+        required=True,
+        choices=["AAL", "Schaefer400", "Yeo17"],
+        help="Atlas name",
+    )
     ap.add_argument("--label-map", help="Path to label NIfTI")
     ap.add_argument("--label-names", help="Path to label names (one per line)")
     ap.add_argument("--limit", type=int, default=0, help="Limit coordinates for test")
@@ -70,7 +91,9 @@ def main():
 
     img, labels = fetch_atlas(args.atlas, args.label_map, args.label_names)
     max_label = int(np.max(img.get_fdata()))
-    print(f"Loaded atlas {args.atlas} with max label {max_label}; labels len={len(labels)}")
+    print(
+        f"Loaded atlas {args.atlas} with max label {max_label}; labels len={len(labels)}"
+    )
 
     uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
     user = os.getenv("NEO4J_USER", "neo4j")
@@ -78,9 +101,12 @@ def main():
     drv = GraphDatabase.driver(uri, auth=(user, pwd))
 
     with drv.session() as sess:
-        sess.run("CREATE CONSTRAINT IF NOT EXISTS FOR (r:BrainRegion) REQUIRE r.id IS UNIQUE")
+        sess.run(
+            "CREATE CONSTRAINT IF NOT EXISTS FOR (r:BrainRegion) REQUIRE r.id IS UNIQUE"
+        )
         coords = sess.run(
-            "MATCH (c:Coordinate) RETURN c.x AS x,c.y AS y,c.z AS z, elementId(c) AS cid" + (" LIMIT $lim" if args.limit else ""),
+            "MATCH (c:Coordinate) RETURN c.x AS x,c.y AS y,c.z AS z, elementId(c) AS cid"
+            + (" LIMIT $lim" if args.limit else ""),
             lim=args.limit,
         ).values()
         print(f"Processing {len(coords)} coordinates...")
@@ -95,14 +121,20 @@ def main():
             rid = f"{args.atlas}:{lbl}"
             sess.run(
                 "MERGE (r:BrainRegion {id:$id}) SET r.name=$name, r.atlas=$atlas, r.label_index=$idx, r.space='MNI'",
-                id=rid, name=name, atlas=args.atlas, idx=lbl,
+                id=rid,
+                name=name,
+                atlas=args.atlas,
+                idx=lbl,
             )
             sess.run(
                 "MATCH (c) WHERE elementId(c)=$cid MATCH (r:BrainRegion {id:$rid}) MERGE (c)-[:IN_REGION]->(r)",
-                cid=cid, rid=rid,
+                cid=cid,
+                rid=rid,
             )
             created += 1
-        print(f"Done. IN_REGION created/merged: {created}, skipped (label=0/outside): {skipped}")
+        print(
+            f"Done. IN_REGION created/merged: {created}, skipped (label=0/outside): {skipped}"
+        )
     drv.close()
 
 

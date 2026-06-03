@@ -113,7 +113,9 @@ def test_build_graph_plan_uses_canonical_task_family_ids(tmp_path: Path) -> None
     assert family_node["properties"]["family_label"] == "Working Memory"
 
     task_node = next(
-        node for node in plan.nodes if node["labels"] == ["Task"] and node["properties"]["name"] == "n-back"
+        node
+        for node in plan.nodes
+        if node["labels"] == ["Task"] and node["properties"]["name"] == "n-back"
     )
     assert task_node["properties"]["family_id"] == "tf_working_memory"
     assert task_node["properties"]["subfamily_id"] == "sf_wm_updating_streaming"
@@ -308,7 +310,10 @@ def test_ingest_maps_psych101_task_to_existing_cogat_task(tmp_path: Path) -> Non
     assert local_task["description_source"] == "psych101_experiment_text"
     assert local_task["canonical_task_id"] == cogat_task_id
     assert local_task["canonical_task_name"] == "n-back"
-    assert local_task["canonical_definition"] == "Maintain and update items in working memory."
+    assert (
+        local_task["canonical_definition"]
+        == "Maintain and update items in working memory."
+    )
     assert local_task["canonical_definition_source"] == "cognitive_atlas"
     assert any(
         rel[0] == "peterson2021using/2-back/exp1.csv"

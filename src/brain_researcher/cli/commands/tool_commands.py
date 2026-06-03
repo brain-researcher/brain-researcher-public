@@ -8,20 +8,21 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.json import JSON
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
+from brain_researcher.services.tools.metadata_schema import RISK  # type: ignore
+from brain_researcher.services.tools.metadata_schema import (
+    DOMAIN,
+    FUNCTION,
+)
 from brain_researcher.services.tools.neurodesk_tools import (
     NeurodeskTools,
-    NEURODESK_TOOLS,
 )
-from brain_researcher.services.tools.metadata_schema import DOMAIN, FUNCTION, RISK
-from brain_researcher.services.tools.metadata_schema import normalize_tags  # type: ignore
 
 app = typer.Typer(help="Neuroimaging tools commands")
 console = Console()
@@ -40,10 +41,27 @@ def list_tools():
 
 @app.command("catalog")
 def catalog_list(
-    domain: Optional[str] = typer.Option(None, "--domain", "-d", help="Filter by domain (e.g., fmri, fmri.glm, dmri.tractography)"),
-    function: Optional[str] = typer.Option(None, "--function", "-f", help="Filter by function (e.g., preproc, glm, connectivity)"),
-    risk: Optional[str] = typer.Option(None, "--risk", "-r", help="Filter by risk (safe|dangerous|external_net|high_cost)"),
-    allow_dangerous: bool = typer.Option(False, "--allow-dangerous", help="Include tools tagged dangerous/high_cost"),
+    domain: str | None = typer.Option(
+        None,
+        "--domain",
+        "-d",
+        help="Filter by domain (e.g., fmri, fmri.glm, dmri.tractography)",
+    ),
+    function: str | None = typer.Option(
+        None,
+        "--function",
+        "-f",
+        help="Filter by function (e.g., preproc, glm, connectivity)",
+    ),
+    risk: str | None = typer.Option(
+        None,
+        "--risk",
+        "-r",
+        help="Filter by risk (safe|dangerous|external_net|high_cost)",
+    ),
+    allow_dangerous: bool = typer.Option(
+        False, "--allow-dangerous", help="Include tools tagged dangerous/high_cost"
+    ),
     limit: int = typer.Option(30, "--limit", "-l", help="Max rows to show"),
 ):
     """List catalog tools with metadata filters (domain/function/risk)."""
@@ -100,35 +118,37 @@ def catalog_list(
 
 @app.command("audit")
 def audit_tools(
-    output_dir: Optional[Path] = typer.Option(
+    output_dir: Path | None = typer.Option(
         None,
         "--output-dir",
         help="Directory to write audit TSVs (default: artifacts/tool_audit)",
     ),
-    tool_universe: Optional[Path] = typer.Option(
+    tool_universe: Path | None = typer.Option(
         None,
         "--tool-universe",
         help="Path to tool_universe.tsv (default: repo_root/tool_universe.tsv; generated if missing)",
     ),
-    family_suggestions: Optional[Path] = typer.Option(
+    family_suggestions: Path | None = typer.Option(
         None,
         "--family-suggestions",
         help="Path to tool_family_suggestions.tsv (default: repo_root/tool_family_suggestions.tsv; generated if missing)",
     ),
-    neo4j_uri: Optional[str] = typer.Option(
+    neo4j_uri: str | None = typer.Option(
         None, "--neo4j-uri", help="Neo4j URI (default: NEO4J_URI env/.env)"
     ),
-    neo4j_user: Optional[str] = typer.Option(
+    neo4j_user: str | None = typer.Option(
         None, "--neo4j-user", help="Neo4j user (default: NEO4J_USER env/.env)"
     ),
-    neo4j_password: Optional[str] = typer.Option(
+    neo4j_password: str | None = typer.Option(
         None,
         "--neo4j-password",
         help="Neo4j password (default: NEO4J_PASSWORD env/.env)",
         hide_input=True,
     ),
-    neo4j_database: Optional[str] = typer.Option(
-        None, "--neo4j-database", help="Neo4j database (default: NEO4J_DATABASE env/.env)"
+    neo4j_database: str | None = typer.Option(
+        None,
+        "--neo4j-database",
+        help="Neo4j database (default: NEO4J_DATABASE env/.env)",
     ),
 ):
     """Generate repeatable tool audit reports (TSV) to drive catalog quality improvements."""
@@ -152,7 +172,7 @@ def audit_tools(
     console.print(JSON.from_data(outputs.stats))
 
 
-def _parse_params(p: Optional[str]) -> dict:
+def _parse_params(p: str | None) -> dict:
     if not p:
         return {}
     # If path, read
@@ -178,9 +198,11 @@ def _parse_params(p: Optional[str]) -> dict:
 def generate(
     tool: str = typer.Option(..., "--tool", "-t", help="Neurodesk tool key, e.g., fsl"),
     command: str = typer.Option(..., "--command", "-c", help="Command, e.g., bet"),
-    input: list[str] = typer.Option(..., "--input", "-i", help="Input file(s)", rich_help_panel="Inputs"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output path"),
-    params: Optional[str] = typer.Option(None, "--params", "-p", help="JSON or k=v pairs"),
+    input: list[str] = typer.Option(
+        ..., "--input", "-i", help="Input file(s)", rich_help_panel="Inputs"
+    ),
+    output: str | None = typer.Option(None, "--output", "-o", help="Output path"),
+    params: str | None = typer.Option(None, "--params", "-p", help="JSON or k=v pairs"),
     mode: str = typer.Option("module", "--mode", help="module or cvmfs"),
 ):
     """Generate a Neurodesk command for a given tool/command.
@@ -209,7 +231,7 @@ def batch(
     spec: str = typer.Argument(
         ..., help="Path to JSON file with commands list, or JSON string"
     ),
-    pipeline_name: Optional[str] = typer.Option(
+    pipeline_name: str | None = typer.Option(
         None, "--name", "-n", help="Pipeline name"
     ),
     parallel: bool = typer.Option(False, "--parallel/--sequential"),
@@ -240,13 +262,13 @@ def batch(
 
 @niwrap_app.command("list")
 def niwrap_list(
-    package: Optional[str] = typer.Option(
+    package: str | None = typer.Option(
         None,
         "--package",
         "-p",
         help="Filter by package (afni, fsl, ants, freesurfer)",
     ),
-    limit: Optional[int] = typer.Option(
+    limit: int | None = typer.Option(
         None, "--limit", "-l", help="Maximum number of tools to display"
     ),
     test_mode: bool = typer.Option(
@@ -259,13 +281,16 @@ def niwrap_list(
 
 @niwrap_app.command("info")
 def niwrap_info(
-    tool_name: str = typer.Argument(..., help="Full tool name (e.g., afni.24.2.06.3dBlurInMask.run)"),
+    tool_name: str = typer.Argument(
+        ..., help="Full tool name (e.g., afni.24.2.06.3dBlurInMask.run)"
+    ),
     show_schema: bool = typer.Option(
         True, "--schema/--no-schema", help="Show full input schema"
     ),
 ):
     """NiWrap MCP catalog has been removed."""
     console.print("[red]NiWrap MCP catalog is no longer available.")
+
 
 @niwrap_app.command("preview")
 def niwrap_preview(
@@ -277,14 +302,19 @@ def niwrap_preview(
     """NiWrap MCP catalog has been removed."""
     console.print("[red]NiWrap MCP catalog is no longer available.")
 
+
 @niwrap_app.command("execute")
 def niwrap_execute(
     tool_name: str = typer.Argument(..., help="Full tool name"),
     params: str = typer.Option(
         ..., "--params", "-p", help="Parameters as JSON string or path to JSON file"
     ),
-    allow_write: bool = typer.Option(False, "--allow-write", help="Allow tools to write to disk"),
-    container_override: str | None = typer.Option(None, "--container-config", help="Path to container override JSON"),
+    allow_write: bool = typer.Option(
+        False, "--allow-write", help="Allow tools to write to disk"
+    ),
+    container_override: str | None = typer.Option(
+        None, "--container-config", help="Path to container override JSON"
+    ),
 ):
     """NiWrap MCP catalog has been removed."""
     console.print("[red]NiWrap MCP catalog is no longer available.")

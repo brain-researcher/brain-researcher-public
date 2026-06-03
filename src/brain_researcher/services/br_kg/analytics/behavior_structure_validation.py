@@ -34,9 +34,13 @@ def build_behavior_structure_validation(
     """Compute pairwise structure/similarity metrics for task nodes."""
     task_nodes = _select_task_nodes(raw_slice, config=config)
     node_lookup = {
-        str(node.get("id")): node for node in raw_slice.get("nodes") or [] if node.get("id")
+        str(node.get("id")): node
+        for node in raw_slice.get("nodes") or []
+        if node.get("id")
     }
-    adjacency = _build_graph_adjacency(raw_slice, node_lookup=node_lookup, config=config)
+    adjacency = _build_graph_adjacency(
+        raw_slice, node_lookup=node_lookup, config=config
+    )
     pairwise_records = _build_pairwise_records(task_nodes, adjacency=adjacency)
     summary = _summarize_pairwise_records(pairwise_records, task_nodes=task_nodes)
     return {
@@ -329,7 +333,9 @@ def _write_validation_plots(
         plt.close(fig)
         plot_paths[file_name.replace(".png", "")] = str(path)
 
-    _scatter_plot("behavior_cosine", "graph_distance_vs_behavior_cosine.png", "Behavior cosine")
+    _scatter_plot(
+        "behavior_cosine", "graph_distance_vs_behavior_cosine.png", "Behavior cosine"
+    )
     _scatter_plot("text_cosine", "graph_distance_vs_text_cosine.png", "Text cosine")
 
     same_family_behavior = [
@@ -453,9 +459,7 @@ def _spearman(left: list[float], right: list[float]) -> float | None:
     right_ranks = _rankdata(np.asarray(right, dtype=float))
     left_centered = left_ranks - left_ranks.mean()
     right_centered = right_ranks - right_ranks.mean()
-    denom = float(
-        np.linalg.norm(left_centered) * np.linalg.norm(right_centered)
-    )
+    denom = float(np.linalg.norm(left_centered) * np.linalg.norm(right_centered))
     if denom == 0.0:
         return None
     return float(np.dot(left_centered, right_centered) / denom)

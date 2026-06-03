@@ -18,8 +18,6 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-
 
 CODING_STOPWORDS = {
     "the",
@@ -51,10 +49,10 @@ CODING_STOPWORDS = {
 @dataclass
 class CodingPlan:
     intent: str
-    terms: List[str]
-    matches: List[Dict[str, str]]
+    terms: list[str]
+    matches: list[dict[str, str]]
     summary: str
-    steps: List[str]
+    steps: list[str]
 
 
 def classify_intent(prompt: str) -> str:
@@ -93,12 +91,12 @@ _DOMAIN_PATTERNS = [
     r"meta[- ]?analysis",
 ]
 
-MANDATORY_TOOL_PARAMS: Dict[str, Tuple[str, ...]] = {
+MANDATORY_TOOL_PARAMS: dict[str, tuple[str, ...]] = {
     "fs.apply_patch": ("patch",),
     "fs.search": ("pattern",),
 }
 
-TOOL_DEFAULTS: Dict[str, Dict[str, object]] = {
+TOOL_DEFAULTS: dict[str, dict[str, object]] = {
     "fs.list_directory": {"path": "."},
     "fs.read": {"path": "."},
     "fs.search": {"root": ".", "max_results": 200, "case_sensitive": False},
@@ -149,9 +147,9 @@ def should_use_coding_mode(prompt: str, auto_enabled: bool = True) -> bool:
     return intent in {"edit", "read", "search", "test"} or _has_code_signals(prompt)
 
 
-def _extract_terms(prompt: str, max_terms: int = 5) -> List[str]:
+def _extract_terms(prompt: str, max_terms: int = 5) -> list[str]:
     words = re.findall(r"[A-Za-z0-9_]{3,}", prompt.lower())
-    seen: List[str] = []
+    seen: list[str] = []
     for word in words:
         if word in CODING_STOPWORDS:
             continue
@@ -163,13 +161,15 @@ def _extract_terms(prompt: str, max_terms: int = 5) -> List[str]:
     return seen
 
 
-def _run_ripgrep(terms: List[str], repo_root: Path, max_matches: int = 60) -> List[Dict[str, str]]:
+def _run_ripgrep(
+    terms: list[str], repo_root: Path, max_matches: int = 60
+) -> list[dict[str, str]]:
     if not terms:
         return []
     if not shutil.which("rg"):
         return []
 
-    matches: List[Dict[str, str]] = []
+    matches: list[dict[str, str]] = []
     seen_keys = set()
     for term in terms:
         cmd = [
@@ -219,7 +219,7 @@ def generate_plan(prompt: str, repo_root: Path) -> CodingPlan:
     terms = _extract_terms(prompt)
     matches = _run_ripgrep(terms, repo_root)
 
-    top_paths: List[str] = []
+    top_paths: list[str] = []
     for match in matches:
         if match["path"] not in top_paths:
             top_paths.append(match["path"])
@@ -227,11 +227,13 @@ def generate_plan(prompt: str, repo_root: Path) -> CodingPlan:
             break
 
     if top_paths:
-        summary = f"Identified {len(matches)} matching lines across {len(top_paths)} files."
+        summary = (
+            f"Identified {len(matches)} matching lines across {len(top_paths)} files."
+        )
     else:
         summary = "No direct matches found; consider broader search or specifying files explicitly."
 
-    steps: List[str] = []
+    steps: list[str] = []
     if top_paths:
         steps.append(f"Review files: {', '.join(top_paths[:3])}")
     if intent == "edit":
@@ -245,10 +247,12 @@ def generate_plan(prompt: str, repo_root: Path) -> CodingPlan:
     if not steps:
         steps = ["Clarify desired action"]
 
-    return CodingPlan(intent=intent, terms=terms, matches=matches, summary=summary, steps=steps)
+    return CodingPlan(
+        intent=intent, terms=terms, matches=matches, summary=summary, steps=steps
+    )
 
 
-def summarise_patch(patch: str, preview_lines: int = 20) -> Dict[str, str]:
+def summarise_patch(patch: str, preview_lines: int = 20) -> dict[str, str]:
     lines = patch.strip().splitlines()
     preview = "\n".join(lines[:preview_lines]) if lines else ""
     return {
@@ -259,11 +263,11 @@ def summarise_patch(patch: str, preview_lines: int = 20) -> Dict[str, str]:
 
 def _collect_candidate_paths(
     prompt: str,
-    plan_matches: List[Dict[str, str]],
+    plan_matches: list[dict[str, str]],
     repo_root: Path,
     limit: int = 5,
-) -> List[str]:
-    candidates: List[str] = []
+) -> list[str]:
+    candidates: list[str] = []
     seen = set()
 
     for match in plan_matches:
@@ -290,7 +294,7 @@ def _collect_candidate_paths(
     return candidates
 
 
-def _guess_search_pattern(prompt: str, plan_terms: List[str]) -> Optional[str]:
+def _guess_search_pattern(prompt: str, plan_terms: list[str]) -> str | None:
     quoted = re.findall(r"\"([^\"]+)\"|'([^']+)'", prompt)
     for primary, secondary in quoted:
         candidate = primary or secondary
@@ -304,18 +308,18 @@ def _guess_search_pattern(prompt: str, plan_terms: List[str]) -> Optional[str]:
     return None
 
 
-def missing_required_params(tool_name: str, params: Dict[str, object]) -> List[str]:
+def missing_required_params(tool_name: str, params: dict[str, object]) -> list[str]:
     required = MANDATORY_TOOL_PARAMS.get(tool_name)
     if not required:
         return []
-    missing: List[str] = []
+    missing: list[str] = []
     for key in required:
         value = params.get(key)
         if value is None:
             missing.append(key)
         elif isinstance(value, str) and not value.strip():
             missing.append(key)
-        elif isinstance(value, (list, dict)) and not value:
+        elif isinstance(value, list | dict) and not value:
             missing.append(key)
     return missing
 
@@ -324,13 +328,11 @@ def should_autorun_tool(tool_name: str) -> bool:
     return tool_name in SAFE_AUTORUN_TOOLS
 
 
-def build_follow_up(tool_name: str, missing_params: List[str]) -> str:
+def build_follow_up(tool_name: str, missing_params: list[str]) -> str:
     if not missing_params:
         return ""
     if tool_name == "fs.apply_patch":
-        return (
-            "I need the diff patch to apply. Paste the patch or describe the changes so I can draft it."
-        )
+        return "I need the diff patch to apply. Paste the patch or describe the changes so I can draft it."
     if tool_name == "fs.search" and "pattern" in missing_params:
         return "Which pattern should I search for? Provide a regex or text snippet."
     missing_list = ", ".join(missing_params)
@@ -338,17 +340,17 @@ def build_follow_up(tool_name: str, missing_params: List[str]) -> str:
 
 
 def infer_parameters(
-    tool_name: Optional[str],
+    tool_name: str | None,
     prompt: str,
     repo_root: Path,
-    plan_matches: List[Dict[str, str]],
-    current_params: Dict[str, object],
-    plan_terms: Optional[List[str]] = None,
-) -> Tuple[Dict[str, object], List[str]]:
+    plan_matches: list[dict[str, str]],
+    current_params: dict[str, object],
+    plan_terms: list[str] | None = None,
+) -> tuple[dict[str, object], list[str]]:
     if not tool_name:
         return {}, []
 
-    inferred: Dict[str, object] = {}
+    inferred: dict[str, object] = {}
     params = dict(current_params or {})
 
     defaults = TOOL_DEFAULTS.get(tool_name)
@@ -387,7 +389,7 @@ def infer_parameters(
     return inferred, missing
 
 
-def apply_patch(patch: str, repo_root: Path) -> Dict[str, Optional[str]]:
+def apply_patch(patch: str, repo_root: Path) -> dict[str, str | None]:
     result = {
         "applied": False,
         "stdout": None,
@@ -443,11 +445,11 @@ def apply_patch(patch: str, repo_root: Path) -> Dict[str, Optional[str]]:
 
 
 def run_tests(
-    targets: Optional[List[str]],
-    marker: Optional[str],
-    extra_args: Optional[List[str]],
+    targets: list[str] | None,
+    marker: str | None,
+    extra_args: list[str] | None,
     repo_root: Path,
-) -> Dict[str, Optional[str]]:
+) -> dict[str, str | None]:
     cmd = ["pytest"]
     if marker:
         cmd.extend(["-m", marker])

@@ -122,7 +122,9 @@ def run_behavior_workflow(
     if review is None:
         raise ValueError("approved review payload is required before generation")
     parsed_review = (
-        review if isinstance(review, BehaviorReviewV1) else BehaviorReviewV1.model_validate(review)
+        review
+        if isinstance(review, BehaviorReviewV1)
+        else BehaviorReviewV1.model_validate(review)
     )
     if not parsed_review.approved or parsed_review.spec_digest != digest:
         raise ValueError("review must be approved and match the resolved spec digest")

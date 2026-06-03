@@ -12,7 +12,6 @@ from uuid import uuid4
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
@@ -42,6 +41,7 @@ class BrainResearcherGraph:
         # Initialize LLM using the configured LLM factory
         try:
             from brain_researcher.services.agent.llm import get_llm
+
             self.llm = get_llm()
             logger.info("Initialized LLM from configured factory")
         except Exception as e:
@@ -97,7 +97,8 @@ class BrainResearcherGraph:
             [
                 (
                     "system",
-                    get_system_prompt("neuroscience_expert") + """
+                    get_system_prompt("neuroscience_expert")
+                    + """
 
             For this step, analyze the user's query and identify:
             1. The main research question
@@ -312,7 +313,9 @@ class BrainResearcherGraph:
 
         return args
 
-    async def arun(self, query: str, thread_id: str = None, resume_checkpoint_id: str | None = None):
+    async def arun(
+        self, query: str, thread_id: str = None, resume_checkpoint_id: str | None = None
+    ):
         """Run the agent asynchronously with optional checkpoint resume."""
         if not thread_id:
             thread_id = str(uuid4())
@@ -339,7 +342,9 @@ class BrainResearcherGraph:
             if thread_id not in storage or not storage[thread_id]:
                 return None
             checkpoint_ns = next(iter(storage[thread_id].keys()))
-            cfg = {"configurable": {"thread_id": thread_id, "checkpoint_ns": checkpoint_ns}}
+            cfg = {
+                "configurable": {"thread_id": thread_id, "checkpoint_ns": checkpoint_ns}
+            }
             ck = self.checkpointer.get_tuple(cfg)
             if ck and ck.config:
                 return ck.config["configurable"].get("checkpoint_id")
@@ -347,7 +352,9 @@ class BrainResearcherGraph:
             return None
         return None
 
-    def run(self, query: str, thread_id: str = None, resume_checkpoint_id: str | None = None):
+    def run(
+        self, query: str, thread_id: str = None, resume_checkpoint_id: str | None = None
+    ):
         """Run the agent synchronously with optional checkpoint resume."""
         if not thread_id:
             thread_id = str(uuid4())

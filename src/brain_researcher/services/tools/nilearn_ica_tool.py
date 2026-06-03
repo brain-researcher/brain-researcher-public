@@ -6,10 +6,10 @@ decomposition and component extraction.
 
 import json
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
 import warnings
+from pathlib import Path
+from typing import Any
+
 import nibabel as nib
 import numpy as np
 from nilearn.decomposition import CanICA
@@ -17,8 +17,8 @@ from nilearn.image import concat_imgs, load_img
 from nilearn.masking import compute_epi_mask
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 from brain_researcher.services.tools.spec import ToolSpec
+from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -26,35 +26,24 @@ logger = logging.getLogger(__name__)
 class NilearnICAArgs(BaseModel):
     """Arguments for Nilearn ICA decomposition."""
 
-    input_files: List[str] = Field(
+    input_files: list[str] = Field(
         description="List of 4D NIfTI files for ICA decomposition"
     )
-    output_dir: str = Field(
-        description="Output directory for ICA results"
-    )
+    output_dir: str = Field(description="Output directory for ICA results")
     n_components: int = Field(
-        default=20,
-        description="Number of ICA components to extract"
+        default=20, description="Number of ICA components to extract"
     )
-    mask: Optional[str] = Field(
-        default=None,
-        description="Brain mask file (optional)"
-    )
-    smoothing_fwhm: Optional[float] = Field(
-        default=None,
-        description="Smoothing FWHM in mm (optional)"
+    mask: str | None = Field(default=None, description="Brain mask file (optional)")
+    smoothing_fwhm: float | None = Field(
+        default=None, description="Smoothing FWHM in mm (optional)"
     )
     standardize: bool = Field(
-        default=True,
-        description="Whether to standardize the data"
+        default=True, description="Whether to standardize the data"
     )
-    random_state: int = Field(
-        default=0,
-        description="Random state for reproducibility"
-    )
+    random_state: int = Field(default=0, description="Random state for reproducibility")
 
 
-def _model_required(model_cls) -> List[str]:
+def _model_required(model_cls) -> list[str]:
     try:
         schema = model_cls.model_json_schema()
     except AttributeError:
@@ -62,8 +51,8 @@ def _model_required(model_cls) -> List[str]:
     return schema.get("required", [])
 
 
-def _model_defaults(model_cls) -> Dict[str, Any]:
-    defaults: Dict[str, Any] = {}
+def _model_defaults(model_cls) -> dict[str, Any]:
+    defaults: dict[str, Any] = {}
     if hasattr(model_cls, "model_fields"):
         for name, field in model_cls.model_fields.items():
             if field.default is not None:
@@ -92,8 +81,7 @@ TOOL_SPEC = ToolSpec(
 
 
 class NilearnICATool(NeuroToolWrapper):
-    """Nilearn ICA decomposition tool.
-    """
+    """Nilearn ICA decomposition tool."""
 
     def __init__(self):
         """Initialize Nilearn ICA tool."""
@@ -113,14 +101,14 @@ class NilearnICATool(NeuroToolWrapper):
 
     def _run(
         self,
-        input_files: List[str],
+        input_files: list[str],
         output_dir: str,
         n_components: int = 20,
-        mask: Optional[str] = None,
-        smoothing_fwhm: Optional[float] = None,
+        mask: str | None = None,
+        smoothing_fwhm: float | None = None,
         standardize: bool = True,
         random_state: int = 0,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Execute Nilearn ICA decomposition."""
         try:
@@ -174,9 +162,7 @@ class NilearnICATool(NeuroToolWrapper):
                 "time_series_shape": list(time_series_array.shape),
             }
             summary_path = output_path / "ica_summary.json"
-            summary_path.write_text(
-                json.dumps(summary, indent=2), encoding="utf-8"
-            )
+            summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
             return ToolResult(
                 status="success",

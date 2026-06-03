@@ -19,9 +19,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any
 
 import yaml
 
@@ -37,7 +38,7 @@ from brain_researcher.services.br_kg.utils.task_taxonomy import (
 logger = logging.getLogger(__name__)
 
 
-def _safe_path_exists(path_obj: Path) -> tuple[bool, Optional[str]]:
+def _safe_path_exists(path_obj: Path) -> tuple[bool, str | None]:
     """Return (exists, error_message) guarding against filesystem IO errors."""
     try:
         return path_obj.exists(), None
@@ -61,14 +62,14 @@ class DatasetIndexLoader:
             raise FileNotFoundError(f"Dataset index not found: {self.index_path}")
 
         self.config_path = Path(config_path) if config_path else None
-        self.config: Dict[str, Any] = self._load_config(self.config_path)
+        self.config: dict[str, Any] = self._load_config(self.config_path)
 
         # BR-KG is Neo4j-only; connection is configured via NEO4J_URI/NEO4J_PASSWORD.
         # Older scripts passed db_path; that is ignored by the Neo4j backend.
         self.db = db or require_neo4j_db(preload_cache=False)
         self.task_resolver = TaskTaxonomyResolver(self.db, matcher)
 
-        self.stats: Dict[str, Any] = {
+        self.stats: dict[str, Any] = {
             "datasets_processed": 0,
             "datasets_upserted": 0,
             "tasks_matched": 0,
@@ -79,21 +80,23 @@ class DatasetIndexLoader:
         }
 
     @staticmethod
-    def _load_config(config_path: Optional[Path]) -> Dict[str, Any]:
+    def _load_config(config_path: Path | None) -> dict[str, Any]:
         """Load YAML configuration if available."""
         if not config_path:
             return {}
         if not config_path.exists():
-            logger.warning("Config path %s does not exist; continuing with defaults", config_path)
+            logger.warning(
+                "Config path %s does not exist; continuing with defaults", config_path
+            )
             return {}
         try:
-            with open(config_path, "r", encoding="utf-8") as handle:
+            with open(config_path, encoding="utf-8") as handle:
                 return yaml.safe_load(handle) or {}
         except Exception as exc:  # pragma: no cover - defensive logging
             logger.error("Failed to read data paths config: %s", exc)
             return {}
 
-    def load(self) -> Dict[str, Any]:
+    def load(self) -> dict[str, Any]:
         """Load all datasets from the index file."""
         logger.info("Loading dataset index from %s", self.index_path)
         index_payload = self._load_index()
@@ -120,16 +123,16 @@ class DatasetIndexLoader:
         self.stats["task_nodes_created"] = self.task_resolver.stats["canonical_created"]
         return dict(self.stats)
 
-    def _load_index(self) -> Dict[str, Any]:
+    def _load_index(self) -> dict[str, Any]:
         """Read and parse the dataset index JSON."""
-        with open(self.index_path, "r", encoding="utf-8") as handle:
+        with open(self.index_path, encoding="utf-8") as handle:
             return json.load(handle)
 
     def _ingest_dataset(
         self,
         dataset_id: str,
-        dataset_info: Dict[str, Any],
-        metadata: Dict[str, Any],
+        dataset_info: dict[str, Any],
+        metadata: dict[str, Any],
     ):
         """Create or update a Dataset node and attach task relationships."""
         dataset_id = dataset_id.strip()
@@ -157,11 +160,11 @@ class DatasetIndexLoader:
     def _build_dataset_payload(
         self,
         dataset_id: str,
-        dataset_info: Dict[str, Any],
-        metadata: Dict[str, Any],
-        task_entries: List[Dict[str, Any]],
-        unmatched: List[str],
-    ) -> Dict[str, Any]:
+        dataset_info: dict[str, Any],
+        metadata: dict[str, Any],
+        task_entries: list[dict[str, Any]],
+        unmatched: list[str],
+    ) -> dict[str, Any]:
         """Assemble dataset node properties."""
         full_name = dataset_info.get("full_name") or dataset_id
         description = dataset_info.get("description")
@@ -180,7 +183,7 @@ class DatasetIndexLoader:
             }
         )
 
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "id": dataset_id,
             "name": full_name,
             "description": description,
@@ -217,14 +220,14 @@ class DatasetIndexLoader:
     def _resolve_storage(
         self,
         dataset_id: str,
-        dataset_info: Dict[str, Any],
-        metadata: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        dataset_info: dict[str, Any],
+        metadata: dict[str, Any],
+    ) -> dict[str, Any]:
         """Collect potential storage locations for the dataset."""
-        storage_details: Dict[str, Any] = {}
+        storage_details: dict[str, Any] = {}
 
         base_location = metadata.get("location")
-        candidate_paths: List[Dict[str, Any]] = []
+        candidate_paths: list[dict[str, Any]] = []
 
         if base_location:
             candidate = Path(str(base_location)).expanduser() / dataset_id
@@ -239,7 +242,9 @@ class DatasetIndexLoader:
             )
 
         config_datasets = (
-            self.config.get("oak_mount", {}).get("datasets", {}) if isinstance(self.config, dict) else {}
+            self.config.get("oak_mount", {}).get("datasets", {})
+            if isinstance(self.config, dict)
+            else {}
         )
         dataset_name_norm = normalize_text(dataset_info.get("full_name", ""))
         for key, path_str in config_datasets.items():
@@ -258,7 +263,9 @@ class DatasetIndexLoader:
                     entry["error"] = error
                 candidate_paths.append(entry)
 
-        local_paths = self.config.get("local", {}) if isinstance(self.config, dict) else {}
+        local_paths = (
+            self.config.get("local", {}) if isinstance(self.config, dict) else {}
+        )
         for key, path_str in local_paths.items():
             if not isinstance(path_str, str):
                 continue
@@ -268,7 +275,11 @@ class DatasetIndexLoader:
             if key_norm in (normalize_text(dataset_id), dataset_name_norm):
                 path_obj = Path(path_str).expanduser()
                 exists, error = _safe_path_exists(path_obj)
-                entry = {"path": str(path_obj), "exists": exists, "source": f"local.{key}"}
+                entry = {
+                    "path": str(path_obj),
+                    "exists": exists,
+                    "source": f"local.{key}",
+                }
                 if error:
                     entry["error"] = error
                 candidate_paths.append(entry)
@@ -280,16 +291,22 @@ class DatasetIndexLoader:
 
         return storage_details
 
-    def _match_tasks(self, tasks: Iterable[Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
+    def _match_tasks(
+        self, tasks: Iterable[Any]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """Match raw task labels to canonical taxonomy entries."""
-        matched: List[Dict[str, Any]] = []
-        unmatched: List[str] = []
+        matched: list[dict[str, Any]] = []
+        unmatched: list[str] = []
 
         for raw_label in tasks or []:
             if not isinstance(raw_label, str):
                 continue
             cleaned = raw_label.strip()
-            if not cleaned or cleaned == "?" or cleaned.lower().startswith("many tasks"):
+            if (
+                not cleaned
+                or cleaned == "?"
+                or cleaned.lower().startswith("many tasks")
+            ):
                 unmatched.append(raw_label)
                 continue
 
@@ -304,7 +321,7 @@ class DatasetIndexLoader:
 
         return matched, unmatched
 
-    def _link_tasks(self, dataset_node_id: str, entries: List[Dict[str, Any]]):
+    def _link_tasks(self, dataset_node_id: str, entries: list[dict[str, Any]]):
         """Create HAS_TASK relationships for matched tasks."""
         for entry in entries:
             match = entry["match"]
@@ -345,6 +362,7 @@ class DatasetIndexLoader:
             if created:
                 self.stats["relationships_created"] += 1
 
+
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Ingest dataset index into BR-KG")
     parser.add_argument(
@@ -371,7 +389,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[List[str]] = None) -> Dict[str, Any]:
+def main(argv: list[str] | None = None) -> dict[str, Any]:
     """Command-line entry point."""
     parser = _build_arg_parser()
     args = parser.parse_args(argv)
@@ -383,7 +401,7 @@ def main(argv: Optional[List[str]] = None) -> Dict[str, Any]:
 
     index_path = Path(args.index).expanduser()
     config_path = Path(args.config).expanduser() if args.config else None
-    db_instance: Optional[BRKGGraphDB] = None
+    db_instance: BRKGGraphDB | None = None
     if args.db:
         db_instance = BRKGGraphDB(str(Path(args.db).expanduser()))
 

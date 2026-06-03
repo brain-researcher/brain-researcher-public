@@ -777,14 +777,16 @@ def test_scientific_report_generate_allows_traceable_claim(monkeypatch):
 
     monkeypatch.setattr(srv, "run_scientific_review", fake_review)
     monkeypatch.setattr(
-        srv, "latex_report_render",
+        srv,
+        "latex_report_render",
         lambda **k: {"ok": True, "run_id": "br_report", "artifacts": {}},
     )
     monkeypatch.setattr(
         bb, "build_artifact_review_bundle", lambda run_id, workflow_id=None: object()
     )
     monkeypatch.setattr(
-        cp, "build_run_provenance_index",
+        cp,
+        "build_run_provenance_index",
         lambda bundle: cp.RunProvenanceIndex(
             artifacts={"derivatives/fc.npy": "abc"}, code_refs={"fc_tool"}
         ),

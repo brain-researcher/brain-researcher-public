@@ -7,13 +7,11 @@ neuroimaging data with biological and biomedical knowledge.
 
 import logging
 import time
-from typing import Dict, Any, List, Optional, Set, Tuple
-from urllib.parse import urlencode
-import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any
 
-from SPARQLWrapper import SPARQLWrapper, JSON, XML
-from rdflib import Graph, Namespace, URIRef, Literal
+from rdflib import Namespace
+from SPARQLWrapper import JSON, XML, SPARQLWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -34,32 +32,32 @@ class Bio2RDFClient:
 
     # Bio2RDF endpoint configuration
     BIO2RDF_ENDPOINTS = {
-        'main': 'https://bio2rdf.org/sparql',
-        'drugbank': 'https://drugbank.bio2rdf.org/sparql',
-        'uniprot': 'https://uniprot.bio2rdf.org/sparql',
-        'go': 'https://go.bio2rdf.org/sparql',
-        'kegg': 'https://kegg.bio2rdf.org/sparql',
-        'chembl': 'https://chembl.bio2rdf.org/sparql'
+        "main": "https://bio2rdf.org/sparql",
+        "drugbank": "https://drugbank.bio2rdf.org/sparql",
+        "uniprot": "https://uniprot.bio2rdf.org/sparql",
+        "go": "https://go.bio2rdf.org/sparql",
+        "kegg": "https://kegg.bio2rdf.org/sparql",
+        "chembl": "https://chembl.bio2rdf.org/sparql",
     }
 
     # Bio2RDF namespaces
     NAMESPACES = {
-        'bio2rdf': Namespace('http://bio2rdf.org/'),
-        'drugbank': Namespace('http://bio2rdf.org/drugbank:'),
-        'uniprot': Namespace('http://bio2rdf.org/uniprot:'),
-        'go': Namespace('http://bio2rdf.org/go:'),
-        'kegg': Namespace('http://bio2rdf.org/kegg:'),
-        'chembl': Namespace('http://bio2rdf.org/chembl:'),
-        'mesh': Namespace('http://bio2rdf.org/mesh:'),
-        'pubmed': Namespace('http://bio2rdf.org/pubmed:')
+        "bio2rdf": Namespace("http://bio2rdf.org/"),
+        "drugbank": Namespace("http://bio2rdf.org/drugbank:"),
+        "uniprot": Namespace("http://bio2rdf.org/uniprot:"),
+        "go": Namespace("http://bio2rdf.org/go:"),
+        "kegg": Namespace("http://bio2rdf.org/kegg:"),
+        "chembl": Namespace("http://bio2rdf.org/chembl:"),
+        "mesh": Namespace("http://bio2rdf.org/mesh:"),
+        "pubmed": Namespace("http://bio2rdf.org/pubmed:"),
     }
 
     def __init__(
         self,
-        default_endpoint: str = 'main',
+        default_endpoint: str = "main",
         timeout: int = 30,
         max_retries: int = 3,
-        cache_ttl: int = 3600
+        cache_ttl: int = 3600,
     ):
         """
         Initialize Bio2RDF client
@@ -71,8 +69,7 @@ class Bio2RDFClient:
             cache_ttl: Cache time-to-live in seconds
         """
         self.default_endpoint = self.BIO2RDF_ENDPOINTS.get(
-            default_endpoint,
-            self.BIO2RDF_ENDPOINTS['main']
+            default_endpoint, self.BIO2RDF_ENDPOINTS["main"]
         )
         self.timeout = timeout
         self.max_retries = max_retries
@@ -81,11 +78,8 @@ class Bio2RDFClient:
         self._cache_timestamps = {}
 
     def query(
-        self,
-        sparql_query: str,
-        endpoint: Optional[str] = None,
-        format: str = 'json'
-    ) -> Dict[str, Any]:
+        self, sparql_query: str, endpoint: str | None = None, format: str = "json"
+    ) -> dict[str, Any]:
         """
         Execute SPARQL query against Bio2RDF endpoint
 
@@ -103,7 +97,7 @@ class Bio2RDFClient:
         cache_key = f"{endpoint_url}:{sparql_query}"
         if cache_key in self._cache:
             if time.time() - self._cache_timestamps[cache_key] < self.cache_ttl:
-                logger.debug(f"Cache hit for Bio2RDF query")
+                logger.debug("Cache hit for Bio2RDF query")
                 return self._cache[cache_key]
 
         # Execute query with retries
@@ -111,7 +105,7 @@ class Bio2RDFClient:
             try:
                 sparql = SPARQLWrapper(endpoint_url)
                 sparql.setQuery(sparql_query)
-                sparql.setReturnFormat(JSON if format == 'json' else XML)
+                sparql.setReturnFormat(JSON if format == "json" else XML)
                 sparql.setTimeout(self.timeout)
 
                 results = sparql.query().convert()
@@ -126,11 +120,11 @@ class Bio2RDFClient:
                 logger.warning(f"Bio2RDF query attempt {attempt + 1} failed: {e}")
                 if attempt == self.max_retries - 1:
                     raise
-                time.sleep(2 ** attempt)  # Exponential backoff
+                time.sleep(2**attempt)  # Exponential backoff
 
         return {}
 
-    def get_gene_info(self, gene_symbol: str) -> Dict[str, Any]:
+    def get_gene_info(self, gene_symbol: str) -> dict[str, Any]:
         """
         Get gene information from Bio2RDF
 
@@ -164,7 +158,7 @@ class Bio2RDFClient:
 
         return self.query(query)
 
-    def get_drug_target_interactions(self, drug_name: str) -> Dict[str, Any]:
+    def get_drug_target_interactions(self, drug_name: str) -> dict[str, Any]:
         """
         Get drug-target interaction data from Bio2RDF
 
@@ -193,9 +187,9 @@ class Bio2RDFClient:
         LIMIT 50
         """
 
-        return self.query(query, endpoint='drugbank')
+        return self.query(query, endpoint="drugbank")
 
-    def get_protein_info(self, protein_id: str) -> Dict[str, Any]:
+    def get_protein_info(self, protein_id: str) -> dict[str, Any]:
         """
         Get protein information from UniProt via Bio2RDF
 
@@ -235,9 +229,9 @@ class Bio2RDFClient:
         LIMIT 20
         """
 
-        return self.query(query, endpoint='uniprot')
+        return self.query(query, endpoint="uniprot")
 
-    def get_pathway_info(self, pathway_name: str) -> Dict[str, Any]:
+    def get_pathway_info(self, pathway_name: str) -> dict[str, Any]:
         """
         Get pathway information from KEGG/Reactome via Bio2RDF
 
@@ -267,13 +261,11 @@ class Bio2RDFClient:
         LIMIT 100
         """
 
-        return self.query(query, endpoint='kegg')
+        return self.query(query, endpoint="kegg")
 
     def federated_search(
-        self,
-        search_term: str,
-        endpoints: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        self, search_term: str, endpoints: list[str] | None = None
+    ) -> dict[str, Any]:
         """
         Search across multiple Bio2RDF endpoints
 
@@ -315,11 +307,7 @@ class Bio2RDFClient:
             for endpoint_name in endpoints:
                 if endpoint_name in self.BIO2RDF_ENDPOINTS:
                     endpoint_url = self.BIO2RDF_ENDPOINTS[endpoint_name]
-                    future = executor.submit(
-                        self.query,
-                        query,
-                        endpoint_url
-                    )
+                    future = executor.submit(self.query, query, endpoint_url)
                     futures[future] = endpoint_name
 
             for future in as_completed(futures):
@@ -329,15 +317,13 @@ class Bio2RDFClient:
                     results[endpoint_name] = result
                 except Exception as e:
                     logger.error(f"Failed to query {endpoint_name}: {e}")
-                    results[endpoint_name] = {'error': str(e)}
+                    results[endpoint_name] = {"error": str(e)}
 
         return results
 
     def enrich_neuroimaging_concept(
-        self,
-        concept: str,
-        concept_type: str = 'brain_region'
-    ) -> Dict[str, Any]:
+        self, concept: str, concept_type: str = "brain_region"
+    ) -> dict[str, Any]:
         """
         Enrich neuroimaging concept with Bio2RDF biological data
 
@@ -348,14 +334,10 @@ class Bio2RDFClient:
         Returns:
             Enriched concept information from Bio2RDF
         """
-        enrichment = {
-            'concept': concept,
-            'type': concept_type,
-            'bio2rdf_links': []
-        }
+        enrichment = {"concept": concept, "type": concept_type, "bio2rdf_links": []}
 
         # Map concept types to Bio2RDF searches
-        if concept_type == 'brain_region':
+        if concept_type == "brain_region":
             # Search for anatomical terms and related genes
             anatomy_query = f"""
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -375,16 +357,22 @@ class Bio2RDFClient:
             """
 
             results = self.query(anatomy_query)
-            if 'results' in results and 'bindings' in results['results']:
-                for binding in results['results']['bindings']:
-                    enrichment['bio2rdf_links'].append({
-                        'uri': binding.get('term', {}).get('value'),
-                        'label': binding.get('label', {}).get('value'),
-                        'type': 'anatomical_term',
-                        'related_gene': binding.get('gene', {}).get('value') if 'gene' in binding else None
-                    })
+            if "results" in results and "bindings" in results["results"]:
+                for binding in results["results"]["bindings"]:
+                    enrichment["bio2rdf_links"].append(
+                        {
+                            "uri": binding.get("term", {}).get("value"),
+                            "label": binding.get("label", {}).get("value"),
+                            "type": "anatomical_term",
+                            "related_gene": (
+                                binding.get("gene", {}).get("value")
+                                if "gene" in binding
+                                else None
+                            ),
+                        }
+                    )
 
-        elif concept_type == 'task':
+        elif concept_type == "task":
             # Search for cognitive/behavioral terms
             cognitive_query = f"""
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -403,24 +391,28 @@ class Bio2RDFClient:
             """
 
             results = self.query(cognitive_query)
-            if 'results' in results and 'bindings' in results['results']:
-                for binding in results['results']['bindings']:
-                    enrichment['bio2rdf_links'].append({
-                        'uri': binding.get('term', {}).get('value'),
-                        'label': binding.get('label', {}).get('value'),
-                        'type': 'cognitive_process'
-                    })
+            if "results" in results and "bindings" in results["results"]:
+                for binding in results["results"]["bindings"]:
+                    enrichment["bio2rdf_links"].append(
+                        {
+                            "uri": binding.get("term", {}).get("value"),
+                            "label": binding.get("label", {}).get("value"),
+                            "type": "cognitive_process",
+                        }
+                    )
 
         # Get related drugs if applicable
         drug_results = self.get_drug_target_interactions(concept)
-        if 'results' in drug_results and 'bindings' in drug_results['results']:
-            for binding in drug_results['results']['bindings'][:5]:
-                enrichment['bio2rdf_links'].append({
-                    'uri': binding.get('drug', {}).get('value'),
-                    'label': binding.get('drug_name', {}).get('value'),
-                    'type': 'drug',
-                    'target': binding.get('target_name', {}).get('value')
-                })
+        if "results" in drug_results and "bindings" in drug_results["results"]:
+            for binding in drug_results["results"]["bindings"][:5]:
+                enrichment["bio2rdf_links"].append(
+                    {
+                        "uri": binding.get("drug", {}).get("value"),
+                        "label": binding.get("drug_name", {}).get("value"),
+                        "type": "drug",
+                        "target": binding.get("target_name", {}).get("value"),
+                    }
+                )
 
         return enrichment
 

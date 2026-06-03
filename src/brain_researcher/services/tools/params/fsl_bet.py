@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Dict, Mapping, Sequence, Tuple
+from typing import Any
 
 
-def _split_args(values: Sequence[str] | str | None) -> Tuple[str, ...]:
+def _split_args(values: Sequence[str] | str | None) -> tuple[str, ...]:
     if values is None:
         return ()
     if isinstance(values, str):
@@ -32,11 +33,13 @@ class FSLBETParameters:
     reduce_bias: bool = False
     robust_center: bool = False
     surface_estimation: str | None = None
-    center_coordinates: Tuple[float, float, float] | None = None
+    center_coordinates: tuple[float, float, float] | None = None
     radius: float | None = None
-    extra_flags: Tuple[str, ...] = field(default_factory=tuple)
+    extra_flags: tuple[str, ...] = field(default_factory=tuple)
 
-    def command(self, include_executable: bool = True, executable: str = "bet") -> list[str]:
+    def command(
+        self, include_executable: bool = True, executable: str = "bet"
+    ) -> list[str]:
         cmd: list[str] = []
         if include_executable:
             cmd.append(executable)
@@ -76,7 +79,10 @@ class FSLBETParameters:
 
 
 def build_fsl_bet_command(
-    params: FSLBETParameters, *, include_executable: bool = True, executable: str = "bet"
+    params: FSLBETParameters,
+    *,
+    include_executable: bool = True,
+    executable: str = "bet",
 ) -> list[str]:
     return params.command(include_executable=include_executable, executable=executable)
 

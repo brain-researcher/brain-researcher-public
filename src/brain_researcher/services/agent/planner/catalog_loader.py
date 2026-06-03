@@ -12,15 +12,16 @@ import logging
 import os
 import re
 import time
-import yaml
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
+
+import yaml
 
 # NiWrap MCP catalog support removed; keep placeholder for compatibility
 iter_tool_definitions = None
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from brain_researcher.config.mapping_resolver import resolve_mapping_path
 from brain_researcher.config.paths import get_repo_root as get_shared_repo_root
@@ -31,16 +32,19 @@ from brain_researcher.services.shared.planner.models import (
 )
 from brain_researcher.services.tools.catalog_loader import (
     resolve_primary_runtime_tool_id,
+)
+from brain_researcher.services.tools.catalog_loader import (
     resolve_runtime_tool_ids as resolve_runtime_registry_tool_ids,
 )
+
 from .intents import Intent
 
 logger = logging.getLogger(__name__)
 
 
-def _dedupe_preserve_order(items: List[str]) -> List[str]:
-    seen: Set[str] = set()
-    ordered: List[str] = []
+def _dedupe_preserve_order(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
     for item in items:
         text = str(item or "").strip()
         if not text or text in seen:
@@ -51,7 +55,7 @@ def _dedupe_preserve_order(items: List[str]) -> List[str]:
 
 
 @lru_cache(maxsize=8192)
-def _preferred_runtime_aliases(tool_id: str) -> List[str]:
+def _preferred_runtime_aliases(tool_id: str) -> list[str]:
     normalized = str(tool_id or "").strip()
     if not normalized:
         return []
@@ -60,20 +64,28 @@ def _preferred_runtime_aliases(tool_id: str) -> List[str]:
     if primary:
         if primary == normalized:
             return _dedupe_preserve_order(
-                [primary, *resolve_runtime_registry_tool_ids(normalized, include_self=False)]
+                [
+                    primary,
+                    *resolve_runtime_registry_tool_ids(normalized, include_self=False),
+                ]
             )
         return _dedupe_preserve_order(
-            [primary, *resolve_runtime_registry_tool_ids(normalized, include_self=False)]
+            [
+                primary,
+                *resolve_runtime_registry_tool_ids(normalized, include_self=False),
+            ]
         )
 
-    return _dedupe_preserve_order(resolve_runtime_registry_tool_ids(normalized, include_self=False))
+    return _dedupe_preserve_order(
+        resolve_runtime_registry_tool_ids(normalized, include_self=False)
+    )
 
 
 def _filter_local_first_capabilities(
-    tools: List["ToolCapability"],
+    tools: list[ToolCapability],
     *,
     include_local_first: bool = False,
-) -> List["ToolCapability"]:
+) -> list[ToolCapability]:
     """Hide remote execution tools from agent-facing planner search by default."""
 
     if include_local_first:
@@ -102,7 +114,7 @@ class ResourceSpec(BaseModel):
     mem_mb_min: int = Field(..., ge=128, le=131072)
     gpu: bool = False
     time_min_default: float = Field(..., ge=0, le=2880)
-    scaling_hints: List[Dict[str, Any]] = Field(default_factory=list)
+    scaling_hints: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ContainerSpec(BaseModel):
@@ -110,10 +122,10 @@ class ContainerSpec(BaseModel):
 
     package_ref: str  # Reference to niwrap_containers.yaml
     runtime: str  # apptainer, singularity, docker
-    image: Optional[str] = None  # Usually loaded from niwrap_containers.yaml
+    image: str | None = None  # Usually loaded from niwrap_containers.yaml
     image_is_directory: bool = True
-    binds: List[str] = Field(default_factory=list)
-    env: Dict[str, str] = Field(default_factory=dict)
+    binds: list[str] = Field(default_factory=list)
+    env: dict[str, str] = Field(default_factory=dict)
     network_disabled: bool = True
     require_license: bool = False
 
@@ -129,10 +141,10 @@ class PythonRunnerSpec(BaseModel):
 class ToolMetadata(BaseModel):
     """Tool metadata (docs, citations, etc.)."""
 
-    description: Optional[str] = None
-    authors: List[str] = Field(default_factory=list)
-    literature: List[str] = Field(default_factory=list)
-    urls: List[str] = Field(default_factory=list)
+    description: str | None = None
+    authors: list[str] = Field(default_factory=list)
+    literature: list[str] = Field(default_factory=list)
+    urls: list[str] = Field(default_factory=list)
 
 
 class ToolCapability(BaseModel):
@@ -143,23 +155,23 @@ class ToolCapability(BaseModel):
     id: str
     name: str
     package: str
-    description: Optional[str] = None
-    documentation: Optional[str] = None
+    description: str | None = None
+    documentation: str | None = None
     runtime_kind: str  # "container" or "python"
-    entrypoint: Optional[str] = None  # NiWrap tool ID (container only)
-    modality: List[str]  # Using str to be flexible during load
-    capabilities: List[str]  # Capability tags (e.g., "skull_strip", "registration")
-    intents: List[str] = Field(
+    entrypoint: str | None = None  # NiWrap tool ID (container only)
+    modality: list[str]  # Using str to be flexible during load
+    capabilities: list[str]  # Capability tags (e.g., "skull_strip", "registration")
+    intents: list[str] = Field(
         default_factory=list
     )  # Intent ids implemented by this tool
-    consumes: List[str]  # Resource types
-    produces: List[str]  # Resource types
+    consumes: list[str]  # Resource types
+    produces: list[str]  # Resource types
     resources: ResourceSpec
-    container: Optional[ContainerSpec] = None  # Only for runtime_kind="container"
-    python: Optional[PythonRunnerSpec] = None  # Only for runtime_kind="python"
-    metadata: Optional[ToolMetadata] = None
-    constraints: Dict[str, Any] = Field(default_factory=dict)
-    source: Optional[str] = None  # "catalog" or "legacy" (for hybrid merge tracking)
+    container: ContainerSpec | None = None  # Only for runtime_kind="container"
+    python: PythonRunnerSpec | None = None  # Only for runtime_kind="python"
+    metadata: ToolMetadata | None = None
+    constraints: dict[str, Any] = Field(default_factory=dict)
+    source: str | None = None  # "catalog" or "legacy" (for hybrid merge tracking)
 
     @field_validator("id")
     def validate_id(cls, v: str):
@@ -182,10 +194,10 @@ class ToolCapability(BaseModel):
 
     @field_validator("modality", mode="before")
     @classmethod
-    def normalize_modality_list(cls, v: List[str]) -> List[str]:
+    def normalize_modality_list(cls, v: list[str]) -> list[str]:
         from brain_researcher.services.shared.planner.models import normalize_modality
 
-        normed: List[str] = []
+        normed: list[str] = []
         for m in v or []:
             normed.append(normalize_modality(m))
         return normed
@@ -198,24 +210,24 @@ class ToolSpec(BaseModel):
 
     name: str
     domain: Domain
-    modality: List[Modality]
-    consumes: Dict[str, str]
-    produces: Dict[str, str]
-    constraints: Dict[str, Any] = Field(default_factory=dict)
+    modality: list[Modality]
+    consumes: dict[str, str]
+    produces: dict[str, str]
+    constraints: dict[str, Any] = Field(default_factory=dict)
     runtime_kind: str = Field(
         default="container", description="Execution backend (container or python)"
     )
-    python_module: Optional[str] = Field(
+    python_module: str | None = Field(
         default=None, description="Python module path for python runtime"
     )
-    python_function: Optional[str] = Field(
+    python_function: str | None = Field(
         default=None, description="Callable name for python runtime"
     )
-    intents: List[str] = Field(default_factory=list)
+    intents: list[str] = Field(default_factory=list)
 
     @field_validator("consumes", "produces", mode="before")
     @classmethod
-    def _validate_resources(cls, v: Dict[str, str]) -> Dict[str, str]:
+    def _validate_resources(cls, v: dict[str, str]) -> dict[str, str]:
         validated = {}
         for key, val in (v or {}).items():
             validated[key] = ResourceType.validate(val)
@@ -225,21 +237,21 @@ class ToolSpec(BaseModel):
 class CapabilityIndex(BaseModel):
     """Indexes for fast tool lookup."""
 
-    by_id: Dict[str, ToolCapability] = Field(default_factory=dict)
-    by_alias: Dict[str, str] = Field(default_factory=dict)  # alias -> canonical tool ID
-    by_capability: Dict[str, List[str]] = Field(
+    by_id: dict[str, ToolCapability] = Field(default_factory=dict)
+    by_alias: dict[str, str] = Field(default_factory=dict)  # alias -> canonical tool ID
+    by_capability: dict[str, list[str]] = Field(
         default_factory=dict
     )  # capability -> tool IDs
-    by_modality: Dict[str, List[str]] = Field(
+    by_modality: dict[str, list[str]] = Field(
         default_factory=dict
     )  # modality -> tool IDs
-    by_package: Dict[str, List[str]] = Field(
+    by_package: dict[str, list[str]] = Field(
         default_factory=dict
     )  # package -> tool IDs
-    by_resource_type: Dict[str, List[str]] = Field(
+    by_resource_type: dict[str, list[str]] = Field(
         default_factory=dict
     )  # resource -> tool IDs
-    by_intent: Dict[str, List[str]] = Field(default_factory=dict)  # intent -> tool IDs
+    by_intent: dict[str, list[str]] = Field(default_factory=dict)  # intent -> tool IDs
 
 
 # ========================================
@@ -259,7 +271,7 @@ def get_planner_source() -> str:
     return os.environ.get("BR_PLANNER_SOURCE", "catalog").lower()
 
 
-_CATALOG_STATUS: Dict[str, Any] = {
+_CATALOG_STATUS: dict[str, Any] = {
     "status": "unknown",
     "planner_mode": "unknown",
     "loaded": False,
@@ -296,7 +308,7 @@ def _set_catalog_status(
     }
 
 
-def get_catalog_status() -> Dict[str, Any]:
+def get_catalog_status() -> dict[str, Any]:
     """Return the latest effective planner catalog load status."""
 
     return dict(_CATALOG_STATUS)
@@ -311,7 +323,7 @@ _ALLOWED_LEGACY_DOMAINS = set(Domain.__args__)
 _ALLOWED_LEGACY_MODALITIES = set(Modality.__args__)
 
 
-def _resolve_tools_catalog_path(path: Optional[Path] = None) -> Path:
+def _resolve_tools_catalog_path(path: Path | None = None) -> Path:
     """Resolve the planner's legacy tool catalog with merged fallback."""
 
     if path is not None:
@@ -328,12 +340,10 @@ def _resolve_tools_catalog_path(path: Optional[Path] = None) -> Path:
     if merged_path.exists():
         return merged_path
 
-    raise FileNotFoundError(
-        f"Tool catalog not found at {legacy_path} or {merged_path}"
-    )
+    raise FileNotFoundError(f"Tool catalog not found at {legacy_path} or {merged_path}")
 
 
-def _infer_legacy_domain(raw_domain: Any, name: str, tags: List[str]) -> str:
+def _infer_legacy_domain(raw_domain: Any, name: str, tags: list[str]) -> str:
     """Map merged-catalog domains onto the legacy planner domain contract."""
 
     domain = str(raw_domain or "").strip().lower()
@@ -354,11 +364,11 @@ def _infer_legacy_domain(raw_domain: Any, name: str, tags: List[str]) -> str:
     return "neuroimaging"
 
 
-def _infer_legacy_modalities(raw_domain: Any, name: str, tags: List[str]) -> List[str]:
+def _infer_legacy_modalities(raw_domain: Any, name: str, tags: list[str]) -> list[str]:
     """Infer a legacy modality list from merged-catalog metadata."""
 
     blob = " ".join([str(raw_domain or ""), name, *tags]).lower()
-    inferred: List[str] = []
+    inferred: list[str] = []
     for modality, patterns in (
         ("fmri", ("fmri", "bold")),
         ("dmri", ("dmri", "diffusion")),
@@ -385,7 +395,7 @@ def _infer_legacy_modalities(raw_domain: Any, name: str, tags: List[str]) -> Lis
     return inferred
 
 
-def _tool_spec_from_merged_entry(entry: Dict[str, Any]) -> Optional[ToolSpec]:
+def _tool_spec_from_merged_entry(entry: dict[str, Any]) -> ToolSpec | None:
     """Coerce a merged-catalog entry into the legacy ToolSpec shape."""
 
     name = entry.get("name")
@@ -417,10 +427,10 @@ def _tool_spec_from_merged_entry(entry: Dict[str, Any]) -> Optional[ToolSpec]:
 
 
 def load_capabilities_yaml(
-    path: Optional[Path] = None,
-    generated_paths: Optional[List[Path]] = None,
-    source: Optional[str] = None,
-) -> List[ToolCapability]:
+    path: Path | None = None,
+    generated_paths: list[Path] | None = None,
+    source: str | None = None,
+) -> list[ToolCapability]:
     """Load curated catalog plus optional generated catalogs.
 
     Defaults to `capabilities.merged.yaml` (2073 tools). Env override:
@@ -444,7 +454,7 @@ def load_capabilities_yaml(
     with path.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    tools_by_id: Dict[str, ToolCapability] = {}
+    tools_by_id: dict[str, ToolCapability] = {}
     for tool_data in data.get("tools", []):
         tool_data["source"] = "catalog"
         tool = ToolCapability(**tool_data)
@@ -469,7 +479,7 @@ def load_capabilities_yaml(
     return list(tools_by_id.values())
 
 
-def load_tools_catalog_json(path: Optional[Path] = None) -> Dict[str, ToolSpec]:
+def load_tools_catalog_json(path: Path | None = None) -> dict[str, ToolSpec]:
     """Load legacy tool catalog from JSON.
 
     Args:
@@ -484,10 +494,12 @@ def load_tools_catalog_json(path: Optional[Path] = None) -> Dict[str, ToolSpec]:
         with source_path.open("r", encoding="utf-8") as f:
             raw = json.load(f)
         entries = raw.get("tools", [])
-        is_legacy_schema = bool(entries) and "consumes" in entries[0] and "produces" in entries[0]
+        is_legacy_schema = (
+            bool(entries) and "consumes" in entries[0] and "produces" in entries[0]
+        )
         return entries, is_legacy_schema
 
-    tools: Dict[str, ToolSpec] = {}
+    tools: dict[str, ToolSpec] = {}
 
     entries, is_legacy_schema = _load_entries(path)
     if is_legacy_schema:
@@ -526,7 +538,7 @@ def load_tools_catalog_json(path: Optional[Path] = None) -> Dict[str, ToolSpec]:
     return tools
 
 
-def load_tool_resources(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
+def load_tool_resources(path: Path | None = None) -> dict[str, dict[str, Any]]:
     """Load tool resource requirements from YAML.
 
     Args:
@@ -547,7 +559,7 @@ def load_tool_resources(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]
     return data.get("tools", {})
 
 
-def load_niwrap_containers(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
+def load_niwrap_containers(path: Path | None = None) -> dict[str, dict[str, Any]]:
     """Load container configuration from YAML.
 
     Args:
@@ -566,7 +578,7 @@ def load_niwrap_containers(path: Optional[Path] = None) -> Dict[str, Dict[str, A
         return yaml.safe_load(f) or {}
 
 
-def load_niwrap_mapping(path: Optional[Path] = None) -> Dict[str, Any]:
+def load_niwrap_mapping(path: Path | None = None) -> dict[str, Any]:
     """Load NiWrap prefix/intents mapping."""
     if path is None:
         path = resolve_mapping_path(
@@ -580,7 +592,7 @@ def load_niwrap_mapping(path: Optional[Path] = None) -> Dict[str, Any]:
         return yaml.safe_load(f) or {}
 
 
-def load_tool_categories(path: Optional[Path] = None) -> Dict[str, Any]:
+def load_tool_categories(path: Path | None = None) -> dict[str, Any]:
     """Load tool categories from YAML.
 
     Args:
@@ -605,12 +617,12 @@ def load_tool_categories(path: Optional[Path] = None) -> Dict[str, Any]:
 
 
 def _map_intents_for_niwrap(
-    name: str, package: str, mapping: Dict[str, Any]
-) -> Tuple[List[str], List[str]]:
+    name: str, package: str, mapping: dict[str, Any]
+) -> tuple[list[str], list[str]]:
     """Infer intents and modalities from mapping rules."""
     default = mapping.get("default", {})
     modalities = default.get("modalities", [])
-    intents: List[str] = []
+    intents: list[str] = []
 
     pkg_rules = (mapping.get("packages") or {}).get(package, {})
     if pkg_rules.get("modalities"):
@@ -631,13 +643,13 @@ def _map_intents_for_niwrap(
 
 
 def load_niwrap_capabilities(
-    mapping: Dict[str, Any], containers: Dict[str, Dict[str, Any]]
-) -> List[ToolCapability]:
+    mapping: dict[str, Any], containers: dict[str, dict[str, Any]]
+) -> list[ToolCapability]:
     """Dynamically convert NiWrap tool definitions into ToolCapability entries."""
     if iter_tool_definitions is None:
         return []
 
-    tools: List[ToolCapability] = []
+    tools: list[ToolCapability] = []
     limit_env = os.environ.get("BR_NIWRAP_LIMIT")
     limit = int(limit_env) if limit_env else None
 
@@ -802,7 +814,7 @@ def legacy_tool_to_capability(name: str, spec: ToolSpec) -> ToolCapability:
 
 
 def enrich_tool_with_container_info(
-    tool: ToolCapability, containers: Dict[str, Dict[str, Any]]
+    tool: ToolCapability, containers: dict[str, dict[str, Any]]
 ) -> ToolCapability:
     """Enrich tool with container info from niwrap_containers.yaml.
 
@@ -834,14 +846,14 @@ def enrich_tool_with_container_info(
 
 
 def enrich_and_merge(
-    capabilities: List[ToolCapability],
-    legacy_tools: Dict[str, ToolSpec],
-    resources: Dict[str, Dict[str, Any]],
-    mapping: Optional[Dict[str, Any]] = None,
-    containers: Dict[str, Dict[str, Any]] = None,
+    capabilities: list[ToolCapability],
+    legacy_tools: dict[str, ToolSpec],
+    resources: dict[str, dict[str, Any]],
+    mapping: dict[str, Any] | None = None,
+    containers: dict[str, dict[str, Any]] = None,
     merge_legacy: bool = True,
     include_niwrap: bool = True,
-) -> List[ToolCapability]:
+) -> list[ToolCapability]:
     """Merge capabilities catalog with legacy tools and enrich with metadata.
 
     Strategy:
@@ -860,8 +872,8 @@ def enrich_and_merge(
         Merged list of ToolCapability objects
     """
     # Fail fast on duplicates inside curated catalog (capabilities.yaml)
-    seen_catalog_ids: Set[str] = set()
-    dup_catalog_ids: Set[str] = set()
+    seen_catalog_ids: set[str] = set()
+    dup_catalog_ids: set[str] = set()
     for tool in capabilities:
         if tool.id in seen_catalog_ids:
             dup_catalog_ids.add(tool.id)
@@ -924,7 +936,7 @@ def enrich_and_merge(
 
     # 3. Merge with conflict resolution: container (catalog) tools win on ID conflicts
     # Build dict by ID from catalog tools first (these have priority)
-    tools_by_id: Dict[str, ToolCapability] = {}
+    tools_by_id: dict[str, ToolCapability] = {}
     for tool in enriched_container:
         tools_by_id[tool.id] = tool
 
@@ -956,7 +968,7 @@ def enrich_and_merge(
     def _canonicalize_tool(tool: ToolCapability) -> ToolCapability:
         original_id = str(tool.id or "").strip()
         constraints = dict(tool.constraints or {})
-        raw_ids: List[str] = []
+        raw_ids: list[str] = []
 
         if constraints.get("is_alias") and constraints.get("alias_of"):
             raw_ids.append(str(constraints["alias_of"]).strip())
@@ -1005,7 +1017,7 @@ def enrich_and_merge(
         incumbent_rank = source_rank.get(str(incumbent.source or ""), 99)
         return candidate_rank < incumbent_rank
 
-    canonical_tools: Dict[str, ToolCapability] = {}
+    canonical_tools: dict[str, ToolCapability] = {}
     for tool in tools_by_id.values():
         canonical = _canonicalize_tool(tool)
         existing = canonical_tools.get(canonical.id)
@@ -1032,7 +1044,7 @@ def enrich_and_merge(
     return list(canonical_tools.values())
 
 
-def build_indexes(tools: List[ToolCapability]) -> CapabilityIndex:
+def build_indexes(tools: list[ToolCapability]) -> CapabilityIndex:
     """Build indexes for fast tool lookup.
 
     Args:
@@ -1117,11 +1129,11 @@ def _record_catalog_failure(reason: str) -> None:
 # Intents
 # ========================================
 
-_INTENT_INDEX: Dict[str, Intent] = {}
+_INTENT_INDEX: dict[str, Intent] = {}
 
 
-@lru_cache()
-def load_intents() -> Dict[str, Intent]:
+@lru_cache
+def load_intents() -> dict[str, Intent]:
     """Load intent catalog from YAML (cached)."""
     global _INTENT_INDEX
     if _INTENT_INDEX:
@@ -1139,7 +1151,7 @@ def load_intents() -> Dict[str, Intent]:
         _INTENT_INDEX = {}
         return _INTENT_INDEX
 
-    intents: Dict[str, Intent] = {}
+    intents: dict[str, Intent] = {}
     for item in data:
         try:
             intent = Intent(
@@ -1263,8 +1275,8 @@ def _clear_capability_index_cache() -> None:
 get_capability_index.cache_clear = _clear_capability_index_cache  # type: ignore[attr-defined]
 
 
-@lru_cache()
-def load_tool_catalog() -> Dict[str, ToolSpec]:
+@lru_cache
+def load_tool_catalog() -> dict[str, ToolSpec]:
     """Load the planner catalog from configs/tools_catalog.json (legacy mode).
 
     This is kept for backward compatibility.
@@ -1275,7 +1287,7 @@ def load_tool_catalog() -> Dict[str, ToolSpec]:
     return load_tools_catalog_json()
 
 
-def get_tool_spec(name: str) -> Optional[ToolSpec]:
+def get_tool_spec(name: str) -> ToolSpec | None:
     """Helper to fetch a single tool specification (legacy mode).
 
     Args:
@@ -1287,7 +1299,7 @@ def get_tool_spec(name: str) -> Optional[ToolSpec]:
     return load_tool_catalog().get(name)
 
 
-def get_tool_by_id(tool_id: str) -> Optional[ToolCapability]:
+def get_tool_by_id(tool_id: str) -> ToolCapability | None:
     """Get tool by ID from capability index.
 
     Args:
@@ -1320,7 +1332,7 @@ def search_by_capability(
     capability: str,
     *,
     include_local_first: bool = False,
-) -> List[ToolCapability]:
+) -> list[ToolCapability]:
     """Search tools by capability tag.
 
     Args:
@@ -1338,7 +1350,7 @@ def search_by_modality(
     modality: str,
     *,
     include_local_first: bool = False,
-) -> List[ToolCapability]:
+) -> list[ToolCapability]:
     """Search tools by modality.
 
     Args:
@@ -1352,7 +1364,7 @@ def search_by_modality(
     return [index.by_id[tid] for tid in tool_ids]
 
 
-def search_by_package(package: str) -> List[ToolCapability]:
+def search_by_package(package: str) -> list[ToolCapability]:
     """Search tools by package.
 
     Args:
@@ -1370,7 +1382,7 @@ def search_by_intent(
     intent_id: str,
     *,
     include_local_first: bool = False,
-) -> List[ToolCapability]:
+) -> list[ToolCapability]:
     """Search tools by declared intent identifier.
 
     Args:

@@ -38,7 +38,7 @@ def __getattr__(name: str) -> Any:
     if name in {"AdvancedVectorSearchEngine", "IndexType"}:
         return getattr(import_module(".advanced_vector_search", __name__), name)
     if name == "VectorSearchResult":
-        return getattr(import_module(".advanced_vector_search", __name__), "SearchResult")
+        return import_module(".advanced_vector_search", __name__).SearchResult
     if name == "HybridSearchEngine":
         return getattr(import_module(".hybrid_search_engine", __name__), name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

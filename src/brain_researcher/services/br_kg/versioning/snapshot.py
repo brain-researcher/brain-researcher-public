@@ -1,20 +1,22 @@
 """Graph snapshot and versioning system."""
 
-import json
 import hashlib
+import json
+import logging
 import pickle
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
-import networkx as nx
 from enum import Enum
-import logging
+from pathlib import Path
+from typing import Any
+
+import networkx as nx
 
 logger = logging.getLogger(__name__)
 
 
 class SnapshotType(str, Enum):
     """Types of snapshots."""
+
     FULL = "full"
     INCREMENTAL = "incremental"
     CHECKPOINT = "checkpoint"
@@ -22,6 +24,7 @@ class SnapshotType(str, Enum):
 
 class ChangeType(str, Enum):
     """Types of changes."""
+
     NODE_ADDED = "node_added"
     NODE_REMOVED = "node_removed"
     NODE_MODIFIED = "node_modified"
@@ -33,10 +36,12 @@ class ChangeType(str, Enum):
 class GraphSnapshot:
     """Represents a graph snapshot."""
 
-    def __init__(self,
-                snapshot_id: str,
-                graph: nx.Graph,
-                metadata: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        snapshot_id: str,
+        graph: nx.Graph,
+        metadata: dict[str, Any] | None = None,
+    ):
         """Initialize snapshot.
 
         Args:
@@ -60,36 +65,33 @@ class GraphSnapshot:
         nodes = sorted(self.graph.nodes(data=True))
         edges = sorted(self.graph.edges(data=True))
 
-        graph_data = {
-            'nodes': nodes,
-            'edges': edges
-        }
+        graph_data = {"nodes": nodes, "edges": edges}
 
         serialized = json.dumps(graph_data, sort_keys=True)
         return hashlib.sha256(serialized.encode()).hexdigest()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert snapshot to dictionary.
 
         Returns:
             Snapshot as dict
         """
         return {
-            'snapshot_id': self.snapshot_id,
-            'timestamp': self.timestamp.isoformat(),
-            'hash': self.hash,
-            'metadata': self.metadata,
-            'stats': {
-                'nodes': self.graph.number_of_nodes(),
-                'edges': self.graph.number_of_edges()
-            }
+            "snapshot_id": self.snapshot_id,
+            "timestamp": self.timestamp.isoformat(),
+            "hash": self.hash,
+            "metadata": self.metadata,
+            "stats": {
+                "nodes": self.graph.number_of_nodes(),
+                "edges": self.graph.number_of_edges(),
+            },
         }
 
 
 class GraphVersioning:
     """Manages graph versions with time-travel queries."""
 
-    def __init__(self, storage_dir: str = '/tmp/graph_snapshots'):
+    def __init__(self, storage_dir: str = "/tmp/graph_snapshots"):
         """Initialize versioning system.
 
         Args:
@@ -98,15 +100,17 @@ class GraphVersioning:
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
-        self.snapshots: Dict[str, GraphSnapshot] = {}
-        self.version_chain: List[str] = []
-        self.current_version: Optional[str] = None
-        self.change_log: List[Dict[str, Any]] = []
+        self.snapshots: dict[str, GraphSnapshot] = {}
+        self.version_chain: list[str] = []
+        self.current_version: str | None = None
+        self.change_log: list[dict[str, Any]] = []
 
-    def create_snapshot(self,
-                       graph: nx.Graph,
-                       snapshot_type: SnapshotType = SnapshotType.FULL,
-                       description: str = "") -> str:
+    def create_snapshot(
+        self,
+        graph: nx.Graph,
+        snapshot_type: SnapshotType = SnapshotType.FULL,
+        description: str = "",
+    ) -> str:
         """Create a new snapshot.
 
         Args:
@@ -119,13 +123,15 @@ class GraphVersioning:
         """
         # Generate snapshot ID
         timestamp = datetime.utcnow()
-        snapshot_id = f"snapshot_{timestamp.strftime('%Y%m%d_%H%M%S')}_{len(self.snapshots)}"
+        snapshot_id = (
+            f"snapshot_{timestamp.strftime('%Y%m%d_%H%M%S')}_{len(self.snapshots)}"
+        )
 
         # Create snapshot
         metadata = {
-            'type': snapshot_type.value,
-            'description': description,
-            'parent': self.current_version
+            "type": snapshot_type.value,
+            "description": description,
+            "parent": self.current_version,
         }
 
         snapshot = GraphSnapshot(snapshot_id, graph, metadata)
@@ -149,10 +155,10 @@ class GraphVersioning:
         """
         snapshot_file = self.storage_dir / f"{snapshot.snapshot_id}.pkl"
 
-        with open(snapshot_file, 'wb') as f:
+        with open(snapshot_file, "wb") as f:
             pickle.dump(snapshot, f)
 
-    def load_snapshot(self, snapshot_id: str) -> Optional[GraphSnapshot]:
+    def load_snapshot(self, snapshot_id: str) -> GraphSnapshot | None:
         """Load snapshot from storage.
 
         Args:
@@ -169,16 +175,14 @@ class GraphVersioning:
         snapshot_file = self.storage_dir / f"{snapshot_id}.pkl"
 
         if snapshot_file.exists():
-            with open(snapshot_file, 'rb') as f:
+            with open(snapshot_file, "rb") as f:
                 snapshot = pickle.load(f)
                 self.snapshots[snapshot_id] = snapshot
                 return snapshot
 
         return None
 
-    def time_travel_query(self,
-                         timestamp: datetime,
-                         query_func: callable) -> Any:
+    def time_travel_query(self, timestamp: datetime, query_func: callable) -> Any:
         """Execute query on graph at specific time.
 
         Args:
@@ -190,7 +194,7 @@ class GraphVersioning:
         """
         # Find snapshot closest to timestamp
         closest_snapshot = None
-        min_diff = float('inf')
+        min_diff = float("inf")
 
         for snapshot_id in self.version_chain:
             snapshot = self.load_snapshot(snapshot_id)
@@ -205,9 +209,7 @@ class GraphVersioning:
 
         return None
 
-    def compare_versions(self,
-                        version1: str,
-                        version2: str) -> Dict[str, Any]:
+    def compare_versions(self, version1: str, version2: str) -> dict[str, Any]:
         """Compare two graph versions.
 
         Args:
@@ -247,24 +249,28 @@ class GraphVersioning:
                 edges_modified.append(edge)
 
         return {
-            'version1': version1,
-            'version2': version2,
-            'nodes': {
-                'added': list(nodes_added),
-                'removed': list(nodes_removed),
-                'modified': nodes_modified
+            "version1": version1,
+            "version2": version2,
+            "nodes": {
+                "added": list(nodes_added),
+                "removed": list(nodes_removed),
+                "modified": nodes_modified,
             },
-            'edges': {
-                'added': list(edges_added),
-                'removed': list(edges_removed),
-                'modified': edges_modified
+            "edges": {
+                "added": list(edges_added),
+                "removed": list(edges_removed),
+                "modified": edges_modified,
             },
-            'summary': {
-                'total_changes': (
-                    len(nodes_added) + len(nodes_removed) + len(nodes_modified) +
-                    len(edges_added) + len(edges_removed) + len(edges_modified)
+            "summary": {
+                "total_changes": (
+                    len(nodes_added)
+                    + len(nodes_removed)
+                    + len(nodes_modified)
+                    + len(edges_added)
+                    + len(edges_removed)
+                    + len(edges_modified)
                 )
-            }
+            },
         }
 
     def rollback(self, target_version: str) -> bool:
@@ -284,19 +290,21 @@ class GraphVersioning:
         target_index = self.version_chain.index(target_version)
 
         # Remove newer versions from chain
-        removed_versions = self.version_chain[target_index + 1:]
-        self.version_chain = self.version_chain[:target_index + 1]
+        removed_versions = self.version_chain[target_index + 1 :]
+        self.version_chain = self.version_chain[: target_index + 1]
 
         # Update current version
         self.current_version = target_version
 
         # Log rollback
-        self.change_log.append({
-            'timestamp': datetime.utcnow().isoformat(),
-            'action': 'rollback',
-            'target_version': target_version,
-            'removed_versions': removed_versions
-        })
+        self.change_log.append(
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "action": "rollback",
+                "target_version": target_version,
+                "removed_versions": removed_versions,
+            }
+        )
 
         logger.info(f"Rolled back to version {target_version}")
         return True
@@ -318,12 +326,14 @@ class GraphVersioning:
             raise ValueError("Current snapshot not found")
 
         # Create branch snapshot
-        branch_id = f"branch_{branch_name}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        branch_id = (
+            f"branch_{branch_name}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        )
 
         metadata = {
-            'type': 'branch',
-            'branch_name': branch_name,
-            'branched_from': self.current_version
+            "type": "branch",
+            "branch_name": branch_name,
+            "branched_from": self.current_version,
         }
 
         branch_snapshot = GraphSnapshot(branch_id, current_snapshot.graph, metadata)
@@ -335,10 +345,12 @@ class GraphVersioning:
         logger.info(f"Created branch {branch_name} as {branch_id}")
         return branch_id
 
-    def merge_branches(self,
-                      source_branch: str,
-                      target_branch: str,
-                      conflict_resolution: str = "source") -> str:
+    def merge_branches(
+        self,
+        source_branch: str,
+        target_branch: str,
+        conflict_resolution: str = "source",
+    ) -> str:
         """Merge two branches.
 
         Args:
@@ -384,12 +396,12 @@ class GraphVersioning:
         merge_id = self.create_snapshot(
             merged_graph,
             SnapshotType.FULL,
-            f"Merge of {source_branch} into {target_branch}"
+            f"Merge of {source_branch} into {target_branch}",
         )
 
         return merge_id
 
-    def get_version_history(self) -> List[Dict[str, Any]]:
+    def get_version_history(self) -> list[dict[str, Any]]:
         """Get version history.
 
         Returns:
@@ -404,9 +416,9 @@ class GraphVersioning:
 
         return history
 
-    def calculate_diff(self,
-                      from_version: str,
-                      to_version: str) -> List[Dict[str, Any]]:
+    def calculate_diff(
+        self, from_version: str, to_version: str
+    ) -> list[dict[str, Any]]:
         """Calculate detailed diff between versions.
 
         Args:
@@ -420,47 +432,59 @@ class GraphVersioning:
         changes = []
 
         # Node changes
-        for node in comparison['nodes']['added']:
-            changes.append({
-                'type': ChangeType.NODE_ADDED.value,
-                'node': node,
-                'timestamp': datetime.utcnow().isoformat()
-            })
+        for node in comparison["nodes"]["added"]:
+            changes.append(
+                {
+                    "type": ChangeType.NODE_ADDED.value,
+                    "node": node,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
 
-        for node in comparison['nodes']['removed']:
-            changes.append({
-                'type': ChangeType.NODE_REMOVED.value,
-                'node': node,
-                'timestamp': datetime.utcnow().isoformat()
-            })
+        for node in comparison["nodes"]["removed"]:
+            changes.append(
+                {
+                    "type": ChangeType.NODE_REMOVED.value,
+                    "node": node,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
 
-        for node in comparison['nodes']['modified']:
-            changes.append({
-                'type': ChangeType.NODE_MODIFIED.value,
-                'node': node,
-                'timestamp': datetime.utcnow().isoformat()
-            })
+        for node in comparison["nodes"]["modified"]:
+            changes.append(
+                {
+                    "type": ChangeType.NODE_MODIFIED.value,
+                    "node": node,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
 
         # Edge changes
-        for edge in comparison['edges']['added']:
-            changes.append({
-                'type': ChangeType.EDGE_ADDED.value,
-                'edge': edge,
-                'timestamp': datetime.utcnow().isoformat()
-            })
+        for edge in comparison["edges"]["added"]:
+            changes.append(
+                {
+                    "type": ChangeType.EDGE_ADDED.value,
+                    "edge": edge,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
 
-        for edge in comparison['edges']['removed']:
-            changes.append({
-                'type': ChangeType.EDGE_REMOVED.value,
-                'edge': edge,
-                'timestamp': datetime.utcnow().isoformat()
-            })
+        for edge in comparison["edges"]["removed"]:
+            changes.append(
+                {
+                    "type": ChangeType.EDGE_REMOVED.value,
+                    "edge": edge,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
 
-        for edge in comparison['edges']['modified']:
-            changes.append({
-                'type': ChangeType.EDGE_MODIFIED.value,
-                'edge': edge,
-                'timestamp': datetime.utcnow().isoformat()
-            })
+        for edge in comparison["edges"]["modified"]:
+            changes.append(
+                {
+                    "type": ChangeType.EDGE_MODIFIED.value,
+                    "edge": edge,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
 
         return changes

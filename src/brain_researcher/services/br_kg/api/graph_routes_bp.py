@@ -3,12 +3,13 @@ Graph API routes as a Blueprint for integration into app.py
 """
 
 import logging
+
 from flask import Blueprint, jsonify, request
 
 logger = logging.getLogger(__name__)
 
 # Create blueprint
-graph_routes_bp = Blueprint('graph_routes', __name__)
+graph_routes_bp = Blueprint("graph_routes", __name__)
 
 
 def init_graph_routes(db):
@@ -19,7 +20,7 @@ def init_graph_routes(db):
         try:
             if hasattr(val, "isoformat"):
                 return val.isoformat()
-            if isinstance(val, (list, tuple)):
+            if isinstance(val, list | tuple):
                 return [_sanitize_value(v) for v in val]
             if isinstance(val, dict):
                 return {k: _sanitize_value(v) for k, v in val.items()}
@@ -47,9 +48,14 @@ def init_graph_routes(db):
 
             # Validate parameters
             if not node_id and (not node_label or not node_name):
-                return jsonify(
-                    {"error": "Missing required parameters: node_id or (label and name)"}
-                ), 400
+                return (
+                    jsonify(
+                        {
+                            "error": "Missing required parameters: node_id or (label and name)"
+                        }
+                    ),
+                    400,
+                )
 
             if depth < 1 or depth > 3:
                 return jsonify({"error": "Depth must be between 1 and 3"}), 400
@@ -60,9 +66,12 @@ def init_graph_routes(db):
             else:
                 nodes = db.find_nodes(labels=node_label, properties={"name": node_name})
                 if not nodes:
-                    return jsonify(
-                        {"error": f"No {node_label} found with name: {node_name}"}
-                    ), 404
+                    return (
+                        jsonify(
+                            {"error": f"No {node_label} found with name: {node_name}"}
+                        ),
+                        404,
+                    )
                 start_node_id = nodes[0][0]
 
             # Get subgraph based on database type
@@ -98,7 +107,9 @@ def init_graph_routes(db):
 
                 # Add edges
                 for edge in edges_result:
-                    source = edge.get("source_id") or edge.get("start") or edge.get("from")
+                    source = (
+                        edge.get("source_id") or edge.get("start") or edge.get("from")
+                    )
                     target = edge.get("target_id") or edge.get("end") or edge.get("to")
                     if not source or not target:
                         logger.warning("Skipping edge without source/target: %s", edge)
@@ -110,7 +121,8 @@ def init_graph_routes(db):
                             "id": f"{source}-{target}",
                             "source": str(source),
                             "target": str(target),
-                            "relationship": edge.get("type") or edge.get("relationship", "RELATED_TO"),
+                            "relationship": edge.get("type")
+                            or edge.get("relationship", "RELATED_TO"),
                             **edge_props,
                         }
                     }

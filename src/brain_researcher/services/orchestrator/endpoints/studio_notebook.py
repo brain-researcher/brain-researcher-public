@@ -75,7 +75,9 @@ async def patch_studio_notebook(
     try:
         notebook = await runtime.patch_notebook(user.id, session_id, payload)
     except KeyError as exc:
-        raise HTTPException(status_code=404, detail="Studio notebook not found") from exc
+        raise HTTPException(
+            status_code=404, detail="Studio notebook not found"
+        ) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"notebook": notebook.model_dump(mode="json", by_alias=True)}
@@ -111,7 +113,9 @@ async def apply_studio_notebook_operation(
         single_request = StudioNotebookOperationRequest.model_validate(payload)
         notebook = await runtime.apply_operation(user.id, session_id, single_request)
     except KeyError as exc:
-        raise HTTPException(status_code=404, detail="Studio notebook not found") from exc
+        raise HTTPException(
+            status_code=404, detail="Studio notebook not found"
+        ) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except ValidationError as exc:
@@ -134,7 +138,9 @@ async def execute_studio_notebook_cell(
     try:
         execution = await runtime.execute_cell(user.id, session_id, cell_id, payload)
     except KeyError as exc:
-        raise HTTPException(status_code=404, detail="Studio notebook not found") from exc
+        raise HTTPException(
+            status_code=404, detail="Studio notebook not found"
+        ) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:

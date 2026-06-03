@@ -6,7 +6,6 @@ Defines resource requirements for each neuroimaging tool.
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 from brain_researcher.services.agent.tool_metadata_bridge import get_resource_hints
 
@@ -59,7 +58,7 @@ DEFAULT_PROFILE = ToolResourceProfile(
 )
 
 # Tool resource profiles based on actual neuroimaging tool requirements
-TOOL_PROFILES: Dict[str, ToolResourceProfile] = {
+TOOL_PROFILES: dict[str, ToolResourceProfile] = {
     # fMRI Analysis Tools (Heavy)
     "glm_analysis": ToolResourceProfile(
         tool_name="glm_analysis",
@@ -95,7 +94,6 @@ TOOL_PROFILES: Dict[str, ToolResourceProfile] = {
         estimated_duration_seconds=90.0,
         max_concurrent=2,
     ),
-
     # Knowledge Graph Tools (Light)
     "find_related_concepts": ToolResourceProfile(
         tool_name="find_related_concepts",
@@ -140,7 +138,6 @@ TOOL_PROFILES: Dict[str, ToolResourceProfile] = {
         max_concurrent=20,
         priority_boost=1,
     ),
-
     # Meta-Analysis Tools (Medium)
     "neurosynth_meta_analysis": ToolResourceProfile(
         tool_name="neurosynth_meta_analysis",
@@ -174,7 +171,6 @@ TOOL_PROFILES: Dict[str, ToolResourceProfile] = {
         estimated_duration_seconds=60.0,
         max_concurrent=2,
     ),
-
     # Data Processing Tools (Variable)
     "validate_bids": ToolResourceProfile(
         tool_name="validate_bids",
@@ -209,7 +205,6 @@ TOOL_PROFILES: Dict[str, ToolResourceProfile] = {
         estimated_duration_seconds=30.0,
         max_concurrent=3,
     ),
-
     # Archive/Conversion Tools (Light)
     "heudiconv_convert": ToolResourceProfile(
         tool_name="heudiconv_convert",
@@ -235,7 +230,6 @@ TOOL_PROFILES: Dict[str, ToolResourceProfile] = {
         estimated_duration_seconds=60.0,
         max_concurrent=2,
     ),
-
     # NWB Tools (Light)
     "read_nwb": ToolResourceProfile(
         tool_name="read_nwb",
@@ -261,7 +255,6 @@ TOOL_PROFILES: Dict[str, ToolResourceProfile] = {
         estimated_duration_seconds=5.0,
         max_concurrent=10,
     ),
-
     # Pipeline Tools (Heavy)
     "fmriprep_pipeline": ToolResourceProfile(
         tool_name="fmriprep_pipeline",
@@ -281,7 +274,6 @@ TOOL_PROFILES: Dict[str, ToolResourceProfile] = {
         max_concurrent=1,
         priority_boost=-1,
     ),
-
     # Statistical Tools (Medium)
     "multiple_comparison_correction": ToolResourceProfile(
         tool_name="multiple_comparison_correction",
@@ -307,7 +299,6 @@ TOOL_PROFILES: Dict[str, ToolResourceProfile] = {
         estimated_duration_seconds=30.0,
         max_concurrent=3,
     ),
-
     # RAG Tools (Light to Medium)
     "semantic_search": ToolResourceProfile(
         tool_name="semantic_search",
@@ -344,7 +335,7 @@ class ResourceLimits:
         global_cpu_limit: float = 4.0,
         global_memory_limit: float = 8.0,
         global_gpu_limit: int = 0,
-        per_tool_limits: Optional[Dict[str, ToolResourceProfile]] = None,
+        per_tool_limits: dict[str, ToolResourceProfile] | None = None,
     ):
         """
         Initialize resource limits.
@@ -371,15 +362,18 @@ class ResourceLimits:
 
     def get_tool_profile(self, tool_name: str) -> ToolResourceProfile:
         """Get resource profile for a tool."""
-        base = self.tool_profiles.get(tool_name, ToolResourceProfile(
-            tool_name=tool_name,
-            cpu_cores=DEFAULT_PROFILE.cpu_cores,
-            memory_gb=DEFAULT_PROFILE.memory_gb,
-            gpu_count=DEFAULT_PROFILE.gpu_count,
-            estimated_duration_seconds=DEFAULT_PROFILE.estimated_duration_seconds,
-            max_concurrent=DEFAULT_PROFILE.max_concurrent,
-            priority_boost=DEFAULT_PROFILE.priority_boost,
-        ))
+        base = self.tool_profiles.get(
+            tool_name,
+            ToolResourceProfile(
+                tool_name=tool_name,
+                cpu_cores=DEFAULT_PROFILE.cpu_cores,
+                memory_gb=DEFAULT_PROFILE.memory_gb,
+                gpu_count=DEFAULT_PROFILE.gpu_count,
+                estimated_duration_seconds=DEFAULT_PROFILE.estimated_duration_seconds,
+                max_concurrent=DEFAULT_PROFILE.max_concurrent,
+                priority_boost=DEFAULT_PROFILE.priority_boost,
+            ),
+        )
 
         profile = _profile_with_hints(tool_name, base)
 
@@ -396,11 +390,13 @@ class ResourceLimits:
                 f"Tool {tool_name} requests {profile.memory_gb}GB memory, "
                 f"but global limit is {self.global_memory_limit}GB"
             )
-            profile = profile.scale_resources(self.global_memory_limit / profile.memory_gb)
+            profile = profile.scale_resources(
+                self.global_memory_limit / profile.memory_gb
+            )
 
         return profile
 
-    def can_execute_tool(self, tool_name: str, current_usage: Dict[str, float]) -> bool:
+    def can_execute_tool(self, tool_name: str, current_usage: dict[str, float]) -> bool:
         """
         Check if tool can be executed given current usage.
 
@@ -418,12 +414,12 @@ class ResourceLimits:
         available_gpu = self.global_gpu_limit - current_usage.get("gpus", 0)
 
         return (
-            profile.cpu_cores <= available_cpu and
-            profile.memory_gb <= available_memory and
-            profile.gpu_count <= available_gpu
+            profile.cpu_cores <= available_cpu
+            and profile.memory_gb <= available_memory
+            and profile.gpu_count <= available_gpu
         )
 
-    def get_resource_summary(self) -> Dict[str, Dict]:
+    def get_resource_summary(self) -> dict[str, dict]:
         """Get summary of all tool resource requirements."""
         summary = {
             "lightweight": [],
@@ -454,7 +450,7 @@ class ResourceLimits:
 def _profile_with_hints(
     tool_name: str,
     base: ToolResourceProfile,
-    hint_key: Optional[str] = None,
+    hint_key: str | None = None,
 ) -> ToolResourceProfile:
     """Merge MCP resource hints into an existing profile."""
     hint_target = hint_key or tool_name
@@ -490,4 +486,6 @@ def get_tool_profile(tool_name: str) -> ToolResourceProfile:
     if base:
         return _profile_with_hints(tool_name, base)
 
-    return _profile_with_hints(DEFAULT_PROFILE.tool_name, DEFAULT_PROFILE, hint_key=tool_name)
+    return _profile_with_hints(
+        DEFAULT_PROFILE.tool_name, DEFAULT_PROFILE, hint_key=tool_name
+    )

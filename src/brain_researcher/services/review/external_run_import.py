@@ -86,7 +86,12 @@ class ExternalRunImportResult:
 def _utc_iso() -> str:
     from datetime import datetime, timezone
 
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return (
+        datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -105,7 +110,9 @@ def _load_json(path: Path) -> dict[str, Any] | None:
 
 
 def _relative_symlink_target(source: Path, destination: Path) -> Path:
-    return Path(os.path.relpath(str(source.resolve()), start=str(destination.parent.resolve())))
+    return Path(
+        os.path.relpath(str(source.resolve()), start=str(destination.parent.resolve()))
+    )
 
 
 def _link_or_copy(source: Path, destination: Path, *, link_mode: LinkMode) -> None:
@@ -161,19 +168,19 @@ def _resolved_review_context(
             if isinstance(run_record.get("review_contract"), dict)
             else {}
         ).get("review_context"),
-        (
-            adapter.run_card
-            if isinstance(adapter.run_card, dict)
-            else {}
-        ).get("review_context"),
+        (adapter.run_card if isinstance(adapter.run_card, dict) else {}).get(
+            "review_context"
+        ),
         (
             adapter.provenance_request_updates
             if isinstance(adapter.provenance_request_updates, dict)
             else {}
         ).get("review_context"),
-        adapter.source_summary.get("review_context")
-        if isinstance(adapter.source_summary, dict)
-        else None,
+        (
+            adapter.source_summary.get("review_context")
+            if isinstance(adapter.source_summary, dict)
+            else None
+        ),
     )
     for candidate in candidates:
         if isinstance(candidate, dict):
@@ -200,7 +207,10 @@ def _external_review_context_file_refs(
     )
     source_mount = run_dir / "artifacts" / "source"
     field_keys = (
-        ("correction_summary_json", statistical_inference.get("correction_summary_path")),
+        (
+            "correction_summary_json",
+            statistical_inference.get("correction_summary_path"),
+        ),
         (
             "threshold_summary_json",
             statistical_inference.get("threshold_summary_path")
@@ -229,7 +239,9 @@ def _external_review_context_file_refs(
         except Exception:
             pass
         try:
-            file_refs[field_name] = candidate.resolve().relative_to(run_dir.resolve()).as_posix()
+            file_refs[field_name] = (
+                candidate.resolve().relative_to(run_dir.resolve()).as_posix()
+            )
         except Exception:
             file_refs[field_name] = candidate.as_posix()
     return file_refs
@@ -289,7 +301,9 @@ def build_imported_run_record(
         for idx, raw_step in enumerate(steps, start=1):
             step = dict(raw_step) if isinstance(raw_step, dict) else {}
             step["step_id"] = str(step.get("step_id") or f"s{idx}")
-            step["tool_id"] = str(step.get("tool_id") or step.get("tool") or spec.tool_id)
+            step["tool_id"] = str(
+                step.get("tool_id") or step.get("tool") or spec.tool_id
+            )
             step["status"] = str(step.get("status") or spec.status)
             params = step.get("params") if isinstance(step.get("params"), dict) else {}
             step["params"] = _merge_step_params(params, spec)
@@ -324,14 +338,18 @@ def build_imported_provenance(
     *,
     adapter: ExternalArtifactAdapterPayload | None = None,
 ) -> dict[str, Any]:
-    existing = _load_json(source_dir / "provenance.json") if source_dir.is_dir() else None
+    existing = (
+        _load_json(source_dir / "provenance.json") if source_dir.is_dir() else None
+    )
     existing = existing or {}
     provenance = dict(existing)
     provenance["run_id"] = spec.run_id
     provenance["mode"] = str(provenance.get("mode") or "external_import")
     provenance["route"] = str(provenance.get("route") or "external_run_import")
     provenance["transport"] = str(provenance.get("transport") or "local_filesystem")
-    request = provenance.get("request") if isinstance(provenance.get("request"), dict) else {}
+    request = (
+        provenance.get("request") if isinstance(provenance.get("request"), dict) else {}
+    )
     request = dict(request)
     request.setdefault("source_dir", str(source_dir))
     request.setdefault("tool_id", spec.tool_id)
@@ -419,7 +437,9 @@ def _write_observation_bundle(
         observation_json="observation.json",
         provenance_json="provenance.json",
         artifact_manifest_json=(
-            "artifact_manifest.json" if (run_dir / "artifact_manifest.json").exists() else None
+            "artifact_manifest.json"
+            if (run_dir / "artifact_manifest.json").exists()
+            else None
         ),
         trace_jsonl="trace.jsonl" if (run_dir / "trace.jsonl").exists() else None,
         correction_summary_json=file_refs.get("correction_summary_json"),
@@ -504,7 +524,9 @@ def stage_external_run(
     if not source.exists() or not (source.is_dir() or source.is_file()):
         raise FileNotFoundError(f"external source path not found: {source}")
     if destination.exists() and any(destination.iterdir()) and not overwrite:
-        raise FileExistsError(f"destination run directory already exists: {destination}")
+        raise FileExistsError(
+            f"destination run directory already exists: {destination}"
+        )
 
     adapter = detect_external_artifact_adapter(source, preferred=adapter_preference)
     effective_spec = _effective_spec(spec, adapter)
@@ -516,7 +538,9 @@ def stage_external_run(
     )
     if adapter is not None:
         reused_root_files = [
-            name for name in reused_root_files if name not in _ADAPTER_GENERATED_FILENAMES
+            name
+            for name in reused_root_files
+            if name not in _ADAPTER_GENERATED_FILENAMES
         ]
     extra_source_files = list(adapter.extra_source_files) if adapter is not None else []
     created_source_files = ["artifacts/source"]

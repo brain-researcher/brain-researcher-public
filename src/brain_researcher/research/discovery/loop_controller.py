@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, is_dataclass
 import sys
 from collections.abc import Sequence
+from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
 
@@ -45,9 +45,7 @@ def _config_dict(config: Any) -> dict[str, Any]:
         return payload if isinstance(payload, dict) else {}
     if hasattr(config, "__dict__"):
         return {
-            key: value
-            for key, value in vars(config).items()
-            if not key.startswith("_")
+            key: value for key, value in vars(config).items() if not key.startswith("_")
         }
     return {}
 
@@ -69,7 +67,9 @@ def _bundle_run_dir(payload: dict[str, Any], config: Any) -> Path | None:
         if path := _path_or_none(config_payload.get(key)):
             return path
 
-    loop_root = _path_or_none(payload.get("loop_root") or config_payload.get("loop_root"))
+    loop_root = _path_or_none(
+        payload.get("loop_root") or config_payload.get("loop_root")
+    )
     if loop_root is not None and loop_root.is_absolute():
         return loop_root
     return None
@@ -118,9 +118,7 @@ def _emit_native_bundle(
     config_payload = _config_dict(config)
     source_manifests = _bundle_relrefs(
         run_dir,
-        payload.get("source_manifests")
-        or config_payload.get("source_manifests")
-        or (),
+        payload.get("source_manifests") or config_payload.get("source_manifests") or (),
     )
     inputs_manifest_ref = _text(
         payload.get("inputs_manifest_ref")

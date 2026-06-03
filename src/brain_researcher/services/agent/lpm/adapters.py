@@ -8,12 +8,12 @@ command construction, and backend-specific quirks.
 
 from __future__ import annotations
 
-from typing import Dict, Any, List
+from typing import Any
 
 from .specs import SmoothParams
 
 
-def compile_smooth_afni(params: SmoothParams) -> Dict[str, Any]:
+def compile_smooth_afni(params: SmoothParams) -> dict[str, Any]:
     """
     Compile smooth operation for AFNI's 3dBlurInMask.
 
@@ -33,7 +33,7 @@ def compile_smooth_afni(params: SmoothParams) -> Dict[str, Any]:
     """
     fwhm = params.to_fwhm()
 
-    args: List[str] = [
+    args: list[str] = [
         "-FWHM",
         f"{fwhm:.4f}",
         "-input",
@@ -60,7 +60,7 @@ def compile_smooth_afni(params: SmoothParams) -> Dict[str, Any]:
     }
 
 
-def compile_smooth_fsl(params: SmoothParams) -> Dict[str, Any]:
+def compile_smooth_fsl(params: SmoothParams) -> dict[str, Any]:
     """
     Compile smooth operation for FSL's fslmaths.
 
@@ -85,7 +85,7 @@ def compile_smooth_fsl(params: SmoothParams) -> Dict[str, Any]:
     """
     sigma = params.to_sigma()
 
-    args: List[str] = [params.input, "-s", f"{sigma:.5f}", params.output]
+    args: list[str] = [params.input, "-s", f"{sigma:.5f}", params.output]
 
     cmd_params = {
         "input": params.input,
@@ -110,7 +110,7 @@ def compile_smooth_fsl(params: SmoothParams) -> Dict[str, Any]:
     }
 
 
-def compile_smooth_fsl_masked(params: SmoothParams) -> Dict[str, Any]:
+def compile_smooth_fsl_masked(params: SmoothParams) -> dict[str, Any]:
     """
     Compile smooth operation for FSL with masking support.
 

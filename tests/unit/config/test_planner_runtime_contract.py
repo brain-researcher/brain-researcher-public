@@ -29,7 +29,9 @@ def test_active_planner_runtime_surfaces_are_catalog_only() -> None:
 
 
 def test_catalog_loader_retains_internal_legacy_merge_compatibility() -> None:
-    catalog_loader = _read("src/brain_researcher/services/agent/planner/catalog_loader.py")
+    catalog_loader = _read(
+        "src/brain_researcher/services/agent/planner/catalog_loader.py"
+    )
 
     assert "legacy_tool_to_capability" in catalog_loader
     assert "BR_PLANNER_INCLUDE_LEGACY" in catalog_loader

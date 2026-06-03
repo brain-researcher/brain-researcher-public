@@ -9,21 +9,19 @@ This module provides FastAPI endpoints for complex DAG workflow management inclu
 - Template management and reuse
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, File, UploadFile
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, model_validator
-from typing import Dict, List, Optional, Any, Union
-import asyncio
+import json
 import logging
 from datetime import datetime
+from typing import Any
+
 import yaml
-import json
-import io
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
+from pydantic import BaseModel, Field, model_validator
+
+from ..agent.dag_executor import ComplexDAGExecutor
 
 # Import DAG execution components
 from ..agent.dag_language import DAGDefinition, ParameterResolver
-from ..agent.dag_executor import ComplexDAGExecutor, ExecutionStatus
-from ..agent.parallel_executor import ParallelExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -37,18 +35,27 @@ dag_executor = ComplexDAGExecutor()
 # Pydantic models for API contracts
 class DAGExecutionRequest(BaseModel):
     """Request to execute a DAG"""
+
     dag_definition: str = Field(..., description="YAML or JSON DAG definition")
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="Initial parameters")
-    execution_mode: str = Field(default="strict", description="Execution mode: strict or best_effort")
-    scheduling_strategy: str = Field(default="eager", description="Scheduling strategy: eager, lazy, or batch")
-    max_concurrent_nodes: int = Field(default=10, description="Maximum concurrent node executions")
-    checkpoint_id: Optional[str] = Field(
+    parameters: dict[str, Any] = Field(
+        default_factory=dict, description="Initial parameters"
+    )
+    execution_mode: str = Field(
+        default="strict", description="Execution mode: strict or best_effort"
+    )
+    scheduling_strategy: str = Field(
+        default="eager", description="Scheduling strategy: eager, lazy, or batch"
+    )
+    max_concurrent_nodes: int = Field(
+        default=10, description="Maximum concurrent node executions"
+    )
+    checkpoint_id: str | None = Field(
         default=None, description="Resume from a saved checkpoint id"
     )
 
     @model_validator(mode="before")
     @classmethod
-    def _normalize_legacy_checkpoint_id(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_legacy_checkpoint_id(cls, values: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(values, dict):
             return values
         if not values.get("checkpoint_id") and values.get("resume_checkpoint_id"):
@@ -59,90 +66,100 @@ class DAGExecutionRequest(BaseModel):
 
 class DAGValidationRequest(BaseModel):
     """Request to validate a DAG definition"""
+
     dag_definition: str = Field(..., description="YAML or JSON DAG definition")
-    parameters: Optional[Dict[str, Any]] = Field(default=None, description="Parameters for validation")
+    parameters: dict[str, Any] | None = Field(
+        default=None, description="Parameters for validation"
+    )
 
 
 class DAGNode(BaseModel):
     """DAG node representation for API"""
+
     id: str
     type: str
-    dependencies: List[str] = []
-    parameters: Dict[str, Any] = {}
-    tool: Optional[str] = None
-    condition: Optional[str] = None
-    true_branch: List[str] = []
-    false_branch: List[str] = []
-    loop_config: Optional[Dict[str, Any]] = None
-    timeout: Optional[int] = None
-    retry_policy: Optional[Dict[str, Any]] = None
+    dependencies: list[str] = []
+    parameters: dict[str, Any] = {}
+    tool: str | None = None
+    condition: str | None = None
+    true_branch: list[str] = []
+    false_branch: list[str] = []
+    loop_config: dict[str, Any] | None = None
+    timeout: int | None = None
+    retry_policy: dict[str, Any] | None = None
 
 
 class DAGDefinitionResponse(BaseModel):
     """DAG definition response"""
+
     name: str
     version: str
     description: str
-    parameters: Dict[str, Any]
-    nodes: Dict[str, DAGNode]
-    edges: List[Dict[str, str]]
-    validation_errors: List[str] = []
-    metadata: Dict[str, Any] = {}
+    parameters: dict[str, Any]
+    nodes: dict[str, DAGNode]
+    edges: list[dict[str, str]]
+    validation_errors: list[str] = []
+    metadata: dict[str, Any] = {}
 
 
 class ExecutionStatusResponse(BaseModel):
     """Execution status response"""
+
     execution_id: str
     dag_name: str
     status: str
-    start_time: Optional[str]
-    end_time: Optional[str]
-    duration_seconds: Optional[float]
+    start_time: str | None
+    end_time: str | None
+    duration_seconds: float | None
     total_nodes: int
     completed_nodes: int
     failed_nodes: int
     active_nodes: int
     progress_percentage: float
-    node_statuses: Dict[str, str] = {}
-    checkpoint_id: Optional[str] = None
+    node_statuses: dict[str, str] = {}
+    checkpoint_id: str | None = None
 
 
 class NodeExecutionDetail(BaseModel):
     """Detailed node execution information"""
+
     node_id: str
     status: str
-    start_time: Optional[str]
-    end_time: Optional[str]
+    start_time: str | None
+    end_time: str | None
     attempt: int
     max_attempts: int
-    result: Optional[Any]
-    error: Optional[str]
-    duration_seconds: Optional[float]
+    result: Any | None
+    error: str | None
+    duration_seconds: float | None
 
 
 class ExecutionDetailResponse(BaseModel):
     """Detailed execution response"""
+
     execution_id: str
     dag: DAGDefinitionResponse
     status: str
-    start_time: Optional[str]
-    end_time: Optional[str]
-    duration_seconds: Optional[float]
-    global_context: Dict[str, Any]
-    node_executions: Dict[str, NodeExecutionDetail]
-    expanded_nodes: Dict[str, List[str]] = {}
-    checkpoint_id: Optional[str] = None
+    start_time: str | None
+    end_time: str | None
+    duration_seconds: float | None
+    global_context: dict[str, Any]
+    node_executions: dict[str, NodeExecutionDetail]
+    expanded_nodes: dict[str, list[str]] = {}
+    checkpoint_id: str | None = None
 
 
 class VisualizationResponse(BaseModel):
     """DAG visualization data"""
-    nodes: List[Dict[str, Any]]
-    edges: List[Dict[str, Any]]
-    layout: Dict[str, Any]
-    execution_overlay: Optional[Dict[str, Any]] = None
+
+    nodes: list[dict[str, Any]]
+    edges: list[dict[str, Any]]
+    layout: dict[str, Any]
+    execution_overlay: dict[str, Any] | None = None
 
 
 # API Endpoints
+
 
 @router.post("/validate", response_model=DAGDefinitionResponse)
 async def validate_dag(request: DAGValidationRequest):
@@ -157,9 +174,7 @@ async def validate_dag(request: DAGValidationRequest):
         # Test parameter resolution if provided
         if request.parameters:
             try:
-                resolved_params = ParameterResolver.resolve_parameters(
-                    dag.parameters, request.parameters
-                )
+                ParameterResolver.resolve_parameters(dag.parameters, request.parameters)
             except Exception as e:
                 validation_errors.append(f"Parameter resolution error: {str(e)}")
 
@@ -181,13 +196,15 @@ async def validate_dag(request: DAGValidationRequest):
                     false_branch=node.false_branch,
                     loop_config=node.loop_config.__dict__ if node.loop_config else None,
                     timeout=node.timeout,
-                    retry_policy=node.retry_policy.__dict__ if node.retry_policy else None
+                    retry_policy=(
+                        node.retry_policy.__dict__ if node.retry_policy else None
+                    ),
                 )
                 for node_id, node in dag.nodes.items()
             },
             edges=[{"from": edge[0], "to": edge[1]} for edge in dag.edges],
             validation_errors=validation_errors,
-            metadata=dag.metadata
+            metadata=dag.metadata,
         )
 
     except Exception as e:
@@ -195,7 +212,7 @@ async def validate_dag(request: DAGValidationRequest):
         raise HTTPException(status_code=400, detail=f"DAG validation failed: {str(e)}")
 
 
-@router.post("/execute", response_model=Dict[str, str])
+@router.post("/execute", response_model=dict[str, str])
 async def execute_dag(request: DAGExecutionRequest, background_tasks: BackgroundTasks):
     """Execute a DAG workflow asynchronously"""
     try:
@@ -206,8 +223,7 @@ async def execute_dag(request: DAGExecutionRequest, background_tasks: Background
         validation_errors = dag.validate()
         if validation_errors:
             raise HTTPException(
-                status_code=400,
-                detail=f"DAG validation failed: {validation_errors}"
+                status_code=400, detail=f"DAG validation failed: {validation_errors}"
             )
 
         # Configure executor
@@ -215,6 +231,7 @@ async def execute_dag(request: DAGExecutionRequest, background_tasks: Background
             dag_executor.max_concurrent_nodes = request.max_concurrent_nodes
 
         import uuid
+
         execution_id = str(uuid.uuid4())
 
         # Start execution in background (pass resume checkpoint and fixed execution id)
@@ -249,7 +266,9 @@ async def get_execution_status(execution_id: str):
 
         summary = dag_executor.get_execution_summary(execution_id)
         if not summary:
-            raise HTTPException(status_code=404, detail="Execution summary not available")
+            raise HTTPException(
+                status_code=404, detail="Execution summary not available"
+            )
 
         # Get node statuses
         node_statuses = {
@@ -291,18 +310,22 @@ async def get_execution_detail(execution_id: str):
         for node_id, node_exec in execution.node_executions.items():
             node_duration = None
             if node_exec.start_time and node_exec.end_time:
-                node_duration = (node_exec.end_time - node_exec.start_time).total_seconds()
+                node_duration = (
+                    node_exec.end_time - node_exec.start_time
+                ).total_seconds()
 
             node_executions[node_id] = NodeExecutionDetail(
                 node_id=node_exec.node_id,
                 status=node_exec.status.value,
-                start_time=node_exec.start_time.isoformat() if node_exec.start_time else None,
+                start_time=(
+                    node_exec.start_time.isoformat() if node_exec.start_time else None
+                ),
                 end_time=node_exec.end_time.isoformat() if node_exec.end_time else None,
                 attempt=node_exec.attempt,
                 max_attempts=node_exec.max_attempts,
                 result=node_exec.result,
                 error=node_exec.error,
-                duration_seconds=node_duration
+                duration_seconds=node_duration,
             )
 
         return ExecutionDetailResponse(
@@ -322,17 +345,25 @@ async def get_execution_detail(execution_id: str):
                         condition=node.condition,
                         true_branch=node.true_branch,
                         false_branch=node.false_branch,
-                        loop_config=node.loop_config.__dict__ if node.loop_config else None,
+                        loop_config=(
+                            node.loop_config.__dict__ if node.loop_config else None
+                        ),
                         timeout=node.timeout,
-                        retry_policy=node.retry_policy.__dict__ if node.retry_policy else None
+                        retry_policy=(
+                            node.retry_policy.__dict__ if node.retry_policy else None
+                        ),
                     )
                     for node_id, node in execution.dag.nodes.items()
                 },
-                edges=[{"from": edge[0], "to": edge[1]} for edge in execution.dag.edges],
-                metadata=execution.dag.metadata
+                edges=[
+                    {"from": edge[0], "to": edge[1]} for edge in execution.dag.edges
+                ],
+                metadata=execution.dag.metadata,
             ),
             status=execution.status.value,
-            start_time=execution.start_time.isoformat() if execution.start_time else None,
+            start_time=(
+                execution.start_time.isoformat() if execution.start_time else None
+            ),
             end_time=execution.end_time.isoformat() if execution.end_time else None,
             duration_seconds=duration,
             global_context=execution.global_context,
@@ -357,8 +388,7 @@ async def cancel_execution(execution_id: str):
             return {"message": f"Execution {execution_id} cancelled successfully"}
         else:
             raise HTTPException(
-                status_code=400,
-                detail="Execution not found or not cancellable"
+                status_code=400, detail="Execution not found or not cancellable"
             )
     except HTTPException:
         raise
@@ -384,39 +414,33 @@ async def visualize_execution(execution_id: str):
             node_exec = execution.node_executions.get(node_id)
             status = node_exec.status.value if node_exec else "unknown"
 
-            nodes.append({
-                "id": node_id,
-                "label": node_id,
-                "type": node.type.value,
-                "status": status,
-                "tool": node.tool,
-                "condition": node.condition,
-                "parameters": node.parameters
-            })
+            nodes.append(
+                {
+                    "id": node_id,
+                    "label": node_id,
+                    "type": node.type.value,
+                    "status": status,
+                    "tool": node.tool,
+                    "condition": node.condition,
+                    "parameters": node.parameters,
+                }
+            )
 
         # Process edges
         for from_node, to_node in execution.dag.edges:
-            edges.append({
-                "from": from_node,
-                "to": to_node,
-                "type": "dependency"
-            })
+            edges.append({"from": from_node, "to": to_node, "type": "dependency"})
 
         # Add conditional edges
         for node_id, node in execution.dag.nodes.items():
             if node.type.value == "conditional":
                 for branch_node in node.true_branch:
-                    edges.append({
-                        "from": node_id,
-                        "to": branch_node,
-                        "type": "true_branch"
-                    })
+                    edges.append(
+                        {"from": node_id, "to": branch_node, "type": "true_branch"}
+                    )
                 for branch_node in node.false_branch:
-                    edges.append({
-                        "from": node_id,
-                        "to": branch_node,
-                        "type": "false_branch"
-                    })
+                    edges.append(
+                        {"from": node_id, "to": branch_node, "type": "false_branch"}
+                    )
 
         # Create layout (simple hierarchical layout)
         layout = _create_dag_layout(nodes, edges)
@@ -429,20 +453,23 @@ async def visualize_execution(execution_id: str):
                 "success": "#green",
                 "failed": "#red",
                 "cancelled": "#orange",
-                "skipped": "#yellow"
+                "skipped": "#yellow",
             },
             "progress": {
                 "completed": len(execution.completed_nodes),
                 "total": len(execution.node_executions),
-                "percentage": len(execution.completed_nodes) / len(execution.node_executions) * 100 if execution.node_executions else 0
-            }
+                "percentage": (
+                    len(execution.completed_nodes)
+                    / len(execution.node_executions)
+                    * 100
+                    if execution.node_executions
+                    else 0
+                ),
+            },
         }
 
         return VisualizationResponse(
-            nodes=nodes,
-            edges=edges,
-            layout=layout,
-            execution_overlay=execution_overlay
+            nodes=nodes, edges=edges, layout=layout, execution_overlay=execution_overlay
         )
 
     except HTTPException:
@@ -460,14 +487,14 @@ async def upload_dag_file(file: UploadFile = File(...)):
         content = await file.read()
 
         # Parse based on file extension
-        if file.filename.endswith(('.yaml', '.yml')):
-            dag_definition = content.decode('utf-8')
-        elif file.filename.endswith('.json'):
-            dag_definition = content.decode('utf-8')
+        if file.filename.endswith((".yaml", ".yml")):
+            dag_definition = content.decode("utf-8")
+        elif file.filename.endswith(".json"):
+            dag_definition = content.decode("utf-8")
         else:
             raise HTTPException(
                 status_code=400,
-                detail="Unsupported file format. Use .yaml, .yml, or .json"
+                detail="Unsupported file format. Use .yaml, .yml, or .json",
             )
 
         # Validate the DAG
@@ -481,7 +508,7 @@ async def upload_dag_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/templates", response_model=List[Dict[str, Any]])
+@router.get("/templates", response_model=list[dict[str, Any]])
 async def list_dag_templates():
     """List available DAG templates"""
     # In practice, this would read from a template repository
@@ -492,7 +519,7 @@ async def list_dag_templates():
             "description": "Standard fMRI analysis with preprocessing and statistics",
             "category": "neuroimaging",
             "parameters": ["subject_id", "threshold", "smoothing_fwhm"],
-            "estimated_duration": "2-4 hours"
+            "estimated_duration": "2-4 hours",
         },
         {
             "id": "group_comparison",
@@ -500,7 +527,7 @@ async def list_dag_templates():
             "description": "Compare two groups with multiple subjects",
             "category": "statistics",
             "parameters": ["group1_subjects", "group2_subjects", "contrast"],
-            "estimated_duration": "1-2 hours"
+            "estimated_duration": "1-2 hours",
         },
         {
             "id": "longitudinal_analysis",
@@ -508,8 +535,8 @@ async def list_dag_templates():
             "description": "Analyze changes over time for subjects",
             "category": "longitudinal",
             "parameters": ["subjects", "timepoints", "model_type"],
-            "estimated_duration": "3-6 hours"
-        }
+            "estimated_duration": "3-6 hours",
+        },
     ]
 
     return templates
@@ -521,6 +548,7 @@ async def get_dag_template(template_id: str):
     # In practice, this would load from a template repository
     if template_id == "neuroimaging_analysis":
         from ..agent.dag_language import EXAMPLE_DAG_YAML
+
         validation_request = DAGValidationRequest(dag_definition=EXAMPLE_DAG_YAML)
         return await validate_dag(validation_request)
     else:
@@ -529,11 +557,12 @@ async def get_dag_template(template_id: str):
 
 # Helper functions
 
+
 def _parse_dag_definition(dag_definition: str) -> DAGDefinition:
     """Parse DAG definition from YAML or JSON string"""
     try:
         # Try YAML first
-        data = yaml.safe_load(dag_definition)
+        yaml.safe_load(dag_definition)
         return DAGDefinition.from_yaml(dag_definition)
     except yaml.YAMLError:
         try:
@@ -543,8 +572,13 @@ def _parse_dag_definition(dag_definition: str) -> DAGDefinition:
             raise ValueError(f"Invalid YAML or JSON format: {e}")
 
 
-async def _execute_dag_background(dag: DAGDefinition, parameters: Dict[str, Any],
-                                execution_mode: str, execution_id: str, resume_checkpoint_id: str | None):
+async def _execute_dag_background(
+    dag: DAGDefinition,
+    parameters: dict[str, Any],
+    execution_mode: str,
+    execution_id: str,
+    resume_checkpoint_id: str | None,
+):
     """Execute DAG in background task"""
     try:
         execution = await dag_executor.execute_dag(
@@ -558,13 +592,13 @@ async def _execute_dag_background(dag: DAGDefinition, parameters: Dict[str, Any]
         logger.error(f"Background DAG execution failed: {e}")
 
 
-def _create_dag_layout(nodes: List[Dict], edges: List[Dict]) -> Dict[str, Any]:
+def _create_dag_layout(nodes: list[dict], edges: list[dict]) -> dict[str, Any]:
     """Create a simple hierarchical layout for DAG visualization"""
     # Simple layout algorithm - in practice, use a proper graph layout library
     node_positions = {}
 
     # Find root nodes (no incoming edges)
-    incoming_edges = set(edge["to"] for edge in edges)
+    incoming_edges = {edge["to"] for edge in edges}
     root_nodes = [node["id"] for node in nodes if node["id"] not in incoming_edges]
 
     # Assign positions in levels
@@ -574,10 +608,7 @@ def _create_dag_layout(nodes: List[Dict], edges: List[Dict]) -> Dict[str, Any]:
 
     while current_level_nodes:
         for i, node_id in enumerate(current_level_nodes):
-            node_positions[node_id] = {
-                "x": i * 200,
-                "y": level * 150
-            }
+            node_positions[node_id] = {"x": i * 200, "y": level * 150}
             processed.add(node_id)
 
         # Find next level nodes
@@ -594,5 +625,5 @@ def _create_dag_layout(nodes: List[Dict], edges: List[Dict]) -> Dict[str, Any]:
         "type": "hierarchical",
         "direction": "top-bottom",
         "node_positions": node_positions,
-        "spacing": {"x": 200, "y": 150}
+        "spacing": {"x": 200, "y": 150},
     }

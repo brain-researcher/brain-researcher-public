@@ -10,18 +10,18 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
+
 import pytest
 
 import brain_researcher.services.agent.logging.run_recorder as run_recorder_module
 from brain_researcher.config.run_artifacts import get_metadata_root
 from brain_researcher.services.agent.logging.run_recorder import (
     RunRecorder,
-    get_recorder,
-    file_fingerprint,
-    redacted_path,
     compute_tool_spec_digest,
+    file_fingerprint,
     get_package_version,
-    get_git_sha,
+    get_recorder,
+    redacted_path,
 )
 from brain_researcher.services.tools.args_resolver import ArgsResolver
 
@@ -243,7 +243,7 @@ class TestFileFingerprinting:
             ),
         ]
 
-        for original, expected_pattern in test_cases:
+        for original, _expected_pattern in test_cases:
             redacted = redacted_path(original)
             # Check that sensitive parts are redacted
             assert "username" not in redacted
@@ -469,7 +469,7 @@ class TestLogPersistence:
         assert len(jsonl_files) == 1
 
         # Read and verify content
-        with open(jsonl_files[0], "r") as f:
+        with open(jsonl_files[0]) as f:
             line = f.readline()
             loaded = json.loads(line)
             assert loaded["run_id"] == log["run_id"]
@@ -512,9 +512,8 @@ class TestUtilityFunctions:
     def test_get_package_version(self):
         """Test package version retrieval."""
         # Test with a package that should exist
-        import sys
 
-        python_version = get_package_version("sys")  # sys doesn't have version
+        get_package_version("sys")  # sys doesn't have version
 
         # Test with numpy (should be installed)
         numpy_version = get_package_version("numpy")

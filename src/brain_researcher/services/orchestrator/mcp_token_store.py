@@ -281,9 +281,8 @@ class McpTokenStore:
                     last_dt = parse_iso_datetime(last_used_at)
                 except ValueError:
                     last_dt = None
-                if (
-                    last_dt is not None
-                    and now - last_dt < timedelta(seconds=LAST_USED_WRITE_INTERVAL_SECONDS)
+                if last_dt is not None and now - last_dt < timedelta(
+                    seconds=LAST_USED_WRITE_INTERVAL_SECONDS
                 ):
                     should_write = False
             if should_write:

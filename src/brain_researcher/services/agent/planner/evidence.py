@@ -9,19 +9,20 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Protocol, Sequence
+from typing import Any, Protocol
 
 from brain_researcher.core.contracts.loop_signals import (
     LoopSignalBaseV1,
     parse_loop_signals,
 )
 from brain_researcher.services.agent.error_taxonomy import classify_failure
+from brain_researcher.services.agent.planner.kg_bridge import resolve_dataset_id
 from brain_researcher.services.agent.planner.kg_utils import (
     extract_dataset_from_context,
     normalize_dataset_id,
 )
-from brain_researcher.services.agent.planner.kg_bridge import resolve_dataset_id
 
 logger = logging.getLogger(__name__)
 
@@ -156,8 +157,16 @@ def aggregate_plan_job_evidence(
 
     tool_versions = dict(tool_versions or {})
 
-    snapshot = job_payload.get("snapshot") if isinstance(job_payload.get("snapshot"), dict) else {}
-    context = job_payload.get("context") if isinstance(job_payload.get("context"), dict) else {}
+    snapshot = (
+        job_payload.get("snapshot")
+        if isinstance(job_payload.get("snapshot"), dict)
+        else {}
+    )
+    context = (
+        job_payload.get("context")
+        if isinstance(job_payload.get("context"), dict)
+        else {}
+    )
     plan_id = plan_id or job_payload.get("plan_id") or snapshot.get("plan_id")
     if run_id is None:
         run_id = job_payload.get("job_id") or context.get("run_id")
@@ -168,7 +177,9 @@ def aggregate_plan_job_evidence(
         task_family = intent[0]
     if not task_family:
         pipeline = context.get("pipeline")
-        task_family = pipeline if isinstance(pipeline, str) and pipeline.strip() else "unknown"
+        task_family = (
+            pipeline if isinstance(pipeline, str) and pipeline.strip() else "unknown"
+        )
 
     state = workflow_result.get("state")
     succeeded = str(state).lower() == "succeeded"
@@ -190,7 +201,7 @@ def aggregate_plan_job_evidence(
                 if isinstance(err, str) and err:
                     tool_error[tool] = err
                 dur = row.get("duration_ms")
-                if isinstance(dur, (int, float)) and dur >= 0:
+                if isinstance(dur, int | float) and dur >= 0:
                     tool_duration_ms[tool] = int(dur)
 
     # Tool ids: prefer plan steps; fallback to chosen_tool only.

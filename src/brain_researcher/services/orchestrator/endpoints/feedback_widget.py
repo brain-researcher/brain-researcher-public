@@ -7,22 +7,21 @@ import logging
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 from fastapi import (
     APIRouter,
     BackgroundTasks,
-    Depends,
     File,
+    Form,
     HTTPException,
     Request,
     UploadFile,
     status,
-    Form,
 )
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field, AnyHttpUrl, ConfigDict
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field
 
 from ...telemetry.models import EventType, PrivacyLevel, ServiceType
 from ..feedback_repository import FeedbackRecord, FeedbackRepository
@@ -36,20 +35,20 @@ class FeedbackSubmissionRequest(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    id: Optional[str] = Field(None, description="Client-provided identifier")
+    id: str | None = Field(None, description="Client-provided identifier")
     rating: int = Field(..., ge=1, le=5)
-    emoji_rating: Optional[str] = Field(None, alias="emojiRating")
+    emoji_rating: str | None = Field(None, alias="emojiRating")
     category: str = Field(..., min_length=1, max_length=64)
     title: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., min_length=1, max_length=5000)
-    screenshot_url: Optional[str] = Field(None, alias="screenshotUrl")
-    user_id: Optional[str] = Field(None, alias="userId")
-    session_id: Optional[str] = Field(None, alias="sessionId")
-    user_agent: Optional[str] = Field(None, alias="userAgent")
-    url: Optional[AnyHttpUrl] = None
-    timestamp: Optional[datetime] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    context: Dict[str, Any] = Field(default_factory=dict)
+    screenshot_url: str | None = Field(None, alias="screenshotUrl")
+    user_id: str | None = Field(None, alias="userId")
+    session_id: str | None = Field(None, alias="sessionId")
+    user_agent: str | None = Field(None, alias="userAgent")
+    url: AnyHttpUrl | None = None
+    timestamp: datetime | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    context: dict[str, Any] = Field(default_factory=dict)
 
 
 class FeedbackSubmissionResponse(BaseModel):
@@ -59,7 +58,7 @@ class FeedbackSubmissionResponse(BaseModel):
 
 
 class FeedbackListResponse(BaseModel):
-    submissions: List[FeedbackSubmissionResponse]
+    submissions: list[FeedbackSubmissionResponse]
 
 
 class ScreenshotUploadResponse(BaseModel):
@@ -67,19 +66,21 @@ class ScreenshotUploadResponse(BaseModel):
     url: str
 
 
-def _generate_feedback_id(candidate: Optional[str]) -> str:
+def _generate_feedback_id(candidate: str | None) -> str:
     if candidate:
         return candidate
     return f"feedback_{uuid.uuid4().hex[:12]}"
 
 
-def _hash_identifier(value: Optional[str]) -> Optional[str]:
+def _hash_identifier(value: str | None) -> str | None:
     if not value:
         return None
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-@router.post("", response_model=FeedbackSubmissionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=FeedbackSubmissionResponse, status_code=status.HTTP_201_CREATED
+)
 async def submit_feedback(
     submission: FeedbackSubmissionRequest,
     background_tasks: BackgroundTasks,
@@ -120,7 +121,7 @@ async def submit_feedback(
 
 
 @router.get("", response_model=FeedbackListResponse)
-async def list_feedback(limit: int = 20, category: Optional[str] = None):
+async def list_feedback(limit: int = 20, category: str | None = None):
     limit = max(1, min(100, limit))
     records = feedback_repo.list_submissions(limit=limit, category=category)
     return FeedbackListResponse(
@@ -136,13 +137,15 @@ async def get_feedback(feedback_id: str):
     record = feedback_repo.get_submission(feedback_id)
     if not record:
         raise HTTPException(status_code=404, detail="Feedback not found")
-    return FeedbackSubmissionResponse(id=record.id, stored_at=record.updated_at, message=record.description[:280])
+    return FeedbackSubmissionResponse(
+        id=record.id, stored_at=record.updated_at, message=record.description[:280]
+    )
 
 
 @router.post("/screenshot", response_model=ScreenshotUploadResponse)
 async def upload_screenshot(
     screenshot: UploadFile = File(...),
-    feedback_id: Optional[str] = Form(None),
+    feedback_id: str | None = Form(None),
 ):
     data = await screenshot.read()
     screenshot_id = feedback_repo.save_screenshot(

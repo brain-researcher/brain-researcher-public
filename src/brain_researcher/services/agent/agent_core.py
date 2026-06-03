@@ -12,7 +12,7 @@ import os
 import re
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ def simple_chat_core(
     history: list | None = None,
     ctx: dict | None = None,
     env_override: dict | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Core chat function without Flask dependencies.
 
@@ -60,9 +60,9 @@ def simple_chat_core(
 
     # Prefer the agent-owned router, but keep the older agent alias if present.
     try:
-        from brain_researcher.services.agent.llm_router import (
+        from brain_researcher.services.agent.llm_router import (  # legacy location
             LLMRouter,
-        )  # legacy location
+        )
     except ModuleNotFoundError:
         from brain_researcher.services.agent.router import LLMRouter
 
@@ -81,26 +81,26 @@ def simple_chat_core(
 
     # Check if orchestrator mode is enabled
     if os.getenv("BR_CHAT_ORCHESTRATOR_ENABLED", "0").lower() in {"1", "true", "yes"}:
-        from brain_researcher.services.tools.tool_registry import ToolRegistry
-        from brain_researcher.services.agent.tool_router import (
-            ToolRouter,
-            load_tool_families,
-        )
-        from brain_researcher.services.agent.tool_allowlist_loader import (
-            resolve_runtime_tool_allowlist,
-        )
-        from brain_researcher.services.agent.tool_executor import ToolExecutor
-        from brain_researcher.services.agent.memory import ConversationMemory
         from brain_researcher.services.agent.advanced_error_recovery import (
             create_error_recovery_system,
         )
+        from brain_researcher.services.agent.memory import ConversationMemory
         from brain_researcher.services.agent.planner.evidence_neo4j import (
             get_default_evidence_store,
         )
         from brain_researcher.services.agent.planner.failure_neo4j import (
             get_default_failure_writer,
         )
+        from brain_researcher.services.agent.tool_allowlist_loader import (
+            resolve_runtime_tool_allowlist,
+        )
+        from brain_researcher.services.agent.tool_executor import ToolExecutor
+        from brain_researcher.services.agent.tool_router import (
+            ToolRouter,
+            load_tool_families,
+        )
         from brain_researcher.services.shared.settings import get_settings
+        from brain_researcher.services.tools.tool_registry import ToolRegistry
 
         tool_registry = ToolRegistry(
             auto_discover=True, use_capabilities=True, enable_integrations=False
@@ -221,12 +221,12 @@ def simple_chat_core(
 
 
 def agent_act_core(
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     trace_id: str | None = None,
     run_id: str | None = None,
     llm_router: Any | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Core agent action function without Flask dependencies.
 
@@ -361,19 +361,19 @@ def agent_act_core(
 
     # Heavy imports are deferred until after the fallback to keep tests hermetic
     from brain_researcher.services.agent import telemetry
-    from brain_researcher.services.agent.web_service import (
-        get_agent,
-        infer_provider,
-        _config,
-    )
     from brain_researcher.services.agent.router import LLMRouter
 
     # Budgeted executor lives under agent.tool_executor (compat wrapper)
     from brain_researcher.services.agent.tool_executor import BudgetedToolExecutor
+    from brain_researcher.services.agent.web_service import (
+        _config,
+        get_agent,
+        infer_provider,
+    )
     from brain_researcher.services.tools.spec import (
-        spec_from_tool,
         ToolSpecRegistry,
         compress_schema,
+        spec_from_tool,
     )
 
     try:
@@ -426,16 +426,16 @@ def agent_act_core(
     fallback_reason = None
     usage: dict[str, Any] = {}
 
-    spans: List[Dict[str, Any]] = []
+    spans: list[dict[str, Any]] = []
     plan_metadata = None
-    selected_tool_name: Optional[str] = None
+    selected_tool_name: str | None = None
     tool_invocation_count = 0
     tool_result_status = "skipped"
-    telemetry_tool_calls: List[Dict[str, Any]] = []
+    telemetry_tool_calls: list[dict[str, Any]] = []
     tool_calls = []
     artifacts = []
     tool_executor = None
-    error_info: Optional[Exception] = None
+    error_info: Exception | None = None
     response_text: str | None = None
     model_name: str | None = None
     started_at_ms = int(time.time() * 1000)
@@ -840,7 +840,7 @@ If no tool is needed: {{"tool": "none", "params": {{}}, "reasoning": "explanatio
                         },
                     )
 
-                    exec_context: Dict[str, Any] = {
+                    exec_context: dict[str, Any] = {
                         "job_id": run_id,
                         "thread_id": session_id or run_id,
                         "parent_run_id": run_id,
@@ -1000,9 +1000,11 @@ If no tool is needed: {{"tool": "none", "params": {{}}, "reasoning": "explanatio
                     "usage": usage,
                     "fallback_reason": fallback_reason,
                     "selected_tool": selected_tool_name,
-                    "api_fee_debit": getattr(plan_metadata, "api_fee_debit", None)
-                    if plan_metadata
-                    else None,
+                    "api_fee_debit": (
+                        getattr(plan_metadata, "api_fee_debit", None)
+                        if plan_metadata
+                        else None
+                    ),
                 },
                 provenance={
                     "run_dir": str(run_dir),
@@ -1070,9 +1072,11 @@ If no tool is needed: {{"tool": "none", "params": {{}}, "reasoning": "explanatio
             "latency_ms": int(round(act_span_record.get("duration_ms", 0))),
             "prompt_hash": telemetry.prompt_hash(query),
             "prompt_length": len(query or ""),
-            "plan_prompt_hash": telemetry.prompt_hash(tool_prompt)
-            if "tool_prompt" in locals()
-            else None,
+            "plan_prompt_hash": (
+                telemetry.prompt_hash(tool_prompt)
+                if "tool_prompt" in locals()
+                else None
+            ),
             "llm": {
                 "provider": plan_metadata.provider if plan_metadata else provider,
                 "model": plan_metadata.model if plan_metadata else model_hint,
@@ -1082,12 +1086,14 @@ If no tool is needed: {{"tool": "none", "params": {{}}, "reasoning": "explanatio
                 "credential": plan_metadata.credential if plan_metadata else None,
                 "bill_to": plan_metadata.bill_to if plan_metadata else None,
                 "usage": usage if plan_metadata else {},
-                "fallback_reason": plan_metadata.fallback_reason
-                if plan_metadata
-                else None,
-                "api_fee_debit": getattr(plan_metadata, "api_fee_debit", None)
-                if plan_metadata
-                else None,
+                "fallback_reason": (
+                    plan_metadata.fallback_reason if plan_metadata else None
+                ),
+                "api_fee_debit": (
+                    getattr(plan_metadata, "api_fee_debit", None)
+                    if plan_metadata
+                    else None
+                ),
             },
             "tooling": {
                 "selected_tool": selected_tool_name,
@@ -1098,9 +1104,11 @@ If no tool is needed: {{"tool": "none", "params": {{}}, "reasoning": "explanatio
                 "artifacts_count": len(artifacts),
             },
             "spans": spans,
-            "error": {"message": str(error_info), "type": type(error_info).__name__}
-            if error_info
-            else None,
+            "error": (
+                {"message": str(error_info), "type": type(error_info).__name__}
+                if error_info
+                else None
+            ),
         }
         try:
             telemetry.record_event(event_payload, event_type="act")

@@ -11,8 +11,8 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import END, StateGraph
 
 from brain_researcher.services.agent.states.base import NeuroAgentState
-from brain_researcher.services.tools.fmri_tools import FMRITools
 from brain_researcher.services.tools.br_kg_tools import BRKGTools
+from brain_researcher.services.tools.fmri_tools import FMRITools
 from brain_researcher.services.tools.statistical_critic import StatisticalCriticTool
 from brain_researcher.services.tools.tool_registry import ToolRegistry
 
@@ -44,7 +44,6 @@ class NeuroAgent:
         self.br_kg_tools = BRKGTools()
         self.critic_tool = StatisticalCriticTool()
 
-
     def _build_graph(self) -> StateGraph:
         """Build the agent workflow graph."""
         workflow = StateGraph(NeuroAgentState)
@@ -55,7 +54,7 @@ class NeuroAgent:
         workflow.add_node("execute", self.execute_tools)
         workflow.add_node("validate", self.validate_statistics)  # NEW: Critic
         workflow.add_node("synthesize", self.synthesize_results)
-        workflow.add_node("memorize", self.memorize_finding)     # NEW: Memory
+        workflow.add_node("memorize", self.memorize_finding)  # NEW: Memory
         workflow.add_node("handle_error", self.handle_error)
 
         # Set entry point
@@ -77,7 +76,7 @@ class NeuroAgent:
         workflow.add_conditional_edges(
             "validate",
             self.check_validation_result,
-            {"valid": "synthesize", "invalid": "handle_error"}
+            {"valid": "synthesize", "invalid": "handle_error"},
         )
 
         # Synthesis -> Memorize -> End
@@ -86,7 +85,6 @@ class NeuroAgent:
         workflow.add_edge("handle_error", END)
 
         return workflow.compile()
-
 
     def understand_query(self, state: NeuroAgentState) -> NeuroAgentState:
         """
@@ -331,7 +329,9 @@ class NeuroAgent:
 
         return state
 
-    def check_execution_result(self, state: NeuroAgentState) -> Literal["success", "error", "retry"]:
+    def check_execution_result(
+        self, state: NeuroAgentState
+    ) -> Literal["success", "error", "retry"]:
         """Determine next step based on execution results."""
         results = state.get("results", {})
         if not results:
@@ -356,7 +356,10 @@ class NeuroAgent:
         # But we pass through this node to keep the graph simple.
 
         # Check if we have GLM results
-        if "glm_analysis" in results and results["glm_analysis"].get("status") == "success":
+        if (
+            "glm_analysis" in results
+            and results["glm_analysis"].get("status") == "success"
+        ):
             glm_data = results["glm_analysis"].get("data", {})
             # Mock extracting residuals/design matrix if not fully populated in this proto
             # In a real scenario, we'd pull these from the output files or return payload
@@ -364,19 +367,23 @@ class NeuroAgent:
             # Running the critic
             # For demonstration, we assume valid interactions if data is present
             critic_result = self.critic_tool.run(
-                residuals=glm_data.get("residuals"), # May be None
-                design_matrix=glm_data.get("design_matrix") # May be None
+                residuals=glm_data.get("residuals"),  # May be None
+                design_matrix=glm_data.get("design_matrix"),  # May be None
             )
 
             state["validation_report"] = critic_result.get("data", {})
             if not state["validation_report"].get("valid", True):
-                state["error"] = f"Statistical Validation Failed: {state['validation_report'].get('issues')}"
+                state["error"] = (
+                    f"Statistical Validation Failed: {state['validation_report'].get('issues')}"
+                )
         else:
             state["validation_report"] = {"valid": True, "skipped": True}
 
         return state
 
-    def check_validation_result(self, state: NeuroAgentState) -> Literal["valid", "invalid"]:
+    def check_validation_result(
+        self, state: NeuroAgentState
+    ) -> Literal["valid", "invalid"]:
         """Check if validation passed."""
         report = state.get("validation_report", {})
         if report.get("valid", True):
@@ -426,7 +433,7 @@ class NeuroAgent:
             elif tool_name == "coordinate_to_concept":
                 mappings = data.get("coordinate_mappings", [])
                 if mappings:
-                    regions = set(m["region"] for m in mappings)
+                    regions = {m["region"] for m in mappings}
                     synthesis["key_findings"].append(
                         f"Brain regions identified: {', '.join(regions)}"
                     )
@@ -513,9 +520,9 @@ class NeuroAgent:
 
         results = state.get("results", {})
         validation_report = state.get("validation_report", {}) or {}
-        statistical_validation = bool(validation_report.get("valid", True)) and not bool(
-            validation_report.get("skipped", False)
-        )
+        statistical_validation = bool(
+            validation_report.get("valid", True)
+        ) and not bool(validation_report.get("skipped", False))
 
         # Evidence count from any literature-style tool outputs
         evidence_count = 0
@@ -532,14 +539,28 @@ class NeuroAgent:
 
         # Infer dataset + concepts when available
         dataset_id = None
-        if "glm_analysis" in results and results["glm_analysis"].get("status") == "success":
+        if (
+            "glm_analysis" in results
+            and results["glm_analysis"].get("status") == "success"
+        ):
             dataset_id = results["glm_analysis"].get("data", {}).get("dataset_id")
 
         concepts = None
-        if "find_related_concepts" in results and results["find_related_concepts"].get("status") == "success":
-            related = results["find_related_concepts"].get("data", {}).get("related_concepts", [])
+        if (
+            "find_related_concepts" in results
+            and results["find_related_concepts"].get("status") == "success"
+        ):
+            related = (
+                results["find_related_concepts"]
+                .get("data", {})
+                .get("related_concepts", [])
+            )
             if related:
-                concepts = [c.get("concept") for c in related if isinstance(c, dict) and c.get("concept")]
+                concepts = [
+                    c.get("concept")
+                    for c in related
+                    if isinstance(c, dict) and c.get("concept")
+                ]
 
         confidence = 0.5
         try:
@@ -553,19 +574,19 @@ class NeuroAgent:
             logger.warning(f"Confidence scoring failed: {e}")
 
         try:
-             # Just memorizing the topline summary for now
-             self.br_kg_tools.add_finding.run(
-                 description=summary,
-                 source_tool="neuro_agent_v1",
-                 confidence=confidence,
-                 dataset_id=dataset_id,
-                 concepts=concepts,
-                 evidence={
-                     "validation_report": validation_report,
-                     "evidence_count": evidence_count,
-                     "tools_used": list(results.keys()),
-                 },
-             )
+            # Just memorizing the topline summary for now
+            self.br_kg_tools.add_finding.run(
+                description=summary,
+                source_tool="neuro_agent_v1",
+                confidence=confidence,
+                dataset_id=dataset_id,
+                concepts=concepts,
+                evidence={
+                    "validation_report": validation_report,
+                    "evidence_count": evidence_count,
+                    "tools_used": list(results.keys()),
+                },
+            )
         except Exception as e:
             logger.warning(f"Failed to memorize: {e}")
 

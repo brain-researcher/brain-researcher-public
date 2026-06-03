@@ -4,11 +4,12 @@ Shared helpers for FreeSurfer recon-all execution.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Dict, Mapping, Sequence, Tuple
+from typing import Any
 
 
-def _as_tuple(values: Sequence[str] | str | None) -> Tuple[str, ...]:
+def _as_tuple(values: Sequence[str] | str | None) -> tuple[str, ...]:
     if values is None:
         return ()
     if isinstance(values, str):
@@ -35,8 +36,8 @@ class FreeSurferReconAllParameters:
     n_threads: int | None = None
     use_gpu: bool = False
     license_file: str | None = None
-    flags: Tuple[str, ...] = field(default_factory=tuple)
-    inputs: Tuple[str, ...] = field(default_factory=tuple)
+    flags: tuple[str, ...] = field(default_factory=tuple)
+    inputs: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "flags", _as_tuple(self.flags))
@@ -83,8 +84,8 @@ class FreeSurferReconAllParameters:
 
         return cmd
 
-    def env(self) -> Dict[str, str]:
-        env: Dict[str, str] = {"SUBJECTS_DIR": self.subjects_dir}
+    def env(self) -> dict[str, str]:
+        env: dict[str, str] = {"SUBJECTS_DIR": self.subjects_dir}
         if self.license_file:
             env["FS_LICENSE"] = self.license_file
         if self.n_threads and self.n_threads > 0:
@@ -101,14 +102,16 @@ def build_freesurfer_command(
     return params.command(include_executable=include_executable)
 
 
-def build_freesurfer_env(params: FreeSurferReconAllParameters) -> Dict[str, str]:
+def build_freesurfer_env(params: FreeSurferReconAllParameters) -> dict[str, str]:
     return params.env()
 
 
 def freesurfer_from_payload(payload: Mapping[str, Any]) -> FreeSurferReconAllParameters:
     return FreeSurferReconAllParameters(
         subject_id=str(payload["subject_id"]),
-        subjects_dir=str(payload.get("subjects_dir") or payload.get("subjects_dir_path") or ""),
+        subjects_dir=str(
+            payload.get("subjects_dir") or payload.get("subjects_dir_path") or ""
+        ),
         t1_image=payload.get("t1_image"),
         stage=str(payload.get("stage", "all")),
         t2_image=payload.get("t2_image"),

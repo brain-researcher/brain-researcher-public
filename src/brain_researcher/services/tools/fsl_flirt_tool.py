@@ -4,7 +4,6 @@ import logging
 import subprocess
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -24,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class FLIRTCostFunction(str, Enum):
     """FLIRT cost function options."""
+
     CORRELATION_RATIO = "corratio"  # Default, robust multi-modal
     MUTUAL_INFO = "mutualinfo"  # Mutual information
     LEAST_SQUARES = "leastsq"  # Least squares (same modality)
@@ -34,6 +34,7 @@ class FLIRTCostFunction(str, Enum):
 
 class FLIRTSearchMethod(str, Enum):
     """FLIRT search method options."""
+
     REGULAR_STEP = "reg"  # Regular stepping (fast)
     GLOBAL_SEARCH = "global"  # Global search (slow but robust)
 
@@ -41,76 +42,57 @@ class FLIRTSearchMethod(str, Enum):
 class FSLFLIRTArgs(BaseModel):
     """Arguments for FSL FLIRT registration."""
 
-    input_file: str = Field(
-        description="Input/source image to be registered"
+    input_file: str = Field(description="Input/source image to be registered")
+    reference_file: str = Field(description="Reference/target image")
+    output_file: str = Field(description="Output registered image")
+    output_matrix: str | None = Field(
+        default=None, description="Output affine transformation matrix file"
     )
-    reference_file: str = Field(
-        description="Reference/target image"
-    )
-    output_file: str = Field(
-        description="Output registered image"
-    )
-    output_matrix: Optional[str] = Field(
-        default=None,
-        description="Output affine transformation matrix file"
-    )
-    init_matrix: Optional[str] = Field(
-        default=None,
-        description="Initial transformation matrix to apply"
+    init_matrix: str | None = Field(
+        default=None, description="Initial transformation matrix to apply"
     )
     dof: int = Field(
         default=12,
         ge=6,
         le=12,
-        description="Degrees of freedom (6=rigid, 7=global rescale, 9=traditional, 12=affine)"
+        description="Degrees of freedom (6=rigid, 7=global rescale, 9=traditional, 12=affine)",
     )
     cost_function: FLIRTCostFunction = Field(
         default=FLIRTCostFunction.CORRELATION_RATIO,
-        description="Cost function for registration"
+        description="Cost function for registration",
     )
     search_method: FLIRTSearchMethod = Field(
         default=FLIRTSearchMethod.REGULAR_STEP,
-        description="Search method for optimization"
+        description="Search method for optimization",
     )
-    search_range_x: Tuple[float, float] = Field(
-        default=(-90, 90),
-        description="Search range in X (degrees)"
+    search_range_x: tuple[float, float] = Field(
+        default=(-90, 90), description="Search range in X (degrees)"
     )
-    search_range_y: Tuple[float, float] = Field(
-        default=(-90, 90),
-        description="Search range in Y (degrees)"
+    search_range_y: tuple[float, float] = Field(
+        default=(-90, 90), description="Search range in Y (degrees)"
     )
-    search_range_z: Tuple[float, float] = Field(
-        default=(-90, 90),
-        description="Search range in Z (degrees)"
+    search_range_z: tuple[float, float] = Field(
+        default=(-90, 90), description="Search range in Z (degrees)"
     )
-    coarse_search: Optional[float] = Field(
-        default=None,
-        description="Coarse search delta angle (degrees)"
+    coarse_search: float | None = Field(
+        default=None, description="Coarse search delta angle (degrees)"
     )
-    fine_search: Optional[float] = Field(
-        default=None,
-        description="Fine search delta angle (degrees)"
+    fine_search: float | None = Field(
+        default=None, description="Fine search delta angle (degrees)"
     )
     interp_method: str = Field(
         default="trilinear",
-        description="Interpolation method (nearestneighbour, trilinear, sinc, spline)"
+        description="Interpolation method (nearestneighbour, trilinear, sinc, spline)",
     )
-    weighting_image: Optional[str] = Field(
-        default=None,
-        description="Weighting image for reference"
+    weighting_image: str | None = Field(
+        default=None, description="Weighting image for reference"
     )
     no_search: bool = Field(
-        default=False,
-        description="Skip search, just apply transformation"
+        default=False, description="Skip search, just apply transformation"
     )
-    verbose: bool = Field(
-        default=False,
-        description="Verbose output"
-    )
+    verbose: bool = Field(default=False, description="Verbose output")
     use_gradient: bool = Field(
-        default=True,
-        description="Use gradient information in cost function"
+        default=True, description="Use gradient information in cost function"
     )
 
 
@@ -252,7 +234,9 @@ class FSLFLIRTTool(NeuroToolWrapper):
                 timeout=300,
             )
         except Exception as exc:  # pragma: no cover
-            return ToolResult(status="error", error=str(exc), data={"command": command_str})
+            return ToolResult(
+                status="error", error=str(exc), data={"command": command_str}
+            )
 
         if result.returncode != 0:
             return ToolResult(
@@ -289,47 +273,48 @@ class FSLFLIRTTool(NeuroToolWrapper):
         reference_file: str,
         output_file: str,
         transformation_matrix: str,
-        interp_method: str = "trilinear"
+        interp_method: str = "trilinear",
     ) -> ToolResult:
         """Apply a previously computed transformation matrix."""
         try:
             # Validate files
-            for file, name in [(input_file, "Input"), (reference_file, "Reference"),
-                               (transformation_matrix, "Matrix")]:
+            for file, name in [
+                (input_file, "Input"),
+                (reference_file, "Reference"),
+                (transformation_matrix, "Matrix"),
+            ]:
                 if not Path(file).exists():
                     return ToolResult(
-                        status="error",
-                        error=f"{name} file not found: {file}",
-                        data={}
+                        status="error", error=f"{name} file not found: {file}", data={}
                     )
 
             # Construct command
             cmd = [
                 self.applyxfm_command,
-                "-in", input_file,
-                "-ref", reference_file,
-                "-out", output_file,
-                "-init", transformation_matrix,
+                "-in",
+                input_file,
+                "-ref",
+                reference_file,
+                "-out",
+                output_file,
+                "-init",
+                transformation_matrix,
                 "-applyxfm",
-                "-interp", interp_method
+                "-interp",
+                interp_method,
             ]
 
             command_str = " ".join(cmd)
             logger.info(f"Applying transformation: {command_str}")
 
             # Execute
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=300
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
             if result.returncode != 0:
                 return ToolResult(
                     status="error",
                     error=f"Apply transformation failed: {result.stderr}",
-                    data={"command": command_str}
+                    data={"command": command_str},
                 )
 
             return ToolResult(
@@ -337,22 +322,16 @@ class FSLFLIRTTool(NeuroToolWrapper):
                 data={
                     "command": command_str,
                     "output_file": output_file,
-                    "message": "Transformation applied successfully"
-                }
+                    "message": "Transformation applied successfully",
+                },
             )
 
         except Exception as e:
             logger.error(f"Apply transformation failed: {str(e)}")
-            return ToolResult(
-                status="error",
-                error=str(e),
-                data={}
-            )
+            return ToolResult(status="error", error=str(e), data={})
 
     def invert_transformation(
-        self,
-        input_matrix: str,
-        output_matrix: str
+        self, input_matrix: str, output_matrix: str
     ) -> ToolResult:
         """Invert a transformation matrix."""
         try:
@@ -360,30 +339,28 @@ class FSLFLIRTTool(NeuroToolWrapper):
                 return ToolResult(
                     status="error",
                     error=f"Input matrix not found: {input_matrix}",
-                    data={}
+                    data={},
                 )
 
             # Use convert_xfm to invert
             cmd = [
                 self.convert_xfm_command,
-                "-omat", output_matrix,
-                "-inverse", input_matrix
+                "-omat",
+                output_matrix,
+                "-inverse",
+                input_matrix,
             ]
 
             command_str = " ".join(cmd)
             logger.info(f"Inverting matrix: {command_str}")
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True)
 
             if result.returncode != 0:
                 return ToolResult(
                     status="error",
                     error=f"Matrix inversion failed: {result.stderr}",
-                    data={"command": command_str}
+                    data={"command": command_str},
                 )
 
             return ToolResult(
@@ -391,23 +368,16 @@ class FSLFLIRTTool(NeuroToolWrapper):
                 data={
                     "command": command_str,
                     "output_matrix": output_matrix,
-                    "message": "Matrix inverted successfully"
-                }
+                    "message": "Matrix inverted successfully",
+                },
             )
 
         except Exception as e:
             logger.error(f"Matrix inversion failed: {str(e)}")
-            return ToolResult(
-                status="error",
-                error=str(e),
-                data={}
-            )
+            return ToolResult(status="error", error=str(e), data={})
 
     def concatenate_transformations(
-        self,
-        matrix1: str,
-        matrix2: str,
-        output_matrix: str
+        self, matrix1: str, matrix2: str, output_matrix: str
     ) -> ToolResult:
         """Concatenate two transformation matrices."""
         try:
@@ -415,32 +385,29 @@ class FSLFLIRTTool(NeuroToolWrapper):
             for file, name in [(matrix1, "Matrix 1"), (matrix2, "Matrix 2")]:
                 if not Path(file).exists():
                     return ToolResult(
-                        status="error",
-                        error=f"{name} not found: {file}",
-                        data={}
+                        status="error", error=f"{name} not found: {file}", data={}
                     )
 
             # Use convert_xfm to concatenate
             cmd = [
                 self.convert_xfm_command,
-                "-omat", output_matrix,
-                "-concat", matrix2, matrix1  # Note: order matters!
+                "-omat",
+                output_matrix,
+                "-concat",
+                matrix2,
+                matrix1,  # Note: order matters!
             ]
 
             command_str = " ".join(cmd)
             logger.info(f"Concatenating matrices: {command_str}")
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True)
 
             if result.returncode != 0:
                 return ToolResult(
                     status="error",
                     error=f"Matrix concatenation failed: {result.stderr}",
-                    data={"command": command_str}
+                    data={"command": command_str},
                 )
 
             return ToolResult(
@@ -448,17 +415,13 @@ class FSLFLIRTTool(NeuroToolWrapper):
                 data={
                     "command": command_str,
                     "output_matrix": output_matrix,
-                    "message": "Matrices concatenated successfully"
-                }
+                    "message": "Matrices concatenated successfully",
+                },
             )
 
         except Exception as e:
             logger.error(f"Matrix concatenation failed: {str(e)}")
-            return ToolResult(
-                status="error",
-                error=str(e),
-                data={}
-            )
+            return ToolResult(status="error", error=str(e), data={})
 
 
 def get_all_tools() -> list:

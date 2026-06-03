@@ -6,26 +6,26 @@ automatically chain tools together to accomplish complex neuroimaging analysis t
 """
 
 import asyncio
-import json
 import logging
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Optional
 from uuid import uuid4
 
 import networkx as nx
 
+from brain_researcher.services.agent.dependency_resolver import (
+    DependencyResolver,
+)
 from brain_researcher.services.tools.enhanced_registry import EnhancedToolRegistry
 from brain_researcher.services.tools.tool_base import BRKGToolWrapper
-from brain_researcher.services.agent.evidence_collection import EvidenceCollector, EvidenceType
-from brain_researcher.services.agent.dependency_resolver import DependencyResolver, ExecutionGraph
 
 logger = logging.getLogger(__name__)
 
 
 class WorkflowPattern(Enum):
     """Common neuroimaging workflow patterns."""
+
     PREPROCESSING_TO_ANALYSIS = "preprocessing_to_analysis"
     TASK_ACTIVATION_ANALYSIS = "task_activation_analysis"
     CONNECTIVITY_ANALYSIS = "connectivity_analysis"
@@ -38,6 +38,7 @@ class WorkflowPattern(Enum):
 
 class DataFlowType(Enum):
     """Types of data flow between tools."""
+
     NIFTI_IMAGE = "nifti_image"
     STATISTICAL_MAP = "statistical_map"
     COORDINATES = "coordinates"
@@ -51,33 +52,35 @@ class DataFlowType(Enum):
 @dataclass
 class WorkflowStep:
     """Individual step in a workflow pipeline."""
+
     step_id: str
     tool_name: str
     tool: BRKGToolWrapper
-    parameters: Dict[str, Any] = field(default_factory=dict)
-    input_requirements: List[DataFlowType] = field(default_factory=list)
-    output_types: List[DataFlowType] = field(default_factory=list)
-    dependencies: List[str] = field(default_factory=list)
+    parameters: dict[str, Any] = field(default_factory=dict)
+    input_requirements: list[DataFlowType] = field(default_factory=list)
+    output_types: list[DataFlowType] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
     optional: bool = False
     estimated_duration: float = 60.0
-    resource_requirements: Dict[str, Any] = field(default_factory=dict)
+    resource_requirements: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class WorkflowPipeline:
     """Complete workflow pipeline definition."""
+
     pipeline_id: str
     name: str
     description: str
     pattern: WorkflowPattern
-    steps: List[WorkflowStep] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    steps: list[WorkflowStep] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_step(self, step: WorkflowStep):
         """Add a step to the pipeline."""
         self.steps.append(step)
 
-    def get_step_by_id(self, step_id: str) -> Optional[WorkflowStep]:
+    def get_step_by_id(self, step_id: str) -> WorkflowStep | None:
         """Get a step by its ID."""
         for step in self.steps:
             if step.step_id == step_id:
@@ -92,17 +95,18 @@ class WorkflowPipeline:
 @dataclass
 class WorkflowExecution:
     """Workflow execution state and results."""
+
     execution_id: str
     pipeline: WorkflowPipeline
     status: str = "pending"
-    current_step: Optional[str] = None
-    completed_steps: Set[str] = field(default_factory=set)
-    failed_steps: Set[str] = field(default_factory=set)
-    step_results: Dict[str, Any] = field(default_factory=dict)
-    step_outputs: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    start_time: Optional[float] = None
-    end_time: Optional[float] = None
-    error_message: Optional[str] = None
+    current_step: str | None = None
+    completed_steps: set[str] = field(default_factory=set)
+    failed_steps: set[str] = field(default_factory=set)
+    step_results: dict[str, Any] = field(default_factory=dict)
+    step_outputs: dict[str, dict[str, Any]] = field(default_factory=dict)
+    start_time: float | None = None
+    end_time: float | None = None
+    error_message: str | None = None
 
 
 class WorkflowComposer:
@@ -111,7 +115,7 @@ class WorkflowComposer:
     def __init__(self, tool_registry: EnhancedToolRegistry):
         """Initialize workflow composer."""
         self.tool_registry = tool_registry
-        self.workflow_patterns: Dict[WorkflowPattern, Dict[str, Any]] = {}
+        self.workflow_patterns: dict[WorkflowPattern, dict[str, Any]] = {}
         self.dependency_resolver = DependencyResolver()
 
         # Initialize common workflow patterns
@@ -130,8 +134,8 @@ class WorkflowComposer:
             "data_flow": [
                 (DataFlowType.NIFTI_IMAGE, DataFlowType.NIFTI_IMAGE),
                 (DataFlowType.NIFTI_IMAGE, DataFlowType.STATISTICAL_MAP),
-                (DataFlowType.STATISTICAL_MAP, DataFlowType.RESULTS_TABLE)
-            ]
+                (DataFlowType.STATISTICAL_MAP, DataFlowType.RESULTS_TABLE),
+            ],
         }
 
         # Task Activation Analysis Pattern
@@ -142,8 +146,8 @@ class WorkflowComposer:
             "data_flow": [
                 (DataFlowType.NIFTI_IMAGE, DataFlowType.STATISTICAL_MAP),
                 (DataFlowType.STATISTICAL_MAP, DataFlowType.COORDINATES),
-                (DataFlowType.COORDINATES, DataFlowType.METADATA)
-            ]
+                (DataFlowType.COORDINATES, DataFlowType.METADATA),
+            ],
         }
 
         # Connectivity Analysis Pattern
@@ -154,8 +158,8 @@ class WorkflowComposer:
             "data_flow": [
                 (DataFlowType.NIFTI_IMAGE, DataFlowType.TIMESERIES),
                 (DataFlowType.TIMESERIES, DataFlowType.CONNECTIVITY_MATRIX),
-                (DataFlowType.CONNECTIVITY_MATRIX, DataFlowType.RESULTS_TABLE)
-            ]
+                (DataFlowType.CONNECTIVITY_MATRIX, DataFlowType.RESULTS_TABLE),
+            ],
         }
 
         # Group Comparison Pattern
@@ -165,8 +169,8 @@ class WorkflowComposer:
             "optional_tools": ["effect_size", "visualization"],
             "data_flow": [
                 (DataFlowType.STATISTICAL_MAP, DataFlowType.STATISTICAL_MAP),
-                (DataFlowType.STATISTICAL_MAP, DataFlowType.RESULTS_TABLE)
-            ]
+                (DataFlowType.STATISTICAL_MAP, DataFlowType.RESULTS_TABLE),
+            ],
         }
 
         # Meta-Analysis Pattern
@@ -176,16 +180,16 @@ class WorkflowComposer:
             "optional_tools": ["heterogeneity_analysis", "sensitivity_analysis"],
             "data_flow": [
                 (DataFlowType.COORDINATES, DataFlowType.STATISTICAL_MAP),
-                (DataFlowType.METADATA, DataFlowType.RESULTS_TABLE)
-            ]
+                (DataFlowType.METADATA, DataFlowType.RESULTS_TABLE),
+            ],
         }
 
     def compose_workflow(
         self,
         intent: str,
-        context: Dict[str, Any] = None,
-        user_preferences: Dict[str, Any] = None,
-        pattern: Optional[WorkflowPattern] = None
+        context: dict[str, Any] = None,
+        user_preferences: dict[str, Any] = None,
+        pattern: WorkflowPattern | None = None,
     ) -> WorkflowPipeline:
         """
         Compose a workflow pipeline based on user intent.
@@ -211,7 +215,7 @@ class WorkflowComposer:
             query=intent,
             context=context,
             user_preferences=user_preferences,
-            max_recommendations=10
+            max_recommendations=10,
         )
 
         # Create pipeline based on pattern and recommendations
@@ -219,7 +223,7 @@ class WorkflowComposer:
             pattern=pattern,
             intent=intent,
             tool_recommendations=tool_recommendations,
-            context=context
+            context=context,
         )
 
         # Optimize pipeline structure
@@ -228,33 +232,37 @@ class WorkflowComposer:
         logger.info(f"Composed workflow pipeline with {len(pipeline.steps)} steps")
         return pipeline
 
-    def _detect_workflow_pattern(self, intent: str, context: Dict[str, Any]) -> WorkflowPattern:
+    def _detect_workflow_pattern(
+        self, intent: str, context: dict[str, Any]
+    ) -> WorkflowPattern:
         """Detect the most appropriate workflow pattern for the intent."""
         intent_lower = intent.lower()
 
         # Pattern detection based on keywords
-        if any(word in intent_lower for word in ['preprocess', 'prepare', 'clean']):
+        if any(word in intent_lower for word in ["preprocess", "prepare", "clean"]):
             return WorkflowPattern.PREPROCESSING_TO_ANALYSIS
 
-        elif any(word in intent_lower for word in ['task', 'activation', 'contrast']):
+        elif any(word in intent_lower for word in ["task", "activation", "contrast"]):
             return WorkflowPattern.TASK_ACTIVATION_ANALYSIS
 
-        elif any(word in intent_lower for word in ['connectivity', 'network', 'functional']):
+        elif any(
+            word in intent_lower for word in ["connectivity", "network", "functional"]
+        ):
             return WorkflowPattern.CONNECTIVITY_ANALYSIS
 
-        elif any(word in intent_lower for word in ['group', 'compare', 'difference']):
+        elif any(word in intent_lower for word in ["group", "compare", "difference"]):
             return WorkflowPattern.GROUP_COMPARISON
 
-        elif any(word in intent_lower for word in ['meta', 'literature', 'coordinate']):
+        elif any(word in intent_lower for word in ["meta", "literature", "coordinate"]):
             return WorkflowPattern.META_ANALYSIS
 
-        elif any(word in intent_lower for word in ['multimodal', 'fusion', 'combine']):
+        elif any(word in intent_lower for word in ["multimodal", "fusion", "combine"]):
             return WorkflowPattern.MULTIMODAL_FUSION
 
-        elif any(word in intent_lower for word in ['longitudinal', 'time', 'change']):
+        elif any(word in intent_lower for word in ["longitudinal", "time", "change"]):
             return WorkflowPattern.LONGITUDINAL_ANALYSIS
 
-        elif any(word in intent_lower for word in ['quality', 'qc', 'check']):
+        elif any(word in intent_lower for word in ["quality", "qc", "check"]):
             return WorkflowPattern.QUALITY_CONTROL_PIPELINE
 
         # Default to preprocessing-to-analysis
@@ -264,8 +272,8 @@ class WorkflowComposer:
         self,
         pattern: WorkflowPattern,
         intent: str,
-        tool_recommendations: List,
-        context: Dict[str, Any]
+        tool_recommendations: list,
+        context: dict[str, Any],
     ) -> WorkflowPipeline:
         """Create pipeline based on workflow pattern and tool recommendations."""
         pattern_config = self.workflow_patterns.get(pattern, {})
@@ -274,7 +282,7 @@ class WorkflowComposer:
             pipeline_id=f"pipeline_{uuid4().hex[:8]}",
             name=f"{pattern.value} Pipeline",
             description=pattern_config.get("description", "Custom workflow pipeline"),
-            pattern=pattern
+            pattern=pattern,
         )
 
         # Map recommended tools to workflow steps
@@ -301,9 +309,11 @@ class WorkflowComposer:
         # Add highly recommended tools that weren't already added
         for recommendation in tool_recommendations:
             tool_name = recommendation.tool.get_tool_name()
-            if (tool_name not in added_tools and
-                recommendation.confidence_score > 0.7 and
-                step_counter <= 8):  # Limit pipeline length
+            if (
+                tool_name not in added_tools
+                and recommendation.confidence_score > 0.7
+                and step_counter <= 8
+            ):  # Limit pipeline length
 
                 step = self._create_workflow_step(
                     step_counter, recommendation, context, required=False
@@ -321,8 +331,10 @@ class WorkflowComposer:
                 optional_tool, tool_recommendations
             )
 
-            if (matching_recommendation and
-                matching_recommendation.tool.get_tool_name() not in added_tools):
+            if (
+                matching_recommendation
+                and matching_recommendation.tool.get_tool_name() not in added_tools
+            ):
                 step = self._create_workflow_step(
                     step_counter, matching_recommendation, context, required=False
                 )
@@ -336,7 +348,9 @@ class WorkflowComposer:
 
         return pipeline
 
-    def _find_matching_recommendation(self, tool_pattern: str, recommendations: List) -> Optional:
+    def _find_matching_recommendation(
+        self, tool_pattern: str, recommendations: list
+    ) -> Optional:
         """Find a recommendation that matches a tool pattern."""
         pattern_lower = tool_pattern.lower()
 
@@ -345,9 +359,11 @@ class WorkflowComposer:
             tool_description = recommendation.tool.get_tool_description().lower()
 
             # Check for direct name match or description match
-            if (pattern_lower in tool_name or
-                pattern_lower in tool_description or
-                any(word in tool_name for word in pattern_lower.split())):
+            if (
+                pattern_lower in tool_name
+                or pattern_lower in tool_description
+                or any(word in tool_name for word in pattern_lower.split())
+            ):
                 return recommendation
 
         return None
@@ -356,8 +372,8 @@ class WorkflowComposer:
         self,
         step_number: int,
         recommendation,
-        context: Dict[str, Any],
-        required: bool = True
+        context: dict[str, Any],
+        required: bool = True,
     ) -> WorkflowStep:
         """Create a workflow step from a tool recommendation."""
         tool = recommendation.tool
@@ -375,43 +391,45 @@ class WorkflowComposer:
             output_types=output_types,
             estimated_duration=recommendation.estimated_execution_time,
             resource_requirements={
-                'requirements': recommendation.resource_requirements,
-                'success_probability': recommendation.success_probability
-            }
+                "requirements": recommendation.resource_requirements,
+                "success_probability": recommendation.success_probability,
+            },
         )
 
         return step
 
-    def _infer_data_flow_types(self, tool: BRKGToolWrapper) -> Tuple[List[DataFlowType], List[DataFlowType]]:
+    def _infer_data_flow_types(
+        self, tool: BRKGToolWrapper
+    ) -> tuple[list[DataFlowType], list[DataFlowType]]:
         """Infer input and output data flow types for a tool."""
         tool_name = tool.get_tool_name().lower()
-        tool_description = tool.get_tool_description().lower()
+        tool.get_tool_description().lower()
 
         inputs = []
         outputs = []
 
         # Common input/output patterns for neuroimaging tools
-        if 'fmriprep' in tool_name or 'preprocessing' in tool_name:
+        if "fmriprep" in tool_name or "preprocessing" in tool_name:
             inputs = [DataFlowType.NIFTI_IMAGE]
             outputs = [DataFlowType.NIFTI_IMAGE, DataFlowType.QUALITY_METRICS]
 
-        elif 'glm' in tool_name or 'analysis' in tool_name:
+        elif "glm" in tool_name or "analysis" in tool_name:
             inputs = [DataFlowType.NIFTI_IMAGE]
             outputs = [DataFlowType.STATISTICAL_MAP, DataFlowType.RESULTS_TABLE]
 
-        elif 'connectivity' in tool_name:
+        elif "connectivity" in tool_name:
             inputs = [DataFlowType.NIFTI_IMAGE, DataFlowType.TIMESERIES]
             outputs = [DataFlowType.CONNECTIVITY_MATRIX, DataFlowType.RESULTS_TABLE]
 
-        elif 'coordinate' in tool_name:
+        elif "coordinate" in tool_name:
             inputs = [DataFlowType.STATISTICAL_MAP, DataFlowType.COORDINATES]
             outputs = [DataFlowType.METADATA, DataFlowType.RESULTS_TABLE]
 
-        elif 'visualization' in tool_name or 'plot' in tool_name:
+        elif "visualization" in tool_name or "plot" in tool_name:
             inputs = [DataFlowType.STATISTICAL_MAP, DataFlowType.CONNECTIVITY_MATRIX]
             outputs = [DataFlowType.METADATA]
 
-        elif 'quality' in tool_name or 'qc' in tool_name:
+        elif "quality" in tool_name or "qc" in tool_name:
             inputs = [DataFlowType.NIFTI_IMAGE]
             outputs = [DataFlowType.QUALITY_METRICS, DataFlowType.RESULTS_TABLE]
 
@@ -422,9 +440,11 @@ class WorkflowComposer:
 
         return inputs, outputs
 
-    def _setup_pipeline_dependencies(self, pipeline: WorkflowPipeline, pattern_config: Dict[str, Any]):
+    def _setup_pipeline_dependencies(
+        self, pipeline: WorkflowPipeline, pattern_config: dict[str, Any]
+    ):
         """Set up dependencies between pipeline steps based on data flow."""
-        data_flow_patterns = pattern_config.get("data_flow", [])
+        pattern_config.get("data_flow", [])
 
         # Create a simple dependency chain based on data flow types
         steps = pipeline.steps
@@ -438,13 +458,17 @@ class WorkflowComposer:
                 prev_step = steps[j]
 
                 # Check if previous step's outputs match current step's inputs
-                common_types = set(prev_step.output_types) & set(step.input_requirements)
+                common_types = set(prev_step.output_types) & set(
+                    step.input_requirements
+                )
 
                 if common_types:
                     step.dependencies.append(prev_step.step_id)
                     break  # Only depend on the most recent matching step
 
-    def _optimize_pipeline(self, pipeline: WorkflowPipeline, context: Dict[str, Any]) -> WorkflowPipeline:
+    def _optimize_pipeline(
+        self, pipeline: WorkflowPipeline, context: dict[str, Any]
+    ) -> WorkflowPipeline:
         """Optimize pipeline structure for efficiency and correctness."""
 
         # Remove redundant steps
@@ -466,7 +490,10 @@ class WorkflowComposer:
 
         for step in pipeline.steps:
             tool_type = self._get_tool_type(step.tool_name)
-            if tool_type not in seen_tools or step.tool_name in ['visualization', 'quality_control']:
+            if tool_type not in seen_tools or step.tool_name in [
+                "visualization",
+                "quality_control",
+            ]:
                 # Allow multiple visualization/QC steps
                 filtered_steps.append(step)
                 seen_tools.add(tool_type)
@@ -478,25 +505,27 @@ class WorkflowComposer:
         """Get the general type of a tool."""
         tool_name_lower = tool_name.lower()
 
-        if 'prep' in tool_name_lower:
-            return 'preprocessing'
-        elif 'glm' in tool_name_lower or 'analysis' in tool_name_lower:
-            return 'statistical_analysis'
-        elif 'connectivity' in tool_name_lower:
-            return 'connectivity'
-        elif 'coordinate' in tool_name_lower:
-            return 'coordinate_analysis'
-        elif 'visualization' in tool_name_lower:
-            return 'visualization'
-        elif 'quality' in tool_name_lower:
-            return 'quality_control'
+        if "prep" in tool_name_lower:
+            return "preprocessing"
+        elif "glm" in tool_name_lower or "analysis" in tool_name_lower:
+            return "statistical_analysis"
+        elif "connectivity" in tool_name_lower:
+            return "connectivity"
+        elif "coordinate" in tool_name_lower:
+            return "coordinate_analysis"
+        elif "visualization" in tool_name_lower:
+            return "visualization"
+        elif "quality" in tool_name_lower:
+            return "quality_control"
         else:
-            return 'general'
+            return "general"
 
-    def _optimize_parameter_propagation(self, pipeline: WorkflowPipeline) -> WorkflowPipeline:
+    def _optimize_parameter_propagation(
+        self, pipeline: WorkflowPipeline
+    ) -> WorkflowPipeline:
         """Optimize parameter sharing between related steps."""
         # Look for parameters that should be shared between steps
-        common_params = ['threshold', 'fwhm', 'mask', 'output_dir']
+        common_params = ["threshold", "fwhm", "mask", "output_dir"]
 
         # Find the first step that has each common parameter
         param_sources = {}
@@ -516,18 +545,20 @@ class WorkflowComposer:
 
         return pipeline
 
-    def _get_tool_schema(self, tool: BRKGToolWrapper) -> Dict[str, Any]:
+    def _get_tool_schema(self, tool: BRKGToolWrapper) -> dict[str, Any]:
         """Get parameter schema for a tool."""
         try:
             langchain_tool = tool.as_langchain_tool()
-            if hasattr(langchain_tool, 'args_schema') and langchain_tool.args_schema:
+            if hasattr(langchain_tool, "args_schema") and langchain_tool.args_schema:
                 schema = langchain_tool.args_schema.schema()
-                return schema.get('properties', {})
+                return schema.get("properties", {})
         except:
             pass
         return {}
 
-    def _validate_and_fix_dependencies(self, pipeline: WorkflowPipeline) -> WorkflowPipeline:
+    def _validate_and_fix_dependencies(
+        self, pipeline: WorkflowPipeline
+    ) -> WorkflowPipeline:
         """Validate and fix dependency relationships."""
         # Create dependency graph
         graph = nx.DiGraph()
@@ -544,7 +575,9 @@ class WorkflowComposer:
 
         # Check for cycles
         if not nx.is_directed_acyclic_graph(graph):
-            logger.warning("Cycle detected in pipeline dependencies, removing problematic edges")
+            logger.warning(
+                "Cycle detected in pipeline dependencies, removing problematic edges"
+            )
             # Remove edges that create cycles
             while not nx.is_directed_acyclic_graph(graph):
                 try:
@@ -553,7 +586,10 @@ class WorkflowComposer:
                     graph.remove_edge(cycle[-1][0], cycle[-1][1])
                     # Update step dependencies
                     for step in pipeline.steps:
-                        if step.step_id == cycle[-1][1] and cycle[-1][0] in step.dependencies:
+                        if (
+                            step.step_id == cycle[-1][1]
+                            and cycle[-1][0] in step.dependencies
+                        ):
                             step.dependencies.remove(cycle[-1][0])
                 except nx.NetworkXNoCycle:
                     break
@@ -567,7 +603,7 @@ class WorkflowExecutor:
     def __init__(self, tool_registry: EnhancedToolRegistry):
         """Initialize workflow executor."""
         self.tool_registry = tool_registry
-        self.active_executions: Dict[str, WorkflowExecution] = {}
+        self.active_executions: dict[str, WorkflowExecution] = {}
         self.dependency_resolver = DependencyResolver()
 
         logger.info("Workflow executor initialized")
@@ -575,8 +611,8 @@ class WorkflowExecutor:
     async def execute_workflow(
         self,
         pipeline: WorkflowPipeline,
-        context: Dict[str, Any] = None,
-        parallel_execution: bool = True
+        context: dict[str, Any] = None,
+        parallel_execution: bool = True,
     ) -> WorkflowExecution:
         """
         Execute a workflow pipeline.
@@ -593,7 +629,7 @@ class WorkflowExecutor:
             execution_id=f"exec_{uuid4().hex[:8]}",
             pipeline=pipeline,
             status="running",
-            start_time=asyncio.get_event_loop().time()
+            start_time=asyncio.get_event_loop().time(),
         )
 
         self.active_executions[execution.execution_id] = execution
@@ -622,7 +658,9 @@ class WorkflowExecutor:
 
         return execution
 
-    async def _execute_sequential_workflow(self, execution: WorkflowExecution, context: Dict[str, Any]):
+    async def _execute_sequential_workflow(
+        self, execution: WorkflowExecution, context: dict[str, Any]
+    ):
         """Execute workflow steps sequentially."""
         pipeline = execution.pipeline
 
@@ -633,11 +671,14 @@ class WorkflowExecutor:
             if step.optional and execution.status == "running":
                 # Skip optional steps if previous required steps failed
                 required_deps_failed = any(
-                    dep in execution.failed_steps for dep in step.dependencies
+                    dep in execution.failed_steps
+                    for dep in step.dependencies
                     if not pipeline.get_step_by_id(dep).optional
                 )
                 if required_deps_failed:
-                    logger.info(f"Skipping optional step {step.step_id} due to failed dependencies")
+                    logger.info(
+                        f"Skipping optional step {step.step_id} due to failed dependencies"
+                    )
                     continue
 
             execution.current_step = step.step_id
@@ -650,23 +691,23 @@ class WorkflowExecutor:
 
                 # Execute step
                 result = await self.tool_registry.execute_with_monitoring(
-                    tool=step.tool,
-                    parameters=step_params,
-                    context=context
+                    tool=step.tool, parameters=step_params, context=context
                 )
 
-                if result['status'] == 'success':
+                if result["status"] == "success":
                     execution.completed_steps.add(step.step_id)
-                    execution.step_results[step.step_id] = result['result']
+                    execution.step_results[step.step_id] = result["result"]
                     execution.step_outputs[step.step_id] = {
-                        'execution_id': result['execution_id'],
-                        'execution_time': result['execution_time'],
-                        'evidence_chain_id': result.get('evidence_chain_id')
+                        "execution_id": result["execution_id"],
+                        "execution_time": result["execution_time"],
+                        "evidence_chain_id": result.get("evidence_chain_id"),
                     }
                 else:
                     execution.failed_steps.add(step.step_id)
                     if not step.optional:
-                        raise Exception(f"Required step {step.step_id} failed: {result['error']}")
+                        raise Exception(
+                            f"Required step {step.step_id} failed: {result['error']}"
+                        )
 
             except Exception as e:
                 logger.error(f"Step {step.step_id} failed: {e}")
@@ -677,14 +718,19 @@ class WorkflowExecutor:
 
         execution.current_step = None
 
-    async def _execute_parallel_workflow(self, execution: WorkflowExecution, context: Dict[str, Any]):
+    async def _execute_parallel_workflow(
+        self, execution: WorkflowExecution, context: dict[str, Any]
+    ):
         """Execute workflow steps in parallel where possible."""
         pipeline = execution.pipeline
 
         # Create execution graph for parallel processing
         tasks = []
         for step in pipeline.steps:
-            from brain_researcher.services.agent.parallel_executor import Task as ParallelTask
+            from brain_researcher.services.agent.parallel_executor import (
+                Task as ParallelTask,
+            )
+
             task = ParallelTask(
                 task_id=step.step_id,
                 name=f"Execute {step.tool_name}",
@@ -692,7 +738,7 @@ class WorkflowExecutor:
                 tool_args=step.parameters,
                 dependencies=step.dependencies,
                 estimated_duration=step.estimated_duration,
-                resource_requirements=[]  # Will be filled by dependency resolver
+                resource_requirements=[],  # Will be filled by dependency resolver
             )
             tasks.append(task)
 
@@ -700,14 +746,22 @@ class WorkflowExecutor:
         execution_graph = self.dependency_resolver.resolve(tasks)
 
         # Execute with parallel orchestrator
-        from brain_researcher.services.agent.parallel_executor import create_parallel_orchestrator
+        from brain_researcher.services.agent.parallel_executor import (
+            create_parallel_orchestrator,
+        )
+
         orchestrator = create_parallel_orchestrator(max_workers=4)
 
         try:
-            from brain_researcher.services.agent.execution_status import ExecutionTracker
+            from brain_researcher.services.agent.execution_status import (
+                ExecutionTracker,
+            )
+
             tracker = ExecutionTracker(execution_id=execution.execution_id)
 
-            parallel_result = await orchestrator.execute_parallel(execution_graph, tracker)
+            parallel_result = await orchestrator.execute_parallel(
+                execution_graph, tracker
+            )
 
             # Process results
             for step_id, result in parallel_result["results"].items():
@@ -726,7 +780,7 @@ class WorkflowExecutor:
         finally:
             await orchestrator.shutdown()
 
-    def _topological_sort_steps(self, steps: List[WorkflowStep]) -> List[WorkflowStep]:
+    def _topological_sort_steps(self, steps: list[WorkflowStep]) -> list[WorkflowStep]:
         """Topologically sort steps based on dependencies."""
         # Create dependency graph
         graph = nx.DiGraph()
@@ -751,7 +805,9 @@ class WorkflowExecutor:
             logger.warning("Cycle detected in step dependencies, using original order")
             return steps
 
-    def _prepare_step_parameters(self, step: WorkflowStep, execution: WorkflowExecution) -> Dict[str, Any]:
+    def _prepare_step_parameters(
+        self, step: WorkflowStep, execution: WorkflowExecution
+    ) -> dict[str, Any]:
         """Prepare parameters for a step, including outputs from previous steps."""
         params = step.parameters.copy()
 
@@ -763,13 +819,18 @@ class WorkflowExecutor:
                 # Simple output propagation based on data types
                 if isinstance(dep_result, dict):
                     # Propagate common output fields
-                    for key in ['output_file', 'result_file', 'statistical_map', 'connectivity_matrix']:
+                    for key in [
+                        "output_file",
+                        "result_file",
+                        "statistical_map",
+                        "connectivity_matrix",
+                    ]:
                         if key in dep_result and key not in params:
                             params[f"input_{key}"] = dep_result[key]
 
         return params
 
-    def get_execution_status(self, execution_id: str) -> Optional[WorkflowExecution]:
+    def get_execution_status(self, execution_id: str) -> WorkflowExecution | None:
         """Get status of a workflow execution."""
         return self.active_executions.get(execution_id)
 
@@ -786,7 +847,9 @@ class WorkflowExecutor:
 
 
 # Factory function for easy integration
-def create_workflow_system(tool_registry: EnhancedToolRegistry) -> Tuple[WorkflowComposer, WorkflowExecutor]:
+def create_workflow_system(
+    tool_registry: EnhancedToolRegistry,
+) -> tuple[WorkflowComposer, WorkflowExecutor]:
     """Create workflow composer and executor instances."""
     composer = WorkflowComposer(tool_registry)
     executor = WorkflowExecutor(tool_registry)

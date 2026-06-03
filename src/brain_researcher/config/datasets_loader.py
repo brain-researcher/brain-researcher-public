@@ -8,11 +8,12 @@ loader_defaults, br_kg).
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
+
 import yaml
 
 
-def _read_yaml(path: Path) -> Dict[str, Any]:
+def _read_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     with path.open("r") as f:
@@ -20,7 +21,9 @@ def _read_yaml(path: Path) -> Dict[str, Any]:
     return data
 
 
-def compose_data_paths(project_root: Path | None = None, env: str = "dev") -> Dict[str, Any]:
+def compose_data_paths(
+    project_root: Path | None = None, env: str = "dev"
+) -> dict[str, Any]:
     """Compose the legacy data_paths-style config from new sources.
 
     Args:
@@ -43,7 +46,7 @@ def compose_data_paths(project_root: Path | None = None, env: str = "dev") -> Di
         overlay = _read_yaml(cfg_dir / "overlays" / "dev.yaml")
 
     # Map to legacy structure
-    out: Dict[str, Any] = {}
+    out: dict[str, Any] = {}
 
     # Local
     if "local" in local_mounts:

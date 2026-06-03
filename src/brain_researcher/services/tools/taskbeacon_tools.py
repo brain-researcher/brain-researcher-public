@@ -105,7 +105,11 @@ class TaskBeaconListTasksTool(NeuroToolWrapper):
                 data=list_taskbeacon_tasks(query=query, limit=limit),
             )
         except Exception as exc:
-            code = "taskbeacon_mcp_unavailable" if isinstance(exc, TaskBeaconMCPError) else "taskbeacon_failed"
+            code = (
+                "taskbeacon_mcp_unavailable"
+                if isinstance(exc, TaskBeaconMCPError)
+                else "taskbeacon_failed"
+            )
             return _error_result(exc, code=code)
 
 
@@ -201,7 +205,11 @@ class TaskBeaconLocalizeTaskTool(NeuroToolWrapper):
             )
             return ToolResult(status="success", data=data)
         except Exception as exc:
-            code = "taskbeacon_mcp_unavailable" if isinstance(exc, TaskBeaconMCPError) else "taskbeacon_failed"
+            code = (
+                "taskbeacon_mcp_unavailable"
+                if isinstance(exc, TaskBeaconMCPError)
+                else "taskbeacon_failed"
+            )
             return _error_result(exc, code=code)
 
 

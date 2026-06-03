@@ -10,11 +10,10 @@ import logging
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +31,9 @@ class ReasoningType(str, Enum):
 class ConfidenceLevel(str, Enum):
     """Confidence levels for reasoning steps."""
 
-    LOW = "low"      # 0.0 - 0.4
+    LOW = "low"  # 0.0 - 0.4
     MEDIUM = "medium"  # 0.4 - 0.7
-    HIGH = "high"      # 0.7 - 1.0
+    HIGH = "high"  # 0.7 - 1.0
 
 
 @dataclass
@@ -48,9 +47,9 @@ class ReasoningStep:
     inference: str
     conclusion: str
     confidence: float
-    evidence: List[str] = field(default_factory=list)
-    assumptions: List[str] = field(default_factory=list)
-    dependencies: List[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
+    assumptions: list[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
     timestamp: float = field(default_factory=time.time)
 
     @property
@@ -70,19 +69,21 @@ class ReasoningTrace:
 
     trace_id: str
     query: str
-    steps: List[ReasoningStep]
+    steps: list[ReasoningStep]
     final_conclusion: str
     overall_confidence: float
     explanation: str
-    reasoning_path: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    reasoning_path: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
 
-    def get_high_confidence_steps(self) -> List[ReasoningStep]:
+    def get_high_confidence_steps(self) -> list[ReasoningStep]:
         """Get steps with high confidence scores."""
-        return [step for step in self.steps if step.confidence_level == ConfidenceLevel.HIGH]
+        return [
+            step for step in self.steps if step.confidence_level == ConfidenceLevel.HIGH
+        ]
 
-    def get_critical_path(self) -> List[ReasoningStep]:
+    def get_critical_path(self) -> list[ReasoningStep]:
         """Get the critical reasoning path (highest confidence chain)."""
         if not self.steps:
             return []
@@ -166,7 +167,9 @@ class CoTTemplates:
 
     def get_template(self, reasoning_type: ReasoningType) -> str:
         """Get template for a specific reasoning type."""
-        return self.templates.get(reasoning_type, self.templates[ReasoningType.ANALYTICAL])
+        return self.templates.get(
+            reasoning_type, self.templates[ReasoningType.ANALYTICAL]
+        )
 
 
 class ReasoningValidator:
@@ -180,7 +183,7 @@ class ReasoningValidator:
             self._check_conclusion_follows,
         ]
 
-    def validate_step(self, step: ReasoningStep) -> List[str]:
+    def validate_step(self, step: ReasoningStep) -> list[str]:
         """Validate a single reasoning step."""
         issues = []
 
@@ -190,7 +193,9 @@ class ReasoningValidator:
 
         # Check confidence bounds
         if not (0.0 <= step.confidence <= 1.0):
-            issues.append(f"Step {step.step_id} has invalid confidence: {step.confidence}")
+            issues.append(
+                f"Step {step.step_id} has invalid confidence: {step.confidence}"
+            )
 
         # Check completeness
         if not step.premise or not step.inference or not step.conclusion:
@@ -198,7 +203,7 @@ class ReasoningValidator:
 
         return issues
 
-    def validate_trace(self, trace: ReasoningTrace) -> List[str]:
+    def validate_trace(self, trace: ReasoningTrace) -> list[str]:
         """Validate an entire reasoning trace."""
         issues = []
 
@@ -272,9 +277,9 @@ class ChainOfThoughtReasoner:
     async def reason(
         self,
         query: str,
-        context: Optional[Dict[str, Any]] = None,
-        reasoning_type: Optional[ReasoningType] = None,
-        max_steps: Optional[int] = None
+        context: dict[str, Any] | None = None,
+        reasoning_type: ReasoningType | None = None,
+        max_steps: int | None = None,
     ) -> ReasoningTrace:
         """
         Generate a chain of reasoning for a query.
@@ -296,10 +301,7 @@ class ChainOfThoughtReasoner:
 
         # Generate reasoning steps
         steps = await self._generate_reasoning_steps(
-            query,
-            context or {},
-            reasoning_type,
-            max_steps or self.max_steps
+            query, context or {}, reasoning_type, max_steps or self.max_steps
         )
 
         # Validate reasoning chain
@@ -310,7 +312,7 @@ class ChainOfThoughtReasoner:
                 steps=steps,
                 final_conclusion="",
                 overall_confidence=0.0,
-                explanation=""
+                explanation="",
             )
         )
 
@@ -332,24 +334,31 @@ class ChainOfThoughtReasoner:
             final_conclusion=final_conclusion,
             overall_confidence=overall_confidence,
             explanation=explanation,
-            reasoning_path=[f"Step {i+1}: {step.conclusion}" for i, step in enumerate(steps)],
+            reasoning_path=[
+                f"Step {i+1}: {step.conclusion}" for i, step in enumerate(steps)
+            ],
             metadata={
                 "reasoning_type": reasoning_type.value,
                 "generation_time": time.time() - start_time,
                 "validation_issues": validation_issues,
-                "context_used": bool(context)
-            }
+                "context_used": bool(context),
+            },
         )
 
         elapsed = time.time() - start_time
-        logger.info(f"CoT reasoning completed in {elapsed:.3f}s with {len(steps)} steps")
+        logger.info(
+            f"CoT reasoning completed in {elapsed:.3f}s with {len(steps)} steps"
+        )
 
         return trace
 
     async def _detect_reasoning_type(self, query: str) -> ReasoningType:
         """Auto-detect the most appropriate reasoning type for a query."""
-        detection_prompt = ChatPromptTemplate.from_messages([
-            ("system", """Analyze this query and determine the most appropriate reasoning type:
+        detection_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """Analyze this query and determine the most appropriate reasoning type:
 
             - ANALYTICAL: Breaking down complex problems into components
             - DEDUCTIVE: Reasoning from general principles to specific conclusions
@@ -357,9 +366,11 @@ class ChainOfThoughtReasoner:
             - CAUSAL: Analyzing cause-and-effect relationships
             - COMPARATIVE: Comparing different options or approaches
 
-            Return only the reasoning type name."""),
-            ("human", "{query}")
-        ])
+            Return only the reasoning type name.""",
+                ),
+                ("human", "{query}"),
+            ]
+        )
 
         chain = detection_prompt | self.llm
         response = await chain.ainvoke({"query": query})
@@ -376,17 +387,20 @@ class ChainOfThoughtReasoner:
     async def _generate_reasoning_steps(
         self,
         query: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         reasoning_type: ReasoningType,
-        max_steps: int
-    ) -> List[ReasoningStep]:
+        max_steps: int,
+    ) -> list[ReasoningStep]:
         """Generate individual reasoning steps."""
 
         # Get appropriate template
-        template = self.templates.get_template(reasoning_type)
+        self.templates.get_template(reasoning_type)
 
-        step_generation_prompt = ChatPromptTemplate.from_messages([
-            ("system", f"""You are reasoning about a neuroscience query using {reasoning_type.value} reasoning.
+        step_generation_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    f"""You are reasoning about a neuroscience query using {reasoning_type.value} reasoning.
 
             Generate a step-by-step reasoning chain. For each step, provide:
             1. A clear premise (what we know/assume)
@@ -411,9 +425,11 @@ class ChainOfThoughtReasoner:
                 }}
             ]
 
-            Maximum {max_steps} steps."""),
-            ("human", "{query}")
-        ])
+            Maximum {max_steps} steps.""",
+                ),
+                ("human", "{query}"),
+            ]
+        )
 
         chain = step_generation_prompt | self.llm
         response = await chain.ainvoke({"query": query})
@@ -430,15 +446,17 @@ class ChainOfThoughtReasoner:
         except Exception as e:
             logger.error(f"Failed to parse reasoning steps: {e}")
             # Fallback to simple step
-            steps_data = [{
-                "step_number": 1,
-                "premise": f"Query: {query}",
-                "inference": "Direct analysis needed",
-                "conclusion": "Will analyze using available tools",
-                "confidence": 0.7,
-                "evidence": ["User query provided"],
-                "assumptions": ["Query is well-formed"]
-            }]
+            steps_data = [
+                {
+                    "step_number": 1,
+                    "premise": f"Query: {query}",
+                    "inference": "Direct analysis needed",
+                    "conclusion": "Will analyze using available tools",
+                    "confidence": 0.7,
+                    "evidence": ["User query provided"],
+                    "assumptions": ["Query is well-formed"],
+                }
+            ]
 
         # Convert to ReasoningStep objects
         steps = []
@@ -452,53 +470,60 @@ class ChainOfThoughtReasoner:
                 conclusion=step_data.get("conclusion", ""),
                 confidence=min(1.0, max(0.0, step_data.get("confidence", 0.5))),
                 evidence=step_data.get("evidence", []),
-                assumptions=step_data.get("assumptions", [])
+                assumptions=step_data.get("assumptions", []),
             )
             steps.append(step)
 
         return steps
 
-    async def _generate_conclusion(self, steps: List[ReasoningStep], query: str) -> str:
+    async def _generate_conclusion(self, steps: list[ReasoningStep], query: str) -> str:
         """Generate final conclusion from reasoning steps."""
         if not steps:
             return "No reasoning steps generated"
 
-        conclusion_prompt = ChatPromptTemplate.from_messages([
-            ("system", """Based on the reasoning steps, generate a clear final conclusion
+        conclusion_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """Based on the reasoning steps, generate a clear final conclusion
             that directly answers the original query.
 
-            Keep it concise but comprehensive."""),
-            ("human", """Query: {query}
+            Keep it concise but comprehensive.""",
+                ),
+                (
+                    "human",
+                    """Query: {query}
 
             Reasoning steps:
             {steps}
 
-            What is the final conclusion?""")
-        ])
+            What is the final conclusion?""",
+                ),
+            ]
+        )
 
-        steps_text = "\n".join([
-            f"Step {step.step_number}: {step.premise} → {step.inference} → {step.conclusion} (confidence: {step.confidence:.2f})"
-            for step in steps
-        ])
+        steps_text = "\n".join(
+            [
+                f"Step {step.step_number}: {step.premise} → {step.inference} → {step.conclusion} (confidence: {step.confidence:.2f})"
+                for step in steps
+            ]
+        )
 
         chain = conclusion_prompt | self.llm
-        response = await chain.ainvoke({
-            "query": query,
-            "steps": steps_text
-        })
+        response = await chain.ainvoke({"query": query, "steps": steps_text})
 
         return response.content.strip()
 
     async def _generate_explanation(
-        self,
-        steps: List[ReasoningStep],
-        query: str,
-        reasoning_type: ReasoningType
+        self, steps: list[ReasoningStep], query: str, reasoning_type: ReasoningType
     ) -> str:
         """Generate natural language explanation of the reasoning process."""
 
-        explanation_prompt = ChatPromptTemplate.from_messages([
-            ("system", f"""Generate a clear, natural language explanation of how we reasoned
+        explanation_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    f"""Generate a clear, natural language explanation of how we reasoned
             through this query using {reasoning_type.value} reasoning.
 
             Explain:
@@ -507,29 +532,33 @@ class ChainOfThoughtReasoner:
             3. How confidence was assessed
             4. Why this reasoning leads to the conclusion
 
-            Make it understandable to a neuroscience researcher."""),
-            ("human", """Query: {query}
+            Make it understandable to a neuroscience researcher.""",
+                ),
+                (
+                    "human",
+                    """Query: {query}
 
             Reasoning steps:
             {steps}
 
-            Please explain this reasoning process.""")
-        ])
+            Please explain this reasoning process.""",
+                ),
+            ]
+        )
 
-        steps_summary = "\n".join([
-            f"Step {step.step_number}: {step.conclusion} (confidence: {step.confidence_level.value})"
-            for step in steps
-        ])
+        steps_summary = "\n".join(
+            [
+                f"Step {step.step_number}: {step.conclusion} (confidence: {step.confidence_level.value})"
+                for step in steps
+            ]
+        )
 
         chain = explanation_prompt | self.llm
-        response = await chain.ainvoke({
-            "query": query,
-            "steps": steps_summary
-        })
+        response = await chain.ainvoke({"query": query, "steps": steps_summary})
 
         return response.content.strip()
 
-    def _calculate_overall_confidence(self, steps: List[ReasoningStep]) -> float:
+    def _calculate_overall_confidence(self, steps: list[ReasoningStep]) -> float:
         """Calculate overall confidence from individual step confidences."""
         if not steps:
             return 0.0
@@ -543,7 +572,7 @@ class ChainOfThoughtReasoner:
 
         return geometric_mean ** (1.0 / len(confidences))
 
-    def get_reasoning_summary(self, trace: ReasoningTrace) -> Dict[str, Any]:
+    def get_reasoning_summary(self, trace: ReasoningTrace) -> dict[str, Any]:
         """Get a summary of the reasoning trace for display."""
         return {
             "trace_id": trace.trace_id,
@@ -553,9 +582,9 @@ class ChainOfThoughtReasoner:
             "high_confidence_steps": len(trace.get_high_confidence_steps()),
             "overall_confidence": trace.overall_confidence,
             "confidence_level": (
-                "High" if trace.overall_confidence >= 0.7 else
-                "Medium" if trace.overall_confidence >= 0.4 else
-                "Low"
+                "High"
+                if trace.overall_confidence >= 0.7
+                else "Medium" if trace.overall_confidence >= 0.4 else "Low"
             ),
             "final_conclusion": trace.final_conclusion,
             "generation_time": trace.metadata.get("generation_time", 0),

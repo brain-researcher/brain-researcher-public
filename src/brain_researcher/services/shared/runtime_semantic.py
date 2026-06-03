@@ -63,9 +63,7 @@ def semantic_matching_enabled(
 def semantic_matching_scope(enabled: bool | None) -> Iterator[None]:
     """Temporarily override heavyweight semantic matching for the current scope."""
 
-    token = _SEMANTIC_MATCHING_ENABLED.set(
-        None if enabled is None else bool(enabled)
-    )
+    token = _SEMANTIC_MATCHING_ENABLED.set(None if enabled is None else bool(enabled))
     try:
         yield
     finally:

@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 
 from brain_researcher.services.tools.tool_base import (
     BatchToolWrapper,
-    CachedToolWrapper,
     BRKGToolWrapper,
+    CachedToolWrapper,
     ToolResult,
 )
 
@@ -320,8 +320,12 @@ class TestCachedToolWrapper:
             tool,
             "_run",
             side_effect=[
-                ToolResult(status="success", data={"calls": 1}, metadata={"cacheable": False}),
-                ToolResult(status="success", data={"calls": 2}, metadata={"cacheable": False}),
+                ToolResult(
+                    status="success", data={"calls": 1}, metadata={"cacheable": False}
+                ),
+                ToolResult(
+                    status="success", data={"calls": 2}, metadata={"cacheable": False}
+                ),
             ],
         ) as mock_run:
             result1 = tool.run(param1="no_cache")

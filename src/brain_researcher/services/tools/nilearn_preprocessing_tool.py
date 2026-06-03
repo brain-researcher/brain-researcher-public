@@ -7,15 +7,15 @@ connectivity analysis preparation.
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from nilearn.image import clean_img
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 from brain_researcher.services.tools.spec import ToolSpec
+from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -37,47 +37,29 @@ def _sample_standardize_columns(values: np.ndarray) -> np.ndarray:
 class NilearnPreprocessingArgs(BaseModel):
     """Arguments for Nilearn preprocessing pipeline."""
 
-    input_file: str = Field(
-        description="Path to 4D NIfTI file for preprocessing"
+    input_file: str = Field(description="Path to 4D NIfTI file for preprocessing")
+    output_dir: str = Field(description="Output directory for preprocessed data")
+    confounds_file: str | None = Field(
+        default=None, description="Path to confounds TSV file (fMRIPrep format)"
     )
-    output_dir: str = Field(
-        description="Output directory for preprocessed data"
+    tr: float | None = Field(default=None, description="Repetition time in seconds")
+    high_pass: float = Field(default=0.01, description="High-pass filter cutoff in Hz")
+    low_pass: float | None = Field(
+        default=None, description="Low-pass filter cutoff in Hz (optional)"
     )
-    confounds_file: Optional[str] = Field(
-        default=None,
-        description="Path to confounds TSV file (fMRIPrep format)"
-    )
-    tr: Optional[float] = Field(
-        default=None,
-        description="Repetition time in seconds"
-    )
-    high_pass: float = Field(
-        default=0.01,
-        description="High-pass filter cutoff in Hz"
-    )
-    low_pass: Optional[float] = Field(
-        default=None,
-        description="Low-pass filter cutoff in Hz (optional)"
-    )
-    smoothing_fwhm: Optional[float] = Field(
-        default=None,
-        description="Smoothing FWHM in mm (optional)"
+    smoothing_fwhm: float | None = Field(
+        default=None, description="Smoothing FWHM in mm (optional)"
     )
     standardize: bool = Field(
-        default=True,
-        description="Whether to standardize the data"
+        default=True, description="Whether to standardize the data"
     )
-    detrend: bool = Field(
-        default=True,
-        description="Whether to detrend the data"
-    )
-    confound_columns: Optional[List[str]] = Field(
-        default=None,
-        description="List of confound columns to regress out"
+    detrend: bool = Field(default=True, description="Whether to detrend the data")
+    confound_columns: list[str] | None = Field(
+        default=None, description="List of confound columns to regress out"
     )
 
 
-def _model_required(model_cls) -> List[str]:
+def _model_required(model_cls) -> list[str]:
     try:
         schema = model_cls.model_json_schema()
     except AttributeError:
@@ -85,8 +67,8 @@ def _model_required(model_cls) -> List[str]:
     return schema.get("required", [])
 
 
-def _model_defaults(model_cls) -> Dict[str, Any]:
-    defaults: Dict[str, Any] = {}
+def _model_defaults(model_cls) -> dict[str, Any]:
+    defaults: dict[str, Any] = {}
     if hasattr(model_cls, "model_fields"):
         for name, field in model_cls.model_fields.items():
             if field.default is not None:
@@ -115,8 +97,7 @@ TOOL_SPEC = ToolSpec(
 
 
 class NilearnPreprocessingTool(NeuroToolWrapper):
-    """Nilearn preprocessing tool for CONN-style connectivity analysis.
-    """
+    """Nilearn preprocessing tool for CONN-style connectivity analysis."""
 
     def __init__(self):
         """Initialize Nilearn preprocessing tool."""
@@ -139,15 +120,15 @@ class NilearnPreprocessingTool(NeuroToolWrapper):
         self,
         input_file: str,
         output_dir: str,
-        confounds_file: Optional[str] = None,
-        tr: Optional[float] = None,
+        confounds_file: str | None = None,
+        tr: float | None = None,
         high_pass: float = 0.01,
-        low_pass: Optional[float] = None,
-        smoothing_fwhm: Optional[float] = None,
+        low_pass: float | None = None,
+        smoothing_fwhm: float | None = None,
         standardize: bool = True,
         detrend: bool = True,
-        confound_columns: Optional[List[str]] = None,
-        **kwargs
+        confound_columns: list[str] | None = None,
+        **kwargs,
     ) -> ToolResult:
         """Execute Nilearn preprocessing pipeline."""
         try:
@@ -196,16 +177,16 @@ class NilearnPreprocessingTool(NeuroToolWrapper):
             }
 
             summary_path = output_path / "preprocessing_summary.json"
-            summary_path.write_text(
-                json.dumps(summary, indent=2), encoding="utf-8"
-            )
+            summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
             return ToolResult(
                 status="success",
                 data={
                     "outputs": {
                         "preprocessed_file": str(output_file),
-                        "confounds_used": str(confounds_path) if confounds_path else None,
+                        "confounds_used": (
+                            str(confounds_path) if confounds_path else None
+                        ),
                         "summary": str(summary_path),
                     },
                     "summary": summary,

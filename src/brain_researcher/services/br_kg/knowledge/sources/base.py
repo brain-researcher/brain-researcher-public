@@ -6,8 +6,9 @@ All evidence source adapters must implement this protocol.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..models import KnowledgeItem
@@ -30,7 +31,7 @@ class SourceCapabilities:
     is_local: bool = True
 
     # Tags for categorization
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
 
 class BaseEvidenceSource(ABC):
@@ -63,8 +64,8 @@ class BaseEvidenceSource(ABC):
         query: str,
         *,
         limit: int = 20,
-        filters: Optional[dict] = None,
-    ) -> Sequence["KnowledgeItem"]:
+        filters: dict | None = None,
+    ) -> Sequence[KnowledgeItem]:
         """Search for evidence items matching the query.
 
         Args:
@@ -77,7 +78,7 @@ class BaseEvidenceSource(ABC):
         """
         ...
 
-    async def get_by_id(self, item_id: str) -> Optional["KnowledgeItem"]:
+    async def get_by_id(self, item_id: str) -> KnowledgeItem | None:
         """Retrieve a specific item by its identifier.
 
         Default implementation returns None. Override if the source supports

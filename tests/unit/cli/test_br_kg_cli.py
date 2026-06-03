@@ -289,7 +289,9 @@ def test_bulk_ingest_tools_catalog_validated_on_uses_canonical_dataresource_id(
     monkeypatch.setattr(catalog_loader_module, "load_exposed_tools", lambda: [])
     monkeypatch.setattr(catalog_loader_module, "load_categories", lambda: {})
     monkeypatch.setattr(catalog_loader_module, "load_niwrap_mapping", lambda: {})
-    monkeypatch.setattr(br_kg_ingest.tools_catalog_loader, "load_intent_config", lambda: {})
+    monkeypatch.setattr(
+        br_kg_ingest.tools_catalog_loader, "load_intent_config", lambda: {}
+    )
     monkeypatch.setattr(
         br_kg_ingest.tools_catalog_loader,
         "load_default_versions_config",
@@ -329,13 +331,15 @@ def test_bulk_ingest_tools_catalog_validated_on_uses_canonical_dataresource_id(
     br_kg_ingest._bulk_ingest_tools_catalog(
         FakeDB(),
         {"tools": [{"id": "ibl_decoding_dataset"}]},
-        {"ibl_decoding_dataset": {"validated_on_collections": ["ds:manual:ibl_brainwide"]}},
+        {
+            "ibl_decoding_dataset": {
+                "validated_on_collections": ["ds:manual:ibl_brainwide"]
+            }
+        },
     )
 
     validated_call = next(
-        (cypher, params)
-        for cypher, params in calls
-        if "VALIDATED_ON" in cypher
+        (cypher, params) for cypher, params in calls if "VALIDATED_ON" in cypher
     )
     assert "MERGE (d:DataResource {id: row.resource_id})" in validated_call[0]
     assert validated_call[1]["rows"] == [

@@ -14,7 +14,6 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Optional, Set
 
 import httpx
 
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Security constants
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
-ALLOWED_CONTENT_TYPES: Set[str] = {
+ALLOWED_CONTENT_TYPES: set[str] = {
     "application/gzip",
     "application/x-gzip",
     "application/x-nifti",
@@ -69,17 +68,17 @@ class ResolvedFile:
 class FileResolverConfig:
     """Configuration for FileResolver."""
 
-    orchestrator_url: str = field(
-        default_factory=_resolve_orchestrator_url
-    )
+    orchestrator_url: str = field(default_factory=_resolve_orchestrator_url)
     cache_dir: Path = field(
         default_factory=lambda: Path(
             os.getenv("FILE_CACHE_DIR", "/tmp/brain_researcher_files")
         )
     )
     max_file_size: int = MAX_FILE_SIZE
-    allowed_content_types: Set[str] = field(default_factory=lambda: ALLOWED_CONTENT_TYPES.copy())
-    auth_token: Optional[str] = field(
+    allowed_content_types: set[str] = field(
+        default_factory=lambda: ALLOWED_CONTENT_TYPES.copy()
+    )
+    auth_token: str | None = field(
         default_factory=lambda: os.getenv("ORCHESTRATOR_AUTH_TOKEN")
     )
     verify_checksum: bool = True
@@ -120,7 +119,7 @@ class FileResolver:
         # Use resolved.path for local file access
     """
 
-    def __init__(self, config: Optional[FileResolverConfig] = None):
+    def __init__(self, config: FileResolverConfig | None = None):
         self.config = config or FileResolverConfig()
         self._ensure_cache_dir()
 
@@ -132,7 +131,7 @@ class FileResolver:
         self,
         file_id: str,
         filename: str,
-        expected_checksum: Optional[str] = None,
+        expected_checksum: str | None = None,
     ) -> ResolvedFile:
         """
         Resolve a file_id to a local path, downloading if necessary.
@@ -186,7 +185,9 @@ class FileResolver:
                         filename=safe_filename,
                     )
                 else:
-                    logger.warning(f"Cache checksum mismatch for {safe_file_id}, re-downloading")
+                    logger.warning(
+                        f"Cache checksum mismatch for {safe_file_id}, re-downloading"
+                    )
                     cached_path.unlink()
             else:
                 # No checksum to verify, use cached file
@@ -229,8 +230,8 @@ class FileResolver:
 
     async def resolve_batch(
         self,
-        attachments: list[Dict],
-    ) -> Dict[str, str]:
+        attachments: list[dict],
+    ) -> dict[str, str]:
         """
         Resolve multiple file attachments to local paths.
 
@@ -303,7 +304,7 @@ class FileResolver:
 
         return name
 
-    def _validate_file_info(self, info: Dict) -> None:
+    def _validate_file_info(self, info: dict) -> None:
         """Validate file info before download."""
         # Check size
         size = info.get("size", 0)
@@ -324,7 +325,7 @@ class FileResolver:
         """Get deterministic cache path for a file."""
         return self.config.cache_dir / file_id / filename
 
-    async def _get_file_info(self, file_id: str) -> Dict:
+    async def _get_file_info(self, file_id: str) -> dict:
         """Fetch file metadata from orchestrator."""
         url = f"{self.config.orchestrator_url}/uploads/info/{file_id}"
         headers = {}
@@ -365,7 +366,10 @@ class FileResolver:
 
                     # Check size from headers
                     content_length = response.headers.get("content-length")
-                    if content_length and int(content_length) > self.config.max_file_size:
+                    if (
+                        content_length
+                        and int(content_length) > self.config.max_file_size
+                    ):
                         raise SecurityValidationError(
                             f"File too large: {content_length} bytes"
                         )
@@ -401,7 +405,7 @@ class FileResolver:
     def _create_resolved_file(
         self,
         path: Path,
-        info: Dict,
+        info: dict,
         storage: str,
         file_id: str,
         filename: str,
@@ -423,7 +427,7 @@ class FileResolver:
             filename=filename,
         )
 
-    def clear_cache(self, file_id: Optional[str] = None) -> int:
+    def clear_cache(self, file_id: str | None = None) -> int:
         """
         Clear cached files.
 
@@ -458,7 +462,7 @@ class FileResolver:
 async def resolve_file(
     file_id: str,
     filename: str,
-    expected_checksum: Optional[str] = None,
+    expected_checksum: str | None = None,
 ) -> ResolvedFile:
     """
     Convenience function to resolve a single file.

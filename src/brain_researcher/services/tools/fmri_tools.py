@@ -5,26 +5,25 @@ Wraps existing fMRI foundation model functionality as LangChain tools.
 """
 
 import logging
+import os
 import subprocess
 from pathlib import Path
-import json
-import os
-from typing import Dict, Any
+from typing import Any
+
 import numpy as np
 import pandas as pd
-
 from pydantic import BaseModel, Field
 
+from brain_researcher.core.analysis.effect_size import roi_summary
+from brain_researcher.core.analysis.validity import validate_design, validate_spec
+from brain_researcher.core.literature.references import gather_references
+from brain_researcher.core.provenance import write_provenance
+from brain_researcher.services.tools.literature_tool import GLMLiteratureTool
 from brain_researcher.services.tools.tool_base import (
     CachedToolWrapper,
     NeuroToolWrapper,
     ToolResult,
 )
-from brain_researcher.core.analysis.validity import validate_spec, validate_design
-from brain_researcher.core.analysis.effect_size import roi_summary
-from brain_researcher.core.provenance import write_provenance
-from brain_researcher.core.literature.references import gather_references
-from brain_researcher.services.tools.literature_tool import GLMLiteratureTool
 
 logger = logging.getLogger(__name__)
 
@@ -52,27 +51,32 @@ class GLMAnalysisArgs(BaseModel):
     estimator: str | None = Field(
         default="nilearn", description="FitLins estimator ('nilearn' or 'afni')"
     )
-    roi_masks: Dict[str, str] | None = Field(
-        default=None, description="Optional mapping of roi_name->mask_path to override default ROI set"
+    roi_masks: dict[str, str] | None = Field(
+        default=None,
+        description="Optional mapping of roi_name->mask_path to override default ROI set",
     )
     psc_threshold: float | None = Field(
-        default=None, description="Threshold for percent signal change to mark meaningful effects"
+        default=None,
+        description="Threshold for percent signal change to mark meaningful effects",
     )
     partial_r2_threshold: float | None = Field(
         default=None, description="Threshold for partial R² to mark meaningful effects"
     )
     correction_method: str | None = Field(
-        default="z-threshold", description="Correction/thresholding method applied to maps"
+        default="z-threshold",
+        description="Correction/thresholding method applied to maps",
     )
     runtime: str = Field(
         default="uv",
         description="'uv' to use external/openneuro_glmfitlins 4_run_fitlins.sh; 'direct' to use scripts/workflows/run_fitlins_direct.sh",
     )
     bids_root: str | None = Field(
-        default=None, description="Override BIDS root (raw) if auto-discovery is incorrect"
+        default=None,
+        description="Override BIDS root (raw) if auto-discovery is incorrect",
     )
     derivatives_root: str | None = Field(
-        default=None, description="Override derivatives root if auto-discovery is incorrect"
+        default=None,
+        description="Override derivatives root if auto-discovery is incorrect",
     )
     execute: bool = Field(
         default=False,
@@ -91,10 +95,12 @@ class GLMAnalysisArgs(BaseModel):
         description="Optional override path to path_config.json (defaults to external/openneuro_glmfitlins/path_config.json)",
     )
     output_dir: str | None = Field(
-        default=None, description="Optional override for final output directory (informational only)"
+        default=None,
+        description="Optional override for final output directory (informational only)",
     )
     threshold: float | None = Field(
-        default=3.1, description="Statistical threshold for activation maps (informational)"
+        default=3.1,
+        description="Statistical threshold for activation maps (informational)",
     )
 
 
@@ -170,7 +176,7 @@ class GLMAnalysisTool(NeuroToolWrapper):
         path_config: str | None = None,
         output_dir: str | None = None,
         threshold: float = 3.1,
-        roi_masks: Dict[str, str] | None = None,
+        roi_masks: dict[str, str] | None = None,
         psc_threshold: float | None = None,
         partial_r2_threshold: float | None = None,
         correction_method: str | None = "z-threshold",
@@ -180,7 +186,12 @@ class GLMAnalysisTool(NeuroToolWrapper):
 
         # Backward-compatible mock path when task not provided
         if not task or not dataset_id:
-            allow_env = os.environ.get("BR_GLM_ALLOW_MOCK", "0").lower() in {"1", "true", "yes", "on"}
+            allow_env = os.environ.get("BR_GLM_ALLOW_MOCK", "0").lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
             if allow_mock or allow_env:
                 contrast_results = {
                     name: {
@@ -203,7 +214,11 @@ class GLMAnalysisTool(NeuroToolWrapper):
                         "mock": True,
                         "note": "Provided mock outputs because task was not specified; set task + execute=True to run FitLins.",
                     },
-                    metadata={"tool": "glm_analysis", "threshold": threshold, "mode": "mock"},
+                    metadata={
+                        "tool": "glm_analysis",
+                        "threshold": threshold,
+                        "mode": "mock",
+                    },
                 )
             missing = []
             if not dataset_id:
@@ -221,7 +236,9 @@ class GLMAnalysisTool(NeuroToolWrapper):
             )
 
         repo_root = Path(__file__).resolve().parents[4]
-        default_config = repo_root / "external" / "openneuro_glmfitlins" / "path_config.json"
+        default_config = (
+            repo_root / "external" / "openneuro_glmfitlins" / "path_config.json"
+        )
         config_path = Path(path_config) if path_config else default_config
 
         if not config_path.exists():
@@ -235,7 +252,9 @@ class GLMAnalysisTool(NeuroToolWrapper):
 
             cfg = json.loads(config_path.read_text())
         except Exception as exc:  # pragma: no cover - defensive
-            return ToolResult(status="error", error=f"Failed to read path_config: {exc}")
+            return ToolResult(
+                status="error", error=f"Failed to read path_config: {exc}"
+            )
 
         data_root = cfg.get("datasets_folder")
         glm_repo = cfg.get("openneuro_glmrepo")
@@ -248,7 +267,12 @@ class GLMAnalysisTool(NeuroToolWrapper):
 
         # Resolve key paths used by the bash runners
         task_suffix = task_suffix or ""
-        spec_path = Path(glm_repo) / "statsmodel_specs" / dataset_id / f"{dataset_id}-{task}{task_suffix}_specs.json"
+        spec_path = (
+            Path(glm_repo)
+            / "statsmodel_specs"
+            / dataset_id
+            / f"{dataset_id}-{task}{task_suffix}_specs.json"
+        )
 
         # BIDS search order
         if bids_root:
@@ -259,7 +283,9 @@ class GLMAnalysisTool(NeuroToolWrapper):
                 Path(data_root) / "openneuro" / dataset_id,
                 Path(data_root) / "openneuro_mount" / dataset_id,
             ]
-            bids_dir = next((p for p in bids_candidates if p.exists()), bids_candidates[0])
+            bids_dir = next(
+                (p for p in bids_candidates if p.exists()), bids_candidates[0]
+            )
 
         if derivatives_root:
             fmriprep_dir = Path(derivatives_root)
@@ -268,9 +294,14 @@ class GLMAnalysisTool(NeuroToolWrapper):
                 Path(data_root) / "fmriprep" / dataset_id / "derivatives_alt",
                 Path(data_root) / "fmriprep" / dataset_id / "derivatives",
                 Path(data_root) / "openneuro" / dataset_id / "derivatives" / "fmriprep",
-                Path(data_root) / "OpenNeuroDerivatives" / "fmriprep" / f"{dataset_id}-fmriprep",
+                Path(data_root)
+                / "OpenNeuroDerivatives"
+                / "fmriprep"
+                / f"{dataset_id}-fmriprep",
             ]
-            fmriprep_dir = next((p for p in fmriprep_candidates if p.exists()), fmriprep_candidates[0])
+            fmriprep_dir = next(
+                (p for p in fmriprep_candidates if p.exists()), fmriprep_candidates[0]
+            )
         scratch_dir = Path(tmp_root) / "fitlins" / f"task-{task}{task_suffix}"
         output_dir_resolved = (
             Path(output_dir)
@@ -280,11 +311,20 @@ class GLMAnalysisTool(NeuroToolWrapper):
 
         runner = None
         if runtime == "uv":
-            runner = repo_root / "external" / "openneuro_glmfitlins" / "scripts" / "4_run_fitlins.sh"
+            runner = (
+                repo_root
+                / "external"
+                / "openneuro_glmfitlins"
+                / "scripts"
+                / "4_run_fitlins.sh"
+            )
         elif runtime == "direct":
             runner = repo_root / "scripts" / "run_fitlins_direct.sh"
         else:
-            return ToolResult(status="error", error=f"Invalid runtime '{runtime}'. Use 'uv' or 'direct'.")
+            return ToolResult(
+                status="error",
+                error=f"Invalid runtime '{runtime}'. Use 'uv' or 'direct'.",
+            )
 
         if not runner.exists():
             return ToolResult(status="error", error=f"Runner not found: {runner}")
@@ -321,7 +361,11 @@ class GLMAnalysisTool(NeuroToolWrapper):
 
         if not execute and not parse_only:
             status = "error" if missing else "success"
-            note = "Plan only; set execute=True to run." if not missing else "Missing required inputs; fix paths then re-run."
+            note = (
+                "Plan only; set execute=True to run."
+                if not missing
+                else "Missing required inputs; fix paths then re-run."
+            )
             return ToolResult(
                 status=status,
                 data={"plan": plan, "missing": missing, "mock": False, "note": note},
@@ -343,12 +387,16 @@ class GLMAnalysisTool(NeuroToolWrapper):
                 proc = subprocess.run(cmd, capture_output=True, text=True)
                 status = "success" if proc.returncode == 0 else "error"
             except Exception as exc:  # pragma: no cover - defensive
-                return ToolResult(status="error", error=f"Failed to launch FitLins: {exc}", data={"plan": plan})
+                return ToolResult(
+                    status="error",
+                    error=f"Failed to launch FitLins: {exc}",
+                    data={"plan": plan},
+                )
 
         # Collect outputs (maps, provenance, validity)
-        maps: Dict[str, str] = {}
-        t_maps: Dict[str, str] = {}
-        beta_maps: Dict[str, str] = {}
+        maps: dict[str, str] = {}
+        t_maps: dict[str, str] = {}
+        beta_maps: dict[str, str] = {}
 
         def _contrast_from_path(path: Path) -> str:
             name = path.name
@@ -361,6 +409,7 @@ class GLMAnalysisTool(NeuroToolWrapper):
                 if stem.startswith(prefix):
                     return stem.replace(prefix, "")
             return stem.split("_")[0]
+
         for tmap in output_dir_resolved.rglob("*stat-t_statmap.nii.gz"):
             cname = _contrast_from_path(tmap)
             t_maps[cname] = str(tmap)
@@ -377,17 +426,33 @@ class GLMAnalysisTool(NeuroToolWrapper):
             seed_model = json.loads(Path(spec_path).read_text())
             validity = validate_spec(seed_model)
         except Exception:
-            validity = {"status": "warn", "checks": [{"name": "spec_load", "status": "warn", "details": "Could not read spec"}]}
+            validity = {
+                "status": "warn",
+                "checks": [
+                    {
+                        "name": "spec_load",
+                        "status": "warn",
+                        "details": "Could not read spec",
+                    }
+                ],
+            }
 
         # Design-matrix validity (best-effort) using produced design matrices
         dm_files = list(output_dir_resolved.rglob("*design_matrix*.tsv")) + list(
             output_dir_resolved.rglob("*design_matrix*.csv")
         )
         # also look in scratch/work dir used by run_fitlins_direct
-        scratch_dir = Path(cfg.get("tmp_folder", "")) / "fitlins" / f"task-{task}{task_suffix}"
+        scratch_dir = (
+            Path(cfg.get("tmp_folder", "")) / "fitlins" / f"task-{task}{task_suffix}"
+        )
         if scratch_dir.exists():
             dm_files += list(scratch_dir.rglob("design.tsv"))
-        design_report = {"status": "warn", "checks": [{"name": "design_matrix", "status": "warn", "details": "not found"}]}
+        design_report = {
+            "status": "warn",
+            "checks": [
+                {"name": "design_matrix", "status": "warn", "details": "not found"}
+            ],
+        }
         design_matrix = None
         design_matrix_path = None
         design_matrix_columns = None
@@ -397,7 +462,9 @@ class GLMAnalysisTool(NeuroToolWrapper):
         if dm_files:
             try:
                 design_matrix_path = str(dm_files[0])
-                df = pd.read_csv(dm_files[0], sep="\t" if dm_files[0].suffix == ".tsv" else ",")
+                df = pd.read_csv(
+                    dm_files[0], sep="\t" if dm_files[0].suffix == ".tsv" else ","
+                )
                 design_report = validate_design(df.values)
                 design_matrix_shape = df.values.shape
                 design_matrix_columns = list(df.columns)
@@ -414,7 +481,16 @@ class GLMAnalysisTool(NeuroToolWrapper):
                 except Exception:
                     df_est = None
             except Exception as exc:
-                design_report = {"status": "warn", "checks": [{"name": "design_matrix", "status": "warn", "details": f"load failed: {exc}"}]}
+                design_report = {
+                    "status": "warn",
+                    "checks": [
+                        {
+                            "name": "design_matrix",
+                            "status": "warn",
+                            "details": f"load failed: {exc}",
+                        }
+                    ],
+                }
 
         residuals = None
         residuals_path = None
@@ -440,7 +516,11 @@ class GLMAnalysisTool(NeuroToolWrapper):
                         sep="\t" if residual_file.suffix == ".tsv" else ",",
                     )
                     numeric = df_res.select_dtypes(include=[np.number])
-                    resid = np.asarray(numeric.values).ravel() if not numeric.empty else None
+                    resid = (
+                        np.asarray(numeric.values).ravel()
+                        if not numeric.empty
+                        else None
+                    )
                 if resid is None or resid.size == 0:
                     continue
                 max_res = int(os.environ.get("BR_GLM_MAX_RESIDUALS", "5000"))
@@ -453,13 +533,17 @@ class GLMAnalysisTool(NeuroToolWrapper):
                 continue
 
         # Provenance (include references; prefer literature tool to add atlas citations)
-        effects: Dict[str, Any] = {}
+        effects: dict[str, Any] = {}
         references = None
-        parcellations_used = effects.get("parcellations") if isinstance(effects, dict) else None
+        parcellations_used = (
+            effects.get("parcellations") if isinstance(effects, dict) else None
+        )
         try:
             model_json = json.loads(Path(spec_path).read_text())
             variant = model_json.get("Metadata", {}).get("multiverse_variant", {})
-            decisions = {k: variant[k] for k in ("hrf", "confounds", "high_pass") if k in variant}
+            decisions = {
+                k: variant[k] for k in ("hrf", "confounds", "high_pass") if k in variant
+            }
             repo_root = Path(__file__).resolve().parents[4]
             datasets_folder = repo_root / "dataset"
             # Try literature tool to get static/dataset + atlas refs
@@ -475,7 +559,9 @@ class GLMAnalysisTool(NeuroToolWrapper):
                 )
                 references = lit.data.get("outputs", {}).get("references")
             if references is None and decisions:
-                references = gather_references(dataset_id, task or "", decisions, datasets_folder=datasets_folder)
+                references = gather_references(
+                    dataset_id, task or "", decisions, datasets_folder=datasets_folder
+                )
         except Exception:
             references = None
 
@@ -492,7 +578,7 @@ class GLMAnalysisTool(NeuroToolWrapper):
             prov_path = None
 
         # ROI effect sizes (best-effort)
-        roi_dict: Dict[str, str] = {}
+        roi_dict: dict[str, str] = {}
         roi_summary_csv: str | None = None
         if roi_masks:
             roi_dict.update(roi_masks)
@@ -553,7 +639,9 @@ class GLMAnalysisTool(NeuroToolWrapper):
                         if fieldnames:
                             import csv
 
-                            with roi_summary_path.open("w", newline="", encoding="utf-8") as handle:
+                            with roi_summary_path.open(
+                                "w", newline="", encoding="utf-8"
+                            ) as handle:
                                 writer = csv.DictWriter(handle, fieldnames=fieldnames)
                                 writer.writeheader()
                                 writer.writerows(roi_summaries)
@@ -563,7 +651,7 @@ class GLMAnalysisTool(NeuroToolWrapper):
             except Exception:
                 effects["roi_summary"] = []
 
-        outputs: Dict[str, Any] = {
+        outputs: dict[str, Any] = {
             "returncode": proc.returncode if proc else None,
             "stdout": proc.stdout if proc else None,
             "stderr": proc.stderr if proc else None,
@@ -677,7 +765,7 @@ class EncodingModelTool(CachedToolWrapper):
             from brain_researcher.core.analysis.encoding_model import EncodingModel
 
             # Initialize model
-            model = EncodingModel(atlas_name=parcellation)
+            EncodingModel(atlas_name=parcellation)
 
             self.logger.info(
                 f"Building encoding model for {dataset_id} with {parcellation}"
@@ -770,7 +858,9 @@ class ContrastAnalysisTool(NeuroToolWrapper):
             import pathlib
 
             # Check if real GLM data directory exists
-            glm_base_path = pathlib.Path("/data/ECoG-foundation-model/mnndl_temp/brain_researcher/llm_cognitive_function/data/z_statmap")
+            glm_base_path = pathlib.Path(
+                "/data/ECoG-foundation-model/mnndl_temp/brain_researcher/llm_cognitive_function/data/z_statmap"
+            )
 
             # Try to use provided path first, then check GLM directory
             use_mock = True
@@ -785,23 +875,33 @@ class ContrastAnalysisTool(NeuroToolWrapper):
                 if "ds" in z_map_path.lower():
                     # Try to parse dataset ID
                     import re
-                    dataset_match = re.search(r'ds\d+', z_map_path.lower())
+
+                    dataset_match = re.search(r"ds\d+", z_map_path.lower())
                     if dataset_match:
                         dataset_id = dataset_match.group()
                         # Look for matching files
-                        for task_dir in glm_base_path.glob(f"{dataset_id}/task-*/node-dataLevel"):
-                            for contrast_file in task_dir.glob("contrast-*_stat-z_statmap.nii.gz"):
+                        for task_dir in glm_base_path.glob(
+                            f"{dataset_id}/task-*/node-dataLevel"
+                        ):
+                            for contrast_file in task_dir.glob(
+                                "contrast-*_stat-z_statmap.nii.gz"
+                            ):
                                 if contrast_name.lower() in str(contrast_file).lower():
                                     actual_z_map_path = str(contrast_file)
                                     use_mock = False
-                                    self.logger.info(f"Found real GLM file: {actual_z_map_path}")
+                                    self.logger.info(
+                                        f"Found real GLM file: {actual_z_map_path}"
+                                    )
                                     break
                             if not use_mock:
                                 break
 
                 # If still no match, try ds000001 balloon analog risk task
                 if use_mock and contrast_name:
-                    balloon_task_dir = glm_base_path / "ds000001/task-balloonanalogrisktask/node-dataLevel"
+                    balloon_task_dir = (
+                        glm_base_path
+                        / "ds000001/task-balloonanalogrisktask/node-dataLevel"
+                    )
                     if balloon_task_dir.exists():
                         # Map common contrast names to actual files
                         contrast_mapping = {
@@ -810,7 +910,7 @@ class ContrastAnalysisTool(NeuroToolWrapper):
                             "cash": "contrast-cashpara_stat-z_statmap.nii.gz",
                             "control": "contrast-controlpara_stat-z_statmap.nii.gz",
                             "allpumps": "contrast-allpumps_stat-z_statmap.nii.gz",
-                            "rt": "contrast-rt_stat-z_statmap.nii.gz"
+                            "rt": "contrast-rt_stat-z_statmap.nii.gz",
                         }
 
                         # Try exact match first
@@ -820,20 +920,27 @@ class ContrastAnalysisTool(NeuroToolWrapper):
                                 if contrast_file.exists():
                                     actual_z_map_path = str(contrast_file)
                                     use_mock = False
-                                    self.logger.info(f"Using balloon task GLM file: {actual_z_map_path}")
+                                    self.logger.info(
+                                        f"Using balloon task GLM file: {actual_z_map_path}"
+                                    )
                                     break
 
             if use_mock:
-                self.logger.info(f"Using mock mode for contrast analysis: {contrast_name}")
+                self.logger.info(
+                    f"Using mock mode for contrast analysis: {contrast_name}"
+                )
             else:
                 # Try to import contrast analysis functionality
                 try:
                     from brain_researcher.core.analysis.contrast_analysis import (
                         ContrastAnalyzer,
                     )
-                    analyzer = ContrastAnalyzer()
+
+                    ContrastAnalyzer()
                 except ImportError:
-                    self.logger.warning("ContrastAnalyzer not available, using mock mode")
+                    self.logger.warning(
+                        "ContrastAnalyzer not available, using mock mode"
+                    )
                     use_mock = True
 
             self.logger.info(f"Analyzing contrast: {contrast_name}")
@@ -883,7 +990,7 @@ class ContrastAnalysisTool(NeuroToolWrapper):
                     "tool": "contrast_analysis",
                     "z_map": actual_z_map_path,
                     "mock_mode": use_mock,
-                    "real_data_available": not use_mock
+                    "real_data_available": not use_mock,
                 },
             )
 
@@ -901,9 +1008,9 @@ class ContrastAnalysisTool(NeuroToolWrapper):
 
             if "FileNotFoundError" in type(e).__name__:
                 metadata["error_category"] = "data"
-                metadata["recovery_suggestions"][0] = (
-                    f"The file '{z_map_path}' was not found"
-                )
+                metadata["recovery_suggestions"][
+                    0
+                ] = f"The file '{z_map_path}' was not found"
             elif "ImportError" in type(e).__name__:
                 metadata["error_category"] = "configuration"
                 metadata["recovery_suggestions"] = [
@@ -992,9 +1099,9 @@ class BrainSimilarityTool(NeuroToolWrapper):
 
             if "FileNotFoundError" in type(e).__name__:
                 metadata["error_category"] = "data"
-                metadata["recovery_suggestions"][0] = (
-                    "One or both dataset files were not found"
-                )
+                metadata["recovery_suggestions"][
+                    0
+                ] = "One or both dataset files were not found"
             elif "ValueError" in type(e).__name__ and "shape" in error_msg.lower():
                 metadata["error_category"] = "validation"
                 metadata["recovery_suggestions"] = [

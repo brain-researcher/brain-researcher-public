@@ -7,8 +7,8 @@ import os
 import secrets
 import threading
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx
@@ -97,14 +97,13 @@ class NotebookAssistantBridgeSettings:
     session_query_param: str
 
     @classmethod
-    def from_env(cls) -> "NotebookAssistantBridgeSettings":
+    def from_env(cls) -> NotebookAssistantBridgeSettings:
         ensure_env_loaded()
         return cls(
             enabled=_bool_env("BR_NOTEBOOK_ASSISTANT_ENABLED", True),
             product_name=os.getenv("BR_PRODUCT_NAME", "Brain Researcher").strip()
             or "Brain Researcher",
-            workspace_mode=os.getenv("BR_WORKSPACE_MODE", "hosted").strip()
-            or "hosted",
+            workspace_mode=os.getenv("BR_WORKSPACE_MODE", "hosted").strip() or "hosted",
             assistant_mode=os.getenv("BR_NOTEBOOK_ASSISTANT_MODE", "mcp").strip()
             or "mcp",
             mcp_mode=os.getenv("BR_MCP_MODE", "hosted_notebook_v1").strip()
@@ -112,9 +111,7 @@ class NotebookAssistantBridgeSettings:
             mcp_transport=os.getenv("BR_MCP_TRANSPORT", "streamable-http").strip()
             or "streamable-http",
             mcp_http_url=_normalize_optional_text(os.getenv("BR_MCP_HTTP_URL")),
-            mcp_bearer_token=_normalize_optional_text(
-                os.getenv("BR_MCP_BEARER_TOKEN")
-            ),
+            mcp_bearer_token=_normalize_optional_text(os.getenv("BR_MCP_BEARER_TOKEN")),
             api_base_path=_normalize_path(
                 os.getenv("BR_NOTEBOOK_BRIDGE_BASE_PATH"), DEFAULT_API_BASE_PATH
             ),
@@ -394,7 +391,9 @@ async def proxy_mcp_request(
     }
     upstream_session_id = response.headers.get("mcp-session-id")
     if bridge_session and bridge_session.bridge_session_id:
-        response_headers[settings.session_header_name] = bridge_session.bridge_session_id
+        response_headers[settings.session_header_name] = (
+            bridge_session.bridge_session_id
+        )
         if upstream_session_id:
             bound = get_bridge_session_store(settings).bind_upstream(
                 bridge_session.bridge_session_id,
@@ -403,9 +402,7 @@ async def proxy_mcp_request(
             if bound is not None:
                 bridge_session = bound
     response_headers["x-brain-researcher-upstream-session-bound"] = (
-        "true"
-        if bridge_session and bridge_session.upstream_session_id
-        else "false"
+        "true" if bridge_session and bridge_session.upstream_session_id else "false"
     )
     return ProxyHttpResponse(
         status_code=response.status_code,

@@ -26,53 +26,50 @@ Usage:
     )
 """
 
+from .brain_annotation_manager import (
+    AnnotationStatus,
+    AnnotationType,
+    BrainAnnotation,
+    BrainAnnotationManager,
+    BrainCoordinate,
+    BrainRegion,
+    CoordinateSystem,
+)
 from .collaboration_manager import (
     CollaborationManager,
     CollaborativeUser,
     DocumentSession,
-    UserRole,
     PermissionLevel,
-    SessionState
+    SessionState,
+    UserRole,
 )
-
-from .operational_transform import (
-    OperationalTransform,
-    Operation,
-    OperationType,
-    DocumentState
-)
-
 from .conflict_resolver import (
-    ConflictResolver,
-    ConflictResolutionStrategy,
-    ConflictType,
     ConflictInfo,
-    ConflictResolution
+    ConflictResolution,
+    ConflictResolutionStrategy,
+    ConflictResolver,
+    ConflictType,
 )
-
-from .brain_annotation_manager import (
-    BrainAnnotationManager,
-    BrainAnnotation,
-    BrainCoordinate,
-    BrainRegion,
-    AnnotationType,
-    CoordinateSystem,
-    AnnotationStatus
+from .enhanced_websocket_endpoints import (
+    initialize_collaboration_infrastructure,
 )
-
-from .state_synchronizer import (
-    StateSynchronizer,
+from .enhanced_websocket_endpoints import router as collaboration_router
+from .enhanced_websocket_endpoints import (
+    shutdown_collaboration_infrastructure,
+)
+from .operational_transform import (
     DocumentState,
+    Operation,
+    OperationalTransform,
+    OperationType,
+)
+from .state_synchronizer import (
+    ClientState,
+    DocumentFormat,
+    DocumentState,
+    StateSynchronizer,
     SyncEvent,
     SyncEventType,
-    DocumentFormat,
-    ClientState
-)
-
-from .enhanced_websocket_endpoints import (
-    router as collaboration_router,
-    initialize_collaboration_infrastructure,
-    shutdown_collaboration_infrastructure
 )
 
 __all__ = [
@@ -82,7 +79,6 @@ __all__ = [
     "OperationalTransform",
     "ConflictResolver",
     "StateSynchronizer",
-
     # Data models
     "CollaborativeUser",
     "DocumentSession",
@@ -95,7 +91,6 @@ __all__ = [
     "BrainRegion",
     "SyncEvent",
     "ClientState",
-
     # Enums
     "UserRole",
     "PermissionLevel",
@@ -108,11 +103,10 @@ __all__ = [
     "AnnotationStatus",
     "SyncEventType",
     "DocumentFormat",
-
     # WebSocket integration
     "collaboration_router",
     "initialize_collaboration_infrastructure",
-    "shutdown_collaboration_infrastructure"
+    "shutdown_collaboration_infrastructure",
 ]
 
 # Version info

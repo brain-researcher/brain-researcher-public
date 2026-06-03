@@ -62,7 +62,9 @@ def _infer_created_notebook_path(
 
 
 def _is_placeholder_ui_result(result: Any) -> bool:
-    return isinstance(result, str) and result.strip() == "Could not serialize the result"
+    return (
+        isinstance(result, str) and result.strip() == "Could not serialize the result"
+    )
 
 
 async def _resolve_notebook_path_after_ui_command(
@@ -270,14 +272,18 @@ def apply_notebook_intelligence_runtime_patches() -> None:
     rename_notebook = getattr(nbi_claude, "rename_notebook", None)
     open_file_in_jupyter_ui = getattr(nbi_claude, "open_file_in_jupyter_ui", None)
     if (
-        create_new_notebook is None
-        or getattr(create_new_notebook, "_brain_researcher_patched", False)
-    ) and (
-        rename_notebook is None
-        or getattr(rename_notebook, "_brain_researcher_patched", False)
-    ) and (
-        open_file_in_jupyter_ui is None
-        or getattr(open_file_in_jupyter_ui, "_brain_researcher_patched", False)
+        (
+            create_new_notebook is None
+            or getattr(create_new_notebook, "_brain_researcher_patched", False)
+        )
+        and (
+            rename_notebook is None
+            or getattr(rename_notebook, "_brain_researcher_patched", False)
+        )
+        and (
+            open_file_in_jupyter_ui is None
+            or getattr(open_file_in_jupyter_ui, "_brain_researcher_patched", False)
+        )
     ):
         return
 

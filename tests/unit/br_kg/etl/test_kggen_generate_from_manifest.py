@@ -4,13 +4,12 @@ import importlib.util
 import sys
 from pathlib import Path
 
-
 MODULE_PATH = (
-    Path(__file__).resolve().parents[4]
-    / "scripts"
-    / "kggen_generate_from_manifest.py"
+    Path(__file__).resolve().parents[4] / "scripts" / "kggen_generate_from_manifest.py"
 )
-SPEC = importlib.util.spec_from_file_location("kggen_generate_from_manifest", MODULE_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "kggen_generate_from_manifest", MODULE_PATH
+)
 assert SPEC and SPEC.loader
 KGGEN_MANIFEST = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = KGGEN_MANIFEST

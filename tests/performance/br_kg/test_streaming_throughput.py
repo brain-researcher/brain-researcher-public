@@ -6,36 +6,41 @@ Tests measure throughput, latency, memory usage, and system resource utilization
 to identify performance bottlenecks and validate streaming system scalability.
 """
 
-import pytest
 import asyncio
-import time
-import threading
-import statistics
-import psutil
 import gc
-from unittest.mock import AsyncMock, MagicMock, patch, Mock
-from typing import List, Dict, Any, Callable
-from datetime import datetime, timedelta
-from dataclasses import dataclass
+import statistics
+import threading
+import time
 from collections import deque
-import json
-import concurrent.futures
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any
+from unittest.mock import AsyncMock
+
+import psutil
+import pytest
 
 # Import the modules under test
 from brain_researcher.services.br_kg.streaming.cdc_processor import (
-    CDCProcessor, GraphChangeEvent, ChangeType
+    CDCProcessor,
+    ChangeType,
+    GraphChangeEvent,
 )
 from brain_researcher.services.br_kg.streaming.kafka_integration import (
-    KafkaProducer, KafkaConsumer, StreamConfig
+    StreamConfig,
 )
 from brain_researcher.services.br_kg.streaming.stream_processor import (
-    StreamProcessor, EventWindow, AggregationRule
+    AggregationRule,
+    EventWindow,
+    StreamProcessor,
 )
 
 
 @dataclass
 class PerformanceMetrics:
     """Container for performance metrics"""
+
     throughput_messages_per_sec: float
     avg_latency_ms: float
     p95_latency_ms: float
@@ -72,7 +77,9 @@ class PerformanceMonitor:
         self._monitoring = True
 
         # Start system resource monitoring thread
-        self._monitor_thread = threading.Thread(target=self._monitor_resources, daemon=True)
+        self._monitor_thread = threading.Thread(
+            target=self._monitor_resources, daemon=True
+        )
         self._monitor_thread.start()
 
     def stop_monitoring(self):
@@ -89,8 +96,16 @@ class PerformanceMonitor:
 
         # Calculate latency percentiles
         avg_latency = statistics.mean(self.latencies) if self.latencies else 0
-        p95_latency = statistics.quantiles(self.latencies, n=20)[18] if len(self.latencies) >= 20 else avg_latency
-        p99_latency = statistics.quantiles(self.latencies, n=100)[98] if len(self.latencies) >= 100 else avg_latency
+        p95_latency = (
+            statistics.quantiles(self.latencies, n=20)[18]
+            if len(self.latencies) >= 20
+            else avg_latency
+        )
+        p99_latency = (
+            statistics.quantiles(self.latencies, n=100)[98]
+            if len(self.latencies) >= 100
+            else avg_latency
+        )
 
         # Calculate average resource usage
         avg_memory = statistics.mean(self.memory_samples) if self.memory_samples else 0
@@ -105,7 +120,7 @@ class PerformanceMonitor:
             cpu_usage_percent=avg_cpu,
             error_rate=error_rate,
             total_processed=self.processed_count,
-            duration_seconds=duration
+            duration_seconds=duration,
         )
 
     def record_processed_message(self, latency_ms: float, success: bool = True):
@@ -145,19 +160,23 @@ class MockKafkaProducerHighThroughput:
         self.total_sent = 0
         self.send_latencies = deque()
 
-    async def send_message(self, topic: str, message: Dict[str, Any], partition_key: str = None) -> bool:
+    async def send_message(
+        self, topic: str, message: dict[str, Any], partition_key: str = None
+    ) -> bool:
         """Mock high-throughput message sending"""
         start_time = time.time()
 
         # Simulate minimal serialization time
         await asyncio.sleep(0.0001)  # 0.1ms
 
-        self.sent_messages.append({
-            "topic": topic,
-            "message": message,
-            "partition_key": partition_key,
-            "timestamp": time.time()
-        })
+        self.sent_messages.append(
+            {
+                "topic": topic,
+                "message": message,
+                "partition_key": partition_key,
+                "timestamp": time.time(),
+            }
+        )
         self.total_sent += 1
 
         latency = (time.time() - start_time) * 1000
@@ -179,18 +198,22 @@ class MockKafkaConsumerHighThroughput:
         self.total_consumed = 0
         self._consuming = False
 
-    def add_messages_to_queue(self, messages: List[Dict[str, Any]]):
+    def add_messages_to_queue(self, messages: list[dict[str, Any]]):
         """Add messages to the mock queue for consumption"""
         for msg in messages:
-            self.message_queue.append({
-                "topic": "test_topic",
-                "partition": 0,
-                "offset": len(self.message_queue),
-                "value": msg,
-                "timestamp": time.time()
-            })
+            self.message_queue.append(
+                {
+                    "topic": "test_topic",
+                    "partition": 0,
+                    "offset": len(self.message_queue),
+                    "value": msg,
+                    "timestamp": time.time(),
+                }
+            )
 
-    async def consume_messages(self, callback: Callable[[Dict[str, Any]], None]) -> None:
+    async def consume_messages(
+        self, callback: Callable[[dict[str, Any]], None]
+    ) -> None:
         """Mock high-throughput message consumption"""
         self._consuming = True
 
@@ -206,7 +229,7 @@ class MockKafkaConsumerHighThroughput:
                 # Call the callback
                 await callback(message)
 
-            except Exception as e:
+            except Exception:
                 # Handle errors gracefully
                 pass
 
@@ -233,14 +256,14 @@ def high_throughput_kafka_config():
             "linger_ms": 5,
             "buffer_memory": 33554432,
             "max_in_flight_requests": 5,
-            "compression_type": "gzip"
+            "compression_type": "gzip",
         },
         consumer_config={
             "fetch_min_bytes": 1024,
             "fetch_max_wait": 500,
             "max_partition_fetch_bytes": 1048576,
-            "session_timeout_ms": 30000
-        }
+            "session_timeout_ms": 30000,
+        },
     )
 
 
@@ -274,7 +297,7 @@ class TestStreamingThroughputPerformance:
                     entity_type="Concept",
                     timestamp=datetime.now(),
                     properties={"name": f"concept_{i}", "value": i * 0.01},
-                    old_properties=None
+                    old_properties=None,
                 )
                 batch_events.append(event)
 
@@ -309,7 +332,7 @@ class TestStreamingThroughputPerformance:
         assert metrics.memory_usage_mb < 500  # Memory usage under 500MB
         assert metrics.total_processed == num_events
 
-        print(f"CDC Processor Performance:")
+        print("CDC Processor Performance:")
         print(f"  Throughput: {metrics.throughput_messages_per_sec:.2f} events/sec")
         print(f"  Average Latency: {metrics.avg_latency_ms:.2f}ms")
         print(f"  P95 Latency: {metrics.p95_latency_ms:.2f}ms")
@@ -317,7 +340,9 @@ class TestStreamingThroughputPerformance:
 
     @pytest.mark.performance
     @pytest.mark.asyncio
-    async def test_kafka_producer_throughput(self, performance_monitor, high_throughput_kafka_config):
+    async def test_kafka_producer_throughput(
+        self, performance_monitor, high_throughput_kafka_config
+    ):
         """Test Kafka producer throughput performance"""
 
         mock_producer = MockKafkaProducerHighThroughput(high_throughput_kafka_config)
@@ -337,14 +362,14 @@ class TestStreamingThroughputPerformance:
                     "entity_id": f"node_{i % 5000}",
                     "change_type": "update",
                     "timestamp": time.time(),
-                    "properties": {"value": i, "category": f"cat_{i % 10}"}
+                    "properties": {"value": i, "category": f"cat_{i % 10}"},
                 }
 
                 send_start = time.time()
                 success = await mock_producer.send_message(
                     topic="graph_changes",
                     message=message,
-                    partition_key=f"partition_{i % 10}"
+                    partition_key=f"partition_{i % 10}",
                 )
                 send_latency = (time.time() - send_start) * 1000
 
@@ -368,14 +393,16 @@ class TestStreamingThroughputPerformance:
         assert metrics.error_rate == 0.0  # No errors expected in mock
         assert metrics.total_processed == num_messages
 
-        print(f"Kafka Producer Performance:")
+        print("Kafka Producer Performance:")
         print(f"  Throughput: {metrics.throughput_messages_per_sec:.2f} messages/sec")
         print(f"  Average Latency: {metrics.avg_latency_ms:.2f}ms")
         print(f"  P95 Latency: {metrics.p95_latency_ms:.2f}ms")
 
     @pytest.mark.performance
     @pytest.mark.asyncio
-    async def test_kafka_consumer_throughput(self, performance_monitor, high_throughput_kafka_config):
+    async def test_kafka_consumer_throughput(
+        self, performance_monitor, high_throughput_kafka_config
+    ):
         """Test Kafka consumer throughput performance"""
 
         mock_consumer = MockKafkaConsumerHighThroughput(high_throughput_kafka_config)
@@ -384,28 +411,30 @@ class TestStreamingThroughputPerformance:
         num_messages = 30000
         test_messages = []
         for i in range(num_messages):
-            test_messages.append({
-                "event_id": f"event_{i}",
-                "entity_type": "relationship",
-                "entity_id": f"rel_{i % 3000}",
-                "change_type": "created",
-                "timestamp": time.time(),
-                "properties": {"weight": 0.5 + (i % 100) * 0.005}
-            })
+            test_messages.append(
+                {
+                    "event_id": f"event_{i}",
+                    "entity_type": "relationship",
+                    "entity_id": f"rel_{i % 3000}",
+                    "change_type": "created",
+                    "timestamp": time.time(),
+                    "properties": {"weight": 0.5 + (i % 100) * 0.005},
+                }
+            )
 
         mock_consumer.add_messages_to_queue(test_messages)
 
         performance_monitor.start_monitoring()
 
         # Message processing callback
-        async def process_message(message: Dict[str, Any]):
+        async def process_message(message: dict[str, Any]):
             """Process consumed message"""
             process_start = time.time()
 
             # Simulate minimal processing work
             data = message["value"]
-            entity_id = data["entity_id"]
-            properties = data.get("properties", {})
+            data["entity_id"]
+            data.get("properties", {})
 
             # Minimal processing delay
             await asyncio.sleep(0.0001)  # 0.1ms
@@ -433,7 +462,7 @@ class TestStreamingThroughputPerformance:
         assert metrics.p95_latency_ms < 10.0  # P95 latency under 10ms
         assert metrics.error_rate == 0.0  # No errors expected in mock
 
-        print(f"Kafka Consumer Performance:")
+        print("Kafka Consumer Performance:")
         print(f"  Throughput: {metrics.throughput_messages_per_sec:.2f} messages/sec")
         print(f"  Average Latency: {metrics.avg_latency_ms:.2f}ms")
         print(f"  Total Processed: {metrics.total_processed}")
@@ -449,9 +478,7 @@ class TestStreamingThroughputPerformance:
         # Configure tumbling window for aggregation
         window_duration = timedelta(seconds=1)
         event_window = EventWindow(
-            window_type="tumbling",
-            duration=window_duration,
-            slide_interval=None
+            window_type="tumbling", duration=window_duration, slide_interval=None
         )
 
         aggregation_rule = AggregationRule(
@@ -459,7 +486,7 @@ class TestStreamingThroughputPerformance:
             window=event_window,
             group_by=["entity_type"],
             aggregation_function="COUNT",
-            output_topic="aggregated_counts"
+            output_topic="aggregated_counts",
         )
 
         await stream_processor.add_aggregation_rule(aggregation_rule)
@@ -468,7 +495,13 @@ class TestStreamingThroughputPerformance:
 
         # Generate high-volume event stream
         num_events = 25000
-        event_types = ["node_created", "node_updated", "node_deleted", "rel_created", "rel_updated"]
+        event_types = [
+            "node_created",
+            "node_updated",
+            "node_deleted",
+            "rel_created",
+            "rel_updated",
+        ]
 
         async def process_event_batch(start_idx: int, end_idx: int):
             """Process a batch of events through stream processor"""
@@ -478,7 +511,7 @@ class TestStreamingThroughputPerformance:
                     "entity_type": event_types[i % len(event_types)],
                     "entity_id": f"entity_{i % 2000}",
                     "timestamp": time.time(),
-                    "properties": {"batch": i // 1000, "sequence": i}
+                    "properties": {"batch": i // 1000, "sequence": i},
                 }
 
                 process_start = time.time()
@@ -509,22 +542,23 @@ class TestStreamingThroughputPerformance:
         assert metrics.error_rate < 0.005  # Less than 0.5% error rate
         assert metrics.total_processed == num_events
 
-        print(f"Stream Processor Performance:")
+        print("Stream Processor Performance:")
         print(f"  Throughput: {metrics.throughput_messages_per_sec:.2f} events/sec")
         print(f"  Average Latency: {metrics.avg_latency_ms:.2f}ms")
         print(f"  P95 Latency: {metrics.p95_latency_ms:.2f}ms")
 
     @pytest.mark.performance
     @pytest.mark.asyncio
-    async def test_end_to_end_streaming_pipeline_throughput(self, performance_monitor,
-                                                           high_throughput_kafka_config):
+    async def test_end_to_end_streaming_pipeline_throughput(
+        self, performance_monitor, high_throughput_kafka_config
+    ):
         """Test complete streaming pipeline throughput from CDC to final aggregation"""
 
         # Setup complete pipeline components
         mock_driver = AsyncMock()
         cdc_processor = CDCProcessor(mock_driver)
         kafka_producer = MockKafkaProducerHighThroughput(high_throughput_kafka_config)
-        kafka_consumer = MockKafkaConsumerHighThroughput(high_throughput_kafka_config)
+        MockKafkaConsumerHighThroughput(high_throughput_kafka_config)
         stream_processor = StreamProcessor()
 
         # Configure aggregation
@@ -533,7 +567,7 @@ class TestStreamingThroughputPerformance:
             window=EventWindow("tumbling", timedelta(seconds=2)),
             group_by=["change_type"],
             aggregation_function="COUNT",
-            output_topic="pipeline_results"
+            output_topic="pipeline_results",
         )
         await stream_processor.add_aggregation_rule(aggregation_rule)
 
@@ -554,7 +588,7 @@ class TestStreamingThroughputPerformance:
                     entity_id=f"node_{i % 1000}",
                     entity_type="Concept",
                     timestamp=datetime.now(),
-                    properties={"value": i, "pipeline_batch": i // 100}
+                    properties={"value": i, "pipeline_batch": i // 100},
                 )
 
                 # Step 2: CDC Processing
@@ -566,13 +600,13 @@ class TestStreamingThroughputPerformance:
                     "change_type": change_event.change_type.value,
                     "entity_id": change_event.entity_id,
                     "timestamp": change_event.timestamp.isoformat(),
-                    "properties": change_event.properties
+                    "properties": change_event.properties,
                 }
 
                 await kafka_producer.send_message(
                     topic="graph_changes",
                     message=kafka_message,
-                    partition_key=change_event.entity_id
+                    partition_key=change_event.entity_id,
                 )
 
                 # Step 4: Stream Processing
@@ -598,14 +632,16 @@ class TestStreamingThroughputPerformance:
         metrics = performance_monitor.stop_monitoring()
 
         # End-to-end performance assertions
-        assert metrics.throughput_messages_per_sec > 800  # At least 800 changes/sec end-to-end
+        assert (
+            metrics.throughput_messages_per_sec > 800
+        )  # At least 800 changes/sec end-to-end
         assert metrics.avg_latency_ms < 15.0  # Average end-to-end latency under 15ms
         assert metrics.p95_latency_ms < 50.0  # P95 latency under 50ms
         assert metrics.error_rate < 0.01  # Less than 1% error rate
         assert metrics.total_processed == num_changes
         assert metrics.memory_usage_mb < 1000  # Memory usage under 1GB
 
-        print(f"End-to-End Pipeline Performance:")
+        print("End-to-End Pipeline Performance:")
         print(f"  Throughput: {metrics.throughput_messages_per_sec:.2f} changes/sec")
         print(f"  Average Latency: {metrics.avg_latency_ms:.2f}ms")
         print(f"  P95 Latency: {metrics.p95_latency_ms:.2f}ms")
@@ -627,7 +663,7 @@ class TestStreamingThroughputPerformance:
             window=EventWindow("tumbling", timedelta(seconds=0.5)),
             group_by=["entity_type"],
             aggregation_function="COUNT",
-            output_topic="memory_test_results"
+            output_topic="memory_test_results",
         )
         await stream_processor.add_aggregation_rule(aggregation_rule)
 
@@ -652,7 +688,11 @@ class TestStreamingThroughputPerformance:
                     entity_id=f"node_{i}",
                     entity_type="MemoryTestNode",
                     timestamp=datetime.now(),
-                    properties={"round": round_num, "index": i, "data": "x" * 100}  # Some data
+                    properties={
+                        "round": round_num,
+                        "index": i,
+                        "data": "x" * 100,
+                    },  # Some data
                 )
 
                 await cdc_processor.process_change_event(event)
@@ -662,7 +702,7 @@ class TestStreamingThroughputPerformance:
                     "entity_type": "MemoryTestNode",
                     "event_id": event.event_id,
                     "timestamp": time.time(),
-                    "properties": event.properties
+                    "properties": event.properties,
                 }
                 await stream_processor.process_event(stream_event)
 
@@ -674,7 +714,9 @@ class TestStreamingThroughputPerformance:
             current_memory = process.memory_info().rss / (1024 * 1024)  # MB
             memory_measurements.append(current_memory)
 
-            print(f"  Memory usage: {current_memory:.2f}MB (growth: {current_memory - baseline_memory:.2f}MB)")
+            print(
+                f"  Memory usage: {current_memory:.2f}MB (growth: {current_memory - baseline_memory:.2f}MB)"
+            )
 
         # Analyze memory efficiency
         max_memory = max(memory_measurements)
@@ -683,12 +725,16 @@ class TestStreamingThroughputPerformance:
 
         # Memory efficiency assertions
         assert memory_growth < 200, f"Memory growth {memory_growth:.2f}MB exceeds limit"
-        assert max_memory - baseline_memory < 300, f"Peak memory usage {max_memory - baseline_memory:.2f}MB too high"
+        assert (
+            max_memory - baseline_memory < 300
+        ), f"Peak memory usage {max_memory - baseline_memory:.2f}MB too high"
 
         # Check for memory leaks (final memory should not be much higher than baseline)
-        assert final_memory - baseline_memory < 150, f"Potential memory leak: {final_memory - baseline_memory:.2f}MB growth"
+        assert (
+            final_memory - baseline_memory < 150
+        ), f"Potential memory leak: {final_memory - baseline_memory:.2f}MB growth"
 
-        print(f"Memory Efficiency Results:")
+        print("Memory Efficiency Results:")
         print(f"  Baseline: {baseline_memory:.2f}MB")
         print(f"  Final: {final_memory:.2f}MB")
         print(f"  Growth: {memory_growth:.2f}MB")
@@ -711,27 +757,29 @@ class TestStreamingThroughputPerformance:
         for i in range(num_producers):
             config = StreamConfig(
                 bootstrap_servers=f"mock://producer_{i}:9092",
-                producer_config={"batch_size": 8192, "linger_ms": 1}
+                producer_config={"batch_size": 8192, "linger_ms": 1},
             )
             producers.append(MockKafkaProducerHighThroughput(config))
 
         for i in range(num_consumers):
             config = StreamConfig(
                 bootstrap_servers=f"mock://consumer_{i}:9092",
-                consumer_config={"fetch_min_bytes": 512}
+                consumer_config={"fetch_min_bytes": 512},
             )
             consumers.append(MockKafkaConsumerHighThroughput(config))
 
         performance_monitor.start_monitoring()
 
-        async def producer_task(producer_id: int, producer: MockKafkaProducerHighThroughput):
+        async def producer_task(
+            producer_id: int, producer: MockKafkaProducerHighThroughput
+        ):
             """Concurrent producer task"""
             for i in range(messages_per_producer):
                 message = {
                     "producer_id": producer_id,
                     "message_id": f"p{producer_id}_m{i}",
                     "timestamp": time.time(),
-                    "data": f"producer_{producer_id}_data_{i}"
+                    "data": f"producer_{producer_id}_data_{i}",
                 }
 
                 send_start = time.time()
@@ -740,16 +788,22 @@ class TestStreamingThroughputPerformance:
 
                 performance_monitor.record_processed_message(send_latency)
 
-        async def consumer_task(consumer_id: int, consumer: MockKafkaConsumerHighThroughput):
+        async def consumer_task(
+            consumer_id: int, consumer: MockKafkaConsumerHighThroughput
+        ):
             """Concurrent consumer task"""
             # Prepare messages for this consumer
             test_messages = []
-            for i in range(messages_per_producer * 2):  # Each consumer gets messages from 2 producers
-                test_messages.append({
-                    "consumer_id": consumer_id,
-                    "message_id": f"c{consumer_id}_m{i}",
-                    "timestamp": time.time()
-                })
+            for i in range(
+                messages_per_producer * 2
+            ):  # Each consumer gets messages from 2 producers
+                test_messages.append(
+                    {
+                        "consumer_id": consumer_id,
+                        "message_id": f"c{consumer_id}_m{i}",
+                        "timestamp": time.time(),
+                    }
+                )
 
             consumer.add_messages_to_queue(test_messages)
 
@@ -761,7 +815,7 @@ class TestStreamingThroughputPerformance:
                 performance_monitor.record_processed_message(process_latency)
 
             # Start consuming
-            consumption_task = asyncio.create_task(consumer.consume_messages(process_message))
+            asyncio.create_task(consumer.consume_messages(process_message))
             await asyncio.sleep(3.0)  # Run for 3 seconds
             await consumer.stop_consuming()
 
@@ -775,14 +829,18 @@ class TestStreamingThroughputPerformance:
         metrics = performance_monitor.stop_monitoring()
 
         # Scalability assertions
-        expected_messages = (num_producers * messages_per_producer) + (num_consumers * messages_per_producer * 2)
+        (num_producers * messages_per_producer) + (
+            num_consumers * messages_per_producer * 2
+        )
 
-        assert metrics.throughput_messages_per_sec > 2000  # At least 2K messages/sec with concurrency
+        assert (
+            metrics.throughput_messages_per_sec > 2000
+        )  # At least 2K messages/sec with concurrency
         assert metrics.avg_latency_ms < 10.0  # Reasonable latency under concurrent load
         assert metrics.error_rate < 0.01  # Low error rate
         assert metrics.memory_usage_mb < 800  # Memory usage should be reasonable
 
-        print(f"Concurrent Streaming Scalability:")
+        print("Concurrent Streaming Scalability:")
         print(f"  Producers: {num_producers}, Consumers: {num_consumers}")
         print(f"  Throughput: {metrics.throughput_messages_per_sec:.2f} messages/sec")
         print(f"  Average Latency: {metrics.avg_latency_ms:.2f}ms")
@@ -797,29 +855,29 @@ def test_streaming_throughput_benchmark_summary():
     benchmark_results = {
         "cdc_processor": {
             "target_throughput": 1000,  # events/sec
-            "target_latency": 10,       # ms
-            "target_memory": 500        # MB
+            "target_latency": 10,  # ms
+            "target_memory": 500,  # MB
         },
         "kafka_producer": {
             "target_throughput": 5000,  # messages/sec
-            "target_latency": 5,        # ms
-            "target_memory": 300        # MB
+            "target_latency": 5,  # ms
+            "target_memory": 300,  # MB
         },
         "kafka_consumer": {
             "target_throughput": 3000,  # messages/sec
-            "target_latency": 2,        # ms
-            "target_memory": 200        # MB
+            "target_latency": 2,  # ms
+            "target_memory": 200,  # MB
         },
         "stream_processor": {
             "target_throughput": 2000,  # events/sec
-            "target_latency": 5,        # ms
-            "target_memory": 400        # MB
+            "target_latency": 5,  # ms
+            "target_memory": 400,  # MB
         },
         "end_to_end_pipeline": {
-            "target_throughput": 800,   # changes/sec
-            "target_latency": 15,       # ms
-            "target_memory": 1000       # MB
-        }
+            "target_throughput": 800,  # changes/sec
+            "target_latency": 15,  # ms
+            "target_memory": 1000,  # MB
+        },
     }
 
     print("Streaming Throughput Performance Benchmarks Summary:")

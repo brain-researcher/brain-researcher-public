@@ -8,7 +8,9 @@ from pathlib import Path
 from flask import Flask
 
 
-def _load_viz_api(monkeypatch, *, template_root: Path, dataset_root: Path, job_root: Path):
+def _load_viz_api(
+    monkeypatch, *, template_root: Path, dataset_root: Path, job_root: Path
+):
     monkeypatch.setenv("BR_KG_VIZ_TEMPLATE_ROOTS", str(template_root))
     monkeypatch.setenv("BR_KG_VIZ_DATASET_ROOTS", str(dataset_root))
     monkeypatch.setenv("BR_KG_VIZ_JOB_ROOTS", str(job_root))

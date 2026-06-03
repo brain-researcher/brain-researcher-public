@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -25,10 +24,10 @@ class SegmentationParameters:
     save_probabilities: bool
     save_volumes: bool
     output_format: str
-    random_state: Optional[int]
+    random_state: int | None
 
 
-def segmentation_from_payload(payload: Dict[str, object]) -> SegmentationParameters:
+def segmentation_from_payload(payload: dict[str, object]) -> SegmentationParameters:
     """Construct parameters from payload."""
 
     return SegmentationParameters(
@@ -92,14 +91,18 @@ def _simulate_tissue_segmentation(
     )
     segmentation = np.zeros_like(image, dtype=int)
     for cls in range(n_classes):
-        mask = foreground_mask & (image >= thresholds[cls]) & (image < thresholds[cls + 1])
+        mask = (
+            foreground_mask & (image >= thresholds[cls]) & (image < thresholds[cls + 1])
+        )
         segmentation[mask] = cls + 1
     noise_mask = rng.random(image.shape) < 0.01
     segmentation[noise_mask] = rng.integers(1, n_classes + 1, size=noise_mask.sum())
     return segmentation
 
 
-def _simulate_lesion_segmentation(image: np.ndarray, min_size: int, rng: np.random.Generator) -> np.ndarray:
+def _simulate_lesion_segmentation(
+    image: np.ndarray, min_size: int, rng: np.random.Generator
+) -> np.ndarray:
     baseline = np.mean(image)
     lesion_mask = image > baseline + np.std(image)
     lesion_mask = lesion_mask & (rng.random(image.shape) < 0.1)
@@ -112,7 +115,7 @@ def _simulate_lesion_segmentation(image: np.ndarray, min_size: int, rng: np.rand
     return segmentation
 
 
-def run_segmentation(params: SegmentationParameters) -> Dict[str, object]:
+def run_segmentation(params: SegmentationParameters) -> dict[str, object]:
     """Execute fallback segmentation."""
 
     rng = np.random.default_rng(params.random_state)
@@ -137,7 +140,7 @@ def run_segmentation(params: SegmentationParameters) -> Dict[str, object]:
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {
+    outputs: dict[str, str | None] = {
         "summary": None,
         "segmentation": None,
         "probabilities": None,
@@ -145,7 +148,10 @@ def run_segmentation(params: SegmentationParameters) -> Dict[str, object]:
     }
 
     if params.save_masks:
-        seg_path = out_dir / f"segmentation.{params.output_format if params.output_format != 'nifti' else 'npy'}"
+        seg_path = (
+            out_dir
+            / f"segmentation.{params.output_format if params.output_format != 'nifti' else 'npy'}"
+        )
         np.save(seg_path.with_suffix(".npy"), segmentation)
         outputs["segmentation"] = str(seg_path.with_suffix(".npy"))
 
@@ -158,7 +164,9 @@ def run_segmentation(params: SegmentationParameters) -> Dict[str, object]:
 
     if params.save_volumes:
         volumes_path = out_dir / "volumes.json"
-        volumes_path.write_text(json.dumps({"volumes": volumes}, indent=2), encoding="utf-8")
+        volumes_path.write_text(
+            json.dumps({"volumes": volumes}, indent=2), encoding="utf-8"
+        )
         outputs["volumes"] = str(volumes_path)
 
     summary = {

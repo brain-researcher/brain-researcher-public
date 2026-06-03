@@ -1,22 +1,21 @@
 """Shared JWT authentication and API key middleware."""
 
-import os
-import json
 import hashlib
+import json
+import os
 import secrets
-from typing import Any, Dict, List, Optional, Union
+import time
 from datetime import datetime, timedelta
 from enum import Enum
-import jwt
-from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
+from typing import Any
 
-from fastapi import HTTPException, Security, Depends, status, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
-from pydantic import BaseModel, Field, validator
+import jwt
 import redis
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from passlib.context import CryptContext
-from functools import wraps
-import time
+from pydantic import BaseModel, Field
 
 
 class AuthType(str, Enum):
@@ -49,12 +48,16 @@ class UserInfo(BaseModel):
 
     user_id: str = Field(..., description="User identifier")
     username: str = Field(..., description="Username")
-    email: Optional[str] = Field(None, description="Email address")
-    roles: List[UserRole] = Field(default_factory=list, description="User roles")
-    permissions: List[str] = Field(default_factory=list, description="User permissions")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-    created_at: datetime = Field(default_factory=datetime.now, description="Account creation time")
-    last_login: Optional[datetime] = Field(None, description="Last login time")
+    email: str | None = Field(None, description="Email address")
+    roles: list[UserRole] = Field(default_factory=list, description="User roles")
+    permissions: list[str] = Field(default_factory=list, description="User permissions")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata"
+    )
+    created_at: datetime = Field(
+        default_factory=datetime.now, description="Account creation time"
+    )
+    last_login: datetime | None = Field(None, description="Last login time")
     is_active: bool = Field(True, description="Account active status")
 
 
@@ -65,9 +68,9 @@ class TokenPayload(BaseModel):
     exp: datetime = Field(..., description="Expiration time")
     iat: datetime = Field(default_factory=datetime.now, description="Issued at")
     type: TokenType = Field(..., description="Token type")
-    roles: List[str] = Field(default_factory=list, description="User roles")
-    permissions: List[str] = Field(default_factory=list, description="Permissions")
-    jti: Optional[str] = Field(None, description="JWT ID for revocation")
+    roles: list[str] = Field(default_factory=list, description="User roles")
+    permissions: list[str] = Field(default_factory=list, description="Permissions")
+    jti: str | None = Field(None, description="JWT ID for revocation")
 
 
 class APIKey(BaseModel):
@@ -77,14 +80,18 @@ class APIKey(BaseModel):
     key_hash: str = Field(..., description="Hashed key value")
     name: str = Field(..., description="Key name")
     user_id: str = Field(..., description="Owner user ID")
-    roles: List[UserRole] = Field(default_factory=list, description="Associated roles")
-    permissions: List[str] = Field(default_factory=list, description="Key permissions")
+    roles: list[UserRole] = Field(default_factory=list, description="Associated roles")
+    permissions: list[str] = Field(default_factory=list, description="Key permissions")
     rate_limit: int = Field(1000, description="Requests per hour")
-    expires_at: Optional[datetime] = Field(None, description="Expiration time")
-    created_at: datetime = Field(default_factory=datetime.now, description="Creation time")
-    last_used: Optional[datetime] = Field(None, description="Last usage time")
+    expires_at: datetime | None = Field(None, description="Expiration time")
+    created_at: datetime = Field(
+        default_factory=datetime.now, description="Creation time"
+    )
+    last_used: datetime | None = Field(None, description="Last usage time")
     is_active: bool = Field(True, description="Key active status")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata"
+    )
 
 
 class AuthConfig:
@@ -92,13 +99,13 @@ class AuthConfig:
 
     def __init__(
         self,
-        secret_key: Optional[str] = None,
+        secret_key: str | None = None,
         algorithm: str = "HS256",
         access_token_expire_minutes: int = 30,
         refresh_token_expire_days: int = 7,
         api_key_header_name: str = "X-API-Key",
         enable_rate_limiting: bool = True,
-        redis_url: Optional[str] = None
+        redis_url: str | None = None,
     ):
         """Initialize auth configuration.
 
@@ -130,7 +137,7 @@ class AuthConfig:
         # Password context
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-    def _init_redis(self, redis_url: Optional[str]) -> redis.Redis:
+    def _init_redis(self, redis_url: str | None) -> redis.Redis:
         """Initialize Redis client."""
         try:
             url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -141,6 +148,7 @@ class AuthConfig:
             # Fallback to fakeredis
             try:
                 import fakeredis
+
                 return fakeredis.FakeRedis(decode_responses=False)
             except ImportError:
                 return None
@@ -160,9 +168,9 @@ class TokenManager:
     def create_access_token(
         self,
         user_id: str,
-        roles: List[UserRole] = None,
-        permissions: List[str] = None,
-        additional_claims: Dict[str, Any] = None
+        roles: list[UserRole] = None,
+        permissions: list[str] = None,
+        additional_claims: dict[str, Any] = None,
     ) -> str:
         """Create access token.
 
@@ -175,7 +183,9 @@ class TokenManager:
         Returns:
             JWT access token
         """
-        expires_at = datetime.utcnow() + timedelta(minutes=self.config.access_token_expire_minutes)
+        expires_at = datetime.utcnow() + timedelta(
+            minutes=self.config.access_token_expire_minutes
+        )
 
         payload = TokenPayload(
             sub=user_id,
@@ -183,14 +193,16 @@ class TokenManager:
             type=TokenType.ACCESS,
             roles=[r.value for r in (roles or [])],
             permissions=permissions or [],
-            jti=secrets.token_urlsafe(16)
+            jti=secrets.token_urlsafe(16),
         )
 
         token_dict = payload.dict()
         if additional_claims:
             token_dict.update(additional_claims)
 
-        token = jwt.encode(token_dict, self.config.secret_key, algorithm=self.config.algorithm)
+        token = jwt.encode(
+            token_dict, self.config.secret_key, algorithm=self.config.algorithm
+        )
 
         # Store token metadata in Redis
         if self.config.redis_client:
@@ -198,7 +210,7 @@ class TokenManager:
             self.config.redis_client.setex(
                 token_key,
                 self.config.access_token_expire_minutes * 60,
-                json.dumps({"user_id": user_id, "type": "access"})
+                json.dumps({"user_id": user_id, "type": "access"}),
             )
 
         return token
@@ -212,16 +224,20 @@ class TokenManager:
         Returns:
             JWT refresh token
         """
-        expires_at = datetime.utcnow() + timedelta(days=self.config.refresh_token_expire_days)
+        expires_at = datetime.utcnow() + timedelta(
+            days=self.config.refresh_token_expire_days
+        )
 
         payload = TokenPayload(
             sub=user_id,
             exp=expires_at,
             type=TokenType.REFRESH,
-            jti=secrets.token_urlsafe(16)
+            jti=secrets.token_urlsafe(16),
         )
 
-        token = jwt.encode(payload.dict(), self.config.secret_key, algorithm=self.config.algorithm)
+        token = jwt.encode(
+            payload.dict(), self.config.secret_key, algorithm=self.config.algorithm
+        )
 
         # Store refresh token
         if self.config.redis_client:
@@ -229,12 +245,14 @@ class TokenManager:
             self.config.redis_client.setex(
                 token_key,
                 self.config.refresh_token_expire_days * 86400,
-                json.dumps({"user_id": user_id, "type": "refresh"})
+                json.dumps({"user_id": user_id, "type": "refresh"}),
             )
 
         return token
 
-    def verify_token(self, token: str, token_type: TokenType = TokenType.ACCESS) -> TokenPayload:
+    def verify_token(
+        self, token: str, token_type: TokenType = TokenType.ACCESS
+    ) -> TokenPayload:
         """Verify JWT token.
 
         Args:
@@ -248,14 +266,16 @@ class TokenManager:
             HTTPException: If token is invalid
         """
         try:
-            payload = jwt.decode(token, self.config.secret_key, algorithms=[self.config.algorithm])
+            payload = jwt.decode(
+                token, self.config.secret_key, algorithms=[self.config.algorithm]
+            )
             token_payload = TokenPayload(**payload)
 
             # Verify token type
             if token_payload.type != token_type:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"Invalid token type. Expected {token_type.value}"
+                    detail=f"Invalid token type. Expected {token_type.value}",
                 )
 
             # Check if token is revoked
@@ -264,20 +284,19 @@ class TokenManager:
                 if self.config.redis_client.exists(revoked_key):
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="Token has been revoked"
+                        detail="Token has been revoked",
                     )
 
             return token_payload
 
         except ExpiredSignatureError:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has expired"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
             )
         except InvalidTokenError as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid token: {str(e)}"
+                detail=f"Invalid token: {str(e)}",
             )
 
     def revoke_token(self, jti: str, expiry_seconds: int = 86400):
@@ -307,9 +326,9 @@ class APIKeyManager:
         self,
         user_id: str,
         name: str,
-        roles: List[UserRole] = None,
-        permissions: List[str] = None,
-        expires_in_days: Optional[int] = None
+        roles: list[UserRole] = None,
+        permissions: list[str] = None,
+        expires_in_days: int | None = None,
     ) -> tuple[str, APIKey]:
         """Generate new API key.
 
@@ -336,7 +355,11 @@ class APIKeyManager:
             user_id=user_id,
             roles=roles or [],
             permissions=permissions or [],
-            expires_at=datetime.now() + timedelta(days=expires_in_days) if expires_in_days else None
+            expires_at=(
+                datetime.now() + timedelta(days=expires_in_days)
+                if expires_in_days
+                else None
+            ),
         )
 
         # Store in Redis
@@ -363,7 +386,7 @@ class APIKeyManager:
         if not self.config.redis_client:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="API key verification unavailable"
+                detail="API key verification unavailable",
             )
 
         # Get key from Redis
@@ -371,8 +394,7 @@ class APIKeyManager:
 
         if not key_data:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid API key"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key"
             )
 
         # Parse key data
@@ -382,29 +404,25 @@ class APIKeyManager:
         except:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid API key format"
+                detail="Invalid API key format",
             )
 
         # Check if key is active
         if not api_key_model.is_active:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="API key is inactive"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="API key is inactive"
             )
 
         # Check expiration
         if api_key_model.expires_at and datetime.now() > api_key_model.expires_at:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="API key has expired"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="API key has expired"
             )
 
         # Update last used
         api_key_model.last_used = datetime.now()
         self.config.redis_client.hset(
-            "api_keys",
-            key_hash,
-            json.dumps(api_key_model.dict(), default=str)
+            "api_keys", key_hash, json.dumps(api_key_model.dict(), default=str)
         )
 
         return api_key_model
@@ -429,9 +447,7 @@ class APIKeyManager:
                 if data.get("key_id") == key_id:
                     data["is_active"] = False
                     self.config.redis_client.hset(
-                        "api_keys",
-                        key_hash,
-                        json.dumps(data, default=str)
+                        "api_keys", key_hash, json.dumps(data, default=str)
                     )
                     return True
 
@@ -451,11 +467,8 @@ class RateLimiter:
         self.enabled = config.enable_rate_limiting and config.redis_client is not None
 
     def check_rate_limit(
-        self,
-        identifier: str,
-        limit: int = 100,
-        window_seconds: int = 3600
-    ) -> tuple[bool, Dict[str, int]]:
+        self, identifier: str, limit: int = 100, window_seconds: int = 3600
+    ) -> tuple[bool, dict[str, int]]:
         """Check rate limit.
 
         Args:
@@ -481,13 +494,12 @@ class RateLimiter:
 
         if request_count >= limit:
             # Rate limit exceeded
-            reset_time = int(self.config.redis_client.zrange(key, 0, 0, withscores=True)[0][1]) + window_seconds
+            reset_time = (
+                int(self.config.redis_client.zrange(key, 0, 0, withscores=True)[0][1])
+                + window_seconds
+            )
 
-            return False, {
-                "limit": limit,
-                "remaining": 0,
-                "reset": reset_time
-            }
+            return False, {"limit": limit, "remaining": 0, "reset": reset_time}
 
         # Add current request
         self.config.redis_client.zadd(key, {str(now): now})
@@ -496,7 +508,7 @@ class RateLimiter:
         return True, {
             "limit": limit,
             "remaining": limit - request_count - 1,
-            "reset": now + window_seconds
+            "reset": now + window_seconds,
         }
 
 
@@ -513,7 +525,7 @@ _rate_limiter = RateLimiter(_auth_config)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
-    api_key: Optional[str] = Security(api_key_header)
+    api_key: str | None = Security(api_key_header),
 ) -> UserInfo:
     """Get current authenticated user.
 
@@ -534,8 +546,7 @@ async def get_current_user(
 
             # Check rate limit
             allowed, rate_info = _rate_limiter.check_rate_limit(
-                f"user:{payload.sub}",
-                limit=1000
+                f"user:{payload.sub}", limit=1000
             )
 
             if not allowed:
@@ -545,19 +556,19 @@ async def get_current_user(
                     headers={
                         "X-RateLimit-Limit": str(rate_info["limit"]),
                         "X-RateLimit-Remaining": str(rate_info["remaining"]),
-                        "X-RateLimit-Reset": str(rate_info["reset"])
-                    }
+                        "X-RateLimit-Reset": str(rate_info["reset"]),
+                    },
                 )
 
             return UserInfo(
                 user_id=payload.sub,
                 username=payload.sub,
                 roles=[UserRole(r) for r in payload.roles],
-                permissions=payload.permissions
+                permissions=payload.permissions,
             )
         except HTTPException:
             raise
-        except Exception as e:
+        except Exception:
             pass  # Try API key next
 
     # Try API key
@@ -567,8 +578,7 @@ async def get_current_user(
 
             # Check rate limit
             allowed, rate_info = _rate_limiter.check_rate_limit(
-                f"api_key:{api_key_model.key_id}",
-                limit=api_key_model.rate_limit
+                f"api_key:{api_key_model.key_id}", limit=api_key_model.rate_limit
             )
 
             if not allowed:
@@ -578,8 +588,8 @@ async def get_current_user(
                     headers={
                         "X-RateLimit-Limit": str(rate_info["limit"]),
                         "X-RateLimit-Remaining": str(rate_info["remaining"]),
-                        "X-RateLimit-Reset": str(rate_info["reset"])
-                    }
+                        "X-RateLimit-Reset": str(rate_info["reset"]),
+                    },
                 )
 
             return UserInfo(
@@ -587,18 +597,18 @@ async def get_current_user(
                 username=f"api_key_{api_key_model.name}",
                 roles=api_key_model.roles,
                 permissions=api_key_model.permissions,
-                metadata={"api_key_id": api_key_model.key_id}
+                metadata={"api_key_id": api_key_model.key_id},
             )
         except HTTPException:
             raise
-        except Exception as e:
+        except Exception:
             pass
 
     # No valid authentication
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Not authenticated",
-        headers={"WWW-Authenticate": "Bearer"}
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
 
@@ -611,11 +621,14 @@ def require_roles(*required_roles: UserRole):
     Returns:
         Dependency function
     """
-    async def role_checker(current_user: UserInfo = Depends(get_current_user)) -> UserInfo:
+
+    async def role_checker(
+        current_user: UserInfo = Depends(get_current_user),
+    ) -> UserInfo:
         if not any(role in current_user.roles for role in required_roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Insufficient permissions. Required roles: {[r.value for r in required_roles]}"
+                detail=f"Insufficient permissions. Required roles: {[r.value for r in required_roles]}",
             )
         return current_user
 
@@ -631,11 +644,14 @@ def require_permissions(*required_permissions: str):
     Returns:
         Dependency function
     """
-    async def permission_checker(current_user: UserInfo = Depends(get_current_user)) -> UserInfo:
+
+    async def permission_checker(
+        current_user: UserInfo = Depends(get_current_user),
+    ) -> UserInfo:
         if not all(perm in current_user.permissions for perm in required_permissions):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Insufficient permissions. Required: {list(required_permissions)}"
+                detail=f"Insufficient permissions. Required: {list(required_permissions)}",
             )
         return current_user
 
@@ -656,5 +672,5 @@ __all__ = [
     "RateLimiter",
     "get_current_user",
     "require_roles",
-    "require_permissions"
+    "require_permissions",
 ]

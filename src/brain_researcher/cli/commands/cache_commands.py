@@ -1,14 +1,13 @@
 """Cache management commands for Brain Researcher CLI (P2.5)."""
 
-import os
 import json
+import os
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from brain_researcher.cli.utils.http_client import get_orchestrator_url
 
@@ -23,9 +22,7 @@ def _check_cache_enabled() -> bool:
         console.print(
             "[yellow]Warning: Cache is disabled (BR_CACHE_ENABLED=false)[/yellow]"
         )
-        console.print(
-            "[dim]Enable with: export BR_CACHE_ENABLED=true[/dim]"
-        )
+        console.print("[dim]Enable with: export BR_CACHE_ENABLED=true[/dim]")
         return False
     return True
 
@@ -53,7 +50,9 @@ def status():
         stats = response.json()
 
         # Create table
-        table = Table(title="Cache Statistics", show_header=True, header_style="bold cyan")
+        table = Table(
+            title="Cache Statistics", show_header=True, header_style="bold cyan"
+        )
         table.add_column("Metric", style="cyan")
         table.add_column("Value", style="magenta", justify="right")
 
@@ -77,9 +76,7 @@ def status():
         # Show cache mode
         cache_mode = os.getenv("BR_CACHE_MODE", "fast")
         cache_store = os.getenv("BR_CACHE_STORE", "memory")
-        console.print(
-            f"\n[dim]Mode: {cache_mode} | Store: {cache_store}[/dim]"
-        )
+        console.print(f"\n[dim]Mode: {cache_mode} | Store: {cache_store}[/dim]")
 
     except httpx.HTTPError as e:
         console.print(f"[red]Error fetching cache stats: {e}[/red]")
@@ -88,15 +85,16 @@ def status():
 
 @app.command()
 def clear(
-    tool_version: Optional[str] = typer.Option(
-        None, "--tool", "-t", help="Clear entries for specific tool version (e.g., 'fsl.bet:6.0.7')"
+    tool_version: str | None = typer.Option(
+        None,
+        "--tool",
+        "-t",
+        help="Clear entries for specific tool version (e.g., 'fsl.bet:6.0.7')",
     ),
-    git_sha: Optional[str] = typer.Option(
+    git_sha: str | None = typer.Option(
         None, "--git", "-g", help="Clear entries for specific git SHA"
     ),
-    force: bool = typer.Option(
-        False, "--force", "-f", help="Skip confirmation prompt"
-    ),
+    force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation prompt"),
 ):
     """Clear cache entries (all, by tool, or by git SHA)."""
     try:
@@ -126,7 +124,7 @@ def clear(
             return
 
     orchestrator_url = get_orchestrator_url()
-    console.print(f"[dim]Clearing cache entries...[/dim]")
+    console.print("[dim]Clearing cache entries...[/dim]")
 
     try:
         # Build query params
@@ -137,9 +135,7 @@ def clear(
             params["git_sha"] = git_sha
 
         response = httpx.delete(
-            f"{orchestrator_url}/api/cache",
-            params=params,
-            timeout=30.0
+            f"{orchestrator_url}/api/cache", params=params, timeout=30.0
         )
         response.raise_for_status()
         result = response.json()
@@ -173,21 +169,21 @@ def gc(
         raise typer.Exit(1)
 
     orchestrator_url = get_orchestrator_url()
-    console.print(f"[dim]Running LRU eviction (keeping {max_entries} most recent)...[/dim]")
+    console.print(
+        f"[dim]Running LRU eviction (keeping {max_entries} most recent)...[/dim]"
+    )
 
     try:
         response = httpx.post(
             f"{orchestrator_url}/api/cache/gc",
             params={"max_entries": max_entries},
-            timeout=60.0
+            timeout=60.0,
         )
         response.raise_for_status()
         result = response.json()
 
         if result["evicted"] > 0:
-            console.print(
-                f"[green]✓[/green] {result['message']}"
-            )
+            console.print(f"[green]✓[/green] {result['message']}")
         else:
             console.print(
                 f"[dim]No eviction needed (cache under {max_entries} entries)[/dim]"
@@ -200,13 +196,13 @@ def gc(
 
 @app.command()
 def resolve(
-    cache_key: Optional[str] = typer.Option(
+    cache_key: str | None = typer.Option(
         None, "--key", "-k", help="Cache key to resolve (sha256:...)"
     ),
-    tool: Optional[str] = typer.Option(
+    tool: str | None = typer.Option(
         None, "--tool", "-t", help="Tool name (e.g., 'fsl.bet')"
     ),
-    params_file: Optional[Path] = typer.Option(
+    params_file: Path | None = typer.Option(
         None, "--params", "-p", help="JSON file with tool parameters"
     ),
 ):
@@ -239,23 +235,25 @@ def resolve(
             response = httpx.get(
                 f"{orchestrator_url}/api/cache/resolve",
                 params={"key": cache_key},
-                timeout=10.0
+                timeout=10.0,
             )
             response.raise_for_status()
             entry = response.json()
 
             # Display entry details
-            console.print(Panel(
-                f"[cyan]Run ID:[/cyan] {entry['run_id']}\n"
-                f"[cyan]State:[/cyan] {entry['state']}\n"
-                f"[cyan]Run Dir:[/cyan] {entry.get('run_dir', 'N/A')}\n"
-                f"[cyan]Tool Version:[/cyan] {entry.get('tool_version', 'N/A')}\n"
-                f"[cyan]Size:[/cyan] {entry.get('size_bytes', 0) / (1024*1024):.2f} MB\n"
-                f"[cyan]Created:[/cyan] {entry['created_at']}\n"
-                f"[cyan]Last Accessed:[/cyan] {entry['last_accessed_at']}",
-                title=f"Cache Entry: {cache_key[:16]}...",
-                border_style="green"
-            ))
+            console.print(
+                Panel(
+                    f"[cyan]Run ID:[/cyan] {entry['run_id']}\n"
+                    f"[cyan]State:[/cyan] {entry['state']}\n"
+                    f"[cyan]Run Dir:[/cyan] {entry.get('run_dir', 'N/A')}\n"
+                    f"[cyan]Tool Version:[/cyan] {entry.get('tool_version', 'N/A')}\n"
+                    f"[cyan]Size:[/cyan] {entry.get('size_bytes', 0) / (1024*1024):.2f} MB\n"
+                    f"[cyan]Created:[/cyan] {entry['created_at']}\n"
+                    f"[cyan]Last Accessed:[/cyan] {entry['last_accessed_at']}",
+                    title=f"Cache Entry: {cache_key[:16]}...",
+                    border_style="green",
+                )
+            )
 
         elif tool and params_file:
             # Compute key from parameters and resolve
@@ -277,9 +275,7 @@ def resolve(
             }
 
             response = httpx.post(
-                f"{orchestrator_url}/api/cache/resolve",
-                json=payload,
-                timeout=30.0
+                f"{orchestrator_url}/api/cache/resolve", json=payload, timeout=30.0
             )
             response.raise_for_status()
             result = response.json()
@@ -304,9 +300,9 @@ def resolve(
             raise typer.Exit(1)
 
     except httpx.HTTPError as e:
-        if hasattr(e, 'response') and e.response.status_code == 404:
+        if hasattr(e, "response") and e.response.status_code == 404:
             console.print("[yellow]Cache entry not found[/yellow]")
-        elif hasattr(e, 'response') and e.response.status_code == 503:
+        elif hasattr(e, "response") and e.response.status_code == 503:
             console.print("[red]Cache is not enabled on the orchestrator[/red]")
         else:
             console.print(f"[red]Error: {e}[/red]")

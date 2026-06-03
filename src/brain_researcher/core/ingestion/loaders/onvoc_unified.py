@@ -5,8 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List
-
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ class OnvocUnifiedLoader:
         self._concepts_path = self.data_dir / "onvoc_concepts.json"
         self._relationships_path = self.data_dir / "onvoc_relationships.json"
 
-    def _load_json(self, path: Path) -> List[Dict[str, Any]]:
+    def _load_json(self, path: Path) -> list[dict[str, Any]]:
         if not path.exists():
             raise FileNotFoundError(
                 f"Required ONVOC artifact missing: {path}. Run scripts/tools/once/parse_onvoc_owl.py first."
@@ -27,14 +26,16 @@ class OnvocUnifiedLoader:
         with path.open("r", encoding="utf-8") as handle:
             return json.load(handle)
 
-    def load_concepts(self) -> List[Dict[str, Any]]:
+    def load_concepts(self) -> list[dict[str, Any]]:
         """Return ONVOC concept payloads."""
 
         concepts = self._load_json(self._concepts_path)
-        logger.debug("Loaded %d ONVOC concepts from %s", len(concepts), self._concepts_path)
+        logger.debug(
+            "Loaded %d ONVOC concepts from %s", len(concepts), self._concepts_path
+        )
         return concepts
 
-    def load_relationships(self) -> List[Dict[str, Any]]:
+    def load_relationships(self) -> list[dict[str, Any]]:
         """Return ONVOC hierarchical relationships."""
 
         relationships = self._load_json(self._relationships_path)

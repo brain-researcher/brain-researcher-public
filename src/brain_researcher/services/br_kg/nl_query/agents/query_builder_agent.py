@@ -5,17 +5,18 @@ Constructs executable Cypher and SPARQL queries from mapped patterns.
 """
 
 import logging
-from typing import Dict, Any, List, Optional, Set
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
-from .schema_mapper_agent import MappedQuery, GraphPattern, NodeType, RelationType
+from .schema_mapper_agent import GraphPattern, MappedQuery
 
 logger = logging.getLogger(__name__)
 
 
 class QueryType(str, Enum):
     """Types of executable queries"""
+
     CYPHER = "cypher"
     SPARQL = "sparql"
     GRAPHQL = "graphql"
@@ -24,13 +25,14 @@ class QueryType(str, Enum):
 @dataclass
 class ExecutableQuery:
     """An executable query ready for database execution"""
+
     query_type: QueryType
     query_string: str
-    parameters: Dict[str, Any]
-    fallback_query: Optional[str]
+    parameters: dict[str, Any]
+    fallback_query: str | None
     estimated_cost: float
     confidence_score: float
-    optimizations_applied: List[str] = field(default_factory=list)
+    optimizations_applied: list[str] = field(default_factory=list)
 
 
 class QueryBuilderAgent:
@@ -48,20 +50,18 @@ class QueryBuilderAgent:
         """Initialize the query builder agent"""
         self.query_templates = self._load_query_templates()
 
-    def _load_query_templates(self) -> Dict[str, str]:
+    def _load_query_templates(self) -> dict[str, str]:
         """Load query templates for common patterns"""
         return {
-            'simple_match': "MATCH {pattern} WHERE {filters} RETURN {projections}",
-            'aggregation': "MATCH {pattern} WHERE {filters} RETURN {aggregation}",
-            'path_search': "MATCH path = {pattern} WHERE {filters} RETURN path",
-            'shortest_path': "MATCH path = shortestPath({pattern}) RETURN path",
-            'optional_match': "MATCH {required} OPTIONAL MATCH {optional} WHERE {filters} RETURN {projections}"
+            "simple_match": "MATCH {pattern} WHERE {filters} RETURN {projections}",
+            "aggregation": "MATCH {pattern} WHERE {filters} RETURN {aggregation}",
+            "path_search": "MATCH path = {pattern} WHERE {filters} RETURN path",
+            "shortest_path": "MATCH path = shortestPath({pattern}) RETURN path",
+            "optional_match": "MATCH {required} OPTIONAL MATCH {optional} WHERE {filters} RETURN {projections}",
         }
 
     def build_query(
-        self,
-        mapped_query: MappedQuery,
-        context: Optional[Dict[str, Any]] = None
+        self, mapped_query: MappedQuery, context: dict[str, Any] | None = None
     ) -> ExecutableQuery:
         """
         Build an executable query from mapped patterns
@@ -87,9 +87,7 @@ class QueryBuilderAgent:
 
         # Apply optimizations
         query_string, optimizations = self._optimize_query(
-            query_string,
-            query_type,
-            mapped_query
+            query_string, query_type, mapped_query
         )
 
         # Estimate query cost
@@ -97,9 +95,7 @@ class QueryBuilderAgent:
 
         # Calculate confidence
         confidence = self._calculate_confidence(
-            mapped_query,
-            optimizations,
-            estimated_cost
+            mapped_query, optimizations, estimated_cost
         )
 
         return ExecutableQuery(
@@ -109,24 +105,23 @@ class QueryBuilderAgent:
             fallback_query=fallback,
             estimated_cost=estimated_cost,
             confidence_score=confidence,
-            optimizations_applied=optimizations
+            optimizations_applied=optimizations,
         )
 
-    def _determine_query_type(self, context: Optional[Dict[str, Any]]) -> QueryType:
+    def _determine_query_type(self, context: dict[str, Any] | None) -> QueryType:
         """Determine which query type to use"""
-        if context and 'backend' in context:
-            if context['backend'] == 'neo4j':
+        if context and "backend" in context:
+            if context["backend"] == "neo4j":
                 return QueryType.CYPHER
-            elif context['backend'] == 'sparql':
+            elif context["backend"] == "sparql":
                 return QueryType.SPARQL
 
         # Default to Cypher for Neo4j
         return QueryType.CYPHER
 
     def _build_cypher_query(
-        self,
-        mapped_query: MappedQuery
-    ) -> tuple[str, Dict[str, Any]]:
+        self, mapped_query: MappedQuery
+    ) -> tuple[str, dict[str, Any]]:
         """Build a Cypher query for Neo4j"""
         query_parts = []
         parameters = {}
@@ -147,12 +142,10 @@ class QueryBuilderAgent:
                 param_counter += 1
 
                 condition = self._build_filter_condition(
-                    node_id,
-                    filter_spec,
-                    param_name
+                    node_id, filter_spec, param_name
                 )
                 where_conditions.append(condition)
-                parameters[param_name] = filter_spec['value']
+                parameters[param_name] = filter_spec["value"]
 
         # Add relationship filters
         for rel_alias, filters in mapped_query.relationship_filters.items():
@@ -161,12 +154,10 @@ class QueryBuilderAgent:
                 param_counter += 1
 
                 condition = self._build_filter_condition(
-                    rel_alias,
-                    filter_spec,
-                    param_name
+                    rel_alias, filter_spec, param_name
                 )
                 where_conditions.append(condition)
-                parameters[param_name] = filter_spec['value']
+                parameters[param_name] = filter_spec["value"]
 
         # Add WHERE clause if conditions exist
         if where_conditions:
@@ -176,7 +167,7 @@ class QueryBuilderAgent:
         return_clause = self._build_return_clause(
             mapped_query.projections,
             mapped_query.parsed_query.intent,
-            mapped_query.parsed_query.modifiers
+            mapped_query.parsed_query.modifiers,
         )
         query_parts.append(return_clause)
 
@@ -189,22 +180,25 @@ class QueryBuilderAgent:
         return query_string, parameters
 
     def _build_sparql_query(
-        self,
-        mapped_query: MappedQuery
-    ) -> tuple[str, Dict[str, Any]]:
+        self, mapped_query: MappedQuery
+    ) -> tuple[str, dict[str, Any]]:
         """Build a SPARQL query"""
         query_parts = []
 
         # Prefixes
-        query_parts.append("""
+        query_parts.append(
+            """
 PREFIX br_kg: <https://br_kg.org/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX bio2rdf: <http://bio2rdf.org/>
-        """.strip())
+        """.strip()
+        )
 
         # SELECT clause
-        projections = mapped_query.projections if mapped_query.projections else ['*']
-        select_vars = ' '.join([f"?{p}" if not p.startswith('?') else p for p in projections])
+        projections = mapped_query.projections if mapped_query.projections else ["*"]
+        select_vars = " ".join(
+            [f"?{p}" if not p.startswith("?") else p for p in projections]
+        )
         query_parts.append(f"SELECT {select_vars}")
 
         # WHERE clause with graph patterns
@@ -227,24 +221,21 @@ PREFIX bio2rdf: <http://bio2rdf.org/>
         query_parts.append("}")
 
         # Add modifiers
-        if mapped_query.parsed_query.modifiers.get('limit'):
+        if mapped_query.parsed_query.modifiers.get("limit"):
             query_parts.append(f"LIMIT {mapped_query.parsed_query.modifiers['limit']}")
 
         query_string = "\n".join(query_parts)
         return query_string, {}
 
     def _build_match_clause(
-        self,
-        pattern: GraphPattern,
-        mapped_query: MappedQuery
+        self, pattern: GraphPattern, mapped_query: MappedQuery
     ) -> str:
         """Build a MATCH clause from a graph pattern"""
         # Use the pattern string if available
         if pattern.pattern_string:
             # Add property filters to pattern
             enhanced_pattern = self._enhance_pattern_with_properties(
-                pattern,
-                mapped_query
+                pattern, mapped_query
             )
             return f"MATCH {enhanced_pattern}"
 
@@ -256,82 +247,75 @@ PREFIX bio2rdf: <http://bio2rdf.org/>
             pattern_parts.append(node_pattern)
 
         for rel in pattern.relationships:
-            source_alias = self._find_node_alias(pattern.nodes, rel['source'])
-            target_alias = self._find_node_alias(pattern.nodes, rel['target'])
-            rel_pattern = f"({source_alias})-[{rel['alias']}:{rel['type']}]->({target_alias})"
+            source_alias = self._find_node_alias(pattern.nodes, rel["source"])
+            target_alias = self._find_node_alias(pattern.nodes, rel["target"])
+            rel_pattern = (
+                f"({source_alias})-[{rel['alias']}:{rel['type']}]->({target_alias})"
+            )
             pattern_parts.append(rel_pattern)
 
         return f"MATCH {', '.join(pattern_parts)}"
 
     def _enhance_pattern_with_properties(
-        self,
-        pattern: GraphPattern,
-        mapped_query: MappedQuery
+        self, pattern: GraphPattern, mapped_query: MappedQuery
     ) -> str:
         """Add inline property filters to pattern"""
         enhanced = pattern.pattern_string
 
         # Add node properties
         for node in pattern.nodes:
-            if 'properties' in node and node['properties']:
-                prop_string = ', '.join([
-                    f"{k}: '{v}'" for k, v in node['properties'].items()
-                ])
+            if "properties" in node and node["properties"]:
+                prop_string = ", ".join(
+                    [f"{k}: '{v}'" for k, v in node["properties"].items()]
+                )
                 enhanced = enhanced.replace(
-                    f"{node['alias']}:",
-                    f"{node['alias']}: {{{prop_string}}} "
+                    f"{node['alias']}:", f"{node['alias']}: {{{prop_string}}} "
                 )
 
         return enhanced
 
     def _build_filter_condition(
-        self,
-        identifier: str,
-        filter_spec: Dict[str, Any],
-        param_name: str
+        self, identifier: str, filter_spec: dict[str, Any], param_name: str
     ) -> str:
         """Build a filter condition"""
         property_path = f"{identifier}.{filter_spec['property']}"
-        operator = filter_spec['operator']
+        operator = filter_spec["operator"]
 
         operator_map = {
-            'eq': '=',
-            'gt': '>',
-            'gte': '>=',
-            'lt': '<',
-            'lte': '<=',
-            'ne': '<>',
-            'contains': 'CONTAINS',
-            'starts_with': 'STARTS WITH',
-            'ends_with': 'ENDS WITH',
-            'between': 'BETWEEN',
-            'in': 'IN'
+            "eq": "=",
+            "gt": ">",
+            "gte": ">=",
+            "lt": "<",
+            "lte": "<=",
+            "ne": "<>",
+            "contains": "CONTAINS",
+            "starts_with": "STARTS WITH",
+            "ends_with": "ENDS WITH",
+            "between": "BETWEEN",
+            "in": "IN",
         }
 
-        cypher_op = operator_map.get(operator, '=')
+        cypher_op = operator_map.get(operator, "=")
 
-        if operator == 'between':
+        if operator == "between":
             # Special handling for between
             return f"{property_path} >= ${param_name}_min AND {property_path} <= ${param_name}_max"
-        elif operator in ['contains', 'starts_with', 'ends_with']:
+        elif operator in ["contains", "starts_with", "ends_with"]:
             return f"{property_path} {cypher_op} ${param_name}"
         else:
             return f"{property_path} {cypher_op} ${param_name}"
 
     def _build_return_clause(
-        self,
-        projections: List[str],
-        intent: str,
-        modifiers: Dict[str, Any]
+        self, projections: list[str], intent: str, modifiers: dict[str, Any]
     ) -> str:
         """Build a RETURN clause"""
-        if not projections or projections == ['*']:
+        if not projections or projections == ["*"]:
             return "RETURN *"
 
         # Handle aggregations
-        if 'aggregate' in intent.lower() or 'count' in intent.lower():
-            if 'group_by' in modifiers:
-                group_field = modifiers['group_by']
+        if "aggregate" in intent.lower() or "count" in intent.lower():
+            if "group_by" in modifiers:
+                group_field = modifiers["group_by"]
                 return f"RETURN {group_field}, count(*) as count"
             else:
                 return "RETURN count(*) as count"
@@ -340,27 +324,27 @@ PREFIX bio2rdf: <http://bio2rdf.org/>
         return_items = []
         for projection in projections:
             # Add labels for clarity
-            if '.' not in projection:
+            if "." not in projection:
                 return_items.append(projection)
             else:
                 # Extract property
-                alias, prop = projection.rsplit('.', 1)
+                alias, prop = projection.rsplit(".", 1)
                 return_items.append(f"{projection} as {alias}_{prop}")
 
         return f"RETURN {', '.join(return_items)}"
 
-    def _build_modifiers(self, modifiers: Dict[str, Any]) -> str:
+    def _build_modifiers(self, modifiers: dict[str, Any]) -> str:
         """Build query modifiers (ORDER BY, LIMIT, SKIP)"""
         modifier_parts = []
 
-        if 'sort_by' in modifiers:
-            order = modifiers.get('sort_order', 'asc').upper()
+        if "sort_by" in modifiers:
+            order = modifiers.get("sort_order", "asc").upper()
             modifier_parts.append(f"ORDER BY {modifiers['sort_by']} {order}")
 
-        if 'limit' in modifiers:
+        if "limit" in modifiers:
             modifier_parts.append(f"LIMIT {modifiers['limit']}")
 
-        if 'skip' in modifiers:
+        if "skip" in modifiers:
             modifier_parts.append(f"SKIP {modifiers['skip']}")
 
         return "\n".join(modifier_parts)
@@ -376,12 +360,12 @@ PREFIX bio2rdf: <http://bio2rdf.org/>
             triples.append(f"{subject} a br_kg:{node['type']}")
 
             # Add property triples
-            if 'properties' in node:
-                for prop, value in node['properties'].items():
+            if "properties" in node:
+                for prop, value in node["properties"].items():
                     if isinstance(value, str):
                         triples.append(f'{subject} br_kg:{prop} "{value}"')
                     else:
-                        triples.append(f'{subject} br_kg:{prop} {value}')
+                        triples.append(f"{subject} br_kg:{prop} {value}")
 
         for rel in pattern.relationships:
             source = f"?{self._find_node_alias(pattern.nodes, rel['source'])}"
@@ -391,40 +375,40 @@ PREFIX bio2rdf: <http://bio2rdf.org/>
 
         return " .\n  ".join(triples) + " ."
 
-    def _build_sparql_filter(self, constraint: Dict[str, Any]) -> Optional[str]:
+    def _build_sparql_filter(self, constraint: dict[str, Any]) -> str | None:
         """Build a SPARQL FILTER expression"""
-        if constraint['type'] == 'numeric':
+        if constraint["type"] == "numeric":
             field = f"?{constraint['field']}"
-            op = constraint['operator']
-            value = constraint['value']
+            op = constraint["operator"]
+            value = constraint["value"]
 
             operator_map = {
-                'gt': '>',
-                'gte': '>=',
-                'lt': '<',
-                'lte': '<=',
-                'eq': '=',
-                'ne': '!='
+                "gt": ">",
+                "gte": ">=",
+                "lt": "<",
+                "lte": "<=",
+                "eq": "=",
+                "ne": "!=",
             }
 
-            sparql_op = operator_map.get(op, '=')
+            sparql_op = operator_map.get(op, "=")
             return f"{field} {sparql_op} {value}"
 
-        elif constraint['type'] == 'temporal':
+        elif constraint["type"] == "temporal":
             # Handle date filters
             field = f"?{constraint['field']}"
             return f'{field} > "{constraint["value"]}"^^xsd:date'
 
         return None
 
-    def _find_node_alias(self, nodes: List[Dict], node_id: str) -> str:
+    def _find_node_alias(self, nodes: list[dict], node_id: str) -> str:
         """Find the alias for a node by its ID"""
         for node in nodes:
-            if node['id'] == node_id:
-                return node['alias']
+            if node["id"] == node_id:
+                return node["alias"]
         return f"n{node_id}"
 
-    def _generate_fallback_query(self, mapped_query: MappedQuery) -> Optional[str]:
+    def _generate_fallback_query(self, mapped_query: MappedQuery) -> str | None:
         """Generate a simpler fallback query"""
         if not mapped_query.graph_patterns:
             return None
@@ -443,11 +427,8 @@ LIMIT 10
         return None
 
     def _optimize_query(
-        self,
-        query_string: str,
-        query_type: QueryType,
-        mapped_query: MappedQuery
-    ) -> tuple[str, List[str]]:
+        self, query_string: str, query_type: QueryType, mapped_query: MappedQuery
+    ) -> tuple[str, list[str]]:
         """Apply query optimizations"""
         optimizations = []
 
@@ -473,34 +454,32 @@ LIMIT 10
         # Use index hints if we have specific property filters
         return bool(mapped_query.node_filters)
 
-    def _add_index_hints(
-        self,
-        query_string: str,
-        mapped_query: MappedQuery
-    ) -> str:
+    def _add_index_hints(self, query_string: str, mapped_query: MappedQuery) -> str:
         """Add index hints to query"""
         # Add USING INDEX hints for filtered properties
         hints = []
         for node_id, filters in mapped_query.node_filters.items():
             for filter_spec in filters:
-                if filter_spec['property'] in ['name', 'id', 'symbol']:
+                if filter_spec["property"] in ["name", "id", "symbol"]:
                     hints.append(f"USING INDEX {node_id}:{filter_spec['property']}")
 
         if hints:
             # Insert hints after MATCH clause
-            parts = query_string.split('\n')
+            parts = query_string.split("\n")
             for i, part in enumerate(parts):
-                if part.startswith('MATCH'):
-                    parts.insert(i + 1, '\n'.join(hints))
+                if part.startswith("MATCH"):
+                    parts.insert(i + 1, "\n".join(hints))
                     break
-            query_string = '\n'.join(parts)
+            query_string = "\n".join(parts)
 
         return query_string
 
     def _can_pushdown_limit(self, query_string: str) -> bool:
         """Check if LIMIT can be pushed down"""
         # Can pushdown if no aggregation
-        return 'count(' not in query_string.lower() and 'sum(' not in query_string.lower()
+        return (
+            "count(" not in query_string.lower() and "sum(" not in query_string.lower()
+        )
 
     def _pushdown_limit(self, query_string: str) -> str:
         """Push LIMIT closer to MATCH for early termination"""
@@ -515,9 +494,7 @@ LIMIT 10
         return query_string
 
     def _estimate_query_cost(
-        self,
-        mapped_query: MappedQuery,
-        query_string: str
+        self, mapped_query: MappedQuery, query_string: str
     ) -> float:
         """Estimate the computational cost of a query"""
         cost = 1.0
@@ -532,20 +509,17 @@ LIMIT 10
         cost -= len(mapped_query.relationship_filters) * 0.1
 
         # Factor in projections
-        if '*' in mapped_query.projections:
+        if "*" in mapped_query.projections:
             cost += 0.5
 
         # Factor in modifiers
-        if mapped_query.parsed_query.modifiers.get('limit'):
+        if mapped_query.parsed_query.modifiers.get("limit"):
             cost *= 0.5  # LIMIT reduces cost
 
         return max(0.1, cost)
 
     def _calculate_confidence(
-        self,
-        mapped_query: MappedQuery,
-        optimizations: List[str],
-        estimated_cost: float
+        self, mapped_query: MappedQuery, optimizations: list[str], estimated_cost: float
     ) -> float:
         """Calculate confidence in the built query"""
         confidence = mapped_query.confidence_score

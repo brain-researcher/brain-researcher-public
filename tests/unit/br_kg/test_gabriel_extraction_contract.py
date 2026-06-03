@@ -119,7 +119,9 @@ def test_finalize_record_demotes_title_only_when_abstract_available() -> None:
     assert finalized["evidence"]["locatable"] is False
 
 
-def test_compute_gabriel_variables_penalizes_title_only_and_unverifiable_snippet() -> None:
+def test_compute_gabriel_variables_penalizes_title_only_and_unverifiable_snippet() -> (
+    None
+):
     baseline_record = {
         "run": {
             "run_id": "r0",
@@ -457,7 +459,9 @@ def test_method_rigor_does_not_grant_full_credit_to_status_only_method_blocks() 
     assert audited.method_rigor > unaudited.method_rigor
 
 
-def test_method_rigor_uses_method_section_when_claim_evidence_is_only_abstract() -> None:
+def test_method_rigor_uses_method_section_when_claim_evidence_is_only_abstract() -> (
+    None
+):
     variables = compute_gabriel_variables(
         {
             "run": {

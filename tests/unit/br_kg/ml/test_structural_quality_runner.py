@@ -178,18 +178,31 @@ def test_export_fixed_graph_slice_applies_profile_filters_and_balanced_sampling(
         ["TaskFamily"],
         {"id": "tf_uncategorized", "name": "Uncategorized"},
     )
-    t1 = _FakeNode("n1", ["Task"], {"id": "t1", "name": "task 1", "source": "neurostore"})
-    t2 = _FakeNode("n2", ["Task"], {"id": "t2", "name": "task 2", "source": "neurostore"})
-    t3 = _FakeNode("n3", ["Task"], {"id": "t3", "name": "task 3", "source": "neurostore"})
-    t4 = _FakeNode("n4", ["Task"], {"id": "t4", "name": "task 4", "source": "neurostore"})
-    t5 = _FakeNode("n5", ["Task"], {"id": "t5", "name": "task 5", "source": "neurostore"})
+    t1 = _FakeNode(
+        "n1", ["Task"], {"id": "t1", "name": "task 1", "source": "neurostore"}
+    )
+    t2 = _FakeNode(
+        "n2", ["Task"], {"id": "t2", "name": "task 2", "source": "neurostore"}
+    )
+    t3 = _FakeNode(
+        "n3", ["Task"], {"id": "t3", "name": "task 3", "source": "neurostore"}
+    )
+    t4 = _FakeNode(
+        "n4", ["Task"], {"id": "t4", "name": "task 4", "source": "neurostore"}
+    )
+    t5 = _FakeNode(
+        "n5", ["Task"], {"id": "t5", "name": "task 5", "source": "neurostore"}
+    )
     fake_db = _FakeDB(
         {
             "MATCH (a)-[r:`BELONGS_TO_FAMILY`]->(b)": [
                 {
                     "a": t1,
                     "b": family_a,
-                    "rel_props": {"source": "task_family_matcher_backfill", "match_method": "exact_alias"},
+                    "rel_props": {
+                        "source": "task_family_matcher_backfill",
+                        "match_method": "exact_alias",
+                    },
                 },
                 {
                     "a": t2,
@@ -210,12 +223,18 @@ def test_export_fixed_graph_slice_applies_profile_filters_and_balanced_sampling(
                 {
                     "a": t4,
                     "b": family_b,
-                    "rel_props": {"source": "task_family_matcher_backfill", "match_method": "exact_alias"},
+                    "rel_props": {
+                        "source": "task_family_matcher_backfill",
+                        "match_method": "exact_alias",
+                    },
                 },
                 {
                     "a": t5,
                     "b": uncategorized,
-                    "rel_props": {"source": "task_family_matcher_backfill", "match_method": "exact_alias"},
+                    "rel_props": {
+                        "source": "task_family_matcher_backfill",
+                        "match_method": "exact_alias",
+                    },
                 },
             ]
         }
@@ -235,7 +254,10 @@ def test_export_fixed_graph_slice_applies_profile_filters_and_balanced_sampling(
     assert exported["metadata"]["edge_count"] == 2
     assert {edge["target"] for edge in exported["edges"]} == {"tf_a", "tf_b"}
     assert all(edge["target"] != "tf_uncategorized" for edge in exported["edges"])
-    assert all(edge["properties"]["match_method"] != "forced_best_candidate" for edge in exported["edges"])
+    assert all(
+        edge["properties"]["match_method"] != "forced_best_candidate"
+        for edge in exported["edges"]
+    )
 
 
 def test_get_structural_quality_profile_returns_expected_defaults():
@@ -266,10 +288,11 @@ def test_runner_writes_graph_slice_and_benchmark_artifacts(tmp_path):
         feature_source="hashed",
     )
 
-    assert result["benchmark_result"]["graph_diagnostic_report"]["primary_probe_model"] == "text_cosine"
-    assert {
-        path.name for path in tmp_path.iterdir()
-    } == {
+    assert (
+        result["benchmark_result"]["graph_diagnostic_report"]["primary_probe_model"]
+        == "text_cosine"
+    )
+    assert {path.name for path in tmp_path.iterdir()} == {
         "benchmark_manifest.json",
         "fairness_audit_report.json",
         "graph_diagnostic_report.json",
@@ -278,8 +301,12 @@ def test_runner_writes_graph_slice_and_benchmark_artifacts(tmp_path):
         "split_manifest.json",
     }
 
-    graph_slice = json.loads((tmp_path / "graph_slice.json").read_text(encoding="utf-8"))
-    fairness = json.loads((tmp_path / "fairness_audit_report.json").read_text(encoding="utf-8"))
+    graph_slice = json.loads(
+        (tmp_path / "graph_slice.json").read_text(encoding="utf-8")
+    )
+    fairness = json.loads(
+        (tmp_path / "fairness_audit_report.json").read_text(encoding="utf-8")
+    )
     assert graph_slice["metadata"]["feature_mode"] == "hashed_text_v1_dim_16"
     assert graph_slice["edges"][0]["relation_signature"] is None
     assert fairness["status"] == "not_requested"

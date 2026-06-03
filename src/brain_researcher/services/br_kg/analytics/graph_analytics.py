@@ -4,13 +4,14 @@ This module provides advanced graph analytics including community detection,
 PageRank, clustering coefficient, graph embeddings, and visualization.
 """
 
-import logging
-import numpy as np
-from typing import Dict, List, Any, Optional, Tuple, Set
-from dataclasses import dataclass, field
-from collections import defaultdict
 import json
+import logging
 import pickle
+from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import Any
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class AnalyticsResult:
 
     analysis_type: str
     results: Any
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     execution_time_ms: float = 0
     timestamp: str = ""
 
@@ -41,10 +42,7 @@ class GraphAnalytics:
         self.embedding_cache = {}
 
     def detect_communities(
-        self,
-        algorithm: str = "louvain",
-        min_size: int = 3,
-        resolution: float = 1.0
+        self, algorithm: str = "louvain", min_size: int = 3, resolution: float = 1.0
     ) -> AnalyticsResult:
         """Detect communities in the graph.
 
@@ -57,6 +55,7 @@ class GraphAnalytics:
             AnalyticsResult with communities
         """
         import time
+
         start_time = time.time()
 
         with self.driver.session() as session:
@@ -78,13 +77,15 @@ class GraphAnalytics:
                 "algorithm": algorithm,
                 "min_size": min_size,
                 "resolution": resolution,
-                "num_communities": len(communities)
+                "num_communities": len(communities),
             },
             execution_time_ms=execution_time,
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S")
+            timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
-    def _louvain_communities(self, session, min_size: int, resolution: float) -> List[Dict[str, Any]]:
+    def _louvain_communities(
+        self, session, min_size: int, resolution: float
+    ) -> list[dict[str, Any]]:
         """Louvain community detection."""
         # Check if APOC is available
         try:
@@ -103,7 +104,9 @@ class GraphAnalytics:
             ORDER BY size DESC
             """
 
-            result = session.run(query, {"min_size": min_size, "resolution": resolution})
+            result = session.run(
+                query, {"min_size": min_size, "resolution": resolution}
+            )
 
         except:
             # Fallback to simple connected components
@@ -126,23 +129,29 @@ class GraphAnalytics:
 
         communities = []
         for record in result:
-            communities.append({
-                "community_id": record["community"],
-                "members": record["members"],
-                "size": record["size"]
-            })
+            communities.append(
+                {
+                    "community_id": record["community"],
+                    "members": record["members"],
+                    "size": record["size"],
+                }
+            )
 
         return communities
 
-    def _manual_louvain(self, session, min_size: int, resolution: float) -> List[Dict[str, Any]]:
+    def _manual_louvain(
+        self, session, min_size: int, resolution: float
+    ) -> list[dict[str, Any]]:
         """Manual Louvain implementation for fallback."""
         # Get all nodes and edges
         nodes_query = "MATCH (n) RETURN n.id as id, labels(n)[0] as label"
         edges_query = "MATCH (n)-[r]-(m) WHERE id(n) < id(m) RETURN n.id as source, m.id as target, 1 as weight"
 
         nodes = {record["id"]: record["label"] for record in session.run(nodes_query)}
-        edges = [(record["source"], record["target"], record["weight"])
-                 for record in session.run(edges_query)]
+        edges = [
+            (record["source"], record["target"], record["weight"])
+            for record in session.run(edges_query)
+        ]
 
         # Initialize each node in its own community
         communities = {node_id: i for i, node_id in enumerate(nodes.keys())}
@@ -180,24 +189,19 @@ class GraphAnalytics:
         # Group by community
         community_members = defaultdict(list)
         for node_id, comm_id in communities.items():
-            community_members[comm_id].append({
-                "id": node_id,
-                "label": nodes[node_id]
-            })
+            community_members[comm_id].append({"id": node_id, "label": nodes[node_id]})
 
         # Filter by size
         result = []
         for comm_id, members in community_members.items():
             if len(members) >= min_size:
-                result.append({
-                    "community_id": comm_id,
-                    "members": members,
-                    "size": len(members)
-                })
+                result.append(
+                    {"community_id": comm_id, "members": members, "size": len(members)}
+                )
 
         return sorted(result, key=lambda x: x["size"], reverse=True)
 
-    def _label_propagation(self, session, min_size: int) -> List[Dict[str, Any]]:
+    def _label_propagation(self, session, min_size: int) -> list[dict[str, Any]]:
         """Label propagation community detection."""
         query = """
         MATCH (n)
@@ -216,17 +220,19 @@ class GraphAnalytics:
             result = session.run(query, {"min_size": min_size})
             communities = []
             for record in result:
-                communities.append({
-                    "community_id": record["community"],
-                    "members": record["members"],
-                    "size": record["size"]
-                })
+                communities.append(
+                    {
+                        "community_id": record["community"],
+                        "members": record["members"],
+                        "size": record["size"],
+                    }
+                )
             return communities
         except:
             # Fallback to connected components
             return self._connected_components(session, min_size)
 
-    def _connected_components(self, session, min_size: int) -> List[Dict[str, Any]]:
+    def _connected_components(self, session, min_size: int) -> list[dict[str, Any]]:
         """Find connected components."""
         query = """
         MATCH (n)
@@ -253,11 +259,13 @@ class GraphAnalytics:
             member_ids = tuple(sorted([m["id"] for m in record["members"]]))
             if member_ids not in seen:
                 seen.add(member_ids)
-                communities.append({
-                    "community_id": record["community"],
-                    "members": record["members"],
-                    "size": record["size"]
-                })
+                communities.append(
+                    {
+                        "community_id": record["community"],
+                        "members": record["members"],
+                        "size": record["size"],
+                    }
+                )
 
         return communities
 
@@ -265,8 +273,8 @@ class GraphAnalytics:
         self,
         damping_factor: float = 0.85,
         iterations: int = 20,
-        node_type: Optional[str] = None,
-        top_k: int = 100
+        node_type: str | None = None,
+        top_k: int = 100,
     ) -> AnalyticsResult:
         """Calculate PageRank for nodes.
 
@@ -280,19 +288,26 @@ class GraphAnalytics:
             AnalyticsResult with PageRank scores
         """
         import time
+
         start_time = time.time()
 
         with self.driver.session() as session:
             # Try GDS first
             try:
-                pagerank = self._gds_pagerank(session, damping_factor, iterations, node_type, top_k)
+                pagerank = self._gds_pagerank(
+                    session, damping_factor, iterations, node_type, top_k
+                )
             except:
                 # Try APOC
                 try:
-                    pagerank = self._apoc_pagerank(session, damping_factor, iterations, node_type, top_k)
+                    pagerank = self._apoc_pagerank(
+                        session, damping_factor, iterations, node_type, top_k
+                    )
                 except:
                     # Manual implementation
-                    pagerank = self._manual_pagerank(session, damping_factor, iterations, node_type, top_k)
+                    pagerank = self._manual_pagerank(
+                        session, damping_factor, iterations, node_type, top_k
+                    )
 
         execution_time = (time.time() - start_time) * 1000
 
@@ -303,14 +318,20 @@ class GraphAnalytics:
                 "damping_factor": damping_factor,
                 "iterations": iterations,
                 "node_type": node_type,
-                "top_k": top_k
+                "top_k": top_k,
             },
             execution_time_ms=execution_time,
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S")
+            timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
-    def _gds_pagerank(self, session, damping_factor: float, iterations: int,
-                      node_type: Optional[str], top_k: int) -> List[Dict[str, Any]]:
+    def _gds_pagerank(
+        self,
+        session,
+        damping_factor: float,
+        iterations: int,
+        node_type: str | None,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
         """PageRank using Graph Data Science library."""
         node_filter = f":{node_type}" if node_type else ""
 
@@ -340,11 +361,10 @@ class GraphAnalytics:
         LIMIT $top_k
         """
 
-        result = session.run(pagerank_query, {
-            "damping": damping_factor,
-            "iterations": iterations,
-            "top_k": top_k
-        })
+        result = session.run(
+            pagerank_query,
+            {"damping": damping_factor, "iterations": iterations, "top_k": top_k},
+        )
 
         # Clean up projection
         session.run("CALL gds.graph.drop('pagerank_graph')")
@@ -354,13 +374,19 @@ class GraphAnalytics:
                 "node_id": record["node_id"],
                 "node_type": record["node_type"],
                 "name": record["name"],
-                "score": record["score"]
+                "score": record["score"],
             }
             for record in result
         ]
 
-    def _apoc_pagerank(self, session, damping_factor: float, iterations: int,
-                       node_type: Optional[str], top_k: int) -> List[Dict[str, Any]]:
+    def _apoc_pagerank(
+        self,
+        session,
+        damping_factor: float,
+        iterations: int,
+        node_type: str | None,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
         """PageRank using APOC."""
         node_filter = f":{node_type}" if node_type else ""
 
@@ -380,24 +406,28 @@ class GraphAnalytics:
         LIMIT $top_k
         """
 
-        result = session.run(query, {
-            "iterations": iterations,
-            "damping": damping_factor,
-            "top_k": top_k
-        })
+        result = session.run(
+            query, {"iterations": iterations, "damping": damping_factor, "top_k": top_k}
+        )
 
         return [
             {
                 "node_id": record["node_id"],
                 "node_type": record["node_type"],
                 "name": record["name"],
-                "score": record["score"]
+                "score": record["score"],
             }
             for record in result
         ]
 
-    def _manual_pagerank(self, session, damping_factor: float, iterations: int,
-                        node_type: Optional[str], top_k: int) -> List[Dict[str, Any]]:
+    def _manual_pagerank(
+        self,
+        session,
+        damping_factor: float,
+        iterations: int,
+        node_type: str | None,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
         """Manual PageRank implementation."""
         node_filter = f":{node_type}" if node_type else ""
 
@@ -410,10 +440,7 @@ class GraphAnalytics:
 
         nodes = {}
         for record in session.run(nodes_query):
-            nodes[record["id"]] = {
-                "name": record["name"],
-                "type": record["type"]
-            }
+            nodes[record["id"]] = {"name": record["name"], "type": record["type"]}
 
         # Build adjacency lists
         out_edges = defaultdict(list)
@@ -428,7 +455,7 @@ class GraphAnalytics:
         if n == 0:
             return []
 
-        pagerank = {node_id: 1.0 / n for node_id in nodes.keys()}
+        pagerank = dict.fromkeys(nodes.keys(), 1.0 / n)
 
         # Power iteration
         for _ in range(iterations):
@@ -456,15 +483,13 @@ class GraphAnalytics:
                 "node_id": node_id,
                 "node_type": nodes[node_id]["type"],
                 "name": nodes[node_id]["name"],
-                "score": score
+                "score": score,
             }
             for node_id, score in sorted_nodes[:top_k]
         ]
 
     def compute_clustering_coefficient(
-        self,
-        node_type: Optional[str] = None,
-        local: bool = False
+        self, node_type: str | None = None, local: bool = False
     ) -> AnalyticsResult:
         """Compute clustering coefficient.
 
@@ -476,6 +501,7 @@ class GraphAnalytics:
             AnalyticsResult with clustering coefficient
         """
         import time
+
         start_time = time.time()
 
         with self.driver.session() as session:
@@ -489,15 +515,12 @@ class GraphAnalytics:
         return AnalyticsResult(
             analysis_type="clustering_coefficient",
             results=result,
-            metadata={
-                "node_type": node_type,
-                "local": local
-            },
+            metadata={"node_type": node_type, "local": local},
             execution_time_ms=execution_time,
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S")
+            timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
-    def _local_clustering(self, session, node_type: Optional[str]) -> List[Dict[str, Any]]:
+    def _local_clustering(self, session, node_type: str | None) -> list[dict[str, Any]]:
         """Compute local clustering coefficient."""
         node_filter = f":{node_type}" if node_type else ""
 
@@ -530,12 +553,12 @@ class GraphAnalytics:
                 "name": record["name"],
                 "node_type": record["node_type"],
                 "clustering_coefficient": record["clustering_coefficient"],
-                "degree": record["degree"]
+                "degree": record["degree"],
             }
             for record in result
         ]
 
-    def _global_clustering(self, session, node_type: Optional[str]) -> Dict[str, float]:
+    def _global_clustering(self, session, node_type: str | None) -> dict[str, float]:
         """Compute global clustering coefficient."""
         node_filter = f":{node_type}" if node_type else ""
 
@@ -555,9 +578,11 @@ class GraphAnalytics:
 
         if result:
             return {
-                "global_clustering_coefficient": result["global_clustering_coefficient"],
+                "global_clustering_coefficient": result[
+                    "global_clustering_coefficient"
+                ],
                 "triangles": result["triangles"],
-                "edges": result["edges"]
+                "edges": result["edges"],
             }
         else:
             return {"global_clustering_coefficient": 0, "triangles": 0, "edges": 0}
@@ -566,8 +591,8 @@ class GraphAnalytics:
         self,
         method: str = "node2vec",
         dimensions: int = 128,
-        node_type: Optional[str] = None,
-        **kwargs
+        node_type: str | None = None,
+        **kwargs,
     ) -> AnalyticsResult:
         """Generate graph embeddings.
 
@@ -581,13 +606,18 @@ class GraphAnalytics:
             AnalyticsResult with embeddings
         """
         import time
+
         start_time = time.time()
 
         with self.driver.session() as session:
             if method == "node2vec":
-                embeddings = self._node2vec_embeddings(session, dimensions, node_type, **kwargs)
+                embeddings = self._node2vec_embeddings(
+                    session, dimensions, node_type, **kwargs
+                )
             elif method == "deepwalk":
-                embeddings = self._deepwalk_embeddings(session, dimensions, node_type, **kwargs)
+                embeddings = self._deepwalk_embeddings(
+                    session, dimensions, node_type, **kwargs
+                )
             elif method == "spectral":
                 embeddings = self._spectral_embeddings(session, dimensions, node_type)
             else:
@@ -605,21 +635,28 @@ class GraphAnalytics:
                 "method": method,
                 "dimensions": dimensions,
                 "num_nodes": len(embeddings),
-                "sample": list(embeddings.items())[:5]  # Sample for inspection
+                "sample": list(embeddings.items())[:5],  # Sample for inspection
             },
             metadata={
                 "method": method,
                 "dimensions": dimensions,
                 "node_type": node_type,
-                "parameters": kwargs
+                "parameters": kwargs,
             },
             execution_time_ms=execution_time,
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S")
+            timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
-    def _node2vec_embeddings(self, session, dimensions: int, node_type: Optional[str],
-                             walk_length: int = 10, num_walks: int = 20,
-                             p: float = 1.0, q: float = 1.0) -> Dict[str, np.ndarray]:
+    def _node2vec_embeddings(
+        self,
+        session,
+        dimensions: int,
+        node_type: str | None,
+        walk_length: int = 10,
+        num_walks: int = 20,
+        p: float = 1.0,
+        q: float = 1.0,
+    ) -> dict[str, np.ndarray]:
         """Generate Node2Vec embeddings."""
         node_filter = f":{node_type}" if node_type else ""
 
@@ -634,7 +671,9 @@ class GraphAnalytics:
         walks = []
         for _ in range(num_walks):
             for start_node in nodes:
-                walk = self._random_walk(session, start_node, walk_length, p, q, node_filter)
+                walk = self._random_walk(
+                    session, start_node, walk_length, p, q, node_filter
+                )
                 if len(walk) > 1:
                     walks.append(walk)
 
@@ -643,8 +682,15 @@ class GraphAnalytics:
 
         return embeddings
 
-    def _random_walk(self, session, start_node: str, walk_length: int,
-                     p: float, q: float, node_filter: str) -> List[str]:
+    def _random_walk(
+        self,
+        session,
+        start_node: str,
+        walk_length: int,
+        p: float,
+        q: float,
+        node_filter: str,
+    ) -> list[str]:
         """Generate a random walk."""
         walk = [start_node]
 
@@ -687,7 +733,9 @@ class GraphAnalytics:
 
         return walk
 
-    def _train_skipgram(self, walks: List[List[str]], dimensions: int) -> Dict[str, np.ndarray]:
+    def _train_skipgram(
+        self, walks: list[list[str]], dimensions: int
+    ) -> dict[str, np.ndarray]:
         """Train Skip-gram model (simplified)."""
         # Get vocabulary
         vocab = set()
@@ -717,25 +765,40 @@ class GraphAnalytics:
                         context_idx = vocab_index[walk[j]]
 
                         # Simplified gradient update
-                        dot_product = np.dot(embeddings[center_idx], embeddings[context_idx])
-                        gradient = (1 / (1 + np.exp(-dot_product)) - 1) * embeddings[context_idx]
+                        dot_product = np.dot(
+                            embeddings[center_idx], embeddings[context_idx]
+                        )
+                        gradient = (1 / (1 + np.exp(-dot_product)) - 1) * embeddings[
+                            context_idx
+                        ]
                         embeddings[center_idx] -= learning_rate * gradient
 
         # Convert to dictionary
         return {node: embeddings[vocab_index[node]] for node in vocab_list}
 
-    def _deepwalk_embeddings(self, session, dimensions: int, node_type: Optional[str],
-                            walk_length: int = 10, num_walks: int = 20) -> Dict[str, np.ndarray]:
+    def _deepwalk_embeddings(
+        self,
+        session,
+        dimensions: int,
+        node_type: str | None,
+        walk_length: int = 10,
+        num_walks: int = 20,
+    ) -> dict[str, np.ndarray]:
         """Generate DeepWalk embeddings."""
         # DeepWalk is Node2Vec with p=1, q=1
         return self._node2vec_embeddings(
-            session, dimensions, node_type,
-            walk_length=walk_length, num_walks=num_walks,
-            p=1.0, q=1.0
+            session,
+            dimensions,
+            node_type,
+            walk_length=walk_length,
+            num_walks=num_walks,
+            p=1.0,
+            q=1.0,
         )
 
-    def _spectral_embeddings(self, session, dimensions: int,
-                            node_type: Optional[str]) -> Dict[str, np.ndarray]:
+    def _spectral_embeddings(
+        self, session, dimensions: int, node_type: str | None
+    ) -> dict[str, np.ndarray]:
         """Generate spectral embeddings using graph Laplacian."""
         node_filter = f":{node_type}" if node_type else ""
 
@@ -775,7 +838,7 @@ class GraphAnalytics:
             eigenvalues, eigenvectors = np.linalg.eigh(laplacian)
 
             # Use smallest non-zero eigenvectors
-            embedding_matrix = eigenvectors[:, 1:dimensions+1]
+            embedding_matrix = eigenvectors[:, 1 : dimensions + 1]
 
             # Convert to dictionary
             return {node: embedding_matrix[i] for node, i in node_index.items()}
@@ -788,7 +851,7 @@ class GraphAnalytics:
         self,
         results: AnalyticsResult,
         format: str = "json",
-        output_file: Optional[str] = None
+        output_file: str | None = None,
     ) -> str:
         """Export analytics results.
 
@@ -806,7 +869,7 @@ class GraphAnalytics:
                 "analysis_type": results.analysis_type,
                 "metadata": results.metadata,
                 "execution_time_ms": results.execution_time_ms,
-                "timestamp": results.timestamp
+                "timestamp": results.timestamp,
             }
 
             if results.analysis_type == "graph_embeddings":
@@ -824,24 +887,26 @@ class GraphAnalytics:
 
             if results.analysis_type == "pagerank":
                 writer = csv.DictWriter(
-                    output_buffer,
-                    fieldnames=["node_id", "node_type", "name", "score"]
+                    output_buffer, fieldnames=["node_id", "node_type", "name", "score"]
                 )
                 writer.writeheader()
                 writer.writerows(results.results)
 
             elif results.analysis_type == "community_detection":
                 writer = csv.DictWriter(
-                    output_buffer,
-                    fieldnames=["community_id", "size", "member_ids"]
+                    output_buffer, fieldnames=["community_id", "size", "member_ids"]
                 )
                 writer.writeheader()
                 for community in results.results:
-                    writer.writerow({
-                        "community_id": community["community_id"],
-                        "size": community["size"],
-                        "member_ids": ",".join([m["id"] for m in community["members"]])
-                    })
+                    writer.writerow(
+                        {
+                            "community_id": community["community_id"],
+                            "size": community["size"],
+                            "member_ids": ",".join(
+                                [m["id"] for m in community["members"]]
+                            ),
+                        }
+                    )
 
             output = output_buffer.getvalue()
 
@@ -863,10 +928,8 @@ class GraphAnalytics:
         return output
 
     def visualize_analytics(
-        self,
-        results: AnalyticsResult,
-        visualization_type: str = "auto"
-    ) -> Dict[str, Any]:
+        self, results: AnalyticsResult, visualization_type: str = "auto"
+    ) -> dict[str, Any]:
         """Create visualization specification for analytics results.
 
         Args:
@@ -889,35 +952,26 @@ class GraphAnalytics:
             else:
                 visualization_type = "table"
 
-        vis_spec = {
-            "type": visualization_type,
-            "data": [],
-            "layout": {},
-            "config": {}
-        }
+        vis_spec = {"type": visualization_type, "data": [], "layout": {}, "config": {}}
 
         if visualization_type == "network_communities":
             # Network with colored communities
             for community in results.results[:10]:  # Limit to 10 communities
                 for member in community["members"]:
-                    vis_spec["data"].append({
-                        "node_id": member["id"],
-                        "community": community["community_id"],
-                        "color": f"community_{community['community_id'] % 10}"
-                    })
+                    vis_spec["data"].append(
+                        {
+                            "node_id": member["id"],
+                            "community": community["community_id"],
+                            "color": f"community_{community['community_id'] % 10}",
+                        }
+                    )
 
-            vis_spec["layout"] = {
-                "type": "force-directed",
-                "node_color": "community"
-            }
+            vis_spec["layout"] = {"type": "force-directed", "node_color": "community"}
 
         elif visualization_type == "node_importance":
             # Bar chart of PageRank scores
             vis_spec["data"] = [
-                {
-                    "node": f"{r['name'] or r['node_id']}",
-                    "score": r["score"]
-                }
+                {"node": f"{r['name'] or r['node_id']}", "score": r["score"]}
                 for r in results.results[:20]
             ]
 
@@ -925,7 +979,7 @@ class GraphAnalytics:
                 "type": "bar",
                 "x": "node",
                 "y": "score",
-                "title": "PageRank Scores"
+                "title": "PageRank Scores",
             }
 
         elif visualization_type == "heatmap":
@@ -935,17 +989,14 @@ class GraphAnalytics:
                     {
                         "node": r["name"] or r["node_id"],
                         "coefficient": r["clustering_coefficient"],
-                        "degree": r["degree"]
+                        "degree": r["degree"],
                     }
                     for r in results.results[:50]
                 ]
             else:
                 vis_spec["data"] = [results.results]
 
-            vis_spec["layout"] = {
-                "type": "heatmap",
-                "title": "Clustering Coefficients"
-            }
+            vis_spec["layout"] = {"type": "heatmap", "title": "Clustering Coefficients"}
 
         elif visualization_type == "scatter_2d":
             # 2D scatter plot for embeddings (using PCA)
@@ -954,7 +1005,7 @@ class GraphAnalytics:
                 vis_spec["data"] = results.results["sample"]
                 vis_spec["layout"] = {
                     "type": "scatter",
-                    "title": f"Graph Embeddings ({results.results['method']})"
+                    "title": f"Graph Embeddings ({results.results['method']})",
                 }
 
         return vis_spec

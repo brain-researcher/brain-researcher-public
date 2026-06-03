@@ -8,10 +8,11 @@ common aliases.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from brain_researcher.behavior.task_spec import BehaviorTaskSpecV1
 from brain_researcher.behavior.catalog import flanker, go_no_go, nback
+from brain_researcher.behavior.task_spec import BehaviorTaskSpecV1
 
 RESOLVERS: dict[str, Callable[[dict[str, Any] | None], BehaviorTaskSpecV1]] = {
     "n_back": nback.build,

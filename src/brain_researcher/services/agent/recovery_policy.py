@@ -7,9 +7,10 @@ tool selection routine for smarter branch switching after failures.
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
+from typing import Any
 
 from brain_researcher.config.mapping_resolver import resolve_mapping_path
 from brain_researcher.config.paths import resolve_from_config
@@ -48,20 +49,20 @@ class RecoveryPolicy:
 class RecoveryDecision:
     action: RecoveryAction
     reason: str
-    fallback_tools: List[str] = field(default_factory=list)
-    adjusted_params: Dict[str, Any] = field(default_factory=dict)
+    fallback_tools: list[str] = field(default_factory=list)
+    adjusted_params: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
 class RecoveryMapRule:
     category: ErrorTaxonomyCategory
-    action: Optional[RecoveryAction] = None
-    allow_tool_substitute: Optional[bool] = None
-    allow_param_adjustment: Optional[bool] = None
-    allow_retry: Optional[bool] = None
-    allow_router_suggestions: Optional[bool] = None
-    tool_family: Optional[str] = None
-    step_role: Optional[str] = None
+    action: RecoveryAction | None = None
+    allow_tool_substitute: bool | None = None
+    allow_param_adjustment: bool | None = None
+    allow_retry: bool | None = None
+    allow_router_suggestions: bool | None = None
+    tool_family: str | None = None
+    step_role: str | None = None
 
 
 def _env_flag(name: str, default: bool = False) -> bool:
@@ -71,7 +72,7 @@ def _env_flag(name: str, default: bool = False) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _canonical_runtime_tool_id(tool_id: Any) -> Optional[str]:
+def _canonical_runtime_tool_id(tool_id: Any) -> str | None:
     normalized = str(tool_id or "").strip()
     if not normalized:
         return None
@@ -98,7 +99,7 @@ def _get_multiagent_router():
     return _MULTIAGENT_ROUTER
 
 
-DEFAULT_POLICIES: Dict[ErrorTaxonomyCategory, RecoveryPolicy] = {
+DEFAULT_POLICIES: dict[ErrorTaxonomyCategory, RecoveryPolicy] = {
     ErrorTaxonomyCategory.INFRA: RecoveryPolicy(
         category=ErrorTaxonomyCategory.INFRA,
         action=RecoveryAction.RETRY_BACKOFF,
@@ -150,7 +151,7 @@ DEFAULT_POLICIES: Dict[ErrorTaxonomyCategory, RecoveryPolicy] = {
 }
 
 
-def _load_recovery_map() -> List[RecoveryMapRule]:
+def _load_recovery_map() -> list[RecoveryMapRule]:
     """Load optional recovery map overrides from YAML (best-effort)."""
     if yaml is None:
         return []
@@ -167,7 +168,7 @@ def _load_recovery_map() -> List[RecoveryMapRule]:
         data = yaml.safe_load(path.read_text()) or {}
     except Exception:
         return []
-    rules: List[RecoveryMapRule] = []
+    rules: list[RecoveryMapRule] = []
     for raw in data.get("rules", []) or []:
         if not isinstance(raw, dict):
             continue
@@ -195,17 +196,15 @@ def _load_recovery_map() -> List[RecoveryMapRule]:
     return rules
 
 
-def _step_role_from_metadata(metadata: Optional[Dict[str, Any]]) -> Optional[str]:
+def _step_role_from_metadata(metadata: dict[str, Any] | None) -> str | None:
     if not isinstance(metadata, dict):
         return None
     return (
-        metadata.get("step_role")
-        or metadata.get("role")
-        or metadata.get("step_type")
+        metadata.get("step_role") or metadata.get("role") or metadata.get("step_type")
     )
 
 
-def _tool_family_from_metadata(metadata: Optional[Dict[str, Any]]) -> Optional[str]:
+def _tool_family_from_metadata(metadata: dict[str, Any] | None) -> str | None:
     if not isinstance(metadata, dict):
         return None
     return metadata.get("tool_family") or metadata.get("family")
@@ -215,7 +214,7 @@ def _match_rule(
     rule: RecoveryMapRule,
     *,
     taxonomy: ErrorTaxonomyResult,
-    step_metadata: Optional[Dict[str, Any]],
+    step_metadata: dict[str, Any] | None,
 ) -> bool:
     if rule.category != taxonomy.category:
         return False
@@ -231,17 +230,17 @@ def _match_rule(
 def _resolve_recovery_rule(
     *,
     taxonomy: ErrorTaxonomyResult,
-    step_metadata: Optional[Dict[str, Any]],
-) -> Optional[RecoveryMapRule]:
+    step_metadata: dict[str, Any] | None,
+) -> RecoveryMapRule | None:
     for rule in _load_recovery_map():
         if _match_rule(rule, taxonomy=taxonomy, step_metadata=step_metadata):
             return rule
     return None
 
 
-def _dedupe_preserve_order(items: Iterable[str]) -> List[str]:
-    seen: Set[str] = set()
-    ordered: List[str] = []
+def _dedupe_preserve_order(items: Iterable[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
     for item in items:
         if not item or item in seen:
             continue
@@ -250,7 +249,7 @@ def _dedupe_preserve_order(items: Iterable[str]) -> List[str]:
     return ordered
 
 
-def _safe_adjust_params(params: Dict[str, Any]) -> Dict[str, Any]:
+def _safe_adjust_params(params: dict[str, Any]) -> dict[str, Any]:
     """Apply conservative parameter adjustments for recovery."""
     tuned = dict(params or {})
     for key in ("n_jobs", "num_workers", "threads"):
@@ -269,7 +268,11 @@ def _safe_adjust_params(params: Dict[str, Any]) -> Dict[str, Any]:
             tuned["timeout"] = int(tuned["timeout"] or 0) * 2 or 600
         except Exception:
             tuned["timeout"] = 600
-    if "low_mem" in tuned or os.getenv("BR_RECOVERY_FORCE_LOW_MEM", "").lower() in {"1", "true", "yes"}:
+    if "low_mem" in tuned or os.getenv("BR_RECOVERY_FORCE_LOW_MEM", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }:
         tuned["low_mem"] = True
     return tuned
 
@@ -277,7 +280,7 @@ def _safe_adjust_params(params: Dict[str, Any]) -> Dict[str, Any]:
 def policy_for_taxonomy(
     taxonomy: ErrorTaxonomyResult,
     *,
-    step_metadata: Optional[Dict[str, Any]] = None,
+    step_metadata: dict[str, Any] | None = None,
 ) -> RecoveryPolicy:
     base = DEFAULT_POLICIES.get(
         taxonomy.category,
@@ -328,13 +331,13 @@ def select_recovery_decision(
     *,
     taxonomy: ErrorTaxonomyResult,
     tool_id: str,
-    step_metadata: Optional[Dict[str, Any]] = None,
+    step_metadata: dict[str, Any] | None = None,
     step_idx: int | None = None,
-    plan_candidates: Optional[Sequence[Dict[str, Any]]] = None,
-    query: Optional[str] = None,
-    router: Optional["ToolRouter"] = None,
-    failed_tools: Optional[Set[str]] = None,
-    params: Optional[Dict[str, Any]] = None,
+    plan_candidates: Sequence[dict[str, Any]] | None = None,
+    query: str | None = None,
+    router: ToolRouter | None = None,
+    failed_tools: set[str] | None = None,
+    params: dict[str, Any] | None = None,
 ) -> RecoveryDecision:
     """Select recovery action and fallback tools based on taxonomy + context."""
     policy = policy_for_taxonomy(taxonomy, step_metadata=step_metadata)
@@ -356,7 +359,7 @@ def select_recovery_decision(
             context={"query": query, "step_metadata": step_metadata},
         )
 
-    fallbacks: List[str] = []
+    fallbacks: list[str] = []
     metadata = step_metadata or {}
     if isinstance(metadata, dict):
         if metadata.get("fallback_tool"):
@@ -387,11 +390,17 @@ def select_recovery_decision(
                 fallbacks.append(str(runtime_id))
 
     fallbacks = _dedupe_preserve_order(
-        [resolved for resolved in (_canonical_runtime_tool_id(tool) for tool in fallbacks) if resolved]
+        [
+            resolved
+            for resolved in (_canonical_runtime_tool_id(tool) for tool in fallbacks)
+            if resolved
+        ]
     )
     failed = {
         resolved
-        for resolved in (_canonical_runtime_tool_id(tool) for tool in (failed_tools or set()))
+        for resolved in (
+            _canonical_runtime_tool_id(tool) for tool in (failed_tools or set())
+        )
         if resolved
     }
     current_tool = _canonical_runtime_tool_id(tool_id) or tool_id
@@ -421,8 +430,8 @@ def _apply_multiagent_recovery_overlay(
     taxonomy: ErrorTaxonomyResult,
     policy: RecoveryPolicy,
     tool_id: str,
-    failed_tools: Optional[Set[str]],
-    context: Optional[Dict[str, Any]],
+    failed_tools: set[str] | None,
+    context: dict[str, Any] | None,
 ) -> RecoveryDecision:
     if not (
         _env_flag("BR_AGENT_MULTIAGENT_ENABLED", False)
@@ -467,7 +476,9 @@ def _apply_multiagent_recovery_overlay(
             if resolved
         }
         current_tool = _canonical_runtime_tool_id(tool_id) or tool_id
-        merged = [tool for tool in merged if tool != current_tool and tool not in failed]
+        merged = [
+            tool for tool in merged if tool != current_tool and tool not in failed
+        ]
         try:
             limit = int(os.getenv("BR_FALLBACK_TOOL_LIMIT", "2"))
         except Exception:
@@ -486,7 +497,8 @@ def _apply_multiagent_recovery_overlay(
     if (
         mapped_action is not None
         and decision.action == RecoveryAction.RETRY_BACKOFF
-        and mapped_action in {
+        and mapped_action
+        in {
             RecoveryAction.TOOL_SUBSTITUTE,
             RecoveryAction.RELAX_CONSTRAINT,
             RecoveryAction.ASK_USER,

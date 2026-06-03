@@ -4,19 +4,19 @@ import json
 import logging
 import os
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from brain_researcher.services.agent.router import LLMRouter, infer_provider
+from brain_researcher.cli.metrics import record_cli_command_metric
+from brain_researcher.services.agent import telemetry
 from brain_researcher.services.agent.llm_budget_manager import (
     get_shared_llm_budget_manager,
 )
 from brain_researcher.services.agent.managed_credential_pool import (
     get_shared_managed_pool,
 )
-from brain_researcher.services.agent import telemetry
+from brain_researcher.services.agent.router import LLMRouter, infer_provider
 from brain_researcher.services.telemetry.job_kind import JobKind
 from brain_researcher.services.telemetry.metrics_kind_resolver import resolve_job_kind
-from brain_researcher.cli.metrics import record_cli_command_metric
 from brain_researcher.services.tools.base import ToolResult
 
 _ROUTER = LLMRouter(
@@ -34,7 +34,7 @@ def _json_safe(obj: Any) -> Any:
         return obj
 
 
-def _score_tools_by_query(tools, query: str) -> List:
+def _score_tools_by_query(tools, query: str) -> list:
     raw = (query or "").lower()
     q = raw.split()
     dataset_intent = any(
@@ -43,7 +43,7 @@ def _score_tools_by_query(tools, query: str) -> List:
     scored = []
     for tool in tools:
         name = tool.get_tool_name().lower()
-        desc = (getattr(tool, "get_tool_description")() or "").lower()
+        desc = (tool.get_tool_description() or "").lower()
         score = 0
         if dataset_intent and any(
             keyword in name for keyword in ("dandi", "openneuro", "dataset")
@@ -90,13 +90,13 @@ If no tool is needed: {{"tool": "none", "params": {{}}, "reasoning": "explanatio
 """
 
 
-def _resolve_job_kind_from_selection(selection: Dict[str, Any] | None) -> str:
+def _resolve_job_kind_from_selection(selection: dict[str, Any] | None) -> str:
     """Map CLI selections onto the shared JobKind taxonomy."""
     if not selection:
         return JobKind.OTHER.value
 
     metadata = selection.get("metadata") or {}
-    params: Dict[str, Any] = {}
+    params: dict[str, Any] = {}
 
     metadata_params = metadata.get("parameters")
     if isinstance(metadata_params, dict):
@@ -109,7 +109,7 @@ def _resolve_job_kind_from_selection(selection: Dict[str, Any] | None) -> str:
     if tool_name and "tool" not in params:
         params["tool"] = tool_name
 
-    resolver_metadata: Dict[str, Any] = {}
+    resolver_metadata: dict[str, Any] = {}
     if params:
         resolver_metadata["parameters"] = params
 
@@ -129,25 +129,25 @@ def _resolve_job_kind_from_selection(selection: Dict[str, Any] | None) -> str:
 def _act_in_process_core(
     query: str,
     *,
-    model: Optional[str] = None,
+    model: str | None = None,
     tool_mode: str = "auto",
-    tools_whitelist: Optional[List[str]] = None,
+    tools_whitelist: list[str] | None = None,
     budget_ms: int = 90_000,
     preview: bool = False,
-    progress_callback: Optional[Any] = None,
-) -> Dict[str, Any]:
+    progress_callback: Any | None = None,
+) -> dict[str, Any]:
     """Execute tool-enabled flow locally (same logic as /act, no HTTP).
 
     Returns a dict including selection and (if run) tool result/artifacts.
     """
     from brain_researcher.services.agent.agents.neuro_agent import NeuroAgent
+    from brain_researcher.services.agent.tool_executor import BudgetedToolExecutor
+    from brain_researcher.services.tools.args_resolver import ArgsResolver
     from brain_researcher.services.tools.spec import (
-        spec_from_tool,
         ToolSpecRegistry,
         compress_schema,
+        spec_from_tool,
     )
-    from brain_researcher.services.tools.args_resolver import ArgsResolver
-    from brain_researcher.services.agent.tool_executor import BudgetedToolExecutor
 
     # Initialize agent and registry
     agent = NeuroAgent()
@@ -198,7 +198,7 @@ def _act_in_process_core(
         )
 
     # Helper: deterministic local selection (used for preview and as fallback)
-    def _local_select_tool() -> Tuple[str, Dict[str, Any], str]:
+    def _local_select_tool() -> tuple[str, dict[str, Any], str]:
         try:
             from brain_researcher.services.orchestrator.nl2tool import select_tool
 
@@ -228,7 +228,7 @@ def _act_in_process_core(
             )
 
         # Prefer spec-based search for precision
-        candidates: List[Tuple[int, Any]] = []
+        candidates: list[tuple[int, Any]] = []
         if tool_infos:
             # Build simple scores by keyword presence
             for info in tool_infos:
@@ -257,10 +257,10 @@ def _act_in_process_core(
     provider = "unknown"
     route = "primary"
     fallback_reason = None
-    usage: Dict[str, Any] = {}
+    usage: dict[str, Any] = {}
     transport = "none"
-    credential_used: Optional[str] = None
-    bill_to: Optional[str] = None
+    credential_used: str | None = None
+    bill_to: str | None = None
 
     if preview:
         # For preview, avoid LLM dependency and use deterministic local selection
@@ -326,7 +326,7 @@ def _act_in_process_core(
         if "instruction" not in chosen_params and "prompt" in chosen_params:
             chosen_params["instruction"] = chosen_params.pop("prompt")
 
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "selection": {
             "tool": chosen_tool,
             "params": chosen_params,
@@ -406,7 +406,7 @@ def _act_in_process_core(
             return obj.model_dump()
         if isinstance(obj, dict):
             return {k: _flatten(v) for k, v in obj.items()}
-        if isinstance(obj, (list, tuple)):
+        if isinstance(obj, list | tuple):
             return [_flatten(v) for v in obj]
         return obj
 
@@ -430,19 +430,19 @@ def _act_in_process_core(
 def act_in_process(
     query: str,
     *,
-    model: Optional[str] = None,
+    model: str | None = None,
     tool_mode: str = "auto",
-    tools_whitelist: Optional[List[str]] = None,
+    tools_whitelist: list[str] | None = None,
     budget_ms: int = 90_000,
     preview: bool = False,
-    progress_callback: Optional[Any] = None,
-) -> Dict[str, Any]:
+    progress_callback: Any | None = None,
+) -> dict[str, Any]:
     """Telemetry-wrapped entrypoint mirroring the /act HTTP endpoint."""
 
     run_id = telemetry.new_run_id()
     request_type = "act_preview" if preview else "act"
-    error_info: Optional[Exception] = None
-    result: Optional[Dict[str, Any]] = None
+    error_info: Exception | None = None
+    result: dict[str, Any] | None = None
 
     act_span = telemetry.start_span(
         "agent.act",
@@ -522,12 +522,14 @@ def act_in_process(
             },
             "selection": selection,
             "spans": spans,
-            "error": {
-                "message": str(error_info),
-                "type": type(error_info).__name__,
-            }
-            if error_info
-            else None,
+            "error": (
+                {
+                    "message": str(error_info),
+                    "type": type(error_info).__name__,
+                }
+                if error_info
+                else None
+            ),
         }
         try:
             telemetry.record_event(event_payload, event_type="act")

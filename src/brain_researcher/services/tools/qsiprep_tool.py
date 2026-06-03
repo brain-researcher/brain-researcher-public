@@ -8,23 +8,22 @@ and quality control with support for multiple acquisition schemes.
 import json
 import logging
 import os
-import tempfile
 from dataclasses import replace
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.pipelines import (
-    QSIPrepParameters,
-    build_qsiprep_command,
-    qsiprep_from_payload,
-)
 from brain_researcher.services.tools.pipeline_tools import (
     _build_apptainer_bind_env,
     _find_freesurfer_license,
     _resolve_bids_app_executable,
+)
+from brain_researcher.services.tools.pipelines import (
+    QSIPrepParameters,
+    build_qsiprep_command,
+    qsiprep_from_payload,
 )
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
@@ -40,9 +39,9 @@ def _env_truthy(name: str) -> bool:
     return raw in {"1", "true", "yes", "on"}
 
 
-def _collect_qsirecon_outputs(output_dir: str) -> Dict[str, Any]:
+def _collect_qsirecon_outputs(output_dir: str) -> dict[str, Any]:
     root = Path(output_dir)
-    outputs: Dict[str, Any] = {"recon_dir": str(root)}
+    outputs: dict[str, Any] = {"recon_dir": str(root)}
 
     dataset_description = root / "dataset_description.json"
     if dataset_description.exists():
@@ -125,7 +124,7 @@ class QSIPrepConfig(QSIPrepParameters):
             return list(value) if value else []
         return super().__getattribute__(name)
 
-    def to_command_args(self) -> List[str]:
+    def to_command_args(self) -> list[str]:
         return build_qsiprep_command(self, include_executable=False)
 
 
@@ -136,14 +135,14 @@ class QSIPrepArgs(BaseModel):
         description="Path to BIDS dataset directory with diffusion data"
     )
     output_dir: str = Field(description="Output directory for QSIPrep results")
-    participant_label: Optional[List[str]] = Field(
+    participant_label: list[str] | None = Field(
         default=None,
         description="Participant labels to process (without 'sub-' prefix)",
     )
-    work_dir: Optional[str] = Field(
+    work_dir: str | None = Field(
         default=None, description="Working directory for intermediate files"
     )
-    fs_license_file: Optional[str] = Field(
+    fs_license_file: str | None = Field(
         default=None, description="Path to FreeSurfer license file"
     )
     denoise_method: DenoisingMethod = Field(
@@ -152,7 +151,7 @@ class QSIPrepArgs(BaseModel):
     distortion_correction: DistortionCorrection = Field(
         default=DistortionCorrection.TOPUP, description="Distortion correction method"
     )
-    eddy_config: Optional[str] = Field(
+    eddy_config: str | None = Field(
         default=None, description="Path to eddy configuration file"
     )
     b0_threshold: float = Field(
@@ -170,14 +169,14 @@ class QSIPrepArgs(BaseModel):
     impute_slice_threshold: float = Field(
         default=0.0, description="Threshold for slice imputation (0 = disabled)"
     )
-    n_cpus: Optional[int] = Field(default=None, description="Number of CPUs to use")
-    mem_mb: Optional[int] = Field(default=None, description="Memory limit in MB")
+    n_cpus: int | None = Field(default=None, description="Number of CPUs to use")
+    mem_mb: int | None = Field(default=None, description="Memory limit in MB")
     low_mem: bool = Field(default=False, description="Use low-memory settings")
     container_type: str = Field(
         default="singularity",
         description="Container type to use (singularity or docker)",
     )
-    container_image: Optional[str] = Field(
+    container_image: str | None = Field(
         default=None, description="Path to container image or docker tag"
     )
 
@@ -204,7 +203,7 @@ class QSIPrepTool(NeuroToolWrapper):
     def get_args_schema(self):
         return QSIPrepArgs
 
-    def _find_freesurfer_license(self) -> Optional[str]:
+    def _find_freesurfer_license(self) -> str | None:
         """Try to locate FreeSurfer license file."""
         possible_locations = [
             os.path.expanduser("~/.freesurfer/license.txt"),
@@ -221,7 +220,7 @@ class QSIPrepTool(NeuroToolWrapper):
         logger.warning("No FreeSurfer license found in common locations")
         return None
 
-    def _find_container_image(self, container_type: str) -> Optional[str]:
+    def _find_container_image(self, container_type: str) -> str | None:
         """Find available QSIPrep container image."""
         if container_type == "singularity":
             # Check Neurodesk/CVMFS
@@ -242,7 +241,7 @@ class QSIPrepTool(NeuroToolWrapper):
         # Default to Docker Hub image
         return self.default_image
 
-    def _validate_bids_dataset(self, bids_dir: str) -> Dict[str, Any]:
+    def _validate_bids_dataset(self, bids_dir: str) -> dict[str, Any]:
         """Basic BIDS dataset validation for diffusion data."""
         validation = {
             "is_valid": False,
@@ -291,7 +290,7 @@ class QSIPrepTool(NeuroToolWrapper):
 
         return validation
 
-    def _extract_outputs(self, output_dir: str) -> Dict[str, Any]:
+    def _extract_outputs(self, output_dir: str) -> dict[str, Any]:
         """Extract key outputs from QSIPrep results."""
         outputs = {
             "output_dir": output_dir,
@@ -305,7 +304,7 @@ class QSIPrepTool(NeuroToolWrapper):
             return outputs
 
         # Find HTML reports
-        for root, dirs, files in os.walk(output_dir):
+        for root, _dirs, files in os.walk(output_dir):
             for file in files:
                 if file.endswith(".html"):
                     outputs["html_reports"].append(os.path.join(root, file))
@@ -356,7 +355,7 @@ class QSIPrepTool(NeuroToolWrapper):
         qc_file = os.path.join(output_dir, "qsiprep", "dwiqc.json")
         if os.path.exists(qc_file):
             try:
-                with open(qc_file, "r") as f:
+                with open(qc_file) as f:
                     outputs["qc_metrics"] = json.load(f)
             except Exception as e:
                 logger.warning(f"Failed to load QC metrics: {e}")
@@ -414,9 +413,9 @@ class QSIPrepTool(NeuroToolWrapper):
                 bids_dir="/data",
                 output_dir="/out",
                 work_dir="/work" if params.work_dir else None,
-                fs_license_file="/opt/freesurfer/license.txt"
-                if params.fs_license_file
-                else None,
+                fs_license_file=(
+                    "/opt/freesurfer/license.txt" if params.fs_license_file else None
+                ),
             )
             cmd.extend(build_qsiprep_command(docker_params, include_executable=False))
 
@@ -429,20 +428,20 @@ class QSIPrepTool(NeuroToolWrapper):
         self,
         bids_dir: str,
         output_dir: str,
-        participant_label: Optional[List[str]] = None,
-        work_dir: Optional[str] = None,
-        fs_license_file: Optional[str] = None,
+        participant_label: list[str] | None = None,
+        work_dir: str | None = None,
+        fs_license_file: str | None = None,
         denoise_method: DenoisingMethod = DenoisingMethod.PATCH2SELF,
         distortion_correction: DistortionCorrection = DistortionCorrection.TOPUP,
-        eddy_config: Optional[str] = None,
+        eddy_config: str | None = None,
         b0_threshold: float = 100.0,
         output_resolution: str = "1.25mm",
         skip_bids_validation: bool = False,
-        n_cpus: Optional[int] = None,
-        mem_mb: Optional[int] = None,
+        n_cpus: int | None = None,
+        mem_mb: int | None = None,
         low_mem: bool = False,
         container_type: str = "singularity",
-        container_image: Optional[str] = None,
+        container_image: str | None = None,
         **kwargs,
     ) -> ToolResult:
         """Execute QSIPrep preprocessing."""
@@ -490,16 +489,18 @@ class QSIPrepTool(NeuroToolWrapper):
                 work_dir = os.path.join(output_dir, "work")
                 os.makedirs(work_dir, exist_ok=True)
 
-            payload: Dict[str, Any] = {
+            payload: dict[str, Any] = {
                 "bids_dir": bids_dir,
                 "output_dir": output_dir,
                 "analysis_level": "participant",
                 "participant_label": participant_label or [],
                 "work_dir": work_dir,
                 "fs_license_file": fs_license_file,
-                "denoise_method": denoise_method.value
-                if isinstance(denoise_method, DenoisingMethod)
-                else str(denoise_method),
+                "denoise_method": (
+                    denoise_method.value
+                    if isinstance(denoise_method, DenoisingMethod)
+                    else str(denoise_method)
+                ),
                 "distortion_correction": distortion_correction.value,
                 "eddy_config": eddy_config,
                 "b0_threshold": b0_threshold,
@@ -542,9 +543,11 @@ class QSIPrepTool(NeuroToolWrapper):
                     "output_dir": output_dir,
                     "work_dir": work_dir,
                     "participant_label": participant_label,
-                    "denoise_method": denoise_method.value
-                    if isinstance(denoise_method, DenoisingMethod)
-                    else str(denoise_method),
+                    "denoise_method": (
+                        denoise_method.value
+                        if isinstance(denoise_method, DenoisingMethod)
+                        else str(denoise_method)
+                    ),
                     "distortion_correction": distortion_correction.value,
                     "output_resolution": output_resolution,
                     "container_type": container_type,
@@ -584,23 +587,21 @@ class QSIPrepReconArgs(BaseModel):
 
     qsiprep_dir: str = Field(description="Path to QSIPrep output directory")
     output_dir: str = Field(description="Output directory for reconstruction results")
-    recon_spec: Union[str, ReconWorkflow] = Field(
+    recon_spec: str | ReconWorkflow = Field(
         description="Reconstruction specification or workflow name"
     )
-    participant_label: Optional[List[str]] = Field(
+    participant_label: list[str] | None = Field(
         default=None, description="Participant labels to reconstruct"
     )
-    work_dir: Optional[str] = Field(
-        default=None, description="Optional working directory"
-    )
-    fs_license_file: Optional[str] = Field(
+    work_dir: str | None = Field(default=None, description="Optional working directory")
+    fs_license_file: str | None = Field(
         default=None, description="Optional FreeSurfer license file"
     )
-    n_cpus: Optional[int] = Field(default=None, description="Number of CPUs to use")
-    omp_nthreads: Optional[int] = Field(
+    n_cpus: int | None = Field(default=None, description="Number of CPUs to use")
+    omp_nthreads: int | None = Field(
         default=None, description="Number of OpenMP threads"
     )
-    extra_args: Optional[List[str]] = Field(
+    extra_args: list[str] | None = Field(
         default=None, description="Additional CLI arguments"
     )
     dry_run: bool = Field(
@@ -630,7 +631,7 @@ class QSIPrepReconTool(NeuroToolWrapper):
     def get_args_schema(self):
         return QSIPrepReconArgs
 
-    def _get_recon_spec_path(self, recon_spec: Union[str, ReconWorkflow]) -> str:
+    def _get_recon_spec_path(self, recon_spec: str | ReconWorkflow) -> str:
         """Get the path to reconstruction specification file."""
         if isinstance(recon_spec, ReconWorkflow):
             # Use built-in workflow
@@ -639,8 +640,8 @@ class QSIPrepReconTool(NeuroToolWrapper):
             # Custom spec file
             return recon_spec
 
-    def _collect_outputs(self, output_dir: str) -> Dict[str, Any]:
-        outputs: Dict[str, Any] = {"qsirecon_dir": output_dir}
+    def _collect_outputs(self, output_dir: str) -> dict[str, Any]:
+        outputs: dict[str, Any] = {"qsirecon_dir": output_dir}
         root = Path(output_dir)
         if not root.exists():
             return outputs
@@ -678,14 +679,14 @@ class QSIPrepReconTool(NeuroToolWrapper):
         qsiprep_dir: str,
         output_dir: str,
         recon_spec: str,
-        participant_label: Optional[List[str]] = None,
-        work_dir: Optional[str] = None,
-        fs_license_file: Optional[str] = None,
-        n_cpus: Optional[int] = None,
-        omp_nthreads: Optional[int] = None,
-        extra_args: Optional[List[str]] = None,
-    ) -> List[str]:
-        cmd: List[str] = [
+        participant_label: list[str] | None = None,
+        work_dir: str | None = None,
+        fs_license_file: str | None = None,
+        n_cpus: int | None = None,
+        omp_nthreads: int | None = None,
+        extra_args: list[str] | None = None,
+    ) -> list[str]:
+        cmd: list[str] = [
             executable,
             qsiprep_dir,
             output_dir,
@@ -711,13 +712,13 @@ class QSIPrepReconTool(NeuroToolWrapper):
         self,
         qsiprep_dir: str,
         output_dir: str,
-        recon_spec: Union[str, ReconWorkflow],
-        participant_label: Optional[List[str]] = None,
-        work_dir: Optional[str] = None,
-        fs_license_file: Optional[str] = None,
-        n_cpus: Optional[int] = None,
-        omp_nthreads: Optional[int] = None,
-        extra_args: Optional[List[str]] = None,
+        recon_spec: str | ReconWorkflow,
+        participant_label: list[str] | None = None,
+        work_dir: str | None = None,
+        fs_license_file: str | None = None,
+        n_cpus: int | None = None,
+        omp_nthreads: int | None = None,
+        extra_args: list[str] | None = None,
         dry_run: bool = True,
         **kwargs,
     ) -> ToolResult:
@@ -806,9 +807,7 @@ class QSIPrepQCArgs(BaseModel):
     """Arguments for QSIPrep quality control."""
 
     qsiprep_dir: str = Field(description="Path to QSIPrep output directory")
-    output_file: Optional[str] = Field(
-        default=None, description="Path to save QC report"
-    )
+    output_file: str | None = Field(default=None, description="Path to save QC report")
 
 
 class QSIPrepQCTool(NeuroToolWrapper):
@@ -826,12 +825,12 @@ class QSIPrepQCTool(NeuroToolWrapper):
     def get_args_schema(self):
         return QSIPrepQCArgs
 
-    def _parse_qc_file(self, qc_file: str) -> Dict[str, Any]:
+    def _parse_qc_file(self, qc_file: str) -> dict[str, Any]:
         """Parse QSIPrep QC JSON file."""
         metrics = {}
 
         try:
-            with open(qc_file, "r") as f:
+            with open(qc_file) as f:
                 qc_data = json.load(f)
 
                 # Extract key metrics
@@ -860,7 +859,7 @@ class QSIPrepQCTool(NeuroToolWrapper):
         return metrics
 
     def _run(
-        self, qsiprep_dir: str, output_file: Optional[str] = None, **kwargs
+        self, qsiprep_dir: str, output_file: str | None = None, **kwargs
     ) -> ToolResult:
         """Extract QC metrics from QSIPrep outputs."""
         try:
@@ -986,6 +985,6 @@ class QSIPrepTools:
     """Collection of QSIPrep tools."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         """Get all QSIPrep tools."""
         return [QSIPrepTool(), QSIPrepReconTool(), QSIPrepQCTool()]

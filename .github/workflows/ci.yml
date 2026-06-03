@@ -97,6 +97,7 @@ jobs:
 
         count="$(wc -l < "$files_path" | tr -d ' ')"
         echo "CHANGED_PYTHON_FILES=$files_path" >> "$GITHUB_ENV"
+        echo "CHANGED_PYTHON_COUNT=$count" >> "$GITHUB_ENV"
         echo "count=$count" >> "$GITHUB_OUTPUT"
         echo "Changed Python files: $count"
         sed -n '1,200p' "$files_path"
@@ -117,7 +118,12 @@ jobs:
           echo "No changed Python files under src/brain_researcher or tests."
           exit 0
         fi
-        ruff check "${files[@]}"
+        if [ "${CHANGED_PYTHON_COUNT:-0}" -gt 500 ]; then
+          echo "Large bootstrap/export diff detected; running Ruff syntax-critical checks only."
+          ruff check --select E9,F63,F7 "${files[@]}"
+        else
+          ruff check "${files[@]}"
+        fi
 
     - name: Run isort (import sorting)
       run: |

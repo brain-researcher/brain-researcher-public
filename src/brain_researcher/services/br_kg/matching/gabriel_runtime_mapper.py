@@ -149,8 +149,12 @@ class GabrielRuntimeMapper:
         """Construct mapper from environment defaults."""
         return cls(
             enabled=_env_flag("BR_KG_GABRIEL_RUNTIME_ENABLED", True),
-            embedding_enabled=_env_flag("BR_KG_GABRIEL_RUNTIME_EMBEDDING_ENABLED", False),
-            embedding_backend=os.environ.get("BR_KG_GABRIEL_RUNTIME_EMBEDDING_BACKEND", "gemini"),
+            embedding_enabled=_env_flag(
+                "BR_KG_GABRIEL_RUNTIME_EMBEDDING_ENABLED", False
+            ),
+            embedding_backend=os.environ.get(
+                "BR_KG_GABRIEL_RUNTIME_EMBEDDING_BACKEND", "gemini"
+            ),
             embedding_model=os.environ.get(
                 "BR_KG_GABRIEL_RUNTIME_EMBEDDING_MODEL", "gemini-embedding-001"
             ),
@@ -200,8 +204,12 @@ class GabrielRuntimeMapper:
                 fallback=_gom.DEFAULT_TREE_PATH,
                 must_exist=True,
             )
-            crosswalk_payload = yaml.safe_load(resolved_crosswalk.read_text(encoding="utf-8")) or {}
-            tree_payload = yaml.safe_load(resolved_tree.read_text(encoding="utf-8")) or {}
+            crosswalk_payload = (
+                yaml.safe_load(resolved_crosswalk.read_text(encoding="utf-8")) or {}
+            )
+            tree_payload = (
+                yaml.safe_load(resolved_tree.read_text(encoding="utf-8")) or {}
+            )
 
             provider = None
             if self.embedding_enabled:
@@ -310,7 +318,9 @@ class GabrielRuntimeMapper:
                 },
             )
 
-        query_mapping = self.map_text(query_concept, source_id=f"concept:{_slug(query_concept)}")
+        query_mapping = self.map_text(
+            query_concept, source_id=f"concept:{_slug(query_concept)}"
+        )
         query_onvoc_id = query_mapping.onvoc_id
         reranked: list[dict[str, Any]] = []
         mapped_count = 0
@@ -318,7 +328,9 @@ class GabrielRuntimeMapper:
         for row in related_concepts or []:
             candidate = dict(row or {})
             concept_label = str(candidate.get("concept") or "").strip()
-            mapping = self.map_text(concept_label, source_id=f"concept:{_slug(concept_label)}")
+            mapping = self.map_text(
+                concept_label, source_id=f"concept:{_slug(concept_label)}"
+            )
             if mapping.status == "mapped":
                 mapped_count += 1
 
@@ -326,7 +338,9 @@ class GabrielRuntimeMapper:
             mapped_strength = _clamp_unit(mapping.score, default=0.0)
             same_target_bonus = (
                 1.0
-                if query_onvoc_id and mapping.onvoc_id and query_onvoc_id == mapping.onvoc_id
+                if query_onvoc_id
+                and mapping.onvoc_id
+                and query_onvoc_id == mapping.onvoc_id
                 else 0.0
             )
             gabriel_score = (

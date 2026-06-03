@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 class TraceReplayEnv:
@@ -26,7 +26,7 @@ class TraceReplayEnv:
 
     def __init__(
         self,
-        records: List[Dict[str, Any]] | None = None,
+        records: list[dict[str, Any]] | None = None,
         trace_path: Path | None = None,
         trajectory_path: Path | None = None,
     ):
@@ -35,7 +35,7 @@ class TraceReplayEnv:
         self._trace_path = trace_path
         self._trajectory_path = trajectory_path
         self._raw_records = records
-        self._records: List[Dict[str, Any]] = []
+        self._records: list[dict[str, Any]] = []
         self._cursor: int = 0
         self._loaded = False
 
@@ -97,14 +97,16 @@ class TraceReplayEnv:
                     self._records.append(obj)
         self._loaded = True
 
-    def reset(self) -> Dict[str, Any]:
+    def reset(self) -> dict[str, Any]:
         self._load()
         if not self._records:
             raise RuntimeError("TraceReplayEnv has no records to replay")
         self._cursor = 0
         return self._records[0]
 
-    def step(self, action: Optional[Any] = None) -> Tuple[Dict[str, Any], float, bool, Dict[str, Any]]:
+    def step(
+        self, action: Any | None = None
+    ) -> tuple[dict[str, Any], float, bool, dict[str, Any]]:
         """
         Advance to next record. Action is ignored (replay), but kept for API parity.
         Returns: observation, reward (0), done, info
@@ -122,7 +124,9 @@ class TraceReplayEnv:
         if violations is None and isinstance(obs.get("observation"), dict):
             results = obs["observation"].get("results")
             if isinstance(results, list) and results:
-                content = results[0].get("content") if isinstance(results[0], dict) else None
+                content = (
+                    results[0].get("content") if isinstance(results[0], dict) else None
+                )
                 if isinstance(content, dict):
                     violations = content.get("violations")
 
@@ -134,7 +138,7 @@ class TraceReplayEnv:
         }
         return obs, 0.0, done, info
 
-    def rollout(self) -> List[Dict[str, Any]]:
+    def rollout(self) -> list[dict[str, Any]]:
         """Return all observations in order (fast path for training)."""
         self._load()
         return list(self._records)

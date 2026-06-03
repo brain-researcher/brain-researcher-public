@@ -45,9 +45,7 @@ def _coerce_float(value: Any, *, default: float) -> float:
         raise ValueError(f"Invalid numeric value: {value}") from exc
 
 
-def _collect_mapping_ids_from_filters(
-    db: Any, filters: dict[str, Any]
-) -> list[str]:
+def _collect_mapping_ids_from_filters(db: Any, filters: dict[str, Any]) -> list[str]:
     source_label = filters.get("source_label")
     target_label = filters.get("target_label")
     confidence_min = _coerce_float(filters.get("confidence_min"), default=0)

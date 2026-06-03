@@ -119,7 +119,10 @@ def test_gwas_edges_are_registered_with_expected_signatures() -> None:
     }
 
     assert expected.issubset(EDGE_TYPES)
-    assert ALLOWED_EDGES["STUDIES"] == (("Publication", "Study"), ("Concept", "DiseaseTrait"))
+    assert ALLOWED_EDGES["STUDIES"] == (
+        ("Publication", "Study"),
+        ("Concept", "DiseaseTrait"),
+    )
     assert ("Study", "DiseaseTrait") in EDGE_SIGNATURES["STUDIES"]
     assert ALLOWED_EDGES["HAS_POPULATION"] == ("Study", "Population")
     assert ALLOWED_EDGES["HAS_LEAD_LOCUS"] == ("Study", "RiskLocus")

@@ -137,9 +137,7 @@ def compute_multiverse_convergence(
 
     # ROI analysis
     roi_table_path = output_dir / "roi_summary.csv"
-    roi_summary = _compute_roi_summary(
-        z_data, model_ids, reference.affine, atlas, roi_table_path
-    )
+    _compute_roi_summary(z_data, model_ids, reference.affine, atlas, roi_table_path)
 
     summary = {
         "n_models": len(z_maps),
@@ -191,7 +189,7 @@ def _find_z_map(model: dict, contrast: str | None) -> Path | None:
             # Specs are in statsmodel_specs/{dataset}/
             # Outputs are in analyses/{dataset}/task-{task}[-mvXX]/
             spec_path = Path(spec_path)
-            model_id = model.get("model_id", "")
+            model.get("model_id", "")
             # This is a heuristic - may need adjustment
             return None
         return None
@@ -245,8 +243,8 @@ def _compute_roi_summary(
     - mean_z (across models), std_z, fraction_significant
     """
     try:
-        from nilearn import datasets, maskers
         import nibabel as nib
+        from nilearn import datasets, maskers
     except ImportError:
         logger.warning("nilearn not available for ROI analysis")
         return {}
@@ -330,14 +328,20 @@ def _compute_roi_summary(
         }
         # Add per-model columns
         for j, model_id in enumerate(model_ids):
-            row[f"z_{model_id}"] = round(float(values[j]), 3) if not np.isnan(values[j]) else ""
+            row[f"z_{model_id}"] = (
+                round(float(values[j]), 3) if not np.isnan(values[j]) else ""
+            )
         rows.append(row)
 
     # Write CSV
     if rows:
-        fieldnames = ["roi_id", "roi_name", "mean_z", "std_z", "fraction_significant"] + [
-            f"z_{m}" for m in model_ids
-        ]
+        fieldnames = [
+            "roi_id",
+            "roi_name",
+            "mean_z",
+            "std_z",
+            "fraction_significant",
+        ] + [f"z_{m}" for m in model_ids]
         with open(output_path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()

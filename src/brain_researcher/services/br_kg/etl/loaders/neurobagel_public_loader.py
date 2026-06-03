@@ -10,19 +10,18 @@ per-subject nodes in the knowledge graph.
 from __future__ import annotations
 
 import json
-import math
+import logging
 import re
 import statistics
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from pathlib import Path
 from itertools import islice
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from pathlib import Path
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +33,15 @@ DEFAULT_BATCH_SIZE = 25
 class DatasetSummary:
     dataset_uuid: str
     dataset_name: str
-    portal_uri: Optional[str]
-    openneuro_id: Optional[str]
-    total_subjects_reported: Optional[int]
+    portal_uri: str | None
+    openneuro_id: str | None
+    total_subjects_reported: int | None
     records_protected: bool
     unique_subjects: int
     imaging_sessions: int
     phenotypic_sessions: int
-    phenotypes: List[Dict[str, Any]] = field(default_factory=list)
-    cohort_metadata: Optional[Dict[str, Any]] = None
+    phenotypes: list[dict[str, Any]] = field(default_factory=list)
+    cohort_metadata: dict[str, Any] | None = None
 
 
 def _slugify(value: str) -> str:
@@ -51,11 +50,11 @@ def _slugify(value: str) -> str:
     return cleaned.strip("_").lower() or "value"
 
 
-def _clean_term(value: Any) -> Optional[str]:
+def _clean_term(value: Any) -> str | None:
     """Normalize Neurobagel vocabulary strings for readability."""
     if value is None:
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return str(value)
     text = str(value)
     if text.startswith("http"):
@@ -67,10 +66,10 @@ def _clean_term(value: Any) -> Optional[str]:
     return text
 
 
-def _try_float(value: Any) -> Optional[float]:
+def _try_float(value: Any) -> float | None:
     if value is None:
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return float(value)
     text = str(value).strip()
     if not text:
@@ -82,7 +81,7 @@ def _try_float(value: Any) -> Optional[float]:
         return None
 
 
-def _chunked(seq: List[str], size: int) -> Iterable[List[str]]:
+def _chunked(seq: list[str], size: int) -> Iterable[list[str]]:
     """Yield successive chunks from a list."""
     for i in range(0, len(seq), size):
         yield seq[i : i + size]
@@ -93,8 +92,10 @@ def _build_group_count_bucket(
     row_counts: Counter[str],
     *,
     min_group_count: int = 5,
-) -> Dict[str, Any]:
-    participant_counts_dict = {str(key): int(value) for key, value in participant_counts.items()}
+) -> dict[str, Any]:
+    participant_counts_dict = {
+        str(key): int(value) for key, value in participant_counts.items()
+    }
     row_counts_dict = {str(key): int(value) for key, value in row_counts.items()}
     underpowered = {
         key: int(value)
@@ -111,8 +112,10 @@ def _build_group_count_bucket(
     }
 
 
-def _rollup_group_counts(group_counts_blocks: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
-    rolled_up: Dict[str, Dict[str, Any]] = {}
+def _rollup_group_counts(
+    group_counts_blocks: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
+    rolled_up: dict[str, dict[str, Any]] = {}
     for block in group_counts_blocks:
         for key, payload in (block or {}).items():
             bucket = rolled_up.setdefault(
@@ -153,8 +156,8 @@ def _build_cohort_metadata(
     *,
     participant_scope: str,
     aggregation_scope: str,
-    group_counts: Dict[str, Any],
-) -> Optional[Dict[str, Any]]:
+    group_counts: dict[str, Any],
+) -> dict[str, Any] | None:
     if not group_counts:
         return None
     resolved_group_keys = sorted(str(key) for key in group_counts)
@@ -171,7 +174,7 @@ def _build_cohort_metadata(
     }
 
 
-def summarize_subject_records(record: Dict[str, Any]) -> Optional[DatasetSummary]:
+def summarize_subject_records(record: dict[str, Any]) -> DatasetSummary | None:
     """
     Aggregate subject-level data from a Neurobagel dataset record.
 
@@ -181,7 +184,7 @@ def summarize_subject_records(record: Dict[str, Any]) -> Optional[DatasetSummary
     if not subject_data or isinstance(subject_data, str):
         return None
 
-    per_subject: Dict[str, Dict[str, Any]] = {}
+    per_subject: dict[str, dict[str, Any]] = {}
     imaging_sessions = 0
     phenotypic_sessions = 0
     imaging_modalities = Counter()
@@ -245,7 +248,7 @@ def summarize_subject_records(record: Dict[str, Any]) -> Optional[DatasetSummary
                 imaging_modalities[cleaned] += 1
 
     # Aggregate demographics
-    ages: List[float] = []
+    ages: list[float] = []
     sexes = Counter()
     groups = Counter()
     diagnoses = Counter()
@@ -266,7 +269,7 @@ def summarize_subject_records(record: Dict[str, Any]) -> Optional[DatasetSummary
         diagnoses.update(subject["diagnoses"])
         assessments.update(subject["assessments"])
 
-    phenotypes: List[Dict[str, Any]] = []
+    phenotypes: list[dict[str, Any]] = []
 
     if ages:
         mean_val = statistics.fmean(ages)
@@ -351,7 +354,9 @@ def summarize_subject_records(record: Dict[str, Any]) -> Optional[DatasetSummary
             key: value
             for key, value in {
                 "sex": _build_group_count_bucket(sexes, sex_rows) if sexes else None,
-                "subject_group": _build_group_count_bucket(groups, group_rows) if groups else None,
+                "subject_group": (
+                    _build_group_count_bucket(groups, group_rows) if groups else None
+                ),
             }.items()
             if value
         },
@@ -387,17 +392,19 @@ class NeurobagelPublicLoader:
     def __init__(
         self,
         db: Any,
-        session: Optional[requests.Session] = None,
+        session: requests.Session | None = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
         nodes_endpoint: str = FEDERATION_NODES_URL,
-        offline_cache_dir: Optional[str | Path] = None,
+        offline_cache_dir: str | Path | None = None,
     ):
         self.db = db
         self.session = session or requests.Session()
         self.batch_size = max(1, batch_size)
         self.nodes_endpoint = nodes_endpoint
-        self.offline_cache_dir = Path(offline_cache_dir).resolve() if offline_cache_dir else None
-        self.stats: Dict[str, Any] = {
+        self.offline_cache_dir = (
+            Path(offline_cache_dir).resolve() if offline_cache_dir else None
+        )
+        self.stats: dict[str, Any] = {
             "nodes_queried": 0,
             "datasets_discovered": 0,
             "datasets_skipped": 0,
@@ -418,24 +425,26 @@ class NeurobagelPublicLoader:
             },
         }
 
-    def _get_node_cache_dir(self, node_name: str) -> Optional[Path]:
+    def _get_node_cache_dir(self, node_name: str) -> Path | None:
         if not self.offline_cache_dir:
             return None
         return self.offline_cache_dir / _slugify(node_name)
 
     def load(
         self,
-        include_nodes: Optional[List[str]] = None,
-        exclude_nodes: Optional[List[str]] = None,
-        dataset_limit_per_node: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        include_nodes: list[str] | None = None,
+        exclude_nodes: list[str] | None = None,
+        dataset_limit_per_node: int | None = None,
+    ) -> dict[str, Any]:
         nodes = self._fetch_nodes(include_nodes, exclude_nodes)
         for node in nodes:
             try:
                 self._process_node(node, dataset_limit_per_node)
             except Exception as exc:  # pragma: no cover - defensive
                 logger.error(
-                    "Failed to process Neurobagel node %s: %s", node.get("NodeName"), exc
+                    "Failed to process Neurobagel node %s: %s",
+                    node.get("NodeName"),
+                    exc,
                 )
                 self.stats.setdefault("node_errors", []).append(
                     {"node": node.get("NodeName"), "error": str(exc)}
@@ -445,16 +454,20 @@ class NeurobagelPublicLoader:
     # ------------------------------------------------------------------ helpers
     def _fetch_nodes(
         self,
-        include_nodes: Optional[List[str]],
-        exclude_nodes: Optional[List[str]],
-    ) -> List[Dict[str, Any]]:
+        include_nodes: list[str] | None,
+        exclude_nodes: list[str] | None,
+    ) -> list[dict[str, Any]]:
         resp = self.session.get(self.nodes_endpoint, timeout=30)
         resp.raise_for_status()
-        nodes: List[Dict[str, Any]] = resp.json()
-        include_set = {name.lower() for name in include_nodes} if include_nodes else None
-        exclude_set = {name.lower() for name in exclude_nodes} if exclude_nodes else set()
+        nodes: list[dict[str, Any]] = resp.json()
+        include_set = (
+            {name.lower() for name in include_nodes} if include_nodes else None
+        )
+        exclude_set = (
+            {name.lower() for name in exclude_nodes} if exclude_nodes else set()
+        )
 
-        filtered: List[Dict[str, Any]] = []
+        filtered: list[dict[str, Any]] = []
         for node in nodes:
             node_name = node.get("NodeName", "")
             if include_set and node_name.lower() not in include_set:
@@ -468,8 +481,8 @@ class NeurobagelPublicLoader:
 
     def _process_node(
         self,
-        node: Dict[str, Any],
-        dataset_limit_per_node: Optional[int],
+        node: dict[str, Any],
+        dataset_limit_per_node: int | None,
     ) -> None:
         node_name = node.get("NodeName", "unknown")
         raw_api_url = node.get("ApiURL")
@@ -491,7 +504,11 @@ class NeurobagelPublicLoader:
         if dataset_limit_per_node is not None:
             datasets = list(islice(datasets, dataset_limit_per_node))
 
-        uuid_lookup = [dataset.get("dataset_uuid") for dataset in datasets if dataset.get("dataset_uuid")]
+        uuid_lookup = [
+            dataset.get("dataset_uuid")
+            for dataset in datasets
+            if dataset.get("dataset_uuid")
+        ]
         if not uuid_lookup:
             logger.info("No datasets with UUIDs for node %s", node_name)
             return
@@ -509,9 +526,9 @@ class NeurobagelPublicLoader:
 
     def _fetch_datasets(
         self,
-        base_url: Optional[str],
+        base_url: str | None,
         node_name: str,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         cache_dir = self._get_node_cache_dir(node_name)
         if cache_dir:
             datasets_path = cache_dir / "datasets.json"
@@ -519,7 +536,9 @@ class NeurobagelPublicLoader:
                 try:
                     return json.loads(datasets_path.read_text())
                 except Exception as exc:  # pragma: no cover
-                    logger.warning("Failed to read cached datasets for %s: %s", node_name, exc)
+                    logger.warning(
+                        "Failed to read cached datasets for %s: %s", node_name, exc
+                    )
 
         if not base_url:
             logger.warning(
@@ -553,13 +572,13 @@ class NeurobagelPublicLoader:
 
     def _fetch_subjects(
         self,
-        base_url: Optional[str],
-        uuids: List[str],
+        base_url: str | None,
+        uuids: list[str],
         node_name: str,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         cache_dir = self._get_node_cache_dir(node_name)
-        records: List[Dict[str, Any]] = []
-        missing: List[str] = []
+        records: list[dict[str, Any]] = []
+        missing: list[str] = []
 
         if cache_dir:
             subjects_dir = cache_dir / "subjects"
@@ -572,7 +591,12 @@ class NeurobagelPublicLoader:
                         records.append(json.loads(path.read_text()))
                         continue
                     except Exception as exc:  # pragma: no cover
-                        logger.warning("Failed to read cached subjects for %s (%s): %s", node_name, uuid, exc)
+                        logger.warning(
+                            "Failed to read cached subjects for %s (%s): %s",
+                            node_name,
+                            uuid,
+                            exc,
+                        )
                 missing.append(uuid)
         else:
             missing = [uuid for uuid in uuids if uuid]
@@ -620,7 +644,12 @@ class NeurobagelPublicLoader:
                 try:
                     path.write_text(json.dumps(entry, indent=2))
                 except Exception as exc:  # pragma: no cover
-                    logger.debug("Failed to write subject cache for %s (%s): %s", node_name, uuid, exc)
+                    logger.debug(
+                        "Failed to write subject cache for %s (%s): %s",
+                        node_name,
+                        uuid,
+                        exc,
+                    )
 
         records.extend(fetched)
         return records
@@ -628,7 +657,7 @@ class NeurobagelPublicLoader:
     # ---------------------------------------------------------- persistence ----
     def _persist_summary(
         self,
-        raw_record: Dict[str, Any],
+        raw_record: dict[str, Any],
         summary: DatasetSummary,
         node_name: str,
     ) -> None:
@@ -638,7 +667,9 @@ class NeurobagelPublicLoader:
         if not dataset_node_id:
             return
 
-        subject_group_id = self._ensure_subject_group(summary, dataset_node_id, node_name)
+        subject_group_id = self._ensure_subject_group(
+            summary, dataset_node_id, node_name
+        )
 
         for phenotype in summary.phenotypes:
             pheno_id = self._ensure_phenotype_node(
@@ -646,7 +677,9 @@ class NeurobagelPublicLoader:
             )
             if not pheno_id:
                 continue
-            if not self._relationship_exists(subject_group_id, pheno_id, "HAS_PHENOTYPE"):
+            if not self._relationship_exists(
+                subject_group_id, pheno_id, "HAS_PHENOTYPE"
+            ):
                 rel_id = self.db.create_relationship(
                     subject_group_id,
                     pheno_id,
@@ -661,8 +694,8 @@ class NeurobagelPublicLoader:
 
     def _ensure_dataset_node(
         self, summary: DatasetSummary, node_name: str
-    ) -> Optional[str]:
-        existing_ids: List[str] = []
+    ) -> str | None:
+        existing_ids: list[str] = []
 
         if summary.openneuro_id:
             matches = self.db.find_nodes(
@@ -676,7 +709,7 @@ class NeurobagelPublicLoader:
             )
             existing_ids.extend(node_id for node_id, _ in matches)
 
-        node_id: Optional[str] = existing_ids[0] if existing_ids else None
+        node_id: str | None = existing_ids[0] if existing_ids else None
 
         if node_id:
             return node_id
@@ -694,7 +727,11 @@ class NeurobagelPublicLoader:
         if summary.cohort_metadata:
             props["cohort_metadata"] = summary.cohort_metadata
             props["audit_group_keys"] = list(
-                ((summary.cohort_metadata.get("group_audit") or {}).get("resolved_group_keys"))
+                (
+                    (summary.cohort_metadata.get("group_audit") or {}).get(
+                        "resolved_group_keys"
+                    )
+                )
                 or []
             )
 
@@ -703,11 +740,15 @@ class NeurobagelPublicLoader:
         except ValueError as exc:
             if "Constraint violation" in str(exc):
                 # Race condition: retrieve existing node
-                matches = self.db.find_nodes(labels="Dataset", properties={"dataset_uuid": summary.dataset_uuid})
+                matches = self.db.find_nodes(
+                    labels="Dataset", properties={"dataset_uuid": summary.dataset_uuid}
+                )
                 if matches:
                     return matches[0][0]
                 return node_id
-            logger.error("Failed to create Dataset node for %s: %s", summary.dataset_uuid, exc)
+            logger.error(
+                "Failed to create Dataset node for %s: %s", summary.dataset_uuid, exc
+            )
             return None
 
         return node_id
@@ -731,7 +772,11 @@ class NeurobagelPublicLoader:
         if summary.cohort_metadata:
             props["cohort_metadata"] = summary.cohort_metadata
             props["audit_group_keys"] = list(
-                ((summary.cohort_metadata.get("group_audit") or {}).get("resolved_group_keys"))
+                (
+                    (summary.cohort_metadata.get("group_audit") or {}).get(
+                        "resolved_group_keys"
+                    )
+                )
                 or []
             )
         try:
@@ -739,7 +784,11 @@ class NeurobagelPublicLoader:
             self.stats["subject_groups_created"] += 1
         except ValueError as exc:
             if "Constraint violation" not in str(exc):
-                logger.error("Failed to create SubjectGroup for %s: %s", summary.dataset_uuid, exc)
+                logger.error(
+                    "Failed to create SubjectGroup for %s: %s",
+                    summary.dataset_uuid,
+                    exc,
+                )
 
         if not self._relationship_exists(dataset_node_id, group_id, "INCLUDES"):
             rel_id = self.db.create_relationship(
@@ -755,11 +804,11 @@ class NeurobagelPublicLoader:
 
     def _ensure_phenotype_node(
         self,
-        phenotype: Dict[str, Any],
+        phenotype: dict[str, Any],
         summary: DatasetSummary,
         subject_group_id: str,
         node_name: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         slug = _slugify(phenotype.get("name", "phenotype"))
         pheno_id = f"{subject_group_id}_{slug}"
         props = {
@@ -790,7 +839,9 @@ class NeurobagelPublicLoader:
         return pheno_id
 
     def _relationship_exists(self, start: str, end: str, rel_type: str) -> bool:
-        existing = self.db.find_relationships(start_node=start, end_node=end, rel_type=rel_type)
+        existing = self.db.find_relationships(
+            start_node=start, end_node=end, rel_type=rel_type
+        )
         return bool(existing)
 
     def _merge_summary_cohort_metadata(self, summary: DatasetSummary) -> None:
@@ -802,7 +853,9 @@ class NeurobagelPublicLoader:
 
         requested = set(stats_group_audit.get("requested_group_keys") or [])
         requested.update(summary_group_audit.get("requested_group_keys") or [])
-        stats_group_audit["requested_group_keys"] = sorted(str(key) for key in requested)
+        stats_group_audit["requested_group_keys"] = sorted(
+            str(key) for key in requested
+        )
 
         resolved = set(stats_group_audit.get("resolved_group_keys") or [])
         resolved.update(summary_group_audit.get("resolved_group_keys") or [])
@@ -820,7 +873,9 @@ class NeurobagelPublicLoader:
         )
 
 
-def load_neurobagel_public(db: Any, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def load_neurobagel_public(
+    db: Any, config: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Entry point used by the ingestion pipeline.
 

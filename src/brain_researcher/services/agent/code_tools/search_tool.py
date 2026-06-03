@@ -5,10 +5,9 @@ from __future__ import annotations
 import logging
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from brain_researcher.services.agent.code_tool_registry import CodeTool
-from brain_researcher.services.agent.code_tools.utils import validate_path as _validate_path
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ class CodeSearchTool(CodeTool):
     name = "code.search"
     description = "Search code files for a pattern using ripgrep-style matching. Returns matching lines with context."
 
-    def get_parameters_schema(self) -> Dict[str, Any]:
+    def get_parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -58,9 +57,9 @@ class CodeSearchTool(CodeTool):
         max_matches: int = 50,
         context_lines: int = 2,
         case_sensitive: bool = False,
-        repo_root: Optional[str] = None,
+        repo_root: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             cwd = Path(repo_root) if repo_root else Path.cwd()
 
@@ -74,14 +73,12 @@ class CodeSearchTool(CodeTool):
             # Try ripgrep first, fall back to grep
             try:
                 return self._search_with_rg(
-                    query, glob_pattern, max_matches, context_lines,
-                    case_sensitive, cwd
+                    query, glob_pattern, max_matches, context_lines, case_sensitive, cwd
                 )
             except FileNotFoundError:
                 logger.debug("ripgrep not found, falling back to grep")
                 return self._search_with_grep(
-                    query, glob_pattern, max_matches, context_lines,
-                    case_sensitive, cwd
+                    query, glob_pattern, max_matches, context_lines, case_sensitive, cwd
                 )
 
         except Exception as exc:
@@ -96,7 +93,7 @@ class CodeSearchTool(CodeTool):
         context_lines: int,
         case_sensitive: bool,
         cwd: Path,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Search using ripgrep."""
         cmd = ["rg", "--json"]
 
@@ -130,11 +127,13 @@ class CodeSearchTool(CodeTool):
                 data = json.loads(line)
                 if data.get("type") == "match":
                     match_data = data["data"]
-                    matches.append({
-                        "path": match_data["path"]["text"],
-                        "line_number": match_data["line_number"],
-                        "line": match_data["lines"]["text"].rstrip(),
-                    })
+                    matches.append(
+                        {
+                            "path": match_data["path"]["text"],
+                            "line_number": match_data["line_number"],
+                            "line": match_data["lines"]["text"].rstrip(),
+                        }
+                    )
             except (json.JSONDecodeError, KeyError):
                 continue
 
@@ -155,7 +154,7 @@ class CodeSearchTool(CodeTool):
         context_lines: int,
         case_sensitive: bool,
         cwd: Path,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fallback search using grep."""
         cmd = ["grep", "-r", "-n"]
 
@@ -186,11 +185,13 @@ class CodeSearchTool(CodeTool):
         for line in result.stdout.splitlines()[:max_matches]:
             parts = line.split(":", 2)
             if len(parts) >= 3:
-                matches.append({
-                    "path": parts[0],
-                    "line_number": int(parts[1]) if parts[1].isdigit() else 0,
-                    "line": parts[2],
-                })
+                matches.append(
+                    {
+                        "path": parts[0],
+                        "line_number": int(parts[1]) if parts[1].isdigit() else 0,
+                        "line": parts[2],
+                    }
+                )
 
         return {
             "status": "success",

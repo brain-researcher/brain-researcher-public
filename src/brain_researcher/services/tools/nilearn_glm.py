@@ -6,11 +6,11 @@ analysis using Nilearn, with full parameter schemas, examples, and metadata for
 proper LLM function calling.
 """
 
-from typing import Dict, Any, List, Optional, Union
-from pydantic import BaseModel, Field
-from pathlib import Path
 import logging
-from brain_researcher.services.tools.result import ToolResult
+from pathlib import Path
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 from brain_researcher.services.tools.params import (
     GLMFirstLevelParameters,
@@ -20,8 +20,9 @@ from brain_researcher.services.tools.params import (
     run_glm_first_level,
     run_glm_second_level,
 )
-from brain_researcher.services.tools.tool_base import NeuroToolWrapper
+from brain_researcher.services.tools.result import ToolResult
 from brain_researcher.services.tools.spec import ToolExample
+from brain_researcher.services.tools.tool_base import NeuroToolWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -35,21 +36,21 @@ class GLMFirstLevelArgs(BaseModel):
     """Arguments for first-level GLM analysis."""
 
     img: str = Field(description="Path to 4D BOLD fMRI image (nifti format)")
-    events: Optional[str] = Field(
+    events: str | None = Field(
         None, description="Path to events.tsv file or 'auto' to detect from BIDS"
     )
-    t_r: Optional[float] = Field(
+    t_r: float | None = Field(
         None, description="Repetition time in seconds (auto-detect if not provided)"
     )
     hrf_model: str = Field(
         default="spm",
         description="HRF model: 'spm', 'spm + derivative', 'glover', 'fir', or 'flobs' (also accepts aliases 'canonical' and 'derivs')",
     )
-    fir_delays: Optional[List[int]] = Field(
+    fir_delays: list[int] | None = Field(
         None,
         description="Optional FIR delay bins (in scans) used when hrf_model='fir'",
     )
-    flobs_basis_file: Optional[str] = Field(
+    flobs_basis_file: str | None = Field(
         None,
         description="Optional path to an FSL FLOBS basis file when hrf_model='flobs'",
     )
@@ -61,22 +62,22 @@ class GLMFirstLevelArgs(BaseModel):
         default="cosine", description="Drift model: 'polynomial', 'cosine', None"
     )
     high_pass: float = Field(default=0.01, description="High-pass filter cutoff in Hz")
-    mask_img: Optional[str] = Field(
+    mask_img: str | None = Field(
         None, description="Path to brain mask or 'compute' to generate"
     )
-    smoothing_fwhm: Optional[float] = Field(
+    smoothing_fwhm: float | None = Field(
         None, description="Smoothing kernel size in mm"
     )
     standardize: bool = Field(default=True, description="Standardize the data")
     noise_model: str = Field(default="ar1", description="Noise model: 'ar1', 'ols'")
     n_jobs: int = Field(default=-1, description="Number of parallel jobs")
-    contrasts: Optional[Dict[str, List[float]]] = Field(
+    contrasts: dict[str, list[float]] | None = Field(
         None, description="Contrast definitions"
     )
-    confounds: Optional[str] = Field(
+    confounds: str | None = Field(
         None, description="Optional confounds TSV/CSV to include during GLM fitting"
     )
-    output_dir: Optional[str] = Field(None, description="Directory to save results")
+    output_dir: str | None = Field(None, description="Directory to save results")
 
 
 class GLMFirstLevelTool(NeuroToolWrapper):
@@ -160,7 +161,7 @@ class GLMFirstLevelTool(NeuroToolWrapper):
             return ToolResult(status=status, data=data)
         return ToolResult(status="success", data={"result": out})
 
-    def _invoke(self, **kwargs) -> Dict[str, Any]:
+    def _invoke(self, **kwargs) -> dict[str, Any]:
         """Execute first-level GLM analysis."""
         args = GLMFirstLevelArgs(**kwargs)
         payload = args.model_dump()
@@ -183,17 +184,17 @@ class GLMFirstLevelTool(NeuroToolWrapper):
 class SecondLevelGLMArgs(BaseModel):
     """Arguments for second-level (group) GLM analysis."""
 
-    contrast_maps: List[str] = Field(description="List of first-level contrast maps")
-    design_matrix: Optional[Union[str, Dict]] = Field(
+    contrast_maps: list[str] = Field(description="List of first-level contrast maps")
+    design_matrix: str | dict | None = Field(
         None, description="Design matrix or path to CSV"
     )
-    contrast: Optional[Union[str, List[float]]] = Field(
+    contrast: str | list[float] | None = Field(
         None, description="Second-level contrast"
     )
-    mask_img: Optional[str] = Field(None, description="Group mask image")
-    smoothing_fwhm: Optional[float] = Field(None, description="Smoothing kernel")
+    mask_img: str | None = Field(None, description="Group mask image")
+    smoothing_fwhm: float | None = Field(None, description="Smoothing kernel")
     model_type: str = Field(default="ols", description="Model type: 'ols' or 'mixedlm'")
-    output_dir: Optional[str] = Field(None, description="Output directory")
+    output_dir: str | None = Field(None, description="Output directory")
 
 
 class SecondLevelGLMTool(NeuroToolWrapper):
@@ -239,7 +240,7 @@ class SecondLevelGLMTool(NeuroToolWrapper):
             return ToolResult(status=status, data=data)
         return ToolResult(status="success", data={"result": out})
 
-    def _invoke(self, **kwargs) -> Dict[str, Any]:
+    def _invoke(self, **kwargs) -> dict[str, Any]:
         """Run second-level analysis."""
         args = SecondLevelGLMArgs(**kwargs)
         payload = args.model_dump()

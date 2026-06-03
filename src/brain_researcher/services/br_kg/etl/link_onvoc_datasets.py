@@ -12,7 +12,6 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 import yaml
 
@@ -29,7 +28,7 @@ DEFAULT_CROSSWALK_PATH = resolve_mapping_path(
 )
 
 
-def _shorten(dataset_id: Optional[str]) -> Optional[str]:
+def _shorten(dataset_id: str | None) -> str | None:
     if not dataset_id:
         return None
     # strip leading ds: prefixes to match legacy crosswalk keys
@@ -51,7 +50,7 @@ def link_datasets(
     logger.info("Found %d Dataset nodes", len(datasets))
 
     for node_id, props in datasets:
-        names: List[str] = []
+        names: list[str] = []
         if props.get("name"):
             names.append(str(props["name"]))
         if props.get("alias"):
@@ -62,7 +61,7 @@ def link_datasets(
         if props.get("tasks"):
             names.extend([str(t) for t in props["tasks"] if t])
 
-        ds_ids: List[str] = []
+        ds_ids: list[str] = []
         for cand in [
             props.get("id"),
             props.get("dataset_id"),
@@ -85,7 +84,9 @@ def link_datasets(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Link Dataset nodes to ONVOC classes using crosswalk")
+    parser = argparse.ArgumentParser(
+        description="Link Dataset nodes to ONVOC classes using crosswalk"
+    )
     parser.add_argument("--neo4j-uri", required=True)
     parser.add_argument("--neo4j-user", required=True)
     parser.add_argument("--neo4j-password", required=True)
@@ -111,10 +112,17 @@ def main() -> None:
     except Exception as exc:  # pragma: no cover - parse safeguard
         raise ValueError(f"Crosswalk YAML is invalid: {exc}") from exc
 
-    db = Neo4jGraphDB(args.neo4j_uri, args.neo4j_user, args.neo4j_password, database=args.neo4j_database)
+    db = Neo4jGraphDB(
+        args.neo4j_uri,
+        args.neo4j_user,
+        args.neo4j_password,
+        database=args.neo4j_database,
+    )
     linker = OnvocLinker(db, crosswalk_path=resolved_crosswalk)
     if not linker.available:
-        raise RuntimeError("ONVOC classes are not present in the graph; load ONVOC first.")
+        raise RuntimeError(
+            "ONVOC classes are not present in the graph; load ONVOC first."
+        )
 
     stats = link_datasets(db, linker)
     logger.info("Linking done: %s", stats)

@@ -5,36 +5,33 @@ This module provides REST API endpoints for parallel execution orchestration,
 execution graph management, and performance metrics.
 """
 
-import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.agent.parallel_executor import (
-    ParallelExecutionOrchestrator,
-    Task,
-    ResourceType,
-    ResourceRequirement,
-    create_parallel_orchestrator
-)
 from brain_researcher.services.agent.dependency_resolver import (
     DependencyResolver,
-    ExecutionGraph,
-    create_dependency_resolver
+    create_dependency_resolver,
 )
 from brain_researcher.services.agent.execution_status import (
     ExecutionTracker,
-    ExecutionStatus
+)
+from brain_researcher.services.agent.parallel_executor import (
+    ParallelExecutionOrchestrator,
+    ResourceRequirement,
+    ResourceType,
+    Task,
+    create_parallel_orchestrator,
 )
 
 logger = logging.getLogger(__name__)
 
 # Global orchestrator instance
-_orchestrator: Optional[ParallelExecutionOrchestrator] = None
-_dependency_resolver: Optional[DependencyResolver] = None
+_orchestrator: ParallelExecutionOrchestrator | None = None
+_dependency_resolver: DependencyResolver | None = None
 
 
 def get_orchestrator() -> ParallelExecutionOrchestrator:
@@ -56,12 +53,16 @@ def get_dependency_resolver() -> DependencyResolver:
 # Request/Response Models
 class ResourceLimitRequest(BaseModel):
     """Resource limit specification."""
-    resource_type: str = Field(..., description="Type of resource (cpu, gpu, memory, storage, network)")
+
+    resource_type: str = Field(
+        ..., description="Type of resource (cpu, gpu, memory, storage, network)"
+    )
     limit: float = Field(..., description="Maximum available amount")
 
 
 class ResourceRequirementRequest(BaseModel):
     """Resource requirement specification."""
+
     resource_type: str = Field(..., description="Type of resource")
     amount: float = Field(..., description="Required amount")
     unit: str = Field("", description="Unit of measurement")
@@ -70,83 +71,106 @@ class ResourceRequirementRequest(BaseModel):
 
 class TaskRequest(BaseModel):
     """Task specification for parallel execution."""
-    task_id: Optional[str] = Field(None, description="Task identifier (auto-generated if not provided)")
+
+    task_id: str | None = Field(
+        None, description="Task identifier (auto-generated if not provided)"
+    )
     name: str = Field(..., description="Human-readable task name")
     tool_name: str = Field(..., description="Name of the tool to execute")
-    tool_args: Dict[str, Any] = Field(default_factory=dict, description="Tool arguments")
-    dependencies: List[str] = Field(default_factory=list, description="List of dependent task IDs")
-    resource_requirements: List[ResourceRequirementRequest] = Field(
+    tool_args: dict[str, Any] = Field(
+        default_factory=dict, description="Tool arguments"
+    )
+    dependencies: list[str] = Field(
+        default_factory=list, description="List of dependent task IDs"
+    )
+    resource_requirements: list[ResourceRequirementRequest] = Field(
         default_factory=list, description="Resource requirements"
     )
-    estimated_duration: float = Field(60.0, description="Estimated execution time in seconds")
-    timeout: Optional[float] = Field(None, description="Execution timeout in seconds")
+    estimated_duration: float = Field(
+        60.0, description="Estimated execution time in seconds"
+    )
+    timeout: float | None = Field(None, description="Execution timeout in seconds")
     max_retries: int = Field(2, description="Maximum retry attempts")
 
 
 class ExecutionGraphRequest(BaseModel):
     """Execution graph specification."""
-    tasks: List[TaskRequest] = Field(..., description="List of tasks to execute")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
+    tasks: list[TaskRequest] = Field(..., description="List of tasks to execute")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata"
+    )
 
 
 class ParallelExecutionRequest(BaseModel):
     """Request for parallel execution."""
+
     execution_graph: ExecutionGraphRequest = Field(..., description="Execution graph")
-    max_parallelism: Optional[int] = Field(None, description="Maximum parallel tasks")
-    resource_limits: Optional[List[ResourceLimitRequest]] = Field(
+    max_parallelism: int | None = Field(None, description="Maximum parallel tasks")
+    resource_limits: list[ResourceLimitRequest] | None = Field(
         None, description="Resource capacity limits"
     )
-    timeout: Optional[float] = Field(None, description="Overall execution timeout")
+    timeout: float | None = Field(None, description="Overall execution timeout")
     enable_monitoring: bool = Field(True, description="Enable progress monitoring")
 
 
 class ParallelExecutionResponse(BaseModel):
     """Response from parallel execution."""
+
     execution_id: str = Field(..., description="Unique execution identifier")
     status: str = Field(..., description="Execution status")
     parallel_tasks: int = Field(..., description="Number of tasks running in parallel")
     estimated_speedup: float = Field(..., description="Estimated speedup factor")
-    results: Dict[str, Any] = Field(default_factory=dict, description="Task results")
-    errors: Dict[str, str] = Field(default_factory=dict, description="Task errors")
-    metrics: Dict[str, Any] = Field(default_factory=dict, description="Performance metrics")
+    results: dict[str, Any] = Field(default_factory=dict, description="Task results")
+    errors: dict[str, str] = Field(default_factory=dict, description="Task errors")
+    metrics: dict[str, Any] = Field(
+        default_factory=dict, description="Performance metrics"
+    )
 
 
 class ExecutionGraphResponse(BaseModel):
     """Response containing execution graph information."""
+
     graph_id: str = Field(..., description="Graph identifier")
     total_tasks: int = Field(..., description="Total number of tasks")
     dependency_count: int = Field(..., description="Number of dependencies")
     max_parallelism: int = Field(..., description="Maximum possible parallelism")
     execution_levels: int = Field(..., description="Number of execution levels")
     estimated_duration: float = Field(..., description="Estimated total duration")
-    validation_errors: List[str] = Field(default_factory=list, description="Validation errors")
+    validation_errors: list[str] = Field(
+        default_factory=list, description="Validation errors"
+    )
 
 
 class ExecutionStatusResponse(BaseModel):
     """Response containing execution status."""
+
     execution_id: str = Field(..., description="Execution identifier")
     status: str = Field(..., description="Current status")
-    started_at: Optional[float] = Field(None, description="Start timestamp")
+    started_at: float | None = Field(None, description="Start timestamp")
     progress: float = Field(0.0, description="Overall progress percentage")
-    task_counts: Dict[str, int] = Field(default_factory=dict, description="Task status counts")
-    current_step: Optional[str] = Field(None, description="Currently executing step")
-    eta: Optional[str] = Field(None, description="Estimated time to completion")
-    resource_usage: Dict[str, Dict[str, float]] = Field(
+    task_counts: dict[str, int] = Field(
+        default_factory=dict, description="Task status counts"
+    )
+    current_step: str | None = Field(None, description="Currently executing step")
+    eta: str | None = Field(None, description="Estimated time to completion")
+    resource_usage: dict[str, dict[str, float]] = Field(
         default_factory=dict, description="Resource usage statistics"
     )
 
 
 class ExecutionMetricsResponse(BaseModel):
     """Response containing execution performance metrics."""
+
     total_executions: int = Field(0, description="Total number of executions")
     successful_executions: int = Field(0, description="Successful executions")
     failed_executions: int = Field(0, description="Failed executions")
     average_speedup: float = Field(1.0, description="Average speedup achieved")
     average_parallel_tasks: float = Field(1.0, description="Average parallel tasks")
-    resource_utilization: Dict[str, float] = Field(
+    resource_utilization: dict[str, float] = Field(
         default_factory=dict, description="Resource utilization rates"
     )
-    performance_improvements: Dict[str, float] = Field(
+    performance_improvements: dict[str, float] = Field(
         default_factory=dict, description="Performance improvement metrics"
     )
 
@@ -160,7 +184,7 @@ async def execute_parallel(
     request: ParallelExecutionRequest,
     background_tasks: BackgroundTasks,
     orchestrator: ParallelExecutionOrchestrator = Depends(get_orchestrator),
-    resolver: DependencyResolver = Depends(get_dependency_resolver)
+    resolver: DependencyResolver = Depends(get_dependency_resolver),
 ):
     """
     Execute tasks in parallel with dependency management.
@@ -191,7 +215,7 @@ async def execute_parallel(
                             resource_type=resource_type,
                             amount=req.amount,
                             unit=req.unit,
-                            priority=req.priority
+                            priority=req.priority,
                         )
                     )
                 except ValueError:
@@ -206,7 +230,7 @@ async def execute_parallel(
                 resource_requirements=resource_requirements,
                 estimated_duration=task_req.estimated_duration,
                 timeout=task_req.timeout,
-                max_retries=task_req.max_retries
+                max_retries=task_req.max_retries,
             )
             tasks.append(task)
 
@@ -215,8 +239,7 @@ async def execute_parallel(
             execution_graph = resolver.resolve(tasks)
         except Exception as e:
             raise HTTPException(
-                status_code=400,
-                detail=f"Failed to resolve task dependencies: {str(e)}"
+                status_code=400, detail=f"Failed to resolve task dependencies: {str(e)}"
             )
 
         # Validate execution graph
@@ -224,7 +247,7 @@ async def execute_parallel(
         if validation_errors:
             raise HTTPException(
                 status_code=400,
-                detail=f"Execution graph validation failed: {'; '.join(validation_errors)}"
+                detail=f"Execution graph validation failed: {'; '.join(validation_errors)}",
             )
 
         # Convert resource limits if provided
@@ -236,11 +259,15 @@ async def execute_parallel(
                     resource_type = ResourceType(limit.resource_type.lower())
                     resource_limits[resource_type] = limit.limit
                 except ValueError:
-                    logger.warning(f"Unknown resource type in limits: {limit.resource_type}")
+                    logger.warning(
+                        f"Unknown resource type in limits: {limit.resource_type}"
+                    )
 
         # Update orchestrator resource limits if provided
         if resource_limits:
-            orchestrator.resource_manager = type(orchestrator.resource_manager)(resource_limits)
+            orchestrator.resource_manager = type(orchestrator.resource_manager)(
+                resource_limits
+            )
 
         # Create execution tracker if monitoring is enabled
         execution_tracker = None
@@ -252,7 +279,7 @@ async def execute_parallel(
         parallel_result = await orchestrator.execute_parallel(
             execution_graph,
             execution_tracker=execution_tracker,
-            timeout=request.timeout
+            timeout=request.timeout,
         )
 
         # Calculate performance metrics
@@ -268,7 +295,7 @@ async def execute_parallel(
             estimated_speedup=speedup,
             results=parallel_result["results"],
             errors=parallel_result["errors"],
-            metrics=metrics
+            metrics=metrics,
         )
 
         logger.info(
@@ -288,7 +315,7 @@ async def execute_parallel(
 @router.get("/graph/{execution_id}", response_model=ExecutionGraphResponse)
 async def get_execution_graph(
     execution_id: str,
-    orchestrator: ParallelExecutionOrchestrator = Depends(get_orchestrator)
+    orchestrator: ParallelExecutionOrchestrator = Depends(get_orchestrator),
 ):
     """
     Get execution graph information.
@@ -306,8 +333,7 @@ async def get_execution_graph(
 
         if not status_info:
             raise HTTPException(
-                status_code=404,
-                detail=f"Execution {execution_id} not found"
+                status_code=404, detail=f"Execution {execution_id} not found"
             )
 
         # Extract graph information from status
@@ -319,7 +345,7 @@ async def get_execution_graph(
             max_parallelism=status_info["task_counts"].get("running", 0),
             execution_levels=1,  # Simplified
             estimated_duration=0.0,  # Would need calculation
-            validation_errors=[]
+            validation_errors=[],
         )
 
         return response
@@ -334,7 +360,7 @@ async def get_execution_graph(
 @router.get("/status/{execution_id}", response_model=ExecutionStatusResponse)
 async def get_execution_status(
     execution_id: str,
-    orchestrator: ParallelExecutionOrchestrator = Depends(get_orchestrator)
+    orchestrator: ParallelExecutionOrchestrator = Depends(get_orchestrator),
 ):
     """
     Get execution status and progress.
@@ -351,8 +377,7 @@ async def get_execution_status(
 
         if not status_info:
             raise HTTPException(
-                status_code=404,
-                detail=f"Execution {execution_id} not found"
+                status_code=404, detail=f"Execution {execution_id} not found"
             )
 
         # Calculate progress
@@ -369,7 +394,7 @@ async def get_execution_status(
             task_counts=task_counts,
             current_step=_get_current_step(task_counts),
             eta=None,  # Would need calculation based on progress
-            resource_usage=status_info.get("resource_usage", {})
+            resource_usage=status_info.get("resource_usage", {}),
         )
 
         return response
@@ -384,7 +409,7 @@ async def get_execution_status(
 @router.delete("/cancel/{execution_id}")
 async def cancel_execution(
     execution_id: str,
-    orchestrator: ParallelExecutionOrchestrator = Depends(get_orchestrator)
+    orchestrator: ParallelExecutionOrchestrator = Depends(get_orchestrator),
 ):
     """
     Cancel a running execution.
@@ -402,7 +427,7 @@ async def cancel_execution(
         if not success:
             raise HTTPException(
                 status_code=404,
-                detail=f"Execution {execution_id} not found or not cancellable"
+                detail=f"Execution {execution_id} not found or not cancellable",
             )
 
         return {"execution_id": execution_id, "cancelled": True}
@@ -416,7 +441,7 @@ async def cancel_execution(
 
 @router.get("/metrics", response_model=ExecutionMetricsResponse)
 async def get_execution_metrics(
-    orchestrator: ParallelExecutionOrchestrator = Depends(get_orchestrator)
+    orchestrator: ParallelExecutionOrchestrator = Depends(get_orchestrator),
 ):
     """
     Get overall execution performance metrics.
@@ -447,8 +472,8 @@ async def get_execution_metrics(
             performance_improvements={
                 "parallel_execution_enabled": True,
                 "dependency_resolution_enabled": True,
-                "resource_management_enabled": True
-            }
+                "resource_management_enabled": True,
+            },
         )
 
         return response
@@ -461,7 +486,7 @@ async def get_execution_metrics(
 @router.post("/validate-graph")
 async def validate_execution_graph(
     request: ExecutionGraphRequest,
-    resolver: DependencyResolver = Depends(get_dependency_resolver)
+    resolver: DependencyResolver = Depends(get_dependency_resolver),
 ):
     """
     Validate an execution graph without executing it.
@@ -485,7 +510,7 @@ async def validate_execution_graph(
                 name=task_req.name,
                 tool_name=task_req.tool_name,
                 tool_args={},
-                dependencies=task_req.dependencies
+                dependencies=task_req.dependencies,
             )
             tasks.append(task)
 
@@ -510,7 +535,7 @@ async def validate_execution_graph(
             "validation_errors": validation_errors,
             "max_parallelism": max_parallelism,
             "dependency_count": dependency_count,
-            "total_tasks": len(tasks)
+            "total_tasks": len(tasks),
         }
 
     except Exception as e:
@@ -519,7 +544,7 @@ async def validate_execution_graph(
 
 
 # Helper functions
-def _determine_overall_status(task_counts: Dict[str, int]) -> str:
+def _determine_overall_status(task_counts: dict[str, int]) -> str:
     """Determine overall execution status from task counts."""
     if task_counts.get("running", 0) > 0:
         return "running"
@@ -531,7 +556,7 @@ def _determine_overall_status(task_counts: Dict[str, int]) -> str:
         return "pending"
 
 
-def _get_current_step(task_counts: Dict[str, int]) -> Optional[str]:
+def _get_current_step(task_counts: dict[str, int]) -> str | None:
     """Get description of current execution step."""
     if task_counts.get("running", 0) > 0:
         return f"{task_counts['running']} tasks running"

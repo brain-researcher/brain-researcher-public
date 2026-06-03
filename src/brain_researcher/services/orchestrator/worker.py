@@ -8,6 +8,7 @@ and updates job state using the JobStore API.
 from __future__ import annotations
 
 import asyncio
+import heapq
 import importlib
 import json
 import logging
@@ -15,12 +16,11 @@ import os
 import sys
 import threading
 import time
-import heapq
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, Any, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
 try:  # Optional dependency for resource snapshots
@@ -28,27 +28,28 @@ try:  # Optional dependency for resource snapshots
 except ImportError:  # pragma: no cover
     psutil = None
 
-from .job_store import JobStore, JobState
-from .job_adapter import JobAdapter
-from .models import CacheMetadata
-from brain_researcher.services.telemetry.metrics_kind_resolver import resolve_job_kind
-from brain_researcher.services.shared.settings import get_settings, Settings
+from brain_researcher.core.contracts import Violation
+from brain_researcher.core.gates import GateEngine
 from brain_researcher.services.orchestrator.dag_runtime import (
     DAGExecutor,
     WorkflowDefinition,
-    WorkflowStep,
-    WorkflowState,
     WorkflowResult,
+    WorkflowState,
+    WorkflowStep,
 )
-from brain_researcher.core.gates import GateEngine
-from brain_researcher.core.contracts import Violation
+from brain_researcher.services.orchestrator.event_log import emit_job_event
+from brain_researcher.services.orchestrator.reward import write_reward_breakdown
 from brain_researcher.services.orchestrator.trace import (
     build_atif_trajectory,
     log_trace_event,
     write_trajectory_json,
 )
-from brain_researcher.services.orchestrator.event_log import emit_job_event
-from brain_researcher.services.orchestrator.reward import write_reward_breakdown
+from brain_researcher.services.shared.settings import Settings, get_settings
+from brain_researcher.services.telemetry.metrics_kind_resolver import resolve_job_kind
+
+from .job_adapter import JobAdapter
+from .job_store import JobState, JobStore
+from .models import CacheMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ def _tool_executor_required() -> bool:
 
 
 def _anchor_plan_step_output_dirs(
-    step_defs: List[Dict[str, Any]],
+    step_defs: list[dict[str, Any]],
     *,
     run_dir: Path | None,
 ) -> bool:
@@ -145,9 +146,9 @@ def _anchor_plan_step_output_dirs(
 # Import ToolExecutor for job execution
 try:
     from brain_researcher.services.agent.tool_executor import (
-        ToolExecutor,
-        ToolExecutionRequest,
         ExecutionMode,
+        ToolExecutionRequest,
+        ToolExecutor,
     )
 
     TOOL_EXECUTOR_AVAILABLE = True
@@ -156,7 +157,7 @@ except ImportError:
     logger.warning("ToolExecutor not available - worker will use stub execution")
 
 _plan_executor_lock = threading.Lock()
-_shared_plan_executor: Optional["ToolExecutor"] = None
+_shared_plan_executor: ToolExecutor | None = None
 _tool_modules_loaded = False
 _tool_import_lock = threading.Lock()
 
@@ -190,8 +191,8 @@ def _resolve_gate_config_path() -> Path | None:
     return None
 
 
-def _parse_violations(raw: Any) -> List[Violation]:
-    violations: List[Violation] = []
+def _parse_violations(raw: Any) -> list[Violation]:
+    violations: list[Violation] = []
     if not isinstance(raw, list):
         return violations
     for item in raw:
@@ -213,7 +214,7 @@ def _parse_violations(raw: Any) -> List[Violation]:
     return violations
 
 
-def _merge_errors(*parts: Optional[str]) -> Optional[str]:
+def _merge_errors(*parts: str | None) -> str | None:
     chunks = [p for p in parts if p]
     if not chunks:
         return None
@@ -239,8 +240,8 @@ class ResourceUsageTracker:
             self._start_cpu_user = 0.0
             self._start_cpu_system = 0.0
 
-    def snapshot(self) -> Dict[str, Any]:
-        metrics: Dict[str, Any] = {
+    def snapshot(self) -> dict[str, Any]:
+        metrics: dict[str, Any] = {
             "duration_ms": int(max(time.time() - self._start_time, 0) * 1000)
         }
         if self._proc:
@@ -260,12 +261,12 @@ class ResourceUsageTracker:
 
 
 def _merge_resource_usage(
-    primary: Optional[Dict[str, Any]],
-    tracker_metrics: Optional[Dict[str, Any]],
-) -> Optional[Dict[str, Any]]:
+    primary: dict[str, Any] | None,
+    tracker_metrics: dict[str, Any] | None,
+) -> dict[str, Any] | None:
     if not primary and not tracker_metrics:
         return None
-    merged: Dict[str, Any] = {}
+    merged: dict[str, Any] = {}
     if tracker_metrics:
         merged.update(tracker_metrics)
     if primary:
@@ -343,7 +344,7 @@ def _quote_grounded_enabled() -> bool:
     return raw in {"1", "true", "yes", "y", "on"}
 
 
-def _get_shared_plan_tool_executor(settings: Settings) -> Optional["ToolExecutor"]:
+def _get_shared_plan_tool_executor(settings: Settings) -> ToolExecutor | None:
     """Lazily construct a ToolExecutor for plan/DAG jobs."""
 
     if not TOOL_EXECUTOR_AVAILABLE:
@@ -399,8 +400,8 @@ class ResourceUsageTracker:
             self._start_cpu_user = 0.0
             self._start_cpu_system = 0.0
 
-    def snapshot(self) -> Dict[str, Any]:
-        data: Dict[str, Any] = {
+    def snapshot(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
             "duration_ms": int(max(time.time() - self._start_time, 0) * 1000)
         }
         if self._proc:
@@ -418,12 +419,12 @@ class ResourceUsageTracker:
 
 
 def _merge_resource_usage(
-    primary: Optional[Dict[str, Any]],
-    tracker_metrics: Optional[Dict[str, Any]],
-) -> Optional[Dict[str, Any]]:
+    primary: dict[str, Any] | None,
+    tracker_metrics: dict[str, Any] | None,
+) -> dict[str, Any] | None:
     if not primary and not tracker_metrics:
         return None
-    merged: Dict[str, Any] = {}
+    merged: dict[str, Any] = {}
     if tracker_metrics:
         merged.update(tracker_metrics)
     if primary:
@@ -448,9 +449,9 @@ class JobWorker:
         worker_id: str,
         lease_ttl: int = 60,
         heartbeat_interval: int = 30,
-        tool_executor: Optional[ToolExecutor] = None,
-        plan_tool_executor: Optional[ToolExecutor] = None,
-        evidence_writer: "ToolEvidenceWriter | None" = None,
+        tool_executor: ToolExecutor | None = None,
+        plan_tool_executor: ToolExecutor | None = None,
+        evidence_writer: ToolEvidenceWriter | None = None,
     ):
         """
         Initialize worker.
@@ -467,8 +468,8 @@ class JobWorker:
         self.lease_ttl = lease_ttl
         self.heartbeat_interval = heartbeat_interval
         self.running = False
-        self.current_job_id: Optional[str] = None
-        self._heartbeat_task: Optional[asyncio.Task] = None
+        self.current_job_id: str | None = None
+        self._heartbeat_task: asyncio.Task | None = None
 
         # Set up graceful shutdown
         self._shutdown_event = asyncio.Event()
@@ -543,10 +544,10 @@ class JobWorker:
     def _evaluate_gates(
         self,
         stage: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         component: str | None = "worker",
         step_id: str | None = None,
-    ) -> List[Violation]:
+    ) -> list[Violation]:
         """Run gate evaluations for the given stage and context."""
         if not self.gate_engine:
             return []
@@ -577,9 +578,9 @@ class JobWorker:
             else:
                 # Attempt classification for failures
                 try:
-                    from brain_researcher.services.orchestrator.retry import (
+                    from brain_researcher.services.orchestrator.retry import (  # local import
                         classify_failure,
-                    )  # local import
+                    )
 
                     reason_label = (
                         classify_failure(exit_code or -1, final_error or "") or "failed"
@@ -742,7 +743,7 @@ class JobWorker:
     async def _add_retry_metadata_to_provenance(
         self,
         provenance_path: str,
-        job: "JobRecord",
+        job: JobRecord,
     ):
         """
         Add retry metadata to provenance.json file (P2.6).
@@ -754,8 +755,8 @@ class JobWorker:
             provenance_path: Path to provenance.json file
             job: JobRecord with retry metadata
         """
-        from pathlib import Path
         import json
+        from pathlib import Path
 
         try:
             prov_file = Path(provenance_path)
@@ -764,7 +765,7 @@ class JobWorker:
                 return
 
             # Load existing provenance
-            with open(prov_file, "r") as f:
+            with open(prov_file) as f:
                 provenance = json.load(f)
 
             # Add retry metadata
@@ -792,12 +793,12 @@ class JobWorker:
         self,
         job_id: str,
         exit_code: int,
-        error_message: Optional[str] = None,
-        run_id: Optional[str] = None,
-        run_dir: Optional[str] = None,
-        provenance_path: Optional[str] = None,
-        actual_resources: Optional[Dict[str, Any]] = None,
-        payload_json: Optional[str] = None,
+        error_message: str | None = None,
+        run_id: str | None = None,
+        run_dir: str | None = None,
+        provenance_path: str | None = None,
+        actual_resources: dict[str, Any] | None = None,
+        payload_json: str | None = None,
     ):
         """
         Finalize job state with cancel-wins rule and retry logic (P2.6).
@@ -853,11 +854,11 @@ class JobWorker:
 
         else:
             # P2.6: Check retry eligibility for failed jobs
-            from brain_researcher.services.orchestrator.retry import (
-                should_retry,
-                format_retry_summary,
-            )
             from brain_researcher.config.retry_settings import get_retry_settings
+            from brain_researcher.services.orchestrator.retry import (
+                format_retry_summary,
+                should_retry,
+            )
 
             retry_settings = get_retry_settings()
             retry_decision = should_retry(
@@ -955,7 +956,7 @@ class JobWorker:
                     except Exception:
                         delay_value = 0.0
 
-                    metric_tags: Dict[str, str] = {}
+                    metric_tags: dict[str, str] = {}
                     if retry_decision.category:
                         metric_tags["category"] = str(retry_decision.category)
                     metric_tags["attempt"] = str(current_attempt)
@@ -1244,8 +1245,8 @@ class JobWorker:
             logger.error(f"Failed to update cache: {e}", exc_info=True)
 
     def _sort_steps_by_dependencies(
-        self, steps: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, steps: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Return plan steps ordered by explicit + implicit dependencies.
 
         The orchestrator historically accepted plan payloads that either declared
@@ -1258,10 +1259,10 @@ class JobWorker:
         if not steps:
             return []
 
-        step_by_id: Dict[str, Dict[str, Any]] = {}
-        original_index: Dict[str, int] = {}
-        produced_by: Dict[str, str] = {}
-        step_ids: List[str] = []
+        step_by_id: dict[str, dict[str, Any]] = {}
+        original_index: dict[str, int] = {}
+        produced_by: dict[str, str] = {}
+        step_ids: list[str] = []
 
         for idx, step in enumerate(steps):
             step_id = step.get("id") or step.get("step_id") or f"step-{idx:04d}"
@@ -1280,8 +1281,8 @@ class JobWorker:
                     ):
                         produced_by[artifact] = step_id
 
-        graph: Dict[str, set[str]] = {sid: set() for sid in step_ids}
-        indegree: Dict[str, int] = {sid: 0 for sid in step_ids}
+        graph: dict[str, set[str]] = {sid: set() for sid in step_ids}
+        indegree: dict[str, int] = dict.fromkeys(step_ids, 0)
 
         for step_id in step_ids:
             step = step_by_id[step_id]
@@ -1307,14 +1308,14 @@ class JobWorker:
                     graph[dep].add(step_id)
                     indegree[step_id] += 1
 
-        ready: List[tuple[int, str]] = [
+        ready: list[tuple[int, str]] = [
             (original_index[sid], sid)
             for sid, degree in indegree.items()
             if degree == 0
         ]
         heapq.heapify(ready)
 
-        ordered: List[str] = []
+        ordered: list[str] = []
         while ready:
             _, current = heapq.heappop(ready)
             ordered.append(current)
@@ -1593,7 +1594,7 @@ class JobWorker:
     def _update_provenance_phases(
         self,
         provenance_path: str | None,
-        workflow_result: Dict[str, Any],
+        workflow_result: dict[str, Any],
         mask_reasons: list[Any] | None = None,
     ) -> None:
         """Best-effort merge phase metadata and mask reasons into provenance.json."""
@@ -1653,7 +1654,7 @@ class JobWorker:
         except Exception:
             return
 
-    async def _execute_plan_job(self, job, payload: Dict[str, Any]) -> None:
+    async def _execute_plan_job(self, job, payload: dict[str, Any]) -> None:
         """Execute a planner DAG job via DAGExecutor and ToolExecutor."""
 
         job_id = job.job_id
@@ -1713,11 +1714,11 @@ class JobWorker:
 
         start_ts = time.perf_counter()
 
-        all_violations: List[Violation] = []
-        preflight_results: Dict[str, Dict[str, Any]] = {}
-        blocking_postcheck: List[Violation] = []
+        all_violations: list[Violation] = []
+        preflight_results: dict[str, dict[str, Any]] = {}
+        blocking_postcheck: list[Violation] = []
 
-        def _step_id(raw: Dict[str, Any], idx: int) -> str:
+        def _step_id(raw: dict[str, Any], idx: int) -> str:
             return str(
                 raw.get("id")
                 or raw.get("step_id")
@@ -1727,7 +1728,7 @@ class JobWorker:
 
         # Run declarative preflight gates on step definitions
         if step_defs and self.gate_engine:
-            blocking: List[Violation] = []
+            blocking: list[Violation] = []
             for idx, raw in enumerate(step_defs):
                 sid = _step_id(raw, idx)
                 context = {
@@ -1843,9 +1844,9 @@ class JobWorker:
             }
 
         def _group_branch_steps(
-            steps: List[Dict[str, Any]],
-        ) -> Dict[str, List[Dict[str, Any]]]:
-            groups: Dict[str, List[Dict[str, Any]]] = {}
+            steps: list[dict[str, Any]],
+        ) -> dict[str, list[dict[str, Any]]]:
+            groups: dict[str, list[dict[str, Any]]] = {}
             for step in steps:
                 meta = step.get("metadata") or {}
                 group_id = meta.get("branch_group_id")
@@ -1855,10 +1856,10 @@ class JobWorker:
             return groups
 
         def _dedupe_branch_events(
-            events: List[Dict[str, Any]], max_items: int = 200
-        ) -> List[Dict[str, Any]]:
+            events: list[dict[str, Any]], max_items: int = 200
+        ) -> list[dict[str, Any]]:
             seen: set[tuple[Any, Any, Any, Any]] = set()
-            deduped: List[Dict[str, Any]] = []
+            deduped: list[dict[str, Any]] = []
             for event in events:
                 key = (
                     event.get("event_type"),
@@ -1884,7 +1885,7 @@ class JobWorker:
         except Exception:
             queue = None
 
-        branch_event_payloads: List[Dict[str, Any]] = []
+        branch_event_payloads: list[dict[str, Any]] = []
 
         loop = asyncio.get_running_loop()
 
@@ -1892,7 +1893,7 @@ class JobWorker:
             plan_payload.get("run_summary") or {}
         ).get("plan_conf")
 
-        def emit(event_type: str, data: Dict[str, Any]):
+        def emit(event_type: str, data: dict[str, Any]):
             event_payload = {
                 "type": event_type,
                 "job_id": job_id,
@@ -1929,16 +1930,16 @@ class JobWorker:
         if primary_runtime == "neurodesk":
             try:
                 from brain_researcher.services.tools.neurodesk_compiler import (
+                    _HEAVY_TOOLS,
                     NeurodeskCompiler,
                     NeurodeskDispatcher,
                     NeurodeskToolExecutor,
-                    _HEAVY_TOOLS,
                 )
 
                 nd_run_dir = (
                     run_dir or Path("/tmp/brain_researcher_neurodesk") / workflow_id
                 )
-                nd_cluster_cfg: Dict[str, Any] = (
+                nd_cluster_cfg: dict[str, Any] = (
                     plan_payload.get("cluster_config") or {}
                 )
 
@@ -2016,7 +2017,7 @@ class JobWorker:
             )
 
         workflow = None
-        result: Optional[WorkflowResult] = None
+        result: WorkflowResult | None = None
         if branch_exec_enabled and branch_groups:
             if len(branch_groups) > 1 or len(step_defs) != sum(
                 len(v) for v in branch_groups.values()
@@ -2029,7 +2030,7 @@ class JobWorker:
             else:
                 group_id, branch_steps = next(iter(branch_groups.items()))
 
-                def _branch_rank(step: Dict[str, Any]) -> int:
+                def _branch_rank(step: dict[str, Any]) -> int:
                     meta = step.get("metadata") or {}
                     try:
                         return int(meta.get("branch_rank", 0))
@@ -2037,16 +2038,16 @@ class JobWorker:
                         return 0
 
                 branch_steps_sorted = sorted(branch_steps, key=_branch_rank)
-                combined_results: List[Dict[str, Any]] = []
-                branch_event_records: List[Dict[str, Any]] = []
+                combined_results: list[dict[str, Any]] = []
+                branch_event_records: list[dict[str, Any]] = []
                 success = False
-                last_error: Optional[str] = None
-                last_failed_tool: Optional[str] = None
+                last_error: str | None = None
+                last_failed_tool: str | None = None
 
                 def _planner_event(
                     event_type: str,
-                    payload: Dict[str, Any],
-                    diff: Dict[str, Any] | None = None,
+                    payload: dict[str, Any],
+                    diff: dict[str, Any] | None = None,
                 ) -> None:
                     try:
                         event_id = f"pev_{uuid.uuid4().hex[:10]}"
@@ -2226,7 +2227,7 @@ class JobWorker:
                             },
                         )
                         for remaining in branch_steps_sorted[idx + 1 :]:
-                            remaining_meta = remaining.get("metadata") or {}
+                            remaining.get("metadata") or {}
                             remaining_rank = _branch_rank(remaining)
                             remaining_tool = remaining.get("tool")
                             remaining_step_id = str(
@@ -2597,8 +2598,8 @@ class JobWorker:
         self,
         *,
         job_id: str,
-        job_payload: Dict[str, Any],
-        workflow_result: Dict[str, Any],
+        job_payload: dict[str, Any],
+        workflow_result: dict[str, Any],
         duration_ms: int,
     ) -> None:
         """Best-effort KG evidence writeback for plan_execution jobs.
@@ -2610,15 +2611,15 @@ class JobWorker:
         """
 
         try:
+            from brain_researcher.services.agent.planner.catalog_loader import (
+                get_tool_by_id,
+            )
             from brain_researcher.services.agent.planner.evidence import (
                 aggregate_plan_job_evidence,
                 is_writeback_enabled,
             )
             from brain_researcher.services.agent.planner.evidence_neo4j import (
                 get_default_evidence_store,
-            )
-            from brain_researcher.services.agent.planner.catalog_loader import (
-                get_tool_by_id,
             )
         except Exception:  # pragma: no cover - optional path
             return
@@ -2673,11 +2674,11 @@ class JobWorker:
             logger.debug("Evidence writeback failed for job %s: %s", job_id, exc)
 
     def _prepare_workflow_steps(
-        self, step_defs: List[Dict[str, Any]]
-    ) -> List[WorkflowStep]:
+        self, step_defs: list[dict[str, Any]]
+    ) -> list[WorkflowStep]:
         """Convert plan step definitions into WorkflowStep objects with metadata."""
 
-        workflow_steps: List[WorkflowStep] = []
+        workflow_steps: list[WorkflowStep] = []
         for raw in step_defs:
             tool_name = raw.get("tool")
             if not tool_name:
@@ -2708,8 +2709,8 @@ class JobWorker:
     async def _persist_plan_result_metadata(
         self,
         job,
-        workflow_result: Dict[str, Any],
-        provenance_path: Optional[str],
+        workflow_result: dict[str, Any],
+        provenance_path: str | None,
     ) -> None:
         """Attach workflow execution metadata to the job payload."""
 
@@ -2745,11 +2746,11 @@ class JobWorker:
         job_id: str,
         cache_key: str,
         hit: bool,
-        run_dir: Optional[str],
-        metadata: Dict[str, Any],
-        payload: Dict[str, Any],
+        run_dir: str | None,
+        metadata: dict[str, Any],
+        payload: dict[str, Any],
         job_record,
-        error: Optional[str] = None,
+        error: str | None = None,
     ) -> None:
         """Persist cache metadata onto the job payload and in-memory stores."""
         try:
@@ -2790,7 +2791,7 @@ class JobWorker:
                 "Failed to annotate cache metadata for job %s: %s", job_id, exc
             )
 
-    async def _emit_cache_event(self, job_id: str, payload: Dict[str, Any]) -> None:
+    async def _emit_cache_event(self, job_id: str, payload: dict[str, Any]) -> None:
         """Send cache metadata updates over the SSE channel."""
         try:
             from .main_enhanced import job_updates  # type: ignore
@@ -2840,15 +2841,15 @@ class JobWorker:
             resource_tracker = ResourceUsageTracker()
 
             def finalize_resource_usage(
-                existing: Optional[Dict[str, Any]] = None,
-            ) -> Optional[Dict[str, Any]]:
+                existing: dict[str, Any] | None = None,
+            ) -> dict[str, Any] | None:
                 return _merge_resource_usage(existing, resource_tracker.snapshot())
 
             resource_tracker = ResourceUsageTracker()
 
             def finalize_resource_usage(
-                existing: Optional[Dict[str, Any]] = None,
-            ) -> Optional[Dict[str, Any]]:
+                existing: dict[str, Any] | None = None,
+            ) -> dict[str, Any] | None:
                 return _merge_resource_usage(existing, resource_tracker.snapshot())
 
             # Check for cancellation before starting
@@ -3000,7 +3001,7 @@ class JobWorker:
             tool_id = str(
                 getattr(request, "tool_name", None) or tool_name or command or "tool"
             )
-            params: Dict[str, Any] = (
+            params: dict[str, Any] = (
                 request.parameters
                 if hasattr(request, "parameters")
                 and isinstance(request.parameters, dict)
@@ -3097,14 +3098,14 @@ class JobWorker:
                     pass
 
             # Attach emitted artifact (e.g., behavior events) to payload for audit
-            emitted_artifact: Dict[str, Any] | None = None
+            emitted_artifact: dict[str, Any] | None = None
             try:
                 run_path = (
                     Path(run_dir).resolve()
                     if isinstance(run_dir, str) and run_dir
                     else None
                 )
-                root_result: Dict[str, Any] = (
+                root_result: dict[str, Any] = (
                     result.result if isinstance(result.result, dict) else {}
                 )
                 data = (
@@ -3136,7 +3137,7 @@ class JobWorker:
                         return "report"
                     return "file"
 
-                def _to_artifact_record(entry: Dict[str, Any]) -> Dict[str, Any]:
+                def _to_artifact_record(entry: dict[str, Any]) -> dict[str, Any]:
                     artifact = dict(entry)
                     raw_path = None
                     for key in ("path", "uri", "file", "output_file"):
@@ -3185,7 +3186,7 @@ class JobWorker:
                     artifact.setdefault("artifact_id", artifact["id"])
                     return artifact
 
-                discovered_files: List[str] = []
+                discovered_files: list[str] = []
                 seen_files: set[str] = set()
 
                 def _collect_output_files(node: Any, depth: int = 0) -> None:
@@ -3196,7 +3197,7 @@ class JobWorker:
                         if not text or "://" in text:
                             return
                         candidate = Path(text).expanduser()
-                        candidate_paths: List[Path] = []
+                        candidate_paths: list[Path] = []
                         if candidate.is_absolute():
                             candidate_paths.append(candidate.resolve())
                         elif run_path is not None:
@@ -3217,11 +3218,11 @@ class JobWorker:
                         for value in node.values():
                             _collect_output_files(value, depth + 1)
                         return
-                    if isinstance(node, (list, tuple, set)):
+                    if isinstance(node, list | tuple | set):
                         for value in node:
                             _collect_output_files(value, depth + 1)
 
-                candidate_artifacts: List[Dict[str, Any]] = []
+                candidate_artifacts: list[dict[str, Any]] = []
                 for maybe_artifact in (
                     root_result.get("artifact"),
                     data.get("artifact") if isinstance(data, dict) else None,
@@ -3550,7 +3551,7 @@ async def start_worker_pool(
     job_store: JobStore,
     num_workers: int = 1,
     worker_id_prefix: str = "worker",
-    stop_event: Optional[asyncio.Event] = None,
+    stop_event: asyncio.Event | None = None,
 ) -> list[asyncio.Task]:
     """
     Start a pool of workers.

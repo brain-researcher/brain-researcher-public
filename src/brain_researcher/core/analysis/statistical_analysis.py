@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
-import numpy as np
 import nibabel as nib
+import numpy as np
 import pandas as pd
 from scipy import stats
 
@@ -14,15 +14,18 @@ from scipy import stats
 class StatisticalAnalyzer:
     """Minimal statistical analysis runner for GLM and group comparisons."""
 
-    def run_statistical_analysis(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def run_statistical_analysis(self, request: dict[str, Any]) -> dict[str, Any]:
         analysis_type = request.get("analysis_type", "").lower()
         if analysis_type == "glm":
             return self._run_glm(request)
         if analysis_type == "group_comparison":
             return self._run_group_comparison(request)
-        return {"success": False, "error": f"Unsupported analysis_type '{analysis_type}'"}
+        return {
+            "success": False,
+            "error": f"Unsupported analysis_type '{analysis_type}'",
+        }
 
-    def _run_glm(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_glm(self, request: dict[str, Any]) -> dict[str, Any]:
         data_paths = request.get("data_paths") or []
         if not data_paths:
             return {"success": False, "error": "No data_paths provided"}
@@ -48,7 +51,7 @@ class StatisticalAnalyzer:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         contrasts = request.get("contrasts") or {}
-        results: Dict[str, Dict[str, Any]] = {}
+        results: dict[str, dict[str, Any]] = {}
 
         for name in contrasts.keys() or ["contrast"]:
             shape = data.shape[:3]
@@ -79,7 +82,7 @@ class StatisticalAnalyzer:
 
         return {"success": True, "results": results}
 
-    def _run_group_comparison(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_group_comparison(self, request: dict[str, Any]) -> dict[str, Any]:
         group1_paths = request.get("group1_data")
         group2_paths = request.get("group2_data")
 
@@ -92,7 +95,10 @@ class StatisticalAnalyzer:
                 group2_paths = groups[group2_name]
 
         if not group1_paths or not group2_paths:
-            return {"success": False, "error": "Group comparison requires two groups of images."}
+            return {
+                "success": False,
+                "error": "Group comparison requires two groups of images.",
+            }
 
         g1 = np.stack([nib.load(p).get_fdata() for p in group1_paths], axis=0)
         g2 = np.stack([nib.load(p).get_fdata() for p in group2_paths], axis=0)
@@ -116,7 +122,7 @@ class StatisticalAnalyzer:
         p_map = p_vals.reshape(g1.shape[1:])
 
         mean_diff = np.mean(g1, axis=0) - np.mean(g2, axis=0)
-        pooled_std = np.sqrt(((np.var(g1, axis=0) + np.var(g2, axis=0)) / 2.0))
+        pooled_std = np.sqrt((np.var(g1, axis=0) + np.var(g2, axis=0)) / 2.0)
         pooled_std[pooled_std == 0] = 1e-6
         cohen_d = mean_diff / pooled_std
 
@@ -130,7 +136,7 @@ class StatisticalAnalyzer:
         nib.save(nib.Nifti1Image(p_map, affine), p_path)
         nib.save(nib.Nifti1Image(cohen_d, affine), d_path)
 
-        results: Dict[str, Any] = {
+        results: dict[str, Any] = {
             "t_map_path": str(t_path),
             "p_map_path": str(p_path),
             "cohen_d_map_path": str(d_path),
@@ -147,7 +153,9 @@ class StatisticalAnalyzer:
 
         return {"success": True, "results": results}
 
-    def _apply_correction(self, p_map: np.ndarray, method: str, alpha: float = 0.05) -> np.ndarray:
+    def _apply_correction(
+        self, p_map: np.ndarray, method: str, alpha: float = 0.05
+    ) -> np.ndarray:
         flat = p_map.reshape(-1)
         n = len(flat)
 

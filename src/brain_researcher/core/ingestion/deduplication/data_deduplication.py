@@ -4,20 +4,19 @@ This module provides data deduplication capabilities including fuzzy matching,
 merge logic, conflict resolution, and deduplication reports.
 """
 
-import logging
+import difflib
 import hashlib
-from typing import Dict, List, Any, Optional, Tuple, Set
+import logging
+import threading
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-import difflib
-import numpy as np
-from collections import defaultdict
-import json
-import re
 from functools import lru_cache
-from concurrent.futures import ThreadPoolExecutor
-import threading
+from typing import Any
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -25,26 +24,31 @@ logger = logging.getLogger(__name__)
 # Custom Exception Classes
 class DeduplicationError(Exception):
     """Base exception for deduplication errors."""
+
     pass
 
 
 class ValidationError(DeduplicationError):
     """Validation-related errors."""
+
     pass
 
 
 class ConfigurationError(DeduplicationError):
     """Configuration-related errors."""
+
     pass
 
 
 class MergeError(DeduplicationError):
     """Merge-related errors."""
+
     pass
 
 
 class ComparisonError(DeduplicationError):
     """Comparison-related errors."""
+
     pass
 
 
@@ -75,9 +79,9 @@ class DuplicateCandidate:
     entity2_id: str
     match_type: MatchType
     similarity_score: float
-    matching_fields: List[str]
-    conflicts: List[str] = field(default_factory=list)
-    suggested_action: Optional[str] = None
+    matching_fields: list[str]
+    conflicts: list[str] = field(default_factory=list)
+    suggested_action: str | None = None
 
 
 @dataclass
@@ -85,12 +89,12 @@ class MergeDecision:
     """Represents a merge decision."""
 
     decision_id: str
-    entities: List[str]
+    entities: list[str]
     strategy: MergeStrategy
-    merged_entity: Dict[str, Any]
-    conflicts_resolved: List[Dict[str, Any]]
+    merged_entity: dict[str, Any]
+    conflicts_resolved: list[dict[str, Any]]
     timestamp: datetime = field(default_factory=datetime.now)
-    user: Optional[str] = None
+    user: str | None = None
 
 
 @dataclass
@@ -105,7 +109,7 @@ class DeduplicationReport:
     conflicts_encountered: int
     execution_time_ms: float
     timestamp: datetime = field(default_factory=datetime.now)
-    details: List[Dict[str, Any]] = field(default_factory=list)
+    details: list[dict[str, Any]] = field(default_factory=list)
 
 
 class DataDeduplication:
@@ -128,7 +132,11 @@ class DataDeduplication:
             "fuzzy_threshold": 0.85,
             "semantic_threshold": 0.9,
             "blocking_fields": ["type", "year", "category"],
-            "quality_indicators": ["citation_count", "completeness", "source_reliability"]
+            "quality_indicators": [
+                "citation_count",
+                "completeness",
+                "source_reliability",
+            ],
         }
         self._validate_config()
 
@@ -147,7 +155,7 @@ class DataDeduplication:
             "fuzzy_matches": 0,
             "semantic_matches": 0,
             "merges_performed": 0,
-            "conflicts_resolved": 0
+            "conflicts_resolved": 0,
         }
 
         # Thread pool for parallel processing
@@ -155,10 +163,10 @@ class DataDeduplication:
 
     def find_duplicates(
         self,
-        entities: List[Dict[str, Any]],
+        entities: list[dict[str, Any]],
         entity_type: str,
-        match_types: Optional[List[MatchType]] = None
-    ) -> List[DuplicateCandidate]:
+        match_types: list[MatchType] | None = None,
+    ) -> list[DuplicateCandidate]:
         """Find duplicate entities.
 
         Args:
@@ -186,7 +194,7 @@ class DataDeduplication:
         blocks = self._create_blocks(entities, entity_type)
 
         # Compare within blocks
-        for block_key, block_entities in blocks.items():
+        for _block_key, block_entities in blocks.items():
             if len(block_entities) < 2:
                 continue
 
@@ -207,10 +215,8 @@ class DataDeduplication:
         return duplicates
 
     def _create_blocks(
-        self,
-        entities: List[Dict[str, Any]],
-        entity_type: str
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        self, entities: list[dict[str, Any]], entity_type: str
+    ) -> dict[str, list[dict[str, Any]]]:
         """Create blocks for efficient duplicate detection.
 
         Args:
@@ -244,11 +250,11 @@ class DataDeduplication:
 
     def _compare_entities(
         self,
-        entity1: Dict[str, Any],
-        entity2: Dict[str, Any],
+        entity1: dict[str, Any],
+        entity2: dict[str, Any],
         entity_type: str,
-        match_types: List[MatchType]
-    ) -> Optional[DuplicateCandidate]:
+        match_types: list[MatchType],
+    ) -> DuplicateCandidate | None:
         """Compare two entities for duplication.
 
         Args:
@@ -279,7 +285,7 @@ class DataDeduplication:
                     match_type=MatchType.EXACT,
                     similarity_score=1.0,
                     matching_fields=exact_fields,
-                    suggested_action="merge"
+                    suggested_action="merge",
                 )
 
         # Fuzzy matching
@@ -312,16 +318,14 @@ class DataDeduplication:
                 similarity_score=best_score,
                 matching_fields=matching_fields,
                 conflicts=conflicts,
-                suggested_action="review" if conflicts else "merge"
+                suggested_action="review" if conflicts else "merge",
             )
 
         return None
 
     def _exact_match(
-        self,
-        entity1: Dict[str, Any],
-        entity2: Dict[str, Any]
-    ) -> Tuple[bool, List[str]]:
+        self, entity1: dict[str, Any], entity2: dict[str, Any]
+    ) -> tuple[bool, list[str]]:
         """Check for exact match.
 
         Args:
@@ -343,10 +347,8 @@ class DataDeduplication:
         return False, matching_fields
 
     def _fuzzy_match(
-        self,
-        entity1: Dict[str, Any],
-        entity2: Dict[str, Any]
-    ) -> Tuple[float, List[str]]:
+        self, entity1: dict[str, Any], entity2: dict[str, Any]
+    ) -> tuple[float, list[str]]:
         """Perform fuzzy matching.
 
         Args:
@@ -366,7 +368,7 @@ class DataDeduplication:
 
                 if val1 and val2:
                     # Use multiple similarity metrics
-                    ratio = difflib.SequenceMatcher(None, val1, val2).ratio()
+                    difflib.SequenceMatcher(None, val1, val2).ratio()
 
                     # Use cached similarity calculation
                     score = self._cached_similarity_score(val1, val2)
@@ -380,9 +382,7 @@ class DataDeduplication:
         return 0, []
 
     def _semantic_match(
-        self,
-        entity1: Dict[str, Any],
-        entity2: Dict[str, Any]
+        self, entity1: dict[str, Any], entity2: dict[str, Any]
     ) -> float:
         """Perform semantic matching using embeddings.
 
@@ -406,10 +406,8 @@ class DataDeduplication:
         return float(similarity)
 
     def _find_conflicts(
-        self,
-        entity1: Dict[str, Any],
-        entity2: Dict[str, Any]
-    ) -> List[str]:
+        self, entity1: dict[str, Any], entity2: dict[str, Any]
+    ) -> list[str]:
         """Find conflicting fields between entities.
 
         Args:
@@ -441,7 +439,7 @@ class DataDeduplication:
                     conflicts.append(field)
                     continue
                 # Allow minor differences in numeric values
-                if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
+                if isinstance(val1, int | float) and isinstance(val2, int | float):
                     # Fix division by zero
                     max_val = max(abs(val1), abs(val2), 1e-10)  # Avoid division by zero
                     if abs(val1 - val2) / max_val > 0.1:
@@ -453,9 +451,9 @@ class DataDeduplication:
 
     def merge_entities(
         self,
-        entities: List[Dict[str, Any]],
+        entities: list[dict[str, Any]],
         strategy: MergeStrategy = MergeStrategy.MERGE_ALL,
-        user: Optional[str] = None
+        user: str | None = None,
     ) -> MergeDecision:
         """Merge duplicate entities.
 
@@ -494,7 +492,7 @@ class DataDeduplication:
             strategy=strategy,
             merged_entity=merged,
             conflicts_resolved=conflicts_resolved,
-            user=user
+            user=user,
         )
 
         self.stats["merges_performed"] += 1
@@ -502,10 +500,7 @@ class DataDeduplication:
 
         return decision
 
-    def _select_highest_quality(
-        self,
-        entities: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _select_highest_quality(self, entities: list[dict[str, Any]]) -> dict[str, Any]:
         """Select entity with highest quality.
 
         Args:
@@ -535,9 +530,11 @@ class DataDeduplication:
                                 1 for v in completeness_val.values() if v is not None
                             )
                             completeness_score = (
-                                non_null / len(completeness_val) if completeness_val else 0
+                                non_null / len(completeness_val)
+                                if completeness_val
+                                else 0
                             )
-                        elif isinstance(completeness_val, (int, float)):
+                        elif isinstance(completeness_val, int | float):
                             completeness_score = float(completeness_val)
                         else:
                             completeness_score = 0.0
@@ -555,10 +552,7 @@ class DataDeduplication:
 
         return best_entity.copy()
 
-    def _merge_all_fields(
-        self,
-        entities: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _merge_all_fields(self, entities: list[dict[str, Any]]) -> dict[str, Any]:
         """Merge all fields from entities.
 
         Args:
@@ -576,7 +570,9 @@ class DataDeduplication:
 
         # Merge each field
         for field in all_fields:
-            values = [e.get(field) for e in entities if field in e and e[field] is not None]
+            values = [
+                e.get(field) for e in entities if field in e and e[field] is not None
+            ]
 
             if not values:
                 continue
@@ -585,7 +581,7 @@ class DataDeduplication:
                 merged[field] = values[0]
             else:
                 # Merge strategy per field type
-                if isinstance(values[0], (int, float)):
+                if isinstance(values[0], int | float):
                     # Take average for numeric fields - handle edge cases
                     try:
                         merged[field] = float(np.mean(values))
@@ -606,6 +602,7 @@ class DataDeduplication:
                 else:
                     # Take most common for other types
                     from collections import Counter
+
                     counter = Counter(values)
                     merged[field] = counter.most_common(1)[0][0]
 
@@ -613,10 +610,10 @@ class DataDeduplication:
 
     def _resolve_conflicts(
         self,
-        entities: List[Dict[str, Any]],
-        merged: Dict[str, Any],
-        strategy: MergeStrategy
-    ) -> List[Dict[str, Any]]:
+        entities: list[dict[str, Any]],
+        merged: dict[str, Any],
+        strategy: MergeStrategy,
+    ) -> list[dict[str, Any]]:
         """Resolve conflicts in merge.
 
         Args:
@@ -636,24 +633,26 @@ class DataDeduplication:
 
         for field in all_fields:
             values = [e.get(field) for e in entities if field in e]
-            unique_values = set(str(v) for v in values if v is not None)
+            unique_values = {str(v) for v in values if v is not None}
 
             if len(unique_values) > 1:
-                conflicts.append({
-                    "field": field,
-                    "original_values": list(unique_values),
-                    "merged_value": merged.get(field),
-                    "resolution_method": strategy.value
-                })
+                conflicts.append(
+                    {
+                        "field": field,
+                        "original_values": list(unique_values),
+                        "merged_value": merged.get(field),
+                        "resolution_method": strategy.value,
+                    }
+                )
 
         return conflicts
 
     def generate_report(
         self,
-        duplicates: List[DuplicateCandidate],
-        merges: List[MergeDecision],
+        duplicates: list[DuplicateCandidate],
+        merges: list[MergeDecision],
         execution_time_ms: float,
-        total_entities: int
+        total_entities: int,
     ) -> DeduplicationReport:
         """Generate deduplication report.
 
@@ -678,23 +677,27 @@ class DataDeduplication:
 
         # Add duplicate details
         for dup in duplicates[:100]:  # Limit to 100 for report
-            details.append({
-                "type": "duplicate_found",
-                "entity1": dup.entity1_id,
-                "entity2": dup.entity2_id,
-                "match_type": dup.match_type.value,
-                "similarity": dup.similarity_score,
-                "action": dup.suggested_action
-            })
+            details.append(
+                {
+                    "type": "duplicate_found",
+                    "entity1": dup.entity1_id,
+                    "entity2": dup.entity2_id,
+                    "match_type": dup.match_type.value,
+                    "similarity": dup.similarity_score,
+                    "action": dup.suggested_action,
+                }
+            )
 
         # Add merge details
         for merge in merges[:50]:  # Limit to 50 for report
-            details.append({
-                "type": "merge_performed",
-                "entities": merge.entities,
-                "strategy": merge.strategy.value,
-                "conflicts": len(merge.conflicts_resolved)
-            })
+            details.append(
+                {
+                    "type": "merge_performed",
+                    "entities": merge.entities,
+                    "strategy": merge.strategy.value,
+                    "conflicts": len(merge.conflicts_resolved),
+                }
+            )
 
         report = DeduplicationReport(
             report_id=report_id,
@@ -704,12 +707,12 @@ class DataDeduplication:
             duplicates_skipped=duplicates_skipped,
             conflicts_encountered=conflicts,
             execution_time_ms=execution_time_ms,
-            details=details
+            details=details,
         )
 
         return report
 
-    def hash_entity(self, entity: Dict[str, Any], fields: List[str]) -> str:
+    def hash_entity(self, entity: dict[str, Any], fields: list[str]) -> str:
         """Generate hash for entity based on specified fields.
 
         Args:
@@ -732,7 +735,7 @@ class DataDeduplication:
         # Generate hash
         return hashlib.sha256(canonical.encode()).hexdigest()
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get deduplication statistics.
 
         Returns:
@@ -746,10 +749,13 @@ class DataDeduplication:
             "merges_performed": self.stats["merges_performed"],
             "conflicts_resolved": self.stats["conflicts_resolved"],
             "match_rates": {
-                "exact": self.stats["exact_matches"] / max(1, self.stats["total_comparisons"]),
-                "fuzzy": self.stats["fuzzy_matches"] / max(1, self.stats["total_comparisons"]),
-                "semantic": self.stats["semantic_matches"] / max(1, self.stats["total_comparisons"])
-            }
+                "exact": self.stats["exact_matches"]
+                / max(1, self.stats["total_comparisons"]),
+                "fuzzy": self.stats["fuzzy_matches"]
+                / max(1, self.stats["total_comparisons"]),
+                "semantic": self.stats["semantic_matches"]
+                / max(1, self.stats["total_comparisons"]),
+            },
         }
 
     def _validate_config(self):
@@ -763,12 +769,21 @@ class DataDeduplication:
                 raise ConfigurationError("semantic_threshold must be between 0 and 1")
 
             # Validate field lists
-            for field_list_name in ["exact_match_fields", "fuzzy_match_fields", "blocking_fields", "quality_indicators"]:
+            for field_list_name in [
+                "exact_match_fields",
+                "fuzzy_match_fields",
+                "blocking_fields",
+                "quality_indicators",
+            ]:
                 if not isinstance(self.config[field_list_name], list):
                     raise ConfigurationError(f"{field_list_name} must be a list")
 
-                if not all(isinstance(field, str) for field in self.config[field_list_name]):
-                    raise ConfigurationError(f"All fields in {field_list_name} must be strings")
+                if not all(
+                    isinstance(field, str) for field in self.config[field_list_name]
+                ):
+                    raise ConfigurationError(
+                        f"All fields in {field_list_name} must be strings"
+                    )
 
             logger.info("Deduplication configuration validated successfully")
 
@@ -808,7 +823,9 @@ class DataDeduplication:
             logger.error(f"Error calculating similarity: {e}")
             return 0.0
 
-    def validate_entities(self, entities: List[Dict[str, Any]]) -> Tuple[bool, List[str]]:
+    def validate_entities(
+        self, entities: list[dict[str, Any]]
+    ) -> tuple[bool, list[str]]:
         """Validate entities before processing.
 
         Args:
@@ -833,7 +850,11 @@ class DataDeduplication:
                 continue
 
             # Check for required fields based on configuration
-            if not any(field in entity for field in self.config["exact_match_fields"] + self.config["fuzzy_match_fields"]):
+            if not any(
+                field in entity
+                for field in self.config["exact_match_fields"]
+                + self.config["fuzzy_match_fields"]
+            ):
                 errors.append(f"Entity at index {i} missing all searchable fields")
 
         return len(errors) == 0, errors

@@ -150,7 +150,7 @@ class NeurosynthRelationshipLoader:
                 center_y = (bounds["y"][0] + bounds["y"][1]) / 2
                 center_z = (bounds["z"][0] + bounds["z"][1]) / 2
 
-                region_id = self.db.create_node(
+                self.db.create_node(
                     "BrainRegion",
                     {
                         "name": region_name,
@@ -430,8 +430,11 @@ def integrate_neurosynth_relationships(db_path: str, limit: int | None = None):
         0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     )
 
-    from brain_researcher.services.br_kg.etl.loaders.enhanced_neurosynth_loader import EnhancedNeurosynthLoader
     from graph.graph_database import BRKGGraphDB
+
+    from brain_researcher.services.br_kg.etl.loaders.enhanced_neurosynth_loader import (
+        EnhancedNeurosynthLoader,
+    )
 
     # Setup logging
     logging.basicConfig(level=logging.INFO)

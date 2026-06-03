@@ -27,6 +27,7 @@ def _disease_entity_matches_query(entity_id: str, label: str, query: str) -> boo
         _normalize_acronym,
         _normalize_entity_label,
     )
+
     q_text = _normalize_entity_label(query, "disease")
     q_acronym = _normalize_acronym(query)
     if not q_text and not q_acronym:
@@ -71,6 +72,7 @@ def _disease_alias_candidate_ids(query: str) -> list[str]:
         _normalize_acronym,
         _normalize_entity_label,
     )
+
     q_text = _normalize_entity_label(query, "disease")
     q_acronym = _normalize_acronym(query)
     if not q_text and not q_acronym:
@@ -116,22 +118,26 @@ def _lens_disabled_response():
 
 def _normalize_lens(lens: str) -> str:
     from brain_researcher.services.br_kg.app import LENS_ALIASES
+
     normalized = (lens or "").strip().lower()
     return LENS_ALIASES.get(normalized, normalized)
 
 
 def _lens_seed_labels(lens: str) -> list[str]:
     from brain_researcher.services.br_kg.app import LENS_REGISTRY
+
     return list(LENS_REGISTRY[lens]["seed_labels"])
 
 
 def _lens_scheme_filter(lens: str) -> str | None:
     from brain_researcher.services.br_kg.app import LENS_REGISTRY
+
     return LENS_REGISTRY[lens].get("scheme_filter")
 
 
 def _infer_lens_for_entity(entity_id: str, requested_lens: str | None = None) -> str:
     from brain_researcher.services.br_kg.app import LENS_REGISTRY
+
     if requested_lens:
         normalized = _normalize_lens(requested_lens)
         if normalized in LENS_REGISTRY:

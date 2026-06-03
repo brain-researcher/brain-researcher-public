@@ -172,7 +172,9 @@ class PortManager:
         process_info = self.get_process_on_port(requested_port)
         console.print(f"\n[yellow]⚠ Port {requested_port} is already in use[/yellow]")
         if process_info:
-            console.print(f"[dim]Process: {process_info.name} (PID: {process_info.pid})[/dim]")
+            console.print(
+                f"[dim]Process: {process_info.name} (PID: {process_info.pid})[/dim]"
+            )
             console.print(f"[dim]Command: {process_info.cmdline[:80]}...[/dim]")
 
         if auto_mode == "auto_increment":
@@ -262,7 +264,9 @@ class PortManager:
         """Display a table of all running services."""
         services = self.list_all_services()
         if not services:
-            console.print("[yellow]No Brain Researcher services are currently running[/yellow]")
+            console.print(
+                "[yellow]No Brain Researcher services are currently running[/yellow]"
+            )
             return
 
         table = Table(title="Running Brain Researcher Services")
@@ -317,7 +321,9 @@ class PortManager:
         time.sleep(2)
 
         if launcher_func is None:
-            console.print(f"[yellow]Please run 'br serve {service_name}' to start the service[/yellow]")
+            console.print(
+                f"[yellow]Please run 'br serve {service_name}' to start the service[/yellow]"
+            )
             return False
 
         launcher_func()

@@ -1,9 +1,8 @@
-import pytest
 from types import SimpleNamespace
 
 from brain_researcher.services.agent.tool_router import (
-    ToolFamily,
     RoutingView,
+    ToolFamily,
     ToolRouter,
 )
 

@@ -20,10 +20,10 @@ import json
 import logging
 import time
 import xml.etree.ElementTree as ET
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
-import hashlib
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -55,9 +55,9 @@ class PubMedUnifiedLoader:
     def __init__(
         self,
         use_niclip: bool = True,
-        niclip_path: Optional[str] = None,
-        cache_dir: Optional[str] = None,
-        api_key: Optional[str] = None
+        niclip_path: str | None = None,
+        cache_dir: str | None = None,
+        api_key: str | None = None,
     ):
         """
         Initialize the unified PubMed loader.
@@ -87,7 +87,9 @@ class PubMedUnifiedLoader:
                 self.niclip_path = Path("data/niclip")
 
         # Set cache directory
-        self.cache_dir = Path(cache_dir) if cache_dir else Path.home() / ".br_kg_cache" / "pubmed"
+        self.cache_dir = (
+            Path(cache_dir) if cache_dir else Path.home() / ".br_kg_cache" / "pubmed"
+        )
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         # API configuration
@@ -107,20 +109,20 @@ class PubMedUnifiedLoader:
             "api_calls": 0,
             "cache_hits": 0,
             "coordinates_extracted": 0,
-            "tasks_linked": 0
+            "tasks_linked": 0,
         }
 
         logger.info(f"Initialized PubMedUnifiedLoader (NICLIP: {use_niclip})")
 
     def load_publications(
         self,
-        query: Optional[str] = None,
-        pmids: Optional[List[str]] = None,
+        query: str | None = None,
+        pmids: list[str] | None = None,
         limit: int = 1000,
         use_embeddings: bool = True,
         extract_coordinates: bool = True,
-        link_tasks: bool = True
-    ) -> List[Dict[str, Any]]:
+        link_tasks: bool = True,
+    ) -> list[dict[str, Any]]:
         """
         Load PubMed publications with optional NICLIP enhancement.
 
@@ -189,11 +191,8 @@ class PubMedUnifiedLoader:
         return text_dir.exists() or results_dir.exists()
 
     def _load_with_niclip_embeddings(
-        self,
-        query: Optional[str],
-        pmids: Optional[List[str]],
-        limit: int
-    ) -> List[Dict[str, Any]]:
+        self, query: str | None, pmids: list[str] | None, limit: int
+    ) -> list[dict[str, Any]]:
         """Load publications using NICLIP pre-computed embeddings."""
         publications = []
 
@@ -249,7 +248,7 @@ class PubMedUnifiedLoader:
                         self._embeddings_cache[pmid] = {
                             "pmid": pmid,
                             "embedding": embedding,
-                            "source": "niclip"
+                            "source": "niclip",
                         }
 
                     # Create embedding index for search
@@ -273,13 +272,13 @@ class PubMedUnifiedLoader:
             if indices_files:
                 indices_file = indices_files[0]  # Use first available
                 logger.info(f"Loading NICLIP model indices from {indices_file.name}")
-                indices_data = np.load(indices_file)
+                np.load(indices_file)
                 # Process indices for enhanced retrieval
 
         except Exception as e:
             logger.warning(f"Could not load NICLIP models: {e}")
 
-    def _search_by_embedding(self, query: str, limit: int) -> List[str]:
+    def _search_by_embedding(self, query: str, limit: int) -> list[str]:
         """Search for similar papers using embeddings."""
         # This would use a proper embedding model to encode the query
         # and find similar papers in the embedding space
@@ -287,11 +286,8 @@ class PubMedUnifiedLoader:
         return []
 
     def _load_from_api(
-        self,
-        query: Optional[str],
-        pmids: Optional[List[str]],
-        limit: int
-    ) -> List[Dict[str, Any]]:
+        self, query: str | None, pmids: list[str] | None, limit: int
+    ) -> list[dict[str, Any]]:
         """Load publications from PubMed E-utilities API."""
         import requests
 
@@ -307,11 +303,13 @@ class PubMedUnifiedLoader:
 
             # Fetch publications in batches
             for i in range(0, len(pmids), BATCH_SIZE):
-                batch = pmids[i:i + BATCH_SIZE]
+                batch = pmids[i : i + BATCH_SIZE]
 
                 # Check cache first
                 cached_pubs = self._load_from_cache(batch)
-                uncached_pmids = [p for p in batch if p not in [pub["pmid"] for pub in cached_pubs]]
+                uncached_pmids = [
+                    p for p in batch if p not in [pub["pmid"] for pub in cached_pubs]
+                ]
                 publications.extend(cached_pubs)
 
                 if uncached_pmids:
@@ -322,7 +320,7 @@ class PubMedUnifiedLoader:
                     params = {
                         "db": "pubmed",
                         "id": ",".join(uncached_pmids),
-                        "retmode": "xml"
+                        "retmode": "xml",
                     }
                     if self.api_key:
                         params["api_key"] = self.api_key
@@ -343,15 +341,13 @@ class PubMedUnifiedLoader:
 
         return publications[:limit]
 
-    def _search_pubmed_with_date_splitting(self, query: str, limit: int) -> List[str]:
+    def _search_pubmed_with_date_splitting(self, query: str, limit: int) -> list[str]:
         """
         Search PubMed using date-range splitting to overcome the 10k limit.
 
         PubMed API has a hard 10,000 retstart limit, so we split the query
         into year-based ranges and fetch each separately.
         """
-        import requests
-        from datetime import datetime
 
         all_pmids = set()  # Use set to avoid duplicates
         current_year = datetime.now().year
@@ -362,7 +358,9 @@ class PubMedUnifiedLoader:
             year_ranges.append((year, year))
         year_ranges.append((1800, 1949))  # Everything before 1950
 
-        logger.info(f"Using date-range splitting to fetch {limit:,} results across {len(year_ranges)} year ranges...")
+        logger.info(
+            f"Using date-range splitting to fetch {limit:,} results across {len(year_ranges)} year ranges..."
+        )
 
         for start_year, end_year in year_ranges:
             if len(all_pmids) >= limit:
@@ -381,15 +379,19 @@ class PubMedUnifiedLoader:
             try:
                 chunk_pmids = self._search_pubmed_simple(date_query, chunk_limit)
                 all_pmids.update(chunk_pmids)
-                logger.info(f"Fetched {len(all_pmids):,} / {limit:,} PMIDs (year range: {start_year}-{end_year})")
+                logger.info(
+                    f"Fetched {len(all_pmids):,} / {limit:,} PMIDs (year range: {start_year}-{end_year})"
+                )
 
             except Exception as e:
-                logger.warning(f"Error fetching year range {start_year}-{end_year}: {e}")
+                logger.warning(
+                    f"Error fetching year range {start_year}-{end_year}: {e}"
+                )
                 continue
 
         return list(all_pmids)[:limit]
 
-    def _search_pubmed_simple(self, query: str, limit: int) -> List[str]:
+    def _search_pubmed_simple(self, query: str, limit: int) -> list[str]:
         """Simple PubMed search without date splitting (max 10k results)."""
         import requests
 
@@ -410,7 +412,7 @@ class PubMedUnifiedLoader:
                     "term": query,
                     "retmax": min(batch_size, limit - len(all_pmids)),
                     "retstart": retstart,
-                    "retmode": "json"
+                    "retmode": "json",
                 }
                 if self.api_key:
                     params["api_key"] = self.api_key
@@ -433,7 +435,7 @@ class PubMedUnifiedLoader:
             logger.error(f"Error in simple search: {e}")
             return all_pmids
 
-    def _search_pubmed(self, query: str, limit: int) -> List[str]:
+    def _search_pubmed(self, query: str, limit: int) -> list[str]:
         """Search PubMed for PMIDs matching query with pagination support."""
         import requests
 
@@ -455,8 +457,12 @@ class PubMedUnifiedLoader:
                 # PubMed ESearch API has a retstart limit of 10,000
                 # Beyond that, results cannot be reliably retrieved
                 if retstart >= max_retstart:
-                    logger.warning(f"Reached retstart limit ({max_retstart}). Use EPost/EFetch for larger result sets.")
-                    logger.info(f"Retrieved {len(all_pmids):,} PMIDs (limited by API constraints)")
+                    logger.warning(
+                        f"Reached retstart limit ({max_retstart}). Use EPost/EFetch for larger result sets."
+                    )
+                    logger.info(
+                        f"Retrieved {len(all_pmids):,} PMIDs (limited by API constraints)"
+                    )
                     break
 
                 self.rate_limiter.wait_if_needed()
@@ -470,7 +476,7 @@ class PubMedUnifiedLoader:
                     "term": query,
                     "retmax": retmax,
                     "retstart": retstart,
-                    "retmode": "json"
+                    "retmode": "json",
                 }
                 if self.api_key:
                     params["api_key"] = self.api_key
@@ -482,7 +488,9 @@ class PubMedUnifiedLoader:
                 try:
                     data = response.json()
                 except Exception as json_error:
-                    logger.warning(f"JSON parse error at offset {retstart}: {json_error}")
+                    logger.warning(
+                        f"JSON parse error at offset {retstart}: {json_error}"
+                    )
                     logger.debug(f"Response text: {response.text[:200]}")
                     # Skip this batch and continue
                     retstart += max_per_query
@@ -506,7 +514,7 @@ class PubMedUnifiedLoader:
             logger.error(f"Error searching PubMed: {e}")
             return all_pmids if all_pmids else []
 
-    def _parse_pubmed_xml(self, xml_content: str) -> List[Dict[str, Any]]:
+    def _parse_pubmed_xml(self, xml_content: str) -> list[dict[str, Any]]:
         """Parse PubMed XML response."""
         publications = []
 
@@ -523,7 +531,7 @@ class PubMedUnifiedLoader:
 
         return publications
 
-    def _extract_article_data(self, article_elem) -> Optional[Dict[str, Any]]:
+    def _extract_article_data(self, article_elem) -> dict[str, Any] | None:
         """Extract data from a PubMed article XML element."""
         try:
             # Extract PMID
@@ -588,14 +596,14 @@ class PubMedUnifiedLoader:
                 "journal": journal,
                 "keywords": keywords,
                 "mesh_terms": mesh_terms,
-                "source": "pubmed_api"
+                "source": "pubmed_api",
             }
 
         except Exception as e:
             logger.error(f"Error extracting article data: {e}")
             return None
 
-    def _extract_coordinates(self, publication: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _extract_coordinates(self, publication: dict[str, Any]) -> list[dict[str, Any]]:
         """Extract brain coordinates from publication text."""
         coordinates = []
 
@@ -606,33 +614,39 @@ class PubMedUnifiedLoader:
         import re
 
         # MNI coordinates pattern
-        mni_pattern = r'(?:MNI|mni).*?(-?\d+)[,\s]+(-?\d+)[,\s]+(-?\d+)'
+        mni_pattern = r"(?:MNI|mni).*?(-?\d+)[,\s]+(-?\d+)[,\s]+(-?\d+)"
 
         # Talairach coordinates pattern
-        tal_pattern = r'(?:Talairach|talairach|TAL|tal).*?(-?\d+)[,\s]+(-?\d+)[,\s]+(-?\d+)'
+        tal_pattern = (
+            r"(?:Talairach|talairach|TAL|tal).*?(-?\d+)[,\s]+(-?\d+)[,\s]+(-?\d+)"
+        )
 
         # Generic coordinate pattern (x, y, z)
-        generic_pattern = r'\(?\s*(-?\d+)\s*[,;]\s*(-?\d+)\s*[,;]\s*(-?\d+)\s*\)?.*?mm'
+        generic_pattern = r"\(?\s*(-?\d+)\s*[,;]\s*(-?\d+)\s*[,;]\s*(-?\d+)\s*\)?.*?mm"
 
         # Extract MNI coordinates
         for match in re.finditer(mni_pattern, text):
-            coordinates.append({
-                "x": int(match.group(1)),
-                "y": int(match.group(2)),
-                "z": int(match.group(3)),
-                "space": "MNI",
-                "source": "regex_extraction"
-            })
+            coordinates.append(
+                {
+                    "x": int(match.group(1)),
+                    "y": int(match.group(2)),
+                    "z": int(match.group(3)),
+                    "space": "MNI",
+                    "source": "regex_extraction",
+                }
+            )
 
         # Extract Talairach coordinates
         for match in re.finditer(tal_pattern, text):
-            coordinates.append({
-                "x": int(match.group(1)),
-                "y": int(match.group(2)),
-                "z": int(match.group(3)),
-                "space": "Talairach",
-                "source": "regex_extraction"
-            })
+            coordinates.append(
+                {
+                    "x": int(match.group(1)),
+                    "y": int(match.group(2)),
+                    "z": int(match.group(3)),
+                    "space": "Talairach",
+                    "source": "regex_extraction",
+                }
+            )
 
         # Extract generic coordinates if no specific space mentioned
         if not coordinates:
@@ -640,56 +654,70 @@ class PubMedUnifiedLoader:
                 x, y, z = int(match.group(1)), int(match.group(2)), int(match.group(3))
                 # Basic sanity check for brain coordinates
                 if -80 <= x <= 80 and -120 <= y <= 90 and -70 <= z <= 85:
-                    coordinates.append({
-                        "x": x,
-                        "y": y,
-                        "z": z,
-                        "space": "unknown",
-                        "source": "regex_extraction"
-                    })
+                    coordinates.append(
+                        {
+                            "x": x,
+                            "y": y,
+                            "z": z,
+                            "space": "unknown",
+                            "source": "regex_extraction",
+                        }
+                    )
 
         return coordinates
 
-    def _link_to_tasks(self, publication: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _link_to_tasks(self, publication: dict[str, Any]) -> list[dict[str, Any]]:
         """Link publication to cognitive tasks."""
         linked_tasks = []
 
         # Load Cognitive Atlas mappings if available
         if self.niclip_path.exists():
-            ca_path = self.niclip_path / "data" / "cognitive_atlas" / "reduced_tasks.csv"
+            ca_path = (
+                self.niclip_path / "data" / "cognitive_atlas" / "reduced_tasks.csv"
+            )
             if ca_path.exists():
                 # Load task-concept mappings
                 import pandas as pd
+
                 tasks_df = pd.read_csv(ca_path)
 
                 # Simple keyword matching for now
-                text = f"{publication.get('title', '')} {publication.get('abstract', '')}"
+                text = (
+                    f"{publication.get('title', '')} {publication.get('abstract', '')}"
+                )
                 text_lower = text.lower()
 
                 for _, row in tasks_df.iterrows():
-                    task_name = row['task']
+                    task_name = row["task"]
                     if task_name.lower() in text_lower:
-                        linked_tasks.append({
-                            "task": task_name,
-                            "concepts": [row['concept_1'], row['concept_2'], row['concept_3']],
-                            "confidence": 0.8,
-                            "method": "keyword_match"
-                        })
+                        linked_tasks.append(
+                            {
+                                "task": task_name,
+                                "concepts": [
+                                    row["concept_1"],
+                                    row["concept_2"],
+                                    row["concept_3"],
+                                ],
+                                "confidence": 0.8,
+                                "method": "keyword_match",
+                            }
+                        )
 
         # Fallback to MeSH term matching
         if not linked_tasks:
             mesh_terms = publication.get("mesh_terms", [])
             for term in mesh_terms:
-                if any(keyword in term.lower() for keyword in ["memory", "attention", "language", "motor"]):
-                    linked_tasks.append({
-                        "task": term,
-                        "confidence": 0.6,
-                        "method": "mesh_match"
-                    })
+                if any(
+                    keyword in term.lower()
+                    for keyword in ["memory", "attention", "language", "motor"]
+                ):
+                    linked_tasks.append(
+                        {"task": term, "confidence": 0.6, "method": "mesh_match"}
+                    )
 
         return linked_tasks
 
-    def _load_from_cache(self, pmids: List[str]) -> List[Dict[str, Any]]:
+    def _load_from_cache(self, pmids: list[str]) -> list[dict[str, Any]]:
         """Load publications from cache."""
         cached_pubs = []
 
@@ -706,7 +734,7 @@ class PubMedUnifiedLoader:
 
         return cached_pubs
 
-    def _save_to_cache(self, publication: Dict[str, Any]):
+    def _save_to_cache(self, publication: dict[str, Any]):
         """Save publication to cache."""
         try:
             pmid = publication.get("pmid")
@@ -718,10 +746,8 @@ class PubMedUnifiedLoader:
             pass
 
     def _merge_publications(
-        self,
-        niclip_pubs: List[Dict[str, Any]],
-        api_pubs: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, niclip_pubs: list[dict[str, Any]], api_pubs: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Merge NICLIP and API publication data."""
         merged = {}
 
@@ -743,7 +769,7 @@ class PubMedUnifiedLoader:
 
         return list(merged.values())
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get loader statistics."""
         return self.stats.copy()
 
@@ -769,7 +795,12 @@ class RateLimiter:
 
 
 # Convenience function for backward compatibility
-def load_pubmed(query: str = None, pmids: List[str] = None, limit: int = 1000, use_niclip: bool = True):
+def load_pubmed(
+    query: str = None,
+    pmids: list[str] = None,
+    limit: int = 1000,
+    use_niclip: bool = True,
+):
     """
     Load PubMed publications using the unified loader.
 
@@ -792,19 +823,16 @@ if __name__ == "__main__":
 
     # Load publications with NICLIP enhancement
     publications = loader.load_publications(
-        query="fMRI working memory",
-        limit=10,
-        extract_coordinates=True,
-        link_tasks=True
+        query="fMRI working memory", limit=10, extract_coordinates=True, link_tasks=True
     )
 
     # Print results
     for pub in publications[:3]:
         print(f"\nPMID: {pub['pmid']}")
         print(f"Title: {pub['title'][:100]}...")
-        if 'coordinates' in pub:
+        if "coordinates" in pub:
             print(f"Coordinates: {len(pub['coordinates'])} found")
-        if 'linked_tasks' in pub:
+        if "linked_tasks" in pub:
             print(f"Tasks: {[t['task'] for t in pub['linked_tasks']]}")
 
     # Print statistics

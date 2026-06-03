@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import Dict, Iterable, List, Literal, Optional, Sequence, Tuple
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -14,11 +15,13 @@ class RegionPrior(BaseModel):
     """Prior weight injected into a region's external drive."""
 
     region_id: str = Field(..., description="Canonical Region.id in BR-KG.")
-    strength: float = Field(..., description="Evidence strength (e.g., ACT" "IVATES.strength).")
-    weight: Optional[float] = Field(
+    strength: float = Field(
+        ..., description="Evidence strength (e.g., ACT" "IVATES.strength)."
+    )
+    weight: float | None = Field(
         None, description="Normalized weight applied to the simulation input vector."
     )
-    source: Optional[str] = Field(
+    source: str | None = Field(
         None, description="Source node identifier or citation for the prior."
     )
 
@@ -31,7 +34,7 @@ class SuggestParamsRequest(BaseModel):
         "schaefer100",
         description="Parcellation label (must match SCMatrix.parcellation).",
     )
-    top_k: Optional[int] = Field(
+    top_k: int | None = Field(
         25,
         ge=1,
         description="Optional cut-off of strongest regions to include. None keeps all.",
@@ -45,7 +48,7 @@ class SuggestParamsRequest(BaseModel):
         True,
         description="Expand task_id via NodeLabelLinker aliases before lookup.",
     )
-    region_filter: Optional[Sequence[str]] = Field(
+    region_filter: Sequence[str] | None = Field(
         None,
         description="Explicit subset of Region ids to keep (applied after top_k).",
     )
@@ -54,10 +57,10 @@ class SuggestParamsRequest(BaseModel):
 class SuggestParamsResponse(BaseModel):
     model: Literal["wilson_cowan"] = "wilson_cowan"
     parcellation: str
-    priors: List[RegionPrior]
-    summary: Dict[str, float] = Field(default_factory=dict)
+    priors: list[RegionPrior]
+    summary: dict[str, float] = Field(default_factory=dict)
     source_task_id: str
-    sc_matrix_id: Optional[str] = None
+    sc_matrix_id: str | None = None
     generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -73,11 +76,11 @@ class WilsonCowanParameters(BaseModel):
     tau_i: float = Field(0.01, gt=0, description="Inhibitory time constant (s).")
     sigma: float = Field(0.01, ge=0, description="Additive noise scale.")
     v: float = Field(10.0, gt=0, description="Conduction velocity (m/s).")
-    i_ext: Optional[List[float]] = Field(
+    i_ext: list[float] | None = Field(
         None, description="Optional explicit external drive vector (per region)."
     )
 
-    def as_vector(self) -> Tuple[float, float, float, float, float, float, float]:
+    def as_vector(self) -> tuple[float, float, float, float, float, float, float]:
         return (
             self.g,
             self.w_ee,
@@ -92,21 +95,21 @@ class WilsonCowanParameters(BaseModel):
 class SimulationMetrics(BaseModel):
     """Canonical set of simulation quality metrics."""
 
-    fc_pearson: Optional[float] = Field(
+    fc_pearson: float | None = Field(
         None, description="Pearson r between simulated FC and target FC."
     )
-    bold_mean: Optional[float] = None
-    bold_std: Optional[float] = None
-    power_band: Dict[str, float] = Field(default_factory=dict)
+    bold_mean: float | None = None
+    bold_std: float | None = None
+    power_band: dict[str, float] = Field(default_factory=dict)
 
 
 class SimulationArtifact(BaseModel):
     """Lightweight pointer to persisted artefacts."""
 
     uri: str
-    etag: Optional[str] = None
-    media_type: Optional[str] = None
-    description: Optional[str] = None
+    etag: str | None = None
+    media_type: str | None = None
+    description: str | None = None
 
 
 class SimulateRequest(BaseModel):
@@ -114,20 +117,22 @@ class SimulateRequest(BaseModel):
 
     model: Literal["wilson_cowan"] = "wilson_cowan"
     parcellation: str = "schaefer100"
-    sc_matrix_id: Optional[str] = Field(
+    sc_matrix_id: str | None = Field(
         None, description="Optional explicit SCMatrix.id to use; defaults to config."
     )
     duration: float = Field(120.0, gt=0, description="Simulation duration (seconds).")
     dt: float = Field(0.001, gt=0, description="Integrator step (seconds).")
     parameters: WilsonCowanParameters = Field(default_factory=WilsonCowanParameters)
-    task_id: Optional[str] = Field(
+    task_id: str | None = Field(
         None, description="Optional task id; reused to register priors/edges."
     )
-    priors: Optional[List[RegionPrior]] = Field(
+    priors: list[RegionPrior] | None = Field(
         None, description="Explicit priors (bypass suggest_params)."
     )
-    persist: bool = Field(True, description="Store Simulation node and artefact metadata.")
-    seed: Optional[int] = Field(None, description="Random seed for reproducibility.")
+    persist: bool = Field(
+        True, description="Store Simulation node and artefact metadata."
+    )
+    seed: int | None = Field(None, description="Random seed for reproducibility.")
     include_metrics: bool = Field(
         True, description="Compute quick QC metrics (FC correlation, PSD)."
     )
@@ -142,13 +147,13 @@ class SimulateRequest(BaseModel):
 
 
 class SimulateResponse(BaseModel):
-    simulation_id: Optional[str] = None
+    simulation_id: str | None = None
     mode: Literal["wilson_cowan"] = "wilson_cowan"
     parcellation: str
     metrics: SimulationMetrics = Field(default_factory=SimulationMetrics)
-    priors: List[RegionPrior] = Field(default_factory=list)
+    priors: list[RegionPrior] = Field(default_factory=list)
     parameters: WilsonCowanParameters
-    artifacts: List[SimulationArtifact] = Field(default_factory=list)
+    artifacts: list[SimulationArtifact] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     persisted: bool = False
 
@@ -158,7 +163,7 @@ class FitRequest(SimulateRequest):
 
     objective: Literal["fc", "psd", "multi"] = "fc"
     max_evals: int = Field(50, gt=0, description="Evaluation budget for optimizer.")
-    search_space: Dict[str, Tuple[float, float]] = Field(
+    search_space: dict[str, tuple[float, float]] = Field(
         default_factory=lambda: {
             "g": (0.5, 4.0),
             "sigma": (0.001, 0.02),
@@ -172,8 +177,8 @@ class FitRequest(SimulateRequest):
 
 class FitResponse(BaseModel):
     simulation: SimulateResponse
-    evaluations: List[Dict[str, float]] = Field(default_factory=list)
-    best_score: Optional[float] = None
+    evaluations: list[dict[str, float]] = Field(default_factory=list)
+    best_score: float | None = None
 
 
 class SimulationReport(BaseModel):
@@ -181,13 +186,13 @@ class SimulationReport(BaseModel):
     status: Literal["completed", "pending", "missing", "failed"]
     model: Literal["wilson_cowan"] = "wilson_cowan"
     parcellation: str = "schaefer100"
-    sc_matrix_id: Optional[str] = None
+    sc_matrix_id: str | None = None
     parameters: WilsonCowanParameters
-    priors: List[RegionPrior] = Field(default_factory=list)
+    priors: list[RegionPrior] = Field(default_factory=list)
     metrics: SimulationMetrics = Field(default_factory=SimulationMetrics)
-    created_at: Optional[datetime] = None
-    artifacts: List[SimulationArtifact] = Field(default_factory=list)
-    provenance: Dict[str, str] = Field(default_factory=dict)
+    created_at: datetime | None = None
+    artifacts: list[SimulationArtifact] = Field(default_factory=list)
+    provenance: dict[str, str] = Field(default_factory=dict)
 
 
 class WhatIfRequest(BaseModel):
@@ -198,4 +203,4 @@ class WhatIfRequest(BaseModel):
 
 class WhatIfResponse(BaseModel):
     baseline: SimulationReport
-    perturbed: List[SimulationReport]
+    perturbed: list[SimulationReport]

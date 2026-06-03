@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, Tuple
+from typing import Any
 
-from brain_researcher.services.agent.router import LLMRouter
+from brain_researcher.services.agent import telemetry
 from brain_researcher.services.agent.llm_budget_manager import (
     get_shared_llm_budget_manager,
 )
 from brain_researcher.services.agent.managed_credential_pool import (
     get_shared_managed_pool,
 )
-from brain_researcher.services.agent.llm_budget_manager import LLMBudgetManager
-from brain_researcher.services.agent import telemetry
+from brain_researcher.services.agent.router import LLMRouter
 
 _BUDGET_MANAGER = get_shared_llm_budget_manager()
 _MANAGED_POOL = get_shared_managed_pool()
@@ -25,7 +24,7 @@ def run_simple_chat(
     domain_filter: list[str] | None = None,
     function_filter: list[str] | None = None,
     risk_filter: list[str] | None = None,
-) -> Tuple[str, Dict[str, Any]]:
+) -> tuple[str, dict[str, Any]]:
     """Execute a single-turn chat with Gemini-compat flags.
 
     Returns: (text, execution_meta)
@@ -127,7 +126,7 @@ def _get_billing_badge(bill_to: str | None, cost: float | None) -> str:
     return ""
 
 
-def emit_result(text: str, meta: Dict[str, Any], json_output: bool = False) -> str:
+def emit_result(text: str, meta: dict[str, Any], json_output: bool = False) -> str:
     """Format the result for CLI output.
 
     If json_output is True, returns a JSON string with unified fields.

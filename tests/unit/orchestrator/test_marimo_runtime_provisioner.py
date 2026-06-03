@@ -111,7 +111,9 @@ def test_marimo_launch_command_appends_base_url_when_public_url_present() -> Non
 
 
 def test_marimo_runtime_uses_start_script_entrypoint() -> None:
-    assert MARIMO_RUNTIME_START_SCRIPT == "/app/scripts/runtime/start_marimo_singleuser.sh"
+    assert (
+        MARIMO_RUNTIME_START_SCRIPT == "/app/scripts/runtime/start_marimo_singleuser.sh"
+    )
 
 
 def test_kubernetes_runtime_pod_disables_service_account_token_automount(
@@ -526,7 +528,7 @@ def test_runtime_env_values_include_taskbeacon_seed_when_requested(monkeypatch) 
 
 
 def test_json_list_env_ignores_invalid_payloads(monkeypatch) -> None:
-    monkeypatch.setenv("BR_MARIMO_RUNTIME_EXTRA_VOLUMES_JSON", "{\"bad\":true}")
+    monkeypatch.setenv("BR_MARIMO_RUNTIME_EXTRA_VOLUMES_JSON", '{"bad":true}')
 
     assert _json_list_env("BR_MARIMO_RUNTIME_EXTRA_VOLUMES_JSON") == []
 
@@ -589,7 +591,9 @@ def _demo_spec():
     )
 
 
-def test_kubernetes_runtime_creates_workspace_pvc_when_template_set(monkeypatch) -> None:
+def test_kubernetes_runtime_creates_workspace_pvc_when_template_set(
+    monkeypatch,
+) -> None:
     if not provisioner.KUBERNETES_AVAILABLE:
         pytest.skip("kubernetes client is not installed")
     monkeypatch.delenv("BR_MARIMO_RUNTIME_EXTRA_VOLUMES_JSON", raising=False)
@@ -639,9 +643,7 @@ def test_kubernetes_runtime_creates_workspace_pvc_when_template_set(monkeypatch)
     assert pvc.spec.access_modes == ["ReadWriteOnce"]
     assert pvc.spec.resources.requests["storage"] == "5Gi"
     assert pvc.spec.storage_class_name == "local-path"
-    ws_vol = next(
-        v for v in core.created_pod.spec.volumes if v.name == "workspace"
-    )
+    ws_vol = next(v for v in core.created_pod.spec.volumes if v.name == "workspace")
     assert ws_vol.persistent_volume_claim is not None
     assert ws_vol.persistent_volume_claim.claim_name == expected_claim
     assert ws_vol.empty_dir is None
@@ -685,8 +687,6 @@ def test_kubernetes_runtime_uses_emptydir_when_no_pvc_template(monkeypatch) -> N
     )
 
     assert core.pvc_calls == 0
-    ws_vol = next(
-        v for v in core.created_pod.spec.volumes if v.name == "workspace"
-    )
+    ws_vol = next(v for v in core.created_pod.spec.volumes if v.name == "workspace")
     assert ws_vol.empty_dir is not None
     assert ws_vol.persistent_volume_claim is None

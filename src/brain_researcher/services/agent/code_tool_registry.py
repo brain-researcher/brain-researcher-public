@@ -15,9 +15,7 @@ not the 200+ tools in the general registry.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Type
-
-from pydantic import BaseModel
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -31,16 +29,16 @@ class CodeToolRegistry:
     """
 
     def __init__(self):
-        self._tools: Dict[str, "CodeTool"] = {}
+        self._tools: dict[str, CodeTool] = {}
         self._register_default_tools()
 
     def _register_default_tools(self) -> None:
         """Register the minimal code tool set."""
         from brain_researcher.services.agent.code_tools import (
-            ReadFileTool,
-            ReadDirTool,
             ApplyPatchTool,
             CodeSearchTool,
+            ReadDirTool,
+            ReadFileTool,
             RunTestsTool,
             SandboxRunTool,
         )
@@ -58,19 +56,19 @@ class CodeToolRegistry:
             self._tools[tool.name] = tool
             logger.debug("Registered code tool: %s", tool.name)
 
-    def get_tool(self, name: str) -> Optional["CodeTool"]:
+    def get_tool(self, name: str) -> CodeTool | None:
         """Get a tool by name."""
         return self._tools.get(name)
 
-    def list_tools(self) -> List[str]:
+    def list_tools(self) -> list[str]:
         """List all registered tool names."""
         return list(self._tools.keys())
 
-    def get_tool_schemas(self) -> List[Dict[str, Any]]:
+    def get_tool_schemas(self) -> list[dict[str, Any]]:
         """Get OpenAI-compatible tool schemas for all tools."""
         return [tool.to_openai_schema() for tool in self._tools.values()]
 
-    def execute(self, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         """Execute a tool by name with given parameters."""
         tool = self._tools.get(tool_name)
         if not tool:
@@ -89,15 +87,15 @@ class CodeTool:
     name: str = "code.tool"
     description: str = "A code tool"
 
-    def get_parameters_schema(self) -> Dict[str, Any]:
+    def get_parameters_schema(self) -> dict[str, Any]:
         """Return JSON schema for tool parameters."""
         raise NotImplementedError
 
-    def run(self, **kwargs) -> Dict[str, Any]:
+    def run(self, **kwargs) -> dict[str, Any]:
         """Execute the tool and return result."""
         raise NotImplementedError
 
-    def to_openai_schema(self) -> Dict[str, Any]:
+    def to_openai_schema(self) -> dict[str, Any]:
         """Convert to OpenAI function calling schema."""
         return {
             "type": "function",
@@ -110,7 +108,7 @@ class CodeTool:
 
 
 # Singleton instance
-_code_tool_registry: Optional[CodeToolRegistry] = None
+_code_tool_registry: CodeToolRegistry | None = None
 
 
 def get_code_tool_registry() -> CodeToolRegistry:

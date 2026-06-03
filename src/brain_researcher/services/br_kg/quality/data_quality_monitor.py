@@ -4,15 +4,16 @@ This module provides automated data quality checks, anomaly detection,
 and quality reports for the knowledge graph.
 """
 
+import json
 import logging
-from typing import Dict, List, Any, Optional, Set, Tuple
+import statistics
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-import statistics
+from typing import Any
+
 import numpy as np
-from collections import defaultdict
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +49,9 @@ class QualityIssue:
     severity: str  # "critical", "high", "medium", "low"
     entity_type: str
     entity_id: str
-    field: Optional[str]
+    field: str | None
     description: str
-    suggested_fix: Optional[str] = None
+    suggested_fix: str | None = None
     detected_at: datetime = field(default_factory=datetime.now)
 
 
@@ -63,10 +64,10 @@ class QualityReport:
     period_start: datetime
     period_end: datetime
     overall_score: float
-    metrics: Dict[str, float]
-    issues: List[QualityIssue]
-    trends: Dict[str, List[float]]
-    recommendations: List[str]
+    metrics: dict[str, float]
+    issues: list[QualityIssue]
+    trends: dict[str, list[float]]
+    recommendations: list[str]
 
 
 class DataQualityMonitor:
@@ -85,25 +86,20 @@ class DataQualityMonitor:
         self.anomaly_detectors = self._initialize_detectors()
         self.metric_history = defaultdict(list)
 
-    def _define_quality_rules(self) -> Dict[str, Any]:
+    def _define_quality_rules(self) -> dict[str, Any]:
         """Define quality rules for different entity types."""
         return {
             "Task": {
                 "required_fields": ["id", "name", "description"],
                 "unique_fields": ["id", "name"],
                 "reference_fields": {"dataset_id": "Dataset"},
-                "value_ranges": {
-                    "difficulty": (1, 10),
-                    "duration_seconds": (0, 3600)
-                }
+                "value_ranges": {"difficulty": (1, 10), "duration_seconds": (0, 3600)},
             },
             "Concept": {
                 "required_fields": ["id", "name", "definition"],
                 "unique_fields": ["id"],
                 "reference_fields": {"parent_id": "Concept"},
-                "value_ranges": {
-                    "weight": (0, 1)
-                }
+                "value_ranges": {"weight": (0, 1)},
             },
             "Region": {
                 "required_fields": ["id", "name", "coordinates"],
@@ -113,49 +109,33 @@ class DataQualityMonitor:
                     "x": (-100, 100),
                     "y": (-100, 100),
                     "z": (-100, 100),
-                    "volume": (0, 10000)
-                }
+                    "volume": (0, 10000),
+                },
             },
             "Dataset": {
                 "required_fields": ["id", "name", "source"],
                 "unique_fields": ["id"],
                 "reference_fields": {},
-                "value_ranges": {
-                    "size_gb": (0, 10000),
-                    "num_subjects": (1, 100000)
-                }
+                "value_ranges": {"size_gb": (0, 10000), "num_subjects": (1, 100000)},
             },
             "Publication": {
                 "required_fields": ["id", "title", "authors"],
                 "unique_fields": ["id", "doi"],
                 "reference_fields": {},
-                "value_ranges": {
-                    "year": (1900, 2030),
-                    "citation_count": (0, 100000)
-                }
-            }
+                "value_ranges": {"year": (1900, 2030), "citation_count": (0, 100000)},
+            },
         }
 
-    def _initialize_detectors(self) -> Dict[str, Any]:
+    def _initialize_detectors(self) -> dict[str, Any]:
         """Initialize anomaly detection algorithms."""
         return {
-            "isolation_forest": {
-                "contamination": 0.1,
-                "n_estimators": 100
-            },
-            "zscore": {
-                "threshold": 3.0
-            },
-            "iqr": {
-                "factor": 1.5
-            },
-            "temporal": {
-                "window_size": 7,
-                "trend_threshold": 0.3
-            }
+            "isolation_forest": {"contamination": 0.1, "n_estimators": 100},
+            "zscore": {"threshold": 3.0},
+            "iqr": {"factor": 1.5},
+            "temporal": {"window_size": 7, "trend_threshold": 0.3},
         }
 
-    def calculate_metrics(self, entity_type: Optional[str] = None) -> Dict[str, float]:
+    def calculate_metrics(self, entity_type: str | None = None) -> dict[str, float]:
         """Calculate quality metrics.
 
         Args:
@@ -186,14 +166,13 @@ class DataQualityMonitor:
             metrics["overall"] = np.mean(list(metrics.values()))
 
         # Store in history
-        self.metric_history[entity_type or "all"].append({
-            "timestamp": datetime.now().isoformat(),
-            "metrics": metrics
-        })
+        self.metric_history[entity_type or "all"].append(
+            {"timestamp": datetime.now().isoformat(), "metrics": metrics}
+        )
 
         return metrics
 
-    def _calculate_completeness(self, session, entity_type: Optional[str]) -> float:
+    def _calculate_completeness(self, session, entity_type: str | None) -> float:
         """Calculate completeness metric."""
         if entity_type:
             types = [entity_type]
@@ -216,17 +195,17 @@ class DataQualityMonitor:
             RETURN avg(size(present_fields) * 1.0 / $num_required) as completeness
             """
 
-            result = session.run(query, {
-                "required": required_fields,
-                "num_required": len(required_fields)
-            }).single()
+            result = session.run(
+                query,
+                {"required": required_fields, "num_required": len(required_fields)},
+            ).single()
 
             if result and result["completeness"] is not None:
                 completeness_scores.append(result["completeness"])
 
         return np.mean(completeness_scores) if completeness_scores else 0.0
 
-    def _calculate_consistency(self, session, entity_type: Optional[str]) -> float:
+    def _calculate_consistency(self, session, entity_type: str | None) -> float:
         """Calculate consistency metric."""
         consistency_checks = []
 
@@ -273,7 +252,7 @@ class DataQualityMonitor:
 
         return np.mean(consistency_checks) if consistency_checks else 0.0
 
-    def _calculate_uniqueness(self, session, entity_type: Optional[str]) -> float:
+    def _calculate_uniqueness(self, session, entity_type: str | None) -> float:
         """Calculate uniqueness metric."""
         uniqueness_scores = []
 
@@ -302,7 +281,7 @@ class DataQualityMonitor:
 
         return np.mean(uniqueness_scores) if uniqueness_scores else 1.0
 
-    def _calculate_validity(self, session, entity_type: Optional[str]) -> float:
+    def _calculate_validity(self, session, entity_type: str | None) -> float:
         """Calculate validity metric."""
         validity_scores = []
 
@@ -331,7 +310,7 @@ class DataQualityMonitor:
 
         return np.mean(validity_scores) if validity_scores else 1.0
 
-    def _calculate_timeliness(self, session, entity_type: Optional[str]) -> float:
+    def _calculate_timeliness(self, session, entity_type: str | None) -> float:
         """Calculate timeliness metric."""
         # Check how recent the data is
         query = """
@@ -365,7 +344,7 @@ class DataQualityMonitor:
         except:
             return 0.5
 
-    def detect_anomalies(self) -> List[QualityIssue]:
+    def detect_anomalies(self) -> list[QualityIssue]:
         """Detect anomalies in the graph data.
 
         Returns:
@@ -397,7 +376,7 @@ class DataQualityMonitor:
 
         return issues
 
-    def _detect_missing_required(self, session) -> List[QualityIssue]:
+    def _detect_missing_required(self, session) -> list[QualityIssue]:
         """Detect missing required fields."""
         issues = []
 
@@ -415,19 +394,21 @@ class DataQualityMonitor:
                 result = session.run(query)
 
                 for record in result:
-                    issues.append(QualityIssue(
-                        issue_type=AnomalyType.MISSING_REQUIRED,
-                        severity="high",
-                        entity_type=entity_type,
-                        entity_id=record["entity_id"],
-                        field=record["missing_field"],
-                        description=f"Required field '{field}' is missing",
-                        suggested_fix=f"Add value for '{field}' field"
-                    ))
+                    issues.append(
+                        QualityIssue(
+                            issue_type=AnomalyType.MISSING_REQUIRED,
+                            severity="high",
+                            entity_type=entity_type,
+                            entity_id=record["entity_id"],
+                            field=record["missing_field"],
+                            description=f"Required field '{field}' is missing",
+                            suggested_fix=f"Add value for '{field}' field",
+                        )
+                    )
 
         return issues
 
-    def _detect_duplicates(self, session) -> List[QualityIssue]:
+    def _detect_duplicates(self, session) -> list[QualityIssue]:
         """Detect duplicate entities."""
         issues = []
 
@@ -448,19 +429,21 @@ class DataQualityMonitor:
 
                 for record in result:
                     for entity_id in record["ids"][1:]:  # Skip first, report others
-                        issues.append(QualityIssue(
-                            issue_type=AnomalyType.DUPLICATE_ENTITY,
-                            severity="medium",
-                            entity_type=entity_type,
-                            entity_id=entity_id,
-                            field=field,
-                            description=f"Duplicate value '{record['value']}' for unique field '{field}'",
-                            suggested_fix=f"Merge with entity {record['ids'][0]}"
-                        ))
+                        issues.append(
+                            QualityIssue(
+                                issue_type=AnomalyType.DUPLICATE_ENTITY,
+                                severity="medium",
+                                entity_type=entity_type,
+                                entity_id=entity_id,
+                                field=field,
+                                description=f"Duplicate value '{record['value']}' for unique field '{field}'",
+                                suggested_fix=f"Merge with entity {record['ids'][0]}",
+                            )
+                        )
 
         return issues
 
-    def _detect_orphans(self, session) -> List[QualityIssue]:
+    def _detect_orphans(self, session) -> list[QualityIssue]:
         """Detect orphan nodes."""
         issues = []
 
@@ -474,19 +457,21 @@ class DataQualityMonitor:
         result = session.run(query)
 
         for record in result:
-            issues.append(QualityIssue(
-                issue_type=AnomalyType.ORPHAN_NODE,
-                severity="low",
-                entity_type=record["entity_type"],
-                entity_id=record["entity_id"],
-                field=None,
-                description="Node has no relationships",
-                suggested_fix="Connect to related entities or remove"
-            ))
+            issues.append(
+                QualityIssue(
+                    issue_type=AnomalyType.ORPHAN_NODE,
+                    severity="low",
+                    entity_type=record["entity_type"],
+                    entity_id=record["entity_id"],
+                    field=None,
+                    description="Node has no relationships",
+                    suggested_fix="Connect to related entities or remove",
+                )
+            )
 
         return issues
 
-    def _detect_invalid_references(self, session) -> List[QualityIssue]:
+    def _detect_invalid_references(self, session) -> list[QualityIssue]:
         """Detect invalid references."""
         issues = []
 
@@ -505,19 +490,21 @@ class DataQualityMonitor:
                 result = session.run(query)
 
                 for record in result:
-                    issues.append(QualityIssue(
-                        issue_type=AnomalyType.INVALID_REFERENCE,
-                        severity="high",
-                        entity_type=entity_type,
-                        entity_id=record["entity_id"],
-                        field=field,
-                        description=f"Invalid reference '{record['invalid_ref']}' to {target_type}",
-                        suggested_fix=f"Update reference or create missing {target_type}"
-                    ))
+                    issues.append(
+                        QualityIssue(
+                            issue_type=AnomalyType.INVALID_REFERENCE,
+                            severity="high",
+                            entity_type=entity_type,
+                            entity_id=record["entity_id"],
+                            field=field,
+                            description=f"Invalid reference '{record['invalid_ref']}' to {target_type}",
+                            suggested_fix=f"Update reference or create missing {target_type}",
+                        )
+                    )
 
         return issues
 
-    def _detect_outliers(self, session) -> List[QualityIssue]:
+    def _detect_outliers(self, session) -> list[QualityIssue]:
         """Detect statistical outliers using Z-score method."""
         issues = []
 
@@ -552,19 +539,21 @@ class DataQualityMonitor:
                     z_score = abs((value - mean) / stdev)
 
                     if z_score > threshold:
-                        issues.append(QualityIssue(
-                            issue_type=AnomalyType.OUTLIER_VALUE,
-                            severity="medium",
-                            entity_type=entity_type,
-                            entity_id=entity_id,
-                            field=field,
-                            description=f"Outlier value {value} (Z-score: {z_score:.2f})",
-                            suggested_fix=f"Verify value is correct (expected range: {mean-2*stdev:.2f} to {mean+2*stdev:.2f})"
-                        ))
+                        issues.append(
+                            QualityIssue(
+                                issue_type=AnomalyType.OUTLIER_VALUE,
+                                severity="medium",
+                                entity_type=entity_type,
+                                entity_id=entity_id,
+                                field=field,
+                                description=f"Outlier value {value} (Z-score: {z_score:.2f})",
+                                suggested_fix=f"Verify value is correct (expected range: {mean-2*stdev:.2f} to {mean+2*stdev:.2f})",
+                            )
+                        )
 
         return issues
 
-    def _detect_schema_violations(self, session) -> List[QualityIssue]:
+    def _detect_schema_violations(self, session) -> list[QualityIssue]:
         """Detect schema violations."""
         issues = []
 
@@ -580,19 +569,21 @@ class DataQualityMonitor:
         result = session.run(query)
 
         for record in result:
-            issues.append(QualityIssue(
-                issue_type=AnomalyType.SCHEMA_VIOLATION,
-                severity="low",
-                entity_type=str(record["node_labels"]),
-                entity_id="multiple",
-                field=None,
-                description=f"Node has multiple labels: {record['node_labels']}",
-                suggested_fix="Ensure single label per node"
-            ))
+            issues.append(
+                QualityIssue(
+                    issue_type=AnomalyType.SCHEMA_VIOLATION,
+                    severity="low",
+                    entity_type=str(record["node_labels"]),
+                    entity_id="multiple",
+                    field=None,
+                    description=f"Node has multiple labels: {record['node_labels']}",
+                    suggested_fix="Ensure single label per node",
+                )
+            )
 
         return issues
 
-    def _detect_temporal_inconsistencies(self, session) -> List[QualityIssue]:
+    def _detect_temporal_inconsistencies(self, session) -> list[QualityIssue]:
         """Detect temporal inconsistencies."""
         issues = []
 
@@ -608,15 +599,17 @@ class DataQualityMonitor:
         result = session.run(query)
 
         for record in result:
-            issues.append(QualityIssue(
-                issue_type=AnomalyType.TEMPORAL_INCONSISTENCY,
-                severity="medium",
-                entity_type=record["entity_type"],
-                entity_id=record["entity_id"],
-                field="timestamp",
-                description="Timestamp is in the future",
-                suggested_fix="Correct timestamp to valid past date"
-            ))
+            issues.append(
+                QualityIssue(
+                    issue_type=AnomalyType.TEMPORAL_INCONSISTENCY,
+                    severity="medium",
+                    entity_type=record["entity_type"],
+                    entity_id=record["entity_id"],
+                    field="timestamp",
+                    description="Timestamp is in the future",
+                    suggested_fix="Correct timestamp to valid past date",
+                )
+            )
 
         # Check for update before creation
         query2 = """
@@ -630,22 +623,22 @@ class DataQualityMonitor:
         result2 = session.run(query2)
 
         for record in result2:
-            issues.append(QualityIssue(
-                issue_type=AnomalyType.TEMPORAL_INCONSISTENCY,
-                severity="medium",
-                entity_type=record["entity_type"],
-                entity_id=record["entity_id"],
-                field="timestamp",
-                description="Updated before created",
-                suggested_fix="Correct timestamp order"
-            ))
+            issues.append(
+                QualityIssue(
+                    issue_type=AnomalyType.TEMPORAL_INCONSISTENCY,
+                    severity="medium",
+                    entity_type=record["entity_type"],
+                    entity_id=record["entity_id"],
+                    field="timestamp",
+                    description="Updated before created",
+                    suggested_fix="Correct timestamp order",
+                )
+            )
 
         return issues
 
     def generate_report(
-        self,
-        period_days: int = 7,
-        include_trends: bool = True
+        self, period_days: int = 7, include_trends: bool = True
     ) -> QualityReport:
         """Generate comprehensive quality report.
 
@@ -686,7 +679,7 @@ class DataQualityMonitor:
             metrics=metrics,
             issues=issues[:100],  # Limit to top 100 issues
             trends=trends,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
         # Save report
@@ -694,7 +687,7 @@ class DataQualityMonitor:
 
         return report
 
-    def _analyze_trends(self, period_days: int) -> Dict[str, List[float]]:
+    def _analyze_trends(self, period_days: int) -> dict[str, list[float]]:
         """Analyze quality trends over time."""
         trends = {}
 
@@ -707,8 +700,7 @@ class DataQualityMonitor:
             # Get recent history
             cutoff = datetime.now() - timedelta(days=period_days)
             recent = [
-                h for h in history
-                if datetime.fromisoformat(h["timestamp"]) >= cutoff
+                h for h in history if datetime.fromisoformat(h["timestamp"]) >= cutoff
             ]
 
             if not recent:
@@ -724,16 +716,18 @@ class DataQualityMonitor:
 
     def _generate_recommendations(
         self,
-        metrics: Dict[str, float],
-        issues: List[QualityIssue],
-        trends: Dict[str, List[float]]
-    ) -> List[str]:
+        metrics: dict[str, float],
+        issues: list[QualityIssue],
+        trends: dict[str, list[float]],
+    ) -> list[str]:
         """Generate recommendations based on analysis."""
         recommendations = []
 
         # Based on metrics
         if metrics.get("completeness", 1) < 0.8:
-            recommendations.append("Improve data completeness by filling missing required fields")
+            recommendations.append(
+                "Improve data completeness by filling missing required fields"
+            )
 
         if metrics.get("consistency", 1) < 0.8:
             recommendations.append("Review and fix referential integrity issues")
@@ -750,13 +744,19 @@ class DataQualityMonitor:
             issue_counts[issue.issue_type] += 1
 
         if issue_counts[AnomalyType.MISSING_REQUIRED] > 10:
-            recommendations.append("Implement validation on data entry to prevent missing required fields")
+            recommendations.append(
+                "Implement validation on data entry to prevent missing required fields"
+            )
 
         if issue_counts[AnomalyType.DUPLICATE_ENTITY] > 5:
-            recommendations.append("Implement duplicate detection before entity creation")
+            recommendations.append(
+                "Implement duplicate detection before entity creation"
+            )
 
         if issue_counts[AnomalyType.ORPHAN_NODE] > 20:
-            recommendations.append("Review orphan nodes and establish proper relationships")
+            recommendations.append(
+                "Review orphan nodes and establish proper relationships"
+            )
 
         # Based on trends
         for key, values in trends.items():
@@ -764,11 +764,15 @@ class DataQualityMonitor:
                 # Check for declining trend
                 if values[-1] < values[0] * 0.9:
                     metric_name = key.split("_")[-1]
-                    recommendations.append(f"Address declining {metric_name} trend in {key.split('_')[0]}")
+                    recommendations.append(
+                        f"Address declining {metric_name} trend in {key.split('_')[0]}"
+                    )
 
         return recommendations[:10]  # Top 10 recommendations
 
-    def _calculate_overall_score(self, metrics: Dict[str, float], issue_count: int) -> float:
+    def _calculate_overall_score(
+        self, metrics: dict[str, float], issue_count: int
+    ) -> float:
         """Calculate overall quality score."""
         # Base score from metrics
         base_score = metrics.get("overall", 0.5)
@@ -786,14 +790,16 @@ class DataQualityMonitor:
             self.redis.setex(
                 key,
                 86400 * 30,  # 30 days TTL
-                json.dumps({
-                    "report_id": report.report_id,
-                    "generated_at": report.generated_at.isoformat(),
-                    "overall_score": report.overall_score,
-                    "metrics": report.metrics,
-                    "issue_count": len(report.issues),
-                    "recommendations": report.recommendations
-                })
+                json.dumps(
+                    {
+                        "report_id": report.report_id,
+                        "generated_at": report.generated_at.isoformat(),
+                        "overall_score": report.overall_score,
+                        "metrics": report.metrics,
+                        "issue_count": len(report.issues),
+                        "recommendations": report.recommendations,
+                    }
+                ),
             )
 
         # Log summary
@@ -813,35 +819,40 @@ class DataQualityMonitor:
             Formatted report string
         """
         if format == "json":
-            return json.dumps({
-                "report_id": report.report_id,
-                "generated_at": report.generated_at.isoformat(),
-                "period": {
-                    "start": report.period_start.isoformat(),
-                    "end": report.period_end.isoformat()
+            return json.dumps(
+                {
+                    "report_id": report.report_id,
+                    "generated_at": report.generated_at.isoformat(),
+                    "period": {
+                        "start": report.period_start.isoformat(),
+                        "end": report.period_end.isoformat(),
+                    },
+                    "overall_score": report.overall_score,
+                    "metrics": report.metrics,
+                    "issues": [
+                        {
+                            "type": issue.issue_type.value,
+                            "severity": issue.severity,
+                            "entity_type": issue.entity_type,
+                            "entity_id": issue.entity_id,
+                            "description": issue.description,
+                            "suggested_fix": issue.suggested_fix,
+                        }
+                        for issue in report.issues
+                    ],
+                    "trends": report.trends,
+                    "recommendations": report.recommendations,
                 },
-                "overall_score": report.overall_score,
-                "metrics": report.metrics,
-                "issues": [
-                    {
-                        "type": issue.issue_type.value,
-                        "severity": issue.severity,
-                        "entity_type": issue.entity_type,
-                        "entity_id": issue.entity_id,
-                        "description": issue.description,
-                        "suggested_fix": issue.suggested_fix
-                    }
-                    for issue in report.issues
-                ],
-                "trends": report.trends,
-                "recommendations": report.recommendations
-            }, indent=2)
+                indent=2,
+            )
 
         elif format == "markdown":
             md = []
             md.append(f"# Data Quality Report {report.report_id}")
             md.append(f"\n**Generated:** {report.generated_at.isoformat()}")
-            md.append(f"**Period:** {report.period_start.date()} to {report.period_end.date()}")
+            md.append(
+                f"**Period:** {report.period_start.date()} to {report.period_end.date()}"
+            )
             md.append(f"\n## Overall Score: {report.overall_score:.1%}")
 
             md.append("\n## Metrics")
@@ -856,9 +867,13 @@ class DataQualityMonitor:
                 issues_by_type[issue.issue_type.value].append(issue)
 
             for issue_type, type_issues in issues_by_type.items():
-                md.append(f"\n### {issue_type.replace('_', ' ').title()} ({len(type_issues)})")
+                md.append(
+                    f"\n### {issue_type.replace('_', ' ').title()} ({len(type_issues)})"
+                )
                 for issue in type_issues[:5]:  # Show top 5 per type
-                    md.append(f"- {issue.entity_type} {issue.entity_id}: {issue.description}")
+                    md.append(
+                        f"- {issue.entity_type} {issue.entity_id}: {issue.description}"
+                    )
 
             md.append("\n## Recommendations")
             for i, rec in enumerate(report.recommendations, 1):

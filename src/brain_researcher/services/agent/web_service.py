@@ -1589,9 +1589,11 @@ def _plan_context_from_request(
         "domain": plan_request.domain,
         "modality": plan_request.modality,
         "inputs": plan_request.inputs,
-        "constraints": plan_request.constraints.model_dump(mode="json")
-        if plan_request.constraints
-        else None,
+        "constraints": (
+            plan_request.constraints.model_dump(mode="json")
+            if plan_request.constraints
+            else None
+        ),
     }
     if query:
         context["query"] = query
@@ -2797,9 +2799,10 @@ def neurodesk_execute_dispatch():
     if not artifact_id:
         return jsonify({"error": "missing_artifact_id"}), 400
     if mode not in ("local", "k8s", "handoff"):
-        return jsonify(
-            {"error": "invalid_mode", "allowed": ["local", "k8s", "handoff"]}
-        ), 400
+        return (
+            jsonify({"error": "invalid_mode", "allowed": ["local", "k8s", "handoff"]}),
+            400,
+        )
 
     try:
         from brain_researcher.services.tools.neurodesk_compiler import (
@@ -3158,9 +3161,10 @@ def rate_limit(max_per_minute=30):
                 last_reset["count"] = 0
 
             if last_reset["count"] >= max_per_minute:
-                return jsonify(
-                    {"error": "Rate limit exceeded. Please try again later."}
-                ), 429
+                return (
+                    jsonify({"error": "Rate limit exceeded. Please try again later."}),
+                    429,
+                )
 
             last_reset["count"] += 1
             return f(*args, **kwargs)
@@ -3422,11 +3426,7 @@ def simple_chat_internal(
             )
             from brain_researcher.services.tools.tool_registry import ToolRegistry
 
-            global \
-                _CHAT_ORCHESTRATOR, \
-                _CHAT_TOOL_EXECUTOR, \
-                _CHAT_TOOL_REGISTRY, \
-                _CHAT_TOOL_ROUTER
+            global _CHAT_ORCHESTRATOR, _CHAT_TOOL_EXECUTOR, _CHAT_TOOL_REGISTRY, _CHAT_TOOL_ROUTER
             test_mode = os.getenv("PYTEST_CURRENT_TEST") is not None
             light_mode = test_mode or os.getenv("TOOL_DISCOVERY_MODE") == "light"
             use_capabilities = not test_mode
@@ -3564,18 +3564,21 @@ def simple_chat_internal(
             else:
                 os.environ[key] = value
 
-        return jsonify(
-            {
-                "text": text,
-                "metadata": {
-                    "provider": provider,
-                    "model": model_used,
-                    "route": route,
-                    "usage": usage,
-                    "fallback_reason": fallback_reason,
-                },
-            }
-        ), 200
+        return (
+            jsonify(
+                {
+                    "text": text,
+                    "metadata": {
+                        "provider": provider,
+                        "model": model_used,
+                        "route": route,
+                        "usage": usage,
+                        "fallback_reason": fallback_reason,
+                    },
+                }
+            ),
+            200,
+        )
 
     except ApiFeeReservationError as e:
         reason = e.result.reason or str(e)
@@ -3773,12 +3776,14 @@ def simple_chat():
                         "session_id": session_id,
                         "prompt_hash": telemetry.prompt_hash(contextualized_query),
                         "prompt_length": len(contextualized_query or ""),
-                        "scenario": {
-                            "id": scenario_config.id,
-                            "title": scenario_config.title,
-                        }
-                        if scenario_config
-                        else None,
+                        "scenario": (
+                            {
+                                "id": scenario_config.id,
+                                "title": scenario_config.title,
+                            }
+                            if scenario_config
+                            else None
+                        ),
                         "llm": {
                             "provider": provider,
                             "model": model_name,
@@ -4243,15 +4248,19 @@ If no tool is needed: {{"tool": "none", "params": {{}}, "reasoning": "explanatio
                         {
                             "name": tool_name,
                             "arguments": tool_params,
-                            "status": "ok"
-                            if tool_result.status == "success"
-                            else "error",
-                            "result": tool_summary.get("data")
-                            if tool_result.status == "success"
-                            else None,
-                            "error": tool_summary.get("error")
-                            if tool_result.status == "error"
-                            else None,
+                            "status": (
+                                "ok" if tool_result.status == "success" else "error"
+                            ),
+                            "result": (
+                                tool_summary.get("data")
+                                if tool_result.status == "success"
+                                else None
+                            ),
+                            "error": (
+                                tool_summary.get("error")
+                                if tool_result.status == "error"
+                                else None
+                            ),
                         }
                     )
                     if tool_result.status == "success" and tool_result.data:
@@ -4376,9 +4385,11 @@ If no tool is needed: {{"tool": "none", "params": {{}}, "reasoning": "explanatio
             "latency_ms": int(round(act_span_record["duration_ms"])),
             "prompt_hash": telemetry.prompt_hash(query),
             "prompt_length": len(query or ""),
-            "plan_prompt_hash": telemetry.prompt_hash(tool_prompt)
-            if "tool_prompt" in locals()
-            else None,
+            "plan_prompt_hash": (
+                telemetry.prompt_hash(tool_prompt)
+                if "tool_prompt" in locals()
+                else None
+            ),
             "llm": {
                 "provider": plan_metadata.provider if plan_metadata else provider,
                 "model": plan_metadata.model if plan_metadata else model_hint,
@@ -4388,9 +4399,9 @@ If no tool is needed: {{"tool": "none", "params": {{}}, "reasoning": "explanatio
                 "credential": plan_metadata.credential if plan_metadata else None,
                 "bill_to": plan_metadata.bill_to if plan_metadata else None,
                 "usage": usage if plan_metadata else {},
-                "fallback_reason": plan_metadata.fallback_reason
-                if plan_metadata
-                else None,
+                "fallback_reason": (
+                    plan_metadata.fallback_reason if plan_metadata else None
+                ),
             },
             "tooling": {
                 "selected_tool": selected_tool_name,
@@ -4401,12 +4412,14 @@ If no tool is needed: {{"tool": "none", "params": {{}}, "reasoning": "explanatio
                 "artifacts_count": len(artifacts),
             },
             "spans": spans,
-            "error": {
-                "message": str(error_info),
-                "type": type(error_info).__name__,
-            }
-            if error_info
-            else None,
+            "error": (
+                {
+                    "message": str(error_info),
+                    "type": type(error_info).__name__,
+                }
+                if error_info
+                else None
+            ),
         }
         try:
             telemetry.record_event(event_payload, event_type="act")
@@ -4863,9 +4876,10 @@ def submit_feedback():
                 {"status": "success", "message": "Feedback recorded successfully"}
             )
         else:
-            return jsonify(
-                {"error": "Failed to record feedback. Query not found."}
-            ), 404
+            return (
+                jsonify({"error": "Failed to record feedback. Query not found."}),
+                404,
+            )
 
     except Exception as e:
         print(f"Error submitting feedback: {e}")
@@ -4991,11 +5005,14 @@ def clear_user_history(user_id):
         # Require confirmation token
         data = request.get_json() or {}
         if data.get("confirm") != "DELETE_ALL_HISTORY":
-            return jsonify(
-                {
-                    "error": 'Confirmation required. Send {"confirm": "DELETE_ALL_HISTORY"}'
-                }
-            ), 400
+            return (
+                jsonify(
+                    {
+                        "error": 'Confirmation required. Send {"confirm": "DELETE_ALL_HISTORY"}'
+                    }
+                ),
+                400,
+            )
 
         success = get_history().clear_user_history(user_id)
 

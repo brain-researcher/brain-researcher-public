@@ -66,7 +66,9 @@ class KGEvidenceBundleTool(CachedToolWrapper):
 
     def __init__(self, api_url: str | None = None):
         super().__init__(cache_ttl=180)
-        self.api_url = api_url or os.environ.get("BR_KG_API_URL", "http://localhost:5000")
+        self.api_url = api_url or os.environ.get(
+            "BR_KG_API_URL", "http://localhost:5000"
+        )
 
     def get_tool_name(self) -> str:
         return "kg_evidence_bundle"
@@ -139,7 +141,9 @@ class KGEvidenceBundleTool(CachedToolWrapper):
         }
 
         if args.include_path_details:
-            path_url = f"{self.api_url}/api/kg/lens/{lens}/entity/{entity_id}/evidence/paths"
+            path_url = (
+                f"{self.api_url}/api/kg/lens/{lens}/entity/{entity_id}/evidence/paths"
+            )
             path_params = {
                 "limit": str(max(1, min(int(args.limit), 200))),
                 "include_mediated": "true" if args.include_mediated else "false",

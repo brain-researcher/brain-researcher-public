@@ -20,7 +20,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 30
 
 
-def create_access_token(data: dict[str, object], expires_delta: timedelta | None = None) -> str:
+def create_access_token(
+    data: dict[str, object], expires_delta: timedelta | None = None
+) -> str:
     """Create a JWT access token"""
     to_encode = data.copy()
 
@@ -62,9 +64,11 @@ def verify_token(token: str, token_type: str = "access") -> dict[str, object] | 
     except JWTError:
         return None
 
+
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
     return pwd_context.hash(password)
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""

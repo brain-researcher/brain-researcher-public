@@ -75,7 +75,9 @@ def normalize_token_text(value: Any) -> str:
 
 
 def short_hash(*parts: Any, prefix: str, length: int = 16) -> str:
-    joined = "||".join(normalize_token_text(part) for part in parts if normalize_space(part))
+    joined = "||".join(
+        normalize_token_text(part) for part in parts if normalize_space(part)
+    )
     digest = hashlib.sha256(joined.encode("utf-8")).hexdigest()[:length]
     return f"{prefix}_{digest}"
 
@@ -346,7 +348,10 @@ class ClaimMemoryV1(MemoryRecordBaseV1):
                 next(
                     (
                         item.claim_id
-                        for item in [*self.supporting_evidence, *self.conflicting_evidence]
+                        for item in [
+                            *self.supporting_evidence,
+                            *self.conflicting_evidence,
+                        ]
                         if item.claim_id
                     ),
                     None,
@@ -431,7 +436,9 @@ def build_memory_record(card_type: str, card_data: dict[str, Any]) -> MemoryReco
         payload.setdefault(
             "source_run_id",
             short_hash(
-                payload.get("task_description") or payload.get("output_summary") or utc_now_iso(),
+                payload.get("task_description")
+                or payload.get("output_summary")
+                or utc_now_iso(),
                 prefix="manual_run",
             ),
         )

@@ -3,13 +3,14 @@
 This module provides FSL BET (Brain Extraction Tool) conforming to the NeuroTool interface.
 It delegates to the existing agent tool implementation to avoid duplication.
 """
+
 from typing import Any
 
 from pydantic import BaseModel
 
-from brain_researcher.services.tools.base import NeuroTool, ExecutionMode
-from brain_researcher.services.tools.result import ToolResult
+from brain_researcher.services.tools.base import ExecutionMode, NeuroTool
 from brain_researcher.services.tools.fsl_bet_tool import FSLBETTool
+from brain_researcher.services.tools.result import ToolResult
 
 
 class FSLBETPipeline(NeuroTool):

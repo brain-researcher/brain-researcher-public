@@ -12,8 +12,7 @@ import logging
 import os
 import re
 import time
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from brain_researcher.services.tools.runtime_profiles import (
     get_neurodesk_package_profile,
@@ -64,8 +63,8 @@ PARAMETER_ALIASES = {
 
 
 def _apply_parameter_aliases(
-    parameters: Dict[str, Any], package: str
-) -> Tuple[Dict[str, Any], Dict[str, str]]:
+    parameters: dict[str, Any], package: str
+) -> tuple[dict[str, Any], dict[str, str]]:
     """Apply package-specific parameter aliases.
 
     Args:
@@ -93,7 +92,7 @@ def _apply_parameter_aliases(
     return mapped_params, applied
 
 
-def _extract_required_params(tool_definition: Dict[str, Any]) -> List[str]:
+def _extract_required_params(tool_definition: dict[str, Any]) -> list[str]:
     """Extract required parameter IDs from tool definition."""
     metadata = tool_definition.get("metadata", {})
     inputs = metadata.get("boutiques_inputs", [])
@@ -114,8 +113,8 @@ def _extract_required_params(tool_definition: Dict[str, Any]) -> List[str]:
 
 
 def _validate_parameters(
-    tool_definition: Dict[str, Any], parameters: Dict[str, Any]
-) -> Tuple[bool, Optional[Dict[str, Any]]]:
+    tool_definition: dict[str, Any], parameters: dict[str, Any]
+) -> tuple[bool, dict[str, Any] | None]:
     """Validate that all required parameters are provided.
 
     Returns:
@@ -153,9 +152,9 @@ def _validate_parameters(
 
 def render_boutiques_command(
     command_template: str,
-    inputs: List[Dict[str, Any]],
-    parameters: Dict[str, Any],
-) -> List[str]:
+    inputs: list[dict[str, Any]],
+    parameters: dict[str, Any],
+) -> list[str]:
     """Render a Boutiques command-line template with user parameters.
 
     Args:
@@ -177,7 +176,7 @@ def render_boutiques_command(
         >>> render_boutiques_command(template, inputs, params)
         ['3dBlurInMask', '/data/brain.nii', 'smooth', '-FWHM', '4.0']
     """
-    substitutions: Dict[str, str] = {}
+    substitutions: dict[str, str] = {}
 
     for input_spec in inputs:
         input_id = input_spec.get("id")
@@ -234,9 +233,9 @@ def render_boutiques_command(
 
 
 def preview_niwrap_tool(
-    tool_definition: Dict[str, Any],
-    parameters: Dict[str, Any],
-) -> Dict[str, Any]:
+    tool_definition: dict[str, Any],
+    parameters: dict[str, Any],
+) -> dict[str, Any]:
     """Generate a preview of the command that would be executed.
 
     Args:
@@ -266,13 +265,13 @@ def preview_niwrap_tool(
 
 
 def execute_niwrap_tool(
-    tool_definition: Optional[Dict[str, Any]] = None,
-    parameters: Optional[Dict[str, Any]] = None,
-    container_config: Optional[Dict[str, Any]] = None,
-    work_dir: Optional[str] = None,
-    output_dir: Optional[str] = None,
-    tool_name: Optional[str] = None,
-) -> Dict[str, Any]:
+    tool_definition: dict[str, Any] | None = None,
+    parameters: dict[str, Any] | None = None,
+    container_config: dict[str, Any] | None = None,
+    work_dir: str | None = None,
+    output_dir: str | None = None,
+    tool_name: str | None = None,
+) -> dict[str, Any]:
     """Execute a NiWrap tool with the given parameters.
 
     Args:
@@ -307,9 +306,9 @@ def execute_niwrap_tool(
                 app = parts[-1]
                 for candidate in get_niwrap_tools(packages=[package], use_cache=True):
                     candidate_name = str(candidate.get("name", "") or "")
-                    if candidate_name.startswith(f"{package}.") and candidate_name.endswith(
-                        f".{app}.run"
-                    ):
+                    if candidate_name.startswith(
+                        f"{package}."
+                    ) and candidate_name.endswith(f".{app}.run"):
                         resolved_definition = candidate
                         break
 
@@ -365,9 +364,9 @@ def execute_niwrap_tool(
     try:
         # Import container execution helpers from unified executors package
         from brain_researcher.services.tools.executors import (
+            BindMount,
             ContainerRequest,
             run_container,
-            BindMount,
         )
 
         # Build mounts
@@ -465,9 +464,9 @@ def execute_niwrap_tool(
 
 def _resolve_container_config(
     package: str,
-    config_override: Optional[Dict[str, Any]],
-    metadata: Dict[str, Any],
-) -> Dict[str, Any]:
+    config_override: dict[str, Any] | None,
+    metadata: dict[str, Any],
+) -> dict[str, Any]:
     """Resolve container configuration for a package."""
     if config_override:
         return config_override
@@ -501,7 +500,7 @@ def _resolve_cvmfs_image(package: str, version: str) -> str:
     return f"{cvmfs_base}/{package}_{version}.sif"
 
 
-def _get_package_defaults(package: str) -> Dict[str, Any]:
+def _get_package_defaults(package: str) -> dict[str, Any]:
     """Get default container configuration for a package."""
     normalized = normalize_runtime_package_name(package)
     profile = get_neurodesk_package_profile(normalized)
@@ -524,7 +523,7 @@ def _get_package_defaults(package: str) -> Dict[str, Any]:
     return config
 
 
-def _build_mounts(bind_specs: List[str]) -> List:
+def _build_mounts(bind_specs: list[str]) -> list:
     """Convert bind specifications to mount objects."""
     try:
         from brain_researcher.services.tools.executors import BindMount
@@ -551,8 +550,8 @@ __all__ = [
 
 
 def build_command(
-    tool_definition: Dict[str, Any], parameters: Dict[str, Any]
-) -> List[str]:
+    tool_definition: dict[str, Any], parameters: dict[str, Any]
+) -> list[str]:
     """Render a NiWrap command for the given tool definition and parameters.
 
     Thin wrapper around render_boutiques_command so tests can compare commands

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import List, Optional
 
 from brain_researcher.services.knowledge.evidence.base import (
     EvidenceQuery,
@@ -27,7 +26,7 @@ class ToolEvidenceSource(SyncEvidenceSourceAdapter):
     available analysis tools matching a query.
     """
 
-    def __init__(self, registry=None, use_kg: Optional[bool] = None):
+    def __init__(self, registry=None, use_kg: bool | None = None):
         """Initialize the tool evidence source.
 
         Args:
@@ -75,7 +74,7 @@ class ToolEvidenceSource(SyncEvidenceSourceAdapter):
             logger.warning("Failed to create ToolRegistry: %s", exc)
             return None
 
-    def query_sync(self, query: EvidenceQuery) -> List[EvidenceResult]:
+    def query_sync(self, query: EvidenceQuery) -> list[EvidenceResult]:
         """Query the tool registry for matching tools.
 
         Args:
@@ -84,7 +83,7 @@ class ToolEvidenceSource(SyncEvidenceSourceAdapter):
         Returns:
             List of EvidenceResult objects for matching tools.
         """
-        results: List[EvidenceResult] = []
+        results: list[EvidenceResult] = []
 
         registry = self._get_registry()
         if registry is None and not self._use_kg:
@@ -104,7 +103,11 @@ class ToolEvidenceSource(SyncEvidenceSourceAdapter):
                     exposed_only=True,
                     k_candidates=max(20, query.limit),
                 )
-                candidates = (kg_data or {}).get("candidates", []) if isinstance(kg_data, dict) else []
+                candidates = (
+                    (kg_data or {}).get("candidates", [])
+                    if isinstance(kg_data, dict)
+                    else []
+                )
 
                 for idx, cand in enumerate(candidates[: query.limit]):
                     tool_id = str(cand.get("tool_id") or "")
@@ -152,7 +155,11 @@ class ToolEvidenceSource(SyncEvidenceSourceAdapter):
 
         try:
             # Use the registry's built-in search
-            tools = registry.get_tools_for_task(query.text, k=query.limit) if registry else []
+            tools = (
+                registry.get_tools_for_task(query.text, k=query.limit)
+                if registry
+                else []
+            )
 
             for i, tool in enumerate(tools):
                 # Get tool metadata
@@ -199,7 +206,7 @@ class ToolEvidenceSource(SyncEvidenceSourceAdapter):
 def search_tools(
     query_text: str,
     limit: int = 10,
-) -> List[EvidenceResult]:
+) -> list[EvidenceResult]:
     """Convenience function to search for tool evidence.
 
     Args:

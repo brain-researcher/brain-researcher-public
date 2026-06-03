@@ -5,12 +5,11 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import List, Optional
 
 _CODE_AGENT_TOOL_ID = "code_agent"
 
 
-def _parse_allowlist(raw: str) -> Optional[List[str]]:
+def _parse_allowlist(raw: str) -> list[str] | None:
     cleaned = raw.strip()
     if not cleaned or cleaned == "*":
         return None
@@ -23,7 +22,7 @@ class Settings:
     """Container for environment-driven runtime settings."""
 
     planner_mode: str
-    tool_allowlist: Optional[List[str]]
+    tool_allowlist: list[str] | None
     enable_code_agent_tool: bool
     sandbox_enabled: bool
     dag_max_concurrency: int
@@ -49,10 +48,9 @@ def get_settings() -> Settings:
     raw_allowlist = os.getenv("AGENT_TOOL_ALLOWLIST", "*")
     tool_allowlist = _parse_allowlist(raw_allowlist)
 
-    enable_code_agent_tool = (
-        os.getenv("BR_ENABLE_CODE_AGENT_TOOL", "0").strip().lower()
-        in {"1", "true", "yes", "on"}
-    )
+    enable_code_agent_tool = os.getenv(
+        "BR_ENABLE_CODE_AGENT_TOOL", "0"
+    ).strip().lower() in {"1", "true", "yes", "on"}
 
     sandbox_enabled = os.getenv("BR_SANDBOX_ENABLED", "true").strip().lower() == "true"
 

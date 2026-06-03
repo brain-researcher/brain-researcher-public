@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set
+from typing import Any
 
 import yaml
 
@@ -48,8 +49,8 @@ class OnvocLinker:
         self,
         db,
         *,
-        crosswalk_path: Optional[Path] = None,
-        tree_path: Optional[Path] = None,
+        crosswalk_path: Path | None = None,
+        tree_path: Path | None = None,
     ) -> None:
         self.db = db
         resolved_crosswalk = resolve_mapping_path(
@@ -64,13 +65,15 @@ class OnvocLinker:
             fallback=DEFAULT_TREE_PATH,
             must_exist=False,
         )
-        self.crosswalk = self._load_crosswalk(resolved_crosswalk or CANONICAL_CROSSWALK_PATH)
-        self._onvoc_by_id: Dict[str, Dict[str, Any]] = {}
-        self._normalized_name_index: Dict[str, Set[str]] = {}
-        self._fuzzy_lookup: Dict[str, str] = {}
-        self._fuzzy_strings: List[str] = []
+        self.crosswalk = self._load_crosswalk(
+            resolved_crosswalk or CANONICAL_CROSSWALK_PATH
+        )
+        self._onvoc_by_id: dict[str, dict[str, Any]] = {}
+        self._normalized_name_index: dict[str, set[str]] = {}
+        self._fuzzy_lookup: dict[str, str] = {}
+        self._fuzzy_strings: list[str] = []
         self._tree = self._load_tree(resolved_tree or DEFAULT_TREE_PATH)
-        self._cannot_link_map: Dict[str, Set[str]] = (
+        self._cannot_link_map: dict[str, set[str]] = (
             self._tree.cannot_link if self._tree else {}
         )
         self.available = self._load_onvoc_classes()
@@ -78,7 +81,7 @@ class OnvocLinker:
     # ------------------------------------------------------------------
     # Loading helpers
     # ------------------------------------------------------------------
-    def _load_crosswalk(self, path: Path) -> Dict[str, Dict[str, Any]]:
+    def _load_crosswalk(self, path: Path) -> dict[str, dict[str, Any]]:
         if not path.exists():
             return {
                 "tasks": {},
@@ -97,7 +100,7 @@ class OnvocLinker:
             "statsmaps": payload.get("statsmaps", {}),
         }
 
-    def _load_tree(self, path: Path) -> Optional[OnvocTree]:
+    def _load_tree(self, path: Path) -> OnvocTree | None:
         if not path.exists():
             return None
         try:
@@ -105,7 +108,9 @@ class OnvocLinker:
         except OnvocTreeError as exc:
             logger.warning("Unable to load ONVOC tree from %s: %s", path, exc)
         except Exception as exc:  # pragma: no cover - defensive
-            logger.warning("Unexpected error while loading ONVOC tree %s: %s", path, exc)
+            logger.warning(
+                "Unexpected error while loading ONVOC tree %s: %s", path, exc
+            )
         return None
 
     def _load_onvoc_classes(self) -> bool:
@@ -245,12 +250,12 @@ class OnvocLinker:
         *,
         entity_type: str,
         names: Sequence[str],
-        hints: Optional[Dict[str, Sequence[str]]] = None,
+        hints: dict[str, Sequence[str]] | None = None,
     ) -> int:
         if not self.available:
             return 0
 
-        candidates: Dict[str, Dict[str, Any]] = {}
+        candidates: dict[str, dict[str, Any]] = {}
         hints = hints or {}
 
         # 1) Direct crosswalk via canonical identifiers
@@ -339,7 +344,7 @@ class OnvocLinker:
                     )
 
         created = 0
-        selected: Set[str] = set()
+        selected: set[str] = set()
         if self._cannot_link_map:
             selected.update(self._existing_onvoc_ids(entity_id))
         for class_id, payload in sorted(
@@ -347,7 +352,11 @@ class OnvocLinker:
         ):
             if not class_id or class_id not in self._onvoc_by_id:
                 continue
-            if selected and self._tree and self._tree.conflicts_with(class_id, selected):
+            if (
+                selected
+                and self._tree
+                and self._tree.conflicts_with(class_id, selected)
+            ):
                 logger.debug(
                     "Skipping ONVOC class %s due to cannot-link constraint", class_id
                 )
@@ -370,11 +379,11 @@ class OnvocLinker:
     # ------------------------------------------------------------------
     # Candidate registration helpers
     # ------------------------------------------------------------------
-    def _lookup_crosswalk(self, section: str, key: str) -> Optional[Dict[str, Any]]:
+    def _lookup_crosswalk(self, section: str, key: str) -> dict[str, Any] | None:
         section_map = self.crosswalk.get(section, {})
         return section_map.get(key)
 
-    def _match_by_label(self, label: str) -> Optional[str]:
+    def _match_by_label(self, label: str) -> str | None:
         if not label:
             return None
         normalized = normalize_text(str(label))
@@ -388,12 +397,12 @@ class OnvocLinker:
 
     def _register_candidate(
         self,
-        candidates: Dict[str, Dict[str, Any]],
-        class_id: Optional[str],
+        candidates: dict[str, dict[str, Any]],
+        class_id: str | None,
         *,
         base_confidence: float,
         method: str,
-        evidence: Optional[Dict[str, Any]] = None,
+        evidence: dict[str, Any] | None = None,
     ) -> None:
         if not class_id:
             return
@@ -416,7 +425,7 @@ class OnvocLinker:
         *,
         method: str,
         confidence: float,
-        evidence: Optional[Dict[str, Any]] = None,
+        evidence: dict[str, Any] | None = None,
     ) -> int:
         existing_conf = self._get_existing_link_confidence(entity_id, class_id)
         if existing_conf is not None and existing_conf >= confidence:
@@ -433,7 +442,9 @@ class OnvocLinker:
         self.db.create_relationship(entity_id, class_id, "IN_ONVOC", props)
         return 1
 
-    def _get_existing_link_confidence(self, entity_id: str, class_id: str) -> Optional[float]:
+    def _get_existing_link_confidence(
+        self, entity_id: str, class_id: str
+    ) -> float | None:
         try:
             result = self.db._run(
                 """
@@ -459,7 +470,7 @@ class OnvocLinker:
             return None
         return record.get("confidence")
 
-    def _existing_onvoc_ids(self, entity_id: str) -> Set[str]:
+    def _existing_onvoc_ids(self, entity_id: str) -> set[str]:
         query = """
         MATCH (n {id:$entity_id})-[r:IN_ONVOC]->(o)
         WHERE any(lbl IN labels(o) WHERE lbl IN $onvoc_labels)

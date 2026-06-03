@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -24,12 +23,14 @@ class PyTorchModelArgs(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     data_file: str = Field(description="Input data file (numpy/npz)")
-    labels_file: Optional[str] = Field(default=None, description="Labels file for supervised learning")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    labels_file: str | None = Field(
+        default=None, description="Labels file for supervised learning"
+    )
+    output_dir: str | None = Field(default=None, description="Output directory")
 
     model_type: str = Field(default="3dcnn", description="Model architecture")
     task: str = Field(default="classification", description="Task type")
-    n_classes: Optional[int] = Field(default=None, description="Number of classes")
+    n_classes: int | None = Field(default=None, description="Number of classes")
     mode: str = Field(default="train", description="Mode: train/evaluate/predict")
     epochs: int = Field(default=10, description="Training epochs")
     batch_size: int = Field(default=32, description="Batch size")
@@ -38,7 +39,7 @@ class PyTorchModelArgs(BaseModel):
     save_model: bool = Field(default=True, description="Persist trained model")
     save_predictions: bool = Field(default=True, description="Persist predictions")
     save_features: bool = Field(default=False, description="Persist extracted features")
-    seed: Optional[int] = Field(default=None, description="Random seed")
+    seed: int | None = Field(default=None, description="Random seed")
 
 
 class PyTorchDeepLearningTool(NeuroToolWrapper):
@@ -77,7 +78,7 @@ class DLPyTorchTools:
     """Registry helper."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         return [PyTorchDeepLearningTool()]
 
 

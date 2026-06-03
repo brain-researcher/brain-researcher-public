@@ -5,11 +5,10 @@ time-aware constructs for querying graph evolution and temporal patterns.
 """
 
 import logging
-import re
-from typing import Dict, List, Any, Optional, Union
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -54,11 +53,13 @@ class TemporalFilter:
 
     operator: TemporalOperator
     entity_path: str  # e.g., "n", "r", "n.property"
-    time_value: Optional[datetime] = None
-    time_range: Optional[tuple[datetime, datetime]] = None
-    property_name: Optional[str] = None
+    time_value: datetime | None = None
+    time_range: tuple[datetime, datetime] | None = None
+    property_name: str | None = None
 
-    def to_cypher_condition(self, param_prefix: str = "temp") -> tuple[str, Dict[str, Any]]:
+    def to_cypher_condition(
+        self, param_prefix: str = "temp"
+    ) -> tuple[str, dict[str, Any]]:
         """Convert to Cypher WHERE condition.
 
         Args:
@@ -72,71 +73,87 @@ class TemporalFilter:
 
         if self.operator == TemporalOperator.AT_TIME:
             if self.time_value:
-                conditions.extend([
-                    f"{self.entity_path}.transaction_time_start <= ${param_prefix}_at_time",
-                    f"({self.entity_path}.transaction_time_end IS NULL OR {self.entity_path}.transaction_time_end > ${param_prefix}_at_time)"
-                ])
+                conditions.extend(
+                    [
+                        f"{self.entity_path}.transaction_time_start <= ${param_prefix}_at_time",
+                        f"({self.entity_path}.transaction_time_end IS NULL OR {self.entity_path}.transaction_time_end > ${param_prefix}_at_time)",
+                    ]
+                )
                 params[f"{param_prefix}_at_time"] = self.time_value
 
         elif self.operator == TemporalOperator.BEFORE:
             if self.time_value:
-                conditions.append(f"{self.entity_path}.transaction_time_start < ${param_prefix}_before_time")
+                conditions.append(
+                    f"{self.entity_path}.transaction_time_start < ${param_prefix}_before_time"
+                )
                 params[f"{param_prefix}_before_time"] = self.time_value
 
         elif self.operator == TemporalOperator.AFTER:
             if self.time_value:
-                conditions.append(f"{self.entity_path}.transaction_time_start > ${param_prefix}_after_time")
+                conditions.append(
+                    f"{self.entity_path}.transaction_time_start > ${param_prefix}_after_time"
+                )
                 params[f"{param_prefix}_after_time"] = self.time_value
 
         elif self.operator == TemporalOperator.DURING:
             if self.time_range:
                 start_time, end_time = self.time_range
-                conditions.extend([
-                    f"{self.entity_path}.transaction_time_start >= ${param_prefix}_during_start",
-                    f"{self.entity_path}.transaction_time_start <= ${param_prefix}_during_end"
-                ])
+                conditions.extend(
+                    [
+                        f"{self.entity_path}.transaction_time_start >= ${param_prefix}_during_start",
+                        f"{self.entity_path}.transaction_time_start <= ${param_prefix}_during_end",
+                    ]
+                )
                 params[f"{param_prefix}_during_start"] = start_time
                 params[f"{param_prefix}_during_end"] = end_time
 
         elif self.operator == TemporalOperator.BETWEEN:
             if self.time_range:
                 start_time, end_time = self.time_range
-                conditions.extend([
-                    f"{self.entity_path}.transaction_time_start >= ${param_prefix}_between_start",
-                    f"{self.entity_path}.transaction_time_start <= ${param_prefix}_between_end"
-                ])
+                conditions.extend(
+                    [
+                        f"{self.entity_path}.transaction_time_start >= ${param_prefix}_between_start",
+                        f"{self.entity_path}.transaction_time_start <= ${param_prefix}_between_end",
+                    ]
+                )
                 params[f"{param_prefix}_between_start"] = start_time
                 params[f"{param_prefix}_between_end"] = end_time
 
         elif self.operator == TemporalOperator.CREATED:
             if self.time_range:
                 start_time, end_time = self.time_range
-                conditions.extend([
-                    f"{self.entity_path}.created_at >= ${param_prefix}_created_start",
-                    f"{self.entity_path}.created_at <= ${param_prefix}_created_end"
-                ])
+                conditions.extend(
+                    [
+                        f"{self.entity_path}.created_at >= ${param_prefix}_created_start",
+                        f"{self.entity_path}.created_at <= ${param_prefix}_created_end",
+                    ]
+                )
                 params[f"{param_prefix}_created_start"] = start_time
                 params[f"{param_prefix}_created_end"] = end_time
 
         elif self.operator == TemporalOperator.CHANGED:
             if self.time_range:
                 start_time, end_time = self.time_range
-                conditions.extend([
-                    f"{self.entity_path}.updated_at IS NOT NULL",
-                    f"{self.entity_path}.updated_at >= ${param_prefix}_changed_start",
-                    f"{self.entity_path}.updated_at <= ${param_prefix}_changed_end"
-                ])
+                conditions.extend(
+                    [
+                        f"{self.entity_path}.updated_at IS NOT NULL",
+                        f"{self.entity_path}.updated_at >= ${param_prefix}_changed_start",
+                        f"{self.entity_path}.updated_at <= ${param_prefix}_changed_end",
+                    ]
+                )
                 params[f"{param_prefix}_changed_start"] = start_time
                 params[f"{param_prefix}_changed_end"] = end_time
 
         elif self.operator == TemporalOperator.DELETED:
             if self.time_range:
                 start_time, end_time = self.time_range
-                conditions.extend([
-                    f"{self.entity_path}.transaction_time_end IS NOT NULL",
-                    f"{self.entity_path}.transaction_time_end >= ${param_prefix}_deleted_start",
-                    f"{self.entity_path}.transaction_time_end <= ${param_prefix}_deleted_end"
-                ])
+                conditions.extend(
+                    [
+                        f"{self.entity_path}.transaction_time_end IS NOT NULL",
+                        f"{self.entity_path}.transaction_time_end >= ${param_prefix}_deleted_start",
+                        f"{self.entity_path}.transaction_time_end <= ${param_prefix}_deleted_end",
+                    ]
+                )
                 params[f"{param_prefix}_deleted_start"] = start_time
                 params[f"{param_prefix}_deleted_end"] = end_time
 
@@ -174,7 +191,9 @@ class TemporalCypherBuilder:
         )
         return self
 
-    def during_interval(self, start_time: datetime, end_time: datetime) -> "TemporalCypherBuilder":
+    def during_interval(
+        self, start_time: datetime, end_time: datetime
+    ) -> "TemporalCypherBuilder":
         """Query during time interval.
 
         Args:
@@ -186,11 +205,15 @@ class TemporalCypherBuilder:
         """
         self.query_type = TemporalQueryType.INTERVAL
         self.temporal_filters.append(
-            TemporalFilter(TemporalOperator.DURING, "n", time_range=(start_time, end_time))
+            TemporalFilter(
+                TemporalOperator.DURING, "n", time_range=(start_time, end_time)
+            )
         )
         return self
 
-    def evolution_between(self, start_time: datetime, end_time: datetime) -> "TemporalCypherBuilder":
+    def evolution_between(
+        self, start_time: datetime, end_time: datetime
+    ) -> "TemporalCypherBuilder":
         """Query evolution between times.
 
         Args:
@@ -206,9 +229,9 @@ class TemporalCypherBuilder:
 
     def match_temporal_nodes(
         self,
-        labels: Optional[List[str]] = None,
+        labels: list[str] | None = None,
         alias: str = "n",
-        properties: Optional[Dict[str, Any]] = None
+        properties: dict[str, Any] | None = None,
     ) -> "TemporalCypherBuilder":
         """Match temporal nodes.
 
@@ -242,10 +265,10 @@ class TemporalCypherBuilder:
 
     def match_temporal_relationships(
         self,
-        relationship_type: Optional[str] = None,
+        relationship_type: str | None = None,
         start_alias: str = "start",
         end_alias: str = "end",
-        rel_alias: str = "r"
+        rel_alias: str = "r",
     ) -> "TemporalCypherBuilder":
         """Match temporal relationships.
 
@@ -270,7 +293,7 @@ class TemporalCypherBuilder:
         self,
         start_time: datetime,
         end_time: datetime,
-        entity_alias: Optional[str] = None
+        entity_alias: str | None = None,
     ) -> "TemporalCypherBuilder":
         """Add condition for entities created during time range.
 
@@ -284,9 +307,7 @@ class TemporalCypherBuilder:
         """
         alias = entity_alias or self._current_entity_alias or "n"
         temp_filter = TemporalFilter(
-            TemporalOperator.CREATED,
-            alias,
-            time_range=(start_time, end_time)
+            TemporalOperator.CREATED, alias, time_range=(start_time, end_time)
         )
         self.temporal_filters.append(temp_filter)
         return self
@@ -295,7 +316,7 @@ class TemporalCypherBuilder:
         self,
         start_time: datetime,
         end_time: datetime,
-        entity_alias: Optional[str] = None
+        entity_alias: str | None = None,
     ) -> "TemporalCypherBuilder":
         """Add condition for entities changed during time range.
 
@@ -309,9 +330,7 @@ class TemporalCypherBuilder:
         """
         alias = entity_alias or self._current_entity_alias or "n"
         temp_filter = TemporalFilter(
-            TemporalOperator.CHANGED,
-            alias,
-            time_range=(start_time, end_time)
+            TemporalOperator.CHANGED, alias, time_range=(start_time, end_time)
         )
         self.temporal_filters.append(temp_filter)
         return self
@@ -320,7 +339,7 @@ class TemporalCypherBuilder:
         self,
         start_time: datetime,
         end_time: datetime,
-        entity_alias: Optional[str] = None
+        entity_alias: str | None = None,
     ) -> "TemporalCypherBuilder":
         """Add condition for entities deleted during time range.
 
@@ -334,9 +353,7 @@ class TemporalCypherBuilder:
         """
         alias = entity_alias or self._current_entity_alias or "n"
         temp_filter = TemporalFilter(
-            TemporalOperator.DELETED,
-            alias,
-            time_range=(start_time, end_time)
+            TemporalOperator.DELETED, alias, time_range=(start_time, end_time)
         )
         self.temporal_filters.append(temp_filter)
         return self
@@ -345,7 +362,7 @@ class TemporalCypherBuilder:
         self,
         start_time: datetime,
         end_time: datetime,
-        entity_alias: Optional[str] = None
+        entity_alias: str | None = None,
     ) -> "TemporalCypherBuilder":
         """Add condition for entities that remained stable.
 
@@ -377,7 +394,7 @@ class TemporalCypherBuilder:
         property_name: str,
         start_time: datetime,
         end_time: datetime,
-        entity_alias: Optional[str] = None
+        entity_alias: str | None = None,
     ) -> "TemporalCypherBuilder":
         """Add condition for specific property changes.
 
@@ -411,7 +428,9 @@ class TemporalCypherBuilder:
 
         return self
 
-    def where_custom(self, condition: str, params: Optional[Dict[str, Any]] = None) -> "TemporalCypherBuilder":
+    def where_custom(
+        self, condition: str, params: dict[str, Any] | None = None
+    ) -> "TemporalCypherBuilder":
         """Add custom WHERE condition.
 
         Args:
@@ -439,7 +458,9 @@ class TemporalCypherBuilder:
             self.return_clauses.append(alias)
         return self
 
-    def return_properties(self, alias: str, *properties: str) -> "TemporalCypherBuilder":
+    def return_properties(
+        self, alias: str, *properties: str
+    ) -> "TemporalCypherBuilder":
         """Return specific properties of an entity.
 
         Args:
@@ -469,16 +490,13 @@ class TemporalCypherBuilder:
             f"{alias}.transaction_time_start",
             f"{alias}.transaction_time_end",
             f"{alias}.valid_time_start",
-            f"{alias}.valid_time_end"
+            f"{alias}.valid_time_end",
         ]
         self.return_clauses.extend(temporal_props)
         return self
 
     def return_evolution_summary(
-        self,
-        alias: str,
-        start_time: datetime,
-        end_time: datetime
+        self, alias: str, start_time: datetime, end_time: datetime
     ) -> "TemporalCypherBuilder":
         """Return evolution summary for entity.
 
@@ -521,7 +539,9 @@ class TemporalCypherBuilder:
 
         return self
 
-    def order_by_time(self, alias: str, ascending: bool = True) -> "TemporalCypherBuilder":
+    def order_by_time(
+        self, alias: str, ascending: bool = True
+    ) -> "TemporalCypherBuilder":
         """Order by temporal fields.
 
         Args:
@@ -535,7 +555,9 @@ class TemporalCypherBuilder:
         self.order_by_clauses.append(f"{alias}.transaction_time_start {direction}")
         return self
 
-    def order_by_creation(self, alias: str, ascending: bool = True) -> "TemporalCypherBuilder":
+    def order_by_creation(
+        self, alias: str, ascending: bool = True
+    ) -> "TemporalCypherBuilder":
         """Order by creation time.
 
         Args:
@@ -561,7 +583,7 @@ class TemporalCypherBuilder:
         self.limit_value = count
         return self
 
-    def build(self) -> tuple[str, Dict[str, Any]]:
+    def build(self) -> tuple[str, dict[str, Any]]:
         """Build the temporal Cypher query.
 
         Returns:
@@ -616,9 +638,9 @@ class TemporalCypherBuilder:
     def snapshot_query(
         cls,
         time: datetime,
-        labels: Optional[List[str]] = None,
-        properties: Optional[Dict[str, Any]] = None
-    ) -> tuple[str, Dict[str, Any]]:
+        labels: list[str] | None = None,
+        properties: dict[str, Any] | None = None,
+    ) -> tuple[str, dict[str, Any]]:
         """Create a snapshot query.
 
         Args:
@@ -636,11 +658,8 @@ class TemporalCypherBuilder:
 
     @classmethod
     def evolution_query(
-        cls,
-        entity_id: str,
-        start_time: datetime,
-        end_time: datetime
-    ) -> tuple[str, Dict[str, Any]]:
+        cls, entity_id: str, start_time: datetime, end_time: datetime
+    ) -> tuple[str, dict[str, Any]]:
         """Create an evolution query for specific entity.
 
         Args:
@@ -656,7 +675,7 @@ class TemporalCypherBuilder:
         builder.match_temporal_nodes(properties={"id": entity_id})
         builder.where_custom(
             "n.transaction_time_start >= $evolution_start AND n.transaction_time_start <= $evolution_end",
-            {"evolution_start": start_time, "evolution_end": end_time}
+            {"evolution_start": start_time, "evolution_end": end_time},
         )
         builder.return_entities("n")
         builder.return_temporal_info("n")
@@ -669,8 +688,8 @@ class TemporalCypherBuilder:
         cls,
         start_time: datetime,
         end_time: datetime,
-        labels: Optional[List[str]] = None
-    ) -> tuple[str, Dict[str, Any]]:
+        labels: list[str] | None = None,
+    ) -> tuple[str, dict[str, Any]]:
         """Create a change detection query.
 
         Args:
@@ -724,7 +743,6 @@ TEMPORAL_QUERY_TEMPLATES = {
     RETURN n
     ORDER BY n.id
     """,
-
     "entities_created_during": """
     MATCH (n:TemporalNode)
     WHERE n.created_at >= $start_time
@@ -732,7 +750,6 @@ TEMPORAL_QUERY_TEMPLATES = {
     RETURN n, n.created_at
     ORDER BY n.created_at DESC
     """,
-
     "entities_changed_during": """
     MATCH (n:TemporalNode)
     WHERE n.updated_at IS NOT NULL
@@ -741,7 +758,6 @@ TEMPORAL_QUERY_TEMPLATES = {
     RETURN n, n.updated_at, n.version
     ORDER BY n.updated_at DESC
     """,
-
     "entity_evolution": """
     MATCH (n:TemporalNode {id: $entity_id})
     WHERE n.transaction_time_start >= $start_time
@@ -749,7 +765,6 @@ TEMPORAL_QUERY_TEMPLATES = {
     RETURN n, n.version, n.transaction_time_start, n.updated_at
     ORDER BY n.version ASC
     """,
-
     "relationship_evolution": """
     MATCH ()-[r:TEMPORAL_REL {id: $rel_id}]->()
     WHERE r.transaction_time_start >= $start_time
@@ -757,7 +772,6 @@ TEMPORAL_QUERY_TEMPLATES = {
     RETURN r, r.version, r.transaction_time_start, r.updated_at
     ORDER BY r.version ASC
     """,
-
     "most_changed_entities": """
     MATCH (n:TemporalNode)
     WHERE n.transaction_time_start >= $start_time
@@ -768,7 +782,6 @@ TEMPORAL_QUERY_TEMPLATES = {
     RETURN entity_id, change_count,
            [v IN versions | {version: v.version, time: v.transaction_time_start}] as changes
     """,
-
     "temporal_pattern_match": """
     MATCH (n1:TemporalNode)-[r:TEMPORAL_REL]->(n2:TemporalNode)
     WHERE n1.transaction_time_start <= $pattern_time
@@ -778,5 +791,5 @@ TEMPORAL_QUERY_TEMPLATES = {
     AND (n2.transaction_time_end IS NULL OR n2.transaction_time_end > $pattern_time)
     AND (r.transaction_time_end IS NULL OR r.transaction_time_end > $pattern_time)
     RETURN n1, r, n2
-    """
+    """,
 }

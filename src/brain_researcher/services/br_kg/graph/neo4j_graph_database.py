@@ -13,13 +13,14 @@ import hashlib
 import json
 import logging
 import os
-from typing import Any, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 import networkx as nx
 
 try:
     from neo4j import Driver, GraphDatabase, Session, Transaction
-except Exception as exc:  # pragma: no cover
+except Exception:  # pragma: no cover
     GraphDatabase = None  # type: ignore
     Driver = None  # type: ignore
     Session = None  # type: ignore
@@ -117,9 +118,7 @@ class Neo4jGraphDB:
         preload_cache: bool = True,
     ) -> None:
         if GraphDatabase is None:
-            raise ImportError(
-                "neo4j driver is not available. Install neo4j and retry."
-            )
+            raise ImportError("neo4j driver is not available. Install neo4j and retry.")
 
         self._query_timeout_s = _read_positive_float_env("NEO4J_QUERY_TIMEOUT_S", 12.0)
 
@@ -261,12 +260,12 @@ class Neo4jGraphDB:
         """Coerce values to Neo4j-supported primitives/arrays."""
 
         def _sanitize(value: Any) -> Any:
-            if value is None or isinstance(value, (str, int, float, bool)):
+            if value is None or isinstance(value, str | int | float | bool):
                 return value
             if isinstance(value, list):
                 sanitized = []
                 for item in value:
-                    if isinstance(item, (str, int, float, bool)) or item is None:
+                    if isinstance(item, str | int | float | bool) or item is None:
                         sanitized.append(item)
                     else:
                         sanitized.append(json.dumps(item, sort_keys=True, default=str))
@@ -302,7 +301,9 @@ class Neo4jGraphDB:
             for key, val in properties.items()
         }
 
-    def _cache_node(self, node_id: str, labels: list[str], sanitized_props: dict[str, Any]) -> None:
+    def _cache_node(
+        self, node_id: str, labels: list[str], sanitized_props: dict[str, Any]
+    ) -> None:
         cached = dict(sanitized_props)
         cached["labels"] = labels
         self.graph.add_node(node_id, **cached)
@@ -320,7 +321,9 @@ class Neo4jGraphDB:
 
     def _lookup_labels(self, node_id: str) -> list[str]:
         if self.graph.has_node(node_id):
-            cached_labels = self._normalize_label_list(self.graph.nodes[node_id].get("labels"))
+            cached_labels = self._normalize_label_list(
+                self.graph.nodes[node_id].get("labels")
+            )
             if cached_labels:
                 return cached_labels
 
@@ -417,14 +420,18 @@ class Neo4jGraphDB:
     # -----------------
     # Schema utilities
     # -----------------
-    def create_constraint(self, label: str, property: str, constraint_type: str = "UNIQUE") -> None:
+    def create_constraint(
+        self, label: str, property: str, constraint_type: str = "UNIQUE"
+    ) -> None:
         if constraint_type.upper() != "UNIQUE":
             return
         cypher = f"CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{label}`) REQUIRE n.`{property}` IS UNIQUE"
         self._run(cypher)
         logger.info("Created UNIQUE constraint on %s.%s", label, property)
 
-    def create_index(self, label: str, property: str, index_type: str = "BTREE") -> None:
+    def create_index(
+        self, label: str, property: str, index_type: str = "BTREE"
+    ) -> None:
         cypher = f"CREATE INDEX IF NOT EXISTS FOR (n:`{label}`) ON (n.`{property}`)"
         self._run(cypher)
         logger.info("Created index on %s.%s", label, property)
@@ -467,7 +474,10 @@ class Neo4jGraphDB:
         else:
             cypher = "MERGE (n {id: $id}) SET n += $props"
         self._run(cypher, {"id": node_id, "props": sanitized_props})
-        self._run("MATCH (n {id:$id}) SET n.labels = $labels", {"id": node_id, "labels": labels})
+        self._run(
+            "MATCH (n {id:$id}) SET n.labels = $labels",
+            {"id": node_id, "labels": labels},
+        )
 
         self._cache_node(node_id, labels, sanitized_props)
         return node_id
@@ -483,7 +493,9 @@ class Neo4jGraphDB:
         return self.create_node(labels, properties, node_id=node_id)
 
     def find_nodes(
-        self, labels: str | list[str] | None = None, properties: dict[str, Any] | None = None
+        self,
+        labels: str | list[str] | None = None,
+        properties: dict[str, Any] | None = None,
     ) -> list[tuple[str, dict[str, Any]]]:
         if isinstance(labels, str):
             labels = [labels]
@@ -496,7 +508,9 @@ class Neo4jGraphDB:
                 where.append(f"n.`{k}` = ${p}")
                 params[p] = v
         where_clause = (" WHERE " + " AND ".join(where)) if where else ""
-        cypher = f"MATCH (n{(':'+label_str) if label_str else ''}){where_clause} RETURN n"
+        cypher = (
+            f"MATCH (n{(':'+label_str) if label_str else ''}){where_clause} RETURN n"
+        )
         result = self._run(cypher, params)
         out: list[tuple[str, dict[str, Any]]] = []
         for rec in result:
@@ -616,7 +630,9 @@ class Neo4jGraphDB:
         count_record = self._run(
             f"MATCH ()-[r:`{rel_type}`]->() RETURN count(r) AS cnt"
         ).single()
-        removed = int(count_record["cnt"]) if count_record and count_record["cnt"] else 0
+        removed = (
+            int(count_record["cnt"]) if count_record and count_record["cnt"] else 0
+        )
         if removed:
             self._run(f"MATCH ()-[r:`{rel_type}`]->() DELETE r")
             edges_to_remove = [
@@ -631,10 +647,10 @@ class Neo4jGraphDB:
 
     def delete_nodes_by_label(self, label: str) -> int:
         """Delete all nodes (and attached relationships) with the given label."""
-        count_record = self._run(
-            f"MATCH (n:`{label}`) RETURN count(n) AS cnt"
-        ).single()
-        removed = int(count_record["cnt"]) if count_record and count_record["cnt"] else 0
+        count_record = self._run(f"MATCH (n:`{label}`) RETURN count(n) AS cnt").single()
+        removed = (
+            int(count_record["cnt"]) if count_record and count_record["cnt"] else 0
+        )
         if removed:
             self._run(f"MATCH (n:`{label}`) DETACH DELETE n")
             nodes_to_remove = [
@@ -655,7 +671,10 @@ class Neo4jGraphDB:
         total_relationships = self._run(
             "MATCH ()-[r]->() RETURN count(r) AS c"
         ).single()["c"]
-        node_labels = [rec["label"] for rec in self._run("CALL db.labels() YIELD label RETURN label")]
+        node_labels = [
+            rec["label"]
+            for rec in self._run("CALL db.labels() YIELD label RETURN label")
+        ]
         relationship_types = [
             rec["relationshipType"]
             for rec in self._run(
@@ -682,7 +701,7 @@ class Neo4jGraphDB:
         self._run("MATCH (n) DETACH DELETE n")
         self.graph.clear()
 
-    def get_node(self, node_id: str) -> Optional[dict[str, Any]]:
+    def get_node(self, node_id: str) -> dict[str, Any] | None:
         if node_id in self.graph.nodes:
             return self._deserialize_properties(dict(self.graph.nodes[node_id]))
         record = self._run("MATCH (n {id:$id}) RETURN n", {"id": node_id}).single()
@@ -797,7 +816,9 @@ class Neo4jGraphDB:
     # -----------------
     # Graph traversal
     # -----------------
-    def graph_bfs(self, start_id: str, depth: int = 2) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    def graph_bfs(
+        self, start_id: str, depth: int = 2
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         d = max(1, min(int(depth), 3))
         cy_nodes = (
             f"MATCH (s {{id:$id}}) "

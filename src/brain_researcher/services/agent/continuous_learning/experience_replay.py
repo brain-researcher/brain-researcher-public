@@ -1,15 +1,15 @@
 """Experience replay buffers for continuous learning."""
 
-import numpy as np
-import logging
-from typing import Dict, List, Optional, Tuple, Any, Union
-from collections import deque
-from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
-from enum import Enum
 import json
-import heapq
+import logging
 import random
+from collections import deque
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +17,14 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Experience:
     """Single experience tuple for replay buffer."""
-    state: Dict[str, Any]
+
+    state: dict[str, Any]
     action: str
     reward: float
-    next_state: Optional[Dict[str, Any]]
+    next_state: dict[str, Any] | None
     done: bool
     timestamp: datetime
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     priority: float = 1.0
     importance_weight: float = 1.0
 
@@ -43,7 +44,7 @@ class ExperienceReplay:
         self,
         capacity: int = 10000,
         min_experiences: int = 100,
-        sampling_strategy: SamplingStrategy = SamplingStrategy.UNIFORM
+        sampling_strategy: SamplingStrategy = SamplingStrategy.UNIFORM,
     ):
         self.capacity = capacity
         self.min_experiences = min_experiences
@@ -59,13 +60,13 @@ class ExperienceReplay:
 
     def add(
         self,
-        state: Dict[str, Any],
+        state: dict[str, Any],
         action: str,
         reward: float,
-        next_state: Optional[Dict[str, Any]] = None,
+        next_state: dict[str, Any] | None = None,
         done: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
-        priority: float = 1.0
+        metadata: dict[str, Any] | None = None,
+        priority: float = 1.0,
     ) -> None:
         """Add experience to the replay buffer."""
         experience = Experience(
@@ -76,30 +77,34 @@ class ExperienceReplay:
             done=done,
             timestamp=datetime.utcnow(),
             metadata=metadata or {},
-            priority=priority
+            priority=priority,
         )
 
         self.buffer.append(experience)
         self.total_added += 1
         self.last_update = datetime.utcnow()
 
-        logger.debug(f"Added experience to buffer (size: {len(self.buffer)}/{self.capacity})")
+        logger.debug(
+            f"Added experience to buffer (size: {len(self.buffer)}/{self.capacity})"
+        )
 
     def sample(
-        self,
-        batch_size: int,
-        strategy: Optional[SamplingStrategy] = None
-    ) -> List[Experience]:
+        self, batch_size: int, strategy: SamplingStrategy | None = None
+    ) -> list[Experience]:
         """Sample batch of experiences from buffer."""
         if len(self.buffer) < self.min_experiences:
-            logger.warning(f"Buffer has insufficient experiences ({len(self.buffer)} < {self.min_experiences})")
+            logger.warning(
+                f"Buffer has insufficient experiences ({len(self.buffer)} < {self.min_experiences})"
+            )
             return []
 
         strategy = strategy or self.sampling_strategy
         actual_batch_size = min(batch_size, len(self.buffer))
 
         if strategy == SamplingStrategy.UNIFORM:
-            indices = np.random.choice(len(self.buffer), actual_batch_size, replace=False)
+            indices = np.random.choice(
+                len(self.buffer), actual_batch_size, replace=False
+            )
             batch = [self.buffer[i] for i in indices]
 
         elif strategy == SamplingStrategy.PRIORITIZED:
@@ -108,7 +113,9 @@ class ExperienceReplay:
         elif strategy == SamplingStrategy.RECENCY:
             # Sample more recent experiences with higher probability
             weights = self._calculate_recency_weights()
-            indices = np.random.choice(len(self.buffer), actual_batch_size, replace=False, p=weights)
+            indices = np.random.choice(
+                len(self.buffer), actual_batch_size, replace=False, p=weights
+            )
             batch = [self.buffer[i] for i in indices]
 
         elif strategy == SamplingStrategy.TEMPORAL:
@@ -121,20 +128,24 @@ class ExperienceReplay:
 
         else:
             # Fallback to uniform
-            indices = np.random.choice(len(self.buffer), actual_batch_size, replace=False)
+            indices = np.random.choice(
+                len(self.buffer), actual_batch_size, replace=False
+            )
             batch = [self.buffer[i] for i in indices]
 
         self.total_sampled += len(batch)
         return batch
 
-    def update_priorities(self, experiences: List[Experience], priorities: List[float]) -> None:
+    def update_priorities(
+        self, experiences: list[Experience], priorities: list[float]
+    ) -> None:
         """Update priorities of experiences (for prioritized replay)."""
-        for experience, priority in zip(experiences, priorities):
+        for experience, priority in zip(experiences, priorities, strict=False):
             experience.priority = priority
 
         logger.debug(f"Updated priorities for {len(experiences)} experiences")
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get buffer statistics."""
         if not self.buffer:
             return {"size": 0}
@@ -144,7 +155,9 @@ class ExperienceReplay:
 
         # Time distribution
         now = datetime.utcnow()
-        ages_hours = [(now - exp.timestamp).total_seconds() / 3600 for exp in self.buffer]
+        ages_hours = [
+            (now - exp.timestamp).total_seconds() / 3600 for exp in self.buffer
+        ]
 
         # Action distribution
         actions = [exp.action for exp in self.buffer]
@@ -161,21 +174,21 @@ class ExperienceReplay:
                 "mean": float(np.mean(rewards)),
                 "std": float(np.std(rewards)),
                 "min": float(np.min(rewards)),
-                "max": float(np.max(rewards))
+                "max": float(np.max(rewards)),
             },
             "priority_stats": {
                 "mean": float(np.mean(priorities)),
                 "std": float(np.std(priorities)),
                 "min": float(np.min(priorities)),
-                "max": float(np.max(priorities))
+                "max": float(np.max(priorities)),
             },
             "age_stats": {
                 "mean_hours": float(np.mean(ages_hours)),
                 "max_hours": float(np.max(ages_hours)),
-                "min_hours": float(np.min(ages_hours))
+                "min_hours": float(np.min(ages_hours)),
             },
             "action_distribution": action_counts,
-            "last_update": self.last_update.isoformat()
+            "last_update": self.last_update.isoformat(),
         }
 
         return stats
@@ -197,7 +210,7 @@ class ExperienceReplay:
             "sampling_strategy": self.sampling_strategy.value,
             "total_added": self.total_added,
             "total_sampled": self.total_sampled,
-            "experiences": []
+            "experiences": [],
         }
 
         for exp in self.buffer:
@@ -205,14 +218,14 @@ class ExperienceReplay:
             exp_data["timestamp"] = exp.timestamp.isoformat()
             data["experiences"].append(exp_data)
 
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(data, f, indent=2)
 
         logger.info(f"Saved experience buffer to {filepath}")
 
     def load(self, filepath: str) -> None:
         """Load buffer from file."""
-        with open(filepath, 'r') as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         self.capacity = data["capacity"]
@@ -241,7 +254,9 @@ class ExperienceReplay:
             return np.array([])
 
         now = datetime.utcnow()
-        ages = [(now - exp.timestamp).total_seconds() / 3600 for exp in self.buffer]  # hours
+        ages = [
+            (now - exp.timestamp).total_seconds() / 3600 for exp in self.buffer
+        ]  # hours
 
         # Exponential decay: more recent experiences have higher weight
         decay_rate = 0.1  # Decay per hour
@@ -252,7 +267,7 @@ class ExperienceReplay:
 
         return weights
 
-    def _sample_prioritized(self, batch_size: int) -> List[Experience]:
+    def _sample_prioritized(self, batch_size: int) -> list[Experience]:
         """Sample experiences based on priorities."""
         priorities = np.array([exp.priority for exp in self.buffer])
 
@@ -260,7 +275,9 @@ class ExperienceReplay:
         priorities = priorities + 1e-8
         probabilities = priorities / np.sum(priorities)
 
-        indices = np.random.choice(len(self.buffer), batch_size, replace=False, p=probabilities)
+        indices = np.random.choice(
+            len(self.buffer), batch_size, replace=False, p=probabilities
+        )
         batch = [self.buffer[i] for i in indices]
 
         # Calculate importance weights for bias correction
@@ -271,7 +288,7 @@ class ExperienceReplay:
 
         return batch
 
-    def _sample_temporal_diverse(self, batch_size: int) -> List[Experience]:
+    def _sample_temporal_diverse(self, batch_size: int) -> list[Experience]:
         """Sample temporally diverse experiences."""
         if len(self.buffer) <= batch_size:
             return list(self.buffer)
@@ -286,7 +303,11 @@ class ExperienceReplay:
         batch = []
         for i in range(num_buckets):
             start_idx = i * bucket_size
-            end_idx = start_idx + bucket_size if i < num_buckets - 1 else len(sorted_experiences)
+            end_idx = (
+                start_idx + bucket_size
+                if i < num_buckets - 1
+                else len(sorted_experiences)
+            )
 
             bucket = sorted_experiences[start_idx:end_idx]
             if bucket:
@@ -302,7 +323,7 @@ class ExperienceReplay:
 
         return batch[:batch_size]
 
-    def _sample_diverse(self, batch_size: int) -> List[Experience]:
+    def _sample_diverse(self, batch_size: int) -> list[Experience]:
         """Sample diverse experiences based on state similarity."""
         # Simple implementation: cluster by action and sample from each cluster
         action_groups = {}
@@ -338,12 +359,16 @@ class PrioritizedExperienceReplay(ExperienceReplay):
         alpha: float = 0.6,
         beta: float = 0.4,
         beta_increment: float = 0.001,
-        epsilon: float = 1e-6
+        epsilon: float = 1e-6,
     ):
         super().__init__(capacity, sampling_strategy=SamplingStrategy.PRIORITIZED)
 
-        self.alpha = alpha  # How much prioritization to use (0=uniform, 1=full prioritization)
-        self.beta = beta    # Importance sampling weight (0=no correction, 1=full correction)
+        self.alpha = (
+            alpha  # How much prioritization to use (0=uniform, 1=full prioritization)
+        )
+        self.beta = (
+            beta  # Importance sampling weight (0=no correction, 1=full correction)
+        )
         self.beta_increment = beta_increment
         self.epsilon = epsilon  # Small constant to avoid zero priorities
 
@@ -354,13 +379,13 @@ class PrioritizedExperienceReplay(ExperienceReplay):
 
     def add(
         self,
-        state: Dict[str, Any],
+        state: dict[str, Any],
         action: str,
         reward: float,
-        next_state: Optional[Dict[str, Any]] = None,
+        next_state: dict[str, Any] | None = None,
         done: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
-        priority: Optional[float] = None
+        metadata: dict[str, Any] | None = None,
+        priority: float | None = None,
     ) -> None:
         """Add experience with priority."""
         if priority is None:
@@ -377,18 +402,22 @@ class PrioritizedExperienceReplay(ExperienceReplay):
 
         self.max_priority = max(self.max_priority, priority)
 
-    def sample(self, batch_size: int, **kwargs) -> Tuple[List[Experience], np.ndarray, np.ndarray]:
+    def sample(
+        self, batch_size: int, **kwargs
+    ) -> tuple[list[Experience], np.ndarray, np.ndarray]:
         """Sample batch with importance weights."""
         if len(self.buffer) < self.min_experiences:
             return [], np.array([]), np.array([])
 
         # Calculate sampling probabilities
-        priorities = np.array(self.priorities[:len(self.buffer)]) + self.epsilon
-        probabilities = priorities ** self.alpha
+        priorities = np.array(self.priorities[: len(self.buffer)]) + self.epsilon
+        probabilities = priorities**self.alpha
         probabilities = probabilities / np.sum(probabilities)
 
         # Sample indices
-        indices = np.random.choice(len(self.buffer), batch_size, replace=False, p=probabilities)
+        indices = np.random.choice(
+            len(self.buffer), batch_size, replace=False, p=probabilities
+        )
 
         # Get experiences
         batch = [self.buffer[i] for i in indices]
@@ -407,7 +436,7 @@ class PrioritizedExperienceReplay(ExperienceReplay):
 
     def update_priorities(self, indices: np.ndarray, priorities: np.ndarray) -> None:
         """Update priorities for specific experiences."""
-        for idx, priority in zip(indices, priorities):
+        for idx, priority in zip(indices, priorities, strict=False):
             if idx < len(self.priorities):
                 self.priorities[idx] = priority + self.epsilon
                 self.buffer[idx].priority = priority
@@ -416,22 +445,24 @@ class PrioritizedExperienceReplay(ExperienceReplay):
 
         logger.debug(f"Updated {len(indices)} priorities")
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get statistics including priority information."""
         stats = super().get_statistics()
 
         if self.priorities:
-            stats.update({
-                "alpha": self.alpha,
-                "beta": self.beta,
-                "max_priority": self.max_priority,
-                "priority_distribution": {
-                    "mean": float(np.mean(self.priorities)),
-                    "std": float(np.std(self.priorities)),
-                    "min": float(np.min(self.priorities)),
-                    "max": float(np.max(self.priorities))
+            stats.update(
+                {
+                    "alpha": self.alpha,
+                    "beta": self.beta,
+                    "max_priority": self.max_priority,
+                    "priority_distribution": {
+                        "mean": float(np.mean(self.priorities)),
+                        "std": float(np.std(self.priorities)),
+                        "min": float(np.min(self.priorities)),
+                        "max": float(np.max(self.priorities)),
+                    },
                 }
-            })
+            )
 
         return stats
 
@@ -443,7 +474,7 @@ class TemporalExperienceReplay(ExperienceReplay):
         self,
         capacity: int = 10000,
         sequence_length: int = 5,
-        overlap_ratio: float = 0.5
+        overlap_ratio: float = 0.5,
     ):
         super().__init__(capacity, sampling_strategy=SamplingStrategy.TEMPORAL)
 
@@ -456,13 +487,13 @@ class TemporalExperienceReplay(ExperienceReplay):
 
     def add(
         self,
-        state: Dict[str, Any],
+        state: dict[str, Any],
         action: str,
         reward: float,
-        next_state: Optional[Dict[str, Any]] = None,
+        next_state: dict[str, Any] | None = None,
         done: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
-        priority: float = 1.0
+        metadata: dict[str, Any] | None = None,
+        priority: float = 1.0,
     ) -> None:
         """Add experience and manage episodes."""
         experience = Experience(
@@ -473,7 +504,7 @@ class TemporalExperienceReplay(ExperienceReplay):
             done=done,
             timestamp=datetime.utcnow(),
             metadata=metadata or {},
-            priority=priority
+            priority=priority,
         )
 
         self.current_episode.append(experience)
@@ -490,7 +521,7 @@ class TemporalExperienceReplay(ExperienceReplay):
         # Also add to regular buffer
         super().add(state, action, reward, next_state, done, metadata, priority)
 
-    def sample_sequences(self, batch_size: int) -> List[List[Experience]]:
+    def sample_sequences(self, batch_size: int) -> list[list[Experience]]:
         """Sample sequences of experiences."""
         if not self.episodes:
             return []
@@ -504,7 +535,7 @@ class TemporalExperienceReplay(ExperienceReplay):
             if len(episode) >= self.sequence_length:
                 # Sample random starting position
                 start_idx = random.randint(0, len(episode) - self.sequence_length)
-                sequence = episode[start_idx:start_idx + self.sequence_length]
+                sequence = episode[start_idx : start_idx + self.sequence_length]
             else:
                 # Use entire episode if shorter than sequence_length
                 sequence = episode
@@ -513,7 +544,7 @@ class TemporalExperienceReplay(ExperienceReplay):
 
         return sequences
 
-    def get_episode_statistics(self) -> Dict[str, Any]:
+    def get_episode_statistics(self) -> dict[str, Any]:
         """Get episode-based statistics."""
         if not self.episodes:
             return {"num_episodes": 0}
@@ -532,14 +563,14 @@ class TemporalExperienceReplay(ExperienceReplay):
                 "mean": float(np.mean(episode_lengths)),
                 "std": float(np.std(episode_lengths)),
                 "min": int(np.min(episode_lengths)),
-                "max": int(np.max(episode_lengths))
+                "max": int(np.max(episode_lengths)),
             },
             "episode_return_stats": {
                 "mean": float(np.mean(episode_returns)),
                 "std": float(np.std(episode_returns)),
                 "min": float(np.min(episode_returns)),
-                "max": float(np.max(episode_returns))
-            }
+                "max": float(np.max(episode_returns)),
+            },
         }
 
         return stats

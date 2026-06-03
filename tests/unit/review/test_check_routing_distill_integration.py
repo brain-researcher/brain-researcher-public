@@ -30,8 +30,8 @@ from types import SimpleNamespace
 import pytest
 
 from brain_researcher.services.review.check_routing import (
-    ALWAYS_ON_GROUPS,
     _CHECK_TO_GROUP,
+    ALWAYS_ON_GROUPS,
     classify_check,
     select_checks,
 )
@@ -121,13 +121,11 @@ def test_flag_off_runs_all_checks(monkeypatch):
     monkeypatch.delenv(_FLAG, raising=False)
     assert _flag_enabled() is False
 
-    bundle = _glm_only_bundle()
+    _glm_only_bundle()
     # Emulate the diff's branch when the flag is off.
     active = _ALL_CHECK_FNS if not _flag_enabled() else None
     assert active is _ALL_CHECK_FNS
-    assert [fn.__name__ for fn in active] == [
-        fn.__name__ for fn in _ALL_CHECK_FNS
-    ]
+    assert [fn.__name__ for fn in active] == [fn.__name__ for fn in _ALL_CHECK_FNS]
 
 
 @pytest.mark.parametrize("value", ["", "0", "false", "no", "off", "FALSE", "  "])

@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from brain_researcher.services.br_kg.etl.adapters.virtual_brain_adapter import VirtualBrainAdapter
+from brain_researcher.services.br_kg.etl.adapters.virtual_brain_adapter import (
+    VirtualBrainAdapter,
+)
 
 
 def _write_report(sim_dir: Path, sim_id: str, task_id: str) -> None:

@@ -94,7 +94,9 @@ async def perform_studio_session_action(
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Studio session not found") from exc
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=f"Unsupported action: {action}") from exc
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported action: {action}"
+        ) from exc
 
 
 @router.post("/{session_id}/workspace-handoff")

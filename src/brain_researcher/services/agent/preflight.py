@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import time
-from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-import shutil
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -18,6 +18,11 @@ from brain_researcher.services.agent.domain_knowledge import get_domain_knowledg
 from brain_researcher.services.agent.kg_resolution import (
     QueryUnderstandingResult,
     build_query_understanding_result,
+)
+from brain_researcher.services.agent.query_understanding import (
+    ParsedQuery,
+    QueryIntent,
+    create_advanced_parser,
 )
 from brain_researcher.services.agent.resolution_memory import (
     add_pending_decision,
@@ -37,13 +42,9 @@ from brain_researcher.services.agent.resolution_memory import (
     set_session_entry,
     set_step_status,
 )
-from brain_researcher.services.agent.query_understanding import (
-    ParsedQuery,
-    QueryIntent,
-    create_advanced_parser,
-)
 
 logger = logging.getLogger(__name__)
+
 
 def _env_flag(name: str, default: bool = True) -> bool:
     raw = os.getenv(name)
@@ -69,9 +70,9 @@ def _minimal_parsed_query(query: str) -> ParsedQuery:
 
 
 def _tool_candidate_source_counts(
-    candidates: Sequence[Dict[str, Any]] | None,
-) -> Dict[str, int]:
-    counts: Dict[str, int] = {}
+    candidates: Sequence[dict[str, Any]] | None,
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
     for candidate in candidates or []:
         if not isinstance(candidate, dict):
             continue
@@ -81,13 +82,13 @@ def _tool_candidate_source_counts(
 
 
 def _store_tool_candidate_diagnostics(
-    ctx: Optional[Dict[str, Any]],
+    ctx: dict[str, Any] | None,
     *,
-    candidates: Sequence[Dict[str, Any]] | None,
+    candidates: Sequence[dict[str, Any]] | None,
     start_time: float,
     retrieval_path: str,
     cache_hit: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     diagnostics = {
         "surface": resolve_runtime_surface(ctx, default="agent"),
         "candidate_count": len(candidates or []),
@@ -103,9 +104,7 @@ def _store_tool_candidate_diagnostics(
     diagnostics["candidate_source"] = (
         next(iter(source_counts.keys()))
         if len(source_counts) == 1
-        else "mixed"
-        if source_counts
-        else None
+        else "mixed" if source_counts else None
     )
     if isinstance(ctx, dict):
         ctx["tool_candidate_diagnostics"] = diagnostics
@@ -114,10 +113,10 @@ def _store_tool_candidate_diagnostics(
 
 def ensure_query_understanding(
     query: str,
-    ctx: Optional[Dict[str, Any]] = None,
+    ctx: dict[str, Any] | None = None,
     *,
     parser=None,
-) -> Optional[QueryUnderstandingResult]:
+) -> QueryUnderstandingResult | None:
     """Attach QueryUnderstandingResult into ctx when missing (best-effort)."""
 
     if not query:
@@ -199,7 +198,7 @@ def ensure_query_understanding(
     return qur
 
 
-def _extract_tool_id(candidate: Any) -> Optional[str]:
+def _extract_tool_id(candidate: Any) -> str | None:
     if isinstance(candidate, str):
         return candidate
     if isinstance(candidate, dict):
@@ -215,7 +214,7 @@ def _extract_tool_id(candidate: Any) -> Optional[str]:
     return None
 
 
-def _registry_has_tool(registry: Any, tool_id: Optional[str]) -> bool:
+def _registry_has_tool(registry: Any, tool_id: str | None) -> bool:
     if registry is None or not tool_id:
         return False
     try:
@@ -239,10 +238,10 @@ def _registry_has_tool(registry: Any, tool_id: Optional[str]) -> bool:
     return False
 
 
-def _iter_tool_id_variants(tool_id: str) -> List[str]:
-    variants: List[str] = []
+def _iter_tool_id_variants(tool_id: str) -> list[str]:
+    variants: list[str] = []
 
-    def add(value: Optional[str]) -> None:
+    def add(value: str | None) -> None:
         if value and value not in variants:
             variants.append(value)
 
@@ -271,7 +270,7 @@ def _iter_tool_id_variants(tool_id: str) -> List[str]:
     return variants
 
 
-def _canonicalize_tool_id(raw_id: Optional[str], registry: Any) -> Optional[str]:
+def _canonicalize_tool_id(raw_id: str | None, registry: Any) -> str | None:
     if not raw_id:
         return None
 
@@ -303,7 +302,7 @@ def _canonicalize_tool_id(raw_id: Optional[str], registry: Any) -> Optional[str]
     if _registry_has_tool(registry, normalized):
         return normalized
 
-    candidates: List[str] = []
+    candidates: list[str] = []
     if primary_runtime:
         candidates.append(primary_runtime)
 
@@ -332,7 +331,7 @@ def _normalize_tool_candidate(
     catalog_lookup: Any = None,
     default_source: str = "br_kg",
     default_rank: int | None = None,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     raw_tool_id = _extract_tool_id(candidate)
     if not raw_tool_id:
         return None
@@ -350,7 +349,7 @@ def _normalize_tool_candidate(
 
     if payload.get("score") is not None:
         score = payload.get("score")
-        if isinstance(score, (int, float)):
+        if isinstance(score, int | float):
             payload["score"] = float(score)
 
     if registry is not None:
@@ -382,12 +381,12 @@ def _normalize_tool_candidate(
 
 def ensure_tool_candidates(
     query: str,
-    ctx: Optional[Dict[str, Any]] = None,
+    ctx: dict[str, Any] | None = None,
     *,
     tool_retriever=None,
     registry=None,
     top_k: int = 12,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Attach KG-backed tool candidates into ctx when missing (best-effort)."""
 
     if not query:
@@ -683,7 +682,7 @@ def ensure_tool_candidates(
         )
         return []
 
-    candidates: List[Dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = []
     seen: set[str] = set()
     catalog_lookup = None
     if registry is None:
@@ -704,12 +703,16 @@ def ensure_tool_candidates(
             {
                 "tool_id": raw_tool_id,
                 "tool_id_raw": raw_tool_id,
-                "score": getattr(match, "score", None)
-                if not isinstance(match, dict)
-                else match.get("score"),
-                "source": getattr(match, "source", None)
-                if not isinstance(match, dict)
-                else match.get("source"),
+                "score": (
+                    getattr(match, "score", None)
+                    if not isinstance(match, dict)
+                    else match.get("score")
+                ),
+                "source": (
+                    getattr(match, "source", None)
+                    if not isinstance(match, dict)
+                    else match.get("source")
+                ),
                 "rank": idx + 1,
             },
             registry=registry,
@@ -753,9 +756,9 @@ def ensure_tool_candidates(
                     runtime_surface,
                     status="resolved",
                     resolved_id_or_path=str(top_tool),
-                    source_run_id=(ctx or {}).get("run_id")
-                    if isinstance(ctx, dict)
-                    else None,
+                    source_run_id=(
+                        (ctx or {}).get("run_id") if isinstance(ctx, dict) else None
+                    ),
                 )
                 clear_pending_decisions(ctx, capability_intent)
     else:
@@ -766,9 +769,9 @@ def ensure_tool_candidates(
                 runtime_surface,
                 status="negative",
                 resolved_id_or_path=None,
-                source_run_id=(ctx or {}).get("run_id")
-                if isinstance(ctx, dict)
-                else None,
+                source_run_id=(
+                    (ctx or {}).get("run_id") if isinstance(ctx, dict) else None
+                ),
             )
             decision = build_pending_decision(capability_intent)
             if decision:
@@ -839,7 +842,7 @@ class PreflightMode(str, Enum):
     HARD_FAIL = "HARD_FAIL"
 
     @classmethod
-    def from_env(cls) -> "PreflightMode":
+    def from_env(cls) -> PreflightMode:
         raw = os.getenv("BR_PREFLIGHT_MODE", "WARN").upper()
         if raw in cls.__members__:
             return cls[raw]
@@ -853,7 +856,7 @@ class PreflightConfig:
     root_path: Path = Path(".")
 
     @classmethod
-    def from_env(cls) -> "PreflightConfig":
+    def from_env(cls) -> PreflightConfig:
         min_disk = os.getenv("BR_PREFLIGHT_MIN_DISK_GB")
         try:
             min_disk_gb = float(min_disk) if min_disk is not None else 1.0
@@ -865,7 +868,7 @@ class PreflightConfig:
 class PreflightItem(BaseModel):
     check: str
     ok: bool
-    detail: Optional[str] = None
+    detail: str | None = None
 
     @property
     def passed(self) -> bool:  # legacy alias
@@ -873,10 +876,10 @@ class PreflightItem(BaseModel):
 
 
 class PreflightReport(BaseModel):
-    ok: Optional[bool] = None
-    blockers: List[PreflightItem] = Field(default_factory=list)
-    warnings: List[PreflightItem] = Field(default_factory=list)
-    disk_free_gb: Optional[float] = None
+    ok: bool | None = None
+    blockers: list[PreflightItem] = Field(default_factory=list)
+    warnings: list[PreflightItem] = Field(default_factory=list)
+    disk_free_gb: float | None = None
 
     @property
     def passed(self) -> bool:  # legacy alias for tests expecting .passed
@@ -917,23 +920,23 @@ def _iter_candidate_paths(value: Any) -> Iterable[Path]:
     elif isinstance(value, str):
         if _looks_like_path(value):
             yield Path(value)
-    elif isinstance(value, (list, tuple, set)):
+    elif isinstance(value, list | tuple | set):
         for item in value:
             yield from _iter_candidate_paths(item)
 
 
 async def resolve_attachments_for_tool(
-    attachments: Sequence[Dict[str, Any]],
+    attachments: Sequence[dict[str, Any]],
     tool_name: str,
     *,
     resolver: Any = None,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Resolve attachments to local paths (best-effort)."""
 
     if not attachments:
         return {}
 
-    resolved: Dict[str, str] = {}
+    resolved: dict[str, str] = {}
     for att in attachments:
         if not isinstance(att, dict):
             continue
@@ -966,17 +969,17 @@ async def resolve_attachments_for_tool(
 
 def run_preflight(
     *,
-    tool_name: Optional[str] = None,
-    params: Optional[Dict[str, Any]] = None,
-    image_path: Optional[str] = None,
-    attachments: Optional[Sequence[Dict[str, Any]]] = None,
-    config: Optional[PreflightConfig] = None,
+    tool_name: str | None = None,
+    params: dict[str, Any] | None = None,
+    image_path: str | None = None,
+    attachments: Sequence[dict[str, Any]] | None = None,
+    config: PreflightConfig | None = None,
 ) -> PreflightReport:
     """Best-effort preflight checks for disk space + missing inputs."""
 
     cfg = config or PreflightConfig.from_env()
-    blockers: List[PreflightItem] = []
-    warnings: List[PreflightItem] = []
+    blockers: list[PreflightItem] = []
+    warnings: list[PreflightItem] = []
 
     disk_free_gb = None
     try:
@@ -993,7 +996,7 @@ def run_preflight(
     except Exception as exc:  # pragma: no cover - best effort
         warnings.append(PreflightItem(check="disk_free_gb", ok=False, detail=str(exc)))
 
-    missing_paths: List[str] = []
+    missing_paths: list[str] = []
     for value in (params or {}).values():
         for path in _iter_candidate_paths(value):
             if not path.exists():
@@ -1040,14 +1043,14 @@ def run_preflight(
 
 def preflight_batch(
     tools: Iterable[Any], use_cache: bool = True
-) -> Dict[str, PreflightReport]:
+) -> dict[str, PreflightReport]:
     """Run preflight on an iterable of tool-like objects.
 
     This is a lightweight placeholder so unit tests can import and exercise the
     batching API without requiring heavy runtime checks.
     """
 
-    results: Dict[str, PreflightReport] = {}
+    results: dict[str, PreflightReport] = {}
     for idx, tool in enumerate(tools):
         tool_id = (
             getattr(tool, "id", None) or getattr(tool, "name", None) or f"tool-{idx}"

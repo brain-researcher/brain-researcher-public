@@ -5,10 +5,10 @@ Provides CPU/memory allocation, queue management, and resource limits
 for neuroimaging tool execution.
 """
 
-from .resource_manager import ResourceManager, ResourceAllocation, ResourcePool
-from .queue_manager import QueueManager, QueueEntry, Priority
-from .resource_limits import ToolResourceProfile, ResourceLimits, get_tool_profile
-from .resource_monitor import ResourceMonitor, ResourceMetrics
+from .queue_manager import Priority, QueueEntry, QueueManager
+from .resource_limits import ResourceLimits, ToolResourceProfile, get_tool_profile
+from .resource_manager import ResourceAllocation, ResourceManager, ResourcePool
+from .resource_monitor import ResourceMetrics, ResourceMonitor
 
 __all__ = [
     "ResourceManager",

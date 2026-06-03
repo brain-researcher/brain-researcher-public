@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence
 
 import nibabel as nib
 import numpy as np
@@ -29,7 +29,9 @@ def _resample_if_needed(
     label_img: nib.Nifti1Image,
     target_img: nib.Nifti1Image,
 ) -> nib.Nifti1Image:
-    if label_img.shape == target_img.shape and np.allclose(label_img.affine, target_img.affine):
+    if label_img.shape == target_img.shape and np.allclose(
+        label_img.affine, target_img.affine
+    ):
         return label_img
     return resample_to_img(
         label_img,
@@ -46,7 +48,7 @@ def compute_features(
     label_img: nib.Nifti1Image,
     max_label: int = 17,
     z_threshold: float = 2.3,
-) -> List[Yeo17Feature]:
+) -> list[Yeo17Feature]:
     """Return Yeo-17 summaries for ``map_img``."""
 
     label_img = _resample_if_needed(label_img, map_img)
@@ -75,7 +77,7 @@ def compute_features(
         minlength=max_label + 1,
     )
 
-    rows: List[Yeo17Feature] = []
+    rows: list[Yeo17Feature] = []
     for label in range(1, max_label + 1):
         n_vox = int(counts[label])
         if n_vox == 0:
@@ -95,10 +97,10 @@ def compute_features(
 
 
 def resolve_label_and_template(
-    neuromaps_root: Optional[Path] = None,
+    neuromaps_root: Path | None = None,
     *,
-    label_globs: Optional[Sequence[str]] = None,
-    template_globs: Optional[Sequence[str]] = None,
+    label_globs: Sequence[str] | None = None,
+    template_globs: Sequence[str] | None = None,
 ) -> NeuromapsAssets:
     return resolve_neuromaps_assets(
         base_dir=neuromaps_root,

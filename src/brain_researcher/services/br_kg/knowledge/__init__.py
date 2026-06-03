@@ -22,17 +22,17 @@ Usage:
     evidence = await gather_knowledge(query)
 """
 
+from .aggregator import (
+    AggregatorConfig,
+    KnowledgeAggregator,
+    gather_knowledge,
+)
 from .models import (
     AggregatedEvidence,
     EvidenceConfidence,
     KnowledgeItem,
     KnowledgePlan,
     PlanIntent,
-)
-from .aggregator import (
-    AggregatorConfig,
-    KnowledgeAggregator,
-    gather_knowledge,
 )
 from .planner import (
     KnowledgePlanner,

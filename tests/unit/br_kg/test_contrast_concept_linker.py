@@ -13,7 +13,9 @@ import unittest
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from brain_researcher.services.br_kg.etl.mappers.contrast_concept_linker import ContrastConceptLinker
+from brain_researcher.services.br_kg.etl.mappers.contrast_concept_linker import (
+    ContrastConceptLinker,
+)
 
 
 class TestContrastConceptLinker(unittest.TestCase):
@@ -172,8 +174,8 @@ class TestContrastConceptLinker(unittest.TestCase):
     def test_task_matching(self):
         """Test task name matching functionality"""
         # Test caching
-        result1 = self.linker._match_task("N-Back Task")
-        result2 = self.linker._match_task("N-Back Task")
+        self.linker._match_task("N-Back Task")
+        self.linker._match_task("N-Back Task")
 
         # Should use cache on second call
         self.assertEqual(self.linker.stats["cache_hits"], 1)

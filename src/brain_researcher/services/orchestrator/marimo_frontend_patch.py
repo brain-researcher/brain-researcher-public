@@ -23,7 +23,6 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 
-
 _JS_IDENT = r"[A-Za-z_$][\w$]*"
 
 _IMPORT_OLD = 'import{A as tm,E as ai,O as nm,T as rm,a as ii,d as om,n as am,o as im,r as si,s as sm,x as lm}from"./add-cell-with-ai-3_AIzd22.js";'
@@ -93,38 +92,38 @@ _CELL_EDITOR_HANDLERS_RE = re.compile(
 _CELL_EDITOR_HANDLER_MARKER = "updateStagedCells(brStagedCells=>"
 
 _SESSION_RUNTIME_OLD = (
-    'var ut=(()=>{let t=new URL(window.location.href).searchParams.get(j.sessionId);'
+    "var ut=(()=>{let t=new URL(window.location.href).searchParams.get(j.sessionId);"
     'return q(t)?(z(u=>{u.has(j.kiosk)||u.delete(j.sessionId)}),D.debug("Connecting '
     'to existing session",{sessionId:t}),t):(D.debug("Starting a new session",{sessionId:t}),'
-    'K())})();function ft(){return ut}export{it as a,V as c,nt as i,N as l,q as n,'
-    'ot as o,st as r,z as s,ft as t};'
+    "K())})();function ft(){return ut}export{it as a,V as c,nt as i,N as l,q as n,"
+    "ot as o,st as r,z as s,ft as t};"
 )
 _SESSION_RUNTIME_NEW = (
-    'var ut=(()=>{let t=new URL(window.location.href).searchParams.get(j.sessionId);'
+    "var ut=(()=>{let t=new URL(window.location.href).searchParams.get(j.sessionId);"
     'return q(t)?(window.sessionStorage.setItem("brHubSessionId",t),z(u=>{u.has(j.kiosk)'
     '||u.delete(j.sessionId)}),D.debug("Connecting '
     'to existing session",{sessionId:t}),t):(D.debug("Starting a new session",{sessionId:t}),'
     'K())})();function setBrSessionId(t){ut=t||"",t?window.sessionStorage.setItem('
     '"brHubSessionId",t):window.sessionStorage.removeItem("brHubSessionId")}function ft(){'
-    'return ut}'
-    'export{it as a,V as c,nt as i,N as l,q as n,ot as o,st as r,z as s,ft as t,'
-    'setBrSessionId as u};'
+    "return ut}"
+    "export{it as a,V as c,nt as i,N as l,q as n,ot as o,st as r,z as s,ft as t,"
+    "setBrSessionId as u};"
 )
-_SESSION_VALIDATOR_OLD = 'function q(t){return t?/^s_[\\da-z]{6}$/.test(t):!1}'
+_SESSION_VALIDATOR_OLD = "function q(t){return t?/^s_[\\da-z]{6}$/.test(t):!1}"
 _SESSION_VALIDATOR_NEW = (
-    'function q(t){return t?/^(?:s_[\\da-z]{6}|studio_[A-Za-z0-9]+)$/.test(t):!1}'
+    "function q(t){return t?/^(?:s_[\\da-z]{6}|studio_[A-Za-z0-9]+)$/.test(t):!1}"
 )
 
 _CONFIG_HEADERS_OLD = (
     'headers(){let t={"Marimo-Session-Id":R(),"Marimo-Server-Token":'
     'this.config.serverToken??"","x-runtime-url":this.httpURL.toString()};return '
-    'this.config.authToken&&(t.Authorization=`Bearer ${this.config.authToken}`),t}'
+    "this.config.authToken&&(t.Authorization=`Bearer ${this.config.authToken}`),t}"
     'sessionHeaders(){return{"Marimo-Session-Id":R()}}'
 )
 _CONFIG_HEADERS_NEW = (
     'headers(){let t=R(),e={"Marimo-Server-Token":this.config.serverToken??"",'
     '"x-runtime-url":this.httpURL.toString()};return t&&(e["Marimo-Session-Id"]=t),'
-    'this.config.authToken&&(e.Authorization=`Bearer ${this.config.authToken}`),e}'
+    "this.config.authToken&&(e.Authorization=`Bearer ${this.config.authToken}`),e}"
     'sessionHeaders(){let t=R();return t?{"Marimo-Session-Id":t}:{}}'
 )
 
@@ -132,12 +131,12 @@ _PANELS_SESSION_IMPORT_OLD = 'import{i as xt}from"./session-DdnWW30b.js";'
 _PANELS_SESSION_IMPORT_NEW = (
     'import{i as xt,u as setBrSessionId}from"./session-DdnWW30b.js";'
 )
-_PANELS_ON_OPEN_OLD = 'V=async()=>{t.current=!0,w({state:p.OPEN})}'
-_PANELS_ON_OPEN_NEW = 'V=async()=>{setBrSessionId(n),t.current=!0,w({state:p.OPEN})}'
+_PANELS_ON_OPEN_OLD = "V=async()=>{t.current=!0,w({state:p.OPEN})}"
+_PANELS_ON_OPEN_NEW = "V=async()=>{setBrSessionId(n),t.current=!0,w({state:p.OPEN})}"
 _PANELS_ALREADY_CONNECTED_OLD = (
     'case"MARIMO_ALREADY_CONNECTED":w({state:p.CLOSED,code:L.ALREADY_RUNNING,reason:'
     '"another browser tab is already connected to the kernel",canTakeover:!0}),'
-    'W.close();return;'
+    "W.close();return;"
 )
 _PANELS_ALREADY_CONNECTED_NEW = (
     'case"MARIMO_ALREADY_CONNECTED":setBrSessionId(""),w({state:p.CLOSED,'
@@ -166,12 +165,12 @@ _PANELS_MALFORMED_QUERY_NEW = (
 _PANELS_STARTUP_ERROR_OLD = (
     'if(h.reason==="MARIMO_KERNEL_STARTUP_ERROR"){w({state:p.CLOSED,'
     'code:L.KERNEL_STARTUP_ERROR,reason:"Failed to start kernel sandbox"}),'
-    'W.close();return}'
+    "W.close();return}"
 )
 _PANELS_STARTUP_ERROR_NEW = (
     'if(h.reason==="MARIMO_KERNEL_STARTUP_ERROR"){setBrSessionId(""),w({state:p.CLOSED,'
     'code:L.KERNEL_STARTUP_ERROR,reason:"Failed to start kernel sandbox"}),'
-    'W.close();return}'
+    "W.close();return}"
 )
 _PANELS_ON_ERROR_OLD = (
     'onError:h=>{v.warn("WebSocket error",h),w({state:p.CLOSED,'
@@ -189,85 +188,83 @@ _PANELS_KERNEL_NOT_FOUND_CASES = (
 _PANELS_MALFORMED_QUERY_CASE = 'case"MARIMO_MALFORMED_QUERY":'
 _PANELS_STARTUP_ERROR_CASE = 'if(h.reason==="MARIMO_KERNEL_STARTUP_ERROR"){'
 _PANELS_SESSION_IMPORT_RE = re.compile(
-    r'import\{i as (?P<getter>[A-Za-z_$][\w$]*)(?P<setter>,u as setBrSessionId)?\}'
+    r"import\{i as (?P<getter>[A-Za-z_$][\w$]*)(?P<setter>,u as setBrSessionId)?\}"
     r'from"(?P<path>\./session-[^"]+\.js)";'
 )
 _PANELS_WS_SESSION_ID_RE = re.compile(
-    r'getWsURL\((?P<session_id>[A-Za-z_$][\w$]*)\)\.toString\(\)'
+    r"getWsURL\((?P<session_id>[A-Za-z_$][\w$]*)\)\.toString\(\)"
 )
 _PANELS_ON_OPEN_RE = re.compile(
-    r'(?P<prefix>[A-Za-z_$][\w$]*=async\(\)=>\{)'
-    r'(?P<current_ref>[A-Za-z_$][\w$]*)\.current=!0,'
-    r'(?P<state_setter>[A-Za-z_$][\w$]*)\(\{state:(?P<state_enum>[A-Za-z_$][\w$]*)\.OPEN\}\)\}'
+    r"(?P<prefix>[A-Za-z_$][\w$]*=async\(\)=>\{)"
+    r"(?P<current_ref>[A-Za-z_$][\w$]*)\.current=!0,"
+    r"(?P<state_setter>[A-Za-z_$][\w$]*)\(\{state:(?P<state_enum>[A-Za-z_$][\w$]*)\.OPEN\}\)\}"
 )
-_PANELS_ON_ERROR_RE = re.compile(
-    r'onError:(?P<error_arg>[A-Za-z_$][\w$]*)=>\{'
-)
+_PANELS_ON_ERROR_RE = re.compile(r"onError:(?P<error_arg>[A-Za-z_$][\w$]*)=>\{")
 _PANELS_STARTUP_ERROR_RETURN_CASE = 'case"MARIMO_KERNEL_STARTUP_ERROR":'
 
 _AI_PROVIDER_REGISTRY_OLD = (
-    'function yt(t){let e=t.get(Ni),a=t.get(Pi),r=t.get(Ti);return new To().register(new '
-    'Fu(a)).register(new zu(r,a)).register(new Lu(t)).register(new Mu(t)).register(new '
-    'So(e.connectionsMap,a))}'
+    "function yt(t){let e=t.get(Ni),a=t.get(Pi),r=t.get(Ti);return new To().register(new "
+    "Fu(a)).register(new zu(r,a)).register(new Lu(t)).register(new Mu(t)).register(new "
+    "So(e.connectionsMap,a))}"
 )
 _AI_PROVIDER_REGISTRY_NEW = (
     'let brHubResources=[],brHubResourcesPromise=null,brHubSections={TOOL:{name:"Tools",'
     'rank:6},DATASET:{name:"Datasets",rank:7},WORKFLOW:{name:"Workflows",rank:8},'
     'KG:{name:"Knowledge Graph",rank:9}};'
-    'function brReadSessionId(t){try{let e=new URL(t,window.location.href).searchParams.get'
+    "function brReadSessionId(t){try{let e=new URL(t,window.location.href).searchParams.get"
     '("session_id")||"";return e&&window.sessionStorage.setItem("brHubSessionId",e),e}'
     'catch{return""}}function brHubSessionId(){return brReadSessionId(window.location.href)||'
     'brReadSessionId(document.referrer)||window.sessionStorage.getItem("brHubSessionId")||""}'
-    'async function brEnsureHubResources(){if(brHubResources.length>0)return brHubResources;'
-    'if(brHubResourcesPromise)return brHubResourcesPromise;let t=brHubSessionId();return '
-    't?(brHubResourcesPromise=fetch('
+    "async function brEnsureHubResources(){if(brHubResources.length>0)return brHubResources;"
+    "if(brHubResourcesPromise)return brHubResourcesPromise;let t=brHubSessionId();return "
+    "t?(brHubResourcesPromise=fetch("
     '`/api/hub/sessions/${encodeURIComponent(t)}/resources`,{credentials:"same-origin"})'
-    '.then(async e=>{if(!e.ok)throw new Error(`BR hub resources ${e.status}`);let a=await '
-    'e.json(),r=Array.isArray(a==null?void 0:a.resources)?a.resources:[];return '
+    ".then(async e=>{if(!e.ok)throw new Error(`BR hub resources ${e.status}`);let a=await "
+    "e.json(),r=Array.isArray(a==null?void 0:a.resources)?a.resources:[];return "
     'brHubResources=r.filter(s=>s&&typeof s.uri=="string"&&typeof s.type=="string"),'
     'brHubResources}).catch(e=>(se.warn("Failed to load BR hub resources",e),'
-    'brHubResources=[])).finally(()=>{brHubResourcesPromise=null}),brHubResourcesPromise)'
-    ':[]}class BrHubResourceProvider extends Ft{constructor(t,e,a,r){super();this.contextType=t,'
+    "brHubResources=[])).finally(()=>{brHubResourcesPromise=null}),brHubResourcesPromise)"
+    ":[]}class BrHubResourceProvider extends Ft{constructor(t,e,a,r){super();this.contextType=t,"
     'this.title=e,this.section=a,this.rank=r,this.mentionPrefix="@"}getItems(){return '
-    'brHubResources.filter(t=>t.type===this.contextType)}parseContextIds(t){let e=RegExp('
+    "brHubResources.filter(t=>t.type===this.contextType)}parseContextIds(t){let e=RegExp("
     '`${this.mentionPrefix}(${this.contextType}):\\\\/\\\\/([^\\\\s]+)`,"g"),a=[...t.matchAll(e)],'
-    'r=s=>`${s[1]}://${s[2]}`;return[...new Set(a.map(([t,...s])=>r(s)))]}formatCompletion(t){'
-    'let e=`@${t.uri}`,a=t.details||t.description||t.name;return{label:e,'
+    "r=s=>`${s[1]}://${s[2]}`;return[...new Set(a.map(([t,...s])=>r(s)))]}formatCompletion(t){"
+    "let e=`@${t.uri}`,a=t.details||t.description||t.name;return{label:e,"
     'displayLabel:t.name,detail:t.description||"",boost:this.rank,type:this.contextType,'
-    'apply:e,section:this.section,info:a}}formatContext(t){let e=t.data&&typeof '
+    "apply:e,section:this.section,info:a}}formatContext(t){let e=t.data&&typeof "
     't.data=="object"?t.data:{};return Zt({type:this.contextType,data:e,details:t.details||'
     't.description||""})}async getAttachments(){return[]}}function yt(t){let e=t.get(Ni),'
-    'a=t.get(Pi),r=t.get(Ti);return new To().register(new Fu(a)).register(new zu(r,a))'
-    '.register(new Lu(t)).register(new Mu(t)).register(new So(e.connectionsMap,a))'
+    "a=t.get(Pi),r=t.get(Ti);return new To().register(new Fu(a)).register(new zu(r,a))"
+    ".register(new Lu(t)).register(new Mu(t)).register(new So(e.connectionsMap,a))"
     '.register(new BrHubResourceProvider("tool","Tools",brHubSections.TOOL,St.HIGH))'
     '.register(new BrHubResourceProvider("dataset","Datasets",brHubSections.DATASET,'
     'St.MEDIUM)).register(new BrHubResourceProvider("workflow","Workflows",'
-    'brHubSections.WORKFLOW,St.MEDIUM)).register(new BrHubResourceProvider('
+    "brHubSections.WORKFLOW,St.MEDIUM)).register(new BrHubResourceProvider("
     '"kg","Knowledge Graph",brHubSections.KG,St.MEDIUM))}'
 )
 _AI_AUTOCOMPLETE_OLD = (
-    'autocomplete:xc(async()=>{let s=yt(a).getAllItems();return s.length===0?Pc:s},s=>{var '
-    'n;return s.type===si?$c:((n=yt(a).getProvider(s.type))==null?void 0:n.formatCompletion'
-    '(s))||{}})'
+    "autocomplete:xc(async()=>{let s=yt(a).getAllItems();return s.length===0?Pc:s},s=>{var "
+    "n;return s.type===si?$c:((n=yt(a).getProvider(s.type))==null?void 0:n.formatCompletion"
+    "(s))||{}})"
 )
 _AI_AUTOCOMPLETE_NEW = (
-    'autocomplete:xc(async()=>{await brEnsureHubResources();let s=yt(a).getAllItems();return '
-    's.length===0?Pc:s},s=>{var n;return s.type===si?$c:((n=yt(a).getProvider(s.type))'
-    '==null?void 0:n.formatCompletion(s))||{}})'
+    "autocomplete:xc(async()=>{await brEnsureHubResources();let s=yt(a).getAllItems();return "
+    "s.length===0?Pc:s},s=>{var n;return s.type===si?$c:((n=yt(a).getProvider(s.type))"
+    "==null?void 0:n.formatCompletion(s))||{}})"
 )
 _AI_CONTEXT_REQUEST_OLD = (
     'async function Wu({input:t}){let e="",a=[];if(t.includes("@")){let r=yt(Gr),s='
-    'r.parseAllContextIds(t);e=r.formatContextForAI(s);try{a=await r.getAttachmentsForContext'
+    "r.parseAllContextIds(t);e=r.formatContextForAI(s);try{a=await r.getAttachmentsForContext"
     '(s),se.debug("Included attachments",a.length)}catch(n){se.error("Error getting '
     'attachments:",n)}}return{body:{includeOtherCode:rs(""),context:{plainText:e,schema:[],'
-    'variables:[]}},attachments:a}}'
+    "variables:[]}},attachments:a}}"
 )
 _AI_CONTEXT_REQUEST_NEW = (
     'async function Wu({input:t}){let e="",a=[];if(t.includes("@")){await '
-    'brEnsureHubResources();let r=yt(Gr),s=r.parseAllContextIds(t);e=r.formatContextForAI(s);'
+    "brEnsureHubResources();let r=yt(Gr),s=r.parseAllContextIds(t);e=r.formatContextForAI(s);"
     'try{a=await r.getAttachmentsForContext(s),se.debug("Included attachments",a.length)}'
     'catch(n){se.error("Error getting attachments:",n)}}return{body:{includeOtherCode:rs("")'
-    ',context:{plainText:e,schema:[],variables:[]}},attachments:a}}'
+    ",context:{plainText:e,schema:[],variables:[]}},attachments:a}}"
 )
 _AI_DATASOURCE_IMPORT_RE = re.compile(
     r'import\{(?P<body>[^}]+)\}from"\./datasource-[^"]+\.js";'
@@ -349,10 +346,10 @@ def patch_cell_editor_source(source: str) -> str:
         cell_id_var = state_match.group("cell_id")
         state_replacement = (
             f'{state_match.group("binding")}'
-            f'[cellEditorStagedMap,updateStagedCells]='
+            f"[cellEditorStagedMap,updateStagedCells]="
             f'{state_match.group("hook")}({state_match.group("staged_atom")}),'
             f'{state_match.group("between")}'
-            f'{staged_var}=cellEditorStagedMap.get({cell_id_var}),'
+            f"{staged_var}=cellEditorStagedMap.get({cell_id_var}),"
             f'{state_match.group("previous_var")};'
             f'({staged_var}==null?void 0:{staged_var}.type)==="update_cell"&&'
             f'({state_match.group("previous_var")}={staged_var}.previousCode);'
@@ -449,9 +446,7 @@ def _panels_insert_startup_error_clear(source: str) -> str:
     """Patch the startup-error path across old inline and new transition layouts."""
 
     old_inline_new = f'{_PANELS_STARTUP_ERROR_CASE}setBrSessionId(""),'
-    return_case_new = (
-        f'{_PANELS_STARTUP_ERROR_RETURN_CASE}return setBrSessionId(""),'
-    )
+    return_case_new = f'{_PANELS_STARTUP_ERROR_RETURN_CASE}return setBrSessionId(""),'
     if old_inline_new in source or return_case_new in source:
         return source
 
@@ -476,7 +471,7 @@ def patch_panels_source(source: str) -> str:
     if import_match.group("setter") is None:
         patched = patched.replace(
             import_match.group(0),
-            f'import{{i as {session_getter},u as setBrSessionId}}'
+            f"import{{i as {session_getter},u as setBrSessionId}}"
             f'from"{import_match.group("path")}";',
             1,
         )
@@ -511,7 +506,7 @@ def patch_panels_source(source: str) -> str:
 
     patched = _panels_insert_startup_error_clear(patched)
 
-    if f"if(!{session_getter}())return;setBrSessionId(\"\")" not in patched:
+    if f'if(!{session_getter}())return;setBrSessionId("")' not in patched:
         on_error_match = _PANELS_ON_ERROR_RE.search(patched)
         if on_error_match is None:
             raise ValueError("Could not find marimo panels on-error block to patch")
@@ -561,8 +556,7 @@ def _get_datasource_import_aliases(source: str) -> dict[str, str]:
     ]
     if missing:
         raise ValueError(
-            "Could not derive marimo AI datasource aliases for "
-            + ", ".join(missing)
+            "Could not derive marimo AI datasource aliases for " + ", ".join(missing)
         )
     return aliases
 
@@ -613,63 +607,63 @@ def _render_ai_provider_registry_patch(
     boost_enum = aliases["r"]
 
     return (
-        'let brHubResources=[],brHubResourcesPromise=null,'
+        "let brHubResources=[],brHubResourcesPromise=null,"
         'brHubSections={TOOL:{name:"Tools",rank:6},'
         'DATASET:{name:"Datasets",rank:7},'
         'WORKFLOW:{name:"Workflows",rank:8},'
         'KG:{name:"Knowledge Graph",rank:9}};'
-        'function brReadSessionId(t){try{let e=new URL(t,window.location.href)'
+        "function brReadSessionId(t){try{let e=new URL(t,window.location.href)"
         '.searchParams.get("session_id")||"";return e&&window.sessionStorage'
         '.setItem("brHubSessionId",e),e}catch{return""}}'
-        'function brHubSessionId(){return brReadSessionId(window.location.href)||'
-        'brReadSessionId(document.referrer)||window.sessionStorage'
+        "function brHubSessionId(){return brReadSessionId(window.location.href)||"
+        "brReadSessionId(document.referrer)||window.sessionStorage"
         '.getItem("brHubSessionId")||""}'
-        'async function brEnsureHubResources(){if(brHubResources.length>0)'
-        'return brHubResources;if(brHubResourcesPromise)return brHubResourcesPromise;'
-        'let t=brHubSessionId();return t?(brHubResourcesPromise=fetch('
-        '`/api/hub/sessions/${encodeURIComponent(t)}/resources`,'
+        "async function brEnsureHubResources(){if(brHubResources.length>0)"
+        "return brHubResources;if(brHubResourcesPromise)return brHubResourcesPromise;"
+        "let t=brHubSessionId();return t?(brHubResourcesPromise=fetch("
+        "`/api/hub/sessions/${encodeURIComponent(t)}/resources`,"
         '{credentials:"same-origin"}).then(async e=>{if(!e.ok)throw new Error('
-        '`BR hub resources ${e.status}`);let a=await e.json(),'
-        'r=Array.isArray(a==null?void 0:a.resources)?a.resources:[];'
+        "`BR hub resources ${e.status}`);let a=await e.json(),"
+        "r=Array.isArray(a==null?void 0:a.resources)?a.resources:[];"
         'return brHubResources=r.filter(s=>s&&typeof s.uri=="string"&&'
         'typeof s.type=="string"),brHubResources}).catch(e=>('
         f'{logger}.warn("Failed to load BR hub resources",e),brHubResources=[]))'
-        '.finally(()=>{brHubResourcesPromise=null}),brHubResourcesPromise):[]}'
-        f'class BrHubResourceProvider extends {base_provider_class}'
-        '{constructor(t,e,a,r){super();this.contextType=t,this.title=e,'
+        ".finally(()=>{brHubResourcesPromise=null}),brHubResourcesPromise):[]}"
+        f"class BrHubResourceProvider extends {base_provider_class}"
+        "{constructor(t,e,a,r){super();this.contextType=t,this.title=e,"
         'this.section=a,this.rank=r,this.mentionPrefix="@"}'
-        'getItems(){return brHubResources.filter(t=>t.type===this.contextType)}'
-        'parseContextIds(t){let e=RegExp('
+        "getItems(){return brHubResources.filter(t=>t.type===this.contextType)}"
+        "parseContextIds(t){let e=RegExp("
         '`${this.mentionPrefix}(${this.contextType}):\\\\/\\\\/([^\\\\s]+)`,"g"),'
-        'a=[...t.matchAll(e)],r=s=>`${s[1]}://${s[2]}`;'
-        'return[...new Set(a.map(([t,...s])=>r(s)))]}'
-        'formatCompletion(t){let e=`@${t.uri}`,a=t.details||t.description||t.name;'
+        "a=[...t.matchAll(e)],r=s=>`${s[1]}://${s[2]}`;"
+        "return[...new Set(a.map(([t,...s])=>r(s)))]}"
+        "formatCompletion(t){let e=`@${t.uri}`,a=t.details||t.description||t.name;"
         'return{label:e,displayLabel:t.name,detail:t.description||"",'
-        f'boost:this.rank,type:this.contextType,apply:e,section:this.section,'
+        f"boost:this.rank,type:this.contextType,apply:e,section:this.section,"
         'info:a}}formatContext(t){let e=t.data&&typeof t.data=="object"?t.data:{};'
-        f'return {context_formatter}('
+        f"return {context_formatter}("
         '{type:this.contextType,data:e,details:t.details||t.description||""})}'
-        'async getAttachments(){return[]}}'
-        f'function {registry_fn}({store}){{let {connections}={store}.get('
+        "async getAttachments(){return[]}}"
+        f"function {registry_fn}({store}){{let {connections}={store}.get("
         f'{registry_match.group("connections_token")}),'
         f'{tables}={store}.get({registry_match.group("tables_token")}),'
         f'{variables}={store}.get({registry_match.group("variables_token")});'
         f'return new {registry_match.group("registry_class")}()'
         f'.register(new {registry_match.group("tables_provider")}({tables}))'
         f'.register(new {registry_match.group("variables_provider")}'
-        f'({variables},{tables}))'
+        f"({variables},{tables}))"
         f'.register(new {registry_match.group("errors_provider")}({store}))'
         f'.register(new {registry_match.group("cell_outputs_provider")}({store}))'
         f'.register(new {registry_match.group("datasource_provider")}'
-        f'({connections}.connectionsMap,{tables}))'
+        f"({connections}.connectionsMap,{tables}))"
         f'.register(new BrHubResourceProvider("tool","Tools",'
-        f'brHubSections.TOOL,{boost_enum}.HIGH))'
+        f"brHubSections.TOOL,{boost_enum}.HIGH))"
         f'.register(new BrHubResourceProvider("dataset","Datasets",'
-        f'brHubSections.DATASET,{boost_enum}.MEDIUM))'
+        f"brHubSections.DATASET,{boost_enum}.MEDIUM))"
         f'.register(new BrHubResourceProvider("workflow","Workflows",'
-        f'brHubSections.WORKFLOW,{boost_enum}.MEDIUM))'
+        f"brHubSections.WORKFLOW,{boost_enum}.MEDIUM))"
         f'.register(new BrHubResourceProvider("kg","Knowledge Graph",'
-        f'brHubSections.KG,{boost_enum}.MEDIUM))}}'
+        f"brHubSections.KG,{boost_enum}.MEDIUM))}}"
     )
 
 
@@ -681,7 +675,9 @@ def patch_add_cell_with_ai_source(source: str) -> str:
     if "function brEnsureHubResources()" not in patched:
         registry_match = _AI_PROVIDER_REGISTRY_RE.search(patched)
         if registry_match is None:
-            raise ValueError("Could not find marimo AI provider registry block to patch")
+            raise ValueError(
+                "Could not find marimo AI provider registry block to patch"
+            )
         context_match = _AI_CONTEXT_REQUEST_RE.search(patched)
         if context_match is None:
             raise ValueError("Could not find marimo AI context request block to patch")
@@ -701,7 +697,7 @@ def patch_add_cell_with_ai_source(source: str) -> str:
             raise ValueError("Could not find marimo AI autocomplete block to patch")
         autocomplete_replacement = (
             f'autocomplete:{autocomplete_match.group("autocomplete_fn")}'
-            f'(async()=>{{await brEnsureHubResources();'
+            f"(async()=>{{await brEnsureHubResources();"
             f'let {autocomplete_match.group("items")}='
             f'{autocomplete_match.group("registry_fn")}'
             f'({autocomplete_match.group("store")}).getAllItems();'
@@ -734,7 +730,7 @@ def patch_add_cell_with_ai_source(source: str) -> str:
             f'let {context_match.group("context")}="",'
             f'{context_match.group("attachments")}=[];'
             f'if({context_match.group("input")}.includes("@")){{'
-            f'await brEnsureHubResources();'
+            f"await brEnsureHubResources();"
             f'let {context_match.group("registry")}='
             f'{context_match.group("registry_fn")}({context_match.group("store")}),'
             f'{context_match.group("context_ids")}='
@@ -751,10 +747,10 @@ def patch_add_cell_with_ai_source(source: str) -> str:
             f'catch({context_match.group("error")}){{'
             f'{context_match.group("logger")}.error("Error getting attachments:",'
             f'{context_match.group("error")})}}}}'
-            f'return{{body:{{includeOtherCode:'
+            f"return{{body:{{includeOtherCode:"
             f'{context_match.group("include_other_code")}(""),'
             f'context:{{plainText:{context_match.group("context")},'
-            f'schema:[],variables:[]}}}},'
+            f"schema:[],variables:[]}}}},"
             f'attachments:{context_match.group("attachments")}}}}}'
         )
         patched = patched.replace(context_match.group(0), context_replacement, 1)
@@ -781,6 +777,8 @@ def _cells_usecellactions_impl(source: str) -> str:
     if wrapper_match is None:
         raise ValueError("Could not find marimo useCellActions memo wrapper to patch")
     return wrapper_match.group(1)
+
+
 # Lazy bridge the embedding hub page calls (same-origin) to append a cell through
 # the browser's LIVE marimo session — the exact createNewCell(__end__) call the AI
 # "Add to Notebook" flow uses (newCellId omitted; marimo mints it, like the
@@ -853,7 +851,9 @@ def find_asset(
         )
     if required_marker is not None:
         matches = [
-            path for path in matches if required_marker in path.read_text(errors="ignore")
+            path
+            for path in matches
+            if required_marker in path.read_text(errors="ignore")
         ]
     if len(matches) > 1:
         raise RuntimeError(

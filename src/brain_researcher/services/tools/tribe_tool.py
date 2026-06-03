@@ -212,7 +212,9 @@ def _direct_text_to_events(*, text: str) -> Any:
     rows: list[dict[str, Any]] = []
     cursor = 0.0
     for sentence_index, sentence in enumerate(
-        chunk.strip() for chunk in _TEXT_SENTENCE_SPLIT_RE.split(normalized) if chunk.strip()
+        chunk.strip()
+        for chunk in _TEXT_SENTENCE_SPLIT_RE.split(normalized)
+        if chunk.strip()
     ):
         tokens = _TEXT_TOKEN_RE.findall(sentence)
         if not tokens:
@@ -418,7 +420,9 @@ class TribePredictTool(NeuroToolWrapper):
         else:
             metadata[stimulus_type] = stimulus_value
 
-        return ToolResult(status="success", data={"outputs": outputs}, metadata=metadata)
+        return ToolResult(
+            status="success", data={"outputs": outputs}, metadata=metadata
+        )
 
 
 class TribePredictTools:

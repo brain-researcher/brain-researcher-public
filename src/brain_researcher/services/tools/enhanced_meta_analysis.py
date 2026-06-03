@@ -31,6 +31,7 @@ try:
     import nimare
     from nimare import dataset, meta, utils
     from nimare.correct import FDRCorrector, FWECorrector
+
     NIMARE_AVAILABLE = True
 except ImportError:
     NIMARE_AVAILABLE = False
@@ -39,11 +40,13 @@ except ImportError:
 
 class MetaAnalysisInput(BaseModel):
     """Input model for meta-analysis tools."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class MetaAnalysisMethod(Enum):
     """Meta-analysis methods."""
+
     ALE = "ale"  # Activation Likelihood Estimation
     MKDA = "mkda"  # Multi-level Kernel Density Analysis
     IBMA = "ibma"  # Image-based meta-analysis
@@ -63,7 +66,9 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
         return "coordinate_meta_analysis"
 
     def get_tool_description(self) -> str:
-        return "Perform coordinate-based meta-analysis (ALE, MKDA) on neuroimaging studies"
+        return (
+            "Perform coordinate-based meta-analysis (ALE, MKDA) on neuroimaging studies"
+        )
 
     def get_args_schema(self):
         return MetaAnalysisInput
@@ -78,7 +83,7 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
         voxel_threshold: float = 0.001,
         mask_file: str | None = None,
         output_dir: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Run coordinate-based meta-analysis."""
         try:
@@ -99,9 +104,7 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
 
             # Apply multiple comparisons correction
             corrected_results = self._apply_correction(
-                results,
-                voxel_threshold,
-                cluster_threshold
+                results, voxel_threshold, cluster_threshold
             )
 
             # Save results
@@ -119,21 +122,18 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
                         "uncorrected_map": str(output_path / "uncorrected.nii.gz"),
                         "corrected_map": str(output_path / "corrected.nii.gz"),
                         "cluster_map": str(output_path / "clusters.nii.gz"),
-                        "report": str(output_path / "report.json")
-                    }
+                        "report": str(output_path / "report.json"),
+                    },
                 },
                 metadata={
                     "correction": f"voxel_p={voxel_threshold}, cluster_p={cluster_threshold}",
-                    "iterations": n_iter
-                }
+                    "iterations": n_iter,
+                },
             )
 
         except Exception as e:
             logger.error(f"Coordinate meta-analysis failed: {e}")
-            return ToolResult(
-                status="error",
-                error=str(e)
-            )
+            return ToolResult(status="error", error=str(e))
 
     def _generate_synthetic_coordinates(self) -> tuple[list, list]:
         """Generate synthetic coordinate data."""
@@ -146,10 +146,10 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
         # Generate clusters in typical brain regions
         cluster_centers = [
             [-40, -20, 50],  # Motor cortex
-            [45, 20, 5],     # IFG
+            [45, 20, 5],  # IFG
             [-30, -60, 45],  # IPS
-            [0, -55, 30],    # PCC
-            [-45, -70, -10]  # Visual cortex
+            [0, -55, 30],  # PCC
+            [-45, -70, -10],  # Visual cortex
         ]
 
         for study_idx in range(n_studies):
@@ -175,6 +175,7 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
             if dset is not None:
                 try:
                     from nimare.meta.cbma import ALE
+
                     ale = ALE()
                     results = ale.fit(dset)
 
@@ -182,11 +183,7 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
                     z_map = results.get_map("z", return_type="array")
                     p_map = results.get_map("p", return_type="array")
 
-                    return {
-                        "z_map": z_map,
-                        "p_map": p_map,
-                        "method": "ALE"
-                    }
+                    return {"z_map": z_map, "p_map": p_map, "method": "ALE"}
                 except Exception as e:
                     logger.warning(f"NiMARE ALE failed: {e}, using fallback")
 
@@ -200,6 +197,7 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
             if dset is not None:
                 try:
                     from nimare.meta.cbma import MKDADensity
+
                     mkda = MKDADensity()
                     results = mkda.fit(dset)
 
@@ -207,18 +205,16 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
                     z_map = results.get_map("z", return_type="array")
                     p_map = results.get_map("p", return_type="array")
 
-                    return {
-                        "z_map": z_map,
-                        "p_map": p_map,
-                        "method": "MKDA"
-                    }
+                    return {"z_map": z_map, "p_map": p_map, "method": "MKDA"}
                 except Exception as e:
                     logger.warning(f"NiMARE MKDA failed: {e}, using fallback")
 
         # Fallback implementation with larger kernel
         return self._run_kernel_ma(coordinates, study_ids, kernel_size=15)
 
-    def _run_kernel_ma(self, coordinates: list, study_ids: list, kernel_size: float = 10) -> dict:
+    def _run_kernel_ma(
+        self, coordinates: list, study_ids: list, kernel_size: float = 10
+    ) -> dict:
         """Fallback kernel-based meta-analysis."""
         # Create a simple 3D volume
         volume = np.zeros((91, 109, 91))
@@ -234,7 +230,8 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
 
         # Smooth with Gaussian kernel
         from scipy.ndimage import gaussian_filter
-        smoothed = gaussian_filter(volume, sigma=kernel_size/2)
+
+        smoothed = gaussian_filter(volume, sigma=kernel_size / 2)
 
         # Convert to z-scores
         z_map = (smoothed - smoothed.mean()) / (smoothed.std() + 1e-8)
@@ -244,18 +241,15 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
             "z_map": z_map,
             "p_map": p_map,
             "method": "Kernel",
-            "kernel_size": kernel_size
+            "kernel_size": kernel_size,
         }
 
     def _mni_to_voxel(self, coords: np.ndarray) -> np.ndarray:
         """Convert MNI coordinates to voxel indices."""
         # Simple affine for 2mm MNI space
-        affine = np.array([
-            [-2, 0, 0, 90],
-            [0, 2, 0, -126],
-            [0, 0, 2, -72],
-            [0, 0, 0, 1]
-        ])
+        affine = np.array(
+            [[-2, 0, 0, 90], [0, 2, 0, -126], [0, 0, 2, -72], [0, 0, 0, 1]]
+        )
 
         # Add homogeneous coordinate
         coords_h = np.column_stack([coords, np.ones(len(coords))])
@@ -265,10 +259,12 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
 
         return voxel_coords[:, :3].astype(int)
 
-    def _apply_correction(self, results: dict, voxel_thresh: float, cluster_thresh: float) -> dict:
+    def _apply_correction(
+        self, results: dict, voxel_thresh: float, cluster_thresh: float
+    ) -> dict:
         """Apply multiple comparisons correction."""
         z_map = results.get("z_map")
-        p_map = results.get("p_map")
+        results.get("p_map")
 
         # Voxel-level thresholding
         z_thresh = stats.norm.ppf(1 - voxel_thresh)
@@ -276,6 +272,7 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
 
         # Cluster-level thresholding
         from scipy.ndimage import label
+
         labeled, n_clusters = label(thresholded)
 
         # Get cluster sizes
@@ -296,7 +293,7 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
         min_cluster_size = 100  # voxels
         significant_clusters = labeled.copy()
         for i in range(1, n_clusters + 1):
-            if cluster_sizes[i-1] < min_cluster_size:
+            if cluster_sizes[i - 1] < min_cluster_size:
                 significant_clusters[significant_clusters == i] = 0
 
         return {
@@ -304,7 +301,7 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
             "uncorrected_map": z_map,
             "n_clusters": int((significant_clusters > 0).sum()),
             "peaks": peaks,
-            "cluster_sizes": cluster_sizes
+            "cluster_sizes": cluster_sizes,
         }
 
     def _save_results(self, results: dict, output_path: Path):
@@ -321,7 +318,7 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
         # Save maps
         for name, data in [
             ("uncorrected", results.get("uncorrected_map")),
-            ("corrected", results.get("corrected_map"))
+            ("corrected", results.get("corrected_map")),
         ]:
             if data is not None and isinstance(data, np.ndarray):
                 img = nib.Nifti1Image(data.astype(np.float32), affine)
@@ -331,7 +328,7 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
         report = {
             "n_clusters": int(results.get("n_clusters", 0)),
             "peaks": [[float(x) for x in peak] for peak in results.get("peaks", [])],
-            "cluster_sizes": [int(x) for x in results.get("cluster_sizes", [])]
+            "cluster_sizes": [int(x) for x in results.get("cluster_sizes", [])],
         }
 
         with open(output_path / "report.json", "w") as f:
@@ -344,13 +341,15 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
         # Convert coordinates to DataFrame format expected by NiMARE
         data_list = []
         for coord, study_id in zip(coordinates, study_ids, strict=False):
-            data_list.append({
-                'study_id': study_id,
-                'x': coord[0],
-                'y': coord[1],
-                'z': coord[2],
-                'space': 'MNI'
-            })
+            data_list.append(
+                {
+                    "study_id": study_id,
+                    "x": coord[0],
+                    "y": coord[1],
+                    "z": coord[2],
+                    "space": "MNI",
+                }
+            )
 
         # Create DataFrame
         df = pd.DataFrame(data_list)
@@ -358,7 +357,8 @@ class CoordinateMetaAnalysisTool(NeuroToolWrapper):
         # Create NiMARE Dataset
         try:
             from nimare.dataset import Dataset
-            dset = Dataset(df, target='mni152_2mm')
+
+            dset = Dataset(df, target="mni152_2mm")
             return dset
         except Exception as e:
             logger.warning(f"Failed to create NiMARE dataset: {e}")
@@ -388,7 +388,7 @@ class ImageBasedMetaAnalysisTool(NeuroToolWrapper):
         method: str = "stouffers",
         weighted: bool = True,
         output_dir: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Run image-based meta-analysis."""
         try:
@@ -423,9 +423,9 @@ class ImageBasedMetaAnalysisTool(NeuroToolWrapper):
                     "output_files": {
                         "combined_z": str(output_path / "combined_z.nii.gz"),
                         "combined_p": str(output_path / "combined_p.nii.gz"),
-                        "report": str(output_path / "ibma_report.json")
-                    }
-                }
+                        "report": str(output_path / "ibma_report.json"),
+                    },
+                },
             )
 
         except Exception as e:
@@ -438,46 +438,52 @@ class ImageBasedMetaAnalysisTool(NeuroToolWrapper):
         images = []
         sample_sizes = []
 
-        for i in range(n_studies):
+        for _i in range(n_studies):
             # Create random z-score map
             img = np.random.randn(64, 64, 40)
 
             # Add some signal
-            center = [32 + np.random.randint(-10, 10),
-                     32 + np.random.randint(-10, 10),
-                     20 + np.random.randint(-5, 5)]
+            center = [
+                32 + np.random.randint(-10, 10),
+                32 + np.random.randint(-10, 10),
+                20 + np.random.randint(-5, 5),
+            ]
 
             # Create sphere of activation
             for x in range(64):
                 for y in range(64):
                     for z in range(40):
-                        dist = np.sqrt((x-center[0])**2 + (y-center[1])**2 + (z-center[2])**2)
+                        dist = np.sqrt(
+                            (x - center[0]) ** 2
+                            + (y - center[1]) ** 2
+                            + (z - center[2]) ** 2
+                        )
                         if dist < 10:
-                            img[x, y, z] += 3 * np.exp(-dist/5)
+                            img[x, y, z] += 3 * np.exp(-dist / 5)
 
             images.append(img)
             sample_sizes.append(np.random.randint(20, 100))
 
         return images, sample_sizes
 
-    def _stouffers_z(self, images: list[np.ndarray], sample_sizes: list[int], weighted: bool) -> dict:
+    def _stouffers_z(
+        self, images: list[np.ndarray], sample_sizes: list[int], weighted: bool
+    ) -> dict:
         """Stouffer's Z-score method."""
         z_scores = np.stack(images)
 
         if weighted and sample_sizes:
             weights = np.sqrt(sample_sizes)
             weights = weights / weights.sum()
-            combined_z = np.average(z_scores, axis=0, weights=weights) * np.sqrt(len(images))
+            combined_z = np.average(z_scores, axis=0, weights=weights) * np.sqrt(
+                len(images)
+            )
         else:
             combined_z = np.mean(z_scores, axis=0) * np.sqrt(len(images))
 
         combined_p = 1 - stats.norm.cdf(combined_z)
 
-        return {
-            "z_map": combined_z,
-            "p_map": combined_p,
-            "method": "Stouffer's Z"
-        }
+        return {"z_map": combined_z, "p_map": combined_p, "method": "Stouffer's Z"}
 
     def _fishers_method(self, images: list[np.ndarray]) -> dict:
         """Fisher's combined probability test."""
@@ -487,16 +493,14 @@ class ImageBasedMetaAnalysisTool(NeuroToolWrapper):
 
         # Fisher's method: -2 * sum(log(p))
         chi2_stat = -2 * np.sum(np.log(p_stack + 1e-10), axis=0)
-        combined_p = 1 - stats.chi2.cdf(chi2_stat, df=2*len(images))
+        combined_p = 1 - stats.chi2.cdf(chi2_stat, df=2 * len(images))
         combined_z = stats.norm.ppf(1 - combined_p)
 
-        return {
-            "z_map": combined_z,
-            "p_map": combined_p,
-            "method": "Fisher's method"
-        }
+        return {"z_map": combined_z, "p_map": combined_p, "method": "Fisher's method"}
 
-    def _weighted_average(self, images: list[np.ndarray], sample_sizes: list[int]) -> dict:
+    def _weighted_average(
+        self, images: list[np.ndarray], sample_sizes: list[int]
+    ) -> dict:
         """Weighted average based on sample sizes."""
         if sample_sizes:
             weights = np.array(sample_sizes) / np.sum(sample_sizes)
@@ -509,11 +513,7 @@ class ImageBasedMetaAnalysisTool(NeuroToolWrapper):
         z_map = combined / (np.sqrt(variance) + 1e-8)
         p_map = 1 - stats.norm.cdf(z_map)
 
-        return {
-            "z_map": z_map,
-            "p_map": p_map,
-            "method": "Weighted average"
-        }
+        return {"z_map": z_map, "p_map": p_map, "method": "Weighted average"}
 
     def _fixed_effects(self, images: list[np.ndarray]) -> dict:
         """Fixed effects model."""
@@ -522,11 +522,7 @@ class ImageBasedMetaAnalysisTool(NeuroToolWrapper):
         z_map = combined / (se + 1e-8)
         p_map = 1 - stats.norm.cdf(z_map)
 
-        return {
-            "z_map": z_map,
-            "p_map": p_map,
-            "method": "Fixed effects"
-        }
+        return {"z_map": z_map, "p_map": p_map, "method": "Fixed effects"}
 
     def _load_images(self, image_files: list[str]) -> list[np.ndarray]:
         """Load NIfTI images."""
@@ -551,7 +547,7 @@ class ImageBasedMetaAnalysisTool(NeuroToolWrapper):
         report = {
             "method": results.get("method"),
             "max_z": float(np.max(results.get("z_map", 0))),
-            "min_p": float(np.min(results.get("p_map", 1)))
+            "min_p": float(np.min(results.get("p_map", 1))),
         }
 
         with open(output_path / "ibma_report.json", "w") as f:
@@ -581,7 +577,7 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
         model: str = "random",  # fixed, random, or mixed
         moderators: dict | None = None,
         output_dir: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Run effect size meta-analysis."""
         try:
@@ -590,7 +586,9 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
 
             # Generate or use provided data
             if effect_sizes is None:
-                effect_sizes, standard_errors, study_labels = self._generate_effect_sizes()
+                effect_sizes, standard_errors, study_labels = (
+                    self._generate_effect_sizes()
+                )
 
             # Run meta-analysis
             if model == "fixed":
@@ -598,7 +596,9 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
             elif model == "random":
                 results = self._random_effects_ma(effect_sizes, standard_errors)
             else:
-                results = self._mixed_effects_ma(effect_sizes, standard_errors, moderators)
+                results = self._mixed_effects_ma(
+                    effect_sizes, standard_errors, moderators
+                )
 
             # Create forest plot data
             forest_data = self._create_forest_plot_data(
@@ -612,7 +612,9 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
             pub_bias = self._test_publication_bias(effect_sizes, standard_errors)
 
             # Save results
-            self._save_effect_size_results(results, forest_data, heterogeneity, pub_bias, output_path)
+            self._save_effect_size_results(
+                results, forest_data, heterogeneity, pub_bias, output_path
+            )
 
             return ToolResult(
                 status="success",
@@ -627,9 +629,9 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
                     "output_files": {
                         "forest_plot": str(output_path / "forest_plot.json"),
                         "funnel_plot": str(output_path / "funnel_plot.json"),
-                        "results": str(output_path / "ma_results.json")
-                    }
-                }
+                        "results": str(output_path / "ma_results.json"),
+                    },
+                },
             )
 
         except Exception as e:
@@ -665,7 +667,7 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
         ses = np.array(ses)
 
         # Inverse variance weights
-        weights = 1 / (ses ** 2)
+        weights = 1 / (ses**2)
 
         # Pooled effect
         pooled = np.sum(effects * weights) / np.sum(weights)
@@ -686,7 +688,7 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
             "ci": ci,
             "z": float(z),
             "p_value": float(p),
-            "weights": weights.tolist()
+            "weights": weights.tolist(),
         }
 
     def _random_effects_ma(self, effects: list[float], ses: list[float]) -> dict:
@@ -704,11 +706,11 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
         df = len(effects) - 1
 
         # Calculate tau-squared (between-study variance)
-        C = np.sum(weights) - np.sum(weights ** 2) / np.sum(weights)
+        C = np.sum(weights) - np.sum(weights**2) / np.sum(weights)
         tau2 = max(0, (Q - df) / C)
 
         # Random effects weights
-        weights_re = 1 / (ses ** 2 + tau2)
+        weights_re = 1 / (ses**2 + tau2)
 
         # Pooled effect
         pooled = np.sum(effects * weights_re) / np.sum(weights_re)
@@ -730,10 +732,12 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
             "z": float(z),
             "p_value": float(p),
             "tau2": float(tau2),
-            "weights": weights_re.tolist()
+            "weights": weights_re.tolist(),
         }
 
-    def _mixed_effects_ma(self, effects: list[float], ses: list[float], moderators: dict | None) -> dict:
+    def _mixed_effects_ma(
+        self, effects: list[float], ses: list[float], moderators: dict | None
+    ) -> dict:
         """Mixed effects meta-analysis with moderators."""
         # For now, just do random effects
         # Full implementation would include meta-regression
@@ -760,7 +764,7 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
             "df": df,
             "p_value": float(p_q),
             "I2": float(I2),
-            "interpretation": self._interpret_i2(I2)
+            "interpretation": self._interpret_i2(I2),
         }
 
     def _interpret_i2(self, i2: float) -> str:
@@ -790,52 +794,71 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
             "egger_test": {
                 "intercept": float(intercept),
                 "p_value": float(p),
-                "significant": bool(p < 0.05)
+                "significant": bool(p < 0.05),
             },
             "begg_test": {
                 "tau": float(tau),
                 "p_value": float(p_tau),
-                "significant": bool(p_tau < 0.05)
+                "significant": bool(p_tau < 0.05),
             },
-            "interpretation": "Evidence of publication bias" if p < 0.05 else "No evidence of publication bias"
+            "interpretation": (
+                "Evidence of publication bias"
+                if p < 0.05
+                else "No evidence of publication bias"
+            ),
         }
 
-    def _create_forest_plot_data(self, effects: list[float], ses: list[float],
-                                 labels: list[str], results: dict) -> dict:
+    def _create_forest_plot_data(
+        self, effects: list[float], ses: list[float], labels: list[str], results: dict
+    ) -> dict:
         """Create data for forest plot visualization."""
         forest_data = {
             "studies": [],
             "pooled": {
                 "effect": results["pooled_effect"],
                 "ci_lower": results["ci"][0],
-                "ci_upper": results["ci"][1]
-            }
+                "ci_upper": results["ci"][1],
+            },
         }
 
-        for i, (effect, se, label) in enumerate(zip(effects, ses, labels, strict=False)):
+        for i, (effect, se, label) in enumerate(
+            zip(effects, ses, labels, strict=False)
+        ):
             ci_lower = effect - 1.96 * se
             ci_upper = effect + 1.96 * se
 
-            forest_data["studies"].append({
-                "label": label,
-                "effect": float(effect),
-                "ci_lower": float(ci_lower),
-                "ci_upper": float(ci_upper),
-                "weight": results.get("weights", [1]*len(effects))[i]
-            })
+            forest_data["studies"].append(
+                {
+                    "label": label,
+                    "effect": float(effect),
+                    "ci_lower": float(ci_lower),
+                    "ci_upper": float(ci_upper),
+                    "weight": results.get("weights", [1] * len(effects))[i],
+                }
+            )
 
         return forest_data
 
-    def _save_effect_size_results(self, results: dict, forest_data: dict,
-                                  heterogeneity: dict, pub_bias: dict, output_path: Path):
+    def _save_effect_size_results(
+        self,
+        results: dict,
+        forest_data: dict,
+        heterogeneity: dict,
+        pub_bias: dict,
+        output_path: Path,
+    ):
         """Save effect size meta-analysis results."""
         # Save main results
         with open(output_path / "ma_results.json", "w") as f:
-            json.dump({
-                "results": results,
-                "heterogeneity": heterogeneity,
-                "publication_bias": pub_bias
-            }, f, indent=2)
+            json.dump(
+                {
+                    "results": results,
+                    "heterogeneity": heterogeneity,
+                    "publication_bias": pub_bias,
+                },
+                f,
+                indent=2,
+            )
 
         # Save forest plot data
         with open(output_path / "forest_plot.json", "w") as f:
@@ -844,9 +867,10 @@ class EffectSizeMetaAnalysisTool(NeuroToolWrapper):
         # Create funnel plot data
         funnel_data = {
             "effects": [s["effect"] for s in forest_data["studies"]],
-            "standard_errors": [1.96 / (s["ci_upper"] - s["ci_lower"])
-                               for s in forest_data["studies"]],
-            "pooled_effect": forest_data["pooled"]["effect"]
+            "standard_errors": [
+                1.96 / (s["ci_upper"] - s["ci_lower"]) for s in forest_data["studies"]
+            ],
+            "pooled_effect": forest_data["pooled"]["effect"],
         }
 
         with open(output_path / "funnel_plot.json", "w") as f:
@@ -875,7 +899,7 @@ class LiteratureMiningTool(NeuroToolWrapper):
         extract_coordinates: bool = True,
         extract_effects: bool = True,
         output_dir: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Extract data from literature."""
         try:
@@ -888,11 +912,7 @@ class LiteratureMiningTool(NeuroToolWrapper):
             else:
                 articles = self._extract_from_pubmed(pubmed_ids)
 
-            extracted_data = {
-                "coordinates": [],
-                "effect_sizes": [],
-                "metadata": []
-            }
+            extracted_data = {"coordinates": [], "effect_sizes": [], "metadata": []}
 
             for article in articles:
                 if extract_coordinates:
@@ -917,9 +937,9 @@ class LiteratureMiningTool(NeuroToolWrapper):
                     "output_files": {
                         "coordinates": str(output_path / "coordinates.json"),
                         "effect_sizes": str(output_path / "effect_sizes.json"),
-                        "metadata": str(output_path / "metadata.json")
-                    }
-                }
+                        "metadata": str(output_path / "metadata.json"),
+                    },
+                },
             )
 
         except Exception as e:
@@ -932,15 +952,19 @@ class LiteratureMiningTool(NeuroToolWrapper):
         articles = []
 
         for i in range(n_articles):
-            articles.append({
-                "pmid": f"PM{30000000 + i}",
-                "title": f"Neuroimaging study of {query or 'brain function'} - Study {i+1}",
-                "authors": [f"Author{j}" for j in range(np.random.randint(2, 8))],
-                "year": 2020 + np.random.randint(0, 5),
-                "journal": np.random.choice(["NeuroImage", "HBM", "Cortex", "JNeurosci"]),
-                "n_subjects": np.random.randint(20, 100),
-                "task": query or "resting-state"
-            })
+            articles.append(
+                {
+                    "pmid": f"PM{30000000 + i}",
+                    "title": f"Neuroimaging study of {query or 'brain function'} - Study {i+1}",
+                    "authors": [f"Author{j}" for j in range(np.random.randint(2, 8))],
+                    "year": 2020 + np.random.randint(0, 5),
+                    "journal": np.random.choice(
+                        ["NeuroImage", "HBM", "Cortex", "JNeurosci"]
+                    ),
+                    "n_subjects": np.random.randint(20, 100),
+                    "task": query or "resting-state",
+                }
+            )
 
         return articles
 
@@ -950,14 +974,16 @@ class LiteratureMiningTool(NeuroToolWrapper):
         coords = []
 
         for _ in range(n_coords):
-            coords.append({
-                "pmid": article["pmid"],
-                "x": np.random.randn() * 30,
-                "y": np.random.randn() * 40,
-                "z": np.random.randn() * 30,
-                "label": np.random.choice(["activation", "deactivation"]),
-                "contrast": f"contrast_{np.random.randint(1, 4)}"
-            })
+            coords.append(
+                {
+                    "pmid": article["pmid"],
+                    "x": np.random.randn() * 30,
+                    "y": np.random.randn() * 40,
+                    "z": np.random.randn() * 30,
+                    "label": np.random.choice(["activation", "deactivation"]),
+                    "contrast": f"contrast_{np.random.randint(1, 4)}",
+                }
+            )
 
         return coords
 
@@ -971,14 +997,16 @@ class LiteratureMiningTool(NeuroToolWrapper):
             effect = np.random.normal(0.4, 0.3)
             se = 1 / np.sqrt(n)
 
-            effects.append({
-                "pmid": article["pmid"],
-                "effect_size": float(effect),
-                "standard_error": float(se),
-                "n": n,
-                "type": np.random.choice(["Cohen's d", "Hedge's g", "r"]),
-                "measure": f"measure_{i+1}"
-            })
+            effects.append(
+                {
+                    "pmid": article["pmid"],
+                    "effect_size": float(effect),
+                    "standard_error": float(se),
+                    "n": n,
+                    "type": np.random.choice(["Cohen's d", "Hedge's g", "r"]),
+                    "measure": f"measure_{i+1}",
+                }
+            )
 
         return effects
 
@@ -992,7 +1020,7 @@ class LiteratureMiningTool(NeuroToolWrapper):
             "n_subjects": article["n_subjects"],
             "task": article["task"],
             "scanner": np.random.choice(["3T", "7T", "1.5T"]),
-            "software": np.random.choice(["SPM", "FSL", "AFNI", "Custom"])
+            "software": np.random.choice(["SPM", "FSL", "AFNI", "Custom"]),
         }
 
     def _extract_from_pubmed(self, pubmed_ids: list[str]) -> list[dict]:
@@ -1027,7 +1055,7 @@ class NetworkMetaAnalysisTool(NeuroToolWrapper):
         reference: str = "control",
         method: str = "netmeta",
         output_dir: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Run network meta-analysis."""
         try:
@@ -1068,9 +1096,9 @@ class NetworkMetaAnalysisTool(NeuroToolWrapper):
                     "output_files": {
                         "network": str(output_path / "network.json"),
                         "results": str(output_path / "network_results.json"),
-                        "ranking": str(output_path / "ranking.json")
-                    }
-                }
+                        "ranking": str(output_path / "ranking.json"),
+                    },
+                },
             )
 
         except Exception as e:
@@ -1079,7 +1107,13 @@ class NetworkMetaAnalysisTool(NeuroToolWrapper):
 
     def _generate_network_data(self) -> list[dict]:
         """Generate synthetic network meta-analysis data."""
-        treatments = ["control", "treatment_A", "treatment_B", "treatment_C", "treatment_D"]
+        treatments = [
+            "control",
+            "treatment_A",
+            "treatment_B",
+            "treatment_C",
+            "treatment_D",
+        ]
         comparisons = []
 
         # Generate pairwise comparisons
@@ -1088,15 +1122,17 @@ class NetworkMetaAnalysisTool(NeuroToolWrapper):
             effect = np.random.normal(0.3 if t1 != "control" else 0, 0.5)
             se = np.random.uniform(0.1, 0.3)
 
-            comparisons.append({
-                "study": f"study_{i+1}",
-                "treatment1": t1,
-                "treatment2": t2,
-                "effect_size": float(effect),
-                "standard_error": float(se),
-                "n1": np.random.randint(20, 50),
-                "n2": np.random.randint(20, 50)
-            })
+            comparisons.append(
+                {
+                    "study": f"study_{i+1}",
+                    "treatment1": t1,
+                    "treatment2": t2,
+                    "effect_size": float(effect),
+                    "standard_error": float(se),
+                    "n1": np.random.randint(20, 50),
+                    "n2": np.random.randint(20, 50),
+                }
+            )
 
         return comparisons
 
@@ -1109,18 +1145,16 @@ class NetworkMetaAnalysisTool(NeuroToolWrapper):
             nodes.add(comp["treatment1"])
             nodes.add(comp["treatment2"])
 
-            edges.append({
-                "from": comp["treatment1"],
-                "to": comp["treatment2"],
-                "weight": 1 / (comp["standard_error"] ** 2),
-                "effect": comp["effect_size"]
-            })
+            edges.append(
+                {
+                    "from": comp["treatment1"],
+                    "to": comp["treatment2"],
+                    "weight": 1 / (comp["standard_error"] ** 2),
+                    "effect": comp["effect_size"],
+                }
+            )
 
-        return {
-            "nodes": list(nodes),
-            "edges": edges,
-            "comparisons": comparisons
-        }
+        return {"nodes": list(nodes), "edges": edges, "comparisons": comparisons}
 
     def _check_connectivity(self, network: dict) -> dict:
         """Check if network is connected."""
@@ -1146,7 +1180,7 @@ class NetworkMetaAnalysisTool(NeuroToolWrapper):
 
         return {
             "is_connected": len(visited) == len(nodes),
-            "components": 1 if len(visited) == len(nodes) else 2
+            "components": 1 if len(visited) == len(nodes) else 2,
         }
 
     def _run_network_ma(self, network: dict, reference: str, method: str) -> dict:
@@ -1175,20 +1209,24 @@ class NetworkMetaAnalysisTool(NeuroToolWrapper):
             if i != ref_idx:
                 # Simple weighted average for demonstration
                 effect = effects_matrix[ref_idx, i]
-                se = np.sqrt(variance_matrix[ref_idx, i]) if variance_matrix[ref_idx, i] > 0 else 1.0
+                se = (
+                    np.sqrt(variance_matrix[ref_idx, i])
+                    if variance_matrix[ref_idx, i] > 0
+                    else 1.0
+                )
 
                 network_effects[treatment] = {
                     "effect": float(effect),
                     "se": float(se),
-                    "ci": [float(effect - 1.96*se), float(effect + 1.96*se)],
-                    "p_value": float(2 * (1 - stats.norm.cdf(abs(effect/se))))
+                    "ci": [float(effect - 1.96 * se), float(effect + 1.96 * se)],
+                    "p_value": float(2 * (1 - stats.norm.cdf(abs(effect / se)))),
                 }
 
         return {
             "reference": reference,
             "treatments": treatments,
             "network_effects": network_effects,
-            "method": method
+            "method": method,
         }
 
     def _calculate_ranking(self, results: dict) -> dict:
@@ -1196,17 +1234,19 @@ class NetworkMetaAnalysisTool(NeuroToolWrapper):
         effects = results["network_effects"]
 
         # Sort by effect size
-        sorted_treatments = sorted(effects.items(), key=lambda x: x[1]["effect"], reverse=True)
+        sorted_treatments = sorted(
+            effects.items(), key=lambda x: x[1]["effect"], reverse=True
+        )
 
         ranking = {
             "rank_order": [t[0] for t in sorted_treatments],
             "p_scores": {},
-            "sucra": {}
+            "sucra": {},
         }
 
         # Calculate P-scores (simplified)
         n = len(sorted_treatments)
-        for i, (treatment, data) in enumerate(sorted_treatments):
+        for i, (treatment, _data) in enumerate(sorted_treatments):
             p_score = 1 - (i / n)
             sucra = (n - i - 1) / (n - 1) if n > 1 else 1
 
@@ -1227,10 +1267,16 @@ class NetworkMetaAnalysisTool(NeuroToolWrapper):
             "global_inconsistency": float(inconsistency_factor),
             "p_value": float(p_value),
             "consistent": p_value > 0.05,
-            "interpretation": "No evidence of inconsistency" if p_value > 0.05 else "Potential inconsistency detected"
+            "interpretation": (
+                "No evidence of inconsistency"
+                if p_value > 0.05
+                else "Potential inconsistency detected"
+            ),
         }
 
-    def _save_network_results(self, results: dict, ranking: dict, consistency: dict, output_path: Path):
+    def _save_network_results(
+        self, results: dict, ranking: dict, consistency: dict, output_path: Path
+    ):
         """Save network meta-analysis results."""
         # Save network structure
         with open(output_path / "network.json", "w") as f:
@@ -1238,10 +1284,7 @@ class NetworkMetaAnalysisTool(NeuroToolWrapper):
 
         # Save results
         with open(output_path / "network_results.json", "w") as f:
-            json.dump({
-                "results": results,
-                "consistency": consistency
-            }, f, indent=2)
+            json.dump({"results": results, "consistency": consistency}, f, indent=2)
 
         # Save ranking
         with open(output_path / "ranking.json", "w") as f:
@@ -1255,5 +1298,5 @@ def get_all_meta_analysis_tools():
         ImageBasedMetaAnalysisTool(),
         EffectSizeMetaAnalysisTool(),
         LiteratureMiningTool(),
-        NetworkMetaAnalysisTool()
+        NetworkMetaAnalysisTool(),
     ]

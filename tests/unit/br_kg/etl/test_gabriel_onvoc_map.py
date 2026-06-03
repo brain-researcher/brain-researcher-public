@@ -84,7 +84,7 @@ def _write_onvoc_assets(tmp_path: Path) -> tuple[Path, Path]:
                         "primary": "ONVOC_9990001",
                         "labels": ["Attention"],
                     }
-                }
+                },
             }
         ),
         encoding="utf-8",
@@ -197,10 +197,14 @@ def test_map_kggen_to_onvoc_emits_edges_and_review_artifacts(tmp_path: Path) -> 
     assert Path(report["artifacts"]["normalized_records_path"]).exists()
 
     maps_to_rows = (
-        Path(report["artifacts"]["maps_to_edges_path"]).read_text(encoding="utf-8").splitlines()
+        Path(report["artifacts"]["maps_to_edges_path"])
+        .read_text(encoding="utf-8")
+        .splitlines()
     )
     same_as_rows = (
-        Path(report["artifacts"]["same_as_edges_path"]).read_text(encoding="utf-8").splitlines()
+        Path(report["artifacts"]["same_as_edges_path"])
+        .read_text(encoding="utf-8")
+        .splitlines()
     )
     assert len(maps_to_rows) == 2
     assert len(same_as_rows) == 1

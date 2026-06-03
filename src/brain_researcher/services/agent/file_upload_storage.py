@@ -13,7 +13,7 @@ import threading
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -47,6 +47,7 @@ MAX_RESUMABLE_FILE_SIZE = int(os.getenv("AGENT_RESUMABLE_MAX_BYTES", str(50 * 10
 # Upload directory helper
 # ---------------------------------------------------------------------------
 
+
 def _compute_upload_dir() -> Path:
     """Return upload base directory, creating it if necessary."""
     env_dir = os.getenv("AGENT_UPLOAD_DIR")
@@ -74,6 +75,7 @@ UPLOAD_DIR = _compute_upload_dir()
 # Filename helpers
 # ---------------------------------------------------------------------------
 
+
 def _get_file_extension(filename: str) -> str:
     """Get normalized file extension, handling .nii.gz specially."""
     if filename.lower().endswith(".nii.gz"):
@@ -90,6 +92,7 @@ def _is_allowed_file(filename: str) -> bool:
 # ---------------------------------------------------------------------------
 # Content-Range parser
 # ---------------------------------------------------------------------------
+
 
 def _parse_content_range(value: str) -> tuple[int, int, int]:
     """Parse ``Content-Range: bytes start-end/total``."""
@@ -110,18 +113,19 @@ def _parse_content_range(value: str) -> tuple[int, int, int]:
 # Storage classes
 # ---------------------------------------------------------------------------
 
+
 class FileStorage:
     """Simple file storage for uploaded files."""
 
     def __init__(self, base_dir: Path = UPLOAD_DIR):
         self.base_dir = base_dir
         self.base_dir.mkdir(parents=True, exist_ok=True)
-        self._files: Dict[str, Dict[str, Any]] = {}
+        self._files: dict[str, dict[str, Any]] = {}
         self._lock = threading.Lock()
 
     def save(
         self, file_data: bytes, filename: str, content_type: str, user_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Save uploaded file and return metadata."""
         file_id = str(uuid.uuid4())
         ext = _get_file_extension(filename)
@@ -160,7 +164,7 @@ class FileStorage:
         content_type: str,
         user_id: str,
         file_path: Path,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Register an already-written file in storage (used by resumable uploads)."""
         ext = _get_file_extension(filename)
         safe_filename = f"{file_id}.{ext}" if ext else file_id
@@ -195,7 +199,7 @@ class FileStorage:
 
         return metadata
 
-    def get(self, file_id: str) -> Optional[Dict[str, Any]]:
+    def get(self, file_id: str) -> dict[str, Any] | None:
         """Get file metadata by ID."""
         with self._lock:
             return self._files.get(file_id)
@@ -218,7 +222,7 @@ class FileStorage:
             del self._files[file_id]
             return True
 
-    def list_user_files(self, user_id: str) -> List[Dict[str, Any]]:
+    def list_user_files(self, user_id: str) -> list[dict[str, Any]]:
         """List all files for a user."""
         with self._lock:
             return [m for m in self._files.values() if m["user_id"] == user_id]
@@ -229,7 +233,7 @@ class ResumableUploadStorage:
 
     def __init__(self, base_dir: Path = UPLOAD_DIR):
         self.base_dir = base_dir
-        self._uploads: Dict[str, Dict[str, Any]] = {}
+        self._uploads: dict[str, dict[str, Any]] = {}
         self._lock = threading.Lock()
 
     def init(
@@ -239,7 +243,7 @@ class ResumableUploadStorage:
         content_type: str,
         total_size: int,
         user_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if total_size < 0:
             raise ValueError("total_size must be >= 0")
         if total_size > MAX_RESUMABLE_FILE_SIZE:
@@ -271,7 +275,7 @@ class ResumableUploadStorage:
             self._uploads[upload_id] = meta
         return meta
 
-    def get(self, upload_id: str) -> Dict[str, Any] | None:
+    def get(self, upload_id: str) -> dict[str, Any] | None:
         with self._lock:
             return self._uploads.get(upload_id)
 
@@ -283,7 +287,7 @@ class ResumableUploadStorage:
         start: int,
         data: bytes,
         total: int | None = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         with self._lock:
             meta = self._uploads.get(upload_id)
             if not meta:
@@ -333,7 +337,7 @@ class ResumableUploadStorage:
 
     def complete(
         self, *, upload_id: str, user_id: str, storage: FileStorage
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         with self._lock:
             meta = self._uploads.get(upload_id)
             if not meta:

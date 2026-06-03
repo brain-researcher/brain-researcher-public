@@ -5,13 +5,13 @@ Tracks actual resource usage and provides metrics.
 """
 
 import logging
-import psutil
 import threading
 import time
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Deque, Dict, List, Optional, Tuple
+
+import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class ResourceMetrics:
     tool_name: str
     execution_id: str
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
 
     # Peak usage
     peak_cpu_percent: float = 0.0
@@ -74,10 +74,10 @@ class ResourceMetrics:
     total_network_recv_mb: float = 0.0
 
     # Snapshots for detailed analysis
-    snapshots: List[ResourceSnapshot] = field(default_factory=list)
+    snapshots: list[ResourceSnapshot] = field(default_factory=list)
 
     @property
-    def duration(self) -> Optional[timedelta]:
+    def duration(self) -> timedelta | None:
         """Get execution duration."""
         if self.end_time:
             return self.end_time - self.start_time
@@ -101,22 +101,32 @@ class ResourceMetrics:
 
         # Update averages
         if self.snapshots:
-            self.avg_cpu_percent = sum(s.cpu_percent for s in self.snapshots) / len(self.snapshots)
-            self.avg_memory_mb = sum(s.memory_mb for s in self.snapshots) / len(self.snapshots)
+            self.avg_cpu_percent = sum(s.cpu_percent for s in self.snapshots) / len(
+                self.snapshots
+            )
+            self.avg_memory_mb = sum(s.memory_mb for s in self.snapshots) / len(
+                self.snapshots
+            )
 
         # Update I/O totals (using deltas from first snapshot)
         if len(self.snapshots) > 1:
             first = self.snapshots[0]
             self.total_disk_read_mb = snapshot.disk_io_read_mb - first.disk_io_read_mb
-            self.total_disk_write_mb = snapshot.disk_io_write_mb - first.disk_io_write_mb
-            self.total_network_sent_mb = snapshot.network_sent_mb - first.network_sent_mb
-            self.total_network_recv_mb = snapshot.network_recv_mb - first.network_recv_mb
+            self.total_disk_write_mb = (
+                snapshot.disk_io_write_mb - first.disk_io_write_mb
+            )
+            self.total_network_sent_mb = (
+                snapshot.network_sent_mb - first.network_sent_mb
+            )
+            self.total_network_recv_mb = (
+                snapshot.network_recv_mb - first.network_recv_mb
+            )
 
     def finalize(self):
         """Mark metrics as complete."""
         self.end_time = datetime.now()
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert metrics to dictionary."""
         return {
             "tool_name": self.tool_name,
@@ -128,7 +138,9 @@ class ResourceMetrics:
             "avg_memory_mb": round(self.avg_memory_mb, 2),
             "total_disk_read_mb": round(self.total_disk_read_mb, 2),
             "total_disk_write_mb": round(self.total_disk_write_mb, 2),
-            "total_network_mb": round(self.total_network_sent_mb + self.total_network_recv_mb, 2),
+            "total_network_mb": round(
+                self.total_network_sent_mb + self.total_network_recv_mb, 2
+            ),
             "snapshot_count": len(self.snapshots),
         }
 
@@ -155,17 +167,17 @@ class ResourceMonitor:
         self.enable_monitoring = enable_monitoring
 
         # Active monitoring
-        self.active_metrics: Dict[str, ResourceMetrics] = {}
+        self.active_metrics: dict[str, ResourceMetrics] = {}
 
         # Historical metrics
-        self.history: Deque[ResourceMetrics] = deque(maxlen=history_size)
+        self.history: deque[ResourceMetrics] = deque(maxlen=history_size)
 
         # System baseline (measured at startup)
         self.baseline = ResourceSnapshot.capture() if enable_monitoring else None
 
         # Monitoring thread
         self._monitoring = False
-        self._monitor_thread: Optional[threading.Thread] = None
+        self._monitor_thread: threading.Thread | None = None
         self._lock = threading.RLock()
 
         if enable_monitoring:
@@ -204,10 +216,12 @@ class ResourceMonitor:
 
             self.active_metrics[execution_id] = metrics
 
-            logger.debug(f"Started tracking resources for {tool_name} (exec: {execution_id[:8]})")
+            logger.debug(
+                f"Started tracking resources for {tool_name} (exec: {execution_id[:8]})"
+            )
             return metrics
 
-    def stop_tracking(self, execution_id: str) -> Optional[ResourceMetrics]:
+    def stop_tracking(self, execution_id: str) -> ResourceMetrics | None:
         """
         Stop tracking resources for an execution.
 
@@ -236,7 +250,7 @@ class ResourceMonitor:
                 logger.warning(f"No active tracking for execution {execution_id}")
                 return None
 
-    def get_current_usage(self) -> Dict[str, float]:
+    def get_current_usage(self) -> dict[str, float]:
         """Get current system resource usage."""
         if not self.enable_monitoring:
             return {"cpu_percent": 0, "memory_mb": 0}
@@ -258,7 +272,7 @@ class ResourceMonitor:
             "active_threads": snapshot.active_threads,
         }
 
-    def get_tool_statistics(self, tool_name: Optional[str] = None) -> Dict:
+    def get_tool_statistics(self, tool_name: str | None = None) -> dict:
         """
         Get aggregated statistics for tool(s).
 
@@ -282,12 +296,17 @@ class ResourceMonitor:
             stats = {
                 "count": len(metrics_list),
                 "total_duration_seconds": sum(m.duration_seconds for m in metrics_list),
-                "avg_duration_seconds": sum(m.duration_seconds for m in metrics_list) / len(metrics_list),
-                "avg_cpu_percent": sum(m.avg_cpu_percent for m in metrics_list) / len(metrics_list),
-                "avg_memory_mb": sum(m.avg_memory_mb for m in metrics_list) / len(metrics_list),
+                "avg_duration_seconds": sum(m.duration_seconds for m in metrics_list)
+                / len(metrics_list),
+                "avg_cpu_percent": sum(m.avg_cpu_percent for m in metrics_list)
+                / len(metrics_list),
+                "avg_memory_mb": sum(m.avg_memory_mb for m in metrics_list)
+                / len(metrics_list),
                 "peak_cpu_percent": max(m.peak_cpu_percent for m in metrics_list),
                 "peak_memory_mb": max(m.peak_memory_mb for m in metrics_list),
-                "total_disk_io_mb": sum(m.total_disk_read_mb + m.total_disk_write_mb for m in metrics_list),
+                "total_disk_io_mb": sum(
+                    m.total_disk_read_mb + m.total_disk_write_mb for m in metrics_list
+                ),
             }
 
             # Group by tool if not filtered
@@ -301,9 +320,12 @@ class ResourceMonitor:
                 stats["by_tool"] = {
                     tool: {
                         "count": len(tool_metrics),
-                        "avg_duration": sum(m.duration_seconds for m in tool_metrics) / len(tool_metrics),
-                        "avg_cpu": sum(m.avg_cpu_percent for m in tool_metrics) / len(tool_metrics),
-                        "avg_memory": sum(m.avg_memory_mb for m in tool_metrics) / len(tool_metrics),
+                        "avg_duration": sum(m.duration_seconds for m in tool_metrics)
+                        / len(tool_metrics),
+                        "avg_cpu": sum(m.avg_cpu_percent for m in tool_metrics)
+                        / len(tool_metrics),
+                        "avg_memory": sum(m.avg_memory_mb for m in tool_metrics)
+                        / len(tool_metrics),
                     }
                     for tool, tool_metrics in by_tool.items()
                 }
@@ -348,7 +370,7 @@ class ResourceMonitor:
             except Exception as e:
                 logger.error(f"Error in monitoring loop: {e}")
 
-    def get_recommendations(self) -> List[str]:
+    def get_recommendations(self) -> list[str]:
         """Get resource optimization recommendations based on history."""
         if not self.history:
             return ["No execution history available for recommendations"]
@@ -386,9 +408,13 @@ class ResourceMonitor:
                         "Consider optimizing or limiting concurrent executions."
                     )
 
-        return recommendations if recommendations else ["System resources are well-utilized"]
+        return (
+            recommendations
+            if recommendations
+            else ["System resources are well-utilized"]
+        )
 
-    def export_metrics(self) -> List[Dict]:
+    def export_metrics(self) -> list[dict]:
         """Export all historical metrics as list of dictionaries."""
         with self._lock:
             return [m.to_dict() for m in self.history]

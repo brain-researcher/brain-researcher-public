@@ -12,7 +12,9 @@ class GateRule(BaseModel):
 
     schema_version: Literal["gate-rule-v1"] = "gate-rule-v1"
 
-    rule_id: str = Field(..., description="Unique rule identifier, e.g., QC_MISSING_T1W")
+    rule_id: str = Field(
+        ..., description="Unique rule identifier, e.g., QC_MISSING_T1W"
+    )
     description: str = Field(..., description="Human-readable summary")
 
     applies_to: Literal["run", "step", "artifact", "plan"] = Field(

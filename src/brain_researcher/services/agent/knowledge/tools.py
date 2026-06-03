@@ -14,18 +14,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.tool_base import (
-    NeuroToolWrapper,
-    ToolResult,
-)
 from brain_researcher.services.agent.knowledge.evidence_models import (
     DecisionType,
     EvidenceBundle,
     EvidenceSourceType,
+)
+from brain_researcher.services.tools.tool_base import (
+    NeuroToolWrapper,
+    ToolResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,7 +41,7 @@ class GatherEvidenceInput(BaseModel):
     query: str = Field(
         description="The neuroimaging question or topic to gather evidence for"
     )
-    sources: Optional[List[str]] = Field(
+    sources: list[str] | None = Field(
         default=None,
         description="Optional list of sources to search. Valid values: 'pubmed', 'neurostore', 'dataset_catalog', 'tool_catalog', 'kg_graph', 'niclip'. If not specified, searches all sources.",
     )
@@ -59,10 +58,8 @@ class GatherEvidenceInput(BaseModel):
 class BuildKnowledgePlanInput(BaseModel):
     """Input schema for build_knowledge_plan tool."""
 
-    query: str = Field(
-        description="The neuroimaging question to build a plan for"
-    )
-    force_intent: Optional[str] = Field(
+    query: str = Field(description="The neuroimaging question to build a plan for")
+    force_intent: str | None = Field(
         default=None,
         description="Optional forced intent: 'explanation', 'dataset_selection', or 'pipeline_recommendation'",
     )
@@ -78,11 +75,11 @@ class RecommendDatasetsInput(BaseModel):
         default=5,
         description="Maximum number of datasets to recommend",
     )
-    required_modalities: Optional[List[str]] = Field(
+    required_modalities: list[str] | None = Field(
         default=None,
         description="Optional filter for required modalities (e.g., 'fMRI', 'MEG')",
     )
-    required_tasks: Optional[List[str]] = Field(
+    required_tasks: list[str] | None = Field(
         default=None,
         description="Optional filter for required cognitive tasks",
     )
@@ -109,7 +106,7 @@ class ExplainInput(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-def _source_str_to_enum(source_str: str) -> Optional[EvidenceSourceType]:
+def _source_str_to_enum(source_str: str) -> EvidenceSourceType | None:
     """Convert source string to EvidenceSourceType enum."""
     mapping = {
         "pubmed": EvidenceSourceType.PUBMED,
@@ -194,7 +191,7 @@ class GatherEvidenceTool(NeuroToolWrapper):
     def _run(
         self,
         query: str,
-        sources: Optional[List[str]] = None,
+        sources: list[str] | None = None,
         limit: int = 10,
         include_niclip: bool = True,
     ) -> ToolResult:
@@ -266,9 +263,9 @@ class GatherEvidenceTool(NeuroToolWrapper):
                     "citations": bundle.format_citations(max_citations=10),
                 },
                 metadata={
-                    "sources_searched": [s.value for s in source_types]
-                    if source_types
-                    else "all",
+                    "sources_searched": (
+                        [s.value for s in source_types] if source_types else "all"
+                    ),
                 },
             )
 
@@ -307,7 +304,7 @@ class BuildKnowledgePlanTool(NeuroToolWrapper):
     def _run(
         self,
         query: str,
-        force_intent: Optional[str] = None,
+        force_intent: str | None = None,
     ) -> ToolResult:
         """Build a knowledge plan for the query."""
         from brain_researcher.services.agent.knowledge.evidence_connector import (
@@ -426,8 +423,8 @@ class RecommendDatasetsTool(NeuroToolWrapper):
         self,
         query: str,
         max_datasets: int = 5,
-        required_modalities: Optional[List[str]] = None,
-        required_tasks: Optional[List[str]] = None,
+        required_modalities: list[str] | None = None,
+        required_tasks: list[str] | None = None,
     ) -> ToolResult:
         """Recommend datasets for the query."""
         from brain_researcher.services.agent.knowledge.evidence_connector import (
@@ -462,7 +459,9 @@ class RecommendDatasetsTool(NeuroToolWrapper):
 
                     # Check modalities
                     if required_modalities:
-                        item_modalities = [m.lower() for m in meta.get("modalities", [])]
+                        item_modalities = [
+                            m.lower() for m in meta.get("modalities", [])
+                        ]
                         if not any(
                             rm.lower() in item_modalities for rm in required_modalities
                         ):
@@ -516,15 +515,19 @@ class RecommendDatasetsTool(NeuroToolWrapper):
                             "title": item.label,
                             "relevance_score": item.relevance_score,
                             "url": item.url,
-                            "tasks": item.metadata.get("tasks", [])
-                            if item.metadata
-                            else [],
-                            "modalities": item.metadata.get("modalities", [])
-                            if item.metadata
-                            else [],
-                            "n_subjects": item.metadata.get("n_subjects")
-                            if item.metadata
-                            else None,
+                            "tasks": (
+                                item.metadata.get("tasks", []) if item.metadata else []
+                            ),
+                            "modalities": (
+                                item.metadata.get("modalities", [])
+                                if item.metadata
+                                else []
+                            ),
+                            "n_subjects": (
+                                item.metadata.get("n_subjects")
+                                if item.metadata
+                                else None
+                            ),
                         }
                         for item in top_datasets
                     ],
@@ -654,7 +657,7 @@ class ExplainTool(NeuroToolWrapper):
 # ---------------------------------------------------------------------------
 
 
-def get_knowledge_tools() -> List[NeuroToolWrapper]:
+def get_knowledge_tools() -> list[NeuroToolWrapper]:
     """Get all knowledge layer tools.
 
     Returns:

@@ -6,7 +6,6 @@ import json
 import os
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Dict, Optional
 
 import numpy as np
 from nilearn.maskers import NiftiLabelsMasker
@@ -20,12 +19,12 @@ _OUTPUT_ROOT = Path(os.getenv("BR_DEMO_ARTIFACT_DIR", Path(gettempdir()) / "br_d
 class ExtractTimeseriesArgs(BaseModel):
     img: str = Field(..., description="Input fMRI image")
     atlas: str = Field(..., description="Atlas path")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    output_dir: str | None = Field(default=None, description="Output directory")
     standardize: bool = Field(default=True, description="Standardize signals")
     detrend: bool = Field(default=True, description="Detrend signals")
-    tr: Optional[float] = Field(default=None, description="Repetition time (seconds)")
-    low_pass: Optional[float] = Field(default=None, description="Low-pass filter (Hz)")
-    high_pass: Optional[float] = Field(default=None, description="High-pass filter (Hz)")
+    tr: float | None = Field(default=None, description="Repetition time (seconds)")
+    low_pass: float | None = Field(default=None, description="Low-pass filter (Hz)")
+    high_pass: float | None = Field(default=None, description="High-pass filter (Hz)")
 
 
 class ExtractTimeseriesTool(NeuroToolWrapper):
@@ -46,12 +45,12 @@ class ExtractTimeseriesTool(NeuroToolWrapper):
         self,
         img: str,
         atlas: str,
-        output_dir: Optional[str] = None,
+        output_dir: str | None = None,
         standardize: bool = True,
         detrend: bool = True,
-        tr: Optional[float] = None,
-        low_pass: Optional[float] = None,
-        high_pass: Optional[float] = None,
+        tr: float | None = None,
+        low_pass: float | None = None,
+        high_pass: float | None = None,
         **kwargs,
     ) -> ToolResult:
         output_root = Path(output_dir) if output_dir else _OUTPUT_ROOT

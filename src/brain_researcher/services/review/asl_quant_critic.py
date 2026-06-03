@@ -59,7 +59,7 @@ _RULE_TO_TARGETED_CHECKS = {
 def _as_bool(value: Any) -> bool:
     if isinstance(value, bool):
         return value
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return bool(value)
     if isinstance(value, str):
         normalized = value.strip().lower()
@@ -73,7 +73,7 @@ def _as_bool(value: Any) -> bool:
 def _as_float(value: Any) -> float | None:
     if value is None or isinstance(value, bool):
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return float(value)
     if isinstance(value, str):
         stripped = value.strip()
@@ -381,8 +381,14 @@ def _build_checklist(
             if (regime := _subject_regime(summary)) is not None
         }
     )
-    synthetic = sum(1 for summary in subject_summaries if _infer_subject_type(summary) == "synthetic")
-    real = sum(1 for summary in subject_summaries if _infer_subject_type(summary) == "real")
+    synthetic = sum(
+        1
+        for summary in subject_summaries
+        if _infer_subject_type(summary) == "synthetic"
+    )
+    real = sum(
+        1 for summary in subject_summaries if _infer_subject_type(summary) == "real"
+    )
     has_2d = any(
         (_as_str(summary.get("acquisition_type")) or "").lower() == "2d"
         or (_as_str(summary.get("dimensionality")) or "").lower() == "2d"
@@ -487,7 +493,9 @@ def review_asl_quant(
             )
         )
 
-    if has_2d_slice_timing and not _as_bool(method_contract.get("uses_slice_timing_for_2d")):
+    if has_2d_slice_timing and not _as_bool(
+        method_contract.get("uses_slice_timing_for_2d")
+    ):
         findings.append(
             _make_finding(
                 rule_id="ASL_2D_SLICE_TIMING_MISSING",

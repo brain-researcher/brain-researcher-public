@@ -3,8 +3,8 @@
 Test script for Brain Researcher API endpoints
 """
 
+
 import requests
-import json
 
 # Test the orchestrator API
 print("Testing Brain Researcher Orchestrator API...")
@@ -24,7 +24,7 @@ try:
     payload = {
         "prompt": "Analyze motor cortex activation",
         "pipeline": "GLM",
-        "parameters": {"smoothing": 6}
+        "parameters": {"smoothing": 6},
     }
     response = requests.post("http://localhost:3001/run", json=payload)
     print(f"\n✅ Job submission: {response.status_code}")

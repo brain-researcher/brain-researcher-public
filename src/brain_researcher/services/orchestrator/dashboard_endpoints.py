@@ -7,37 +7,43 @@ import logging
 import os
 import uuid
 from collections import defaultdict
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar, Tuple
+from typing import Any, TypeVar
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from .env import BR_KG_URL
-from .job_state import jobs_db
-from .job_store import JobState
-from .job_store import JobState
+from brain_researcher.services.shared.mcp_tokens import parse_iso_datetime
+
 from .background_tasks import _render_state_counts
-from .models import (
-    DashboardLayoutModel,
-    DashboardLayoutRequest,
-    DashboardLayoutListResponse,
-    DashboardExportData,
-    ErrorCode,
-    ErrorResponse,
-    JobStatus
-)
-from .service_coordinator import ServiceType, ServiceUnavailableError, service_coordinator
-from .user_store import UserStore, _get_redis as _get_userstore_redis
 from .endpoints.auth import (
     _decode_auth_token,
     _extract_bearer_token,
     _is_admin_role,
     _resolve_authenticated_user,
 )
-from brain_researcher.services.shared.mcp_tokens import parse_iso_datetime
+from .env import BR_KG_URL
+from .job_state import jobs_db
+from .job_store import JobState
+from .models import (
+    DashboardExportData,
+    DashboardLayoutListResponse,
+    DashboardLayoutModel,
+    DashboardLayoutRequest,
+    ErrorCode,
+    ErrorResponse,
+    JobStatus,
+)
+from .service_coordinator import (
+    ServiceType,
+    ServiceUnavailableError,
+    service_coordinator,
+)
+from .user_store import UserStore
+from .user_store import _get_redis as _get_userstore_redis
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +81,9 @@ class ProjectStatus(BaseModel):
     id: str
     name: str
     progress: float = 0.0
-    subjects: Optional[int] = None
-    timeRemaining: Optional[str] = None
-    status: Optional[str] = None
+    subjects: int | None = None
+    timeRemaining: str | None = None
+    status: str | None = None
 
 
 class ActivityEvent(BaseModel):
@@ -122,11 +128,11 @@ class OutputItem(BaseModel):
 
     id: str
     name: str
-    type: Optional[str] = None
+    type: str | None = None
     size: str = "N/A"
     created: datetime
-    url: Optional[str] = None
-    jobId: Optional[str] = None
+    url: str | None = None
+    jobId: str | None = None
 
 
 class ClusterStatus(BaseModel):
@@ -134,9 +140,9 @@ class ClusterStatus(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    nodes: Dict[str, Any] = Field(default_factory=dict)
-    cpus: Dict[str, Any] = Field(default_factory=dict)
-    memory: Dict[str, Any] = Field(default_factory=dict)
+    nodes: dict[str, Any] = Field(default_factory=dict)
+    cpus: dict[str, Any] = Field(default_factory=dict)
+    memory: dict[str, Any] = Field(default_factory=dict)
 
 
 class JobMetricsModel(BaseModel):
@@ -146,8 +152,8 @@ class JobMetricsModel(BaseModel):
 
     queue: QueueStatusModel = Field(default_factory=QueueStatusModel)
     queueSource: str = "in_memory"
-    oldestPendingSeconds: Optional[float] = None
-    throughputPerMinute: Optional[float] = None
+    oldestPendingSeconds: float | None = None
+    throughputPerMinute: float | None = None
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -156,8 +162,8 @@ class ResourceMetricsModel(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    gpuSamples: List[GPUUtilizationPoint] = Field(default_factory=list)
-    cluster: Optional[ClusterStatus] = None
+    gpuSamples: list[GPUUtilizationPoint] = Field(default_factory=list)
+    cluster: ClusterStatus | None = None
 
 
 class McpAdoptionUserModel(BaseModel):
@@ -168,14 +174,14 @@ class McpAdoptionUserModel(BaseModel):
     userId: str
     username: str
     email: str
-    fullName: Optional[str] = None
-    role: Optional[str] = None
+    fullName: str | None = None
+    role: str | None = None
     createdAt: datetime
     hasAnyToken: bool = False
     hasActiveToken: bool = False
     tokenCount: int = 0
     usedMcp: bool = False
-    lastUsedAt: Optional[datetime] = None
+    lastUsedAt: datetime | None = None
     mcpStatus: str = "no_token"
 
 
@@ -199,7 +205,7 @@ class McpAdoptionMetricsModel(BaseModel):
 
     generatedAt: datetime = Field(default_factory=datetime.utcnow)
     summary: McpAdoptionSummaryModel = Field(default_factory=McpAdoptionSummaryModel)
-    users: List[McpAdoptionUserModel] = Field(default_factory=list)
+    users: list[McpAdoptionUserModel] = Field(default_factory=list)
 
 
 class DashboardMetricsResponse(BaseModel):
@@ -210,12 +216,12 @@ class DashboardMetricsResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     jobMetrics: JobMetricsModel = Field(default_factory=JobMetricsModel)
     resourceMetrics: ResourceMetricsModel = Field(default_factory=ResourceMetricsModel)
-    projects: List[ProjectStatus] = Field(default_factory=list)
-    activity: List[ActivityEvent] = Field(default_factory=list)
+    projects: list[ProjectStatus] = Field(default_factory=list)
+    activity: list[ActivityEvent] = Field(default_factory=list)
     storageMetrics: StorageMetricsModel = Field(default_factory=StorageMetricsModel)
-    outputs: List[OutputItem] = Field(default_factory=list)
-    mcpAdoption: Optional[McpAdoptionMetricsModel] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    outputs: list[OutputItem] = Field(default_factory=list)
+    mcpAdoption: McpAdoptionMetricsModel | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 DEFAULT_STORAGE_TEMPLATE = {
@@ -248,10 +254,10 @@ QUEUE_STATE_MAPPING = {
 }
 
 
-def _collect_gpu_metrics() -> List[Dict[str, Any]]:
+def _collect_gpu_metrics() -> list[dict[str, Any]]:
     """Collect GPU utilization metrics from nvidia-smi if available."""
-    import subprocess
     import shutil
+    import subprocess
 
     gpu_data = []
 
@@ -266,19 +272,19 @@ def _collect_gpu_metrics() -> List[Dict[str, Any]]:
             [
                 "nvidia-smi",
                 "--query-gpu=index,utilization.gpu,memory.used,memory.total",
-                "--format=csv,noheader,nounits"
+                "--format=csv,noheader,nounits",
             ],
             capture_output=True,
             text=True,
-            timeout=2.0
+            timeout=2.0,
         )
 
         if result.returncode == 0:
-            lines = result.stdout.strip().split('\n')
+            lines = result.stdout.strip().split("\n")
             gpu_metrics = {}
 
             for line in lines:
-                parts = line.split(',')
+                parts = line.split(",")
                 if len(parts) >= 4:
                     index = int(parts[0].strip())
                     util = float(parts[1].strip())
@@ -287,12 +293,13 @@ def _collect_gpu_metrics() -> List[Dict[str, Any]]:
 
             # Return single sample with current timestamp
             if gpu_metrics:
-                gpu_data.append({
-                    "timestamp": datetime.utcnow(),
-                    **gpu_metrics
-                })
+                gpu_data.append({"timestamp": datetime.utcnow(), **gpu_metrics})
 
-    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, ValueError) as exc:
+    except (
+        subprocess.TimeoutExpired,
+        subprocess.CalledProcessError,
+        ValueError,
+    ) as exc:
         logger.warning("Failed to collect GPU metrics: %s", exc)
 
     return gpu_data
@@ -308,7 +315,7 @@ def _get_job_store():
         return None
 
 
-def _collect_storage_metrics() -> Dict[str, Dict[str, float]]:
+def _collect_storage_metrics() -> dict[str, dict[str, float]]:
     """Collect real storage metrics from filesystem."""
     import shutil
 
@@ -320,7 +327,9 @@ def _collect_storage_metrics() -> Dict[str, Dict[str, float]]:
 
     storage_paths = {
         "primary": os.environ.get("PRIMARY_STORAGE_PATH", default_data_path),
-        "archive": os.environ.get("ARCHIVE_STORAGE_PATH", str(project_root / "data" / "archive")),
+        "archive": os.environ.get(
+            "ARCHIVE_STORAGE_PATH", str(project_root / "data" / "archive")
+        ),
         "scratch": os.environ.get("SCRATCH_STORAGE_PATH", "/tmp/brain_researcher"),
     }
 
@@ -331,7 +340,7 @@ def _collect_storage_metrics() -> Dict[str, Dict[str, float]]:
             usage = shutil.disk_usage(path)
             storage[tier] = {
                 "used": round(usage.used / (1024**3), 2),  # Convert to GB
-                "total": round(usage.total / (1024**3), 2)
+                "total": round(usage.total / (1024**3), 2),
             }
         except Exception as exc:
             logger.debug("Failed to collect storage for %s (%s): %s", tier, path, exc)
@@ -341,7 +350,7 @@ def _collect_storage_metrics() -> Dict[str, Dict[str, float]]:
     return storage
 
 
-def _default_storage(snapshot: Optional[Dict[str, Any]]) -> Dict[str, Dict[str, float]]:
+def _default_storage(snapshot: dict[str, Any] | None) -> dict[str, dict[str, float]]:
     """Return a storage payload that always includes the expected tiers."""
     storage = {
         tier: {"used": float(values["used"]), "total": float(values["total"])}
@@ -363,7 +372,7 @@ def _default_storage(snapshot: Optional[Dict[str, Any]]) -> Dict[str, Dict[str, 
     return storage
 
 
-def _map_state_counts_to_dashboard(state_counts: Dict[str, int]) -> Dict[str, int]:
+def _map_state_counts_to_dashboard(state_counts: dict[str, int]) -> dict[str, int]:
     """Map JobState counts to dashboard queue fields."""
     snapshot = {"running": 0, "queued": 0, "completed": 0, "failed": 0}
     for raw_state, count in state_counts.items():
@@ -373,10 +382,12 @@ def _map_state_counts_to_dashboard(state_counts: Dict[str, int]) -> Dict[str, in
     return snapshot
 
 
-async def _gather_queue_status() -> Tuple[Dict[str, int], str, Optional[float], Optional[str]]:
+async def _gather_queue_status() -> (
+    tuple[dict[str, int], str, float | None, str | None]
+):
     """Pull queue stats from the configured job store when available."""
     job_store = _get_job_store()
-    oldest_age: Optional[float] = None
+    oldest_age: float | None = None
     source = "in_memory"
     error = None
     counts = _calculate_queue_snapshot()
@@ -389,7 +400,9 @@ async def _gather_queue_status() -> Tuple[Dict[str, int], str, Optional[float], 
         state_counts = _render_state_counts(stats)
         counts = _map_state_counts_to_dashboard(state_counts)
         source = "job_store"
-        oldest_age = stats.get("oldest_pending_age_sec") or stats.get("oldest_pending_age_seconds")
+        oldest_age = stats.get("oldest_pending_age_sec") or stats.get(
+            "oldest_pending_age_seconds"
+        )
         if oldest_age is not None:
             oldest_age = float(oldest_age)
     except Exception as exc:
@@ -399,7 +412,7 @@ async def _gather_queue_status() -> Tuple[Dict[str, int], str, Optional[float], 
     return counts, source, oldest_age, error
 
 
-def _calculate_queue_snapshot() -> Dict[str, int]:
+def _calculate_queue_snapshot() -> dict[str, int]:
     """Build a queue status snapshot from orchestrator job state."""
     snapshot = {"running": 0, "queued": 0, "completed": 0, "failed": 0}
 
@@ -417,7 +430,7 @@ def _calculate_queue_snapshot() -> Dict[str, int]:
     return snapshot
 
 
-def _format_bytes(size_bytes: Optional[int]) -> str:
+def _format_bytes(size_bytes: int | None) -> str:
     """Human readable size helper."""
     if not size_bytes or size_bytes <= 0:
         return "N/A"
@@ -430,7 +443,7 @@ def _format_bytes(size_bytes: Optional[int]) -> str:
     return f"{size:.1f} PB"
 
 
-def _safe_trim(value: Optional[str], max_length: int = 96) -> str:
+def _safe_trim(value: str | None, max_length: int = 96) -> str:
     """Trim long text for dashboard surface."""
     if not value:
         return ""
@@ -440,15 +453,17 @@ def _safe_trim(value: Optional[str], max_length: int = 96) -> str:
     return value[: max_length - 1].rstrip() + "…"
 
 
-def _collect_recent_outputs(limit: int = 10) -> List[Dict[str, Any]]:
+def _collect_recent_outputs(limit: int = 10) -> list[dict[str, Any]]:
     """Surface recent artifacts generated by orchestrator jobs."""
-    outputs: List[Dict[str, Any]] = []
+    outputs: list[dict[str, Any]] = []
 
     for job in list(jobs_db.values()):
         artifacts = getattr(job, "artifacts", [])
         for artifact in artifacts:
             created_at = None
-            if getattr(artifact, "provenance", None) and getattr(artifact.provenance, "timestamp", None):
+            if getattr(artifact, "provenance", None) and getattr(
+                artifact.provenance, "timestamp", None
+            ):
                 created_at = artifact.provenance.timestamp
             elif getattr(job.timing, "end_time", None):
                 created_at = job.timing.end_time
@@ -471,15 +486,24 @@ def _collect_recent_outputs(limit: int = 10) -> List[Dict[str, Any]]:
     return outputs[:limit]
 
 
-def _build_team_activity_snapshot(limit: int = 20) -> List[Dict[str, Any]]:
+def _build_team_activity_snapshot(limit: int = 20) -> list[dict[str, Any]]:
     """Derive activity entries from recent jobs."""
-    events: List[Dict[str, Any]] = []
+    events: list[dict[str, Any]] = []
 
     for job in list(jobs_db.values()):
         timing = getattr(job, "timing", None)
         metadata = getattr(job, "metadata", {}) or {}
-        user_label = metadata.get("user_name") or metadata.get("initiated_by") or job.user_id or "System"
-        title = metadata.get("title") or metadata.get("pipeline") or _safe_trim(getattr(job, "prompt", ""), 72)
+        user_label = (
+            metadata.get("user_name")
+            or metadata.get("initiated_by")
+            or job.user_id
+            or "System"
+        )
+        title = (
+            metadata.get("title")
+            or metadata.get("pipeline")
+            or _safe_trim(getattr(job, "prompt", ""), 72)
+        )
 
         if timing and getattr(timing, "start_time", None):
             events.append(
@@ -492,11 +516,16 @@ def _build_team_activity_snapshot(limit: int = 20) -> List[Dict[str, Any]]:
                 }
             )
 
-        if timing and getattr(timing, "end_time", None) and job.status in (
-            JobStatus.COMPLETED,
-            JobStatus.FAILED,
-            JobStatus.CANCELLED,
-            JobStatus.TIMEOUT,
+        if (
+            timing
+            and getattr(timing, "end_time", None)
+            and job.status
+            in (
+                JobStatus.COMPLETED,
+                JobStatus.FAILED,
+                JobStatus.CANCELLED,
+                JobStatus.TIMEOUT,
+            )
         ):
             event_type = "complete" if job.status == JobStatus.COMPLETED else "error"
             status_text = (
@@ -518,12 +547,14 @@ def _build_team_activity_snapshot(limit: int = 20) -> List[Dict[str, Any]]:
     return events[:limit]
 
 
-def _normalize_gpu_series(samples: Optional[Iterable[Dict[str, Any]]]) -> List[GPUUtilizationPoint]:
+def _normalize_gpu_series(
+    samples: Iterable[dict[str, Any]] | None,
+) -> list[GPUUtilizationPoint]:
     """Validate GPU samples returned by upstream services."""
     if not samples:
         return []
 
-    normalized: List[GPUUtilizationPoint] = []
+    normalized: list[GPUUtilizationPoint] = []
     for sample in samples:
         if not isinstance(sample, dict):
             continue
@@ -534,12 +565,12 @@ def _normalize_gpu_series(samples: Optional[Iterable[Dict[str, Any]]]) -> List[G
     return normalized
 
 
-def _safe_build_list(model_cls: Type[T], raw_items: Optional[Iterable[Any]]) -> List[T]:
+def _safe_build_list(model_cls: type[T], raw_items: Iterable[Any] | None) -> list[T]:
     """Construct a list of pydantic models while skipping invalid entries."""
     if not raw_items:
         return []
 
-    results: List[T] = []
+    results: list[T] = []
     for item in raw_items:
         if isinstance(item, model_cls):
             results.append(item)
@@ -549,11 +580,13 @@ def _safe_build_list(model_cls: Type[T], raw_items: Optional[Iterable[Any]]) -> 
         try:
             results.append(model_cls(**item))
         except ValidationError as exc:
-            logger.debug("Skipping invalid %s entry %s: %s", model_cls.__name__, item, exc)
+            logger.debug(
+                "Skipping invalid %s entry %s: %s", model_cls.__name__, item, exc
+            )
     return results
 
 
-async def _fetch_metrics_direct() -> Dict[str, Any]:
+async def _fetch_metrics_direct() -> dict[str, Any]:
     """Fetch dashboard metrics directly from BR-KG."""
     url = f"{BR_KG_URL.rstrip('/')}{BR_KG_DASHBOARD_PATH}"
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
@@ -562,11 +595,11 @@ async def _fetch_metrics_direct() -> Dict[str, Any]:
         return response.json()
 
 
-async def _load_dashboard_metrics() -> tuple[Dict[str, Any], str, List[str]]:
+async def _load_dashboard_metrics() -> tuple[dict[str, Any], str, list[str]]:
     """Attempt to load dashboard metrics from upstream services."""
-    payload: Optional[Dict[str, Any]] = None
+    payload: dict[str, Any] | None = None
     source = "fallback"
-    errors: List[str] = []
+    errors: list[str] = []
 
     if service_coordinator:
         try:
@@ -575,11 +608,19 @@ async def _load_dashboard_metrics() -> tuple[Dict[str, Any], str, List[str]]:
             )
             payload = response.json()
             source = "br_kg"
-        except (ServiceUnavailableError, httpx.HTTPStatusError, httpx.RequestError) as exc:
-            logger.warning("Coordinator fetch for BR-KG dashboard metrics failed: %s", exc)
+        except (
+            ServiceUnavailableError,
+            httpx.HTTPStatusError,
+            httpx.RequestError,
+        ) as exc:
+            logger.warning(
+                "Coordinator fetch for BR-KG dashboard metrics failed: %s", exc
+            )
             errors.append(f"coordinator:{exc}")
-        except Exception as exc:  # pragma: no cover - defensive logging
-            logger.exception("Unexpected error fetching dashboard metrics via coordinator")
+        except Exception:  # pragma: no cover - defensive logging
+            logger.exception(
+                "Unexpected error fetching dashboard metrics via coordinator"
+            )
             errors.append("coordinator:unexpected")
     else:
         errors.append("coordinator:not_available")
@@ -591,7 +632,7 @@ async def _load_dashboard_metrics() -> tuple[Dict[str, Any], str, List[str]]:
         except (httpx.HTTPStatusError, httpx.RequestError) as exc:
             logger.warning("Direct fetch for BR-KG dashboard metrics failed: %s", exc)
             errors.append(f"direct:{exc}")
-        except Exception as exc:  # pragma: no cover - defensive logging
+        except Exception:  # pragma: no cover - defensive logging
             logger.exception("Unexpected error fetching BR-KG metrics directly")
             errors.append("direct:unexpected")
 
@@ -650,7 +691,8 @@ async def _build_mcp_adoption_metrics() -> McpAdoptionMetricsModel:
         user
         for user in users
         if getattr(user, "id", None) not in SEED_USER_IDS
-        and str(getattr(user, "email", "") or "").strip().lower() not in SEED_USER_EMAILS
+        and str(getattr(user, "email", "") or "").strip().lower()
+        not in SEED_USER_EMAILS
     ]
 
     token_records_by_user: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -681,7 +723,9 @@ async def _build_mcp_adoption_metrics() -> McpAdoptionMetricsModel:
             for record in records
             if str(record.get("last_used_at") or "").strip()
         ]
-        last_used_candidates = [value for value in last_used_candidates if value is not None]
+        last_used_candidates = [
+            value for value in last_used_candidates if value is not None
+        ]
         last_used_at = max(last_used_candidates) if last_used_candidates else None
         used_mcp = last_used_at is not None
 
@@ -716,7 +760,11 @@ async def _build_mcp_adoption_metrics() -> McpAdoptionMetricsModel:
 
     adoption_users.sort(
         key=lambda item: (
-            2 if item.mcpStatus == "no_token" else 1 if item.mcpStatus == "token_never_used" else 0,
+            (
+                2
+                if item.mcpStatus == "no_token"
+                else 1 if item.mcpStatus == "token_never_used" else 0
+            ),
             item.createdAt.timestamp(),
         ),
         reverse=True,
@@ -754,7 +802,9 @@ async def build_dashboard_metrics_response(
     storage_data = _collect_storage_metrics()
 
     derived_activity = _build_team_activity_snapshot()
-    activity_source = derived_activity if derived_activity else payload.get("teamActivity")
+    activity_source = (
+        derived_activity if derived_activity else payload.get("teamActivity")
+    )
 
     derived_outputs = _collect_recent_outputs()
     output_source = derived_outputs if derived_outputs else payload.get("outputs")
@@ -831,7 +881,7 @@ async def get_dashboard_metrics(request: Request) -> DashboardMetricsResponse:
     return await build_dashboard_metrics_response(request)
 
 
-def _build_fallback_metrics() -> Dict[str, Any]:
+def _build_fallback_metrics() -> dict[str, Any]:
     """Generate a minimal metrics payload from orchestrator state."""
     return {
         "timestamp": datetime.utcnow(),
@@ -854,6 +904,7 @@ def _build_fallback_metrics() -> Dict[str, Any]:
             "errors": ["br_kg_unavailable"],
         },
     }
+
 
 # Storage configuration
 # Persist layouts and preferences on the shared PVC by default (mounted at
@@ -882,34 +933,45 @@ except Exception as exc:
         )
         DASHBOARD_DATA_DIR = Path(tempfile.mkdtemp(prefix="br_dashboards_"))
 
+
 def get_layout_file_path(layout_id: str) -> Path:
     """Get the file path for a layout."""
     return DASHBOARD_DATA_DIR / f"{layout_id}.json"
 
-def load_layout(layout_id: str) -> Optional[DashboardLayoutModel]:
+
+def load_layout(layout_id: str) -> DashboardLayoutModel | None:
     """Load a layout from disk."""
     file_path = get_layout_file_path(layout_id)
     if not file_path.exists():
         return None
 
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path) as f:
             data = json.load(f)
             # Convert datetime strings back to datetime objects
-            for widget in data.get('widgets', []):
-                if 'created_at' in widget:
-                    widget['created_at'] = datetime.fromisoformat(widget['created_at'].replace('Z', '+00:00'))
-                if 'updated_at' in widget:
-                    widget['updated_at'] = datetime.fromisoformat(widget['updated_at'].replace('Z', '+00:00'))
-            if 'created_at' in data:
-                data['created_at'] = datetime.fromisoformat(data['created_at'].replace('Z', '+00:00'))
-            if 'updated_at' in data:
-                data['updated_at'] = datetime.fromisoformat(data['updated_at'].replace('Z', '+00:00'))
+            for widget in data.get("widgets", []):
+                if "created_at" in widget:
+                    widget["created_at"] = datetime.fromisoformat(
+                        widget["created_at"].replace("Z", "+00:00")
+                    )
+                if "updated_at" in widget:
+                    widget["updated_at"] = datetime.fromisoformat(
+                        widget["updated_at"].replace("Z", "+00:00")
+                    )
+            if "created_at" in data:
+                data["created_at"] = datetime.fromisoformat(
+                    data["created_at"].replace("Z", "+00:00")
+                )
+            if "updated_at" in data:
+                data["updated_at"] = datetime.fromisoformat(
+                    data["updated_at"].replace("Z", "+00:00")
+                )
 
             return DashboardLayoutModel(**data)
     except (json.JSONDecodeError, ValidationError, ValueError) as e:
         print(f"Error loading layout {layout_id}: {e}")
         return None
+
 
 def save_layout(layout: DashboardLayoutModel) -> None:
     """Save a layout to disk."""
@@ -918,10 +980,11 @@ def save_layout(layout: DashboardLayoutModel) -> None:
     # Convert to dict and handle datetime serialization
     data = layout.model_dump()
 
-    with open(file_path, 'w') as f:
+    with open(file_path, "w") as f:
         json.dump(data, f, indent=2, default=str)
 
-def list_all_layouts() -> List[DashboardLayoutModel]:
+
+def list_all_layouts() -> list[DashboardLayoutModel]:
     """Load all layouts from disk."""
     layouts = []
 
@@ -934,6 +997,7 @@ def list_all_layouts() -> List[DashboardLayoutModel]:
     # Sort by updated_at desc
     layouts.sort(key=lambda l: l.updated_at, reverse=True)
     return layouts
+
 
 def create_default_layout() -> DashboardLayoutModel:
     """Create a default dashboard layout."""
@@ -953,7 +1017,7 @@ def create_default_layout() -> DashboardLayoutModel:
                 "visible": True,
                 "locked": False,
                 "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+                "updated_at": datetime.utcnow(),
             },
             {
                 "id": "recent_results",
@@ -964,7 +1028,7 @@ def create_default_layout() -> DashboardLayoutModel:
                 "visible": True,
                 "locked": False,
                 "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+                "updated_at": datetime.utcnow(),
             },
             {
                 "id": "resource_usage",
@@ -975,7 +1039,7 @@ def create_default_layout() -> DashboardLayoutModel:
                 "visible": True,
                 "locked": False,
                 "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+                "updated_at": datetime.utcnow(),
             },
             {
                 "id": "quick_actions",
@@ -986,22 +1050,23 @@ def create_default_layout() -> DashboardLayoutModel:
                 "visible": True,
                 "locked": False,
                 "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
-            }
+                "updated_at": datetime.utcnow(),
+            },
         ],
         breakpoints={"lg": [], "md": [], "sm": [], "xs": []},
         isDefault=True,
         created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        updated_at=datetime.utcnow(),
     )
 
     return default_layout
+
 
 @router.get(
     "/layouts",
     response_model=DashboardLayoutListResponse,
     summary="List dashboard layouts",
-    description="Get all available dashboard layouts for the current user"
+    description="Get all available dashboard layouts for the current user",
 )
 async def list_layouts(request: Request) -> DashboardLayoutListResponse:
     """List all dashboard layouts."""
@@ -1025,7 +1090,7 @@ async def list_layouts(request: Request) -> DashboardLayoutListResponse:
             layouts=layouts,
             total_count=len(layouts),
             user_layouts_count=len([l for l in layouts if not l.isDefault]),
-            default_layout_id=default_layout_id
+            default_layout_id=default_layout_id,
         )
 
     except Exception as e:
@@ -1033,15 +1098,16 @@ async def list_layouts(request: Request) -> DashboardLayoutListResponse:
             status_code=500,
             detail=ErrorResponse.create(
                 code=ErrorCode.INTERNAL_ERROR,
-                message=f"Failed to list dashboard layouts: {str(e)}"
-            ).error
+                message=f"Failed to list dashboard layouts: {str(e)}",
+            ).error,
         )
+
 
 @router.get(
     "/layouts/{layout_id}",
     response_model=DashboardLayoutModel,
     summary="Get dashboard layout",
-    description="Get a specific dashboard layout by ID"
+    description="Get a specific dashboard layout by ID",
 )
 async def get_layout(layout_id: str, request: Request) -> DashboardLayoutModel:
     """Get a specific dashboard layout."""
@@ -1057,8 +1123,8 @@ async def get_layout(layout_id: str, request: Request) -> DashboardLayoutModel:
                     status_code=404,
                     detail=ErrorResponse.create(
                         code=ErrorCode.NOT_FOUND,
-                        message=f"Dashboard layout '{layout_id}' not found"
-                    ).error
+                        message=f"Dashboard layout '{layout_id}' not found",
+                    ).error,
                 )
 
         return layout
@@ -1070,19 +1136,19 @@ async def get_layout(layout_id: str, request: Request) -> DashboardLayoutModel:
             status_code=500,
             detail=ErrorResponse.create(
                 code=ErrorCode.INTERNAL_ERROR,
-                message=f"Failed to get dashboard layout: {str(e)}"
-            ).error
+                message=f"Failed to get dashboard layout: {str(e)}",
+            ).error,
         )
+
 
 @router.post(
     "/layouts",
     response_model=DashboardLayoutModel,
     summary="Create dashboard layout",
-    description="Create a new dashboard layout"
+    description="Create a new dashboard layout",
 )
 async def create_layout(
-    layout_request: DashboardLayoutRequest,
-    request: Request
+    layout_request: DashboardLayoutRequest, request: Request
 ) -> DashboardLayoutModel:
     """Create a new dashboard layout."""
     try:
@@ -1098,7 +1164,7 @@ async def create_layout(
             breakpoints=layout_request.breakpoints,
             isDefault=layout_request.isDefault,
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
         # If this is set as default, unset other defaults
@@ -1118,28 +1184,27 @@ async def create_layout(
             detail=ErrorResponse.create(
                 code=ErrorCode.VALIDATION_ERROR,
                 message="Invalid layout data",
-                details={"errors": str(e)}
-            ).error
+                details={"errors": str(e)},
+            ).error,
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=ErrorResponse.create(
                 code=ErrorCode.INTERNAL_ERROR,
-                message=f"Failed to create dashboard layout: {str(e)}"
-            ).error
+                message=f"Failed to create dashboard layout: {str(e)}",
+            ).error,
         )
+
 
 @router.put(
     "/layouts/{layout_id}",
     response_model=DashboardLayoutModel,
     summary="Update dashboard layout",
-    description="Update an existing dashboard layout"
+    description="Update an existing dashboard layout",
 )
 async def update_layout(
-    layout_id: str,
-    layout_request: DashboardLayoutRequest,
-    request: Request
+    layout_id: str, layout_request: DashboardLayoutRequest, request: Request
 ) -> DashboardLayoutModel:
     """Update an existing dashboard layout."""
     try:
@@ -1149,8 +1214,8 @@ async def update_layout(
                 status_code=404,
                 detail=ErrorResponse.create(
                     code=ErrorCode.NOT_FOUND,
-                    message=f"Dashboard layout '{layout_id}' not found"
-                ).error
+                    message=f"Dashboard layout '{layout_id}' not found",
+                ).error,
             )
 
         # Update layout
@@ -1162,7 +1227,7 @@ async def update_layout(
             breakpoints=layout_request.breakpoints,
             isDefault=layout_request.isDefault,
             created_at=existing_layout.created_at,
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
         # If this is set as default, unset other defaults
@@ -1184,24 +1249,25 @@ async def update_layout(
             detail=ErrorResponse.create(
                 code=ErrorCode.VALIDATION_ERROR,
                 message="Invalid layout data",
-                details={"errors": str(e)}
-            ).error
+                details={"errors": str(e)},
+            ).error,
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=ErrorResponse.create(
                 code=ErrorCode.INTERNAL_ERROR,
-                message=f"Failed to update dashboard layout: {str(e)}"
-            ).error
+                message=f"Failed to update dashboard layout: {str(e)}",
+            ).error,
         )
+
 
 @router.delete(
     "/layouts/{layout_id}",
     summary="Delete dashboard layout",
-    description="Delete a dashboard layout"
+    description="Delete a dashboard layout",
 )
-async def delete_layout(layout_id: str, request: Request) -> Dict[str, str]:
+async def delete_layout(layout_id: str, request: Request) -> dict[str, str]:
     """Delete a dashboard layout."""
     try:
         if layout_id == "default":
@@ -1209,8 +1275,8 @@ async def delete_layout(layout_id: str, request: Request) -> Dict[str, str]:
                 status_code=400,
                 detail=ErrorResponse.create(
                     code=ErrorCode.INVALID_PARAMETER,
-                    message="Cannot delete the default layout"
-                ).error
+                    message="Cannot delete the default layout",
+                ).error,
             )
 
         layout = load_layout(layout_id)
@@ -1219,8 +1285,8 @@ async def delete_layout(layout_id: str, request: Request) -> Dict[str, str]:
                 status_code=404,
                 detail=ErrorResponse.create(
                     code=ErrorCode.NOT_FOUND,
-                    message=f"Dashboard layout '{layout_id}' not found"
-                ).error
+                    message=f"Dashboard layout '{layout_id}' not found",
+                ).error,
             )
 
         # Delete file
@@ -1236,15 +1302,16 @@ async def delete_layout(layout_id: str, request: Request) -> Dict[str, str]:
             status_code=500,
             detail=ErrorResponse.create(
                 code=ErrorCode.INTERNAL_ERROR,
-                message=f"Failed to delete dashboard layout: {str(e)}"
-            ).error
+                message=f"Failed to delete dashboard layout: {str(e)}",
+            ).error,
         )
+
 
 @router.post(
     "/layouts/{layout_id}/export",
     response_model=DashboardExportData,
     summary="Export dashboard layout",
-    description="Export a dashboard layout for sharing or backup"
+    description="Export a dashboard layout for sharing or backup",
 )
 async def export_layout(layout_id: str, request: Request) -> DashboardExportData:
     """Export a dashboard layout."""
@@ -1255,8 +1322,8 @@ async def export_layout(layout_id: str, request: Request) -> DashboardExportData
                 status_code=404,
                 detail=ErrorResponse.create(
                     code=ErrorCode.NOT_FOUND,
-                    message=f"Dashboard layout '{layout_id}' not found"
-                ).error
+                    message=f"Dashboard layout '{layout_id}' not found",
+                ).error,
             )
 
         # Create export data (remove ID for import compatibility)
@@ -1268,8 +1335,8 @@ async def export_layout(layout_id: str, request: Request) -> DashboardExportData
             metadata={
                 "exported_from": "Brain Researcher Dashboard",
                 "original_id": layout_id,
-                "original_name": layout.name
-            }
+                "original_name": layout.name,
+            },
         )
 
         return export_data
@@ -1281,19 +1348,19 @@ async def export_layout(layout_id: str, request: Request) -> DashboardExportData
             status_code=500,
             detail=ErrorResponse.create(
                 code=ErrorCode.INTERNAL_ERROR,
-                message=f"Failed to export dashboard layout: {str(e)}"
-            ).error
+                message=f"Failed to export dashboard layout: {str(e)}",
+            ).error,
         )
+
 
 @router.post(
     "/layouts/import",
     response_model=DashboardLayoutModel,
     summary="Import dashboard layout",
-    description="Import a dashboard layout from export data"
+    description="Import a dashboard layout from export data",
 )
 async def import_layout(
-    export_data: DashboardExportData,
-    request: Request
+    export_data: DashboardExportData, request: Request
 ) -> DashboardLayoutModel:
     """Import a dashboard layout."""
     try:
@@ -1307,17 +1374,19 @@ async def import_layout(
             name=imported_name,
             description=export_data.layout.description,
             widgets=[
-                widget.model_copy(update={
-                    "id": f"widget_{uuid.uuid4().hex[:8]}",
-                    "created_at": datetime.utcnow(),
-                    "updated_at": datetime.utcnow()
-                })
+                widget.model_copy(
+                    update={
+                        "id": f"widget_{uuid.uuid4().hex[:8]}",
+                        "created_at": datetime.utcnow(),
+                        "updated_at": datetime.utcnow(),
+                    }
+                )
                 for widget in export_data.layout.widgets
             ],
             breakpoints=export_data.layout.breakpoints,
             isDefault=False,  # Never import as default
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
         save_layout(imported_layout)
@@ -1329,14 +1398,14 @@ async def import_layout(
             detail=ErrorResponse.create(
                 code=ErrorCode.VALIDATION_ERROR,
                 message="Invalid import data",
-                details={"errors": str(e)}
-            ).error
+                details={"errors": str(e)},
+            ).error,
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=ErrorResponse.create(
                 code=ErrorCode.INTERNAL_ERROR,
-                message=f"Failed to import dashboard layout: {str(e)}"
-            ).error
+                message=f"Failed to import dashboard layout: {str(e)}",
+            ).error,
         )

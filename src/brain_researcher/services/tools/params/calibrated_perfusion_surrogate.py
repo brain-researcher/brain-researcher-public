@@ -83,7 +83,9 @@ def calibrated_perfusion_surrogate_from_payload(
 ) -> CalibratedPerfusionSurrogateParameters:
     """Split a combined payload into ASL and CVR sub-configurations."""
 
-    output_dir = payload.get("output_dir") or Path.cwd() / "calibrated_perfusion_surrogate"
+    output_dir = (
+        payload.get("output_dir") or Path.cwd() / "calibrated_perfusion_surrogate"
+    )
     return CalibratedPerfusionSurrogateParameters(
         output_dir=str(output_dir),
         asl_payload=_subset_payload(payload, _ASL_PARAM_KEYS),

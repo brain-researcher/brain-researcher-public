@@ -14,11 +14,13 @@ import logging
 import os
 import re
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any
 
 try:  # pragma: no cover - optional dependency in slim environments
-    from jsonschema import ValidationError, validate as jsonschema_validate
+    from jsonschema import ValidationError
+    from jsonschema import validate as jsonschema_validate
 except Exception:  # pragma: no cover
     ValidationError = None  # type: ignore
     jsonschema_validate = None  # type: ignore
@@ -50,18 +52,20 @@ class ToolDecision:
     pipeline: PipelineType
     tool: str
     confidence: float
-    parameters: Dict[str, Any] = field(default_factory=dict)
-    rationale: Optional[str] = None
+    parameters: dict[str, Any] = field(default_factory=dict)
+    rationale: str | None = None
     source: str = "rules"
-    resolved_tool: Optional[str] = None
-    candidates: List[str] = field(default_factory=list)
-    profile: Optional[str] = None
+    resolved_tool: str | None = None
+    candidates: list[str] = field(default_factory=list)
+    profile: str | None = None
 
-    def to_metadata(self) -> Dict[str, Any]:
+    def to_metadata(self) -> dict[str, Any]:
         data = {
-            "pipeline": self.pipeline.value
-            if isinstance(self.pipeline, PipelineType)
-            else self.pipeline,
+            "pipeline": (
+                self.pipeline.value
+                if isinstance(self.pipeline, PipelineType)
+                else self.pipeline
+            ),
             "tool": self.tool,
             "confidence": self.confidence,
             "parameters": self.parameters,
@@ -83,10 +87,10 @@ class _PipelineRule:
     pipeline: PipelineType
     confidence: float
     rationale: str
-    patterns: Tuple[str, ...]
-    zh_patterns: Tuple[str, ...]
-    preferred_tools: Tuple[str, ...]
-    preferred_tags: Tuple[str, ...]
+    patterns: tuple[str, ...]
+    zh_patterns: tuple[str, ...]
+    preferred_tools: tuple[str, ...]
+    preferred_tags: tuple[str, ...]
 
 
 # ---------------------------------------------------------------------------
@@ -129,7 +133,7 @@ _EXECUTION_RX = re.compile(
     re.IGNORECASE,
 )
 
-_PIPELINE_RULES: Tuple[_PipelineRule, ...] = (
+_PIPELINE_RULES: tuple[_PipelineRule, ...] = (
     # Coding profile rule – only wins when explicitly selected or matched by coding verbs
     _PipelineRule(
         alias="code",
@@ -234,7 +238,7 @@ _PIPELINE_RULES: Tuple[_PipelineRule, ...] = (
 
 _PIPELINE_ALIAS_TO_RULE = {rule.alias: rule for rule in _PIPELINE_RULES}
 
-_DEFAULT_TOOL_FOR_PIPELINE: Dict[PipelineType, str] = {
+_DEFAULT_TOOL_FOR_PIPELINE: dict[PipelineType, str] = {
     PipelineType.GLM: "glm",
     PipelineType.CONNECTIVITY: "connectivity",
     PipelineType.CUSTOM: "meta_analysis",
@@ -257,7 +261,7 @@ def _language_hint(text: str) -> str:
     return "zh" if _CHINESE_RX.search(text) else "en"
 
 
-def _extract_dataset(text: str) -> Optional[str]:
+def _extract_dataset(text: str) -> str | None:
     match = _DATASET_RX.search(text)
     if match:
         value = match.group(1)
@@ -274,7 +278,7 @@ def _extract_dataset_search_terms(text: str) -> str:
     return "datasets"
 
 
-def _coerce_pipeline(value: Optional[str], default: PipelineType) -> PipelineType:
+def _coerce_pipeline(value: str | None, default: PipelineType) -> PipelineType:
     if not value:
         return default
     for member in PipelineType:
@@ -285,9 +289,9 @@ def _coerce_pipeline(value: Optional[str], default: PipelineType) -> PipelineTyp
 
 def _rule_match(
     prompt: str,
-    attachments: Optional[Sequence[str]],
-    current_pipeline: Optional[PipelineType],
-    profile: Optional[str] = None,
+    attachments: Sequence[str] | None,
+    current_pipeline: PipelineType | None,
+    profile: str | None = None,
 ) -> ToolDecision:
     prompt_norm = prompt.strip()
     lang = _language_hint(prompt_norm)
@@ -327,7 +331,7 @@ def _rule_match(
             profile=profile,
         )
 
-    lowered = prompt_norm.lower()
+    prompt_norm.lower()
 
     planning_intent = bool(_PLANNING_RX.search(prompt_norm))
     execution_intent = bool(_EXECUTION_RX.search(prompt_norm))
@@ -372,7 +376,7 @@ def _rule_match(
 
 def _top_candidates(
     rule: _PipelineRule, prompt: str, limit: int
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     if CATALOG:
         candidates = CATALOG.candidates(
             prompt,
@@ -400,8 +404,8 @@ def _top_candidates(
 
 
 def _maybe_run_llm(
-    prompt: str, rule: _PipelineRule, candidates: List[Dict[str, Any]]
-) -> Optional[Dict[str, Any]]:
+    prompt: str, rule: _PipelineRule, candidates: list[dict[str, Any]]
+) -> dict[str, Any] | None:
     if _is_test_env():
         return None
 
@@ -570,10 +574,10 @@ def _maybe_run_llm(
 
 def select_tool(
     prompt: str,
-    attachments: Optional[List[str]] = None,
-    current_pipeline: Optional[PipelineType] = None,
+    attachments: list[str] | None = None,
+    current_pipeline: PipelineType | None = None,
     max_candidates: int = 6,
-    profile: Optional[str] = None,
+    profile: str | None = None,
     validate_schema: bool = True,
 ) -> ToolDecision:
     """Select the best-fit pipeline/tool for a natural-language prompt.
@@ -604,7 +608,7 @@ def select_tool(
         parameters.setdefault("dataset_id", dataset_id)
     decision.parameters = parameters
 
-    lowered_prompt = prompt.lower()
+    prompt.lower()
     dataset_listing = (
         decision.tool == "ingest"
         and not dataset_id
@@ -619,7 +623,7 @@ def select_tool(
         return decision
 
     rule = _PIPELINE_ALIAS_TO_RULE.get(decision.tool)
-    candidates: List[Dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = []
     if rule:
         candidates = _top_candidates(rule, prompt, limit=max_candidates)
         decision.candidates = [
@@ -664,7 +668,7 @@ def select_tool(
     return decision
 
 
-def validate_tool_parameters(tool_name: str, parameters: Dict[str, Any]) -> List[str]:
+def validate_tool_parameters(tool_name: str, parameters: dict[str, Any]) -> list[str]:
     """Validate parameters against a tool's input schema.
 
     Args:
@@ -714,7 +718,7 @@ def validate_tool_parameters(tool_name: str, parameters: Dict[str, Any]) -> List
 
 __all__ = ["ToolDecision", "select_tool"]
 # Fallback catalog used when MCP tool catalog is unavailable inside the runtime
-_FALLBACK_TOOLS: Tuple[Dict[str, Any], ...] = (
+_FALLBACK_TOOLS: tuple[dict[str, Any], ...] = (
     {
         "name": "fs.read",
         "tags": ["fs"],

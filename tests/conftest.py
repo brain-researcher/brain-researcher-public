@@ -5,25 +5,25 @@ Provides common fixtures for service connections, mock data, and test utilities
 across all integration test modules.
 """
 
-import pytest
-import pytest_asyncio
 import asyncio
-import httpx
-import redis.asyncio as redis_asyncio
-import os
-import tempfile
-import json
 import inspect
-import threading
+import json
+import os
 import sys
-from contextlib import contextmanager
+import tempfile
+import threading
+from collections.abc import AsyncGenerator
 from concurrent.futures import Future
-from typing import Dict, List, Any, Optional, AsyncGenerator
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-import numpy as np
 import fakeredis.aioredis
+import httpx
+import numpy as np
+import pytest
+import pytest_asyncio
+import redis.asyncio as redis_asyncio
 
 # Explicitly ignore problematic integration test that pulls MNE/numba and
 # crashes collection in unit-only runs.
@@ -40,6 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
+
 
 # Ensure TMPDIR exists and is writable. Some environments in CI/sandboxes have a
 # non-writable system temp dir; tests also pass --basetemp which may clear dirs.
@@ -69,6 +70,7 @@ except Exception:
     _anyio_from_thread = None  # pragma: no cover
 
 if _anyio_from_thread is not None:
+
     class _InlinePortal:
         @staticmethod
         def _run_awaitable(awaitable):
@@ -126,6 +128,7 @@ if _anyio_from_thread is not None:
         _starlette_testclient = None
 
     if _starlette_testclient is not None:
+
         async def _noop_lifespan(self):
             return None
 
@@ -159,19 +162,15 @@ TEST_CONFIG = {
         "br_kg": {"host": "localhost", "port": 5000, "timeout": 30.0},
         "orchestrator": {"host": "localhost", "port": 3001, "timeout": 30.0},
         "agent": {"host": "localhost", "port": 8000, "timeout": 60.0},
-        "web_ui": {"host": "localhost", "port": 3000, "timeout": 10.0}
+        "web_ui": {"host": "localhost", "port": 3000, "timeout": 10.0},
     },
     "redis": {
         "url": os.getenv("REDIS_URL", "redis://localhost:6379"),
-        "use_fake": os.getenv("USE_FAKE_REDIS", "true").lower() == "true"
+        "use_fake": os.getenv("USE_FAKE_REDIS", "true").lower() == "true",
     },
-    "demo_timeouts": {
-        "short": 30,
-        "medium": 120,
-        "long": 300
-    },
+    "demo_timeouts": {"short": 30, "medium": 120, "long": 300},
     "max_concurrent_demos": 5,
-    "test_data_dir": Path(__file__).parent / "fixtures"
+    "test_data_dir": Path(__file__).parent / "fixtures",
 }
 
 
@@ -208,18 +207,18 @@ def coding_workflow_test_routes():
     router = APIRouter()
 
     class CodePatchRequest(BaseModel):
-        patch: Optional[str] = None
-        description: Optional[str] = None
+        patch: str | None = None
+        description: str | None = None
 
     class CodeTestRequest(BaseModel):
-        targets: Optional[List[str]] = None
-        marker: Optional[str] = None
-        extra_args: Optional[List[str]] = None
+        targets: list[str] | None = None
+        marker: str | None = None
+        extra_args: list[str] | None = None
 
     def _repo_root() -> Path:
         return Path(os.environ.get("WORKSPACE_ROOT", Path.cwd()))
 
-    def _truncate(text: Optional[str], limit: int = 2000) -> Optional[str]:
+    def _truncate(text: str | None, limit: int = 2000) -> str | None:
         if text is None:
             return None
         if len(text) <= limit:
@@ -227,14 +226,18 @@ def coding_workflow_test_routes():
         return text[: limit - 3] + "..."
 
     @router.post("/jobs/{job_id}/apply_patch")
-    async def apply_patch(job_id: str, request: CodePatchRequest | None = Body(default=None)):
+    async def apply_patch(
+        job_id: str, request: CodePatchRequest | None = Body(default=None)
+    ):
         if job_id not in main_enhanced.jobs_db:
             raise HTTPException(
                 status_code=404,
-                detail=ErrorResponse.create(ErrorCode.NOT_FOUND, "Job not found").model_dump(),
+                detail=ErrorResponse.create(
+                    ErrorCode.NOT_FOUND, "Job not found"
+                ).model_dump(),
             )
 
-        patch_text = (request.patch if request else None)
+        patch_text = request.patch if request else None
         if not patch_text:
             raise HTTPException(status_code=400, detail="No patch provided or pending")
 
@@ -263,8 +266,12 @@ def coding_workflow_test_routes():
         )
         job.steps.append(step)
         job.status = JobStatus.RUNNING
-        await main_enhanced.notify_job_update(job_id, {"type": "step", "step": step.model_dump()})
-        await main_enhanced.notify_job_update(job_id, {"type": "status", "status": job.status})
+        await main_enhanced.notify_job_update(
+            job_id, {"type": "step", "step": step.model_dump()}
+        )
+        await main_enhanced.notify_job_update(
+            job_id, {"type": "status", "status": job.status}
+        )
         await main_enhanced.EnhancedJobManager._sync_job_in_store(job)
         return result
 
@@ -273,7 +280,9 @@ def coding_workflow_test_routes():
         if job_id not in main_enhanced.jobs_db:
             raise HTTPException(
                 status_code=404,
-                detail=ErrorResponse.create(ErrorCode.NOT_FOUND, "Job not found").model_dump(),
+                detail=ErrorResponse.create(
+                    ErrorCode.NOT_FOUND, "Job not found"
+                ).model_dump(),
             )
 
         result = await coding_agent.run_in_executor(
@@ -306,16 +315,18 @@ def coding_workflow_test_routes():
             job.status = JobStatus.FAILED
             job.error = ErrorResponse.create(ErrorCode.PROCESSING_ERROR, "Tests failed")
 
-        await main_enhanced.notify_job_update(job_id, {"type": "step", "step": step.model_dump()})
-        await main_enhanced.notify_job_update(job_id, {"type": "status", "status": job.status})
+        await main_enhanced.notify_job_update(
+            job_id, {"type": "step", "step": step.model_dump()}
+        )
+        await main_enhanced.notify_job_update(
+            job_id, {"type": "status", "status": job.status}
+        )
         await main_enhanced.EnhancedJobManager._sync_job_in_store(job)
         return result
 
     app.include_router(router)
     app.state._test_coding_routes = True
     return app
-
-
 
 
 @pytest.fixture(scope="session")
@@ -376,6 +387,7 @@ def service_urls():
 @pytest_asyncio.fixture
 async def check_service_health(http_session, service_urls):
     """Check if services are running and healthy."""
+
     async def _check_health(service_name: str) -> bool:
         if service_name not in service_urls:
             return False
@@ -406,7 +418,7 @@ def mock_demo_data():
                 "estimated_real_duration": "8-12 minutes",
                 "tags": ["fMRI", "GLM", "Motor", "FSL", "Statistics", "Beginner"],
                 "popularity": 5,
-                "thumbnail": "/demo/thumbnails/glm_motor_card.png"
+                "thumbnail": "/demo/thumbnails/glm_motor_card.png",
             },
             {
                 "id": "connectivity_dmn",
@@ -419,8 +431,8 @@ def mock_demo_data():
                 "estimated_real_duration": "15-20 minutes",
                 "tags": ["Resting State", "Connectivity", "DMN", "Networks"],
                 "popularity": 4,
-                "thumbnail": "/demo/thumbnails/connectivity_dmn_card.png"
-            }
+                "thumbnail": "/demo/thumbnails/connectivity_dmn_card.png",
+            },
         ],
         "artifacts": {
             "glm_motor_task": [
@@ -430,7 +442,7 @@ def mock_demo_data():
                     "type": "brain_map",
                     "size_bytes": 2847392,
                     "url": "/api/demo/artifacts/glm_motor/zstat1.nii.gz",
-                    "meta": {"threshold": 3.1, "max_z": 8.42}
+                    "meta": {"threshold": 3.1, "max_z": 8.42},
                 },
                 {
                     "id": "design_matrix",
@@ -438,8 +450,8 @@ def mock_demo_data():
                     "type": "image",
                     "size_bytes": 156432,
                     "url": "/api/demo/artifacts/glm_motor/design_matrix.png",
-                    "meta": {"format": "PNG", "dimensions": [800, 600]}
-                }
+                    "meta": {"format": "PNG", "dimensions": [800, 600]},
+                },
             ]
         },
         "visualizations": {
@@ -451,10 +463,10 @@ def mock_demo_data():
                     "description": "Interactive 3D brain showing motor task activation",
                     "url": "/viz/demo/glm_motor/brain_map",
                     "interactive": True,
-                    "thumbnail": "/demo/thumbnails/motor_activation_thumb.png"
+                    "thumbnail": "/demo/thumbnails/motor_activation_thumb.png",
                 }
             ]
-        }
+        },
     }
 
 
@@ -467,27 +479,27 @@ def mock_service_responses():
                 "status": "healthy",
                 "service": "br_kg",
                 "version": "1.0.0",
-                "database": "connected"
+                "database": "connected",
             },
             "orchestrator": {
                 "status": "healthy",
                 "service": "orchestrator",
                 "demos_available": 5,
-                "active_demos": 2
+                "active_demos": 2,
             },
             "agent": {
                 "status": "healthy",
                 "service": "agent",
                 "active_tools": 25,
-                "langgraph_status": "ready"
-            }
+                "langgraph_status": "ready",
+            },
         },
         "demo_responses": {
             "start_demo": {
                 "demo_id": "test_demo_123",
                 "status": "started",
                 "estimated_duration": 85,
-                "queue_position": 1
+                "queue_position": 1,
             },
             "demo_progress": {
                 "demo_id": "test_demo_123",
@@ -495,7 +507,7 @@ def mock_service_responses():
                 "progress": 45,
                 "current_step": "Running GLM analysis",
                 "steps_completed": ["Data loading", "Preprocessing"],
-                "estimated_time_remaining": 40
+                "estimated_time_remaining": 40,
             },
             "demo_result": {
                 "demo_id": "test_demo_123",
@@ -507,15 +519,15 @@ def mock_service_responses():
                 "visualizations": [
                     {
                         "type": "3d_brain",
-                        "url": "/api/landing/demos/test_demo_123/viz/brain"
+                        "url": "/api/landing/demos/test_demo_123/viz/brain",
                     }
                 ],
                 "run_card": {
                     "reproducibility_score": 0.95,
-                    "parameters": {"smoothing": "6mm", "threshold": "p<0.001"}
-                }
-            }
-        }
+                    "parameters": {"smoothing": "6mm", "threshold": "p<0.001"},
+                },
+            },
+        },
     }
 
 
@@ -561,7 +573,7 @@ def test_data(tmp_path):
     magnitude = np.abs(t1).astype(np.float32) * 1000
     asl = rng.normal(size=(32, 32, 16, 20)).astype(np.float32)
     fmri = rng.normal(size=(32, 32, 16, 40)).astype(np.float32)
-    mask = (t1 > t1.mean())
+    mask = t1 > t1.mean()
 
     data = {
         "t1": _save("test_t1", t1),
@@ -574,7 +586,6 @@ def test_data(tmp_path):
     }
 
     return data
-
 
 
 @pytest.fixture
@@ -598,7 +609,7 @@ def demo_executor_mock():
             "demo_id": demo_id,
             "status": "completed",
             "progress": 100,
-            "scenario_id": "glm_motor_task"
+            "scenario_id": "glm_motor_task",
         }
 
     def mock_list_scenarios():
@@ -607,7 +618,7 @@ def demo_executor_mock():
                 "id": "glm_motor_task",
                 "name": "Motor Task GLM",
                 "complexity": "beginner",
-                "duration": 85
+                "duration": 85,
             }
         ]
 
@@ -628,12 +639,14 @@ def websocket_mock():
         pass
 
     async def mock_recv():
-        return json.dumps({
-            "type": "progress_update",
-            "demo_id": "test_demo_123",
-            "progress": 50,
-            "status": "running"
-        })
+        return json.dumps(
+            {
+                "type": "progress_update",
+                "demo_id": "test_demo_123",
+                "progress": 50,
+                "status": "running",
+            }
+        )
 
     mock_ws.send = mock_send
     mock_ws.recv = mock_recv
@@ -644,6 +657,7 @@ def websocket_mock():
 @pytest.fixture
 def integration_test_markers():
     """Helper for marking integration tests."""
+
     def marker_helper(test_type: str):
         markers = {
             "demo_scenarios": pytest.mark.demo_scenarios,
@@ -652,7 +666,7 @@ def integration_test_markers():
             "demo_gallery": pytest.mark.demo_gallery,
             "slow": pytest.mark.slow_integration,
             "requires_services": pytest.mark.requires_services,
-            "websockets": pytest.mark.websockets
+            "websockets": pytest.mark.websockets,
         }
         return markers.get(test_type, lambda x: x)
 
@@ -663,15 +677,21 @@ def integration_test_markers():
 @pytest.fixture
 def test_utilities():
     """Utility functions for integration tests."""
+
     class TestUtils:
         @staticmethod
         async def wait_for_condition(condition_func, timeout=30, interval=1):
             """Wait for a condition to be true."""
             import time
+
             start_time = time.time()
 
             while (time.time() - start_time) < timeout:
-                if await condition_func() if asyncio.iscoroutinefunction(condition_func) else condition_func():
+                if (
+                    await condition_func()
+                    if asyncio.iscoroutinefunction(condition_func)
+                    else condition_func()
+                ):
                     return True
                 await asyncio.sleep(interval)
             return False
@@ -679,9 +699,12 @@ def test_utilities():
         @staticmethod
         async def wait_for_demo_completion(client, base_url, demo_id, timeout=120):
             """Wait for demo to complete."""
+
             async def check_completed():
                 try:
-                    response = await client.get(f"{base_url}/api/landing/demos/{demo_id}/progress")
+                    response = await client.get(
+                        f"{base_url}/api/landing/demos/{demo_id}/progress"
+                    )
                     if response.status_code == 200:
                         progress = response.json()
                         return progress["status"] in ["completed", "failed", "timeout"]
@@ -722,6 +745,7 @@ def test_utilities():
 @pytest.fixture
 def skip_if_service_unavailable(check_service_health):
     """Skip test if required service is unavailable."""
+
     async def _skip_if_unavailable(service_name: str):
         if not await check_service_health(service_name):
             pytest.skip(f"{service_name} service not available")
@@ -776,7 +800,9 @@ def performance_monitor():
         def assert_performance(self, metric_name: str, max_value: float):
             if metric_name in self.metrics:
                 actual = self.metrics[metric_name]
-                assert actual <= max_value, f"{metric_name} was {actual}, expected <= {max_value}"
+                assert (
+                    actual <= max_value
+                ), f"{metric_name} was {actual}, expected <= {max_value}"
 
     return PerformanceMonitor()
 
@@ -791,7 +817,7 @@ def sample_fmri_data():
         "n_volumes": 200,
         "voxel_size": [2.0, 2.0, 2.0],
         "tasks": ["motor"],
-        "conditions": ["left_hand", "right_hand", "rest"]
+        "conditions": ["left_hand", "right_hand", "rest"],
     }
 
 
@@ -802,7 +828,7 @@ def sample_coordinates():
         "motor_cortex": [42, -22, 62],
         "visual_cortex": [18, -94, -12],
         "auditory_cortex": [52, -26, 8],
-        "frontal_cortex": [36, 42, 28]
+        "frontal_cortex": [36, 42, 28],
     }
 
 
@@ -810,6 +836,7 @@ def sample_coordinates():
 @pytest.fixture
 def simulate_service_errors():
     """Simulate various service error conditions."""
+
     class ErrorSimulator:
         @staticmethod
         def connection_error():
@@ -824,10 +851,7 @@ def simulate_service_errors():
             response = MagicMock()
             response.status_code = 500
             response.json.return_value = {
-                "error": {
-                    "code": "INTERNAL_ERROR",
-                    "message": "Internal server error"
-                }
+                "error": {"code": "INTERNAL_ERROR", "message": "Internal server error"}
             }
             return response
 
@@ -838,7 +862,7 @@ def simulate_service_errors():
             response.json.return_value = {
                 "error": {
                     "code": "SERVICE_UNAVAILABLE",
-                    "message": "Service temporarily unavailable"
+                    "message": "Service temporarily unavailable",
                 }
             }
             return response
@@ -860,7 +884,7 @@ def add_istio_markers(config):
         "observability: Tests related to observability features",
         "performance: Tests related to performance characteristics",
         "scalability: Tests related to scalability features",
-        "production: Tests that simulate production conditions"
+        "production: Tests that simulate production conditions",
     ]
 
     for marker in istio_markers:
@@ -878,7 +902,7 @@ def pytest_configure(config):
         "demo_gallery: Tests for demo gallery functionality",
         "slow_integration: Integration tests that take >30s",
         "requires_services: Tests that require external services running",
-        "websockets: Tests that use WebSocket connections"
+        "websockets: Tests that use WebSocket connections",
     ]
 
     for marker in markers:
@@ -894,8 +918,10 @@ def istio_test_environment():
     return {
         "CI": os.getenv("CI", "false").lower() == "true",
         "ISTIO_AVAILABLE": os.getenv("ISTIO_AVAILABLE", "false").lower() == "true",
-        "K8S_CLUSTER_AVAILABLE": os.getenv("K8S_CLUSTER_AVAILABLE", "false").lower() == "true",
-        "LOAD_TESTING_ENABLED": os.getenv("LOAD_TESTING_ENABLED", "false").lower() == "true",
+        "K8S_CLUSTER_AVAILABLE": os.getenv("K8S_CLUSTER_AVAILABLE", "false").lower()
+        == "true",
+        "LOAD_TESTING_ENABLED": os.getenv("LOAD_TESTING_ENABLED", "false").lower()
+        == "true",
         "TEST_TIMEOUT": int(os.getenv("TEST_TIMEOUT", "300")),  # 5 minutes default
     }
 
@@ -929,29 +955,19 @@ def mock_k8s_config():
             {
                 "cluster": {
                     "certificate-authority-data": "LS0tLS1CRUdJTi...",
-                    "server": "https://kubernetes.example.com"
+                    "server": "https://kubernetes.example.com",
                 },
-                "name": "test-cluster"
+                "name": "test-cluster",
             }
         ],
         "contexts": [
             {
-                "context": {
-                    "cluster": "test-cluster",
-                    "user": "test-user"
-                },
-                "name": "test-context"
+                "context": {"cluster": "test-cluster", "user": "test-user"},
+                "name": "test-context",
             }
         ],
         "current-context": "test-context",
-        "users": [
-            {
-                "name": "test-user",
-                "user": {
-                    "token": "test-token"
-                }
-            }
-        ]
+        "users": [{"name": "test-user", "user": {"token": "test-token"}}],
     }
 
 
@@ -960,10 +976,7 @@ def istio_test_namespace():
     """Provide Istio test namespace configuration."""
     return {
         "name": "brain-researcher-test",
-        "labels": {
-            "istio-injection": "enabled",
-            "test-environment": "true"
-        }
+        "labels": {"istio-injection": "enabled", "test-environment": "true"},
     }
 
 
@@ -977,10 +990,10 @@ def sample_service_config():
             "replicas": 2,
             "resources": {
                 "requests": {"cpu": "100m", "memory": "256Mi"},
-                "limits": {"cpu": "500m", "memory": "1Gi"}
+                "limits": {"cpu": "500m", "memory": "1Gi"},
             },
             "health_check": "/health",
-            "readiness_check": "/ready"
+            "readiness_check": "/ready",
         },
         "agent": {
             "image": "brain-researcher/agent:test",
@@ -988,10 +1001,10 @@ def sample_service_config():
             "replicas": 1,
             "resources": {
                 "requests": {"cpu": "200m", "memory": "512Mi"},
-                "limits": {"cpu": "1000m", "memory": "2Gi"}
+                "limits": {"cpu": "1000m", "memory": "2Gi"},
             },
             "health_check": "/health",
-            "readiness_check": "/ready"
+            "readiness_check": "/ready",
         },
         "orchestrator": {
             "image": "brain-researcher/orchestrator:test",
@@ -999,11 +1012,11 @@ def sample_service_config():
             "replicas": 2,
             "resources": {
                 "requests": {"cpu": "150m", "memory": "384Mi"},
-                "limits": {"cpu": "750m", "memory": "1.5Gi"}
+                "limits": {"cpu": "750m", "memory": "1.5Gi"},
             },
             "health_check": "/health",
-            "readiness_check": "/ready"
-        }
+            "readiness_check": "/ready",
+        },
     }
 
 
@@ -1016,28 +1029,28 @@ def mock_prometheus_metrics():
                 "metric": {
                     "__name__": "istio_requests_total",
                     "destination_service_name": "br_kg-service",
-                    "response_code": "200"
+                    "response_code": "200",
                 },
-                "value": [1640995200, "1500"]
+                "value": [1640995200, "1500"],
             },
             {
                 "metric": {
                     "__name__": "istio_requests_total",
                     "destination_service_name": "agent-service",
-                    "response_code": "200"
+                    "response_code": "200",
                 },
-                "value": [1640995200, "800"]
-            }
+                "value": [1640995200, "800"],
+            },
         ],
         "istio_request_duration_milliseconds": [
             {
                 "metric": {
                     "__name__": "istio_request_duration_milliseconds",
-                    "destination_service_name": "br_kg-service"
+                    "destination_service_name": "br_kg-service",
                 },
-                "value": [1640995200, "45.5"]
+                "value": [1640995200, "45.5"],
             }
-        ]
+        ],
     }
 
 
@@ -1056,24 +1069,20 @@ def mock_jaeger_traces():
                         "duration": 45500,
                         "tags": [
                             {"key": "http.method", "value": "GET"},
-                            {"key": "http.url", "value": "/health"}
+                            {"key": "http.url", "value": "/health"},
                         ],
                         "process": {
                             "serviceName": "br_kg-service",
-                            "tags": [
-                                {"key": "version", "value": "v1.0.0"}
-                            ]
-                        }
+                            "tags": [{"key": "version", "value": "v1.0.0"}],
+                        },
                     }
                 ],
                 "processes": {
                     "p1": {
                         "serviceName": "br_kg-service",
-                        "tags": [
-                            {"key": "version", "value": "v1.0.0"}
-                        ]
+                        "tags": [{"key": "version", "value": "v1.0.0"}],
                     }
-                }
+                },
             }
         ]
     }
@@ -1088,15 +1097,18 @@ class IstioTestConfig:
         self.mesh_config = {
             "default_config": {
                 "proxy_stats_matcher": {
-                    "inclusion_regexps": [".*outlier_detection.*", ".*circuit_breaker.*"],
-                    "exclusion_regexps": [".*_bucket"]
+                    "inclusion_regexps": [
+                        ".*outlier_detection.*",
+                        ".*circuit_breaker.*",
+                    ],
+                    "exclusion_regexps": [".*_bucket"],
                 }
             }
         }
         self.security_config = {
             "mtls_mode": "STRICT",
             "authorization_enabled": True,
-            "jwt_validation_enabled": True
+            "jwt_validation_enabled": True,
         }
 
 
@@ -1118,7 +1130,7 @@ def performance_thresholds():
         "max_error_rate": 0.05,
         "min_throughput_rps": 100,
         "max_cpu_utilization": 0.8,
-        "max_memory_utilization": 0.8
+        "max_memory_utilization": 0.8,
     }
 
 
@@ -1131,7 +1143,7 @@ def load_test_config():
         "ramp_up_duration_seconds": 30,
         "ramp_down_duration_seconds": 30,
         "request_timeout_seconds": 30,
-        "think_time_seconds": 1
+        "think_time_seconds": 1,
     }
 
 
@@ -1147,15 +1159,25 @@ def istio_error_scenarios():
         "rate_limited": {"type": "http_error", "status_code": 429},
         "unauthorized": {"type": "http_error", "status_code": 401},
         "forbidden": {"type": "http_error", "status_code": 403},
-        "circuit_breaker_open": {"type": "http_error", "status_code": 503, "headers": {"x-envoy-overloaded": "true"}},
+        "circuit_breaker_open": {
+            "type": "http_error",
+            "status_code": 503,
+            "headers": {"x-envoy-overloaded": "true"},
+        },
         "mtls_failure": {"type": "ssl_error", "reason": "certificate_verify_failed"},
-        "mesh_config_error": {"type": "istio_error", "reason": "virtual_service_invalid"}
+        "mesh_config_error": {
+            "type": "istio_error",
+            "reason": "virtual_service_invalid",
+        },
     }
 
 
 # Auto-added to block flaky integration test that fails numba/MNE caching
 import pathlib as _pathlib
-_collect_ignore_entry = _pathlib.Path(__file__).parent / "integration" / "test_advanced_tools.py"
-collect_ignore = globals().get('collect_ignore', [])
+
+_collect_ignore_entry = (
+    _pathlib.Path(__file__).parent / "integration" / "test_advanced_tools.py"
+)
+collect_ignore = globals().get("collect_ignore", [])
 if _collect_ignore_entry.exists():
     collect_ignore.append(str(_collect_ignore_entry))

@@ -6,7 +6,7 @@ checking assumptions like normality of residuals and multicollinearity.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+
 import numpy as np
 from pydantic import BaseModel, Field
 
@@ -14,20 +14,18 @@ from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResu
 
 logger = logging.getLogger(__name__)
 
+
 class StatisticalCriticArgs(BaseModel):
     """Arguments for statistical validation."""
 
-    residuals: Optional[List[float]] = Field(
-        None,
-        description="Residuals from the model fit (for normality check)"
+    residuals: list[float] | None = Field(
+        None, description="Residuals from the model fit (for normality check)"
     )
-    design_matrix: Optional[List[List[float]]] = Field(
-        None,
-        description="Design matrix (for multicollinearity check)"
+    design_matrix: list[list[float]] | None = Field(
+        None, description="Design matrix (for multicollinearity check)"
     )
-    p_values: Optional[List[float]] = Field(
-        None,
-        description="P-values to check for multiple comparison issues"
+    p_values: list[float] | None = Field(
+        None, description="P-values to check for multiple comparison issues"
     )
     alpha: float = Field(0.05, description="Significance level")
 
@@ -59,22 +57,19 @@ class StatisticalCriticTool(NeuroToolWrapper):
 
     def _run(
         self,
-        residuals: Optional[List[float]] = None,
-        design_matrix: Optional[List[List[float]]] = None,
-        p_values: Optional[List[float]] = None,
-        alpha: float = 0.05
+        residuals: list[float] | None = None,
+        design_matrix: list[list[float]] | None = None,
+        p_values: list[float] | None = None,
+        alpha: float = 0.05,
     ) -> ToolResult:
 
-        report = {
-            "valid": True,
-            "issues": [],
-            "checks": {}
-        }
+        report = {"valid": True, "issues": [], "checks": {}}
 
         # 1. Check Normality of Residuals
         if residuals:
             try:
                 from scipy import stats
+
                 # Shapiro-Wilk test
                 # Note: N > 5000 is often too strict for Shapiro, but good for small N
                 # For large N, D'Agostino's K^2 is better, but stick to simple for now.
@@ -85,7 +80,7 @@ class StatisticalCriticTool(NeuroToolWrapper):
                 report["checks"]["normality"] = {
                     "method": "Shapiro-Wilk",
                     "p_value": float(shapiro_p),
-                    "passed": is_normal
+                    "passed": is_normal,
                 }
 
                 if not is_normal:
@@ -104,7 +99,9 @@ class StatisticalCriticTool(NeuroToolWrapper):
                 X = np.array(design_matrix)
                 # Check for constant columns to avoid singular matrix if possible
                 # But mostly rely on statsmodels if available, else manual
-                from statsmodels.stats.outliers_influence import variance_inflation_factor
+                from statsmodels.stats.outliers_influence import (
+                    variance_inflation_factor,
+                )
 
                 # Assuming X has shape (n_samples, n_features)
                 n_features = X.shape[1]
@@ -125,7 +122,7 @@ class StatisticalCriticTool(NeuroToolWrapper):
                     "method": "VIF",
                     "max_vif": float(max(vifs)) if vifs else 0.0,
                     "high_vif_features": high_vif_indices,
-                    "passed": passed_vif
+                    "passed": passed_vif,
                 }
 
                 if not passed_vif:
@@ -148,8 +145,14 @@ class StatisticalCriticTool(NeuroToolWrapper):
                 resid_arr = np.asarray(residuals)
                 X = np.asarray(design_matrix)
                 # Require 2D design matrix
-                if X.ndim == 2 and resid_arr.ndim == 1 and X.shape[0] == resid_arr.shape[0]:
-                    lm_stat, lm_pvalue, f_stat, f_pvalue = het_breuschpagan(resid_arr, X)
+                if (
+                    X.ndim == 2
+                    and resid_arr.ndim == 1
+                    and X.shape[0] == resid_arr.shape[0]
+                ):
+                    lm_stat, lm_pvalue, f_stat, f_pvalue = het_breuschpagan(
+                        resid_arr, X
+                    )
                     passed = lm_pvalue > alpha
                     report["checks"]["heteroskedasticity"] = {
                         "method": "Breusch-Pagan",
@@ -196,7 +199,11 @@ class StatisticalCriticTool(NeuroToolWrapper):
             try:
                 resid_arr = np.asarray(residuals)
                 X = np.asarray(design_matrix)
-                if X.ndim == 2 and resid_arr.ndim == 1 and X.shape[0] == resid_arr.shape[0]:
+                if (
+                    X.ndim == 2
+                    and resid_arr.ndim == 1
+                    and X.shape[0] == resid_arr.shape[0]
+                ):
                     n, p = X.shape
                     if n == 0 or p == 0:
                         report["checks"]["influence"] = "invalid_shapes"
@@ -206,8 +213,10 @@ class StatisticalCriticTool(NeuroToolWrapper):
                         mx = X @ xtx_inv
                         leverage = np.sum(mx * X, axis=1)
                         leverage = np.clip(leverage, 0.0, 1.0 - 1e-12)
-                        mse = float(np.mean(resid_arr ** 2))
-                        cooks = (resid_arr ** 2 / (p * max(mse, 1e-12))) * (leverage / (1 - leverage) ** 2)
+                        mse = float(np.mean(resid_arr**2))
+                        cooks = (resid_arr**2 / (p * max(mse, 1e-12))) * (
+                            leverage / (1 - leverage) ** 2
+                        )
 
                         lev_threshold = 2 * p / max(n, 1)
                         cooks_threshold = 4 / max(n, 1)
@@ -216,7 +225,9 @@ class StatisticalCriticTool(NeuroToolWrapper):
 
                         report["checks"]["influence"] = {
                             "method": "Cook's distance/leverage",
-                            "max_leverage": float(np.max(leverage)) if leverage.size else 0.0,
+                            "max_leverage": (
+                                float(np.max(leverage)) if leverage.size else 0.0
+                            ),
                             "max_cooks": float(np.max(cooks)) if cooks.size else 0.0,
                             "high_leverage_points": high_lev,
                             "high_cooks_points": high_cooks,
@@ -239,7 +250,9 @@ class StatisticalCriticTool(NeuroToolWrapper):
                 pvals = np.asarray(p_values, dtype=float)
                 pvals = pvals[np.isfinite(pvals)]
                 if pvals.size:
-                    reject, pvals_corr, _, _ = multipletests(pvals, alpha=alpha, method="fdr_bh")
+                    reject, pvals_corr, _, _ = multipletests(
+                        pvals, alpha=alpha, method="fdr_bh"
+                    )
                     frac_sig = float(np.mean(reject))
                     report["checks"]["multiple_comparisons"] = {
                         "method": "BH-FDR",
@@ -256,7 +269,4 @@ class StatisticalCriticTool(NeuroToolWrapper):
             except Exception as e:
                 logger.warning(f"Multiple comparison check failed: {e}")
 
-        return ToolResult(
-            status="success",
-            data=report
-        )
+        return ToolResult(status="success", data=report)

@@ -18,7 +18,7 @@ import os
 import shutil
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from brain_researcher.services.tools.executors import (
     BindMount,
@@ -26,14 +26,10 @@ from brain_researcher.services.tools.executors import (
     ContainerRequest,
     run_container,
 )
-from brain_researcher.services.tools.pipelines.params import (
-    # FitLins
+from brain_researcher.services.tools.pipelines.params import (  # FitLins; fMRIPrep; MRIQC; QSIPrep
     FitLinsParameters,
-    # fMRIPrep
     FMRIPrepParameters,
-    # MRIQC
     MRIQCParameters,
-    # QSIPrep
     QSIPrepParameters,
     build_fitlins_command,
     build_fitlins_env,
@@ -55,19 +51,19 @@ Runtime = Literal["docker", "apptainer", "wrapper"]
 # Default container images with environment variable overrides
 FMRIPREP_IMAGE = os.environ.get(
     "BR_FMRIPREP_IMAGE",
-    "/cvmfs/neurodesk.ardc.edu.au/containers/fmriprep_24.0.0/fmriprep_24.0.0.sif"
+    "/cvmfs/neurodesk.ardc.edu.au/containers/fmriprep_24.0.0/fmriprep_24.0.0.sif",
 )
 FITLINS_IMAGE = os.environ.get(
     "BR_FITLINS_IMAGE",
-    "/cvmfs/neurodesk.ardc.edu.au/containers/fitlins_0.11.0/fitlins_0.11.0.sif"
+    "/cvmfs/neurodesk.ardc.edu.au/containers/fitlins_0.11.0/fitlins_0.11.0.sif",
 )
 QSIPREP_IMAGE = os.environ.get(
     "BR_QSIPREP_IMAGE",
-    "/cvmfs/neurodesk.ardc.edu.au/containers/qsiprep_0.21.4/qsiprep_0.21.4.sif"
+    "/cvmfs/neurodesk.ardc.edu.au/containers/qsiprep_0.21.4/qsiprep_0.21.4.sif",
 )
 MRIQC_IMAGE = os.environ.get(
     "BR_MRIQC_IMAGE",
-    "/cvmfs/neurodesk.ardc.edu.au/containers/mriqc_24.0.0/mriqc_24.0.0.sif"
+    "/cvmfs/neurodesk.ardc.edu.au/containers/mriqc_24.0.0/mriqc_24.0.0.sif",
 )
 
 
@@ -75,7 +71,8 @@ MRIQC_IMAGE = os.environ.get(
 # Path remapping utilities
 # ============================================================================
 
-def _remap_command(cmd: List[str], path_map: Dict[str, str]) -> List[str]:
+
+def _remap_command(cmd: list[str], path_map: dict[str, str]) -> list[str]:
     """Remap host paths to container paths in a command list.
 
     Args:
@@ -100,11 +97,12 @@ def _remap_command(cmd: List[str], path_map: Dict[str, str]) -> List[str]:
 # fMRIPrep helpers
 # ============================================================================
 
+
 def run_fmriprep(
     params: FMRIPrepParameters,
     runtime: Runtime = "apptainer",
-    image: Optional[str] = None,
-) -> Dict[str, Any]:
+    image: str | None = None,
+) -> dict[str, Any]:
     """Run fMRIPrep with the given parameters.
 
     Args:
@@ -150,22 +148,26 @@ def run_fmriprep(
     if params.work_dir:
         mounts.append(BindMount(host_path=params.work_dir, container_path="/work"))
     if params.fs_license_file:
-        mounts.append(BindMount(
-            host_path=params.fs_license_file,
-            container_path="/opt/freesurfer/license.txt",
-            read_only=True,
-        ))
+        mounts.append(
+            BindMount(
+                host_path=params.fs_license_file,
+                container_path="/opt/freesurfer/license.txt",
+                read_only=True,
+            )
+        )
     if params.bids_filter_file:
-        mounts.append(BindMount(
-            host_path=params.bids_filter_file,
-            container_path="/bids_filter.json",
-            read_only=True,
-        ))
+        mounts.append(
+            BindMount(
+                host_path=params.bids_filter_file,
+                container_path="/bids_filter.json",
+                read_only=True,
+            )
+        )
 
     # Build container command with remapped paths using delegation pattern
     container_cmd = _build_fmriprep_container_cmd(params)
 
-    container_env: Dict[str, str] = {}
+    container_env: dict[str, str] = {}
     if params.fs_license_file:
         container_env["FS_LICENSE"] = "/opt/freesurfer/license.txt"
 
@@ -184,7 +186,7 @@ def run_fmriprep(
     return result
 
 
-def _build_fmriprep_container_cmd(params: FMRIPrepParameters) -> List[str]:
+def _build_fmriprep_container_cmd(params: FMRIPrepParameters) -> list[str]:
     """Build fMRIPrep command with container-remapped paths.
 
     Uses delegation pattern: gets full command from params.command() then
@@ -195,7 +197,7 @@ def _build_fmriprep_container_cmd(params: FMRIPrepParameters) -> List[str]:
     cmd = params.command(include_executable=True)
 
     # Build path mapping: host -> container
-    path_map: Dict[str, str] = {
+    path_map: dict[str, str] = {
         params.bids_dir: "/data",
         params.output_dir: "/out",
     }
@@ -210,9 +212,9 @@ def _build_fmriprep_container_cmd(params: FMRIPrepParameters) -> List[str]:
 
 
 def run_fmriprep_from_dict(
-    data: Dict[str, object],
+    data: dict[str, object],
     runtime: Runtime = "apptainer",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run fMRIPrep from a dict payload.
 
     Args:
@@ -230,6 +232,7 @@ def run_fmriprep_from_dict(
 # FitLins helpers
 # ============================================================================
 
+
 def _multiprocessing_semlock_available() -> bool:
     """Return True if multiprocessing SemLock primitives work in this environment."""
     try:
@@ -241,7 +244,7 @@ def _multiprocessing_semlock_available() -> bool:
         return False
 
 
-def _run_fitlins_linear(params: FitLinsParameters) -> Dict[str, Any]:
+def _run_fitlins_linear(params: FitLinsParameters) -> dict[str, Any]:
     """Run FitLins in-process using Nipype's Linear plugin.
 
     Some environments disallow multiprocessing semaphore primitives (SemLock),
@@ -269,8 +272,8 @@ def _run_fitlins_linear(params: FitLinsParameters) -> Dict[str, Any]:
 
     warnings.showwarning = _warn_redirect
 
-    def _compile_patterns(values: tuple[str, ...]) -> List[object]:
-        compiled: List[object] = []
+    def _compile_patterns(values: tuple[str, ...]) -> list[object]:
+        compiled: list[object] = []
         for item in values:
             if len(item) >= 2 and item[0] == "/" and item[-1] == "/":
                 compiled.append(re.compile(item[1:-1]))
@@ -299,7 +302,9 @@ def _run_fitlins_linear(params: FitLinsParameters) -> Dict[str, Any]:
             "fitlins_version": fitlins_version,
         }
 
-    work_dir_path = Path(mkdtemp()) if params.work_dir is None else Path(params.work_dir)
+    work_dir_path = (
+        Path(mkdtemp()) if params.work_dir is None else Path(params.work_dir)
+    )
     work_dir = str(work_dir_path.resolve())
     Path(work_dir).mkdir(parents=True, exist_ok=True)
 
@@ -420,7 +425,6 @@ def _run_fitlins_linear(params: FitLinsParameters) -> Dict[str, Any]:
     }
 
 
-
 def _normalize_subject_label(value: str) -> str:
     text = str(value).strip()
     return text[4:] if text.startswith("sub-") else text
@@ -462,11 +466,11 @@ def _looks_like_confound_term(term: object) -> bool:
     return lowered.startswith(prefixes)
 
 
-def _normalize_legacy_fitlins_model(model: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_legacy_fitlins_model(model: dict[str, Any]) -> dict[str, Any]:
     if model.get("Nodes") or not model.get("Steps"):
         return model
 
-    nodes: List[Dict[str, Any]] = []
+    nodes: list[dict[str, Any]] = []
     for idx, step in enumerate(model.get("Steps", []), start=1):
         level = str(step.get("Level", "run")).title()
         model_block = dict(step.get("Model") or {})
@@ -498,7 +502,7 @@ def _normalize_legacy_fitlins_model(model: Dict[str, Any]) -> Dict[str, Any]:
                 }
             )
 
-        node: Dict[str, Any] = {
+        node: dict[str, Any] = {
             "Level": level,
             "Name": step.get("Name") or f"{level.lower()}_{idx}",
             "Model": model_block or {"Type": "glm", "X": [1]},
@@ -520,20 +524,26 @@ def _normalize_legacy_fitlins_model(model: Dict[str, Any]) -> Dict[str, Any]:
     return normalized
 
 
-def _ensure_fitlins_run_node(model: Dict[str, Any]) -> Dict[str, Any]:
+def _ensure_fitlins_run_node(model: dict[str, Any]) -> dict[str, Any]:
     from brain_researcher.services.tools.fitlins_tool import _find_run_node
 
     run_node = _find_run_node(model)
     if run_node is None:
         raise ValueError("FitLins model missing run-level node")
-    tx = run_node.setdefault("Transformations", {"Transformer": "pybids-transforms-v1", "Instructions": []})
+    tx = run_node.setdefault(
+        "Transformations", {"Transformer": "pybids-transforms-v1", "Instructions": []}
+    )
     tx.setdefault("Transformer", "pybids-transforms-v1")
     tx.setdefault("Instructions", [])
-    model_block = run_node.setdefault("Model", {"Type": "glm", "X": [1, "trial_type.*"]})
+    model_block = run_node.setdefault(
+        "Model", {"Type": "glm", "X": [1, "trial_type.*"]}
+    )
     model_block.setdefault("Type", "glm")
     x_terms = model_block.get("X")
     if not isinstance(x_terms, list):
-        model_block["X"] = [x_terms] if isinstance(x_terms, str) else [1, "trial_type.*"]
+        model_block["X"] = (
+            [x_terms] if isinstance(x_terms, str) else [1, "trial_type.*"]
+        )
     return run_node
 
 
@@ -576,7 +586,9 @@ def _prepare_fitlins_effective_model(params: FitLinsParameters) -> FitLinsParame
         _apply_hrf_variant(run_node, convolve_idx, params.hrf_model)
 
     if params.include_confounds:
-        model_block = run_node.setdefault("Model", {"Type": "glm", "X": [1, "trial_type.*"]})
+        model_block = run_node.setdefault(
+            "Model", {"Type": "glm", "X": [1, "trial_type.*"]}
+        )
         x_terms = model_block.get("X", [])
         if not isinstance(x_terms, list):
             x_terms = [x_terms] if isinstance(x_terms, str) else [1, "trial_type.*"]
@@ -614,10 +626,12 @@ def _copytree_hardlink_or_copy(src: Path, dst: Path) -> None:
 def _candidate_native_confound_targets(
     derivatives_root: Path,
     participant_labels: tuple[str, ...],
-) -> List[Path]:
+) -> list[Path]:
     patterns = ["*_desc-confounds_timeseries.tsv", "*_desc-confounds_regressors.tsv"]
-    candidates: List[Path] = []
-    normalized_labels = {_normalize_subject_label(label) for label in participant_labels if label}
+    candidates: list[Path] = []
+    normalized_labels = {
+        _normalize_subject_label(label) for label in participant_labels if label
+    }
     for pattern in patterns:
         for candidate in derivatives_root.rglob(pattern):
             rel_parts = candidate.relative_to(derivatives_root).parts
@@ -650,13 +664,17 @@ def _infer_native_confound_target(
     participant_labels: tuple[str, ...],
     external_df,
 ) -> Path:
-    candidates = _candidate_native_confound_targets(derivatives_root, participant_labels)
+    candidates = _candidate_native_confound_targets(
+        derivatives_root, participant_labels
+    )
     if not candidates:
-        raise ValueError("No native derivative confounds TSVs were found for external confounds staging")
+        raise ValueError(
+            "No native derivative confounds TSVs were found for external confounds staging"
+        )
     if len(candidates) == 1:
         return candidates[0]
 
-    row_matched: List[Path] = []
+    row_matched: list[Path] = []
     for candidate in candidates:
         candidate_df = _read_confounds_table(candidate)
         if len(candidate_df) == len(external_df):
@@ -673,7 +691,7 @@ def _load_confounds_overlay_specs(
     confounds_map_file: Path,
     *,
     derivatives_root: Path,
-) -> List[Dict[str, Path]]:
+) -> list[dict[str, Path]]:
     payload = json.loads(confounds_map_file.read_text(encoding="utf-8"))
     if isinstance(payload, dict) and "targets" in payload:
         raw_entries = payload["targets"]
@@ -687,7 +705,7 @@ def _load_confounds_overlay_specs(
     else:
         raise ValueError("confounds_map_file must be a JSON object or list")
 
-    specs: List[Dict[str, Path]] = []
+    specs: list[dict[str, Path]] = []
     for idx, entry in enumerate(raw_entries):
         if not isinstance(entry, dict):
             raise ValueError(f"confounds_map_file entry {idx} must be an object")
@@ -722,7 +740,9 @@ def _load_confounds_overlay_specs(
 
     target_keys = [str(spec["target"]) for spec in specs]
     if len(target_keys) != len(set(target_keys)):
-        raise ValueError("confounds_map_file must not contain duplicate target confounds files")
+        raise ValueError(
+            "confounds_map_file must not contain duplicate target confounds files"
+        )
     return specs
 
 
@@ -730,12 +750,16 @@ def _prepare_fitlins_external_confounds(params: FitLinsParameters) -> FitLinsPar
     if not params.confounds_file and not params.confounds_map_file:
         return params
     if params.confounds_file and params.confounds_map_file:
-        raise ValueError("Provide either confounds_file or confounds_map_file, not both")
+        raise ValueError(
+            "Provide either confounds_file or confounds_map_file, not both"
+        )
     if not params.derivatives_dir:
-        raise ValueError("confounds_file requires derivatives_dir for native FitLins execution")
+        raise ValueError(
+            "confounds_file requires derivatives_dir for native FitLins execution"
+        )
 
     derivatives_root = Path(params.derivatives_dir).resolve(strict=True)
-    overlay_specs: List[Dict[str, Path]] = []
+    overlay_specs: list[dict[str, Path]] = []
     source_confounds_file: str | None = None
     source_confounds_map_file: str | None = None
 
@@ -788,12 +812,14 @@ def _prepare_fitlins_external_confounds(params: FitLinsParameters) -> FitLinsPar
     subjects_to_copy = {
         _normalize_subject_label(label) for label in params.participant_label if label
     }
-    relative_targets: Dict[Path, Path] = {}
+    relative_targets: dict[Path, Path] = {}
     for spec in overlay_specs:
         try:
             relative_target = spec["target"].relative_to(derivatives_root)
         except ValueError as exc:
-            raise ValueError("confounds target file must live under derivatives_dir") from exc
+            raise ValueError(
+                "confounds target file must live under derivatives_dir"
+            ) from exc
         relative_targets[spec["target"]] = relative_target
         subjects_in_path = {
             part[4:].split("_", 1)[0]
@@ -815,7 +841,7 @@ def _prepare_fitlins_external_confounds(params: FitLinsParameters) -> FitLinsPar
             )
         _copytree_hardlink_or_copy(src_dir, overlay_root / f"sub-{label}")
 
-    overlay_entries: List[Dict[str, Any]] = []
+    overlay_entries: list[dict[str, Any]] = []
     for spec in overlay_specs:
         target_path = spec["target"]
         source_path = spec["source"]
@@ -832,8 +858,8 @@ def _prepare_fitlins_external_confounds(params: FitLinsParameters) -> FitLinsPar
         if overlay_target.exists():
             overlay_target.unlink()
         merged_df = original_df.copy()
-        overwritten: List[str] = []
-        added: List[str] = []
+        overwritten: list[str] = []
+        added: list[str] = []
         for column in external_df.columns:
             if column in merged_df.columns:
                 overwritten.append(column)
@@ -867,17 +893,19 @@ def _prepare_fitlins_external_confounds(params: FitLinsParameters) -> FitLinsPar
     )
     return replace(params, derivatives_dir=str(overlay_root))
 
+
 def _prepare_fitlins_runtime_params(params: FitLinsParameters) -> FitLinsParameters:
     prepared = _prepare_fitlins_effective_model(params)
     prepared = _prepare_fitlins_external_confounds(prepared)
     return prepared
 
+
 def run_fitlins(
     params: FitLinsParameters,
     runtime: Runtime = "apptainer",
-    image: Optional[str] = None,
+    image: str | None = None,
     dry_run: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run FitLins with the given parameters.
 
     Args:
@@ -921,7 +949,9 @@ def run_fitlins(
             }
 
         mounts = [
-            BindMount(host_path=prepared.bids_dir, container_path="/data", read_only=True),
+            BindMount(
+                host_path=prepared.bids_dir, container_path="/data", read_only=True
+            ),
             BindMount(host_path=prepared.output_dir, container_path="/out"),
         ]
         if prepared.derivatives_dir:
@@ -933,7 +963,9 @@ def run_fitlins(
                 )
             )
         if prepared.work_dir:
-            mounts.append(BindMount(host_path=prepared.work_dir, container_path="/work"))
+            mounts.append(
+                BindMount(host_path=prepared.work_dir, container_path="/work")
+            )
 
         container_cmd = _build_fitlins_container_cmd(prepared)
         return {
@@ -993,11 +1025,13 @@ def run_fitlins(
         BindMount(host_path=prepared.output_dir, container_path="/out"),
     ]
     if prepared.derivatives_dir:
-        mounts.append(BindMount(
-            host_path=prepared.derivatives_dir,
-            container_path="/derivatives",
-            read_only=True,
-        ))
+        mounts.append(
+            BindMount(
+                host_path=prepared.derivatives_dir,
+                container_path="/derivatives",
+                read_only=True,
+            )
+        )
     if prepared.work_dir:
         mounts.append(BindMount(host_path=prepared.work_dir, container_path="/work"))
 
@@ -1018,7 +1052,7 @@ def run_fitlins(
     return result
 
 
-def _build_fitlins_container_cmd(params: FitLinsParameters) -> List[str]:
+def _build_fitlins_container_cmd(params: FitLinsParameters) -> list[str]:
     """Build FitLins command with container-remapped paths.
 
     Uses delegation pattern: gets full command from params.command() then
@@ -1029,7 +1063,7 @@ def _build_fitlins_container_cmd(params: FitLinsParameters) -> List[str]:
     cmd = params.command(include_executable=True)
 
     # Build path mapping: host -> container
-    path_map: Dict[str, str] = {
+    path_map: dict[str, str] = {
         params.bids_dir: "/data",
         params.output_dir: "/out",
     }
@@ -1042,9 +1076,9 @@ def _build_fitlins_container_cmd(params: FitLinsParameters) -> List[str]:
 
 
 def run_fitlins_from_dict(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     runtime: Runtime = "apptainer",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run FitLins from a dict payload.
 
     Args:
@@ -1067,11 +1101,12 @@ def run_fitlins_from_dict(
 # QSIPrep helpers
 # ============================================================================
 
+
 def run_qsiprep(
     params: QSIPrepParameters,
     runtime: Runtime = "apptainer",
-    image: Optional[str] = None,
-) -> Dict[str, Any]:
+    image: str | None = None,
+) -> dict[str, Any]:
     """Run QSIPrep with the given parameters.
 
     Args:
@@ -1119,28 +1154,34 @@ def run_qsiprep(
     if params.work_dir:
         mounts.append(BindMount(host_path=params.work_dir, container_path="/work"))
     if params.fs_license_file:
-        mounts.append(BindMount(
-            host_path=params.fs_license_file,
-            container_path="/opt/freesurfer/license.txt",
-            read_only=True,
-        ))
+        mounts.append(
+            BindMount(
+                host_path=params.fs_license_file,
+                container_path="/opt/freesurfer/license.txt",
+                read_only=True,
+            )
+        )
     if params.bids_filter_file:
-        mounts.append(BindMount(
-            host_path=params.bids_filter_file,
-            container_path="/bids_filter.json",
-            read_only=True,
-        ))
+        mounts.append(
+            BindMount(
+                host_path=params.bids_filter_file,
+                container_path="/bids_filter.json",
+                read_only=True,
+            )
+        )
     if params.eddy_config:
-        mounts.append(BindMount(
-            host_path=params.eddy_config,
-            container_path="/eddy_config.json",
-            read_only=True,
-        ))
+        mounts.append(
+            BindMount(
+                host_path=params.eddy_config,
+                container_path="/eddy_config.json",
+                read_only=True,
+            )
+        )
 
     # Build container command with remapped paths using delegation pattern
     container_cmd = _build_qsiprep_container_cmd(params)
 
-    container_env: Dict[str, str] = {}
+    container_env: dict[str, str] = {}
     if params.fs_license_file:
         container_env["FS_LICENSE"] = "/opt/freesurfer/license.txt"
 
@@ -1159,7 +1200,7 @@ def run_qsiprep(
     return result
 
 
-def _build_qsiprep_container_cmd(params: QSIPrepParameters) -> List[str]:
+def _build_qsiprep_container_cmd(params: QSIPrepParameters) -> list[str]:
     """Build QSIPrep command with container-remapped paths.
 
     Uses delegation pattern: gets full command from params.command() then
@@ -1170,7 +1211,7 @@ def _build_qsiprep_container_cmd(params: QSIPrepParameters) -> List[str]:
     cmd = params.command(include_executable=True)
 
     # Build path mapping: host -> container
-    path_map: Dict[str, str] = {
+    path_map: dict[str, str] = {
         params.bids_dir: "/data",
         params.output_dir: "/out",
     }
@@ -1187,9 +1228,9 @@ def _build_qsiprep_container_cmd(params: QSIPrepParameters) -> List[str]:
 
 
 def run_qsiprep_from_dict(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     runtime: Runtime = "apptainer",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run QSIPrep from a dict payload.
 
     Args:
@@ -1207,11 +1248,12 @@ def run_qsiprep_from_dict(
 # MRIQC helpers
 # ============================================================================
 
+
 def run_mriqc(
     params: MRIQCParameters,
     runtime: Runtime = "apptainer",
-    image: Optional[str] = None,
-) -> Dict[str, Any]:
+    image: str | None = None,
+) -> dict[str, Any]:
     """Run MRIQC with the given parameters.
 
     Args:
@@ -1255,11 +1297,13 @@ def run_mriqc(
     if params.work_dir:
         mounts.append(BindMount(host_path=params.work_dir, container_path="/work"))
     if params.bids_filter_file:
-        mounts.append(BindMount(
-            host_path=params.bids_filter_file,
-            container_path="/bids_filter.json",
-            read_only=True,
-        ))
+        mounts.append(
+            BindMount(
+                host_path=params.bids_filter_file,
+                container_path="/bids_filter.json",
+                read_only=True,
+            )
+        )
 
     # Build container command with remapped paths using delegation pattern
     container_cmd = _build_mriqc_container_cmd(params)
@@ -1279,7 +1323,7 @@ def run_mriqc(
     return result
 
 
-def _build_mriqc_container_cmd(params: MRIQCParameters) -> List[str]:
+def _build_mriqc_container_cmd(params: MRIQCParameters) -> list[str]:
     """Build MRIQC command with container-remapped paths.
 
     Uses delegation pattern: gets full command from params.command() then
@@ -1290,7 +1334,7 @@ def _build_mriqc_container_cmd(params: MRIQCParameters) -> List[str]:
     cmd = params.command(include_executable=True)
 
     # Build path mapping: host -> container
-    path_map: Dict[str, str] = {
+    path_map: dict[str, str] = {
         params.bids_dir: "/data",
         params.output_dir: "/out",
     }
@@ -1303,9 +1347,9 @@ def _build_mriqc_container_cmd(params: MRIQCParameters) -> List[str]:
 
 
 def run_mriqc_from_dict(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     runtime: Runtime = "apptainer",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run MRIQC from a dict payload.
 
     Args:

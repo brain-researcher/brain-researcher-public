@@ -8,7 +8,7 @@ Moved from: services/toolhub/common/recorder_factory.py
 
 from __future__ import annotations
 
-from typing import Optional, Protocol
+from typing import Protocol
 
 from brain_researcher.config.run_artifacts import (
     RecorderConfig,
@@ -29,9 +29,9 @@ class RecorderFactory(Protocol):
         self,
         run_id: str,
         resolver_mode: str,
-        parent_run_id: Optional[str] = None,
-        step_id: Optional[str] = None,
-        attempt: Optional[int] = None,
+        parent_run_id: str | None = None,
+        step_id: str | None = None,
+        attempt: int | None = None,
     ) -> RunRecorder:
         """Create a new RunRecorder instance.
 
@@ -75,7 +75,7 @@ class DefaultRecorderFactory:
     parent/child relationships.
     """
 
-    def __init__(self, config: Optional[RecorderConfig] = None):
+    def __init__(self, config: RecorderConfig | None = None):
         """Initialize factory.
 
         Args:
@@ -87,9 +87,9 @@ class DefaultRecorderFactory:
         self,
         run_id: str,
         resolver_mode: str,
-        parent_run_id: Optional[str] = None,
-        step_id: Optional[str] = None,
-        attempt: Optional[int] = None,
+        parent_run_id: str | None = None,
+        step_id: str | None = None,
+        attempt: int | None = None,
     ) -> RunRecorder:
         """Create a new RunRecorder instance.
 
@@ -160,9 +160,7 @@ class DefaultRecorderFactory:
         )
 
 
-def create_recorder_factory(
-    config: Optional[RecorderConfig] = None
-) -> RecorderFactory:
+def create_recorder_factory(config: RecorderConfig | None = None) -> RecorderFactory:
     """Factory function for creating RecorderFactory instances.
 
     This follows the existing pattern in the codebase for component creation

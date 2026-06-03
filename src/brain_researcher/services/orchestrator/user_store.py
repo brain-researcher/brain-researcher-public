@@ -20,7 +20,7 @@ import secrets
 import time
 import uuid
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,7 @@ def _ensure_models():
     global _User, _UserRole
     if _User is None:
         from .models import User, UserRole
+
         _User = User
         _UserRole = UserRole
 
@@ -89,6 +90,7 @@ async def _get_redis():
     _redis_last_connect_attempt = now
     try:
         import redis.asyncio as aioredis
+
         client = aioredis.from_url(
             _get_redis_url(),
             decode_responses=True,
@@ -104,7 +106,9 @@ async def _get_redis():
     except Exception as exc:
         # Avoid flooding logs when Redis is temporarily unavailable.
         if not _redis_connect_error_logged:
-            logger.warning("UserStore: Redis unavailable (%s), falling back to in-memory", exc)
+            logger.warning(
+                "UserStore: Redis unavailable (%s), falling back to in-memory", exc
+            )
             _redis_connect_error_logged = True
         else:
             logger.debug("UserStore: Redis still unavailable (%s)", exc)
@@ -116,16 +120,17 @@ async def _get_redis():
 # In-memory fallback (used when Redis is unreachable)
 # ---------------------------------------------------------------------------
 
-_mem_users: Dict[str, Dict[str, Any]] = {}
-_mem_email_idx: Dict[str, str] = {}
-_mem_username_idx: Dict[str, str] = {}
+_mem_users: dict[str, dict[str, Any]] = {}
+_mem_email_idx: dict[str, str] = {}
+_mem_username_idx: dict[str, str] = {}
 
 
 # ---------------------------------------------------------------------------
 # Serialisation helpers
 # ---------------------------------------------------------------------------
 
-def _user_to_dict(user) -> Dict[str, Any]:
+
+def _user_to_dict(user) -> dict[str, Any]:
     """Serialise a User model to a plain dict for storage."""
     data = user.model_dump(mode="json")
     # User.hashed_password is excluded from public model dumps by design,
@@ -136,7 +141,7 @@ def _user_to_dict(user) -> Dict[str, Any]:
     return data
 
 
-def _dict_to_user(data: Dict[str, Any]):
+def _dict_to_user(data: dict[str, Any]):
     """Deserialise a dict back into a User model."""
     _ensure_models()
     return _User.model_validate(data)
@@ -149,6 +154,7 @@ def _generate_user_id() -> str:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 class UserStore:
     """Async user store backed by Redis with in-memory fallback."""
@@ -244,10 +250,10 @@ class UserStore:
     @staticmethod
     async def upsert_oauth_user(
         email: str,
-        name: Optional[str] = None,
-        provider: Optional[str] = None,
-        provider_account_id: Optional[str] = None,
-        image: Optional[str] = None,
+        name: str | None = None,
+        provider: str | None = None,
+        provider_account_id: str | None = None,
+        image: str | None = None,
     ):
         """
         Idempotent create-or-update for OAuth users.
@@ -264,7 +270,10 @@ class UserStore:
             if provider and provider != existing.auth_provider:
                 existing.auth_provider = provider
                 changed = True
-            if provider_account_id and provider_account_id != existing.provider_account_id:
+            if (
+                provider_account_id
+                and provider_account_id != existing.provider_account_id
+            ):
                 existing.provider_account_id = provider_account_id
                 changed = True
             if image and image != existing.picture:
@@ -279,6 +288,7 @@ class UserStore:
         user_id = _generate_user_id()
         # Derive username from email, sanitise to match User.username pattern ^[a-zA-Z0-9_]+$
         import re
+
         raw_stem = email.split("@")[0]
         username = re.sub(r"[^a-zA-Z0-9_]", "_", raw_stem) or "user"
         # Enforce min length (3)
@@ -302,7 +312,9 @@ class UserStore:
             picture=image,
         )
         await UserStore._persist(user)
-        logger.info("UserStore: created OAuth user %s (%s via %s)", user_id, email, provider)
+        logger.info(
+            "UserStore: created OAuth user %s (%s via %s)", user_id, email, provider
+        )
         return user, True
 
     @staticmethod
@@ -310,9 +322,9 @@ class UserStore:
         username: str,
         email: str,
         hashed_password: str,
-        full_name: Optional[str] = None,
+        full_name: str | None = None,
         role=None,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         **extra_fields,
     ):
         """

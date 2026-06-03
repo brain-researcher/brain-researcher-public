@@ -1,12 +1,12 @@
 """Reward model for neuroimaging tasks and RL training."""
 
-import numpy as np
 import logging
-from typing import Dict, List, Optional, Tuple, Any
-from datetime import datetime, timedelta
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
-import json
+from typing import Any
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +48,9 @@ class RewardMetrics:
     success: bool
     quality_score: float
     error_count: int
-    resource_usage: Dict[str, float]
-    user_feedback: Optional[Dict[str, Any]] = None
-    intermediate_results: Optional[List[Dict]] = None
+    resource_usage: dict[str, float]
+    user_feedback: dict[str, Any] | None = None
+    intermediate_results: list[dict] | None = None
 
 
 class NeuroimagingRewardModel:
@@ -68,7 +68,7 @@ class NeuroimagingRewardModel:
             RewardComponent.ROBUSTNESS: 0.4,
             RewardComponent.USER_SATISFACTION: 0.6,
             RewardComponent.COST: -0.2,
-            RewardComponent.INTERPRETABILITY: 0.3
+            RewardComponent.INTERPRETABILITY: 0.3,
         }
 
         # Baseline expectations (learned from historical data)
@@ -77,32 +77,32 @@ class NeuroimagingRewardModel:
                 "expected_time": 300,  # 5 minutes
                 "quality_threshold": 0.8,
                 "max_errors": 2,
-                "resource_limit": {"memory_mb": 2000, "cpu_percent": 50}
+                "resource_limit": {"memory_mb": 2000, "cpu_percent": 50},
             },
             TaskType.GLM_ANALYSIS: {
                 "expected_time": 600,  # 10 minutes
                 "quality_threshold": 0.85,
                 "max_errors": 1,
-                "resource_limit": {"memory_mb": 4000, "cpu_percent": 70}
+                "resource_limit": {"memory_mb": 4000, "cpu_percent": 70},
             },
             TaskType.CONTRAST_ANALYSIS: {
                 "expected_time": 120,  # 2 minutes
                 "quality_threshold": 0.9,
                 "max_errors": 0,
-                "resource_limit": {"memory_mb": 1000, "cpu_percent": 30}
+                "resource_limit": {"memory_mb": 1000, "cpu_percent": 30},
             },
             TaskType.STATISTICAL_TEST: {
-                "expected_time": 60,   # 1 minute
+                "expected_time": 60,  # 1 minute
                 "quality_threshold": 0.95,
                 "max_errors": 0,
-                "resource_limit": {"memory_mb": 500, "cpu_percent": 20}
+                "resource_limit": {"memory_mb": 500, "cpu_percent": 20},
             },
             TaskType.VISUALIZATION: {
                 "expected_time": 180,  # 3 minutes
                 "quality_threshold": 0.7,
                 "max_errors": 1,
-                "resource_limit": {"memory_mb": 1500, "cpu_percent": 40}
-            }
+                "resource_limit": {"memory_mb": 1500, "cpu_percent": 40},
+            },
         }
 
         # Adaptive parameters
@@ -114,8 +114,8 @@ class NeuroimagingRewardModel:
         self,
         task_type: str,
         metrics: RewardMetrics,
-        context: Optional[Dict[str, Any]] = None
-    ) -> Tuple[float, Dict[str, float]]:
+        context: dict[str, Any] | None = None,
+    ) -> tuple[float, dict[str, float]]:
         """Calculate comprehensive reward for a task execution."""
         try:
             task_type_enum = TaskType(task_type.lower())
@@ -151,17 +151,23 @@ class NeuroimagingRewardModel:
         # 3. Quality Reward
         quality_threshold = baseline["quality_threshold"]
         if metrics.quality_score > quality_threshold:
-            quality_bonus = (metrics.quality_score - quality_threshold) * task_config.quality_bonus_rate
+            quality_bonus = (
+                metrics.quality_score - quality_threshold
+            ) * task_config.quality_bonus_rate
             reward_components[RewardComponent.QUALITY.value] = quality_bonus
         else:
             # Penalty for low quality
-            quality_penalty = (quality_threshold - metrics.quality_score) * task_config.quality_bonus_rate
+            quality_penalty = (
+                quality_threshold - metrics.quality_score
+            ) * task_config.quality_bonus_rate
             reward_components[RewardComponent.QUALITY.value] = -quality_penalty
 
         # 4. Robustness Reward (error-based)
         max_errors = baseline["max_errors"]
         if metrics.error_count <= max_errors:
-            reward_components[RewardComponent.ROBUSTNESS.value] = 0.1 * task_config.base_reward
+            reward_components[RewardComponent.ROBUSTNESS.value] = (
+                0.1 * task_config.base_reward
+            )
         else:
             excess_errors = metrics.error_count - max_errors
             error_penalty = excess_errors * task_config.error_penalty
@@ -185,14 +191,20 @@ class NeuroimagingRewardModel:
             satisfaction = metrics.user_feedback.get("satisfaction_score", 0.5)
             # Scale from [0,1] to [-0.5, 0.5]
             satisfaction_reward = (satisfaction - 0.5) * task_config.base_reward
-            reward_components[RewardComponent.USER_SATISFACTION.value] = satisfaction_reward
+            reward_components[RewardComponent.USER_SATISFACTION.value] = (
+                satisfaction_reward
+            )
 
             # Additional feedback-based adjustments
             if metrics.user_feedback.get("helpful", False):
-                reward_components[RewardComponent.INTERPRETABILITY.value] = 0.2 * task_config.base_reward
+                reward_components[RewardComponent.INTERPRETABILITY.value] = (
+                    0.2 * task_config.base_reward
+                )
 
             if metrics.user_feedback.get("accurate", False):
-                reward_components[RewardComponent.QUALITY.value] += 0.1 * task_config.base_reward
+                reward_components[RewardComponent.QUALITY.value] += (
+                    0.1 * task_config.base_reward
+                )
         else:
             reward_components[RewardComponent.USER_SATISFACTION.value] = 0.0
             reward_components[RewardComponent.INTERPRETABILITY.value] = 0.0
@@ -221,14 +233,16 @@ class NeuroimagingRewardModel:
                 total_reward += value
 
         # Context-based adjustments
-        total_reward = self._apply_context_adjustments(total_reward, context, task_type_enum)
+        total_reward = self._apply_context_adjustments(
+            total_reward, context, task_type_enum
+        )
 
         # Store for adaptation
         self._record_reward(task_type_enum, total_reward, metrics)
 
         return total_reward, weighted_components
 
-    def update_baselines(self, recent_performance: List[Dict[str, Any]]) -> None:
+    def update_baselines(self, recent_performance: list[dict[str, Any]]) -> None:
         """Update baseline expectations based on recent performance data."""
         if not recent_performance:
             return
@@ -252,33 +266,47 @@ class NeuroimagingRewardModel:
                 continue
 
             # Update expected time (75th percentile)
-            times = [p.get("execution_time", 0) for p in performances if p.get("execution_time")]
+            times = [
+                p.get("execution_time", 0)
+                for p in performances
+                if p.get("execution_time")
+            ]
             if times:
                 self.baselines[task_type]["expected_time"] = np.percentile(times, 75)
 
             # Update quality threshold (25th percentile)
-            qualities = [p.get("quality_score", 0) for p in performances if p.get("quality_score")]
+            qualities = [
+                p.get("quality_score", 0)
+                for p in performances
+                if p.get("quality_score")
+            ]
             if qualities:
-                self.baselines[task_type]["quality_threshold"] = np.percentile(qualities, 25)
+                self.baselines[task_type]["quality_threshold"] = np.percentile(
+                    qualities, 25
+                )
 
             # Update resource limits (90th percentile)
-            memory_usage = [p.get("memory_usage", 0) for p in performances if p.get("memory_usage")]
+            memory_usage = [
+                p.get("memory_usage", 0) for p in performances if p.get("memory_usage")
+            ]
             if memory_usage:
-                self.baselines[task_type]["resource_limit"]["memory_mb"] = np.percentile(memory_usage, 90)
+                self.baselines[task_type]["resource_limit"]["memory_mb"] = (
+                    np.percentile(memory_usage, 90)
+                )
 
         logger.info(f"Updated baselines for {len(task_performance)} task types")
 
     def get_expected_reward(
         self,
         task_type: str,
-        estimated_metrics: Dict[str, float],
-        context: Optional[Dict[str, Any]] = None
+        estimated_metrics: dict[str, float],
+        context: dict[str, Any] | None = None,
     ) -> float:
         """Get expected reward for a task given estimated performance."""
         try:
-            task_type_enum = TaskType(task_type.lower())
+            TaskType(task_type.lower())
         except ValueError:
-            task_type_enum = TaskType.PREPROCESSING
+            pass
 
         # Create synthetic metrics
         metrics = RewardMetrics(
@@ -287,7 +315,9 @@ class NeuroimagingRewardModel:
             quality_score=estimated_metrics.get("quality_score", 0.7),
             error_count=int(estimated_metrics.get("error_count", 0)),
             resource_usage=estimated_metrics.get("resource_usage", {}),
-            user_feedback={"satisfaction_score": estimated_metrics.get("satisfaction", 0.7)}
+            user_feedback={
+                "satisfaction_score": estimated_metrics.get("satisfaction", 0.7)
+            },
         )
 
         expected_reward, _ = self.calculate_reward(task_type, metrics, context)
@@ -296,9 +326,9 @@ class NeuroimagingRewardModel:
     def optimize_task_parameters(
         self,
         task_type: str,
-        parameter_ranges: Dict[str, Tuple[float, float]],
-        num_samples: int = 100
-    ) -> Tuple[Dict[str, float], float]:
+        parameter_ranges: dict[str, tuple[float, float]],
+        num_samples: int = 100,
+    ) -> tuple[dict[str, float], float]:
         """Find optimal parameters for maximizing expected reward."""
         try:
             task_type_enum = TaskType(task_type.lower())
@@ -306,7 +336,7 @@ class NeuroimagingRewardModel:
             task_type_enum = TaskType.PREPROCESSING
 
         best_params = {}
-        best_reward = float('-inf')
+        best_reward = float("-inf")
 
         for _ in range(num_samples):
             # Sample random parameters
@@ -315,7 +345,9 @@ class NeuroimagingRewardModel:
                 params[param_name] = np.random.uniform(min_val, max_val)
 
             # Estimate metrics based on parameters
-            estimated_metrics = self._estimate_metrics_from_params(params, task_type_enum)
+            estimated_metrics = self._estimate_metrics_from_params(
+                params, task_type_enum
+            )
 
             # Calculate expected reward
             expected_reward = self.get_expected_reward(task_type, estimated_metrics)
@@ -329,34 +361,40 @@ class NeuroimagingRewardModel:
     def get_reward_sensitivity(
         self,
         task_type: str,
-        base_metrics: Dict[str, float],
-        perturbation_size: float = 0.1
-    ) -> Dict[str, float]:
+        base_metrics: dict[str, float],
+        perturbation_size: float = 0.1,
+    ) -> dict[str, float]:
         """Analyze sensitivity of reward to different metrics."""
         base_reward = self.get_expected_reward(task_type, base_metrics)
 
         sensitivities = {}
 
         for metric_name, base_value in base_metrics.items():
-            if isinstance(base_value, (int, float)):
+            if isinstance(base_value, int | float):
                 # Perturb metric
                 perturbed_metrics = base_metrics.copy()
                 perturbed_metrics[metric_name] = base_value * (1 + perturbation_size)
 
-                perturbed_reward = self.get_expected_reward(task_type, perturbed_metrics)
+                perturbed_reward = self.get_expected_reward(
+                    task_type, perturbed_metrics
+                )
 
                 # Calculate sensitivity (derivative approximation)
-                sensitivity = (perturbed_reward - base_reward) / (base_value * perturbation_size)
+                sensitivity = (perturbed_reward - base_reward) / (
+                    base_value * perturbation_size
+                )
                 sensitivities[metric_name] = sensitivity
 
         return sensitivities
 
-    def get_performance_summary(self, task_type: Optional[str] = None) -> Dict[str, Any]:
+    def get_performance_summary(self, task_type: str | None = None) -> dict[str, Any]:
         """Get performance summary for model analysis."""
         if task_type:
             try:
                 task_filter = TaskType(task_type.lower())
-                filtered_history = [r for r in self.reward_history if r["task_type"] == task_filter]
+                filtered_history = [
+                    r for r in self.reward_history if r["task_type"] == task_filter
+                ]
             except ValueError:
                 filtered_history = self.reward_history
         else:
@@ -373,7 +411,11 @@ class NeuroimagingRewardModel:
             "reward_std": float(np.std(rewards)),
             "min_reward": float(np.min(rewards)),
             "max_reward": float(np.max(rewards)),
-            "recent_performance": float(np.mean(rewards[-20:])) if len(rewards) >= 20 else float(np.mean(rewards)),
+            "recent_performance": (
+                float(np.mean(rewards[-20:]))
+                if len(rewards) >= 20
+                else float(np.mean(rewards))
+            ),
             "improvement_trend": self._calculate_trend(rewards),
         }
 
@@ -381,13 +423,19 @@ class NeuroimagingRewardModel:
         if not task_type:
             task_stats = {}
             for task in TaskType:
-                task_rewards = [r["reward"] for r in filtered_history if r["task_type"] == task]
+                task_rewards = [
+                    r["reward"] for r in filtered_history if r["task_type"] == task
+                ]
                 if task_rewards:
                     task_stats[task.value] = {
                         "count": len(task_rewards),
                         "average": float(np.mean(task_rewards)),
-                        "success_rate": sum(1 for r in filtered_history
-                                          if r["task_type"] == task and r.get("success", False)) / len(task_rewards)
+                        "success_rate": sum(
+                            1
+                            for r in filtered_history
+                            if r["task_type"] == task and r.get("success", False)
+                        )
+                        / len(task_rewards),
                     }
 
             summary["task_statistics"] = task_stats
@@ -396,7 +444,7 @@ class NeuroimagingRewardModel:
 
     # Private Methods
 
-    def _initialize_task_rewards(self) -> Dict[TaskType, TaskReward]:
+    def _initialize_task_rewards(self) -> dict[TaskType, TaskReward]:
         """Initialize task-specific reward configurations."""
         return {
             TaskType.PREPROCESSING: TaskReward(
@@ -405,7 +453,7 @@ class NeuroimagingRewardModel:
                 time_penalty_rate=0.01,
                 quality_bonus_rate=1.5,
                 error_penalty=0.5,
-                resource_penalty_rate=0.1
+                resource_penalty_rate=0.1,
             ),
             TaskType.GLM_ANALYSIS: TaskReward(
                 task_type=TaskType.GLM_ANALYSIS,
@@ -413,7 +461,7 @@ class NeuroimagingRewardModel:
                 time_penalty_rate=0.008,
                 quality_bonus_rate=3.0,
                 error_penalty=1.0,
-                resource_penalty_rate=0.15
+                resource_penalty_rate=0.15,
             ),
             TaskType.CONTRAST_ANALYSIS: TaskReward(
                 task_type=TaskType.CONTRAST_ANALYSIS,
@@ -421,7 +469,7 @@ class NeuroimagingRewardModel:
                 time_penalty_rate=0.02,
                 quality_bonus_rate=2.0,
                 error_penalty=1.5,
-                resource_penalty_rate=0.05
+                resource_penalty_rate=0.05,
             ),
             TaskType.STATISTICAL_TEST: TaskReward(
                 task_type=TaskType.STATISTICAL_TEST,
@@ -429,7 +477,7 @@ class NeuroimagingRewardModel:
                 time_penalty_rate=0.05,
                 quality_bonus_rate=2.5,
                 error_penalty=2.0,
-                resource_penalty_rate=0.02
+                resource_penalty_rate=0.02,
             ),
             TaskType.VISUALIZATION: TaskReward(
                 task_type=TaskType.VISUALIZATION,
@@ -437,7 +485,7 @@ class NeuroimagingRewardModel:
                 time_penalty_rate=0.015,
                 quality_bonus_rate=1.0,
                 error_penalty=0.3,
-                resource_penalty_rate=0.08
+                resource_penalty_rate=0.08,
             ),
             TaskType.QUALITY_CHECK: TaskReward(
                 task_type=TaskType.QUALITY_CHECK,
@@ -445,7 +493,7 @@ class NeuroimagingRewardModel:
                 time_penalty_rate=0.03,
                 quality_bonus_rate=2.0,
                 error_penalty=0.8,
-                resource_penalty_rate=0.03
+                resource_penalty_rate=0.03,
             ),
             TaskType.DATA_EXPORT: TaskReward(
                 task_type=TaskType.DATA_EXPORT,
@@ -453,7 +501,7 @@ class NeuroimagingRewardModel:
                 time_penalty_rate=0.02,
                 quality_bonus_rate=0.5,
                 error_penalty=1.0,
-                resource_penalty_rate=0.05
+                resource_penalty_rate=0.05,
             ),
             TaskType.OPTIMIZATION: TaskReward(
                 task_type=TaskType.OPTIMIZATION,
@@ -461,14 +509,12 @@ class NeuroimagingRewardModel:
                 time_penalty_rate=0.005,
                 quality_bonus_rate=4.0,
                 error_penalty=0.5,
-                resource_penalty_rate=0.2
-            )
+                resource_penalty_rate=0.2,
+            ),
         }
 
     def _calculate_progress_reward(
-        self,
-        intermediate_results: List[Dict],
-        task_type: TaskType
+        self, intermediate_results: list[dict], task_type: TaskType
     ) -> float:
         """Calculate reward based on intermediate progress."""
         if not intermediate_results:
@@ -494,10 +540,7 @@ class NeuroimagingRewardModel:
         return (avg_progress * base_progress_reward) + consistency_bonus
 
     def _apply_context_adjustments(
-        self,
-        base_reward: float,
-        context: Dict[str, Any],
-        task_type: TaskType
+        self, base_reward: float, context: dict[str, Any], task_type: TaskType
     ) -> float:
         """Apply context-specific reward adjustments."""
         adjusted_reward = base_reward
@@ -506,10 +549,14 @@ class NeuroimagingRewardModel:
         user_level = context.get("user_experience_level", "intermediate")
         if user_level == "beginner":
             # More forgiving for beginners
-            adjusted_reward = adjusted_reward * 1.2 if adjusted_reward > 0 else adjusted_reward * 0.8
+            adjusted_reward = (
+                adjusted_reward * 1.2 if adjusted_reward > 0 else adjusted_reward * 0.8
+            )
         elif user_level == "expert":
             # Higher standards for experts
-            adjusted_reward = adjusted_reward * 0.9 if adjusted_reward > 0 else adjusted_reward * 1.2
+            adjusted_reward = (
+                adjusted_reward * 0.9 if adjusted_reward > 0 else adjusted_reward * 1.2
+            )
 
         # Urgency adjustment
         urgency = context.get("urgency", "normal")
@@ -526,7 +573,9 @@ class NeuroimagingRewardModel:
 
         # Historical performance adjustment
         if task_type in self.performance_stats:
-            recent_performance = self.performance_stats[task_type].get("recent_average", 0)
+            recent_performance = self.performance_stats[task_type].get(
+                "recent_average", 0
+            )
             if recent_performance > 0:
                 # Relative to recent performance
                 performance_ratio = base_reward / recent_performance
@@ -538,19 +587,23 @@ class NeuroimagingRewardModel:
         return adjusted_reward
 
     def _estimate_metrics_from_params(
-        self,
-        params: Dict[str, float],
-        task_type: TaskType
-    ) -> Dict[str, float]:
+        self, params: dict[str, float], task_type: TaskType
+    ) -> dict[str, float]:
         """Estimate task metrics based on parameters (simplified model)."""
         baseline = self.baselines[task_type]
 
         # Simple linear model for estimation (would be replaced with learned model)
         estimated_time = baseline["expected_time"] * params.get("time_multiplier", 1.0)
-        estimated_quality = baseline["quality_threshold"] * params.get("quality_multiplier", 1.0)
-        estimated_errors = max(0, int(baseline["max_errors"] * params.get("error_multiplier", 1.0)))
+        estimated_quality = baseline["quality_threshold"] * params.get(
+            "quality_multiplier", 1.0
+        )
+        estimated_errors = max(
+            0, int(baseline["max_errors"] * params.get("error_multiplier", 1.0))
+        )
 
-        estimated_memory = baseline["resource_limit"]["memory_mb"] * params.get("memory_multiplier", 1.0)
+        estimated_memory = baseline["resource_limit"]["memory_mb"] * params.get(
+            "memory_multiplier", 1.0
+        )
 
         return {
             "execution_time": estimated_time,
@@ -558,10 +611,14 @@ class NeuroimagingRewardModel:
             "quality_score": min(1.0, estimated_quality),
             "error_count": estimated_errors,
             "resource_usage": {"memory_mb": estimated_memory},
-            "satisfaction": 0.8 - (estimated_errors * 0.1) + (max(0, estimated_quality - 0.7) * 0.5)
+            "satisfaction": 0.8
+            - (estimated_errors * 0.1)
+            + (max(0, estimated_quality - 0.7) * 0.5),
         }
 
-    def _record_reward(self, task_type: TaskType, reward: float, metrics: RewardMetrics) -> None:
+    def _record_reward(
+        self, task_type: TaskType, reward: float, metrics: RewardMetrics
+    ) -> None:
         """Record reward for historical analysis."""
         record = {
             "timestamp": datetime.utcnow().isoformat(),
@@ -570,7 +627,7 @@ class NeuroimagingRewardModel:
             "success": metrics.success,
             "execution_time": metrics.execution_time,
             "quality_score": metrics.quality_score,
-            "error_count": metrics.error_count
+            "error_count": metrics.error_count,
         }
 
         self.reward_history.append(record)
@@ -587,13 +644,15 @@ class NeuroimagingRewardModel:
 
         # Keep last 50 rewards for recent average
         if len(self.performance_stats[task_type]["rewards"]) > 50:
-            self.performance_stats[task_type]["rewards"] = self.performance_stats[task_type]["rewards"][-50:]
+            self.performance_stats[task_type]["rewards"] = self.performance_stats[
+                task_type
+            ]["rewards"][-50:]
 
         self.performance_stats[task_type]["recent_average"] = np.mean(
             self.performance_stats[task_type]["rewards"]
         )
 
-    def _calculate_trend(self, rewards: List[float]) -> str:
+    def _calculate_trend(self, rewards: list[float]) -> str:
         """Calculate performance trend."""
         if len(rewards) < 10:
             return "insufficient_data"

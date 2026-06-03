@@ -14,21 +14,28 @@ import os
 import re
 import sys
 import time
+from collections.abc import Sequence
 from difflib import SequenceMatcher
-from typing import Any, Dict, List, Optional, Protocol, Sequence, Set, Tuple, runtime_checkable
-
-from brain_researcher.services.agent.knowledge.evidence_models import (
-    EvidenceBundle,
-    EvidenceItem,
-    EvidenceSourceType,
+from typing import (
+    Any,
+    Protocol,
+    runtime_checkable,
 )
+
 from brain_researcher.services.agent.cache_manager import (
     CacheKeyType,
     QueryCacheManager,
     get_global_cache_manager,
 )
+from brain_researcher.services.agent.knowledge.evidence_models import (
+    EvidenceBundle,
+    EvidenceItem,
+    EvidenceSourceType,
+)
 from brain_researcher.services.agent.knowledge.memory_store import KnowledgeMemoryStore
-from brain_researcher.services.agent.monitoring_integration import get_monitoring_integration
+from brain_researcher.services.agent.monitoring_integration import (
+    get_monitoring_integration,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +44,7 @@ def _is_test_env() -> bool:
     return bool(os.getenv("PYTEST_CURRENT_TEST")) or "pytest" in sys.modules
 
 
-def _dataset_hint_to_evidence_item(hint: Any) -> Optional[EvidenceItem]:
+def _dataset_hint_to_evidence_item(hint: Any) -> EvidenceItem | None:
     """Convert a dataset hint (dataclass or dict) into EvidenceItem."""
     try:
         dataset_id = getattr(hint, "dataset_id", None) or hint.get("dataset_id")
@@ -54,7 +61,11 @@ def _dataset_hint_to_evidence_item(hint: Any) -> Optional[EvidenceItem]:
         hint_meta = getattr(hint, "metadata", None) or hint.get("metadata", {})
         if isinstance(hint_meta, dict):
             metadata.update(hint_meta)
-        url = getattr(hint, "remote_url", None) or hint.get("remote_url") or hint.get("primary_url")
+        url = (
+            getattr(hint, "remote_url", None)
+            or hint.get("remote_url")
+            or hint.get("primary_url")
+        )
         # Record provenance to distinguish KG hint from catalog/connector matches.
         metadata.setdefault("source", "kg_hint")
         return EvidenceItem(
@@ -95,7 +106,7 @@ class EvidenceConnector(Protocol):
         """The type of evidence this connector produces."""
         ...
 
-    async def search(self, query: str, limit: int = 10) -> List[EvidenceItem]:
+    async def search(self, query: str, limit: int = 10) -> list[EvidenceItem]:
         """Search for evidence matching the query.
 
         Args:
@@ -153,7 +164,7 @@ class LiteratureConnector:
     def source_type(self) -> EvidenceSourceType:
         return EvidenceSourceType.PUBMED
 
-    async def search(self, query: str, limit: int = 10) -> List[EvidenceItem]:
+    async def search(self, query: str, limit: int = 10) -> list[EvidenceItem]:
         """Search for literature matching the query.
 
         First tries Neo4j indexed publications, then falls back to EDirect.
@@ -170,7 +181,7 @@ class LiteratureConnector:
 
         return items[:limit]
 
-    async def _search_neo4j(self, query: str, limit: int) -> List[EvidenceItem]:
+    async def _search_neo4j(self, query: str, limit: int) -> list[EvidenceItem]:
         """Search Neo4j indexed publications."""
         try:
             from brain_researcher.services.br_kg.query_service import search_nodes
@@ -196,7 +207,7 @@ class LiteratureConnector:
             logger.warning(f"Neo4j publication search failed: {e}")
             return []
 
-    async def _search_edirect(self, query: str, limit: int) -> List[EvidenceItem]:
+    async def _search_edirect(self, query: str, limit: int) -> list[EvidenceItem]:
         """Search PubMed via EDirect API."""
         try:
             import httpx
@@ -218,7 +229,9 @@ class LiteratureConnector:
 
                 if self._rate_limiter:
                     self._rate_limiter.wait_if_needed()
-                resp = await client.get(f"{base_url}/esearch.fcgi", params=search_params)
+                resp = await client.get(
+                    f"{base_url}/esearch.fcgi", params=search_params
+                )
                 resp.raise_for_status()
                 data = resp.json()
                 if self._rate_limiter:
@@ -239,7 +252,9 @@ class LiteratureConnector:
 
                 if self._rate_limiter:
                     self._rate_limiter.wait_if_needed()
-                resp = await client.get(f"{base_url}/esummary.fcgi", params=summary_params)
+                resp = await client.get(
+                    f"{base_url}/esummary.fcgi", params=summary_params
+                )
                 resp.raise_for_status()
                 summaries = resp.json().get("result", {})
                 if self._rate_limiter:
@@ -268,10 +283,14 @@ class LiteratureConnector:
         except Exception as e:
             logger.warning(f"EDirect search failed: {e}")
             if self._rate_limiter:
-                self._rate_limiter.request_failure(getattr(e, "response", None).status_code if hasattr(e, "response") else None)
+                self._rate_limiter.request_failure(
+                    getattr(e, "response", None).status_code
+                    if hasattr(e, "response")
+                    else None
+                )
             return []
 
-    def _build_pubmed_url(self, kg_id: str) -> Optional[str]:
+    def _build_pubmed_url(self, kg_id: str) -> str | None:
         """Build PubMed URL from KG ID."""
         if kg_id.startswith("pmid:"):
             pmid = kg_id.replace("pmid:", "")
@@ -311,7 +330,7 @@ class NeuroStoreConnector:
     def source_type(self) -> EvidenceSourceType:
         return EvidenceSourceType.NEUROSTORE
 
-    async def search(self, query: str, limit: int = 10) -> List[EvidenceItem]:
+    async def search(self, query: str, limit: int = 10) -> list[EvidenceItem]:
         """Search NeuroStore nodes in Neo4j."""
         try:
             from brain_researcher.services.br_kg.query_service import search_nodes
@@ -341,7 +360,7 @@ class NeuroStoreConnector:
             logger.warning(f"NeuroStore search failed: {e}")
             return []
 
-    def _build_neurostore_url(self, kg_id: str) -> Optional[str]:
+    def _build_neurostore_url(self, kg_id: str) -> str | None:
         """Build NeuroStore URL from KG ID."""
         if kg_id.startswith("neurostore:") or kg_id.startswith("ns:"):
             study_id = kg_id.split(":")[-1]
@@ -378,7 +397,7 @@ class DatasetCatalogConnector:
     def source_type(self) -> EvidenceSourceType:
         return EvidenceSourceType.DATASET_CATALOG
 
-    async def search(self, query: str, limit: int = 10) -> List[EvidenceItem]:
+    async def search(self, query: str, limit: int = 10) -> list[EvidenceItem]:
         """Search dataset catalog."""
         try:
             from brain_researcher.services.br_kg.query_service import search_datasets
@@ -413,10 +432,14 @@ class DatasetCatalogConnector:
         higher of the two for a conservative upper-bound relevance in [0, 1].
         """
 
-        def _tokenize(text: str) -> Set[str]:
+        def _tokenize(text: str) -> set[str]:
             return {t for t in re.findall(r"[a-z0-9]+", text.lower()) if len(t) > 2}
 
-        fields = [ds.title or "", " ".join(ds.tasks or []), " ".join(ds.modalities or [])]
+        fields = [
+            ds.title or "",
+            " ".join(ds.tasks or []),
+            " ".join(ds.modalities or []),
+        ]
         haystack = " ".join(part for part in fields if part)
         if not haystack.strip():
             return 0.0
@@ -434,7 +457,7 @@ class DatasetCatalogConnector:
         score = max(jaccard, seq_ratio)
         return max(0.0, min(1.0, score))
 
-    def _build_dataset_url(self, dataset_id: str) -> Optional[str]:
+    def _build_dataset_url(self, dataset_id: str) -> str | None:
         """Build dataset URL from ID."""
         if dataset_id.startswith("ds"):
             return f"https://openneuro.org/datasets/{dataset_id}"
@@ -454,7 +477,7 @@ class DatasetCatalogConnector:
 class KGNodeConnector:
     """Connector for general KG node evidence (concepts, regions, tasks)."""
 
-    def __init__(self, db=None, node_types: Optional[Sequence[str]] = None):
+    def __init__(self, db=None, node_types: Sequence[str] | None = None):
         """Initialize the KG node connector.
 
         Args:
@@ -472,7 +495,7 @@ class KGNodeConnector:
     def source_type(self) -> EvidenceSourceType:
         return EvidenceSourceType.KG_GRAPH
 
-    async def search(self, query: str, limit: int = 10) -> List[EvidenceItem]:
+    async def search(self, query: str, limit: int = 10) -> list[EvidenceItem]:
         """Search KG nodes."""
         try:
             from brain_researcher.services.br_kg.query_service import search_nodes
@@ -511,9 +534,9 @@ class KGNodeConnector:
 class ToolCatalogConnector:
     """Connector for tool catalog evidence."""
 
-    _shared_registry: Optional["ToolRegistry"] = None
+    _shared_registry: ToolRegistry | None = None
 
-    def __init__(self, registry: Optional["ToolRegistry"] = None):
+    def __init__(self, registry: ToolRegistry | None = None):
         """Initialize the tool connector.
 
         Args:
@@ -537,10 +560,10 @@ class ToolCatalogConnector:
     def source_type(self) -> EvidenceSourceType:
         return EvidenceSourceType.TOOL_CATALOG
 
-    async def search(self, query: str, limit: int = 10) -> List[EvidenceItem]:
+    async def search(self, query: str, limit: int = 10) -> list[EvidenceItem]:
         """Search tool catalog."""
         registry = self._get_registry()
-        items: List[EvidenceItem] = []
+        items: list[EvidenceItem] = []
         seen_ids: set[str] = set()
 
         # ------------------------------------------------------------------
@@ -555,7 +578,11 @@ class ToolCatalogConnector:
                     exposed_only=True,
                     k_candidates=max(20, limit),
                 )
-                candidates = (kg_data or {}).get("candidates", []) if isinstance(kg_data, dict) else []
+                candidates = (
+                    (kg_data or {}).get("candidates", [])
+                    if isinstance(kg_data, dict)
+                    else []
+                )
 
                 for idx, cand in enumerate(candidates[:limit]):
                     tool_id = str(cand.get("tool_id") or "")
@@ -717,16 +744,16 @@ class EvidenceAggregator:
 
     def __init__(
         self,
-        connectors: Optional[List[EvidenceConnector]] = None,
+        connectors: list[EvidenceConnector] | None = None,
         source_timeout: float = DEFAULT_SOURCE_TIMEOUT,
         total_timeout: float = DEFAULT_TOTAL_TIMEOUT,
         enable_cache: bool = True,
         cache_ttl_seconds: int = 300,
         max_cache_size: int = 100,
         use_shared_cache: bool = False,
-        account_id: Optional[str] = None,
-        cache_manager: Optional[QueryCacheManager] = None,
-        memory_store: Optional[KnowledgeMemoryStore] = None,
+        account_id: str | None = None,
+        cache_manager: QueryCacheManager | None = None,
+        memory_store: KnowledgeMemoryStore | None = None,
     ):
         """Initialize the aggregator.
 
@@ -757,8 +784,8 @@ class EvidenceAggregator:
             or "test-account"
         )
         # L1 cache: cache_key -> (timestamp, EvidenceBundle)
-        self._cache: Dict[str, Tuple[float, EvidenceBundle]] = {}
-        self._shared_cache: Optional[QueryCacheManager] = cache_manager
+        self._cache: dict[str, tuple[float, EvidenceBundle]] = {}
+        self._shared_cache: QueryCacheManager | None = cache_manager
         self._shared_cache_checked = cache_manager is not None
         self._memory_store = memory_store
         self._metrics = {
@@ -773,10 +800,10 @@ class EvidenceAggregator:
         else:
             self._connectors = self._create_default_connectors()
 
-    def _create_default_connectors(self) -> List[EvidenceConnector]:
+    def _create_default_connectors(self) -> list[EvidenceConnector]:
         """Create default set of connectors (fast, resilient)."""
 
-        connectors: List[EvidenceConnector] = []
+        connectors: list[EvidenceConnector] = []
 
         # Literature (PubMed) — only if API key configured
         if os.getenv("NCBI_API_KEY"):
@@ -818,10 +845,10 @@ class EvidenceAggregator:
     def _make_cache_key(
         self,
         query: str,
-        sources: Optional[List[EvidenceSourceType]],
+        sources: list[EvidenceSourceType] | None,
         limit: int,
         source_timeout: float,
-        dataset_hints: Optional[Sequence[Any]] = None,
+        dataset_hints: Sequence[Any] | None = None,
     ) -> str:
         source_part = "|".join(sorted(s.value for s in sources)) if sources else "*"
         acct_part = self._account_id or "global"
@@ -839,7 +866,7 @@ class EvidenceAggregator:
         key = f"{acct_part}|{query.strip().lower()}|{source_part}|{limit}|{source_timeout:.3f}{hint_part}"
         return key[:200]
 
-    def _get_cached_bundle(self, cache_key: str) -> Optional[EvidenceBundle]:
+    def _get_cached_bundle(self, cache_key: str) -> EvidenceBundle | None:
         if not self._enable_cache:
             return None
         cached = self._cache.get(cache_key)
@@ -860,11 +887,11 @@ class EvidenceAggregator:
             self._cache.pop(oldest_key, None)
         self._cache[cache_key] = (time.time(), bundle)
 
-    def get_metrics(self) -> Dict[str, int]:
+    def get_metrics(self) -> dict[str, int]:
         """Return cache metrics snapshot."""
         return dict(self._metrics)
 
-    def export_metrics(self, metrics_collector=None, account_id: Optional[str] = None):
+    def export_metrics(self, metrics_collector=None, account_id: str | None = None):
         """Push metrics into MetricsCollector if provided.
 
         Args:
@@ -878,14 +905,28 @@ class EvidenceAggregator:
         labels = {"account_id": account_id or self._account_id or "unknown"}
         mc = metrics_collector
         try:
-            mc.increment("cache_hits_total", self._metrics.get("l1_hits", 0), labels={**labels, "layer": "l1"})
-            mc.increment("cache_hits_total", self._metrics.get("shared_hits", 0), labels={**labels, "layer": "shared"})
-            mc.increment("cache_misses_total", self._metrics.get("l1_misses", 0), labels={**labels, "layer": "l1"})
-            mc.set_gauge("cache_size_bytes", len(self._cache), labels={**labels, "layer": "l1"})
+            mc.increment(
+                "cache_hits_total",
+                self._metrics.get("l1_hits", 0),
+                labels={**labels, "layer": "l1"},
+            )
+            mc.increment(
+                "cache_hits_total",
+                self._metrics.get("shared_hits", 0),
+                labels={**labels, "layer": "shared"},
+            )
+            mc.increment(
+                "cache_misses_total",
+                self._metrics.get("l1_misses", 0),
+                labels={**labels, "layer": "l1"},
+            )
+            mc.set_gauge(
+                "cache_size_bytes", len(self._cache), labels={**labels, "layer": "l1"}
+            )
         except Exception:  # pragma: no cover - defensive
             logger.debug("Failed to export cache metrics", exc_info=True)
 
-    def _get_shared_cache(self) -> Optional[QueryCacheManager]:
+    def _get_shared_cache(self) -> QueryCacheManager | None:
         """Lazily acquire global shared cache manager (Redis-backed)."""
 
         if not self._use_shared_cache:
@@ -905,11 +946,11 @@ class EvidenceAggregator:
     async def gather_evidence(
         self,
         query: str,
-        sources: Optional[List[EvidenceSourceType]] = None,
+        sources: list[EvidenceSourceType] | None = None,
         limit: int = 20,
-        timeout: Optional[float] = None,
-        source_timeout: Optional[float] = None,
-        dataset_hints: Optional[Sequence[Any]] = None,
+        timeout: float | None = None,
+        source_timeout: float | None = None,
+        dataset_hints: Sequence[Any] | None = None,
     ) -> EvidenceBundle:
         """Gather evidence from multiple sources in parallel.
 
@@ -927,7 +968,9 @@ class EvidenceAggregator:
         bundle = EvidenceBundle(query=query)
 
         # Use per-call timeouts if provided, otherwise fall back to instance settings
-        effective_source_timeout = source_timeout if source_timeout is not None else self._source_timeout
+        effective_source_timeout = (
+            source_timeout if source_timeout is not None else self._source_timeout
+        )
 
         cache_key = self._make_cache_key(
             query, sources, limit, effective_source_timeout, dataset_hints
@@ -972,7 +1015,9 @@ class EvidenceAggregator:
         tasks = []
         for connector in connectors:
             task = asyncio.create_task(
-                self._search_with_timeout(connector, query, limit, effective_source_timeout)
+                self._search_with_timeout(
+                    connector, query, limit, effective_source_timeout
+                )
             )
             tasks.append(task)
 
@@ -1038,7 +1083,9 @@ class EvidenceAggregator:
                 # Export memory size to monitoring integration if available
                 try:
                     mi = get_monitoring_integration()
-                    mi.metrics_collector.record_knowledge_memory_size(self._account_id, size)
+                    mi.metrics_collector.record_knowledge_memory_size(
+                        self._account_id, size
+                    )
                 except Exception:  # pragma: no cover - best effort
                     logger.debug("knowledge memory size export failed", exc_info=True)
             except Exception as exc:  # pragma: no cover - defensive
@@ -1048,7 +1095,7 @@ class EvidenceAggregator:
 
     async def _search_with_timeout(
         self, connector: EvidenceConnector, query: str, limit: int, timeout: float
-    ) -> List[EvidenceItem]:
+    ) -> list[EvidenceItem]:
         """Search a single connector with timeout.
 
         Args:

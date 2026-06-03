@@ -5,20 +5,21 @@ and escalation policies.
 """
 
 import asyncio
+import hashlib
 import logging
+from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Callable
-import hashlib
-import json
-from collections import defaultdict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class AlertSeverity(Enum):
     """Alert severity levels."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -27,6 +28,7 @@ class AlertSeverity(Enum):
 
 class AlertChannel(Enum):
     """Alert delivery channels."""
+
     LOG = "log"
     EMAIL = "email"
     SLACK = "slack"
@@ -37,14 +39,15 @@ class AlertChannel(Enum):
 @dataclass
 class Alert:
     """Individual alert."""
+
     alert_id: str
     title: str
     message: str
     severity: AlertSeverity
     source: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
-    fingerprint: Optional[str] = None
+    fingerprint: str | None = None
 
     def __post_init__(self):
         """Generate fingerprint if not provided."""
@@ -57,18 +60,20 @@ class Alert:
 @dataclass
 class AlertRule:
     """Alert rule configuration."""
+
     name: str
     condition: str  # Expression to evaluate
     severity: AlertSeverity
-    channels: List[AlertChannel]
+    channels: list[AlertChannel]
     cooldown_seconds: int = 300  # Prevent alert spam
-    escalation_after: Optional[int] = None  # Seconds before escalation
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    escalation_after: int | None = None  # Seconds before escalation
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class AlertState:
     """Track alert state for suppression."""
+
     alert: Alert
     count: int = 1
     first_seen: datetime = field(default_factory=datetime.now)
@@ -81,9 +86,7 @@ class AlertState:
 class AlertManager:
     """Manages alerts with intelligent routing and suppression."""
 
-    def __init__(self,
-                 suppression_window: int = 300,
-                 max_alerts_per_window: int = 5):
+    def __init__(self, suppression_window: int = 300, max_alerts_per_window: int = 5):
         """Initialize alert manager.
 
         Args:
@@ -94,15 +97,15 @@ class AlertManager:
         self.max_alerts_per_window = max_alerts_per_window
 
         # Alert tracking
-        self.active_alerts: Dict[str, AlertState] = {}
-        self.alert_history: List[Alert] = []
-        self.alert_rules: List[AlertRule] = []
+        self.active_alerts: dict[str, AlertState] = {}
+        self.alert_history: list[Alert] = []
+        self.alert_rules: list[AlertRule] = []
 
         # Channel handlers
-        self.channel_handlers: Dict[AlertChannel, List[Callable]] = defaultdict(list)
+        self.channel_handlers: dict[AlertChannel, list[Callable]] = defaultdict(list)
 
         # Suppression tracking
-        self.suppression_counts: Dict[str, List[datetime]] = defaultdict(list)
+        self.suppression_counts: dict[str, list[datetime]] = defaultdict(list)
 
         # Register default handlers
         self._register_default_handlers()
@@ -174,8 +177,7 @@ class AlertManager:
         # Clean old suppression entries
         cutoff = now - timedelta(seconds=self.suppression_window)
         self.suppression_counts[fingerprint] = [
-            ts for ts in self.suppression_counts[fingerprint]
-            if ts > cutoff
+            ts for ts in self.suppression_counts[fingerprint] if ts > cutoff
         ]
 
         # Check if over limit
@@ -217,7 +219,7 @@ class AlertManager:
         # Track for suppression
         self.suppression_counts[fingerprint].append(now)
 
-    def _get_channels_for_severity(self, severity: AlertSeverity) -> List[AlertChannel]:
+    def _get_channels_for_severity(self, severity: AlertSeverity) -> list[AlertChannel]:
         """Get appropriate channels for severity.
 
         Args:
@@ -233,7 +235,9 @@ class AlertManager:
         elif severity == AlertSeverity.ERROR:
             channels.extend([AlertChannel.SLACK, AlertChannel.EMAIL])
         elif severity == AlertSeverity.CRITICAL:
-            channels.extend([AlertChannel.SLACK, AlertChannel.EMAIL, AlertChannel.PAGERDUTY])
+            channels.extend(
+                [AlertChannel.SLACK, AlertChannel.EMAIL, AlertChannel.PAGERDUTY]
+            )
 
         return channels
 
@@ -279,7 +283,7 @@ class AlertManager:
                 message=f"Alert active for {duration/3600:.1f} hours: {alert.message}",
                 severity=AlertSeverity.CRITICAL,
                 source=alert.source,
-                metadata={**alert.metadata, "escalated": True}
+                metadata={**alert.metadata, "escalated": True},
             )
             await self.send_alert(escalated)
 
@@ -291,7 +295,9 @@ class AlertManager:
         """
         # Add to appropriate channels
         self.channel_handlers[AlertChannel.LOG].append(handler)
-        logger.info(f"Added alert handler: {handler.__name__ if hasattr(handler, '__name__') else 'handler'}")
+        logger.info(
+            f"Added alert handler: {handler.__name__ if hasattr(handler, '__name__') else 'handler'}"
+        )
 
     async def _handle_log_alert(self, alert: Alert):
         """Default log handler.
@@ -303,10 +309,12 @@ class AlertManager:
             AlertSeverity.INFO: logging.INFO,
             AlertSeverity.WARNING: logging.WARNING,
             AlertSeverity.ERROR: logging.ERROR,
-            AlertSeverity.CRITICAL: logging.CRITICAL
+            AlertSeverity.CRITICAL: logging.CRITICAL,
         }.get(alert.severity, logging.INFO)
 
-        logger.log(level, f"[{alert.severity.value.upper()}] {alert.title}: {alert.message}")
+        logger.log(
+            level, f"[{alert.severity.value.upper()}] {alert.title}: {alert.message}"
+        )
 
     def acknowledge_alert(self, fingerprint: str):
         """Acknowledge an alert.
@@ -328,18 +336,15 @@ class AlertManager:
             self.active_alerts[fingerprint].resolved = True
             logger.info(f"Alert resolved: {fingerprint}")
 
-    def get_active_alerts(self) -> List[AlertState]:
+    def get_active_alerts(self) -> list[AlertState]:
         """Get list of active alerts.
 
         Returns:
             List of active alert states
         """
-        return [
-            state for state in self.active_alerts.values()
-            if not state.resolved
-        ]
+        return [state for state in self.active_alerts.values() if not state.resolved]
 
-    def get_alert_summary(self) -> Dict[str, Any]:
+    def get_alert_summary(self) -> dict[str, Any]:
         """Get alert summary statistics.
 
         Returns:
@@ -355,18 +360,19 @@ class AlertManager:
             "total_active": len(active),
             "by_severity": dict(severity_counts),
             "suppressed": sum(1 for s in self.active_alerts.values() if s.suppressed),
-            "acknowledged": sum(1 for s in self.active_alerts.values() if s.acknowledged),
-            "total_sent": len(self.alert_history)
+            "acknowledged": sum(
+                1 for s in self.active_alerts.values() if s.acknowledged
+            ),
+            "total_sent": len(self.alert_history),
         }
 
 
 class CircuitBreaker:
     """Circuit breaker for preventing cascade failures."""
 
-    def __init__(self,
-                 failure_threshold: int = 5,
-                 timeout: int = 60,
-                 recovery_timeout: int = 30):
+    def __init__(
+        self, failure_threshold: int = 5, timeout: int = 60, recovery_timeout: int = 30
+    ):
         """Initialize circuit breaker.
 
         Args:
@@ -406,7 +412,7 @@ class CircuitBreaker:
             result = func(*args, **kwargs)
             self._on_success()
             return result
-        except Exception as e:
+        except Exception:
             self._on_failure()
             raise
 
@@ -434,7 +440,9 @@ class CircuitBreaker:
 
         if self.failure_count >= self.failure_threshold:
             self.state = "open"
-            logger.warning(f"Circuit breaker opened after {self.failure_count} failures")
+            logger.warning(
+                f"Circuit breaker opened after {self.failure_count} failures"
+            )
 
     def reset(self):
         """Reset circuit breaker."""
@@ -445,4 +453,5 @@ class CircuitBreaker:
 
 class CircuitOpenError(Exception):
     """Raised when circuit breaker is open."""
+
     pass

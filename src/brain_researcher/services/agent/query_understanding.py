@@ -11,12 +11,11 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import numpy as np
 from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +59,9 @@ class ExtractedEntity:
     confidence: float
     normalized_form: str
     context: str = ""
-    aliases: List[str] = field(default_factory=list)
-    coordinates: Optional[Tuple[float, float, float]] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    aliases: list[str] = field(default_factory=list)
+    coordinates: tuple[float, float, float] | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -70,10 +69,10 @@ class QueryExpansion:
     """Represents query expansion with synonyms and related terms."""
 
     original_query: str
-    expanded_terms: Dict[str, List[str]]
-    synonyms: Dict[str, List[str]]
-    related_concepts: List[str]
-    domain_terms: List[str]
+    expanded_terms: dict[str, list[str]]
+    synonyms: dict[str, list[str]]
+    related_concepts: list[str]
+    domain_terms: list[str]
     confidence: float
 
 
@@ -84,15 +83,15 @@ class ParsedQuery:
     original_query: str
     normalized_query: str
     primary_intent: QueryIntent
-    secondary_intents: List[QueryIntent] = field(default_factory=list)
-    entities: List[ExtractedEntity] = field(default_factory=list)
-    expansion: Optional[QueryExpansion] = None
-    context_vector: Optional[np.ndarray] = None
+    secondary_intents: list[QueryIntent] = field(default_factory=list)
+    entities: list[ExtractedEntity] = field(default_factory=list)
+    expansion: QueryExpansion | None = None
+    context_vector: np.ndarray | None = None
     complexity_score: float = 0.0
     confidence: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def get_entities_by_type(self, entity_type: EntityType) -> List[ExtractedEntity]:
+    def get_entities_by_type(self, entity_type: EntityType) -> list[ExtractedEntity]:
         """Get all entities of a specific type."""
         return [entity for entity in self.entities if entity.entity_type == entity_type]
 
@@ -102,16 +101,16 @@ class ContextManager:
 
     def __init__(self):
         """Initialize the context manager."""
-        self.conversation_history: List[str] = []
-        self.session_context: Dict[str, Any] = {}
-        self.user_preferences: Dict[str, Any] = {}
-        self.domain_context: Dict[str, Any] = {}
+        self.conversation_history: list[str] = []
+        self.session_context: dict[str, Any] = {}
+        self.user_preferences: dict[str, Any] = {}
+        self.domain_context: dict[str, Any] = {}
 
     def update_context(
         self,
         query: str,
-        session_data: Optional[Dict[str, Any]] = None,
-        user_data: Optional[Dict[str, Any]] = None
+        session_data: dict[str, Any] | None = None,
+        user_data: dict[str, Any] | None = None,
     ):
         """
         Update context with new information.
@@ -136,14 +135,16 @@ class ContextManager:
         if user_data:
             self.user_preferences.update(user_data)
 
-    def get_contextual_information(self) -> Dict[str, Any]:
+    def get_contextual_information(self) -> dict[str, Any]:
         """Get all contextual information for query understanding."""
         return {
             "conversation_history": self.conversation_history,
             "session_context": self.session_context,
             "user_preferences": self.user_preferences,
             "domain_context": self.domain_context,
-            "recent_queries": self.conversation_history[-3:] if self.conversation_history else []
+            "recent_queries": (
+                self.conversation_history[-3:] if self.conversation_history else []
+            ),
         }
 
 
@@ -164,41 +165,81 @@ class EntityExtractor:
         # Compile regex patterns for common entities
         self.patterns = self._compile_patterns()
 
-    def _compile_patterns(self) -> Dict[EntityType, List[re.Pattern]]:
+    def _compile_patterns(self) -> dict[EntityType, list[re.Pattern]]:
         """Compile regex patterns for entity extraction."""
         patterns = {
             EntityType.COORDINATE: [
-                re.compile(r'(?:coordinates?|coords?)\s*:?\s*(?:\(|\[)?(-?\d+\.?\d*),?\s*(-?\d+\.?\d*),?\s*(-?\d+\.?\d*)(?:\)|\])?', re.IGNORECASE),
-                re.compile(r'MNI\s*(?:coordinates?|coords?)?\s*:?\s*(?:\(|\[)?(-?\d+\.?\d*),?\s*(-?\d+\.?\d*),?\s*(-?\d+\.?\d*)(?:\)|\])?', re.IGNORECASE),
-                re.compile(r'(?:\(|\[)(-?\d+\.?\d*),?\s*(-?\d+\.?\d*),?\s*(-?\d+\.?\d*)(?:\)|\])', re.IGNORECASE)
+                re.compile(
+                    r"(?:coordinates?|coords?)\s*:?\s*(?:\(|\[)?(-?\d+\.?\d*),?\s*(-?\d+\.?\d*),?\s*(-?\d+\.?\d*)(?:\)|\])?",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"MNI\s*(?:coordinates?|coords?)?\s*:?\s*(?:\(|\[)?(-?\d+\.?\d*),?\s*(-?\d+\.?\d*),?\s*(-?\d+\.?\d*)(?:\)|\])?",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"(?:\(|\[)(-?\d+\.?\d*),?\s*(-?\d+\.?\d*),?\s*(-?\d+\.?\d*)(?:\)|\])",
+                    re.IGNORECASE,
+                ),
             ],
             EntityType.BRAIN_REGION: [
-                re.compile(r'\b(?:anterior|posterior|left|right|bilateral)\s+(?:cingulate|cortex|gyrus|sulcus|lobe|area)\b', re.IGNORECASE),
-                re.compile(r'\b(?:frontal|parietal|temporal|occipital)\s+(?:cortex|lobe|region)\b', re.IGNORECASE),
-                re.compile(r'\b(?:amygdala|hippocampus|thalamus|caudate|putamen|nucleus accumbens|insula|cerebellum)\b', re.IGNORECASE),
-                re.compile(r'\bBA\s*\d+\b', re.IGNORECASE),  # Brodmann areas
-                re.compile(r'\bV\d+\b(?:\s+area)?', re.IGNORECASE)  # Visual areas
+                re.compile(
+                    r"\b(?:anterior|posterior|left|right|bilateral)\s+(?:cingulate|cortex|gyrus|sulcus|lobe|area)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:frontal|parietal|temporal|occipital)\s+(?:cortex|lobe|region)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:amygdala|hippocampus|thalamus|caudate|putamen|nucleus accumbens|insula|cerebellum)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(r"\bBA\s*\d+\b", re.IGNORECASE),  # Brodmann areas
+                re.compile(r"\bV\d+\b(?:\s+area)?", re.IGNORECASE),  # Visual areas
             ],
             EntityType.TASK: [
-                re.compile(r'\b(?:n-back|oddball|stroop|go/no-go|stop signal|flanker|simon|attention|memory|language|motor|emotional|reward)\s*(?:task|paradigm)?\b', re.IGNORECASE),
-                re.compile(r'\b(?:working memory|episodic memory|semantic memory|executive control|cognitive control)\b', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:n-back|oddball|stroop|go/no-go|stop signal|flanker|simon|attention|memory|language|motor|emotional|reward)\s*(?:task|paradigm)?\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:working memory|episodic memory|semantic memory|executive control|cognitive control)\b",
+                    re.IGNORECASE,
+                ),
             ],
             EntityType.STATISTICAL_METHOD: [
-                re.compile(r'\b(?:GLM|general linear model|t-test|ANOVA|correlation|regression|PCA|ICA|SVM|machine learning|classification|clustering)\b', re.IGNORECASE),
-                re.compile(r'\b(?:FWE|FDR|Bonferroni|cluster correction|multiple comparison)\b', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:GLM|general linear model|t-test|ANOVA|correlation|regression|PCA|ICA|SVM|machine learning|classification|clustering)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:FWE|FDR|Bonferroni|cluster correction|multiple comparison)\b",
+                    re.IGNORECASE,
+                ),
             ],
             EntityType.PREPROCESSING_STEP: [
-                re.compile(r'\b(?:skull stripping|motion correction|slice timing|normalization|smoothing|registration|segmentation)\b', re.IGNORECASE),
-                re.compile(r'\b(?:fMRIPrep|SPM|FSL|AFNI|ANTs|FreeSurfer)\b', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:skull stripping|motion correction|slice timing|normalization|smoothing|registration|segmentation)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:fMRIPrep|SPM|FSL|AFNI|ANTs|FreeSurfer)\b", re.IGNORECASE
+                ),
             ],
             EntityType.MODALITY: [
-                re.compile(r'\b(?:fMRI|sMRI|DTI|DWI|ASL|PET|EEG|MEG|BOLD|T1|T2|FLAIR)\b', re.IGNORECASE)
-            ]
+                re.compile(
+                    r"\b(?:fMRI|sMRI|DTI|DWI|ASL|PET|EEG|MEG|BOLD|T1|T2|FLAIR)\b",
+                    re.IGNORECASE,
+                )
+            ],
         }
 
         return patterns
 
-    def extract_entities(self, query: str, context: Dict[str, Any]) -> List[ExtractedEntity]:
+    def extract_entities(
+        self, query: str, context: dict[str, Any]
+    ) -> list[ExtractedEntity]:
         """
         Extract entities from query using patterns and LLM.
 
@@ -224,7 +265,7 @@ class EntityExtractor:
 
         return entities
 
-    def _extract_with_patterns(self, query: str) -> List[ExtractedEntity]:
+    def _extract_with_patterns(self, query: str) -> list[ExtractedEntity]:
         """Extract entities using regex patterns."""
         entities = []
 
@@ -241,7 +282,7 @@ class EntityExtractor:
                                 entity_type=entity_type,
                                 confidence=0.9,
                                 normalized_form=f"[{coords[0]}, {coords[1]}, {coords[2]}]",
-                                coordinates=coords
+                                coordinates=coords,
                             )
                             entities.append(entity)
                     else:
@@ -250,19 +291,26 @@ class EntityExtractor:
                             entity_type=entity_type,
                             confidence=0.8,
                             normalized_form=match.group(0).lower().strip(),
-                            context=query[max(0, match.start()-20):match.end()+20]
+                            context=query[
+                                max(0, match.start() - 20) : match.end() + 20
+                            ],
                         )
                         entities.append(entity)
 
         return entities
 
-    def _extract_with_llm(self, query: str, context: Dict[str, Any]) -> List[ExtractedEntity]:
+    def _extract_with_llm(
+        self, query: str, context: dict[str, Any]
+    ) -> list[ExtractedEntity]:
         """Extract entities using LLM for complex cases."""
         if self.llm is None:
             return []
         try:
-            extraction_prompt = ChatPromptTemplate.from_messages([
-                ("system", """You are a neuroimaging entity extractor.
+            extraction_prompt = ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        """You are a neuroimaging entity extractor.
 
                 Extract entities from the query and classify them into these types:
                 - brain_region: Brain regions, areas, networks
@@ -283,15 +331,14 @@ class EntityExtractor:
                         "confidence": 0.95,
                         "normalized": "normalized form"
                     }}
-                ]"""),
-                ("human", "Query: {query}\nContext: {context}")
-            ])
+                ]""",
+                    ),
+                    ("human", "Query: {query}\nContext: {context}"),
+                ]
+            )
 
             chain = extraction_prompt | self.llm
-            response = chain.invoke({
-                "query": query,
-                "context": str(context)
-            })
+            response = chain.invoke({"query": query, "context": str(context)})
 
             # Parse response
             content = response.content
@@ -310,7 +357,9 @@ class EntityExtractor:
                         text=entity_data.get("text", ""),
                         entity_type=entity_type,
                         confidence=entity_data.get("confidence", 0.7),
-                        normalized_form=entity_data.get("normalized", entity_data.get("text", "").lower())
+                        normalized_form=entity_data.get(
+                            "normalized", entity_data.get("text", "").lower()
+                        ),
                     )
                     entities.append(entity)
                 except (ValueError, KeyError) as e:
@@ -322,7 +371,7 @@ class EntityExtractor:
             logger.warning(f"LLM entity extraction failed: {e}")
             return []
 
-    def _merge_entities(self, entities: List[ExtractedEntity]) -> List[ExtractedEntity]:
+    def _merge_entities(self, entities: list[ExtractedEntity]) -> list[ExtractedEntity]:
         """Merge overlapping or duplicate entities."""
         if not entities:
             return entities
@@ -341,8 +390,10 @@ class EntityExtractor:
             # Check for overlaps with existing entities
             is_overlapping = False
             for existing in merged:
-                if (entity.text.lower() in existing.text.lower() or
-                    existing.text.lower() in entity.text.lower()):
+                if (
+                    entity.text.lower() in existing.text.lower()
+                    or existing.text.lower() in entity.text.lower()
+                ):
                     # Keep the one with higher confidence
                     if entity.confidence > existing.confidence:
                         merged.remove(existing)
@@ -374,31 +425,49 @@ class QueryExpander:
         # Load built-in synonym mappings
         self.built_in_synonyms = self._load_built_in_synonyms()
 
-    def _load_built_in_synonyms(self) -> Dict[str, List[str]]:
+    def _load_built_in_synonyms(self) -> dict[str, list[str]]:
         """Load built-in neuroimaging synonyms."""
         return {
-            "fmri": ["functional mri", "functional magnetic resonance imaging", "bold fmri"],
+            "fmri": [
+                "functional mri",
+                "functional magnetic resonance imaging",
+                "bold fmri",
+            ],
             "dmn": ["default mode network", "default network", "resting state network"],
             "roi": ["region of interest", "regions of interest"],
             "glm": ["general linear model", "general linear models"],
             "svm": ["support vector machine", "support vector machines"],
             "pca": ["principal component analysis", "principal components analysis"],
-            "ica": ["independent component analysis", "independent components analysis"],
-            "bold": ["blood oxygen level dependent", "blood oxygenation level dependent"],
+            "ica": [
+                "independent component analysis",
+                "independent components analysis",
+            ],
+            "bold": [
+                "blood oxygen level dependent",
+                "blood oxygenation level dependent",
+            ],
             "preprocessing": ["pre-processing", "data preprocessing"],
-            "connectivity": ["functional connectivity", "effective connectivity", "structural connectivity"],
-            "activation": ["brain activation", "neural activation", "cortical activation"],
+            "connectivity": [
+                "functional connectivity",
+                "effective connectivity",
+                "structural connectivity",
+            ],
+            "activation": [
+                "brain activation",
+                "neural activation",
+                "cortical activation",
+            ],
             "contrast": ["statistical contrast", "contrasts", "comparison"],
             "cluster": ["brain cluster", "activation cluster", "statistical cluster"],
             "threshold": ["statistical threshold", "significance threshold"],
-            "correction": ["multiple comparison correction", "multiple comparisons correction"],
+            "correction": [
+                "multiple comparison correction",
+                "multiple comparisons correction",
+            ],
         }
 
     def expand_query(
-        self,
-        query: str,
-        entities: List[ExtractedEntity],
-        context: Dict[str, Any]
+        self, query: str, entities: list[ExtractedEntity], context: dict[str, Any]
     ) -> QueryExpansion:
         """
         Expand query with synonyms and related terms.
@@ -446,10 +515,10 @@ class QueryExpander:
             synonyms=synonyms,
             related_concepts=related_concepts,
             domain_terms=domain_terms,
-            confidence=confidence
+            confidence=confidence,
         )
 
-    def _get_synonyms(self, term: str) -> List[str]:
+    def _get_synonyms(self, term: str) -> list[str]:
         """Get synonyms for a term."""
         term = term.lower().strip()
 
@@ -471,9 +540,9 @@ class QueryExpander:
 
     def _calculate_expansion_confidence(
         self,
-        expanded_terms: Dict[str, List[str]],
-        synonyms: Dict[str, List[str]],
-        related_concepts: List[str]
+        expanded_terms: dict[str, list[str]],
+        synonyms: dict[str, list[str]],
+        related_concepts: list[str],
     ) -> float:
         """Calculate confidence score for query expansion."""
         if not expanded_terms and not related_concepts:
@@ -481,7 +550,9 @@ class QueryExpander:
 
         # Base confidence on number of expansions found
         expansion_score = min(len(expanded_terms) / 5.0, 1.0)  # Max 5 expansions
-        concept_score = min(len(related_concepts) / 10.0, 0.3)  # Max 10 concepts, 30% weight
+        concept_score = min(
+            len(related_concepts) / 10.0, 0.3
+        )  # Max 10 concepts, 30% weight
 
         return min(expansion_score + concept_score, 1.0)
 
@@ -522,40 +593,74 @@ class AdvancedQueryParser:
 
         logger.info("Advanced Query Parser initialized")
 
-    def _compile_intent_patterns(self) -> Dict[QueryIntent, List[re.Pattern]]:
+    def _compile_intent_patterns(self) -> dict[QueryIntent, list[re.Pattern]]:
         """Compile regex patterns for intent classification."""
         return {
             QueryIntent.ANALYSIS: [
-                re.compile(r'\b(?:analyze|analysis|examine|investigate|study|explore)\b', re.IGNORECASE),
-                re.compile(r'\b(?:glm|statistical|statistics|test|model)\b', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:analyze|analysis|examine|investigate|study|explore)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:glm|statistical|statistics|test|model)\b", re.IGNORECASE
+                ),
             ],
             QueryIntent.COMPARISON: [
-                re.compile(r'\b(?:compare|comparison|versus|vs|between|difference|contrast)\b', re.IGNORECASE),
-                re.compile(r'\b(?:group|condition|task).*(?:difference|compare|contrast)\b', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:compare|comparison|versus|vs|between|difference|contrast)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:group|condition|task).*(?:difference|compare|contrast)\b",
+                    re.IGNORECASE,
+                ),
             ],
             QueryIntent.CORRELATION: [
-                re.compile(r'\b(?:correlat|relationship|association|connect|link)\b', re.IGNORECASE),
-                re.compile(r'\b(?:connectivity|network|functional connectivity)\b', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:correlat|relationship|association|connect|link)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:connectivity|network|functional connectivity)\b",
+                    re.IGNORECASE,
+                ),
             ],
             QueryIntent.PREDICTION: [
-                re.compile(r'\b(?:predict|prediction|classify|classification|machine learning|svm|random forest)\b', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:predict|prediction|classify|classification|machine learning|svm|random forest)\b",
+                    re.IGNORECASE,
+                )
             ],
             QueryIntent.VISUALIZATION: [
-                re.compile(r'\b(?:visualiz|plot|display|show|render|image|figure)\b', re.IGNORECASE),
-                re.compile(r'\b(?:brain map|activation map|statistical map)\b', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:visualiz|plot|display|show|render|image|figure)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:brain map|activation map|statistical map)\b", re.IGNORECASE
+                ),
             ],
             QueryIntent.SEARCH: [
-                re.compile(r'\b(?:search|find|locate|identify|discover|look for)\b', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:search|find|locate|identify|discover|look for)\b",
+                    re.IGNORECASE,
+                )
             ],
             QueryIntent.PREPROCESSING: [
-                re.compile(r'\b(?:preprocess|preprocessing|normalize|smooth|register|skull strip)\b', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:preprocess|preprocessing|normalize|smooth|register|skull strip)\b",
+                    re.IGNORECASE,
+                )
             ],
             QueryIntent.META_ANALYSIS: [
-                re.compile(r'\b(?:meta.analysis|coordinate.based|activation likelihood)\b', re.IGNORECASE)
-            ]
+                re.compile(
+                    r"\b(?:meta.analysis|coordinate.based|activation likelihood)\b",
+                    re.IGNORECASE,
+                )
+            ],
         }
 
-    def parse(self, query: str, context: Optional[Dict[str, Any]] = None) -> ParsedQuery:
+    def parse(self, query: str, context: dict[str, Any] | None = None) -> ParsedQuery:
         """
         Parse a query with advanced NLP and context awareness.
 
@@ -592,7 +697,9 @@ class AdvancedQueryParser:
             context_vector = self._compute_context_vector(query, expansion)
 
         # Calculate complexity score
-        complexity_score = self._calculate_complexity(query, entities, secondary_intents)
+        complexity_score = self._calculate_complexity(
+            query, entities, secondary_intents
+        )
 
         # Calculate overall confidence
         confidence = self._calculate_confidence(
@@ -614,8 +721,10 @@ class AdvancedQueryParser:
                 "context_used": bool(context),
                 "entity_count": len(entities),
                 "expansion_terms": len(expansion.expanded_terms) if expansion else 0,
-                "has_coordinates": any(e.entity_type == EntityType.COORDINATE for e in entities)
-            }
+                "has_coordinates": any(
+                    e.entity_type == EntityType.COORDINATE for e in entities
+                ),
+            },
         )
 
         logger.info(
@@ -628,17 +737,17 @@ class AdvancedQueryParser:
     def _normalize_query(self, query: str) -> str:
         """Normalize query text."""
         # Remove extra whitespace
-        normalized = re.sub(r'\s+', ' ', query.strip())
+        normalized = re.sub(r"\s+", " ", query.strip())
 
         # Expand common abbreviations
         abbreviations = {
-            r'\bfmri\b': 'functional MRI',
-            r'\broi\b': 'region of interest',
-            r'\bdmn\b': 'default mode network',
-            r'\bglm\b': 'general linear model',
-            r'\bsvm\b': 'support vector machine',
-            r'\bpca\b': 'principal component analysis',
-            r'\bica\b': 'independent component analysis'
+            r"\bfmri\b": "functional MRI",
+            r"\broi\b": "region of interest",
+            r"\bdmn\b": "default mode network",
+            r"\bglm\b": "general linear model",
+            r"\bsvm\b": "support vector machine",
+            r"\bpca\b": "principal component analysis",
+            r"\bica\b": "independent component analysis",
         }
 
         for abbrev, expansion in abbreviations.items():
@@ -646,7 +755,7 @@ class AdvancedQueryParser:
 
         return normalized
 
-    def _classify_intent(self, query: str) -> Tuple[QueryIntent, List[QueryIntent]]:
+    def _classify_intent(self, query: str) -> tuple[QueryIntent, list[QueryIntent]]:
         """Classify the primary and secondary intents of a query."""
         intent_scores = {}
 
@@ -666,17 +775,16 @@ class AdvancedQueryParser:
 
         # Get secondary intents (score > 0 and != primary)
         secondary_intents = [
-            intent for intent, score in intent_scores.items()
+            intent
+            for intent, score in intent_scores.items()
             if score > 0 and intent != primary_intent
         ]
 
         return primary_intent, secondary_intents
 
     def _compute_context_vector(
-        self,
-        query: str,
-        expansion: QueryExpansion
-    ) -> Optional[np.ndarray]:
+        self, query: str, expansion: QueryExpansion
+    ) -> np.ndarray | None:
         """Compute context vector for semantic similarity."""
         if not self.embeddings:
             return None
@@ -685,7 +793,7 @@ class AdvancedQueryParser:
             # Combine original query with expansions
             expanded_text = query
             if expansion and expansion.expanded_terms:
-                for term, synonyms in expansion.expanded_terms.items():
+                for _term, synonyms in expansion.expanded_terms.items():
                     expanded_text += " " + " ".join(synonyms[:3])  # Add top 3 synonyms
 
             # Compute embedding
@@ -699,31 +807,33 @@ class AdvancedQueryParser:
     def _calculate_complexity(
         self,
         query: str,
-        entities: List[ExtractedEntity],
-        secondary_intents: List[QueryIntent]
+        entities: list[ExtractedEntity],
+        secondary_intents: list[QueryIntent],
     ) -> float:
         """Calculate query complexity score (0-1)."""
         complexity_factors = [
             len(query.split()) / 50.0,  # Length factor (max 50 words = 1.0)
             len(entities) / 10.0,  # Entity factor (max 10 entities = 1.0)
             len(secondary_intents) / 3.0,  # Multi-intent factor (max 3 = 1.0)
-            query.count('?') / 3.0,  # Question factor (max 3 questions = 1.0)
-            query.count(' and ') / 5.0,  # Conjunction factor (max 5 = 1.0)
-            query.count(' or ') / 5.0,  # Disjunction factor (max 5 = 1.0)
+            query.count("?") / 3.0,  # Question factor (max 3 questions = 1.0)
+            query.count(" and ") / 5.0,  # Conjunction factor (max 5 = 1.0)
+            query.count(" or ") / 5.0,  # Disjunction factor (max 5 = 1.0)
         ]
 
         # Weighted average
         weights = [0.2, 0.3, 0.2, 0.1, 0.1, 0.1]
-        complexity = sum(f * w for f, w in zip(complexity_factors, weights))
+        complexity = sum(
+            f * w for f, w in zip(complexity_factors, weights, strict=False)
+        )
 
         return min(complexity, 1.0)
 
     def _calculate_confidence(
         self,
-        entities: List[ExtractedEntity],
+        entities: list[ExtractedEntity],
         expansion: QueryExpansion,
         primary_intent: QueryIntent,
-        complexity_score: float
+        complexity_score: float,
     ) -> float:
         """Calculate overall parsing confidence."""
         factors = []
@@ -775,7 +885,10 @@ class AdvancedQueryParser:
             parsed2 = self.parse(query2)
 
             # Compute cosine similarity of context vectors
-            if parsed1.context_vector is not None and parsed2.context_vector is not None:
+            if (
+                parsed1.context_vector is not None
+                and parsed2.context_vector is not None
+            ):
                 dot_product = np.dot(parsed1.context_vector, parsed2.context_vector)
                 norm1 = np.linalg.norm(parsed1.context_vector)
                 norm2 = np.linalg.norm(parsed2.context_vector)
@@ -792,9 +905,7 @@ class AdvancedQueryParser:
 
 # Factory function
 def create_advanced_parser(
-    domain_knowledge=None,
-    embeddings=None,
-    llm=None
+    domain_knowledge=None, embeddings=None, llm=None
 ) -> AdvancedQueryParser:
     """
     Create an advanced query parser instance.

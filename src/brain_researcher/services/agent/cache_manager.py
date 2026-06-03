@@ -10,14 +10,14 @@ import json
 import logging
 import pickle
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Union
 from functools import wraps
+from typing import Any
 
 import redis
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,9 @@ class CachePolicy(str, Enum):
     """Cache policies for different types of operations."""
 
     AGGRESSIVE = "aggressive"  # Cache everything, long TTL
-    MODERATE = "moderate"     # Cache most things, medium TTL
+    MODERATE = "moderate"  # Cache most things, medium TTL
     CONSERVATIVE = "conservative"  # Cache only expensive operations, short TTL
-    DISABLED = "disabled"     # No caching
+    DISABLED = "disabled"  # No caching
 
 
 class CacheKeyType(str, Enum):
@@ -51,8 +51,8 @@ class CacheMetrics:
     total_sets: int = 0
     total_evictions: int = 0
     total_invalidations: int = 0
-    hit_latency_ms: List[float] = field(default_factory=list)
-    miss_latency_ms: List[float] = field(default_factory=list)
+    hit_latency_ms: list[float] = field(default_factory=list)
+    miss_latency_ms: list[float] = field(default_factory=list)
     cache_size_bytes: int = 0
     last_updated: float = field(default_factory=time.time)
 
@@ -65,12 +65,20 @@ class CacheMetrics:
     @property
     def avg_hit_latency_ms(self) -> float:
         """Average latency for cache hits."""
-        return sum(self.hit_latency_ms) / len(self.hit_latency_ms) if self.hit_latency_ms else 0.0
+        return (
+            sum(self.hit_latency_ms) / len(self.hit_latency_ms)
+            if self.hit_latency_ms
+            else 0.0
+        )
 
     @property
     def avg_miss_latency_ms(self) -> float:
         """Average latency for cache misses (includes computation time)."""
-        return sum(self.miss_latency_ms) / len(self.miss_latency_ms) if self.miss_latency_ms else 0.0
+        return (
+            sum(self.miss_latency_ms) / len(self.miss_latency_ms)
+            if self.miss_latency_ms
+            else 0.0
+        )
 
 
 @dataclass
@@ -85,7 +93,7 @@ class CacheEntry:
     last_accessed: float = field(default_factory=time.time)
     key_type: CacheKeyType = CacheKeyType.QUERY_RESULT
     size_bytes: int = 0
-    tags: Set[str] = field(default_factory=set)
+    tags: set[str] = field(default_factory=set)
 
     @property
     def is_expired(self) -> bool:
@@ -113,9 +121,9 @@ class CacheKeyGenerator:
     def generate_key(
         self,
         query: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
         key_type: CacheKeyType = CacheKeyType.QUERY_RESULT,
-        **kwargs
+        **kwargs,
     ) -> str:
         """
         Generate a deterministic cache key.
@@ -134,11 +142,11 @@ class CacheKeyGenerator:
             "query": self._normalize_query(query),
             "context": self._normalize_context(context or {}),
             "type": key_type.value,
-            "kwargs": self._normalize_context(kwargs)
+            "kwargs": self._normalize_context(kwargs),
         }
 
         # Create deterministic JSON representation
-        key_data = json.dumps(components, sort_keys=True, separators=(',', ':'))
+        key_data = json.dumps(components, sort_keys=True, separators=(",", ":"))
 
         # Generate hash
         key_hash = hashlib.sha256(key_data.encode()).hexdigest()[:32]
@@ -154,17 +162,17 @@ class CacheKeyGenerator:
         normalized = " ".join(query.strip().lower().split())
         return normalized
 
-    def _normalize_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_context(self, context: dict[str, Any]) -> dict[str, Any]:
         """Normalize context dictionary for consistent key generation."""
         normalized = {}
 
         for key, value in context.items():
             # Skip non-deterministic values
-            if key in ['timestamp', 'session_id', 'request_id']:
+            if key in ["timestamp", "session_id", "request_id"]:
                 continue
 
             # Convert to string for consistency
-            if isinstance(value, (dict, list)):
+            if isinstance(value, dict | list):
                 normalized[key] = json.dumps(value, sort_keys=True)
             else:
                 normalized[key] = str(value)
@@ -186,11 +194,11 @@ class QueryCacheManager:
 
     def __init__(
         self,
-        redis_client: Optional[redis.Redis] = None,
+        redis_client: redis.Redis | None = None,
         ttl_seconds: int = 3600,
         max_memory_mb: int = 512,
         policy: CachePolicy = CachePolicy.MODERATE,
-        namespace: str = "brain_researcher"
+        namespace: str = "brain_researcher",
     ):
         """
         Initialize the cache manager.
@@ -218,7 +226,7 @@ class QueryCacheManager:
         self.metrics = CacheMetrics()
 
         # Cache invalidation tracking
-        self.invalidation_patterns: Dict[str, List[str]] = {}
+        self.invalidation_patterns: dict[str, list[str]] = {}
 
         # Policy-specific configurations
         self.policy_config = self._get_policy_config()
@@ -229,7 +237,8 @@ class QueryCacheManager:
         """Create Redis client with fallback to fakeredis for testing."""
         try:
             import os
-            redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+
+            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
             client = redis.from_url(redis_url, decode_responses=False)
 
             # Test connection
@@ -243,11 +252,12 @@ class QueryCacheManager:
 
             try:
                 import fakeredis
+
                 return fakeredis.FakeRedis(decode_responses=False)
             except ImportError:
                 raise Exception("Neither Redis nor fakeredis available")
 
-    def _get_policy_config(self) -> Dict[str, Any]:
+    def _get_policy_config(self) -> dict[str, Any]:
         """Get configuration based on cache policy."""
         configs = {
             CachePolicy.AGGRESSIVE: {
@@ -268,8 +278,8 @@ class QueryCacheManager:
             CachePolicy.DISABLED: {
                 "default_ttl": 0,
                 "cache_everything": False,
-                "min_execution_time": float('inf'),  # Never cache
-            }
+                "min_execution_time": float("inf"),  # Never cache
+            },
         }
 
         return configs.get(self.policy, configs[CachePolicy.MODERATE])
@@ -278,10 +288,10 @@ class QueryCacheManager:
         self,
         key: str,
         compute_fn: Callable[[], Any],
-        ttl_seconds: Optional[int] = None,
+        ttl_seconds: int | None = None,
         force_refresh: bool = False,
         key_type: CacheKeyType = CacheKeyType.QUERY_RESULT,
-        tags: Optional[Set[str]] = None
+        tags: set[str] | None = None,
     ) -> Any:
         """
         Get value from cache or compute if not present.
@@ -376,7 +386,9 @@ class QueryCacheManager:
             cache_entry.last_accessed = time.time()
 
             # Store updated entry
-            self.redis.set(key, pickle.dumps(cache_entry), ex=int(cache_entry.ttl_seconds))
+            self.redis.set(
+                key, pickle.dumps(cache_entry), ex=int(cache_entry.ttl_seconds)
+            )
 
             return cache_entry.value
 
@@ -390,7 +402,7 @@ class QueryCacheManager:
         value: Any,
         ttl_seconds: int,
         key_type: CacheKeyType,
-        tags: Set[str]
+        tags: set[str],
     ):
         """Set value in Redis cache."""
         try:
@@ -406,7 +418,7 @@ class QueryCacheManager:
                 ttl_seconds=ttl_seconds,
                 key_type=key_type,
                 size_bytes=size_bytes,
-                tags=tags
+                tags=tags,
             )
 
             # Serialize and store
@@ -429,9 +441,9 @@ class QueryCacheManager:
 
     def invalidate(
         self,
-        pattern: Optional[str] = None,
-        tags: Optional[Set[str]] = None,
-        key_type: Optional[CacheKeyType] = None
+        pattern: str | None = None,
+        tags: set[str] | None = None,
+        key_type: CacheKeyType | None = None,
     ) -> int:
         """
         Invalidate cache entries by pattern, tags, or key type.
@@ -485,9 +497,9 @@ class QueryCacheManager:
 
     def warm_cache(
         self,
-        queries: List[str],
-        context_list: Optional[List[Dict[str, Any]]] = None,
-        compute_fn: Optional[Callable[[str, Dict[str, Any]], Any]] = None
+        queries: list[str],
+        context_list: list[dict[str, Any]] | None = None,
+        compute_fn: Callable[[str, dict[str, Any]], Any] | None = None,
     ):
         """
         Warm the cache with common queries.
@@ -514,7 +526,7 @@ class QueryCacheManager:
                 self.get_or_compute(
                     cache_key,
                     lambda q=query, c=context: compute_fn(q, c),
-                    tags={"warmup"}
+                    tags={"warmup"},
                 )
 
             except Exception as e:
@@ -522,12 +534,12 @@ class QueryCacheManager:
 
         logger.info("Cache warming completed")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get comprehensive cache statistics."""
         try:
             # Get Redis info
             redis_info = self.redis.info()
-            memory_used = redis_info.get('used_memory', 0)
+            memory_used = redis_info.get("used_memory", 0)
 
             # Calculate additional metrics
             total_requests = self.metrics.total_hits + self.metrics.total_misses
@@ -543,10 +555,15 @@ class QueryCacheManager:
                 "avg_miss_latency_ms": self.metrics.avg_miss_latency_ms,
                 "memory_used_bytes": memory_used,
                 "memory_limit_bytes": self.max_memory_mb * 1024 * 1024,
-                "memory_usage_percent": (memory_used / (self.max_memory_mb * 1024 * 1024)) * 100,
+                "memory_usage_percent": (
+                    memory_used / (self.max_memory_mb * 1024 * 1024)
+                )
+                * 100,
                 "policy": self.policy.value,
                 "default_ttl_seconds": self.policy_config["default_ttl"],
-                "last_updated": datetime.fromtimestamp(self.metrics.last_updated).isoformat()
+                "last_updated": datetime.fromtimestamp(
+                    self.metrics.last_updated
+                ).isoformat(),
             }
 
             return stats
@@ -580,7 +597,7 @@ class QueryCacheManager:
 def cached(
     ttl_seconds: int = 3600,
     key_type: CacheKeyType = CacheKeyType.QUERY_RESULT,
-    cache_manager: Optional[QueryCacheManager] = None
+    cache_manager: QueryCacheManager | None = None,
 ):
     """
     Decorator for automatic function result caching.
@@ -593,6 +610,7 @@ def cached(
     Returns:
         Decorated function with caching
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -603,11 +621,7 @@ def cached(
                 cache_manager = get_global_cache_manager()
 
             # Generate cache key from function name and arguments
-            key_data = {
-                "function": func.__name__,
-                "args": str(args),
-                "kwargs": kwargs
-            }
+            key_data = {"function": func.__name__, "args": str(args), "kwargs": kwargs}
 
             cache_key = cache_manager.key_generator.generate_key(
                 str(key_data), key_type=key_type
@@ -618,15 +632,16 @@ def cached(
                 cache_key,
                 lambda: func(*args, **kwargs),
                 ttl_seconds=ttl_seconds,
-                key_type=key_type
+                key_type=key_type,
             )
 
         return wrapper
+
     return decorator
 
 
 # Global cache manager instance
-_global_cache_manager: Optional[QueryCacheManager] = None
+_global_cache_manager: QueryCacheManager | None = None
 
 
 def get_global_cache_manager() -> QueryCacheManager:

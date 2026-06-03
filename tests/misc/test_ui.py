@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Test Brain Researcher UI and capture screenshots"""
 
+
 from playwright.sync_api import sync_playwright
-import time
+
 
 def test_brain_researcher_ui():
     with sync_playwright() as p:
@@ -16,7 +17,9 @@ def test_brain_researcher_ui():
         try:
             # First try the root URL
             print("Navigating to http://localhost:3001/")
-            response = page.goto("http://localhost:3001/", wait_until="networkidle", timeout=10000)
+            response = page.goto(
+                "http://localhost:3001/", wait_until="networkidle", timeout=10000
+            )
             print(f"Response status: {response.status if response else 'No response'}")
 
             # Take a screenshot
@@ -46,7 +49,9 @@ def test_brain_researcher_ui():
             # Try to find and click on elements
             try:
                 # Look for the main demo button
-                demo_button = page.locator('button:has-text("demo")', ).first
+                demo_button = page.locator(
+                    'button:has-text("demo")',
+                ).first
                 if demo_button.is_visible():
                     print("✓ Demo button is visible")
             except:
@@ -70,7 +75,11 @@ def test_brain_researcher_ui():
             for path in ["/", "/auth/signin", "/dashboard", "/chat"]:
                 try:
                     print(f"\nTrying path: {path}")
-                    page.goto(f"http://localhost:3001{path}", wait_until="domcontentloaded", timeout=5000)
+                    page.goto(
+                        f"http://localhost:3001{path}",
+                        wait_until="domcontentloaded",
+                        timeout=5000,
+                    )
                     page.screenshot(path=f"ui_screenshot_{path.replace('/', '_')}.png")
                     print(f"Screenshot saved for {path}")
                 except Exception as e2:
@@ -79,6 +88,7 @@ def test_brain_researcher_ui():
         finally:
             browser.close()
             print("\nTest complete!")
+
 
 if __name__ == "__main__":
     test_brain_researcher_ui()

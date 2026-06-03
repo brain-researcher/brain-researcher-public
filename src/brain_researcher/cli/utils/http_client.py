@@ -5,9 +5,11 @@ Provides convenient functions for making requests to the orchestrator API
 with proper error handling and formatting.
 """
 
-import os
 import json
-from typing import Dict, Any, Optional, AsyncIterator
+import os
+from collections.abc import AsyncIterator
+from typing import Any
+
 import httpx
 from rich.console import Console
 
@@ -59,10 +61,8 @@ def format_http_error(response: httpx.Response) -> str:
 
 
 async def api_get(
-    path: str,
-    params: Optional[Dict[str, Any]] = None,
-    timeout: float = 30.0
-) -> Dict[str, Any]:
+    path: str, params: dict[str, Any] | None = None, timeout: float = 30.0
+) -> dict[str, Any]:
     """
     Make a GET request to the orchestrator API.
 
@@ -91,16 +91,18 @@ async def api_get(
         console.print(f"[red]Error:[/red] {error_msg}")
         raise
     except httpx.ConnectError:
-        console.print(f"[red]Error:[/red] Could not connect to orchestrator at {base_url}")
-        console.print(f"[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]")
+        console.print(
+            f"[red]Error:[/red] Could not connect to orchestrator at {base_url}"
+        )
+        console.print(
+            "[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]"
+        )
         raise
 
 
 async def api_post(
-    path: str,
-    json_data: Dict[str, Any],
-    timeout: float = 30.0
-) -> Dict[str, Any]:
+    path: str, json_data: dict[str, Any], timeout: float = 30.0
+) -> dict[str, Any]:
     """
     Make a POST request to the orchestrator API.
 
@@ -129,15 +131,17 @@ async def api_post(
         console.print(f"[red]Error:[/red] {error_msg}")
         raise
     except httpx.ConnectError:
-        console.print(f"[red]Error:[/red] Could not connect to orchestrator at {base_url}")
-        console.print(f"[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]")
+        console.print(
+            f"[red]Error:[/red] Could not connect to orchestrator at {base_url}"
+        )
+        console.print(
+            "[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]"
+        )
         raise
 
 
 async def api_stream(
-    path: str,
-    params: Optional[Dict[str, Any]] = None,
-    timeout: float = 300.0
+    path: str, params: dict[str, Any] | None = None, timeout: float = 300.0
 ) -> AsyncIterator[str]:
     """
     Stream data from an SSE endpoint.
@@ -169,16 +173,18 @@ async def api_stream(
         console.print(f"[red]Error:[/red] {error_msg}")
         raise
     except httpx.ConnectError:
-        console.print(f"[red]Error:[/red] Could not connect to orchestrator at {base_url}")
-        console.print(f"[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]")
+        console.print(
+            f"[red]Error:[/red] Could not connect to orchestrator at {base_url}"
+        )
+        console.print(
+            "[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]"
+        )
         raise
 
 
 def api_get_sync(
-    path: str,
-    params: Optional[Dict[str, Any]] = None,
-    timeout: float = 30.0
-) -> Dict[str, Any]:
+    path: str, params: dict[str, Any] | None = None, timeout: float = 30.0
+) -> dict[str, Any]:
     """
     Make a synchronous GET request to the orchestrator API.
 
@@ -207,16 +213,18 @@ def api_get_sync(
         console.print(f"[red]Error:[/red] {error_msg}")
         raise
     except httpx.ConnectError:
-        console.print(f"[red]Error:[/red] Could not connect to orchestrator at {base_url}")
-        console.print(f"[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]")
+        console.print(
+            f"[red]Error:[/red] Could not connect to orchestrator at {base_url}"
+        )
+        console.print(
+            "[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]"
+        )
         raise
 
 
 def api_post_sync(
-    path: str,
-    json_data: Dict[str, Any],
-    timeout: float = 30.0
-) -> Dict[str, Any]:
+    path: str, json_data: dict[str, Any], timeout: float = 30.0
+) -> dict[str, Any]:
     """
     Make a synchronous POST request to the orchestrator API.
 
@@ -245,6 +253,10 @@ def api_post_sync(
         console.print(f"[red]Error:[/red] {error_msg}")
         raise
     except httpx.ConnectError:
-        console.print(f"[red]Error:[/red] Could not connect to orchestrator at {base_url}")
-        console.print(f"[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]")
+        console.print(
+            f"[red]Error:[/red] Could not connect to orchestrator at {base_url}"
+        )
+        console.print(
+            "[yellow]Tip:[/yellow] Start the orchestrator with: [cyan]br serve orchestrator[/cyan]"
+        )
         raise

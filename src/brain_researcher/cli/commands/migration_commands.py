@@ -3,8 +3,6 @@ BR-KG Migration CLI Commands.
 """
 
 import typer
-from pathlib import Path
-from typing import Optional
 
 from brain_researcher.services.br_kg.migrations.cli import cli as migration_cli
 
@@ -18,7 +16,7 @@ def create(name: str):
 
 
 @app.command()
-def up(target: Optional[str] = None):
+def up(target: str | None = None):
     """Apply pending migrations."""
     args = ["migrate"]
     if target:

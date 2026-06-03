@@ -17,7 +17,7 @@ import sys
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from brain_researcher.config.run_artifacts import get_metadata_root
@@ -40,7 +40,7 @@ def iso_local() -> str:
     return datetime.now(LA).isoformat(timespec="microseconds")
 
 
-def file_fingerprint(path: str) -> Dict[str, Any]:
+def file_fingerprint(path: str) -> dict[str, Any]:
     """
     Calculate SHA256 fingerprint and size for a file.
 
@@ -107,7 +107,7 @@ def redacted_path(path: str) -> str:
     return redacted
 
 
-def get_package_version(package_name: str) -> Optional[str]:
+def get_package_version(package_name: str) -> str | None:
     """
     Get installed package version.
 
@@ -118,7 +118,7 @@ def get_package_version(package_name: str) -> Optional[str]:
         Version string or None if not found
     """
     try:
-        from importlib.metadata import version, PackageNotFoundError
+        from importlib.metadata import PackageNotFoundError, version
 
         return version(package_name)
     except (ImportError, PackageNotFoundError):
@@ -131,7 +131,7 @@ def get_package_version(package_name: str) -> Optional[str]:
             return None
 
 
-def get_git_sha() -> Optional[str]:
+def get_git_sha() -> str | None:
     """
     Get current git commit SHA.
 
@@ -242,9 +242,9 @@ class RunRecorder:
     def start(
         self,
         phase: str,
-        run_id: Optional[str] = None,
-        trace_id: Optional[str] = None,
-        parent_span_id: Optional[str] = None,
+        run_id: str | None = None,
+        trace_id: str | None = None,
+        parent_span_id: str | None = None,
     ) -> str:
         """
         Start recording a new phase.
@@ -272,7 +272,7 @@ class RunRecorder:
 
         return self.run_id
 
-    def get_environment(self) -> Dict[str, Any]:
+    def get_environment(self) -> dict[str, Any]:
         """
         Get current environment information.
 
@@ -299,8 +299,8 @@ class RunRecorder:
         return self._env_cache
 
     def finish(
-        self, record: Dict[str, Any], categories: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        self, record: dict[str, Any], categories: list[str] | None = None
+    ) -> dict[str, Any]:
         """
         Finish recording and write to log files.
 
@@ -367,12 +367,12 @@ class RunRecorder:
     def record_planning(
         self,
         query: str,
-        tool_candidates: List[Dict[str, Any]],
+        tool_candidates: list[dict[str, Any]],
         selected_tool: str,
         candidate_count: int | None = None,
-        candidate_source_counts: Dict[str, int] | None = None,
+        candidate_source_counts: dict[str, int] | None = None,
         selected_tool_rank: int | None = None,
-        selected_tool_in_top_k: Dict[str, bool] | None = None,
+        selected_tool_in_top_k: dict[str, bool] | None = None,
         family_selected: bool | None = None,
         family_expand_success: bool | None = None,
         routing_latency_ms: float | None = None,
@@ -380,9 +380,9 @@ class RunRecorder:
         tool_spec: Any = None,
         llm_provider: str = None,
         llm_model: str = None,
-        llm_params: Dict[str, Any] = None,
+        llm_params: dict[str, Any] = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Record planning phase with tool selection.
 
@@ -444,16 +444,16 @@ class RunRecorder:
         self,
         query: str,
         selected_tool: str,
-        args_raw: Dict[str, Any],
-        args_resolved: Dict[str, Any],
+        args_raw: dict[str, Any],
+        args_resolved: dict[str, Any],
         validation_ok: bool,
-        validation_errors: List[str] = None,
-        input_files: List[str] = None,
-        output_files: List[str] = None,
+        validation_errors: list[str] = None,
+        input_files: list[str] = None,
+        output_files: list[str] = None,
         exit_code: int = 0,
         plan_cmd: str = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Record execution phase with full parameter tracing.
 
@@ -522,10 +522,10 @@ class RunRecorder:
         self,
         query: str,
         status: str,
-        checks: List[Dict[str, Any]] = None,
+        checks: list[dict[str, Any]] = None,
         notes: str = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Record review phase results.
 

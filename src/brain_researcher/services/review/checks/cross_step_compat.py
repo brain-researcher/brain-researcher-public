@@ -14,39 +14,87 @@ from brain_researcher.core.contracts.code_review import CodeReviewBundle, Review
 # Tool sets
 # ---------------------------------------------------------------------------
 
-_BANDPASS_TOOLS = frozenset({
-    "nilearn_clean_img", "nilearn_bandpass", "xcpd", "xcpd_denoise",
-    "butterworth_filter", "bandpass_filter", "fsl_regfilt",
-    "nilearn_preprocessing", "nilearn_signal_clean",
-})
+_BANDPASS_TOOLS = frozenset(
+    {
+        "nilearn_clean_img",
+        "nilearn_bandpass",
+        "xcpd",
+        "xcpd_denoise",
+        "butterworth_filter",
+        "bandpass_filter",
+        "fsl_regfilt",
+        "nilearn_preprocessing",
+        "nilearn_signal_clean",
+    }
+)
 
-_GLM_TOOLS = frozenset({
-    "glm_fit", "glm_first_level", "spm_glm", "nilearn_first_level_model",
-    "glm_contrasts", "first_level_model", "fsl_feat", "fsl_film_gls",
-    "fitlins", "statsmodels_glm",
-})
+_GLM_TOOLS = frozenset(
+    {
+        "glm_fit",
+        "glm_first_level",
+        "spm_glm",
+        "nilearn_first_level_model",
+        "glm_contrasts",
+        "first_level_model",
+        "fsl_feat",
+        "fsl_film_gls",
+        "fitlins",
+        "statsmodels_glm",
+    }
+)
 
-_CONFOUND_TOOLS = frozenset({
-    "confound_regression", "regress_confounds", "nilearn_clean_img",
-    "fsl_regfilt", "aroma_denoise", "fmriprep_confounds", "extract_confounds",
-})
+_CONFOUND_TOOLS = frozenset(
+    {
+        "confound_regression",
+        "regress_confounds",
+        "nilearn_clean_img",
+        "fsl_regfilt",
+        "aroma_denoise",
+        "fmriprep_confounds",
+        "extract_confounds",
+    }
+)
 
-_PREPROCESSING_TOOLS = frozenset({
-    "fmriprep", "nilearn_preprocessing", "xcpd", "xcpd_denoise",
-    "nilearn_clean_img", "nilearn_signal_clean",
-})
+_PREPROCESSING_TOOLS = frozenset(
+    {
+        "fmriprep",
+        "nilearn_preprocessing",
+        "xcpd",
+        "xcpd_denoise",
+        "nilearn_clean_img",
+        "nilearn_signal_clean",
+    }
+)
 
-_ATLAS_TOOLS = frozenset({
-    "parcellation_fetch", "label_transfer", "dmri_parcellate_connectome",
-    "nilearn_fetch_atlas", "extract_timeseries", "atlas_apply", "atlas_label",
-    "atlas_parcellate", "parcellate", "nilearn_masker", "extract_roi",
-})
+_ATLAS_TOOLS = frozenset(
+    {
+        "parcellation_fetch",
+        "label_transfer",
+        "dmri_parcellate_connectome",
+        "nilearn_fetch_atlas",
+        "extract_timeseries",
+        "atlas_apply",
+        "atlas_label",
+        "atlas_parcellate",
+        "parcellate",
+        "nilearn_masker",
+        "extract_roi",
+    }
+)
 
-_REGISTRATION_TOOLS = frozenset({
-    "coreg_register", "coreg_apply_xfm", "fsl_flirt", "fsl_fnirt",
-    "ants_registration", "antsRegistration", "mri_robust_register",
-    "spm_normalise", "spm_coreg",
-})
+_REGISTRATION_TOOLS = frozenset(
+    {
+        "coreg_register",
+        "coreg_apply_xfm",
+        "fsl_flirt",
+        "fsl_fnirt",
+        "ants_registration",
+        "antsRegistration",
+        "mri_robust_register",
+        "spm_normalise",
+        "spm_coreg",
+    }
+)
 
 # MNI space normalization — treat these as equivalent for matching purposes
 _MNI_ALIASES: dict[str, str] = {
@@ -62,6 +110,7 @@ _MNI_ALIASES: dict[str, str] = {
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _tool_name(step: dict) -> str:
     return str(step.get("tool") or "").lower()
@@ -108,6 +157,7 @@ def _extract_spaces(step: dict, *keys: str) -> set[str]:
 # Check functions
 # ---------------------------------------------------------------------------
 
+
 def bandpass_glm_drift_overlap(bundle: CodeReviewBundle) -> ReviewFinding | None:
     """Warn if bandpass filter and GLM drift model cover the same frequency range.
 
@@ -134,8 +184,15 @@ def bandpass_glm_drift_overlap(bundle: CodeReviewBundle) -> ReviewFinding | None
                 pass
 
         if tool in _GLM_TOOLS and glm_hp is None:
-            raw = _get_param(step, "high_pass", "hp", "highpass", "hp_filter",
-                             "drift_cutoff", "cosine_drift_cutoff")
+            raw = _get_param(
+                step,
+                "high_pass",
+                "hp",
+                "highpass",
+                "hp_filter",
+                "drift_cutoff",
+                "cosine_drift_cutoff",
+            )
             try:
                 glm_hp = float(raw)
             except (TypeError, ValueError):
@@ -145,7 +202,11 @@ def bandpass_glm_drift_overlap(bundle: CodeReviewBundle) -> ReviewFinding | None
         return None
 
     # Overlap: both filters active in similar range (within 2x)
-    ratio = max(bandpass_hp, glm_hp) / min(bandpass_hp, glm_hp) if min(bandpass_hp, glm_hp) > 0 else float("inf")
+    ratio = (
+        max(bandpass_hp, glm_hp) / min(bandpass_hp, glm_hp)
+        if min(bandpass_hp, glm_hp) > 0
+        else float("inf")
+    )
     if ratio <= 2.0:
         return ReviewFinding(
             rule_id="REVIEW_BANDPASS_GLM_DRIFT_OVERLAP",
@@ -162,7 +223,9 @@ def bandpass_glm_drift_overlap(bundle: CodeReviewBundle) -> ReviewFinding | None
     return None
 
 
-def preprocessing_stats_space_mismatch(bundle: CodeReviewBundle) -> ReviewFinding | None:
+def preprocessing_stats_space_mismatch(
+    bundle: CodeReviewBundle,
+) -> ReviewFinding | None:
     """Error if preprocessing output space differs from stats/atlas expected space."""
     preproc_spaces: set[str] = set()
     stats_spaces: set[str] = set()
@@ -171,11 +234,18 @@ def preprocessing_stats_space_mismatch(bundle: CodeReviewBundle) -> ReviewFindin
         tool = _tool_name(step)
         if tool in _PREPROCESSING_TOOLS:
             preproc_spaces |= _extract_spaces(
-                step, "output_space", "output_spaces", "target_space",
+                step,
+                "output_space",
+                "output_spaces",
+                "target_space",
             )
         if tool in (_ATLAS_TOOLS | _GLM_TOOLS):
             stats_spaces |= _extract_spaces(
-                step, "space", "target_space", "atlas_space", "input_space",
+                step,
+                "space",
+                "target_space",
+                "atlas_space",
+                "input_space",
             )
 
     if not preproc_spaces or not stats_spaces:
@@ -197,7 +267,9 @@ def preprocessing_stats_space_mismatch(bundle: CodeReviewBundle) -> ReviewFindin
     return None
 
 
-def bandpass_before_confound_regression(bundle: CodeReviewBundle) -> ReviewFinding | None:
+def bandpass_before_confound_regression(
+    bundle: CodeReviewBundle,
+) -> ReviewFinding | None:
     """Warn if a bandpass filter step precedes confound regression.
 
     Standard practice: regress confounds first, then bandpass, to avoid
@@ -247,11 +319,17 @@ def atlas_registration_space_mismatch(bundle: CodeReviewBundle) -> ReviewFinding
         tool = _tool_name(step)
         if tool in _REGISTRATION_TOOLS:
             reg_target_spaces |= _extract_spaces(
-                step, "target_space", "reference_space", "dest_space",
+                step,
+                "target_space",
+                "reference_space",
+                "dest_space",
             )
         if tool in _ATLAS_TOOLS:
             atlas_spaces |= _extract_spaces(
-                step, "space", "atlas_space", "target_space",
+                step,
+                "space",
+                "atlas_space",
+                "target_space",
             )
 
     if not reg_target_spaces or not atlas_spaces:

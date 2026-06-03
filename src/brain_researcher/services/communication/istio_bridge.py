@@ -5,25 +5,18 @@ This module provides a Python interface to interact with Istio service mesh
 capabilities, including traffic management, security policies, and observability.
 """
 
-import asyncio
-import json
 import logging
-import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Union, Callable
-from datetime import datetime, timedelta
-import yaml
+from datetime import datetime
+from typing import Any
 
-import aiohttp
-import kubernetes.client
-from kubernetes.client.rest import ApiException
-from kubernetes import config
 import httpx
-from prometheus_client.parser import text_string_to_metric_families
+import kubernetes.client
+from kubernetes import config
+from kubernetes.client.rest import ApiException
 
 from brain_researcher.core.utils.tool import tool
-
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ServiceMeshConfig:
     """Configuration for Istio service mesh integration"""
+
     namespace: str = "brain-researcher"
     istio_namespace: str = "istio-system"
     mesh_id: str = "brain-researcher-mesh"
@@ -46,18 +40,17 @@ class ServiceMeshConfig:
 @dataclass
 class TrafficPolicy:
     """Traffic management policy configuration"""
+
     service_name: str
     load_balancer: str = "ROUND_ROBIN"  # ROUND_ROBIN, LEAST_CONN, RANDOM, PASSTHROUGH
-    connection_pool: Optional[Dict] = None
-    circuit_breaker: Optional[Dict] = None
-    retry_policy: Optional[Dict] = None
-    timeout: Optional[str] = None
+    connection_pool: dict | None = None
+    circuit_breaker: dict | None = None
+    retry_policy: dict | None = None
+    timeout: str | None = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to Kubernetes resource format"""
-        policy = {
-            "loadBalancer": {"simple": self.load_balancer}
-        }
+        policy = {"loadBalancer": {"simple": self.load_balancer}}
 
         if self.connection_pool:
             policy["connectionPool"] = self.connection_pool
@@ -71,10 +64,11 @@ class TrafficPolicy:
 @dataclass
 class SecurityPolicy:
     """Security policy configuration"""
+
     service_name: str
     mtls_mode: str = "STRICT"  # STRICT, PERMISSIVE, DISABLE
-    authorization_rules: List[Dict] = None
-    jwt_rules: List[Dict] = None
+    authorization_rules: list[dict] = None
+    jwt_rules: list[dict] = None
 
     def __post_init__(self):
         if self.authorization_rules is None:
@@ -96,7 +90,7 @@ class IstioMetrics:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.client.aclose()
 
-    async def query_metric(self, query: str, time_range: Optional[str] = None) -> Dict:
+    async def query_metric(self, query: str, time_range: str | None = None) -> dict:
         """Query Prometheus metrics"""
         try:
             params = {"query": query}
@@ -104,8 +98,7 @@ class IstioMetrics:
                 params["time"] = time_range
 
             response = await self.client.get(
-                f"{self.prometheus_url}/api/v1/query",
-                params=params
+                f"{self.prometheus_url}/api/v1/query", params=params
             )
             response.raise_for_status()
             return response.json()
@@ -114,7 +107,7 @@ class IstioMetrics:
             logger.error(f"Failed to query metric {query}: {e}")
             return {"status": "error", "error": str(e)}
 
-    async def get_service_metrics(self, service_name: str, namespace: str) -> Dict:
+    async def get_service_metrics(self, service_name: str, namespace: str) -> dict:
         """Get comprehensive metrics for a specific service"""
         metrics = {}
 
@@ -142,12 +135,12 @@ class IstioMetrics:
 
         return metrics
 
-    async def get_mesh_overview(self) -> Dict:
+    async def get_mesh_overview(self) -> dict:
         """Get overview metrics for the entire service mesh"""
         overview = {}
 
         # Total request rate across mesh
-        query = 'sum(rate(istio_requests_total[5m]))'
+        query = "sum(rate(istio_requests_total[5m]))"
         overview["total_request_rate"] = await self.query_metric(query)
 
         # Success rate across mesh
@@ -155,11 +148,11 @@ class IstioMetrics:
         overview["overall_success_rate"] = await self.query_metric(query)
 
         # Service count
-        query = 'count(count by (destination_service_name)(istio_requests_total))'
+        query = "count(count by (destination_service_name)(istio_requests_total))"
         overview["service_count"] = await self.query_metric(query)
 
         # Active connections
-        query = 'sum(istio_tcp_connections_opened_total) - sum(istio_tcp_connections_closed_total)'
+        query = "sum(istio_tcp_connections_opened_total) - sum(istio_tcp_connections_closed_total)"
         overview["active_connections"] = await self.query_metric(query)
 
         return overview
@@ -181,23 +174,18 @@ class IstioTracing:
     async def get_traces(
         self,
         service: str,
-        operation: Optional[str] = None,
+        operation: str | None = None,
         lookback: str = "1h",
-        limit: int = 100
-    ) -> List[Dict]:
+        limit: int = 100,
+    ) -> list[dict]:
         """Get traces for a service"""
         try:
-            params = {
-                "service": service,
-                "lookback": lookback,
-                "limit": limit
-            }
+            params = {"service": service, "lookback": lookback, "limit": limit}
             if operation:
                 params["operation"] = operation
 
             response = await self.client.get(
-                f"{self.jaeger_url}/api/traces",
-                params=params
+                f"{self.jaeger_url}/api/traces", params=params
             )
             response.raise_for_status()
             return response.json().get("data", [])
@@ -206,7 +194,7 @@ class IstioTracing:
             logger.error(f"Failed to get traces for {service}: {e}")
             return []
 
-    async def get_service_operations(self, service: str) -> List[str]:
+    async def get_service_operations(self, service: str) -> list[str]:
         """Get available operations for a service"""
         try:
             response = await self.client.get(
@@ -221,10 +209,8 @@ class IstioTracing:
             return []
 
     async def analyze_trace_performance(
-        self,
-        service: str,
-        time_range: str = "1h"
-    ) -> Dict:
+        self, service: str, time_range: str = "1h"
+    ) -> dict:
         """Analyze performance patterns from traces"""
         traces = await self.get_traces(service, lookback=time_range)
 
@@ -259,7 +245,9 @@ class IstioTracing:
         return {
             "total_traces": len(traces),
             "total_spans": sum(span_counts),
-            "avg_spans_per_trace": sum(span_counts) / len(span_counts) if span_counts else 0,
+            "avg_spans_per_trace": (
+                sum(span_counts) / len(span_counts) if span_counts else 0
+            ),
             "error_count": error_count,
             "error_rate": error_count / n if n > 0 else 0,
             "duration_stats": {
@@ -268,15 +256,15 @@ class IstioTracing:
                 "mean": sum(durations) / n,
                 "p50": durations[int(n * 0.5)],
                 "p95": durations[int(n * 0.95)],
-                "p99": durations[int(n * 0.99)]
-            }
+                "p99": durations[int(n * 0.99)],
+            },
         }
 
 
 class IstioBridge:
     """Main Istio service mesh integration bridge"""
 
-    def __init__(self, config: Optional[ServiceMeshConfig] = None):
+    def __init__(self, config: ServiceMeshConfig | None = None):
         self.config = config or ServiceMeshConfig()
         self.k8s_client = None
         self.metrics = None
@@ -313,10 +301,8 @@ class IstioBridge:
 
     @tool
     async def apply_traffic_policy(
-        self,
-        service_name: str,
-        policy: TrafficPolicy
-    ) -> Dict[str, Any]:
+        self, service_name: str, policy: TrafficPolicy
+    ) -> dict[str, Any]:
         """Apply traffic management policy to a service"""
         if not self.k8s_client:
             return {"error": "Kubernetes client not available"}
@@ -329,15 +315,12 @@ class IstioBridge:
                 "metadata": {
                     "name": f"{service_name}-traffic-policy",
                     "namespace": self.config.namespace,
-                    "labels": {
-                        "app": "brain-researcher",
-                        "managed-by": "istio-bridge"
-                    }
+                    "labels": {"app": "brain-researcher", "managed-by": "istio-bridge"},
                 },
                 "spec": {
                     "host": f"{service_name}.{self.config.namespace}.svc.cluster.local",
-                    "trafficPolicy": policy.to_dict()
-                }
+                    "trafficPolicy": policy.to_dict(),
+                },
             }
 
             # Apply using kubectl
@@ -345,12 +328,12 @@ class IstioBridge:
 
             try:
                 # Try to get existing resource
-                existing = custom_api.get_namespaced_custom_object(
+                custom_api.get_namespaced_custom_object(
                     group="networking.istio.io",
                     version="v1beta1",
                     namespace=self.config.namespace,
                     plural="destinationrules",
-                    name=f"{service_name}-traffic-policy"
+                    name=f"{service_name}-traffic-policy",
                 )
 
                 # Update existing
@@ -360,7 +343,7 @@ class IstioBridge:
                     namespace=self.config.namespace,
                     plural="destinationrules",
                     name=f"{service_name}-traffic-policy",
-                    body=destination_rule
+                    body=destination_rule,
                 )
                 action = "updated"
 
@@ -372,7 +355,7 @@ class IstioBridge:
                         version="v1beta1",
                         namespace=self.config.namespace,
                         plural="destinationrules",
-                        body=destination_rule
+                        body=destination_rule,
                     )
                     action = "created"
                 else:
@@ -381,7 +364,7 @@ class IstioBridge:
             return {
                 "success": True,
                 "action": action,
-                "resource": result["metadata"]["name"]
+                "resource": result["metadata"]["name"],
             }
 
         except Exception as e:
@@ -390,10 +373,8 @@ class IstioBridge:
 
     @tool
     async def apply_security_policy(
-        self,
-        service_name: str,
-        policy: SecurityPolicy
-    ) -> Dict[str, Any]:
+        self, service_name: str, policy: SecurityPolicy
+    ) -> dict[str, Any]:
         """Apply security policy to a service"""
         if not self.k8s_client:
             return {"error": "Kubernetes client not available"}
@@ -409,21 +390,12 @@ class IstioBridge:
                 "metadata": {
                     "name": f"{service_name}-peer-auth",
                     "namespace": self.config.namespace,
-                    "labels": {
-                        "app": "brain-researcher",
-                        "managed-by": "istio-bridge"
-                    }
+                    "labels": {"app": "brain-researcher", "managed-by": "istio-bridge"},
                 },
                 "spec": {
-                    "selector": {
-                        "matchLabels": {
-                            "app": service_name
-                        }
-                    },
-                    "mtls": {
-                        "mode": policy.mtls_mode
-                    }
-                }
+                    "selector": {"matchLabels": {"app": service_name}},
+                    "mtls": {"mode": policy.mtls_mode},
+                },
             }
 
             try:
@@ -432,12 +404,24 @@ class IstioBridge:
                     version="v1beta1",
                     namespace=self.config.namespace,
                     plural="peerauthentications",
-                    body=peer_auth
+                    body=peer_auth,
                 )
-                results.append({"type": "PeerAuthentication", "action": "created", "name": result["metadata"]["name"]})
+                results.append(
+                    {
+                        "type": "PeerAuthentication",
+                        "action": "created",
+                        "name": result["metadata"]["name"],
+                    }
+                )
             except ApiException as e:
                 if e.status == 409:  # Already exists
-                    results.append({"type": "PeerAuthentication", "action": "exists", "name": f"{service_name}-peer-auth"})
+                    results.append(
+                        {
+                            "type": "PeerAuthentication",
+                            "action": "exists",
+                            "name": f"{service_name}-peer-auth",
+                        }
+                    )
                 else:
                     raise
 
@@ -451,17 +435,13 @@ class IstioBridge:
                         "namespace": self.config.namespace,
                         "labels": {
                             "app": "brain-researcher",
-                            "managed-by": "istio-bridge"
-                        }
+                            "managed-by": "istio-bridge",
+                        },
                     },
                     "spec": {
-                        "selector": {
-                            "matchLabels": {
-                                "app": service_name
-                            }
-                        },
-                        "rules": policy.authorization_rules
-                    }
+                        "selector": {"matchLabels": {"app": service_name}},
+                        "rules": policy.authorization_rules,
+                    },
                 }
 
                 try:
@@ -470,12 +450,24 @@ class IstioBridge:
                         version="v1beta1",
                         namespace=self.config.namespace,
                         plural="authorizationpolicies",
-                        body=auth_policy
+                        body=auth_policy,
                     )
-                    results.append({"type": "AuthorizationPolicy", "action": "created", "name": result["metadata"]["name"]})
+                    results.append(
+                        {
+                            "type": "AuthorizationPolicy",
+                            "action": "created",
+                            "name": result["metadata"]["name"],
+                        }
+                    )
                 except ApiException as e:
                     if e.status == 409:
-                        results.append({"type": "AuthorizationPolicy", "action": "exists", "name": f"{service_name}-auth-policy"})
+                        results.append(
+                            {
+                                "type": "AuthorizationPolicy",
+                                "action": "exists",
+                                "name": f"{service_name}-auth-policy",
+                            }
+                        )
                     else:
                         raise
 
@@ -486,7 +478,7 @@ class IstioBridge:
             return {"error": str(e)}
 
     @tool
-    async def get_service_health(self, service_name: str) -> Dict[str, Any]:
+    async def get_service_health(self, service_name: str) -> dict[str, Any]:
         """Get comprehensive health status for a service"""
         if not self.metrics:
             return {"error": "Metrics not available"}
@@ -494,8 +486,7 @@ class IstioBridge:
         try:
             # Get metrics
             service_metrics = await self.metrics.get_service_metrics(
-                service_name,
-                self.config.namespace
+                service_name, self.config.namespace
             )
 
             # Get trace analysis if tracing enabled
@@ -514,14 +505,14 @@ class IstioBridge:
                 "health_score": health_score,
                 "metrics": service_metrics,
                 "trace_analysis": trace_analysis,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
         except Exception as e:
             logger.error(f"Failed to get service health for {service_name}: {e}")
             return {"error": str(e)}
 
-    async def _calculate_health_score(self, metrics: Dict) -> Dict:
+    async def _calculate_health_score(self, metrics: dict) -> dict:
         """Calculate health score based on service metrics"""
         score = 100
         factors = []
@@ -555,12 +546,14 @@ class IstioBridge:
 
         return {
             "score": max(0, int(score)),
-            "status": "healthy" if score >= 80 else "degraded" if score >= 60 else "unhealthy",
-            "factors": factors
+            "status": (
+                "healthy" if score >= 80 else "degraded" if score >= 60 else "unhealthy"
+            ),
+            "factors": factors,
         }
 
     @tool
-    async def get_mesh_overview(self) -> Dict[str, Any]:
+    async def get_mesh_overview(self) -> dict[str, Any]:
         """Get overview of the entire service mesh"""
         if not self.metrics:
             return {"error": "Metrics not available"}
@@ -586,14 +579,14 @@ class IstioBridge:
                 "services": service_list,
                 "metrics": overview,
                 "config_status": config_status,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
         except Exception as e:
             logger.error(f"Failed to get mesh overview: {e}")
             return {"error": str(e)}
 
-    async def _get_istio_config_status(self) -> Dict:
+    async def _get_istio_config_status(self) -> dict:
         """Get status of Istio configuration objects"""
         if not self.k8s_client:
             return {"error": "Kubernetes client not available"}
@@ -608,16 +601,20 @@ class IstioBridge:
                 ("DestinationRule", "destinationrules"),
                 ("Gateway", "gateways"),
                 ("PeerAuthentication", "peerauthentications"),
-                ("AuthorizationPolicy", "authorizationpolicies")
+                ("AuthorizationPolicy", "authorizationpolicies"),
             ]
 
             for resource_type, plural in resource_types:
                 try:
                     resources = custom_api.list_namespaced_custom_object(
-                        group="networking.istio.io" if "authentication" not in plural else "security.istio.io",
+                        group=(
+                            "networking.istio.io"
+                            if "authentication" not in plural
+                            else "security.istio.io"
+                        ),
                         version="v1beta1",
                         namespace=self.config.namespace,
-                        plural=plural
+                        plural=plural,
                     )
                     status[resource_type] = len(resources.get("items", []))
                 except ApiException:
@@ -631,11 +628,8 @@ class IstioBridge:
 
     @tool
     async def enable_canary_deployment(
-        self,
-        service_name: str,
-        canary_version: str,
-        traffic_split: int = 10
-    ) -> Dict[str, Any]:
+        self, service_name: str, canary_version: str, traffic_split: int = 10
+    ) -> dict[str, Any]:
         """Enable canary deployment for a service"""
         if not self.k8s_client:
             return {"error": "Kubernetes client not available"}
@@ -653,41 +647,45 @@ class IstioBridge:
                     "labels": {
                         "app": "brain-researcher",
                         "managed-by": "istio-bridge",
-                        "deployment-type": "canary"
-                    }
+                        "deployment-type": "canary",
+                    },
                 },
                 "spec": {
-                    "hosts": [f"{service_name}.{self.config.namespace}.svc.cluster.local"],
+                    "hosts": [
+                        f"{service_name}.{self.config.namespace}.svc.cluster.local"
+                    ],
                     "http": [
                         {
                             "match": [{"headers": {"X-Canary": {"exact": "true"}}}],
-                            "route": [{
-                                "destination": {
-                                    "host": f"{service_name}.{self.config.namespace}.svc.cluster.local",
-                                    "subset": "canary"
+                            "route": [
+                                {
+                                    "destination": {
+                                        "host": f"{service_name}.{self.config.namespace}.svc.cluster.local",
+                                        "subset": "canary",
+                                    }
                                 }
-                            }]
+                            ],
                         },
                         {
                             "route": [
                                 {
                                     "destination": {
                                         "host": f"{service_name}.{self.config.namespace}.svc.cluster.local",
-                                        "subset": "stable"
+                                        "subset": "stable",
                                     },
-                                    "weight": 100 - traffic_split
+                                    "weight": 100 - traffic_split,
                                 },
                                 {
                                     "destination": {
                                         "host": f"{service_name}.{self.config.namespace}.svc.cluster.local",
-                                        "subset": "canary"
+                                        "subset": "canary",
                                     },
-                                    "weight": traffic_split
-                                }
+                                    "weight": traffic_split,
+                                },
                             ]
-                        }
-                    ]
-                }
+                        },
+                    ],
+                },
             }
 
             result = custom_api.create_namespaced_custom_object(
@@ -695,7 +693,7 @@ class IstioBridge:
                 version="v1beta1",
                 namespace=self.config.namespace,
                 plural="virtualservices",
-                body=virtual_service
+                body=virtual_service,
             )
 
             return {
@@ -704,7 +702,7 @@ class IstioBridge:
                 "service": service_name,
                 "canary_version": canary_version,
                 "traffic_split": f"{100 - traffic_split}% stable, {traffic_split}% canary",
-                "virtual_service": result["metadata"]["name"]
+                "virtual_service": result["metadata"]["name"],
             }
 
         except Exception as e:
@@ -713,10 +711,8 @@ class IstioBridge:
 
     @tool
     async def update_canary_traffic(
-        self,
-        service_name: str,
-        new_traffic_split: int
-    ) -> Dict[str, Any]:
+        self, service_name: str, new_traffic_split: int
+    ) -> dict[str, Any]:
         """Update traffic split for canary deployment"""
         if not self.k8s_client:
             return {"error": "Kubernetes client not available"}
@@ -731,7 +727,7 @@ class IstioBridge:
                 version="v1beta1",
                 namespace=self.config.namespace,
                 plural="virtualservices",
-                name=vs_name
+                name=vs_name,
             )
 
             # Update traffic weights
@@ -747,14 +743,14 @@ class IstioBridge:
                 namespace=self.config.namespace,
                 plural="virtualservices",
                 name=vs_name,
-                body=existing_vs
+                body=existing_vs,
             )
 
             return {
                 "success": True,
                 "service": service_name,
                 "updated_traffic_split": f"{100 - new_traffic_split}% stable, {new_traffic_split}% canary",
-                "virtual_service": result["metadata"]["name"]
+                "virtual_service": result["metadata"]["name"],
             }
 
         except Exception as e:
@@ -762,7 +758,7 @@ class IstioBridge:
             return {"error": str(e)}
 
     @tool
-    async def get_canary_metrics(self, service_name: str) -> Dict[str, Any]:
+    async def get_canary_metrics(self, service_name: str) -> dict[str, Any]:
         """Get metrics comparison between stable and canary versions"""
         if not self.metrics:
             return {"error": "Metrics not available"}
@@ -800,15 +796,15 @@ class IstioBridge:
                     "stable": {
                         "request_rate": stable_metrics,
                         "error_rate": stable_errors,
-                        "p95_latency": stable_latency
+                        "p95_latency": stable_latency,
                     },
                     "canary": {
                         "request_rate": canary_metrics,
                         "error_rate": canary_errors,
-                        "p95_latency": canary_latency
-                    }
+                        "p95_latency": canary_latency,
+                    },
                 },
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
         except Exception as e:
@@ -818,7 +814,7 @@ class IstioBridge:
 
 # Context manager for bridge lifecycle
 @asynccontextmanager
-async def istio_bridge(config: Optional[ServiceMeshConfig] = None):
+async def istio_bridge(config: ServiceMeshConfig | None = None):
     """Context manager for Istio bridge with proper resource cleanup"""
     bridge = IstioBridge(config)
     await bridge.initialize()
@@ -841,7 +837,7 @@ async def apply_brain_researcher_policies():
             ("br_kg-service", "LEAST_CONN"),
             ("agent-service", "ROUND_ROBIN"),
             ("web-ui-service", "LEAST_CONN"),
-            ("orchestrator-service", "ROUND_ROBIN")
+            ("orchestrator-service", "ROUND_ROBIN"),
         ]
 
         for service_name, lb_policy in services:
@@ -851,14 +847,17 @@ async def apply_brain_researcher_policies():
                 load_balancer=lb_policy,
                 connection_pool={
                     "tcp": {"maxConnections": 100, "connectTimeout": "30s"},
-                    "http": {"http1MaxPendingRequests": 50, "maxRequestsPerConnection": 10}
+                    "http": {
+                        "http1MaxPendingRequests": 50,
+                        "maxRequestsPerConnection": 10,
+                    },
                 },
                 circuit_breaker={
                     "consecutiveGatewayErrors": 5,
                     "interval": "30s",
-                    "baseEjectionTime": "30s"
+                    "baseEjectionTime": "30s",
                 },
-                timeout="60s"
+                timeout="60s",
             )
 
             result = await bridge.apply_traffic_policy(service_name, traffic_policy)
@@ -868,10 +867,20 @@ async def apply_brain_researcher_policies():
             security_policy = SecurityPolicy(
                 service_name=service_name,
                 mtls_mode="STRICT",
-                authorization_rules=[{
-                    "from": [{"source": {"principals": ["cluster.local/ns/brain-researcher/sa/*"]}}],
-                    "to": [{"operation": {"methods": ["GET", "POST"]}}]
-                }]
+                authorization_rules=[
+                    {
+                        "from": [
+                            {
+                                "source": {
+                                    "principals": [
+                                        "cluster.local/ns/brain-researcher/sa/*"
+                                    ]
+                                }
+                            }
+                        ],
+                        "to": [{"operation": {"methods": ["GET", "POST"]}}],
+                    }
+                ],
             )
 
             result = await bridge.apply_security_policy(service_name, security_policy)

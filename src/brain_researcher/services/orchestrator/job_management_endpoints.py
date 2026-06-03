@@ -4,42 +4,53 @@ Provides comprehensive job lifecycle management with real-time updates.
 """
 
 import asyncio
-import copy
 import base64
+import copy
 import json
+import logging
 import os
 import shutil
+import statistics
 import sys
+import time as time_module
 import uuid
 from collections import defaultdict, deque
+from collections.abc import AsyncGenerator, Iterable
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Set, Tuple, AsyncGenerator, Iterable
 from enum import Enum
-import logging
-import statistics
-import time as time_module
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote, unquote, urlparse
 
-from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect, BackgroundTasks, Depends, Request, Body
-from fastapi.responses import StreamingResponse, FileResponse, Response
-from pydantic import BaseModel, Field, model_validator, validator
-from sse_starlette.sse import EventSourceResponse
 import httpx
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Body,
+    HTTPException,
+    Query,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from fastapi.responses import FileResponse, Response
+from pydantic import BaseModel, Field, model_validator
+from sse_starlette.sse import EventSourceResponse
 
-from .env import AGENT_URL, BR_KG_URL
-from .job_state import jobs_db as core_jobs_db
-from . import models as core_models
-from .models import CacheMetadata
-from .job_adapter import JobAdapter
-from .pipeline_graph import build_job_graph_snapshot
-from .job_store import JobEvent, JobRecord, LogChunk
 from brain_researcher.config.run_artifacts import (
     get_recorder_config,
     get_recorder_roots_for_read,
     resolve_recorded_path_for_read,
 )
 from brain_researcher.core.contracts.job import JobRecordV1
+
+from . import models as core_models
+from .env import AGENT_URL, BR_KG_URL
+from .job_adapter import JobAdapter
+from .job_state import jobs_db as core_jobs_db
+from .job_store import JobEvent, JobRecord, LogChunk
+from .models import CacheMetadata
+from .pipeline_graph import build_job_graph_snapshot
 
 logger = logging.getLogger(__name__)
 
@@ -71,12 +82,14 @@ _OBS_INTERNAL_ARTIFACT_FILENAMES = {
 def _is_test_env() -> bool:
     return "PYTEST_CURRENT_TEST" in os.environ or "pytest" in sys.modules
 
+
 # Initialize router
 router = APIRouter(prefix="/api/jobs", tags=["job-management"])
 
 # ============================================================================
 # Enhanced Models
 # ============================================================================
+
 
 class JobStatus(str, Enum):
     PENDING = "pending"
@@ -92,11 +105,13 @@ class JobStatus(str, Enum):
     RETRYING = "retrying"
     TIMEOUT = "timeout"
 
+
 class JobPriority(str, Enum):
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
     CRITICAL = "critical"
+
 
 class StepStatus(str, Enum):
     PENDING = "pending"
@@ -106,6 +121,7 @@ class StepStatus(str, Enum):
     SKIPPED = "skipped"
     RETRYING = "retrying"
 
+
 class ResourceType(str, Enum):
     CPU = "cpu"
     MEMORY = "memory"
@@ -113,177 +129,218 @@ class ResourceType(str, Enum):
     STORAGE = "storage"
     NETWORK = "network"
 
+
 class JobMetrics(BaseModel):
     """Job performance metrics"""
-    cpu_usage: Optional[float] = Field(None, ge=0.0, le=100.0, description="CPU usage percentage")
-    memory_usage: Optional[float] = Field(None, ge=0.0, description="Memory usage in GB")
-    gpu_usage: Optional[float] = Field(None, ge=0.0, le=100.0, description="GPU usage percentage")
-    disk_io: Optional[float] = Field(None, ge=0.0, description="Disk I/O rate in MB/s")
-    network_io: Optional[float] = Field(None, ge=0.0, description="Network I/O rate in MB/s")
-    peak_memory: Optional[float] = Field(None, ge=0.0, description="Peak memory usage in GB")
-    total_compute_time: Optional[float] = Field(None, ge=0.0, description="Total compute time in seconds")
+
+    cpu_usage: float | None = Field(
+        None, ge=0.0, le=100.0, description="CPU usage percentage"
+    )
+    memory_usage: float | None = Field(None, ge=0.0, description="Memory usage in GB")
+    gpu_usage: float | None = Field(
+        None, ge=0.0, le=100.0, description="GPU usage percentage"
+    )
+    disk_io: float | None = Field(None, ge=0.0, description="Disk I/O rate in MB/s")
+    network_io: float | None = Field(
+        None, ge=0.0, description="Network I/O rate in MB/s"
+    )
+    peak_memory: float | None = Field(
+        None, ge=0.0, description="Peak memory usage in GB"
+    )
+    total_compute_time: float | None = Field(
+        None, ge=0.0, description="Total compute time in seconds"
+    )
+
 
 class JobStep(BaseModel):
     """Enhanced job step with detailed tracking"""
+
     id: str = Field(..., description="Step identifier")
     name: str = Field(..., description="Step name")
-    description: Optional[str] = Field(None, description="Step description")
+    description: str | None = Field(None, description="Step description")
     tool: str = Field(..., description="Tool/service executing this step")
     status: StepStatus = Field(default=StepStatus.PENDING)
-    progress: float = Field(default=0.0, ge=0.0, le=100.0, description="Progress percentage")
+    progress: float = Field(
+        default=0.0, ge=0.0, le=100.0, description="Progress percentage"
+    )
 
     # Timing information
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    estimated_duration: Optional[int] = Field(None, description="Estimated duration in seconds")
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    estimated_duration: int | None = Field(
+        None, description="Estimated duration in seconds"
+    )
 
     # Step details
-    args: Dict[str, Any] = Field(default_factory=dict)
-    preview: Optional[str] = Field(None, description="Step output preview")
-    error: Optional[str] = Field(None, description="Error message if failed")
+    args: dict[str, Any] = Field(default_factory=dict)
+    preview: str | None = Field(None, description="Step output preview")
+    error: str | None = Field(None, description="Error message if failed")
 
     # Dependencies and ordering
-    depends_on: List[str] = Field(default_factory=list, description="Step IDs this step depends on")
+    depends_on: list[str] = Field(
+        default_factory=list, description="Step IDs this step depends on"
+    )
     order: int = Field(default=0, description="Execution order")
 
     # Resource usage
-    metrics: Optional[JobMetrics] = None
+    metrics: JobMetrics | None = None
 
     # Retry information
     retry_count: int = Field(default=0, description="Number of retries attempted")
     max_retries: int = Field(default=3, description="Maximum retry attempts")
 
     # Phase 3: Cache integration
-    cache_metadata: Optional[CacheMetadata] = Field(None, description="Cache hit/miss metadata for this step")
+    cache_metadata: CacheMetadata | None = Field(
+        None, description="Cache hit/miss metadata for this step"
+    )
+
 
 class JobArtifact(BaseModel):
     """Job output artifact"""
+
     id: str = Field(..., description="Artifact identifier")
     name: str = Field(..., description="Artifact name")
     type: str = Field(..., description="Artifact type")
-    path: Optional[str] = Field(None, description="File path")
-    url: Optional[str] = Field(None, description="Access URL")
-    size: Optional[int] = Field(None, description="File size in bytes")
-    checksum: Optional[str] = Field(None, description="File checksum")
-    mime_type: Optional[str] = Field(None, description="MIME type")
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    path: str | None = Field(None, description="File path")
+    url: str | None = Field(None, description="Access URL")
+    size: int | None = Field(None, description="File size in bytes")
+    checksum: str | None = Field(None, description="File checksum")
+    mime_type: str | None = Field(None, description="MIME type")
+    metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
 
 class JobDependency(BaseModel):
     """Job dependency specification"""
+
     job_id: str = Field(..., description="Dependent job ID")
     dependency_type: str = Field(default="completion", description="Type of dependency")
     required_status: JobStatus = Field(default=JobStatus.COMPLETED)
 
+
 class Job(BaseModel):
     """Enhanced job model with comprehensive tracking"""
+
     id: str = Field(..., description="Job identifier")
-    name: Optional[str] = Field(None, description="Job name")
-    description: Optional[str] = Field(None, description="Job description")
+    name: str | None = Field(None, description="Job name")
+    description: str | None = Field(None, description="Job description")
     prompt: str = Field(..., description="Original user prompt")
 
     # Status and lifecycle
     status: JobStatus = Field(default=JobStatus.PENDING)
     priority: JobPriority = Field(default=JobPriority.NORMAL)
-    progress: float = Field(default=0.0, ge=0.0, le=100.0, description="Overall progress percentage")
+    progress: float = Field(
+        default=0.0, ge=0.0, le=100.0, description="Overall progress percentage"
+    )
 
     # Timing
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    queued_at: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    estimated_completion: Optional[datetime] = None
+    queued_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    estimated_completion: datetime | None = None
 
     # User and context
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
-    project_id: Optional[str] = None
+    user_id: str | None = None
+    session_id: str | None = None
+    project_id: str | None = None
 
     # Execution details
-    steps: List[JobStep] = Field(default_factory=list)
-    current_step_index: int = Field(default=0, description="Index of currently executing step")
-    artifacts: List[JobArtifact] = Field(default_factory=list)
+    steps: list[JobStep] = Field(default_factory=list)
+    current_step_index: int = Field(
+        default=0, description="Index of currently executing step"
+    )
+    artifacts: list[JobArtifact] = Field(default_factory=list)
 
     # Resource requirements and usage
-    resource_requirements: Dict[str, Any] = Field(default_factory=dict)
-    resource_usage: Optional[JobMetrics] = None
-    worker_id: Optional[str] = None
-    lease_expires_at: Optional[datetime] = None
-    last_heartbeat: Optional[datetime] = None
+    resource_requirements: dict[str, Any] = Field(default_factory=dict)
+    resource_usage: JobMetrics | None = None
+    worker_id: str | None = None
+    lease_expires_at: datetime | None = None
+    last_heartbeat: datetime | None = None
     attempt: int = Field(default=0, ge=0)
     max_attempts: int = Field(default=3, ge=1)
     gpu_count_required: int = Field(default=0, ge=0)
-    gpu_type: Optional[str] = None
-    assigned_gpu_slots: List[int] = Field(default_factory=list)
-    run_id: Optional[str] = None
-    run_dir: Optional[str] = None
-    provenance_path: Optional[str] = None
+    gpu_type: str | None = None
+    assigned_gpu_slots: list[int] = Field(default_factory=list)
+    run_id: str | None = None
+    run_dir: str | None = None
+    provenance_path: str | None = None
 
     # Dependencies
-    dependencies: List[JobDependency] = Field(default_factory=list)
-    dependent_jobs: List[str] = Field(default_factory=list, description="Jobs that depend on this job")
+    dependencies: list[JobDependency] = Field(default_factory=list)
+    dependent_jobs: list[str] = Field(
+        default_factory=list, description="Jobs that depend on this job"
+    )
 
     # Error handling
-    error: Optional[str] = None
+    error: str | None = None
     retry_count: int = Field(default=0)
     max_retries: int = Field(default=3)
 
     # Metadata
-    tags: List[str] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    plan_of_record: Optional[Dict[str, Any]] = None
-    plan_events: List[Dict[str, Any]] = Field(default_factory=list)
-    por_token: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    plan_of_record: dict[str, Any] | None = None
+    plan_events: list[dict[str, Any]] = Field(default_factory=list)
+    por_token: str | None = None
 
     # Phase 3: Cache integration
-    cache_metadata: Optional[CacheMetadata] = Field(None, description="Cache hit/miss metadata")
+    cache_metadata: CacheMetadata | None = Field(
+        None, description="Cache hit/miss metadata"
+    )
 
     # Cancellation
     cancellation_requested: bool = Field(default=False)
-    cancellation_reason: Optional[str] = None
+    cancellation_reason: str | None = None
+
 
 class JobProgressUpdate(BaseModel):
     """Job progress update event"""
+
     job_id: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     update_type: str = Field(..., description="Type of update")
-    data: Dict[str, Any] = Field(default_factory=dict)
+    data: dict[str, Any] = Field(default_factory=dict)
 
 
 class PlanOfRecordResponse(BaseModel):
-    plan: Dict[str, Any]
-    por_token: Optional[str] = None
+    plan: dict[str, Any]
+    por_token: str | None = None
 
 
 class PlanEventsResponse(BaseModel):
     plan_id: str
-    events: List[Dict[str, Any]] = Field(default_factory=list)
+    events: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class JobSearchRequest(BaseModel):
     """Job search and filter request"""
-    user_id: Optional[str] = None
-    status: Optional[List[JobStatus]] = None
-    priority: Optional[List[JobPriority]] = None
-    created_after: Optional[datetime] = None
-    created_before: Optional[datetime] = None
-    tags: Optional[List[str]] = None
-    search_query: Optional[str] = None
+
+    user_id: str | None = None
+    status: list[JobStatus] | None = None
+    priority: list[JobPriority] | None = None
+    created_after: datetime | None = None
+    created_before: datetime | None = None
+    tags: list[str] | None = None
+    search_query: str | None = None
     limit: int = Field(50, ge=1, le=200)
     offset: int = Field(0, ge=0)
     sort_by: str = Field("created_at", description="Sort field")
     sort_desc: bool = Field(True, description="Sort descending")
 
+
 class JobStatistics(BaseModel):
     """Job execution statistics"""
+
     total_jobs: int
-    status_breakdown: Dict[JobStatus, int]
-    priority_breakdown: Dict[JobPriority, int]
+    status_breakdown: dict[JobStatus, int]
+    priority_breakdown: dict[JobPriority, int]
     avg_execution_time: float
     success_rate: float
     retry_rate: float
-    most_common_errors: List[Dict[str, Any]]
-    resource_utilization: Dict[str, float]
+    most_common_errors: list[dict[str, Any]]
+    resource_utilization: dict[str, float]
     throughput_per_hour: float
 
 
@@ -295,17 +352,17 @@ class CreateJobPayload(BaseModel):
     """
 
     prompt: str = Field(..., description="User prompt / request")
-    pipeline: Optional[str] = Field(default=None, description="Requested pipeline/kind")
-    dataset_id: Optional[str] = Field(default=None, alias="datasetId")
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+    pipeline: str | None = Field(default=None, description="Requested pipeline/kind")
+    dataset_id: str | None = Field(default=None, alias="datasetId")
+    parameters: dict[str, Any] = Field(default_factory=dict)
     copilot: bool = False
-    attachments: List[Any] = Field(default_factory=list)
-    scenario_id: Optional[str] = Field(default=None, alias="scenarioId")
-    checkpoint_id: Optional[str] = None
+    attachments: list[Any] = Field(default_factory=list)
+    scenario_id: str | None = Field(default=None, alias="scenarioId")
+    checkpoint_id: str | None = None
 
     @model_validator(mode="before")
     @classmethod
-    def _normalize_legacy_checkpoint_id(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_legacy_checkpoint_id(cls, values: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(values, dict):
             return values
         if not values.get("checkpoint_id") and values.get("resume_checkpoint_id"):
@@ -315,25 +372,27 @@ class CreateJobPayload(BaseModel):
 
     model_config = {"populate_by_name": True}
 
+
 # ============================================================================
 # In-Memory Storage (Replace with Database in production)
 # ============================================================================
 
 # Job storage (router-local; synced from core store on demand)
-jobs_db: Dict[str, Job] = {}
-job_history: Dict[str, List[JobProgressUpdate]] = defaultdict(list)
+jobs_db: dict[str, Job] = {}
+job_history: dict[str, list[JobProgressUpdate]] = defaultdict(list)
 
 # Real-time updates
-job_subscribers: Dict[str, Set[WebSocket]] = defaultdict(set)  # job_id -> websockets
-progress_queues: Dict[str, asyncio.Queue] = {}  # job_id -> update queue
+job_subscribers: dict[str, set[WebSocket]] = defaultdict(set)  # job_id -> websockets
+progress_queues: dict[str, asyncio.Queue] = {}  # job_id -> update queue
 
 # Job execution queue
 job_queue: deque = deque()  # Priority queue for pending jobs
-running_jobs: Set[str] = set()  # Currently running job IDs
+running_jobs: set[str] = set()  # Currently running job IDs
 
 # ---------------------------------------------------------------------------
 # Helpers to convert orchestrator core jobs into the router's richer schema
 # ---------------------------------------------------------------------------
+
 
 def _coerce_job_status(value: Any) -> JobStatus:
     try:
@@ -357,7 +416,11 @@ def _core_step_to_router_step(step: core_models.JobStep, order: int) -> JobStep:
     timing = getattr(step, "timing", None)
     start_time = getattr(timing, "start_time", None) if timing else None
     end_time = getattr(timing, "end_time", None) if timing else None
-    progress_pct = 100.0 if getattr(step, "status", None) == core_models.StepStatus.COMPLETED else 0.0
+    progress_pct = (
+        100.0
+        if getattr(step, "status", None) == core_models.StepStatus.COMPLETED
+        else 0.0
+    )
 
     return JobStep(
         id=getattr(step, "id", f"step_{order}"),
@@ -409,10 +472,12 @@ def _core_job_to_router_job(core_job: core_models.Job) -> Job:
         progress_pct = 0.0
 
     steps = [
-        _core_step_to_router_step(step, idx) for idx, step in enumerate(getattr(core_job, "steps", []) or [])
+        _core_step_to_router_step(step, idx)
+        for idx, step in enumerate(getattr(core_job, "steps", []) or [])
     ]
     artifacts = [
-        _core_artifact_to_router_artifact(artifact) for artifact in getattr(core_job, "artifacts", []) or []
+        _core_artifact_to_router_artifact(artifact)
+        for artifact in getattr(core_job, "artifacts", []) or []
     ]
 
     error_obj = getattr(core_job, "error", None)
@@ -458,7 +523,7 @@ def _core_job_to_router_job(core_job: core_models.Job) -> Job:
     )
 
 
-def _sync_router_jobs_from_core(job_ids: Optional[Iterable[str]] = None) -> None:
+def _sync_router_jobs_from_core(job_ids: Iterable[str] | None = None) -> None:
     """Ensure router-visible jobs mirror the latest orchestrator state."""
 
     if job_ids is None:
@@ -476,13 +541,13 @@ def _sync_router_jobs_from_core(job_ids: Optional[Iterable[str]] = None) -> None
         jobs_db[job_id] = _core_job_to_router_job(core_job)
 
 
-def _get_router_job(job_id: str) -> Optional[Job]:
+def _get_router_job(job_id: str) -> Job | None:
     if job_id in core_jobs_db:
         _sync_router_jobs_from_core([job_id])
     return jobs_db.get(job_id)
 
 
-async def _get_job_with_store(job_id: str, request: Request) -> Optional[Job]:
+async def _get_job_with_store(job_id: str, request: Request) -> Job | None:
     job = _get_router_job(job_id)
     if job:
         return _hydrate_plan_metadata(job)
@@ -499,14 +564,17 @@ async def _get_job_with_store(job_id: str, request: Request) -> Optional[Job]:
     return None
 
 
-def _extract_plan_bundle(job: Job) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, Any]], Optional[str]]:
+def _extract_plan_bundle(
+    job: Job,
+) -> tuple[dict[str, Any] | None, list[dict[str, Any]], str | None]:
     metadata = getattr(job, "metadata", {}) or {}
     plan = getattr(job, "plan_of_record", None) or metadata.get("plan_of_record")
     events = getattr(job, "plan_events", None) or metadata.get("plan_events") or []
     por_token = getattr(job, "por_token", None) or metadata.get("por_token")
     return plan, events, por_token
 
-def _hydrate_plan_metadata(job: Optional[Job]) -> Optional[Job]:
+
+def _hydrate_plan_metadata(job: Job | None) -> Job | None:
     """Ensure plan fields live on the Job payload returned to clients."""
     if not job:
         return job
@@ -544,7 +612,7 @@ def _hydrate_cache_metadata(job: Job) -> None:
         job.cache_metadata = None
 
 
-def _build_plan_summary(job: Job) -> Optional[Dict[str, Any]]:
+def _build_plan_summary(job: Job) -> dict[str, Any] | None:
     """Create a lightweight summary describing the plan-of-record."""
     plan, events, por_token = _extract_plan_bundle(job)
     if not plan:
@@ -568,12 +636,16 @@ def _build_plan_summary(job: Job) -> Optional[Dict[str, Any]]:
         "step_count": len(steps),
         "por_token_set": bool(por_token),
         "plan_status": last_event_type or "planned",
-        "plan_conf": plan.get("plan_conf") or (plan.get("run_summary") or {}).get("plan_conf"),
-        "confidence_score": plan.get("confidence_score") or (plan.get("run_summary") or {}).get("plan_conf"),
+        "plan_conf": plan.get("plan_conf")
+        or (plan.get("run_summary") or {}).get("plan_conf"),
+        "confidence_score": plan.get("confidence_score")
+        or (plan.get("run_summary") or {}).get("plan_conf"),
     }
 
 
-def _truncate_events(events: List[Dict[str, Any]], max_events: int = 25) -> List[Dict[str, Any]]:
+def _truncate_events(
+    events: list[dict[str, Any]], max_events: int = 25
+) -> list[dict[str, Any]]:
     """Truncate plan events to most recent N events to avoid bloated payloads."""
     if not events:
         return []
@@ -582,10 +654,9 @@ def _truncate_events(events: List[Dict[str, Any]], max_events: int = 25) -> List
     return events[-max_events:]  # Return most recent N events
 
 
-
 # Statistics tracking
-job_stats_cache: Dict[str, Any] = {}
-stats_cache_time: Optional[datetime] = None
+job_stats_cache: dict[str, Any] = {}
+stats_cache_time: datetime | None = None
 
 # Execution history for analytics
 execution_history: deque = deque(maxlen=10000)  # Recent job completions
@@ -593,6 +664,7 @@ execution_history: deque = deque(maxlen=10000)  # Recent job completions
 # ============================================================================
 # Job Queue Management
 # ============================================================================
+
 
 class JobQueueManager:
     """Manages job queuing and prioritization"""
@@ -605,7 +677,7 @@ class JobQueueManager:
             JobPriority.CRITICAL: 0,
             JobPriority.HIGH: 1,
             JobPriority.NORMAL: 2,
-            JobPriority.LOW: 3
+            JobPriority.LOW: 3,
         }
 
         job_tuple = (priority_order[job.priority], job.created_at, job.id)
@@ -624,7 +696,7 @@ class JobQueueManager:
         logger.info(f"Job {job.id} added to queue (priority: {job.priority})")
 
     @staticmethod
-    def get_next_job() -> Optional[str]:
+    def get_next_job() -> str | None:
         """Get next job from queue"""
         if job_queue:
             _, _, job_id = job_queue.popleft()
@@ -632,12 +704,12 @@ class JobQueueManager:
         return None
 
     @staticmethod
-    def get_queue_status() -> Dict[str, Any]:
+    def get_queue_status() -> dict[str, Any]:
         """Get current queue status"""
         queue_breakdown = defaultdict(int)
         estimated_wait_times = {}
 
-        for i, (priority_num, created_at, job_id) in enumerate(job_queue):
+        for i, (_priority_num, _created_at, job_id) in enumerate(job_queue):
             if job_id in jobs_db:
                 job = jobs_db[job_id]
                 queue_breakdown[job.priority] += 1
@@ -649,18 +721,22 @@ class JobQueueManager:
             "queue_length": len(job_queue),
             "running_jobs": len(running_jobs),
             "queue_breakdown": dict(queue_breakdown),
-            "estimated_wait_times": estimated_wait_times
+            "estimated_wait_times": estimated_wait_times,
         }
+
 
 # ============================================================================
 # Progress Tracking
 # ============================================================================
 
+
 class ProgressTracker:
     """Tracks and manages job progress"""
 
     @staticmethod
-    async def update_job_progress(job_id: str, progress: float, message: Optional[str] = None):
+    async def update_job_progress(
+        job_id: str, progress: float, message: str | None = None
+    ):
         """Update overall job progress"""
         if job_id not in jobs_db:
             return
@@ -672,11 +748,7 @@ class ProgressTracker:
         update = JobProgressUpdate(
             job_id=job_id,
             update_type="progress",
-            data={
-                "progress": progress,
-                "message": message,
-                "status": job.status
-            }
+            data={"progress": progress, "message": message, "status": job.status},
         )
 
         job_history[job_id].append(update)
@@ -685,7 +757,9 @@ class ProgressTracker:
         await ProgressTracker.notify_subscribers(job_id, update)
 
     @staticmethod
-    async def update_step_progress(job_id: str, step_id: str, progress: float, status: Optional[StepStatus] = None):
+    async def update_step_progress(
+        job_id: str, step_id: str, progress: float, status: StepStatus | None = None
+    ):
         """Update individual step progress"""
         if job_id not in jobs_db:
             return
@@ -714,7 +788,7 @@ class ProgressTracker:
                 "type": "progress_update",
                 "job_id": job_id,
                 "timestamp": update.timestamp.isoformat(),
-                "data": update.data
+                "data": update.data,
             }
 
             # Send to all subscribers
@@ -730,9 +804,11 @@ class ProgressTracker:
             for ws in disconnected_sockets:
                 job_subscribers[job_id].discard(ws)
 
+
 # ============================================================================
 # Job Execution Engine
 # ============================================================================
+
 
 class JobExecutor:
     """Executes jobs and manages their lifecycle"""
@@ -751,7 +827,9 @@ class JobExecutor:
             job.started_at = datetime.utcnow()
             running_jobs.add(job_id)
 
-            await ProgressTracker.update_job_progress(job_id, 0.0, "Starting job execution")
+            await ProgressTracker.update_job_progress(
+                job_id, 0.0, "Starting job execution"
+            )
 
             # Execute each step
             for i, step in enumerate(job.steps):
@@ -767,24 +845,30 @@ class JobExecutor:
 
                 # Update overall progress
                 step_progress = (i + 1) / len(job.steps) * 100
-                await ProgressTracker.update_job_progress(job_id, step_progress, f"Completed step: {step.name}")
+                await ProgressTracker.update_job_progress(
+                    job_id, step_progress, f"Completed step: {step.name}"
+                )
 
             # Mark as completed
             job.status = JobStatus.COMPLETED
             job.completed_at = datetime.utcnow()
             job.progress = 100.0
 
-            await ProgressTracker.update_job_progress(job_id, 100.0, "Job completed successfully")
+            await ProgressTracker.update_job_progress(
+                job_id, 100.0, "Job completed successfully"
+            )
 
             # Record completion in history
             execution_time = (job.completed_at - job.started_at).total_seconds()
-            execution_history.append({
-                "job_id": job_id,
-                "execution_time": execution_time,
-                "status": JobStatus.COMPLETED,
-                "completed_at": job.completed_at,
-                "retry_count": job.retry_count
-            })
+            execution_history.append(
+                {
+                    "job_id": job_id,
+                    "execution_time": execution_time,
+                    "status": JobStatus.COMPLETED,
+                    "completed_at": job.completed_at,
+                    "retry_count": job.retry_count,
+                }
+            )
 
         except Exception as e:
             logger.error(f"Job {job_id} failed: {e}")
@@ -793,7 +877,9 @@ class JobExecutor:
             job.error = str(e)
             job.completed_at = datetime.utcnow()
 
-            await ProgressTracker.update_job_progress(job_id, job.progress, f"Job failed: {str(e)}")
+            await ProgressTracker.update_job_progress(
+                job_id, job.progress, f"Job failed: {str(e)}"
+            )
 
             # Consider retry
             if job.retry_count < job.max_retries:
@@ -818,7 +904,9 @@ class JobExecutor:
             step.status = StepStatus.RUNNING
             step.start_time = datetime.utcnow()
 
-            await ProgressTracker.update_step_progress(job_id, step_id, 0.0, StepStatus.RUNNING)
+            await ProgressTracker.update_step_progress(
+                job_id, step_id, 0.0, StepStatus.RUNNING
+            )
 
             # Simulate step execution (replace with actual tool execution)
             if step.tool == "agent":
@@ -836,29 +924,29 @@ class JobExecutor:
             step.end_time = datetime.utcnow()
             step.preview = result.get("preview", "Step completed successfully")
 
-            await ProgressTracker.update_step_progress(job_id, step_id, 100.0, StepStatus.COMPLETED)
+            await ProgressTracker.update_step_progress(
+                job_id, step_id, 100.0, StepStatus.COMPLETED
+            )
 
         except Exception as e:
             step.status = StepStatus.FAILED
             step.error = str(e)
             step.end_time = datetime.utcnow()
 
-            await ProgressTracker.update_step_progress(job_id, step_id, step.progress, StepStatus.FAILED)
+            await ProgressTracker.update_step_progress(
+                job_id, step_id, step.progress, StepStatus.FAILED
+            )
 
             raise e
 
     @staticmethod
-    async def execute_agent_step(step: JobStep) -> Dict[str, Any]:
+    async def execute_agent_step(step: JobStep) -> dict[str, Any]:
         """Execute step via Agent service"""
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
                     f"{AGENT_URL}/execute",
-                    json={
-                        "tool": step.tool,
-                        "args": step.args,
-                        "step_id": step.id
-                    }
+                    json={"tool": step.tool, "args": step.args, "step_id": step.id},
                 )
                 response.raise_for_status()
                 return response.json()
@@ -867,7 +955,7 @@ class JobExecutor:
             return {"success": False, "error": str(e)}
 
     @staticmethod
-    async def execute_br_kg_step(step: JobStep) -> Dict[str, Any]:
+    async def execute_br_kg_step(step: JobStep) -> dict[str, Any]:
         """Execute step via BR-KG service"""
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -876,8 +964,8 @@ class JobExecutor:
                     json={
                         "operation": step.tool,
                         "parameters": step.args,
-                        "step_id": step.id
-                    }
+                        "step_id": step.id,
+                    },
                 )
                 response.raise_for_status()
                 return response.json()
@@ -886,7 +974,7 @@ class JobExecutor:
             return {"success": False, "error": str(e)}
 
     @staticmethod
-    async def cancel_job(job_id: str, reason: Optional[str] = None):
+    async def cancel_job(job_id: str, reason: str | None = None):
         """Cancel a running job"""
         if job_id not in jobs_db:
             return
@@ -903,7 +991,9 @@ class JobExecutor:
             current_step.status = StepStatus.SKIPPED
             current_step.end_time = datetime.utcnow()
 
-        await ProgressTracker.update_job_progress(job_id, job.progress, f"Job cancelled: {reason}")
+        await ProgressTracker.update_job_progress(
+            job_id, job.progress, f"Job cancelled: {reason}"
+        )
 
         running_jobs.discard(job_id)
 
@@ -939,11 +1029,15 @@ class JobExecutor:
 
         JobQueueManager.add_to_queue(job)
 
-        await ProgressTracker.update_job_progress(job_id, 0.0, f"Retrying job (attempt {job.retry_count + 1})")
+        await ProgressTracker.update_job_progress(
+            job_id, 0.0, f"Retrying job (attempt {job.retry_count + 1})"
+        )
+
 
 # ============================================================================
 # Statistics and Analytics
 # ============================================================================
+
 
 def calculate_job_statistics() -> JobStatistics:
     """Calculate comprehensive job statistics"""
@@ -966,7 +1060,7 @@ def calculate_job_statistics() -> JobStatistics:
             retry_rate=0.0,
             most_common_errors=[],
             resource_utilization={},
-            throughput_per_hour=0.0
+            throughput_per_hour=0.0,
         )
 
     # Status breakdown
@@ -1005,23 +1099,19 @@ def calculate_job_statistics() -> JobStatistics:
 
     most_common_errors = [
         {"error": error, "count": count}
-        for error, count in sorted(error_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        for error, count in sorted(
+            error_counts.items(), key=lambda x: x[1], reverse=True
+        )[:5]
     ]
 
     # Calculate throughput (jobs completed in last hour)
     one_hour_ago = datetime.utcnow() - timedelta(hours=1)
-    recent_completions = len([
-        job for job in jobs
-        if job.completed_at and job.completed_at >= one_hour_ago
-    ])
+    recent_completions = len(
+        [job for job in jobs if job.completed_at and job.completed_at >= one_hour_ago]
+    )
 
     # Resource utilization (mock data - would come from actual monitoring)
-    resource_utilization = {
-        "cpu": 65.5,
-        "memory": 78.2,
-        "gpu": 45.0,
-        "storage": 34.8
-    }
+    resource_utilization = {"cpu": 65.5, "memory": 78.2, "gpu": 45.0, "storage": 34.8}
 
     stats = JobStatistics(
         total_jobs=total_jobs,
@@ -1032,7 +1122,7 @@ def calculate_job_statistics() -> JobStatistics:
         retry_rate=retry_rate,
         most_common_errors=most_common_errors,
         resource_utilization=resource_utilization,
-        throughput_per_hour=recent_completions
+        throughput_per_hour=recent_completions,
     )
 
     # Cache results
@@ -1041,20 +1131,22 @@ def calculate_job_statistics() -> JobStatistics:
 
     return stats
 
+
 # ============================================================================
 # API Endpoints
 # ============================================================================
 
+
 @router.post("", response_model=JobRecordV1)
 async def create_job(
     request: Request,
-    payload: Optional[CreateJobPayload] = Body(None),
-    prompt: Optional[str] = Query(None, description="Job prompt (legacy query param)"),
-    name: Optional[str] = Query(None, description="Job name"),
+    payload: CreateJobPayload | None = Body(None),
+    prompt: str | None = Query(None, description="Job prompt (legacy query param)"),
+    name: str | None = Query(None, description="Job name"),
     priority: JobPriority = Query(JobPriority.NORMAL),
-    user_id: Optional[str] = Query(None),
-    tags: Optional[List[str]] = Query(None),
-    background_tasks: BackgroundTasks = BackgroundTasks()
+    user_id: str | None = Query(None),
+    tags: list[str] | None = Query(None),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
 ) -> JobRecordV1:
     """Create and queue a new job"""
 
@@ -1130,7 +1222,7 @@ async def create_job(
     if not _is_test_env():
         background_tasks.add_task(JobExecutor.execute_job, job_id)
 
-    record: Optional[JobRecord] = None
+    record: JobRecord | None = None
     if job_store is not None:
         try:
             record = JobAdapter.to_record(job)
@@ -1142,6 +1234,7 @@ async def create_job(
         record = JobAdapter.to_record(job)
 
     return record
+
 
 @router.get("/{job_id}", response_model=JobRecordV1)
 async def get_job(job_id: str, request: Request) -> JobRecordV1:
@@ -1164,11 +1257,12 @@ async def get_job(job_id: str, request: Request) -> JobRecordV1:
         raise HTTPException(status_code=404, detail="Job not found")
     return JobAdapter.to_record(_hydrate_plan_metadata(job))
 
+
 @router.post("/resolve")
 async def resolve_cached_run(
     request: Request,
     cache_key: str = Query(..., description="Cache key to resolve"),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Phase 3.1: Resolve a cache key to a completed run.
 
     This endpoint checks if a cache key exists and returns the run_dir
@@ -1184,7 +1278,9 @@ async def resolve_cached_run(
         cache_store = getattr(request.app.state, "cache_store", None)
         if cache_store is None:
             try:
-                from brain_researcher.services.orchestrator.main_enhanced import cache_store as orchestrator_cache
+                from brain_researcher.services.orchestrator.main_enhanced import (
+                    cache_store as orchestrator_cache,
+                )
             except ImportError:
                 orchestrator_cache = None
             cache_store = orchestrator_cache
@@ -1204,7 +1300,7 @@ async def resolve_cached_run(
                     "tool_version": entry.tool_version,
                     "git_sha": entry.git_sha,
                     "size_bytes": entry.size_bytes,
-                }
+                },
             }
         else:
             return {
@@ -1215,26 +1311,37 @@ async def resolve_cached_run(
         logger.error(f"Cache lookup failed: {e}")
         raise HTTPException(status_code=500, detail=f"Cache lookup error: {str(e)}")
 
+
 @router.post("/{job_id}/cancel")
 async def cancel_job_endpoint(
-    job_id: str,
-    reason: Optional[str] = Query(None, description="Cancellation reason")
-) -> Dict[str, str]:
+    job_id: str, reason: str | None = Query(None, description="Cancellation reason")
+) -> dict[str, str]:
     """Cancel a job"""
     job = _get_router_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
     # Cannot cancel terminal states
-    if job.status in [JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED, JobStatus.TIMEOUT, JobStatus.SKIPPED]:
-        raise HTTPException(status_code=400, detail=f"Cannot cancel job with status: {job.status}")
+    if job.status in [
+        JobStatus.COMPLETED,
+        JobStatus.FAILED,
+        JobStatus.CANCELLED,
+        JobStatus.TIMEOUT,
+        JobStatus.SKIPPED,
+    ]:
+        raise HTTPException(
+            status_code=400, detail=f"Cannot cancel job with status: {job.status}"
+        )
 
     await JobExecutor.cancel_job(job_id, reason)
 
     return {"status": "cancelled", "job_id": job_id}
 
+
 @router.post("/{job_id}/retry")
-async def retry_job_endpoint(job_id: str, background_tasks: BackgroundTasks) -> Dict[str, str]:
+async def retry_job_endpoint(
+    job_id: str, background_tasks: BackgroundTasks
+) -> dict[str, str]:
     """Retry a failed job"""
     job = _get_router_job(job_id)
     if not job:
@@ -1247,8 +1354,9 @@ async def retry_job_endpoint(job_id: str, background_tasks: BackgroundTasks) -> 
 
     return {"status": "retrying", "job_id": job_id}
 
-@router.post("/search", response_model=Dict[str, Any])
-async def search_jobs(request: JobSearchRequest) -> Dict[str, Any]:
+
+@router.post("/search", response_model=dict[str, Any])
+async def search_jobs(request: JobSearchRequest) -> dict[str, Any]:
     """Search and filter jobs"""
 
     _sync_router_jobs_from_core()
@@ -1266,24 +1374,30 @@ async def search_jobs(request: JobSearchRequest) -> Dict[str, Any]:
         filtered_jobs = [j for j in filtered_jobs if j.priority in request.priority]
 
     if request.created_after:
-        filtered_jobs = [j for j in filtered_jobs if j.created_at >= request.created_after]
+        filtered_jobs = [
+            j for j in filtered_jobs if j.created_at >= request.created_after
+        ]
 
     if request.created_before:
-        filtered_jobs = [j for j in filtered_jobs if j.created_at <= request.created_before]
+        filtered_jobs = [
+            j for j in filtered_jobs if j.created_at <= request.created_before
+        ]
 
     if request.tags:
         filtered_jobs = [
-            j for j in filtered_jobs
-            if any(tag in j.tags for tag in request.tags)
+            j for j in filtered_jobs if any(tag in j.tags for tag in request.tags)
         ]
 
     if request.search_query:
         query_lower = request.search_query.lower()
         filtered_jobs = [
-            j for j in filtered_jobs
-            if (query_lower in j.prompt.lower() or
-                (j.name and query_lower in j.name.lower()) or
-                (j.description and query_lower in j.description.lower()))
+            j
+            for j in filtered_jobs
+            if (
+                query_lower in j.prompt.lower()
+                or (j.name and query_lower in j.name.lower())
+                or (j.description and query_lower in j.description.lower())
+            )
         ]
 
     # Sort jobs
@@ -1291,7 +1405,12 @@ async def search_jobs(request: JobSearchRequest) -> Dict[str, Any]:
     if request.sort_by == "created_at":
         filtered_jobs.sort(key=lambda j: j.created_at, reverse=reverse)
     elif request.sort_by == "priority":
-        priority_order = {JobPriority.CRITICAL: 0, JobPriority.HIGH: 1, JobPriority.NORMAL: 2, JobPriority.LOW: 3}
+        priority_order = {
+            JobPriority.CRITICAL: 0,
+            JobPriority.HIGH: 1,
+            JobPriority.NORMAL: 2,
+            JobPriority.LOW: 3,
+        }
         filtered_jobs.sort(key=lambda j: priority_order[j.priority], reverse=reverse)
     elif request.sort_by == "progress":
         filtered_jobs.sort(key=lambda j: j.progress, reverse=reverse)
@@ -1300,7 +1419,7 @@ async def search_jobs(request: JobSearchRequest) -> Dict[str, Any]:
 
     # Paginate
     total = len(filtered_jobs)
-    paginated_jobs = filtered_jobs[request.offset:request.offset + request.limit]
+    paginated_jobs = filtered_jobs[request.offset : request.offset + request.limit]
 
     serialized_jobs = []
     for job in paginated_jobs:
@@ -1318,11 +1437,12 @@ async def search_jobs(request: JobSearchRequest) -> Dict[str, Any]:
         "total": total,
         "limit": request.limit,
         "offset": request.offset,
-        "has_more": request.offset + request.limit < total
+        "has_more": request.offset + request.limit < total,
     }
 
+
 @router.get("/{job_id}/progress")
-async def get_job_progress(job_id: str) -> Dict[str, Any]:
+async def get_job_progress(job_id: str) -> dict[str, Any]:
     """Get detailed job progress information"""
     job = _get_router_job(job_id)
     if not job:
@@ -1333,7 +1453,7 @@ async def get_job_progress(job_id: str) -> Dict[str, Any]:
     return _build_job_progress_payload(job_id, job)
 
 
-def _build_job_progress_payload(job_id: str, job: Job) -> Dict[str, Any]:
+def _build_job_progress_payload(job_id: str, job: Job) -> dict[str, Any]:
     """Build the progress payload shared by polling and SSE endpoints."""
     overall_progress = float(getattr(job, "progress", 0.0) or 0.0)
     if job.status == JobStatus.COMPLETED and overall_progress < 100.0:
@@ -1373,7 +1493,9 @@ def _build_job_progress_payload(job_id: str, job: Job) -> Dict[str, Any]:
         "current_step": job.current_step_index,
         "step_progress": step_progress,
         "time_estimates": time_estimates,
-        "resource_usage": job.resource_usage.model_dump() if job.resource_usage else None,
+        "resource_usage": (
+            job.resource_usage.model_dump() if job.resource_usage else None
+        ),
         "last_updated": datetime.utcnow().isoformat(),
     }
 
@@ -1385,6 +1507,7 @@ def _build_job_progress_payload(job_id: str, job: Job) -> Dict[str, Any]:
             response["plan_events"] = _truncate_events(plan_events, max_events=25)
 
     return response
+
 
 @router.websocket("/{job_id}/ws")
 async def websocket_job_progress(websocket: WebSocket, job_id: str):
@@ -1408,7 +1531,7 @@ async def websocket_job_progress(websocket: WebSocket, job_id: str):
         initial_message = {
             "type": "initial_state",
             "job": job_dict,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
         await websocket.send_json(initial_message)
 
@@ -1419,17 +1542,15 @@ async def websocket_job_progress(websocket: WebSocket, job_id: str):
                 message = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
 
                 if message == "ping":
-                    await websocket.send_json({
-                        "type": "pong",
-                        "timestamp": datetime.utcnow().isoformat()
-                    })
+                    await websocket.send_json(
+                        {"type": "pong", "timestamp": datetime.utcnow().isoformat()}
+                    )
 
             except asyncio.TimeoutError:
                 # Send periodic heartbeat
-                await websocket.send_json({
-                    "type": "heartbeat",
-                    "timestamp": datetime.utcnow().isoformat()
-                })
+                await websocket.send_json(
+                    {"type": "heartbeat", "timestamp": datetime.utcnow().isoformat()}
+                )
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected for job {job_id}")
@@ -1440,13 +1561,14 @@ async def websocket_job_progress(websocket: WebSocket, job_id: str):
     finally:
         job_subscribers[job_id].discard(websocket)
 
+
 @router.get("/{job_id}/events")
 async def list_job_events(
     job_id: str,
     request: Request,
     since: int = Query(0, ge=0, description="Return events after this event_id"),
     limit: int = Query(200, ge=1, le=2000),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """List append-only job events (replay/debug)."""
     if not hasattr(request.app.state, "job_store"):
         raise HTTPException(status_code=503, detail="Job store not available")
@@ -1471,12 +1593,13 @@ async def list_job_events(
         ],
     }
 
+
 @router.get("/{job_id}/stream")
 async def stream_job_progress(
     job_id: str,
     request: Request = None,
     since: int = Query(0, ge=0, description="Resume event stream after this event_id"),
-    since_event_id: Optional[int] = Query(
+    since_event_id: int | None = Query(
         None, ge=0, description="Alias for since (resume after event_id)"
     ),
     include_initial_state: bool = Query(
@@ -1528,13 +1651,13 @@ async def stream_job_progress(
         header_value = request.headers.get("Last-Event-ID")
     except Exception:
         header_value = None
-    if isinstance(header_value, (str, int)):
+    if isinstance(header_value, str | int):
         try:
             last_event_id_header = int(header_value)
         except (TypeError, ValueError):
             last_event_id_header = None
 
-    def _serialize_event(evt: JobEvent) -> Dict[str, Any]:
+    def _serialize_event(evt: JobEvent) -> dict[str, Any]:
         from brain_researcher.core.contracts.ids import IdsV1
 
         ids = IdsV1(
@@ -1585,7 +1708,7 @@ async def stream_job_progress(
 
         async def emit_progress_update(
             *, source_event_id: int | None = None, as_terminal: bool = False
-        ) -> AsyncGenerator[Dict[str, Any], None]:
+        ) -> AsyncGenerator[dict[str, Any], None]:
             """Emit a UI-compatible progress_update (and optional job_complete)."""
             from brain_researcher.core.contracts.ids import IdsV1
 
@@ -1601,7 +1724,9 @@ async def stream_job_progress(
             try:
                 job = _get_router_job(job_id)
                 if job is not None:
-                    payload = _build_job_progress_payload(job_id, _hydrate_plan_metadata(job))
+                    payload = _build_job_progress_payload(
+                        job_id, _hydrate_plan_metadata(job)
+                    )
                 else:
                     latest = await job_store.get(job_id)
                     if latest is not None:
@@ -1701,7 +1826,10 @@ async def stream_job_progress(
                 yield {
                     "event": "ping",
                     "data": json.dumps(
-                        {"timestamp": datetime.utcnow().isoformat(), "last_event_id": last_event_id},
+                        {
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "last_event_id": last_event_id,
+                        },
                         default=str,
                     ),
                 }
@@ -1711,9 +1839,6 @@ async def stream_job_progress(
     return EventSourceResponse(event_generator())
 
 
-
-
-
 @router.get("/{job_id}/analysis-stream")
 async def stream_analysis_stream_events(
     job_id: str,
@@ -1721,13 +1846,13 @@ async def stream_analysis_stream_events(
     since: int = Query(
         0, ge=0, description="Resume stream after this seq (Last-Event-ID compatible)"
     ),
-    since_event_id: Optional[int] = Query(
+    since_event_id: int | None = Query(
         None, ge=0, description="Alias for since (resume after seq)"
     ),
-    source: Optional[str] = Query(
+    source: str | None = Query(
         None, description="Force source: job_store|trace (default: auto)"
     ),
-    run_dir: Optional[str] = Query(
+    run_dir: str | None = Query(
         None, description="Run directory for trace replay when job_store is unavailable"
     ),
 ):
@@ -1753,7 +1878,7 @@ async def stream_analysis_stream_events(
     except Exception:
         header_value = None
     last_event_id_header: int | None = None
-    if isinstance(header_value, (str, int)):
+    if isinstance(header_value, str | int):
         try:
             last_event_id_header = int(header_value)
         except (TypeError, ValueError):
@@ -1822,7 +1947,9 @@ async def stream_analysis_stream_events(
         return EventSourceResponse(trace_generator())
 
     # JobStore-backed streaming mode.
-    from brain_researcher.core.contracts.analysis_stream import AnalysisStreamEventTypeV1
+    from brain_researcher.core.contracts.analysis_stream import (
+        AnalysisStreamEventTypeV1,
+    )
     from brain_researcher.services.orchestrator.legacy_event_adapter import (
         adapt_job_event,
     )
@@ -1873,35 +2000,43 @@ async def stream_analysis_stream_events(
     return EventSourceResponse(event_generator())
 
 
-@router.get('/{job_id}/logs/stream')
+@router.get("/{job_id}/logs/stream")
 async def stream_job_logs(
     job_id: str,
     request: Request,
-    run_dir: Optional[str] = Query(None, description='Step run directory for per-step log streaming'),
-    stream: Optional[str] = Query(None, pattern='^(stdout|stderr)$', description='Filter by stream type'),
-    start_offset: int = Query(0, ge=0, description='Start from byte offset (for resume)'),
-    follow: bool = Query(True, description='Enable tail-like behavior (stream new logs)'),
+    run_dir: str | None = Query(
+        None, description="Step run directory for per-step log streaming"
+    ),
+    stream: str | None = Query(
+        None, pattern="^(stdout|stderr)$", description="Filter by stream type"
+    ),
+    start_offset: int = Query(
+        0, ge=0, description="Start from byte offset (for resume)"
+    ),
+    follow: bool = Query(
+        True, description="Enable tail-like behavior (stream new logs)"
+    ),
 ):
     """Stream job or step logs via Server-Sent Events."""
     job = _get_router_job(job_id)
     if not job:
-        raise HTTPException(status_code=404, detail=f'Job {job_id} not found')
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
-    if not hasattr(request.app.state, 'job_store'):
-        raise HTTPException(status_code=503, detail='Job store not available')
+    if not hasattr(request.app.state, "job_store"):
+        raise HTTPException(status_code=503, detail="Job store not available")
 
     job_store = request.app.state.job_store
 
-    job_record: Optional[JobRecord] = await job_store.get(job_id)
+    job_record: JobRecord | None = await job_store.get(job_id)
     if job_record is None:
-        raise HTTPException(status_code=404, detail=f'Job {job_id} not found in store')
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found in store")
 
     try:
         stream_names = _normalize_streams(stream)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    run_dir_path: Optional[Path] = None
+    run_dir_path: Path | None = None
     if run_dir:
         try:
             run_dir_path = _resolve_step_log_path(job_record, run_dir)
@@ -1922,7 +2057,7 @@ async def stream_job_logs(
         last_activity = time_module.time()
 
         logger.debug(
-            'Starting log stream for job %s (start_offset=%s, stream=%s, follow=%s, run_dir=%s)',
+            "Starting log stream for job %s (start_offset=%s, stream=%s, follow=%s, run_dir=%s)",
             job_id,
             start_offset,
             stream,
@@ -1932,14 +2067,18 @@ async def stream_job_logs(
 
         try:
             if run_dir_path is not None:
-                initial_chunks = _collect_file_chunks(job_id, run_dir_path, stream_names, file_offsets)
+                initial_chunks = _collect_file_chunks(
+                    job_id, run_dir_path, stream_names, file_offsets
+                )
             else:
-                initial_chunks = await _collect_store_chunks(job_store, job_id, stream, store_offsets)
+                initial_chunks = await _collect_store_chunks(
+                    job_store, job_id, stream, store_offsets
+                )
         except Exception as exc:  # pragma: no cover - defensive
-            logger.exception('Error fetching initial logs for job %s', job_id)
+            logger.exception("Error fetching initial logs for job %s", job_id)
             yield {
-                'event': 'error',
-                'data': json.dumps({'error': f'Failed to fetch logs: {str(exc)}'}),
+                "event": "error",
+                "data": json.dumps({"error": f"Failed to fetch logs: {str(exc)}"}),
             }
             return
 
@@ -1951,24 +2090,30 @@ async def stream_job_logs(
         if not follow_mode:
             job_record = await job_store.get(job_id)
             if job_record and _job_is_terminal(job_record.state):
-                yield _serialize_log_complete(job_id, job_record.state, stream_names, store_offsets, file_offsets)
+                yield _serialize_log_complete(
+                    job_id, job_record.state, stream_names, store_offsets, file_offsets
+                )
             return
 
         while True:
             if await request.is_disconnected():
-                logger.debug('Client disconnected from log stream for job %s', job_id)
+                logger.debug("Client disconnected from log stream for job %s", job_id)
                 break
 
             try:
                 if run_dir_path is not None:
-                    new_chunks = _collect_file_chunks(job_id, run_dir_path, stream_names, file_offsets)
+                    new_chunks = _collect_file_chunks(
+                        job_id, run_dir_path, stream_names, file_offsets
+                    )
                 else:
-                    new_chunks = await _collect_store_chunks(job_store, job_id, stream, store_offsets)
+                    new_chunks = await _collect_store_chunks(
+                        job_store, job_id, stream, store_offsets
+                    )
             except Exception as exc:  # pragma: no cover - defensive
-                logger.exception('Error tailing logs for job %s', job_id)
+                logger.exception("Error tailing logs for job %s", job_id)
                 yield {
-                    'event': 'error',
-                    'data': json.dumps({'error': f'Failed to fetch logs: {str(exc)}'}),
+                    "event": "error",
+                    "data": json.dumps({"error": f"Failed to fetch logs: {str(exc)}"}),
                 }
                 break
 
@@ -1979,31 +2124,45 @@ async def stream_job_logs(
 
             job_record = await job_store.get(job_id)
             if job_record is None:
-                logger.warning('Job %s disappeared during log streaming', job_id)
+                logger.warning("Job %s disappeared during log streaming", job_id)
                 yield {
-                    'event': 'log_complete',
-                    'data': json.dumps({
-                        'job_id': job_id,
-                        'status': 'unknown',
-                        'final_offset': _max_offset(stream_names, store_offsets, file_offsets),
-                        'reason': 'job_removed',
-                    }),
+                    "event": "log_complete",
+                    "data": json.dumps(
+                        {
+                            "job_id": job_id,
+                            "status": "unknown",
+                            "final_offset": _max_offset(
+                                stream_names, store_offsets, file_offsets
+                            ),
+                            "reason": "job_removed",
+                        }
+                    ),
                 }
                 break
 
             if _job_is_terminal(job_record.state) and not new_chunks:
-                logger.debug('Job %s reached terminal state %s – closing stream', job_id, job_record.state)
-                yield _serialize_log_complete(job_id, job_record.state, stream_names, store_offsets, file_offsets)
+                logger.debug(
+                    "Job %s reached terminal state %s – closing stream",
+                    job_id,
+                    job_record.state,
+                )
+                yield _serialize_log_complete(
+                    job_id, job_record.state, stream_names, store_offsets, file_offsets
+                )
                 break
 
             now = time_module.time()
             if now - last_activity >= keepalive_interval:
                 yield {
-                    'event': 'ping',
-                    'data': json.dumps({
-                        'timestamp': int(now),
-                        'current_offset': _max_offset(stream_names, store_offsets, file_offsets),
-                    }),
+                    "event": "ping",
+                    "data": json.dumps(
+                        {
+                            "timestamp": int(now),
+                            "current_offset": _max_offset(
+                                stream_names, store_offsets, file_offsets
+                            ),
+                        }
+                    ),
                 }
                 last_activity = now
 
@@ -2012,36 +2171,38 @@ async def stream_job_logs(
     return EventSourceResponse(event_generator())
 
 
-_DEFAULT_STREAMS = ('stdout', 'stderr')
+_DEFAULT_STREAMS = ("stdout", "stderr")
 _TERMINAL_JOB_STATES = {
-    'completed',
-    'succeeded',
-    'failed',
-    'cancelled',
-    'timeout',
-    'skipped',
+    "completed",
+    "succeeded",
+    "failed",
+    "cancelled",
+    "timeout",
+    "skipped",
 }
 _LOG_FILE_CANDIDATES = {
-    'stdout': ('stdout.txt', 'stdout.log'),
-    'stderr': ('stderr.txt', 'stderr.log'),
+    "stdout": ("stdout.txt", "stdout.log"),
+    "stderr": ("stderr.txt", "stderr.log"),
 }
 
 
-def _normalize_streams(stream: Optional[str]) -> List[str]:
+def _normalize_streams(stream: str | None) -> list[str]:
     if stream is None:
         return list(_DEFAULT_STREAMS)
     value = stream.lower()
     if value not in _DEFAULT_STREAMS:
-        raise ValueError(f"Unsupported stream '{stream}'. Expected 'stdout' or 'stderr'.")
+        raise ValueError(
+            f"Unsupported stream '{stream}'. Expected 'stdout' or 'stderr'."
+        )
     return [value]
 
 
 def _resolve_step_log_path(job: JobRecord, run_dir: str) -> Path:
     if not run_dir:
-        raise ValueError('run_dir parameter must be a non-empty string')
+        raise ValueError("run_dir parameter must be a non-empty string")
 
     candidate = Path(run_dir)
-    job_root: Optional[Path] = None
+    job_root: Path | None = None
     if job.run_dir:
         config = get_recorder_config()
         job_root = _resolve_recorded_job_path(
@@ -2051,14 +2212,15 @@ def _resolve_step_log_path(job: JobRecord, run_dir: str) -> Path:
 
     if not candidate.is_absolute():
         if job_root is None:
-            raise ValueError('Job run_dir is not available; run_dir must be absolute')
+            raise ValueError("Job run_dir is not available; run_dir must be absolute")
         candidate = (job_root / candidate).resolve()
     else:
         candidate = candidate.resolve()
 
     if job_root and not _path_is_within(candidate, job_root):
         raise PermissionError(
-            f'Step run_dir {candidate} is outside job run_dir {job_root}')
+            f"Step run_dir {candidate} is outside job run_dir {job_root}"
+        )
 
     return candidate
 
@@ -2074,13 +2236,15 @@ def _path_is_within(path: Path, root: Path) -> bool:
 async def _collect_store_chunks(
     job_store: Any,
     job_id: str,
-    stream_filter: Optional[str],
-    offsets: Dict[str, int],
-) -> List[LogChunk]:
+    stream_filter: str | None,
+    offsets: dict[str, int],
+) -> list[LogChunk]:
     start_from = min(offsets.values()) if offsets else 0
-    raw_chunks = await job_store.iter_logs(job_id=job_id, start_offset=start_from, stream=stream_filter)
+    raw_chunks = await job_store.iter_logs(
+        job_id=job_id, start_offset=start_from, stream=stream_filter
+    )
 
-    result: List[LogChunk] = []
+    result: list[LogChunk] = []
     for raw in raw_chunks:
         current_offset = offsets.setdefault(raw.stream, start_from)
         effective_offset = max(current_offset, raw.offset)
@@ -2105,18 +2269,18 @@ async def _collect_store_chunks(
 def _collect_file_chunks(
     job_id: str,
     run_dir: Path,
-    streams: List[str],
-    offsets: Dict[str, int],
-) -> List[LogChunk]:
+    streams: list[str],
+    offsets: dict[str, int],
+) -> list[LogChunk]:
     if not run_dir.exists():
         return []
 
     now = int(time_module.time())
-    chunks: List[LogChunk] = []
+    chunks: list[LogChunk] = []
 
     for stream_name in streams:
         candidates = _LOG_FILE_CANDIDATES.get(stream_name, ())
-        path: Optional[Path] = None
+        path: Path | None = None
         for candidate_name in candidates:
             candidate_path = run_dir / candidate_name
             if candidate_path.exists():
@@ -2129,18 +2293,18 @@ def _collect_file_chunks(
         try:
             size = path.stat().st_size
         except OSError:
-            logger.warning('Unable to stat log file %s for job %s', path, job_id)
+            logger.warning("Unable to stat log file %s for job %s", path, job_id)
             continue
 
         if size <= offset:
             continue
 
         try:
-            with path.open('rb') as fh:
+            with path.open("rb") as fh:
                 fh.seek(offset)
                 data = fh.read()
         except OSError:
-            logger.warning('Unable to read log file %s for job %s', path, job_id)
+            logger.warning("Unable to read log file %s for job %s", path, job_id)
             continue
 
         if not data:
@@ -2160,41 +2324,45 @@ def _collect_file_chunks(
     return chunks
 
 
-def _serialize_log_chunk(chunk: LogChunk) -> Dict[str, str]:
-    data_b64 = base64.b64encode(chunk.data).decode('utf-8')
+def _serialize_log_chunk(chunk: LogChunk) -> dict[str, str]:
+    data_b64 = base64.b64encode(chunk.data).decode("utf-8")
     return {
-        'event': 'log_chunk',
-        'data': json.dumps({
-            'stream': chunk.stream,
-            'offset': chunk.offset,
-            'data': data_b64,
-            'timestamp': chunk.created_at,
-            'size': len(chunk.data),
-        }),
+        "event": "log_chunk",
+        "data": json.dumps(
+            {
+                "stream": chunk.stream,
+                "offset": chunk.offset,
+                "data": data_b64,
+                "timestamp": chunk.created_at,
+                "size": len(chunk.data),
+            }
+        ),
     }
 
 
 def _serialize_log_complete(
     job_id: str,
-    status: Optional[str],
-    streams: List[str],
-    store_offsets: Dict[str, int],
-    file_offsets: Dict[str, int],
-) -> Dict[str, str]:
+    status: str | None,
+    streams: list[str],
+    store_offsets: dict[str, int],
+    file_offsets: dict[str, int],
+) -> dict[str, str]:
     return {
-        'event': 'log_complete',
-        'data': json.dumps({
-            'job_id': job_id,
-            'status': status,
-            'final_offset': _max_offset(streams, store_offsets, file_offsets),
-        }),
+        "event": "log_complete",
+        "data": json.dumps(
+            {
+                "job_id": job_id,
+                "status": status,
+                "final_offset": _max_offset(streams, store_offsets, file_offsets),
+            }
+        ),
     }
 
 
 def _max_offset(
-    streams: List[str],
-    store_offsets: Dict[str, int],
-    file_offsets: Dict[str, int],
+    streams: list[str],
+    store_offsets: dict[str, int],
+    file_offsets: dict[str, int],
 ) -> int:
     values = []
     for name in streams:
@@ -2205,37 +2373,40 @@ def _max_offset(
     return max(values) if values else 0
 
 
-def _job_is_terminal(state: Optional[str]) -> bool:
+def _job_is_terminal(state: str | None) -> bool:
     if state is None:
         return False
     return state.lower() in _TERMINAL_JOB_STATES
 
+
 @router.get("/queue/status")
-async def get_queue_status() -> Dict[str, Any]:
+async def get_queue_status() -> dict[str, Any]:
     """Get job queue status"""
     return JobQueueManager.get_queue_status()
+
 
 @router.get("/statistics")
 async def get_job_statistics_endpoint() -> JobStatistics:
     """Get comprehensive job statistics"""
     return calculate_job_statistics()
 
+
 @router.get("")
 async def list_jobs(
     request: Request,
-    user_id: Optional[str] = Query(None),
-    status: Optional[JobStatus] = Query(None),
-    priority: Optional[JobPriority] = Query(None),
+    user_id: str | None = Query(None),
+    status: JobStatus | None = Query(None),
+    priority: JobPriority | None = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     sort_by: str = Query("created_at"),
-    sort_desc: bool = Query(True)
-) -> Dict[str, Any]:
+    sort_desc: bool = Query(True),
+) -> dict[str, Any]:
     """List jobs (contract-first)."""
 
     job_store = getattr(request.app.state, "job_store", None)
 
-    state_filter: Optional[str] = None
+    state_filter: str | None = None
     if status is not None:
         state_filter = str(getattr(status, "value", status))
         if state_filter == JobStatus.COMPLETED.value:
@@ -2297,7 +2468,9 @@ async def list_jobs(
 
     total = len(filtered_jobs)
     paginated_jobs = filtered_jobs[offset : offset + limit]
-    records = [JobAdapter.to_record(_hydrate_plan_metadata(job)) for job in paginated_jobs]
+    records = [
+        JobAdapter.to_record(_hydrate_plan_metadata(job)) for job in paginated_jobs
+    ]
 
     return {
         "jobs": records,
@@ -2309,19 +2482,21 @@ async def list_jobs(
 
 
 @router.get("/{job_id}/graph")
-async def get_job_graph(job_id: str, request: Request) -> Dict[str, Any]:
+async def get_job_graph(job_id: str, request: Request) -> dict[str, Any]:
     """Return a pipeline graph snapshot for the given job."""
     job = await _get_job_with_store(job_id, request)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return build_job_graph_snapshot(job, job_id=job_id)
 
+
 # ---------------------------------------------------------------------------
 # Evidence & Provenance Endpoints (for Web UI Evidence Rail)
 # ---------------------------------------------------------------------------
 
+
 @router.get("/{job_id}/provenance-graph")
-async def get_job_provenance_graph(job_id: str) -> Dict[str, Any]:
+async def get_job_provenance_graph(job_id: str) -> dict[str, Any]:
     """Return a simple provenance graph for the given job.
 
     The shape matches the Web UI's expected ProvenanceGraph:
@@ -2331,77 +2506,77 @@ async def get_job_provenance_graph(job_id: str) -> Dict[str, Any]:
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    nodes: List[Dict[str, Any]] = []
-    edges: List[Dict[str, Any]] = []
+    nodes: list[dict[str, Any]] = []
+    edges: list[dict[str, Any]] = []
 
     # Job node
-    nodes.append({
-        "id": job.id,
-        "type": "job",
-        "label": job.name or f"Job {job.id}",
-        "metadata": {
-            "status": job.status,
-            "created_at": job.created_at.isoformat(),
-            "pipeline": job.metadata.get("pipeline") if job.metadata else None,
+    nodes.append(
+        {
+            "id": job.id,
+            "type": "job",
+            "label": job.name or f"Job {job.id}",
+            "metadata": {
+                "status": job.status,
+                "created_at": job.created_at.isoformat(),
+                "pipeline": job.metadata.get("pipeline") if job.metadata else None,
+            },
         }
-    })
+    )
 
     # Dataset (if present in metadata)
     dataset_id = job.metadata.get("dataset_id") if job.metadata else None
     if dataset_id:
-        nodes.append({
-            "id": f"dataset:{dataset_id}",
-            "type": "dataset",
-            "label": str(dataset_id),
-            "metadata": {"source": job.metadata.get("dataset_source")}
-        })
-        edges.append({
-            "source": f"dataset:{dataset_id}",
-            "target": job.id,
-            "label": "used_by"
-        })
+        nodes.append(
+            {
+                "id": f"dataset:{dataset_id}",
+                "type": "dataset",
+                "label": str(dataset_id),
+                "metadata": {"source": job.metadata.get("dataset_source")},
+            }
+        )
+        edges.append(
+            {"source": f"dataset:{dataset_id}", "target": job.id, "label": "used_by"}
+        )
 
     # Steps as tool nodes
     for step in job.steps:
         step_node_id = f"step:{step.id}"
-        nodes.append({
-            "id": step_node_id,
-            "type": "tool",
-            "label": step.tool,
-            "metadata": {
-                "name": step.name,
-                "status": step.status,
-                "args": step.args,
-                "start_time": step.start_time.isoformat() if step.start_time else None,
-                "end_time": step.end_time.isoformat() if step.end_time else None,
+        nodes.append(
+            {
+                "id": step_node_id,
+                "type": "tool",
+                "label": step.tool,
+                "metadata": {
+                    "name": step.name,
+                    "status": step.status,
+                    "args": step.args,
+                    "start_time": (
+                        step.start_time.isoformat() if step.start_time else None
+                    ),
+                    "end_time": step.end_time.isoformat() if step.end_time else None,
+                },
             }
-        })
-        edges.append({
-            "source": job.id,
-            "target": step_node_id,
-            "label": "has_step"
-        })
+        )
+        edges.append({"source": job.id, "target": step_node_id, "label": "has_step"})
 
     # Artifacts as outputs
     for artifact in job.artifacts:
         art_node_id = f"artifact:{artifact.id}"
-        nodes.append({
-            "id": art_node_id,
-            "type": "output",
-            "label": artifact.name,
-            "metadata": artifact.model_dump()
-        })
-        edges.append({
-            "source": job.id,
-            "target": art_node_id,
-            "label": "produces"
-        })
+        nodes.append(
+            {
+                "id": art_node_id,
+                "type": "output",
+                "label": artifact.name,
+                "metadata": artifact.model_dump(),
+            }
+        )
+        edges.append({"source": job.id, "target": art_node_id, "label": "produces"})
 
     return {"nodes": nodes, "edges": edges}
 
 
 @router.get("/{job_id}/runcard")
-async def get_job_runcard(job_id: str, request: Request) -> Dict[str, Any]:
+async def get_job_runcard(job_id: str, request: Request) -> dict[str, Any]:
     """Return a RunCard-like structure for Evidence Rail.
 
     This is a minimal implementation derived from the in-memory Job.
@@ -2410,7 +2585,9 @@ async def get_job_runcard(job_id: str, request: Request) -> Dict[str, Any]:
     # provenance, artifacts, and file refs stay consistent.
     try:
         observation = await get_job_observation(job_id, request)
-        run_card = observation.get("run_card") if isinstance(observation, dict) else None
+        run_card = (
+            observation.get("run_card") if isinstance(observation, dict) else None
+        )
         if isinstance(run_card, dict):
             return run_card
     except HTTPException:
@@ -2428,28 +2605,30 @@ async def get_job_runcard(job_id: str, request: Request) -> Dict[str, Any]:
     if job.metadata and job.metadata.get("dataset_id"):
         dataset = {
             "id": str(job.metadata.get("dataset_id")),
-            "name": job.metadata.get("dataset_name") or str(job.metadata.get("dataset_id")),
+            "name": job.metadata.get("dataset_name")
+            or str(job.metadata.get("dataset_id")),
             "source": job.metadata.get("dataset_source") or "unknown",
-            "n_subjects": job.metadata.get("n_subjects")
+            "n_subjects": job.metadata.get("n_subjects"),
         }
 
     tools = []
     seen_tools = set()
     for step in job.steps:
         if step.tool and step.tool not in seen_tools:
-            tools.append({
-                "name": step.tool,
-                "version": step.metrics.model_dump().get("tool_version") if step.metrics else "latest"
-            })
+            tools.append(
+                {
+                    "name": step.tool,
+                    "version": (
+                        step.metrics.model_dump().get("tool_version")
+                        if step.metrics
+                        else "latest"
+                    ),
+                }
+            )
             seen_tools.add(step.tool)
 
     outputs = [
-        {
-            "name": a.name,
-            "type": a.type,
-            "path": a.path,
-            "size": a.size
-        }
+        {"name": a.name, "type": a.type, "path": a.path, "size": a.size}
         for a in job.artifacts
     ]
 
@@ -2466,14 +2645,14 @@ async def get_job_runcard(job_id: str, request: Request) -> Dict[str, Any]:
         "analysis": {
             "name": job.name or f"Job {job.id}",
             "description": job.metadata.get("description") if job.metadata else None,
-            "pipeline": job.metadata.get("pipeline") if job.metadata else None
+            "pipeline": job.metadata.get("pipeline") if job.metadata else None,
         },
         "datasets": [dataset] if dataset else [],
         "tools": tools,
         "parameters": job.metadata.get("parameters") if job.metadata else {},
         "outputs": outputs,
         "provenance": provenance,
-        "citations": citations or []
+        "citations": citations or [],
     }
 
     from brain_researcher.core.contracts.ids import IdsV1
@@ -2527,8 +2706,8 @@ async def get_job_runcard(job_id: str, request: Request) -> Dict[str, Any]:
     return dumped
 
 
-@router.get("/{job_id}/observation", response_model=Dict[str, Any], tags=["provenance"])
-async def get_job_observation(job_id: str, request: Request) -> Dict[str, Any]:
+@router.get("/{job_id}/observation", response_model=dict[str, Any], tags=["provenance"])
+async def get_job_observation(job_id: str, request: Request) -> dict[str, Any]:
     """Return the canonical observation document for a job.
 
     Serves `observation.json` from the run directory when present. If missing,
@@ -2573,7 +2752,9 @@ async def get_job_observation(job_id: str, request: Request) -> Dict[str, Any]:
                         if not isinstance(art.get("checksum_status"), str):
                             needs_backfill = True
                             break
-            if not needs_backfill and _needs_observation_artifact_backfill(data, run_dir):
+            if not needs_backfill and _needs_observation_artifact_backfill(
+                data, run_dir
+            ):
                 needs_backfill = True
 
             if not needs_backfill:
@@ -2601,14 +2782,16 @@ async def get_job_observation(job_id: str, request: Request) -> Dict[str, Any]:
         resolved_job_record = job_record.model_copy(
             update={
                 "run_dir": str(run_dir),
-                "provenance_path": str(
-                    _resolve_recorded_job_path(
-                        job_record.provenance_path,
-                        run_store_root=run_store_root,
+                "provenance_path": (
+                    str(
+                        _resolve_recorded_job_path(
+                            job_record.provenance_path,
+                            run_store_root=run_store_root,
+                        )
                     )
-                )
-                if job_record.provenance_path
-                else None,
+                    if job_record.provenance_path
+                    else None
+                ),
             }
         )
         spec = load_or_build_observation(resolved_job_record)
@@ -2642,7 +2825,9 @@ async def get_job_observation(job_id: str, request: Request) -> Dict[str, Any]:
 
 def _infer_ui_artifact_type(path: str) -> str:
     lower = (path or "").lower()
-    if lower.endswith((".png", ".jpg", ".jpeg", ".svg", ".gif", ".webp", ".nii", ".nii.gz")):
+    if lower.endswith(
+        (".png", ".jpg", ".jpeg", ".svg", ".gif", ".webp", ".nii", ".nii.gz")
+    ):
         return "image"
     if lower.endswith((".csv", ".tsv", ".parquet", ".xlsx", ".xls")):
         return "table"
@@ -2654,10 +2839,10 @@ def _infer_ui_artifact_type(path: str) -> str:
 
 
 def _normalize_observation_artifacts(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     *,
     run_dir: Path | None = None,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     artifacts = data.get("artifacts")
     if not isinstance(artifacts, list):
         data["artifacts"] = []
@@ -2668,7 +2853,7 @@ def _normalize_observation_artifacts(
     return normalized
 
 
-def _artifact_output_views(artifacts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _artifact_output_views(artifacts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [
         {
             "name": item.get("name"),
@@ -2681,7 +2866,7 @@ def _artifact_output_views(artifacts: List[Dict[str, Any]]) -> List[Dict[str, An
 
 
 def _ensure_observation_artifact_views(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     *,
     run_dir: Path | None = None,
 ) -> None:
@@ -2697,11 +2882,13 @@ def _ensure_observation_artifact_views(
     run_card["artifacts"] = artifacts
 
 
-def _needs_observation_artifact_backfill(data: Dict[str, Any], run_dir: Path) -> bool:
+def _needs_observation_artifact_backfill(data: dict[str, Any], run_dir: Path) -> bool:
     artifacts = _normalize_observation_artifacts(data, run_dir=run_dir)
     run_card = data.get("run_card")
     run_card_outputs = run_card.get("outputs") if isinstance(run_card, dict) else None
-    run_card_artifacts = run_card.get("artifacts") if isinstance(run_card, dict) else None
+    run_card_artifacts = (
+        run_card.get("artifacts") if isinstance(run_card, dict) else None
+    )
     run_files = _collect_artifact_files(run_dir)
 
     has_artifacts = any(isinstance(item, dict) for item in artifacts)
@@ -2721,8 +2908,8 @@ def _needs_observation_artifact_backfill(data: Dict[str, Any], run_dir: Path) ->
     return len(run_files) > 0
 
 
-def _collect_artifact_files(run_dir: Path) -> List[Dict[str, Any]]:
-    files: List[Dict[str, Any]] = []
+def _collect_artifact_files(run_dir: Path) -> list[dict[str, Any]]:
+    files: list[dict[str, Any]] = []
     for file_path in run_dir.rglob("*"):
         if not file_path.is_file():
             continue
@@ -2750,7 +2937,7 @@ def _normalized_artifact_path(
     value: Any,
     *,
     run_dir: Path | None = None,
-) -> Optional[str]:
+) -> str | None:
     if not isinstance(value, str):
         return None
     text = value.strip()
@@ -2783,7 +2970,7 @@ def _normalized_artifact_path(
 
 
 def _artifact_dedupe_key(
-    artifact: Dict[str, Any],
+    artifact: dict[str, Any],
     *,
     run_dir: Path | None = None,
 ) -> str:
@@ -2823,7 +3010,7 @@ def _is_local_artifact_file_url(value: Any) -> bool:
     return text.startswith("/api/jobs/") and "/artifacts/files/" in text
 
 
-def _merge_artifact_fields(target: Dict[str, Any], source: Dict[str, Any]) -> None:
+def _merge_artifact_fields(target: dict[str, Any], source: dict[str, Any]) -> None:
     for field, value in source.items():
         if field in {"url", "download_url"} and _is_local_artifact_file_url(value):
             target[field] = value
@@ -2839,11 +3026,11 @@ def _merge_artifact_fields(target: Dict[str, Any], source: Dict[str, Any]) -> No
 
 
 def _merge_artifact_payloads(
-    *artifact_lists: List[Dict[str, Any]],
+    *artifact_lists: list[dict[str, Any]],
     run_dir: Path | None = None,
-) -> List[Dict[str, Any]]:
-    merged: List[Dict[str, Any]] = []
-    merged_by_key: Dict[str, Dict[str, Any]] = {}
+) -> list[dict[str, Any]]:
+    merged: list[dict[str, Any]] = []
+    merged_by_key: dict[str, dict[str, Any]] = {}
     for artifacts in artifact_lists:
         for artifact in artifacts:
             if not isinstance(artifact, dict):
@@ -2860,11 +3047,11 @@ def _merge_artifact_payloads(
 
 
 def _artifact_dedupe_keys(
-    artifacts: List[Dict[str, Any]],
+    artifacts: list[dict[str, Any]],
     *,
     run_dir: Path | None = None,
-) -> Set[str]:
-    keys: Set[str] = set()
+) -> set[str]:
+    keys: set[str] = set()
     for artifact in artifacts:
         if not isinstance(artifact, dict):
             continue
@@ -2874,9 +3061,9 @@ def _artifact_dedupe_keys(
     return keys
 
 
-def _payload_output_dirs(payload: Dict[str, Any]) -> List[str]:
-    output_dirs: List[str] = []
-    seen: Set[str] = set()
+def _payload_output_dirs(payload: dict[str, Any]) -> list[str]:
+    output_dirs: list[str] = []
+    seen: set[str] = set()
 
     def add(value: Any) -> None:
         if not isinstance(value, str):
@@ -2906,7 +3093,7 @@ def _payload_output_dirs(payload: Dict[str, Any]) -> List[str]:
 def _mirror_external_output_artifacts(
     *,
     job_id: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     run_dir: Path,
     run_store_root: Path,
 ) -> None:
@@ -2924,7 +3111,9 @@ def _mirror_external_output_artifacts(
 
     max_files = int(os.getenv("BR_JOB_ARTIFACT_OUTPUT_DIR_MAX_FILES", "128"))
     max_per_file = int(os.getenv("BR_JOB_ARTIFACT_OUTPUT_DIR_MAX_BYTES", "104857600"))
-    max_total = int(os.getenv("BR_JOB_ARTIFACT_OUTPUT_DIR_MAX_TOTAL_BYTES", "1073741824"))
+    max_total = int(
+        os.getenv("BR_JOB_ARTIFACT_OUTPUT_DIR_MAX_TOTAL_BYTES", "1073741824")
+    )
     if max_files <= 0 or max_per_file <= 0 or max_total <= 0:
         return
 
@@ -2939,7 +3128,9 @@ def _mirror_external_output_artifacts(
         try:
             output_dir = Path(raw_output_dir).expanduser().resolve()
         except (OSError, RuntimeError):
-            logger.debug("Skipping invalid output_dir for job %s: %r", job_id, raw_output_dir)
+            logger.debug(
+                "Skipping invalid output_dir for job %s: %r", job_id, raw_output_dir
+            )
             continue
         if not output_dir.exists() or not output_dir.is_dir():
             continue
@@ -2948,16 +3139,23 @@ def _mirror_external_output_artifacts(
             output_dir.relative_to(run_dir_resolved)
             continue
         except HTTPException:
-            logger.warning("Skipping output_dir outside allowed roots for job %s: %s", job_id, output_dir)
+            logger.warning(
+                "Skipping output_dir outside allowed roots for job %s: %s",
+                job_id,
+                output_dir,
+            )
             continue
         except ValueError:
             pass
 
         safe_dir_name = output_dir.name or "output_dir"
-        safe_dir_name = "".join(
-            char if char.isalnum() or char in "._-" else "_"
-            for char in safe_dir_name
-        ).strip("._") or "output_dir"
+        safe_dir_name = (
+            "".join(
+                char if char.isalnum() or char in "._-" else "_"
+                for char in safe_dir_name
+            ).strip("._")
+            or "output_dir"
+        )
         dest_root = run_dir_resolved / "workflow_outputs" / safe_dir_name
 
         for file_path in sorted(output_dir.rglob("*")):
@@ -2977,7 +3175,10 @@ def _mirror_external_output_artifacts(
                 rel_path = file_path.relative_to(output_dir)
             except ValueError:
                 continue
-            if any(part in {"", ".", ".."} or part.startswith(".") for part in rel_path.parts):
+            if any(
+                part in {"", ".", ".."} or part.startswith(".")
+                for part in rel_path.parts
+            ):
                 continue
             if file_path.name in _OBS_INTERNAL_ARTIFACT_FILENAMES:
                 continue
@@ -3016,10 +3217,14 @@ def _mirror_external_output_artifacts(
             copied_bytes += size
 
 
-@router.get("/{job_id}/artifacts", response_model=Dict[str, Any], tags=["provenance", "artifacts"])
-async def get_job_artifacts(job_id: str, request: Request) -> Dict[str, Any]:
+@router.get(
+    "/{job_id}/artifacts",
+    response_model=dict[str, Any],
+    tags=["provenance", "artifacts"],
+)
+async def get_job_artifacts(job_id: str, request: Request) -> dict[str, Any]:
     """Return UI-ready artifact metadata for a job."""
-    observation_artifacts: List[Dict[str, Any]] = []
+    observation_artifacts: list[dict[str, Any]] = []
     try:
         observation = await get_job_observation(job_id, request)
     except HTTPException as exc:
@@ -3063,7 +3268,7 @@ async def get_job_artifacts(job_id: str, request: Request) -> Dict[str, Any]:
         run_store_root=run_store_root,
     )
     files = _collect_artifact_files(run_dir)
-    artifacts_payload: List[Dict[str, Any]] = []
+    artifacts_payload: list[dict[str, Any]] = []
     for idx, file_item in enumerate(files):
         rel_path = str(file_item.get("path") or "")
         encoded_rel = quote(rel_path, safe="/._-")
@@ -3089,9 +3294,10 @@ async def get_job_artifacts(job_id: str, request: Request) -> Dict[str, Any]:
     }
 
 
-
 @router.post("/{job_id}/artifacts/{artifact_id}/annotate")
-async def annotate_artifact(job_id: str, artifact_id: str, annotation: str = Query(...)) -> Dict[str, Any]:
+async def annotate_artifact(
+    job_id: str, artifact_id: str, annotation: str = Query(...)
+) -> dict[str, Any]:
     """Add a simple text annotation to an artifact's metadata."""
     job = _get_router_job(job_id)
     if not job:
@@ -3106,19 +3312,21 @@ async def annotate_artifact(job_id: str, artifact_id: str, annotation: str = Que
 
     md = target.metadata or {}
     annotations = md.get("annotations", [])
-    annotations.append({
-        "text": annotation,
-        "timestamp": datetime.utcnow().isoformat()
-    })
+    annotations.append({"text": annotation, "timestamp": datetime.utcnow().isoformat()})
     md["annotations"] = annotations
     target.metadata = md
 
-    return {"status": "ok", "artifact_id": artifact_id, "annotations_count": len(annotations)}
+    return {
+        "status": "ok",
+        "artifact_id": artifact_id,
+        "annotations_count": len(annotations),
+    }
 
 
 # ============================================================================
 # Provenance and Artifact File Endpoints
 # ============================================================================
+
 
 def _validate_path_security(target_path: Path, base_path: Path) -> None:
     """
@@ -3143,15 +3351,11 @@ def _validate_path_security(target_path: Path, base_path: Path) -> None:
                 f"not under {base_path}"
             )
             raise HTTPException(
-                status_code=403,
-                detail="Access denied: Path traversal attempt detected"
+                status_code=403, detail="Access denied: Path traversal attempt detected"
             )
     except (OSError, RuntimeError) as e:
         logger.error(f"Path validation error: {e}")
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid path"
-        )
+        raise HTTPException(status_code=400, detail="Invalid path")
 
 
 def _validate_path_security_against_roots(
@@ -3199,7 +3403,7 @@ def _resolve_recorded_job_path(path_value: str, *, run_store_root: Path) -> Path
 
 @router.get(
     "/{job_id}/provenance",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     responses={
         200: {
             "description": "Provenance metadata retrieved successfully",
@@ -3212,20 +3416,17 @@ def _resolve_recorded_job_path(path_value: str, *, run_store_root: Path) -> Path
                         "started_at": "2025-01-01T12:00:00Z",
                         "finished_at": "2025-01-01T12:00:05Z",
                         "environment": {"PATH": "/usr/bin"},
-                        "outputs": [{"path": "output.nii.gz", "size": 1024}]
+                        "outputs": [{"path": "output.nii.gz", "size": 1024}],
                     }
                 }
-            }
+            },
         },
         404: {"description": "Job not found or provenance not available"},
-        500: {"description": "Error reading provenance file"}
+        500: {"description": "Error reading provenance file"},
     },
-    tags=["provenance"]
+    tags=["provenance"],
 )
-async def get_job_provenance(
-    job_id: str,
-    request: Request
-) -> Dict[str, Any]:
+async def get_job_provenance(job_id: str, request: Request) -> dict[str, Any]:
     """
     Get the full provenance JSON for a job.
 
@@ -3245,8 +3446,7 @@ async def get_job_provenance(
     # Check if job has provenance
     if not job_record.provenance_path:
         raise HTTPException(
-            status_code=404,
-            detail="Provenance not available for this job"
+            status_code=404, detail="Provenance not available for this job"
         )
 
     # Construct full path
@@ -3260,13 +3460,12 @@ async def get_job_provenance(
     # Check file exists
     if not provenance_path.exists():
         raise HTTPException(
-            status_code=404,
-            detail=f"Provenance file not found at {provenance_path}"
+            status_code=404, detail=f"Provenance file not found at {provenance_path}"
         )
 
     # Read and return provenance JSON
     try:
-        with open(provenance_path, 'r') as f:
+        with open(provenance_path) as f:
             provenance_data = json.load(f)
 
         logger.info(f"Served provenance for job {job_id}")
@@ -3275,20 +3474,16 @@ async def get_job_provenance(
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in provenance file {provenance_path}: {e}")
         raise HTTPException(
-            status_code=500,
-            detail="Provenance file contains invalid JSON"
+            status_code=500, detail="Provenance file contains invalid JSON"
         )
     except Exception as e:
         logger.error(f"Error reading provenance file {provenance_path}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Error reading provenance file"
-        )
+        raise HTTPException(status_code=500, detail="Error reading provenance file")
 
 
 @router.get(
     "/{job_id}/plan",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     responses={
         200: {
             "description": "Planner trace retrieved successfully",
@@ -3303,34 +3498,33 @@ async def get_job_provenance(
                                 "score": 0.85,
                                 "image": "/cvmfs/fsl/bet.simg",
                                 "preflight_ok": True,
-                                "reason": "All checks passed"
+                                "reason": "All checks passed",
                             }
                         ],
                         "chosen": {
                             "tool_id": "fsl.bet",
                             "tool_name": "bet",
-                            "score": 0.85
+                            "score": 0.85,
                         },
                         "plan_id": "uuid-here",
-                        "constraints": {"input": "/data/brain.nii.gz"}
+                        "constraints": {"input": "/data/brain.nii.gz"},
                     }
                 }
-            }
+            },
         },
         404: {
             "description": "Job or plan not found",
             "content": {
                 "application/json": {
-                    "example": {"detail": "Plan not available (planner was not used for this job)"}
+                    "example": {
+                        "detail": "Plan not available (planner was not used for this job)"
+                    }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
-async def get_job_plan(
-    job_id: str,
-    request: Request
-) -> Dict[str, Any]:
+async def get_job_plan(job_id: str, request: Request) -> dict[str, Any]:
     """
     Get the planner trace for a job.
 
@@ -3352,7 +3546,9 @@ async def get_job_plan(
     # STEP 1: Try in-memory first (fast path)
     job = _get_router_job(job_id)
     if job and job.metadata and "planner_trace" in job.metadata:
-        logger.info(f"Returning planner trace for job {job_id} from metadata (fast path)")
+        logger.info(
+            f"Returning planner trace for job {job_id} from metadata (fast path)"
+        )
         return job.metadata["planner_trace"]
 
     # STEP 2: Fall back to JobStore + provenance.json
@@ -3365,7 +3561,7 @@ async def get_job_plan(
     if not job_record.provenance_path:
         raise HTTPException(
             status_code=404,
-            detail="Plan not available (job may not have used planner or has not completed)"
+            detail="Plan not available (job may not have used planner or has not completed)",
         )
 
     # STEP 3: Read from provenance.json
@@ -3380,18 +3576,17 @@ async def get_job_plan(
         raise HTTPException(status_code=404, detail="Provenance file not found")
 
     try:
-        with open(provenance_path, 'r') as f:
+        with open(provenance_path) as f:
             provenance_data = json.load(f)
 
         if "plan" not in provenance_data:
             raise HTTPException(
                 status_code=404,
-                detail="Plan not available (planner was not used for this job)"
+                detail="Plan not available (planner was not used for this job)",
             )
 
         logger.info(f"Returning planner trace for job {job_id} from provenance.json")
         return provenance_data["plan"]
-
 
     except HTTPException:
         # Re-raise HTTPExceptions without wrapping them
@@ -3399,15 +3594,11 @@ async def get_job_plan(
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in provenance file {provenance_path}: {e}")
         raise HTTPException(
-            status_code=500,
-            detail="Provenance file contains invalid JSON"
+            status_code=500, detail="Provenance file contains invalid JSON"
         )
     except Exception as e:
         logger.error(f"Error reading provenance file {provenance_path}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Error reading provenance file"
-        )
+        raise HTTPException(status_code=500, detail="Error reading provenance file")
 
 
 @router.get("/{job_id}/plan/por", response_model=PlanOfRecordResponse)
@@ -3449,7 +3640,7 @@ async def get_job_plan_events(job_id: str, request: Request) -> PlanEventsRespon
 
 @router.get(
     "/{job_id}/artifacts/files",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     responses={
         200: {
             "description": "File list retrieved successfully",
@@ -3463,26 +3654,23 @@ async def get_job_plan_events(job_id: str, request: Request) -> PlanEventsRespon
                             {
                                 "name": "output.nii.gz",
                                 "size": 1048576,
-                                "modified": "2025-01-01T12:00:05"
+                                "modified": "2025-01-01T12:00:05",
                             },
                             {
                                 "name": "results.csv",
                                 "size": 2048,
-                                "modified": "2025-01-01T12:00:06"
-                            }
-                        ]
+                                "modified": "2025-01-01T12:00:06",
+                            },
+                        ],
                     }
                 }
-            }
+            },
         },
-        404: {"description": "Job not found or run directory not available"}
+        404: {"description": "Job not found or run directory not available"},
     },
-    tags=["provenance", "artifacts"]
+    tags=["provenance", "artifacts"],
 )
-async def list_artifact_files(
-    job_id: str,
-    request: Request
-) -> Dict[str, Any]:
+async def list_artifact_files(job_id: str, request: Request) -> dict[str, Any]:
     """
     List all artifact files in the job's run directory.
 
@@ -3502,8 +3690,7 @@ async def list_artifact_files(
     # Check if job has run_dir
     if not job_record.run_dir:
         raise HTTPException(
-            status_code=404,
-            detail="Run directory not available for this job"
+            status_code=404, detail="Run directory not available for this job"
         )
 
     config = get_recorder_config()
@@ -3516,8 +3703,7 @@ async def list_artifact_files(
     # Check directory exists
     if not run_dir.exists() or not run_dir.is_dir():
         raise HTTPException(
-            status_code=404,
-            detail=f"Run directory not found: {run_dir}"
+            status_code=404, detail=f"Run directory not found: {run_dir}"
         )
 
     # List files recursively (exclude provenance.json)
@@ -3530,15 +3716,12 @@ async def list_artifact_files(
             "run_id": job_record.run_id,
             "run_dir": str(run_dir),
             "file_count": len(files),
-            "files": files
+            "files": files,
         }
 
     except Exception as e:
         logger.error(f"Error listing files in {run_dir}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Error listing artifact files"
-        )
+        raise HTTPException(status_code=500, detail="Error listing artifact files")
 
 
 @router.get(
@@ -3553,19 +3736,19 @@ async def list_artifact_files(
                 },
                 "application/json": {},
                 "text/plain": {},
-                "application/x-nifti": {}
-            }
+                "application/x-nifti": {},
+            },
         },
         400: {"description": "Invalid filename (contains path separators)"},
-        403: {"description": "Access denied (provenance.json or path traversal attempt)"},
-        404: {"description": "Job, run directory, or file not found"}
+        403: {
+            "description": "Access denied (provenance.json or path traversal attempt)"
+        },
+        404: {"description": "Job, run directory, or file not found"},
     },
-    tags=["provenance", "artifacts"]
+    tags=["provenance", "artifacts"],
 )
 async def download_artifact_file(
-    job_id: str,
-    filename: str,
-    request: Request
+    job_id: str, filename: str, request: Request
 ) -> FileResponse:
     """
     Download a specific artifact file from the job's run directory.
@@ -3584,10 +3767,7 @@ async def download_artifact_file(
         or normalized.startswith("\\")
         or "\0" in normalized
     ):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid filename"
-        )
+        raise HTTPException(status_code=400, detail="Invalid filename")
 
     requested = Path(normalized)
     if any(part in {"", ".", ".."} for part in requested.parts):
@@ -3603,8 +3783,7 @@ async def download_artifact_file(
     # Check if job has run_dir
     if not job_record.run_dir:
         raise HTTPException(
-            status_code=404,
-            detail="Run directory not available for this job"
+            status_code=404, detail="Run directory not available for this job"
         )
 
     config = get_recorder_config()
@@ -3625,22 +3804,17 @@ async def download_artifact_file(
         file_path.relative_to(resolved_run_dir)
     except ValueError:
         raise HTTPException(
-            status_code=403,
-            detail="Access denied: Path traversal attempt detected"
+            status_code=403, detail="Access denied: Path traversal attempt detected"
         )
 
     # Check file exists
     if not file_path.exists():
-        raise HTTPException(
-            status_code=404,
-            detail=f"File not found: {filename}"
-        )
+        raise HTTPException(status_code=404, detail=f"File not found: {filename}")
 
     # Don't allow downloading provenance.json via this endpoint
     if file_path.name == "provenance.json":
         raise HTTPException(
-            status_code=403,
-            detail="Use /provenance endpoint to access provenance.json"
+            status_code=403, detail="Use /provenance endpoint to access provenance.json"
         )
 
     # Return file
@@ -3662,9 +3836,7 @@ async def download_artifact_file(
         )
 
     return FileResponse(
-        path=str(file_path),
-        filename=file_path.name,
-        media_type=media_type
+        path=str(file_path), filename=file_path.name, media_type=media_type
     )
 
 
@@ -3672,20 +3844,22 @@ async def download_artifact_file(
 # Job Listing
 # ============================================================================
 
+
 class JobSummary(BaseModel):
     """Summary view of a job for list endpoints"""
+
     job_id: str
     state: str
-    tool: Optional[str] = None
-    prompt: Optional[str] = None
+    tool: str | None = None
+    prompt: str | None = None
     created_at: int  # Unix timestamp
-    updated_at: Optional[int] = None  # Unix timestamp
+    updated_at: int | None = None  # Unix timestamp
     priority: int = 0
 
 
 @router.get(
     "/summaries",
-    response_model=List[JobSummary],
+    response_model=list[JobSummary],
     responses={
         200: {
             "description": "Job list retrieved successfully",
@@ -3699,7 +3873,7 @@ class JobSummary(BaseModel):
                             "prompt": "Extract brain from T1",
                             "created_at": 1704067200,
                             "updated_at": 1704067260,
-                            "priority": 0
+                            "priority": 0,
                         },
                         {
                             "job_id": "run_xyz789",
@@ -3708,21 +3882,25 @@ class JobSummary(BaseModel):
                             "prompt": "Skull strip T1 image",
                             "created_at": 1704067100,
                             "updated_at": 1704067150,
-                            "priority": 5
-                        }
+                            "priority": 5,
+                        },
                     ]
                 }
-            }
+            },
         }
     },
-    tags=["job-management", "jobs"]
+    tags=["job-management", "jobs"],
 )
 async def list_job_summaries(
     request: Request,
-    state: Optional[str] = Query(None, description="Filter by job state (running, succeeded, failed, etc.)"),
-    limit: int = Query(50, ge=1, le=1000, description="Maximum number of jobs to return"),
-    offset: int = Query(0, ge=0, description="Number of jobs to skip")
-) -> List[JobSummary]:
+    state: str | None = Query(
+        None, description="Filter by job state (running, succeeded, failed, etc.)"
+    ),
+    limit: int = Query(
+        50, ge=1, le=1000, description="Maximum number of jobs to return"
+    ),
+    offset: int = Query(0, ge=0, description="Number of jobs to skip"),
+) -> list[JobSummary]:
     """
     List jobs with optional filtering.
 
@@ -3746,7 +3924,7 @@ async def list_job_summaries(
     all_jobs.sort(key=lambda j: j.created_at, reverse=True)
 
     # Apply pagination
-    paginated_jobs = all_jobs[offset:offset + limit]
+    paginated_jobs = all_jobs[offset : offset + limit]
 
     # Convert JobRecord to JobSummary
     summaries = []
@@ -3769,7 +3947,9 @@ async def list_job_summaries(
             job_record.queued_at,
             job_record.created_at,
         ]
-        updated_at = max((ts for ts in timestamps if ts is not None), default=job_record.created_at)
+        updated_at = max(
+            (ts for ts in timestamps if ts is not None), default=job_record.created_at
+        )
 
         summary = JobSummary(
             job_id=job_record.job_id,
@@ -3778,9 +3958,11 @@ async def list_job_summaries(
             prompt=prompt,
             created_at=job_record.created_at,
             updated_at=updated_at,
-            priority=job_record.priority
+            priority=job_record.priority,
         )
         summaries.append(summary)
 
-    logger.info(f"Returning {len(summaries)} jobs (state={state}, limit={limit}, offset={offset})")
+    logger.info(
+        f"Returning {len(summaries)} jobs (state={state}, limit={limit}, offset={offset})"
+    )
     return summaries

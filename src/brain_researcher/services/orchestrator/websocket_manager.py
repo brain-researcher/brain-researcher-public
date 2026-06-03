@@ -6,23 +6,23 @@ and automatic reconnection logic.
 import asyncio
 import json
 import logging
-import time
 import uuid
 from collections import defaultdict, deque
+from collections.abc import Callable
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Set, Callable, Union
 from enum import Enum
-import weakref
+from typing import Any
 
-from fastapi import WebSocket, WebSocketDisconnect
-from pydantic import BaseModel
 import redis.asyncio as redis
+from fastapi import WebSocket
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
 class ConnectionState(str, Enum):
     """WebSocket connection states."""
+
     CONNECTING = "connecting"
     CONNECTED = "connected"
     DISCONNECTING = "disconnecting"
@@ -33,6 +33,7 @@ class ConnectionState(str, Enum):
 
 class MessageType(str, Enum):
     """WebSocket message types."""
+
     PING = "ping"
     PONG = "pong"
     HEARTBEAT = "heartbeat"
@@ -51,25 +52,28 @@ class MessageType(str, Enum):
 
 class WebSocketMessage(BaseModel):
     """WebSocket message structure."""
+
     type: MessageType
-    channel: Optional[str] = None
-    data: Optional[Any] = None
+    channel: str | None = None
+    data: Any | None = None
     timestamp: datetime = None
-    message_id: Optional[str] = None
-    correlation_id: Optional[str] = None
+    message_id: str | None = None
+    correlation_id: str | None = None
 
     def __init__(self, **data):
-        if data.get('timestamp') is None:
-            data['timestamp'] = datetime.utcnow()
-        if data.get('message_id') is None:
-            data['message_id'] = f"msg_{uuid.uuid4().hex[:12]}"
+        if data.get("timestamp") is None:
+            data["timestamp"] = datetime.utcnow()
+        if data.get("message_id") is None:
+            data["message_id"] = f"msg_{uuid.uuid4().hex[:12]}"
         super().__init__(**data)
 
 
 class Connection:
     """WebSocket connection wrapper with metadata and state tracking."""
 
-    def __init__(self, websocket: WebSocket, connection_id: str, user_id: Optional[str] = None):
+    def __init__(
+        self, websocket: WebSocket, connection_id: str, user_id: str | None = None
+    ):
         self.websocket = websocket
         self.connection_id = connection_id
         self.user_id = user_id
@@ -77,8 +81,8 @@ class Connection:
         self.created_at = datetime.utcnow()
         self.last_ping = datetime.utcnow()
         self.last_activity = datetime.utcnow()
-        self.subscriptions: Set[str] = set()
-        self.metadata: Dict[str, Any] = {}
+        self.subscriptions: set[str] = set()
+        self.metadata: dict[str, Any] = {}
         self.message_count = 0
         self.bytes_sent = 0
         self.bytes_received = 0
@@ -94,7 +98,9 @@ class Connection:
         """Send message to WebSocket with error handling."""
         try:
             if self.state != ConnectionState.CONNECTED:
-                logger.warning(f"Attempted to send message to disconnected websocket {self.connection_id}")
+                logger.warning(
+                    f"Attempted to send message to disconnected websocket {self.connection_id}"
+                )
                 return False
 
             message_json = message.json()
@@ -102,7 +108,7 @@ class Connection:
 
             self.last_activity = datetime.utcnow()
             self.message_count += 1
-            self.bytes_sent += len(message_json.encode('utf-8'))
+            self.bytes_sent += len(message_json.encode("utf-8"))
 
             logger.debug(f"Sent message to {self.connection_id}: {message.type}")
             return True
@@ -116,8 +122,7 @@ class Connection:
         """Check if connection is rate limited."""
         cutoff_time = datetime.utcnow() - timedelta(seconds=self.rate_limit_window)
         recent_messages = [
-            msg_time for msg_time in self.message_history
-            if msg_time > cutoff_time
+            msg_time for msg_time in self.message_history if msg_time > cutoff_time
         ]
 
         return len(recent_messages) >= self.max_messages_per_window
@@ -132,7 +137,9 @@ class Connection:
 
     def is_stale(self, timeout_seconds: int = 300) -> bool:
         """Check if connection is stale (no activity for timeout period)."""
-        return (datetime.utcnow() - self.last_activity).total_seconds() > timeout_seconds
+        return (
+            datetime.utcnow() - self.last_activity
+        ).total_seconds() > timeout_seconds
 
 
 class WebSocketPool:
@@ -145,7 +152,7 @@ class WebSocketPool:
         heartbeat_interval_seconds: int = 30,
         connection_timeout_seconds: int = 300,
         enable_redis_pubsub: bool = False,
-        redis_url: Optional[str] = None
+        redis_url: str | None = None,
     ):
         self.max_connections_per_pool = max_connections_per_pool
         self.cleanup_interval_seconds = cleanup_interval_seconds
@@ -155,17 +162,17 @@ class WebSocketPool:
         self.redis_url = redis_url
 
         # Connection storage
-        self.connections: Dict[str, Connection] = {}
-        self.connections_by_user: Dict[str, Set[str]] = defaultdict(set)
-        self.connections_by_channel: Dict[str, Set[str]] = defaultdict(set)
+        self.connections: dict[str, Connection] = {}
+        self.connections_by_user: dict[str, set[str]] = defaultdict(set)
+        self.connections_by_channel: dict[str, set[str]] = defaultdict(set)
 
         # Background tasks
-        self.cleanup_task: Optional[asyncio.Task] = None
-        self.heartbeat_task: Optional[asyncio.Task] = None
-        self.pubsub_task: Optional[asyncio.Task] = None
+        self.cleanup_task: asyncio.Task | None = None
+        self.heartbeat_task: asyncio.Task | None = None
+        self.pubsub_task: asyncio.Task | None = None
 
         # Redis client for scaling
-        self.redis_client: Optional[redis.Redis] = None
+        self.redis_client: redis.Redis | None = None
 
         # Statistics
         self.stats = {
@@ -175,13 +182,13 @@ class WebSocketPool:
             "messages_received": 0,
             "connections_created": 0,
             "connections_dropped": 0,
-            "rate_limited_requests": 0
+            "rate_limited_requests": 0,
         }
 
         # Event handlers
-        self.connection_handlers: List[Callable] = []
-        self.disconnection_handlers: List[Callable] = []
-        self.message_handlers: Dict[str, List[Callable]] = defaultdict(list)
+        self.connection_handlers: list[Callable] = []
+        self.disconnection_handlers: list[Callable] = []
+        self.message_handlers: dict[str, list[Callable]] = defaultdict(list)
 
         logger.info("WebSocket pool initialized")
 
@@ -190,7 +197,9 @@ class WebSocketPool:
         # Initialize Redis if enabled
         if self.enable_redis_pubsub and self.redis_url:
             try:
-                self.redis_client = redis.from_url(self.redis_url, decode_responses=True)
+                self.redis_client = redis.from_url(
+                    self.redis_url, decode_responses=True
+                )
                 await self.redis_client.ping()
                 logger.info("Redis client connected for WebSocket scaling")
 
@@ -231,8 +240,8 @@ class WebSocketPool:
     async def add_connection(
         self,
         websocket: WebSocket,
-        user_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        user_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """Add a new WebSocket connection to the pool."""
 
@@ -276,7 +285,7 @@ class WebSocketPool:
                 "heartbeat_interval_ms": self.heartbeat_interval_seconds * 1000,
                 "max_message_bytes": 1024 * 1024,
                 "supports_resume": False,
-            }
+            },
         )
         await connection.send_message(connection_info)
 
@@ -290,7 +299,9 @@ class WebSocketPool:
             except Exception as e:
                 logger.error(f"Connection handler error: {str(e)}")
 
-        logger.info(f"WebSocket connection established: {connection_id} (user: {user_id})")
+        logger.info(
+            f"WebSocket connection established: {connection_id} (user: {user_id})"
+        )
         return connection_id
 
     async def disconnect(self, connection_id: str, reason: str = "Normal closure"):
@@ -307,7 +318,7 @@ class WebSocketPool:
                 await self.unsubscribe(connection_id, channel)
 
             # Close WebSocket
-            if not connection.websocket.client_state.name == 'DISCONNECTED':
+            if not connection.websocket.client_state.name == "DISCONNECTED":
                 await connection.websocket.close(code=1000, reason=reason)
 
         except Exception as e:
@@ -315,7 +326,9 @@ class WebSocketPool:
 
         finally:
             # Cleanup connection references
-            if connection.user_id and connection_id in self.connections_by_user.get(connection.user_id, set()):
+            if connection.user_id and connection_id in self.connections_by_user.get(
+                connection.user_id, set()
+            ):
                 self.connections_by_user[connection.user_id].discard(connection_id)
                 if not self.connections_by_user[connection.user_id]:
                     del self.connections_by_user[connection.user_id]
@@ -338,7 +351,9 @@ class WebSocketPool:
                 except Exception as e:
                     logger.error(f"Disconnection handler error: {str(e)}")
 
-            logger.info(f"WebSocket connection closed: {connection_id} (reason: {reason})")
+            logger.info(
+                f"WebSocket connection closed: {connection_id} (reason: {reason})"
+            )
 
     async def subscribe(self, connection_id: str, channel: str):
         """Subscribe connection to a channel."""
@@ -372,7 +387,7 @@ class WebSocketPool:
         self,
         channel: str,
         message: WebSocketMessage,
-        exclude_connections: Optional[Set[str]] = None
+        exclude_connections: set[str] | None = None,
     ):
         """Broadcast message to all connections subscribed to a channel."""
         if channel not in self.connections_by_channel:
@@ -408,22 +423,22 @@ class WebSocketPool:
                     "channel": channel,
                     "message": message.model_dump(),
                     "sender_pool": "orchestrator",
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.utcnow().isoformat(),
                 }
-                await self.redis_client.publish(f"ws_broadcast:{channel}", json.dumps(redis_message))
+                await self.redis_client.publish(
+                    f"ws_broadcast:{channel}", json.dumps(redis_message)
+                )
             except Exception as e:
                 logger.error(f"Failed to publish to Redis: {str(e)}")
 
         self.stats["messages_sent"] += success_count
-        logger.debug(f"Broadcast to channel {channel}: {success_count} successful, {len(failed_connections)} failed")
+        logger.debug(
+            f"Broadcast to channel {channel}: {success_count} successful, {len(failed_connections)} failed"
+        )
 
         return success_count
 
-    async def send_to_user(
-        self,
-        user_id: str,
-        message: WebSocketMessage
-    ) -> int:
+    async def send_to_user(self, user_id: str, message: WebSocketMessage) -> int:
         """Send message to all connections for a specific user."""
         if user_id not in self.connections_by_user:
             logger.debug(f"No connections for user {user_id}")
@@ -448,9 +463,7 @@ class WebSocketPool:
         return success_count
 
     async def send_to_connection(
-        self,
-        connection_id: str,
-        message: WebSocketMessage
+        self, connection_id: str, message: WebSocketMessage
     ) -> bool:
         """Send message to a specific connection."""
         if connection_id not in self.connections:
@@ -480,7 +493,10 @@ class WebSocketPool:
             self.stats["rate_limited_requests"] += 1
             error_message = WebSocketMessage(
                 type=MessageType.ERROR,
-                data={"error": "Rate limit exceeded", "retry_after": connection.rate_limit_window}
+                data={
+                    "error": "Rate limit exceeded",
+                    "retry_after": connection.rate_limit_window,
+                },
             )
             await connection.send_message(error_message)
             return
@@ -493,8 +509,7 @@ class WebSocketPool:
             # Handle built-in message types
             if message.type == MessageType.PING:
                 pong_message = WebSocketMessage(
-                    type=MessageType.PONG,
-                    correlation_id=message.message_id
+                    type=MessageType.PONG, correlation_id=message.message_id
                 )
                 await connection.send_message(pong_message)
                 connection.update_ping()
@@ -509,7 +524,9 @@ class WebSocketPool:
                 return
 
             # Handle custom message types
-            message_type = message.type.value if isinstance(message.type, Enum) else message.type
+            message_type = (
+                message.type.value if isinstance(message.type, Enum) else message.type
+            )
             if message_type in self.message_handlers:
                 for handler in self.message_handlers[message_type]:
                     try:
@@ -524,8 +541,7 @@ class WebSocketPool:
 
         except json.JSONDecodeError:
             error_message = WebSocketMessage(
-                type=MessageType.ERROR,
-                data={"error": "Invalid JSON format"}
+                type=MessageType.ERROR, data={"error": "Invalid JSON format"}
             )
             await connection.send_message(error_message)
 
@@ -533,7 +549,7 @@ class WebSocketPool:
             logger.error(f"Error handling message from {connection_id}: {str(e)}")
             error_message = WebSocketMessage(
                 type=MessageType.ERROR,
-                data={"error": f"Message processing failed: {str(e)}"}
+                data={"error": f"Message processing failed: {str(e)}"},
             )
             await connection.send_message(error_message)
 
@@ -552,7 +568,9 @@ class WebSocketPool:
                     await self.disconnect(connection_id, "Connection timeout")
 
                 if stale_connections:
-                    logger.info(f"Cleaned up {len(stale_connections)} stale connections")
+                    logger.info(
+                        f"Cleaned up {len(stale_connections)} stale connections"
+                    )
 
             except Exception as e:
                 logger.error(f"Cleanup loop error: {str(e)}")
@@ -567,8 +585,8 @@ class WebSocketPool:
                     type=MessageType.HEARTBEAT,
                     data={
                         "timestamp": datetime.utcnow().isoformat(),
-                        "active_connections": len(self.connections)
-                    }
+                        "active_connections": len(self.connections),
+                    },
                 )
 
                 # Send heartbeat to all connections
@@ -594,7 +612,9 @@ class WebSocketPool:
 
         try:
             while True:
-                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+                message = await pubsub.get_message(
+                    ignore_subscribe_messages=True, timeout=1.0
+                )
                 if message:
                     try:
                         data = json.loads(message["data"])
@@ -625,11 +645,11 @@ class WebSocketPool:
         """Add message type handler."""
         self.message_handlers[message_type].append(handler)
 
-    def get_connection(self, connection_id: str) -> Optional[Connection]:
+    def get_connection(self, connection_id: str) -> Connection | None:
         """Get connection by ID."""
         return self.connections.get(connection_id)
 
-    def get_user_connections(self, user_id: str) -> List[Connection]:
+    def get_user_connections(self, user_id: str) -> list[Connection]:
         """Get all connections for a user."""
         connection_ids = self.connections_by_user.get(user_id, set())
         return [
@@ -638,7 +658,7 @@ class WebSocketPool:
             if conn_id in self.connections
         ]
 
-    def get_channel_subscribers(self, channel: str) -> List[Connection]:
+    def get_channel_subscribers(self, channel: str) -> list[Connection]:
         """Get all connections subscribed to a channel."""
         connection_ids = self.connections_by_channel.get(channel, set())
         return [
@@ -647,14 +667,16 @@ class WebSocketPool:
             if conn_id in self.connections
         ]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get connection pool statistics."""
         return {
             **self.stats,
             "pool_capacity": self.max_connections_per_pool,
-            "pool_utilization": len(self.connections) / self.max_connections_per_pool * 100,
+            "pool_utilization": len(self.connections)
+            / self.max_connections_per_pool
+            * 100,
             "channels": list(self.connections_by_channel.keys()),
-            "users_connected": list(self.connections_by_user.keys())
+            "users_connected": list(self.connections_by_user.keys()),
         }
 
 

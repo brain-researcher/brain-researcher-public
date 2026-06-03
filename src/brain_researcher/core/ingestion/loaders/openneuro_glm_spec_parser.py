@@ -5,23 +5,25 @@ from __future__ import annotations
 import json
 import logging
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
-_SPEC_PATTERN = re.compile(r"^(?P<dataset>ds\d+)-(?P<task>.+?)_specs\.json$", re.IGNORECASE)
+_SPEC_PATTERN = re.compile(
+    r"^(?P<dataset>ds\d+)-(?P<task>.+?)_specs\.json$", re.IGNORECASE
+)
 
 
 @dataclass
 class ContrastSpec:
     name: str
-    condition_list: List[str]
-    weights: List[float]
-    test: Optional[str] = None
-    metadata: Dict[str, object] = field(default_factory=dict)
+    condition_list: list[str]
+    weights: list[float]
+    test: str | None = None
+    metadata: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass
@@ -29,18 +31,18 @@ class TaskSpec:
     dataset_id: str
     task_name: str
     spec_path: Path
-    bids_model_version: Optional[str] = None
-    model_name: Optional[str] = None
-    group_by: Optional[List[str]] = None
-    subjects: List[str] = field(default_factory=list)
-    task_metadata: Dict[str, object] = field(default_factory=dict)
-    contrasts: List[ContrastSpec] = field(default_factory=list)
-    extra_metadata: Dict[str, object] = field(default_factory=dict)
-    fitlins_params: Dict[str, object] = field(default_factory=dict)
-    auxiliary_resources: List[Path] = field(default_factory=list)
+    bids_model_version: str | None = None
+    model_name: str | None = None
+    group_by: list[str] | None = None
+    subjects: list[str] = field(default_factory=list)
+    task_metadata: dict[str, object] = field(default_factory=dict)
+    contrasts: list[ContrastSpec] = field(default_factory=list)
+    extra_metadata: dict[str, object] = field(default_factory=dict)
+    fitlins_params: dict[str, object] = field(default_factory=dict)
+    auxiliary_resources: list[Path] = field(default_factory=list)
 
 
-def discover_task_specs(statsmodel_root: Path) -> List[TaskSpec]:
+def discover_task_specs(statsmodel_root: Path) -> list[TaskSpec]:
     """Discover task specification bundles within the statsmodel directory."""
 
     statsmodel_root = Path(statsmodel_root)
@@ -48,7 +50,7 @@ def discover_task_specs(statsmodel_root: Path) -> List[TaskSpec]:
         logger.warning("Statsmodel directory missing: %s", statsmodel_root)
         return []
 
-    task_specs: List[TaskSpec] = []
+    task_specs: list[TaskSpec] = []
 
     for dataset_dir in sorted(p for p in statsmodel_root.iterdir() if p.is_dir()):
         for spec_path in sorted(dataset_dir.glob("*_specs.json")):
@@ -84,7 +86,7 @@ def _build_task_spec(
     bids_model_version = spec_data.get("BIDSModelVersion")
     model_name = spec_data.get("Name")
     nodes = spec_data.get("Nodes") or []
-    group_by: Optional[List[str]] = None
+    group_by: list[str] | None = None
     if nodes:
         first_node = nodes[0]
         if isinstance(first_node, dict):
@@ -97,7 +99,11 @@ def _build_task_spec(
         bids_model_version=bids_model_version,
         model_name=model_name,
         group_by=group_by,
-        extra_metadata={k: v for k, v in spec_data.items() if k not in {"BIDSModelVersion", "Name", "Nodes", "Input"}},
+        extra_metadata={
+            k: v
+            for k, v in spec_data.items()
+            if k not in {"BIDSModelVersion", "Name", "Nodes", "Input"}
+        },
         fitlins_params=_extract_fitlins_params(spec_data),
     )
 
@@ -129,8 +135,8 @@ def _build_task_spec(
     return task_spec
 
 
-def _parse_contrasts(items: Iterable[object]) -> List[ContrastSpec]:
-    contrasts: List[ContrastSpec] = []
+def _parse_contrasts(items: Iterable[object]) -> list[ContrastSpec]:
+    contrasts: list[ContrastSpec] = []
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -139,7 +145,7 @@ def _parse_contrasts(items: Iterable[object]) -> List[ContrastSpec]:
             continue
         condition_list = [str(cond) for cond in item.get("ConditionList") or []]
         weights_raw = item.get("Weights") or []
-        weights: List[float] = []
+        weights: list[float] = []
         for value in weights_raw:
             try:
                 weights.append(float(value))
@@ -163,9 +169,9 @@ def _parse_contrasts(items: Iterable[object]) -> List[ContrastSpec]:
     return contrasts
 
 
-def _extract_fitlins_params(spec_data: Dict[str, object]) -> Dict[str, object]:
+def _extract_fitlins_params(spec_data: dict[str, object]) -> dict[str, object]:
     """Extract FitLins parameters from a BIDS Stats Model spec."""
-    params: Dict[str, object] = {}
+    params: dict[str, object] = {}
     nodes = spec_data.get("Nodes") or []
     run_node = None
     for node in nodes:
@@ -184,17 +190,23 @@ def _extract_fitlins_params(spec_data: Dict[str, object]) -> Dict[str, object]:
             params["convolve_input"] = step.get("Input")
             break
 
-    model_block = run_node.get("Model", {}) if isinstance(run_node.get("Model"), dict) else {}
+    model_block = (
+        run_node.get("Model", {}) if isinstance(run_node.get("Model"), dict) else {}
+    )
     if model_block.get("Type"):
         params["model_type"] = model_block.get("Type")
-    opts = model_block.get("Options", {}) if isinstance(model_block.get("Options"), dict) else {}
+    opts = (
+        model_block.get("Options", {})
+        if isinstance(model_block.get("Options"), dict)
+        else {}
+    )
     if opts:
         params["model_options"] = opts
         if "HighPassFilterCutoff" in opts:
             params["high_pass"] = opts.get("HighPassFilterCutoff")
 
     x_terms = model_block.get("X", [])
-    confounds: List[str] = []
+    confounds: list[str] = []
     if isinstance(x_terms, list):
         for term in x_terms:
             if not isinstance(term, str):
@@ -210,7 +222,7 @@ def _extract_fitlins_params(spec_data: Dict[str, object]) -> Dict[str, object]:
     return params
 
 
-def _safe_load_json(path: Path) -> Optional[Dict[str, object]]:
+def _safe_load_json(path: Path) -> dict[str, object] | None:
     try:
         with path.open("r", encoding="utf-8") as handle:
             return json.load(handle)

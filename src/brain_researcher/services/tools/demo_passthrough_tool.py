@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
@@ -26,14 +26,21 @@ class DemoPassthroughTool(NeuroToolWrapper):
             model_config = ConfigDict(extra="allow")
 
             message: str | None = None
-            payload: Dict[str, Any] | None = None
+            payload: dict[str, Any] | None = None
 
         return DemoArgs
 
-    def _run(self, message: str | None = None, payload: Dict[str, Any] | None = None, **kwargs) -> ToolResult:
+    def _run(
+        self,
+        message: str | None = None,
+        payload: dict[str, Any] | None = None,
+        **kwargs,
+    ) -> ToolResult:
         summary = message or "demo-pass"
         outputs = {"payload": payload or {}, "extra": kwargs}
-        return ToolResult(status="success", data={"outputs": outputs, "summary": {"message": summary}})
+        return ToolResult(
+            status="success", data={"outputs": outputs, "summary": {"message": summary}}
+        )
 
 
 __all__ = ["DemoPassthroughTool"]

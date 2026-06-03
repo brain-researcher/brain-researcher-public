@@ -3,13 +3,16 @@
 Test script to verify agent output logging at each stage.
 """
 
-import requests
 import json
 import time
 from pathlib import Path
-import sys
 
-from brain_researcher.services.agent.utils.agent_output_collector import AgentOutputCollector
+import requests
+
+from brain_researcher.services.agent.utils.agent_output_collector import (
+    AgentOutputCollector,
+)
+
 
 def test_agent_conversation():
     """Test a conversation with the agent and log outputs."""
@@ -30,9 +33,7 @@ def test_agent_conversation():
     # Send request to agent
     try:
         response = requests.post(
-            "http://localhost:8000/chat",
-            json={"message": query},
-            timeout=30
+            "http://localhost:8000/chat", json={"message": query}, timeout=30
         )
 
         planning_time = time.time() - start_time
@@ -42,14 +43,14 @@ def test_agent_conversation():
             print(f"✅ Got response in {planning_time:.2f}s")
 
             # Log the planning stage
-            planning_data = collector.collect_tool_execution(
+            collector.collect_tool_execution(
                 tool_name="AgentPlanning",
                 tool_category="agent",
                 input_params={"query": query},
                 execute_fn=lambda: result,
             )
 
-            print(f"📝 Logged planning stage")
+            print("📝 Logged planning stage")
 
             # Display response
             if "response" in result:
@@ -77,23 +78,20 @@ def test_agent_conversation():
             "status": "success",
             "output": "connectivity_matrix.npy",
             "shape": [116, 116],
-            "metrics": {
-                "mean_connectivity": 0.342,
-                "std_connectivity": 0.156
-            }
+            "metrics": {"mean_connectivity": 0.342, "std_connectivity": 0.156},
         }
 
-    tool_result = collector.collect_tool_execution(
+    collector.collect_tool_execution(
         tool_name="ConnectivityMatrixTool",
         tool_category="nilearn/connectivity",
         input_params={
             "data_path": "/app/data/openneuro/ds000114/sub-06/ses-retest/func/sub-06_ses-retest_task-covertverbgeneration_bold.nii.gz",
-            "atlas": "AAL"
+            "atlas": "AAL",
         },
-        execute_fn=simulate_connectivity_tool
+        execute_fn=simulate_connectivity_tool,
     )
 
-    print(f"📝 Logged tool execution stage")
+    print("📝 Logged tool execution stage")
 
     # Stage 3: Review/Summary
     print("\n🔄 Stage 3: Review...")
@@ -102,17 +100,17 @@ def test_agent_conversation():
         "summary": "Successfully calculated connectivity matrix",
         "tools_executed": ["ConnectivityMatrixTool"],
         "outputs_generated": ["connectivity_matrix.npy"],
-        "total_time": time.time() - start_time
+        "total_time": time.time() - start_time,
     }
 
-    review_result = collector.collect_tool_execution(
+    collector.collect_tool_execution(
         tool_name="AgentReview",
         tool_category="agent",
         input_params={"query": query},
-        execute_fn=lambda: review_data
+        execute_fn=lambda: review_data,
     )
 
-    print(f"📝 Logged review stage")
+    print("📝 Logged review stage")
 
     # Get session summary
     print("\n📊 Session Summary:")
@@ -130,14 +128,14 @@ def test_agent_conversation():
 
     if session_file.exists():
         print(f"✅ Session file exists: {session_file}")
-        with open(session_file, "r") as f:
+        with open(session_file) as f:
             lines = f.readlines()
             print(f"   Contains {len(lines)} log entries")
 
             # Show first entry
             if lines:
                 first_entry = json.loads(lines[0])
-                print(f"\n   First entry:")
+                print("\n   First entry:")
                 print(f"   - Tool: {first_entry.get('tool_name')}")
                 print(f"   - Category: {first_entry.get('tool_category')}")
                 print(f"   - Success: {first_entry.get('success')}")
@@ -151,7 +149,7 @@ def test_agent_conversation():
         category_file = base_path / category / "executions.jsonl"
         if category_file.exists():
             print(f"✅ Category file exists: {category_file}")
-            with open(category_file, "r") as f:
+            with open(category_file) as f:
                 lines = f.readlines()
                 print(f"   Contains {len(lines)} entries")
         else:
@@ -161,12 +159,12 @@ def test_agent_conversation():
     print("\n📤 Testing export functionality...")
     export_file = "/tmp/test_export.jsonl"
     num_exported = collector.export_training_dataset(
-        output_file=export_file,
-        filters={"success": True}
+        output_file=export_file, filters={"success": True}
     )
     print(f"✅ Exported {num_exported} records to {export_file}")
 
     return collector.session_id
+
 
 if __name__ == "__main__":
     print("🚀 Starting agent conversation logging test...")

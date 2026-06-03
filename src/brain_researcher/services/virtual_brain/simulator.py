@@ -6,10 +6,10 @@ import json
 import logging
 import math
 import uuid
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -20,11 +20,11 @@ from .models import (
     FitRequest,
     FitResponse,
     RegionPrior,
+    SimulateRequest,
+    SimulateResponse,
     SimulationArtifact,
     SimulationMetrics,
     SimulationReport,
-    SimulateRequest,
-    SimulateResponse,
     SuggestParamsRequest,
     SuggestParamsResponse,
     WhatIfRequest,
@@ -46,8 +46,8 @@ class SCMatrices:
     id: str
     weights: np.ndarray
     delays: np.ndarray
-    regions: List[str]
-    metadata: Dict[str, str]
+    regions: list[str]
+    metadata: dict[str, str]
 
     def size(self) -> int:
         return int(self.weights.shape[0])
@@ -61,17 +61,17 @@ class VirtualBrainSimulator:
         db: GraphDatabaseProtocol,
         config: VirtualBrainConfig,
         *,
-        repository_root: Optional[Path] = None,
+        repository_root: Path | None = None,
     ) -> None:
         self.db = db
         self.config = config
         self.repo_root = repository_root or Path(__file__).resolve().parents[4]
         self.config.cache_dir.mkdir(parents=True, exist_ok=True)
 
-        self._sc_cache: Dict[str, SCMatrices] = {}
-        self._target_cache: Dict[str, np.ndarray] = {}
-        self._sc_meta_cache: Dict[str, dict] = {}
-        self._target_meta_cache: Dict[str, dict] = {}
+        self._sc_cache: dict[str, SCMatrices] = {}
+        self._target_cache: dict[str, np.ndarray] = {}
+        self._sc_meta_cache: dict[str, dict] = {}
+        self._target_meta_cache: dict[str, dict] = {}
 
     # ------------------------------------------------------------------
     # Public API
@@ -127,8 +127,8 @@ class VirtualBrainSimulator:
             sc_matrix_id=request.sc_matrix_id or self.config.sc_matrix_id,
         )
 
-        canonical_task_id: Optional[str] = None
-        priors_response: Optional[SuggestParamsResponse] = None
+        canonical_task_id: str | None = None
+        priors_response: SuggestParamsResponse | None = None
 
         if not request.priors and request.task_id:
             priors_response = self.suggest_params(
@@ -154,7 +154,9 @@ class VirtualBrainSimulator:
         params = (
             request.parameters
             if request.parameters.i_ext is not None
-            else request.parameters.model_copy(update={"i_ext": i_ext.tolist() if i_ext is not None else None})
+            else request.parameters.model_copy(
+                update={"i_ext": i_ext.tolist() if i_ext is not None else None}
+            )
         )
 
         sim_id = f"sim:{request.parcellation}:{uuid.uuid4().hex[:12]}"
@@ -176,9 +178,9 @@ class VirtualBrainSimulator:
             )
             target_fc = metrics.fc_pearson
 
-        artifacts: List[SimulationArtifact] = []
-        sim_dir: Optional[Path] = None
-        region_activity: List[dict[str, float]] = []
+        artifacts: list[SimulationArtifact] = []
+        sim_dir: Path | None = None
+        region_activity: list[dict[str, float]] = []
         if request.persist:
             artifacts, sim_dir, region_activity = self._persist_artifacts(
                 sim_id, bold_samples, sim_samples, metrics, sc_matrix
@@ -227,10 +229,10 @@ class VirtualBrainSimulator:
             ).priors
 
         rng = np.random.default_rng(request.seed)
-        evaluations: List[Dict[str, float]] = []
+        evaluations: list[dict[str, float]] = []
         best_score = -math.inf
         best_params = request.parameters
-        best_response: Optional[SimulateResponse] = None
+        best_response: SimulateResponse | None = None
 
         for _ in range(request.max_evals):
             candidate_params = request.parameters.model_copy()
@@ -301,7 +303,9 @@ class VirtualBrainSimulator:
                 )
             )
 
-        return FitResponse(simulation=best_response, evaluations=evaluations, best_score=best_score)
+        return FitResponse(
+            simulation=best_response, evaluations=evaluations, best_score=best_score
+        )
 
     def report(self, simulation_id: str) -> SimulationReport:
         node = self.db.get_node(simulation_id)  # type: ignore[attr-defined]
@@ -320,10 +324,16 @@ class VirtualBrainSimulator:
         status = props.get("status", "completed")
         parcellation = props.get("parcellation", self.config.parcellation)
         sc_id = props.get("sc_matrix_id") or self.config.sc_matrix_id
-        parameters = self._decode_json_field(props.get("parameters"), WilsonCowanParameters) or WilsonCowanParameters()
+        parameters = (
+            self._decode_json_field(props.get("parameters"), WilsonCowanParameters)
+            or WilsonCowanParameters()
+        )
         priors = self._decode_json_field(props.get("priors"), list) or []
         priors_models = [RegionPrior.model_validate(p) for p in priors]
-        metrics = self._decode_json_field(props.get("metrics"), SimulationMetrics) or SimulationMetrics()
+        metrics = (
+            self._decode_json_field(props.get("metrics"), SimulationMetrics)
+            or SimulationMetrics()
+        )
         artifacts = self._decode_json_field(props.get("artifacts"), list) or []
         artifact_models = [SimulationArtifact.model_validate(a) for a in artifacts]
 
@@ -362,7 +372,7 @@ class VirtualBrainSimulator:
 
         base_value = getattr(baseline.parameters, request.parameter)
         deltas = [-request.delta_pct, request.delta_pct]
-        perturbed_reports: List[SimulationReport] = []
+        perturbed_reports: list[SimulationReport] = []
 
         for delta in deltas:
             factor = 1.0 + delta / 100.0
@@ -384,7 +394,8 @@ class VirtualBrainSimulator:
             )
             perturbed_reports.append(
                 SimulationReport(
-                    simulation_id=response.simulation_id or f"whatif:{uuid.uuid4().hex[:8]}",
+                    simulation_id=response.simulation_id
+                    or f"whatif:{uuid.uuid4().hex[:8]}",
                     status="completed",
                     model=baseline.model,
                     parcellation=baseline.parcellation,
@@ -394,7 +405,10 @@ class VirtualBrainSimulator:
                     metrics=response.metrics,
                     created_at=response.created_at,
                     artifacts=response.artifacts,
-                    provenance={"baseline": baseline.simulation_id, "delta_pct": str(delta)},
+                    provenance={
+                        "baseline": baseline.simulation_id,
+                        "delta_pct": str(delta),
+                    },
                 )
             )
 
@@ -422,7 +436,9 @@ class VirtualBrainSimulator:
             return np.loadtxt(path, delimiter=delimiter)
         raise ValueError(f"Unsupported matrix format: {path}")
 
-    def _load_sc_matrix(self, parcellation: str, sc_matrix_id: Optional[str]) -> SCMatrices:
+    def _load_sc_matrix(
+        self, parcellation: str, sc_matrix_id: str | None
+    ) -> SCMatrices:
         sc_id = sc_matrix_id or self.config.sc_matrix_id
         if not sc_id:
             raise ValueError("SC matrix id must be provided in config or request")
@@ -442,7 +458,11 @@ class VirtualBrainSimulator:
         )
         if not weights_uri:
             raise ValueError(f"SCMatrix node {sc_id} missing weights_uri")
-        delays_uri = node.get("delays_uri") or node.get("lengths_uri") or node.get("distance_uri")
+        delays_uri = (
+            node.get("delays_uri")
+            or node.get("lengths_uri")
+            or node.get("distance_uri")
+        )
         regions = node.get("regions") or node.get("region_ids") or []
         if isinstance(regions, str):
             try:
@@ -477,7 +497,7 @@ class VirtualBrainSimulator:
         self._sc_meta_cache[sc.id] = dict(node)
         return sc
 
-    def _load_target_fc(self, fc_id: Optional[str]) -> Optional[np.ndarray]:
+    def _load_target_fc(self, fc_id: str | None) -> np.ndarray | None:
         if not fc_id:
             return None
         if fc_id in self._target_cache:
@@ -499,7 +519,7 @@ class VirtualBrainSimulator:
         self._target_meta_cache[fc_id] = dict(node)
         return arr
 
-    def _resolve_task(self, task_id: str) -> Tuple[str, dict]:
+    def _resolve_task(self, task_id: str) -> tuple[str, dict]:
         candidates = [
             {"id": task_id},
             {"label": task_id},
@@ -518,8 +538,8 @@ class VirtualBrainSimulator:
         task_node_id: str,
         request: SuggestParamsRequest,
         sc_regions: Sequence[str],
-    ) -> List[Tuple[str, float, MutableMapping[str, float]]]:
-        priors: List[Tuple[str, float, MutableMapping[str, float]]] = []
+    ) -> list[tuple[str, float, MutableMapping[str, float]]]:
+        priors: list[tuple[str, float, MutableMapping[str, float]]] = []
         rels = self.db.find_relationships(start_node=task_node_id, rel_type="ACTIVATES")  # type: ignore[attr-defined]
         for _, region_id, rel_props in rels:
             strength = rel_props.get("strength")
@@ -532,8 +552,13 @@ class VirtualBrainSimulator:
             except (TypeError, ValueError):
                 continue
             region_props = self._get_node_by_id(region_id) or {}
-            region_parcellation = region_props.get("parcellation") or region_props.get("atlas")
-            if region_parcellation and region_parcellation.lower() != request.parcellation.lower():
+            region_parcellation = region_props.get("parcellation") or region_props.get(
+                "atlas"
+            )
+            if (
+                region_parcellation
+                and region_parcellation.lower() != request.parcellation.lower()
+            ):
                 continue
             if sc_regions and region_id not in sc_regions:
                 continue
@@ -542,19 +567,21 @@ class VirtualBrainSimulator:
 
     def _normalise_priors(
         self,
-        priors: Iterable[Tuple[str, float, Mapping[str, float]]],
+        priors: Iterable[tuple[str, float, Mapping[str, float]]],
         *,
         alpha: float,
-        top_k: Optional[int],
-        region_filter: Optional[Sequence[str]],
+        top_k: int | None,
+        region_filter: Sequence[str] | None,
         region_order: Sequence[str],
-    ) -> List[RegionPrior]:
+    ) -> list[RegionPrior]:
         sorted_priors = sorted(priors, key=lambda row: row[1], reverse=True)
         if top_k:
             sorted_priors = sorted_priors[:top_k]
         if region_filter:
-            region_filter_set = {rid for rid in region_filter}
-            sorted_priors = [row for row in sorted_priors if row[0] in region_filter_set]
+            region_filter_set = set(region_filter)
+            sorted_priors = [
+                row for row in sorted_priors if row[0] in region_filter_set
+            ]
 
         strengths = np.array([row[1] for row in sorted_priors], dtype=float)
         if strengths.size == 0:
@@ -562,8 +589,10 @@ class VirtualBrainSimulator:
         denom = float(strengths.max()) or 1.0
         weights = strengths / denom
 
-        priors_model: List[RegionPrior] = []
-        for (region_id, strength, rel_props), weight in zip(sorted_priors, weights):
+        priors_model: list[RegionPrior] = []
+        for (region_id, strength, rel_props), weight in zip(
+            sorted_priors, weights, strict=False
+        ):
             priors_model.append(
                 RegionPrior(
                     region_id=region_id,
@@ -581,7 +610,7 @@ class VirtualBrainSimulator:
         self,
         priors: Sequence[RegionPrior],
         sc_matrix: SCMatrices,
-    ) -> Optional[np.ndarray]:
+    ) -> np.ndarray | None:
         if not priors:
             return None
         ext = np.zeros(sc_matrix.size(), dtype=float)
@@ -590,7 +619,9 @@ class VirtualBrainSimulator:
             idx = region_index.get(prior.region_id)
             if idx is None:
                 continue
-            ext[idx] = prior.weight if prior.weight is not None else float(prior.strength)
+            ext[idx] = (
+                prior.weight if prior.weight is not None else float(prior.strength)
+            )
         return ext
 
     def _run_wilson_cowan(
@@ -600,8 +631,8 @@ class VirtualBrainSimulator:
         *,
         duration: float,
         dt: float,
-        seed: Optional[int],
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        seed: int | None,
+    ) -> tuple[np.ndarray, np.ndarray]:
         n_regions = sc.size()
         steps = int(duration / dt)
         sample_stride = max(1, int(round(0.01 / dt)))  # sample every 10ms
@@ -626,8 +657,16 @@ class VirtualBrainSimulator:
             noise_e = rng.normal(0.0, params.sigma, size=n_regions)
             noise_i = rng.normal(0.0, params.sigma, size=n_regions)
 
-            drive_e = params.w_ee * e_state - params.w_ei * i_state + coupled_e + ext + noise_e
-            drive_i = params.w_ie * e_state - params.w_ii * i_state + coupled_i + noise_i
+            drive_e = (
+                params.w_ee * e_state
+                - params.w_ei * i_state
+                + coupled_e
+                + ext
+                + noise_e
+            )
+            drive_i = (
+                params.w_ie * e_state - params.w_ii * i_state + coupled_i + noise_i
+            )
 
             dE = (-e_state + sigmoid(drive_e)) / params.tau_e
             dI = (-i_state + sigmoid(drive_i)) / params.tau_i
@@ -637,7 +676,9 @@ class VirtualBrainSimulator:
 
             if step % sample_stride == 0:
                 samples[sample_idx] = e_state
-                bold[sample_idx] = self._balloon_windkessel(e_state, sample_idx, dt * sample_stride)
+                bold[sample_idx] = self._balloon_windkessel(
+                    e_state, sample_idx, dt * sample_stride
+                )
                 sample_idx += 1
 
         return samples[:sample_idx], bold[:sample_idx]
@@ -654,7 +695,7 @@ class VirtualBrainSimulator:
         self,
         bold_samples: np.ndarray,
         sc: SCMatrices,
-        target_fc_id: Optional[str],
+        target_fc_id: str | None,
     ) -> SimulationMetrics:
         metrics = SimulationMetrics()
         if bold_samples.size == 0:
@@ -695,7 +736,7 @@ class VirtualBrainSimulator:
         e_samples: np.ndarray,
         metrics: SimulationMetrics,
         sc_matrix: SCMatrices,
-    ) -> tuple[List[SimulationArtifact], Path, List[dict[str, float]]]:
+    ) -> tuple[list[SimulationArtifact], Path, list[dict[str, float]]]:
         sim_dir = self.config.cache_dir / sim_id.replace(":", "_")
         sim_dir.mkdir(parents=True, exist_ok=True)
 
@@ -709,7 +750,7 @@ class VirtualBrainSimulator:
         with metrics_path.open("w", encoding="utf-8") as handle:
             json.dump(metrics.model_dump(), handle, indent=2, sort_keys=True)
 
-        region_activity: List[dict[str, float]] = []
+        region_activity: list[dict[str, float]] = []
         if e_samples.size and sc_matrix.regions:
             means = e_samples.mean(axis=0)
             region_activity = [
@@ -724,10 +765,26 @@ class VirtualBrainSimulator:
             json.dump(region_activity, handle, indent=2, sort_keys=True)
 
         artifacts = [
-            SimulationArtifact(uri=str(bold_path), media_type="application/x-npy", description="BOLD samples"),
-            SimulationArtifact(uri=str(act_path), media_type="application/x-npy", description="Excitatory activity"),
-            SimulationArtifact(uri=str(metrics_path), media_type="application/json", description="Simulation metrics"),
-            SimulationArtifact(uri=str(region_path), media_type="application/json", description="Region mean activity"),
+            SimulationArtifact(
+                uri=str(bold_path),
+                media_type="application/x-npy",
+                description="BOLD samples",
+            ),
+            SimulationArtifact(
+                uri=str(act_path),
+                media_type="application/x-npy",
+                description="Excitatory activity",
+            ),
+            SimulationArtifact(
+                uri=str(metrics_path),
+                media_type="application/json",
+                description="Simulation metrics",
+            ),
+            SimulationArtifact(
+                uri=str(region_path),
+                media_type="application/json",
+                description="Region mean activity",
+            ),
         ]
         return artifacts, sim_dir, region_activity
 
@@ -736,15 +793,15 @@ class VirtualBrainSimulator:
         sim_id: str,
         request: SimulateRequest,
         params: WilsonCowanParameters,
-        priors: List[RegionPrior],
+        priors: list[RegionPrior],
         metrics: SimulationMetrics,
-        artifacts: List[SimulationArtifact],
+        artifacts: list[SimulationArtifact],
         sc_matrix: SCMatrices,
-        target_fc: Optional[float],
+        target_fc: float | None,
         *,
-        task_node_id: Optional[str],
+        task_node_id: str | None,
         sim_dir: Path,
-        region_activity: List[dict[str, float]],
+        region_activity: list[dict[str, float]],
     ) -> None:
         sc_meta = dict(self._sc_meta_cache.get(sc_matrix.id, {}))
         sc_meta.setdefault("id", sc_matrix.id)
@@ -754,7 +811,7 @@ class VirtualBrainSimulator:
         if sc_matrix.metadata.get("delays_uri"):
             sc_meta.setdefault("delays_uri", sc_matrix.metadata.get("delays_uri"))
 
-        target_meta: Optional[dict] = None
+        target_meta: dict | None = None
         if self.config.target_fc_id:
             raw = self._target_meta_cache.get(self.config.target_fc_id)
             if raw:
@@ -816,7 +873,7 @@ class VirtualBrainSimulator:
             return None
         if isinstance(value, model_cls):
             return value
-        if isinstance(value, (str, bytes)):
+        if isinstance(value, str | bytes):
             try:
                 data = json.loads(value)
             except json.JSONDecodeError:
@@ -827,7 +884,7 @@ class VirtualBrainSimulator:
             return model_cls.model_validate(data)  # type: ignore[attr-defined]
         return data
 
-    def _get_node_by_id(self, node_id: str) -> Optional[dict]:
+    def _get_node_by_id(self, node_id: str) -> dict | None:
         if hasattr(self.db, "get_node"):
             node = self.db.get_node(node_id)  # type: ignore[attr-defined]
             if node:

@@ -656,8 +656,7 @@ def test_server_module_loads_auth_env_from_dotenv_for_direct_module_run(
 
     dotenv_path = tmp_path / ".env"
     dotenv_path.write_text(
-        "BR_MCP_AUTH_MODE=token_or_jwt\n"
-        "JWT_SECRET_KEY=dotenv-jwt-secret\n",
+        "BR_MCP_AUTH_MODE=token_or_jwt\n" "JWT_SECRET_KEY=dotenv-jwt-secret\n",
         encoding="utf-8",
     )
 

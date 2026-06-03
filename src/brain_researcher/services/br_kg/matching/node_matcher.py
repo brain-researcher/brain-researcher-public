@@ -7,12 +7,13 @@ Matching cascade: Exact → Embedding → Fuzzy → Spatial
 """
 
 import logging
-import yaml
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
 import numpy as np
+import yaml
 
 from brain_researcher.services.shared.runtime_semantic import (
     semantic_matching_enabled,
@@ -24,15 +25,17 @@ logger = logging.getLogger(__name__)
 @dataclass
 class MatchResult:
     """Result of node matching operation."""
+
     target_node_id: str
     confidence: float
     method: str  # exact, fuzzy, embedding, spatial
-    matched_fields: List[str]
-    metadata: Dict[str, Any]
+    matched_fields: list[str]
+    metadata: dict[str, Any]
 
 
 class UnifiedNodeMatcher:
     """Centralized node matching following PRD specifications."""
+
     STRICT_EVIDENCE_NODE_TYPES = {"Task", "Concept", "Phenotype"}
 
     def __init__(
@@ -57,7 +60,7 @@ class UnifiedNodeMatcher:
         # Cache for canonical node lookups
         self.canonical_cache = {}
 
-    def _load_yaml(self, filename: str) -> Dict:
+    def _load_yaml(self, filename: str) -> dict:
         """Load YAML configuration file."""
         path = self.config_dir / filename
         if not path.exists():
@@ -75,6 +78,7 @@ class UnifiedNodeMatcher:
             return
         try:
             from ..utils.task_matcher import TaskMatcher
+
             self.task_matcher = TaskMatcher()
         except Exception as e:
             logger.warning(f"TaskMatcher not available: {e}")
@@ -82,15 +86,18 @@ class UnifiedNodeMatcher:
 
         try:
             from ..utils.phenotype_matcher_fixed import PhenotypeMatcher
+
             self.phenotype_matcher = PhenotypeMatcher()
         except Exception as e:
             logger.warning(f"PhenotypeMatcher not available: {e}")
             self.phenotype_matcher = None
 
-    def match_node(self,
-                   candidate: Dict[str, Any],
-                   node_type: str,
-                   existing_nodes: List[Dict[str, Any]]) -> List[MatchResult]:
+    def match_node(
+        self,
+        candidate: dict[str, Any],
+        node_type: str,
+        existing_nodes: list[dict[str, Any]],
+    ) -> list[MatchResult]:
         """Match candidate node against existing nodes.
 
         Args:
@@ -115,17 +122,23 @@ class UnifiedNodeMatcher:
         # Try each matching method in order
         for method in methods:
             if method == "exact":
-                matches.extend(self._exact_match(candidate, existing_nodes, primary_fields))
+                matches.extend(
+                    self._exact_match(candidate, existing_nodes, primary_fields)
+                )
             elif method == "fuzzy":
-                matches.extend(self._fuzzy_match(candidate, existing_nodes, primary_fields))
+                matches.extend(
+                    self._fuzzy_match(candidate, existing_nodes, primary_fields)
+                )
             elif method == "embedding":
-                matches.extend(self._embedding_match(candidate, existing_nodes, node_type))
+                matches.extend(
+                    self._embedding_match(candidate, existing_nodes, node_type)
+                )
             elif method == "spatial":
                 matches.extend(self._spatial_match(candidate, existing_nodes))
 
         # Aggregate evidence per target and enforce strict mapping acceptance:
         # exact/id OR >=2 method families (reject fuzzy-only/embedding-only).
-        grouped_matches: Dict[str, Dict[str, Any]] = {}
+        grouped_matches: dict[str, dict[str, Any]] = {}
         for match in matches:
             if not match.target_node_id:
                 continue
@@ -144,7 +157,7 @@ class UnifiedNodeMatcher:
             if match.confidence > group["best_match"].confidence:
                 group["best_match"] = match
 
-        filtered: List[MatchResult] = []
+        filtered: list[MatchResult] = []
         for target_node_id, group in grouped_matches.items():
             best_match = group["best_match"]
             if best_match.confidence < threshold:
@@ -178,10 +191,9 @@ class UnifiedNodeMatcher:
 
         return sorted(filtered, key=lambda m: m.confidence, reverse=True)
 
-    def _exact_match(self,
-                     candidate: Dict,
-                     existing: List[Dict],
-                     fields: List[str]) -> List[MatchResult]:
+    def _exact_match(
+        self, candidate: dict, existing: list[dict], fields: list[str]
+    ) -> list[MatchResult]:
         """Exact field matching."""
         matches = []
 
@@ -195,9 +207,15 @@ class UnifiedNodeMatcher:
                         matched_fields.append(field)
 
             if matched_fields:
-                has_id_signal = any(self._is_id_field(field) for field in matched_fields)
-                non_id_fields = [field for field in fields if not self._is_id_field(field)]
-                matched_non_id_fields = [field for field in matched_fields if field in non_id_fields]
+                has_id_signal = any(
+                    self._is_id_field(field) for field in matched_fields
+                )
+                non_id_fields = [
+                    field for field in fields if not self._is_id_field(field)
+                ]
+                matched_non_id_fields = [
+                    field for field in matched_fields if field in non_id_fields
+                ]
                 if has_id_signal:
                     confidence = 1.0
                 elif non_id_fields and len(matched_non_id_fields) == len(non_id_fields):
@@ -207,28 +225,33 @@ class UnifiedNodeMatcher:
                     confidence = 0.95
                 else:
                     confidence = 0.8
-                matches.append(MatchResult(
-                    target_node_id=node.get("id", node.get("uid")),
-                    confidence=confidence,
-                    method="id" if has_id_signal else "exact",
-                    matched_fields=matched_fields,
-                    metadata={
-                        "match_count": len(matched_fields),
-                        "has_id_signal": has_id_signal,
-                    }
-                ))
+                matches.append(
+                    MatchResult(
+                        target_node_id=node.get("id", node.get("uid")),
+                        confidence=confidence,
+                        method="id" if has_id_signal else "exact",
+                        matched_fields=matched_fields,
+                        metadata={
+                            "match_count": len(matched_fields),
+                            "has_id_signal": has_id_signal,
+                        },
+                    )
+                )
 
         return matches
 
-    def _fuzzy_match(self,
-                     candidate: Dict,
-                     existing: List[Dict],
-                     fields: List[str]) -> List[MatchResult]:
+    def _fuzzy_match(
+        self, candidate: dict, existing: list[dict], fields: list[str]
+    ) -> list[MatchResult]:
         """Fuzzy string matching using Dice coefficient."""
         from rapidfuzz import fuzz
 
         matches = []
-        threshold = self.edge_scoring.get("matching_methods", {}).get("fuzzy", {}).get("threshold", 0.9)
+        threshold = (
+            self.edge_scoring.get("matching_methods", {})
+            .get("fuzzy", {})
+            .get("threshold", 0.9)
+        )
 
         for node in existing:
             scores = []
@@ -248,20 +271,21 @@ class UnifiedNodeMatcher:
 
             if scores:
                 confidence = np.mean(scores)
-                matches.append(MatchResult(
-                    target_node_id=node.get("id", node.get("uid")),
-                    confidence=float(confidence),
-                    method="fuzzy",
-                    matched_fields=matched_fields,
-                    metadata={"avg_score": float(confidence)}
-                ))
+                matches.append(
+                    MatchResult(
+                        target_node_id=node.get("id", node.get("uid")),
+                        confidence=float(confidence),
+                        method="fuzzy",
+                        matched_fields=matched_fields,
+                        metadata={"avg_score": float(confidence)},
+                    )
+                )
 
         return matches
 
-    def _embedding_match(self,
-                        candidate: Dict,
-                        existing: List[Dict],
-                        node_type: str) -> List[MatchResult]:
+    def _embedding_match(
+        self, candidate: dict, existing: list[dict], node_type: str
+    ) -> list[MatchResult]:
         """Semantic embedding matching."""
         if not self.enable_semantic:
             return []
@@ -276,20 +300,22 @@ class UnifiedNodeMatcher:
                     # Find matching existing node
                     for node in existing:
                         if node.get("label") == res["label"]:
-                            matches.append(MatchResult(
-                                target_node_id=node.get("id", node.get("uid")),
-                                confidence=res["score"],
-                                method=f"embedding_{res['engine']}",
-                                matched_fields=["label"],
-                                metadata={"engine": res["engine"]}
-                            ))
+                            matches.append(
+                                MatchResult(
+                                    target_node_id=node.get("id", node.get("uid")),
+                                    confidence=res["score"],
+                                    method=f"embedding_{res['engine']}",
+                                    matched_fields=["label"],
+                                    metadata={"engine": res["engine"]},
+                                )
+                            )
                             break
 
         return matches
 
-    def _spatial_match(self,
-                      candidate: Dict,
-                      existing: List[Dict]) -> List[MatchResult]:
+    def _spatial_match(
+        self, candidate: dict, existing: list[dict]
+    ) -> list[MatchResult]:
         """Spatial distance matching for coordinates."""
         matches = []
 
@@ -297,7 +323,9 @@ class UnifiedNodeMatcher:
             return matches
 
         cand_coords = np.array([candidate["x"], candidate["y"], candidate["z"]])
-        threshold_mm = self.thresholds.get("spatial_matching", {}).get("coordinate_radius_mm", 8.0)
+        threshold_mm = self.thresholds.get("spatial_matching", {}).get(
+            "coordinate_radius_mm", 8.0
+        )
 
         for node in existing:
             if all(k in node for k in ["x", "y", "z"]):
@@ -307,20 +335,21 @@ class UnifiedNodeMatcher:
                 if distance <= threshold_mm:
                     # Linear decay: score = 1 - (d / threshold)
                     confidence = 1.0 - (distance / threshold_mm)
-                    matches.append(MatchResult(
-                        target_node_id=node.get("id", node.get("uid")),
-                        confidence=float(confidence),
-                        method="spatial",
-                        matched_fields=["x", "y", "z"],
-                        metadata={"distance_mm": float(distance)}
-                    ))
+                    matches.append(
+                        MatchResult(
+                            target_node_id=node.get("id", node.get("uid")),
+                            confidence=float(confidence),
+                            method="spatial",
+                            matched_fields=["x", "y", "z"],
+                            metadata={"distance_mm": float(distance)},
+                        )
+                    )
 
         return matches
 
-    def create_same_as_edges(self,
-                            source_id: str,
-                            matches: List[MatchResult],
-                            graph_db) -> List[str]:
+    def create_same_as_edges(
+        self, source_id: str, matches: list[MatchResult], graph_db
+    ) -> list[str]:
         """Create SAME_AS edges for matched nodes.
 
         Args:
@@ -332,7 +361,11 @@ class UnifiedNodeMatcher:
             List of created edge IDs
         """
         edge_ids = []
-        min_confidence = self.edge_scoring.get("edge_rules", {}).get("SAME_AS", {}).get("min_confidence", 0.90)
+        min_confidence = (
+            self.edge_scoring.get("edge_rules", {})
+            .get("SAME_AS", {})
+            .get("min_confidence", 0.90)
+        )
 
         for match in matches:
             if match.confidence < min_confidence:
@@ -366,22 +399,21 @@ class UnifiedNodeMatcher:
                 "provenance": {
                     "source": "UnifiedNodeMatcher",
                     "timestamp": datetime.utcnow().isoformat(),
-                    "metadata": match.metadata
-                }
+                    "metadata": match.metadata,
+                },
             }
 
             try:
                 # Create edge (bidirectional)
                 edge_id = graph_db.create_relationship(
-                    source_id,
-                    match.target_node_id,
-                    "SAME_AS",
-                    edge_props
+                    source_id, match.target_node_id, "SAME_AS", edge_props
                 )
                 edge_ids.append(edge_id)
 
-                logger.info(f"Created SAME_AS edge: {source_id} <-> {match.target_node_id} "
-                          f"(confidence={match.confidence:.2f}, method={match.method})")
+                logger.info(
+                    f"Created SAME_AS edge: {source_id} <-> {match.target_node_id} "
+                    f"(confidence={match.confidence:.2f}, method={match.method})"
+                )
             except Exception as e:
                 logger.error(f"Failed to create SAME_AS edge: {e}")
 
@@ -405,9 +437,9 @@ class UnifiedNodeMatcher:
 
     def _is_mapping_acceptable(
         self,
-        methods: List[str],
+        methods: list[str],
         edge_type: str = "SAME_AS",
-        node_type: Optional[str] = None,
+        node_type: str | None = None,
     ) -> bool:
         """Strict acceptance for SAME_AS/MAPS_TO mappings."""
         _ = edge_type  # Shared rule for SAME_AS/MAPS_TO.
@@ -422,7 +454,7 @@ class UnifiedNodeMatcher:
         method_families = {self._method_family(m) for m in normalized_methods}
         return len(method_families) >= 2
 
-    def _select_primary_method(self, methods: List[str], fallback: str) -> str:
+    def _select_primary_method(self, methods: list[str], fallback: str) -> str:
         normalized = {(m or "").lower(): m for m in methods}
         if "id" in normalized:
             return normalized["id"]
@@ -430,10 +462,7 @@ class UnifiedNodeMatcher:
             return normalized["exact"]
         return fallback
 
-    def select_canonical(self,
-                        node_ids: List[str],
-                        node_type: str,
-                        graph_db) -> str:
+    def select_canonical(self, node_ids: list[str], node_type: str, graph_db) -> str:
         """Select canonical node from cluster following priority rules.
 
         Args:
@@ -448,7 +477,11 @@ class UnifiedNodeMatcher:
             return node_ids[0]
 
         # Get source priority for this node type
-        priorities = self.thresholds.get("canonical_selection", {}).get("source_priority", {}).get(node_type, [])
+        priorities = (
+            self.thresholds.get("canonical_selection", {})
+            .get("source_priority", {})
+            .get(node_type, [])
+        )
 
         # Fetch nodes
         nodes = []
@@ -486,12 +519,13 @@ class UnifiedNodeMatcher:
     def _normalize_string(self, s: str) -> str:
         """Normalize string for comparison."""
         import re
+
         # Case fold
         s = s.lower()
         # Remove punctuation
-        s = re.sub(r'[^\w\s]', '', s)
+        s = re.sub(r"[^\w\s]", "", s)
         # Remove extra whitespace
-        s = ' '.join(s.split())
+        s = " ".join(s.split())
         return s
 
 
@@ -502,12 +536,12 @@ if __name__ == "__main__":
     test_candidate = {
         "id": "test_task_1",
         "label": "N-back task",
-        "description": "Working memory task"
+        "description": "Working memory task",
     }
 
     test_existing = [
         {"id": "cogat:nback", "label": "n-back"},
-        {"id": "bids:nback_task", "label": "nback task"}
+        {"id": "bids:nback_task", "label": "nback task"},
     ]
 
     matches = matcher.match_node(test_candidate, "Task", test_existing)

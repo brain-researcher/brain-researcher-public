@@ -29,7 +29,7 @@
   "artifacts": [
     {
       "id": "a001",
-      "path": "docs/prompts/brain_researcher_hybrid/reports/bounded_self_evolving_research_predictive_case_report.pdf",
+      "path": "docs/use_cases/brain_researcher_hybrid/reports/bounded_self_evolving_research_predictive_case_report.pdf",
       "mime_type": "application/pdf",
       "roles": [
         "reference_summary_source",

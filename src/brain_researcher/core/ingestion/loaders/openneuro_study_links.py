@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from typing import Any, Iterable, Iterator
-
+from typing import Any
 
 DATASET_LABEL = "Dataset"
 TASKSPEC_LABEL = "TaskSpec"
@@ -143,7 +143,7 @@ class _StudyIndex:
         self._by_key: dict[str, set[str]] = {}
 
     @classmethod
-    def from_db(cls, db: Any) -> "_StudyIndex":
+    def from_db(cls, db: Any) -> _StudyIndex:
         index = cls()
         for study_id, props in db.find_nodes(STUDY_LABEL):
             index.add(study_id, props)

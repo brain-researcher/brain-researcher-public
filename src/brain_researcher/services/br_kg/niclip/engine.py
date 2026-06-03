@@ -5,9 +5,10 @@ from __future__ import annotations
 import logging
 import os
 import threading
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -18,17 +19,17 @@ logger = logging.getLogger(__name__)
 class NiclipEngineConfig:
     """Configuration for the NiclipEngine."""
 
-    data_path: Optional[str] = None
-    model_dir: Optional[str] = None
-    model_path: Optional[str] = None
-    faiss_index_path: Optional[str] = None
+    data_path: str | None = None
+    model_dir: str | None = None
+    model_path: str | None = None
+    faiss_index_path: str | None = None
     model_name: str = "BrainGPT-7B-v0.2"
     section: str = "abstract"
-    device: Optional[str] = None
+    device: str | None = None
     vocabulary_type: str = "cogatlas_task-names"
     index_type: str = "flat"
     normalize: bool = True
-    use_gpu: Optional[bool] = None
+    use_gpu: bool | None = None
 
     DEFAULT_DATA_PATH: str = field(
         default="/data/ECoG-foundation-model/mnndl_temp/niclip",
@@ -36,7 +37,7 @@ class NiclipEngineConfig:
     )
 
     @classmethod
-    def from_env(cls) -> "NiclipEngineConfig":
+    def from_env(cls) -> NiclipEngineConfig:
         data_path = os.environ.get("NICLIP_EMBEDDINGS_PATH") or os.environ.get(
             "NICLIP_DATA_PATH"
         )
@@ -65,7 +66,7 @@ class NiclipEngineConfig:
             return base
         return base / "osf_data/dsj56/osfstorage/osfstorage/data"
 
-    def resolve_model_path(self) -> Optional[str]:
+    def resolve_model_path(self) -> str | None:
         if self.model_path:
             return self.model_path
         if self.model_dir:
@@ -84,27 +85,27 @@ class NiclipEngineConfig:
 class NiclipEngine:
     """Unified NiCLIP engine for embeddings, search, and status."""
 
-    _instance: Optional["NiclipEngine"] = None
+    _instance: NiclipEngine | None = None
     _lock = threading.Lock()
 
     def __init__(self, config: NiclipEngineConfig):
         self.config = config
         self._embedding_service = None
-        self._embedding_error: Optional[Exception] = None
+        self._embedding_error: Exception | None = None
         self._text_encoder = None
-        self._text_encoder_error: Optional[Exception] = None
+        self._text_encoder_error: Exception | None = None
         self._model = None
-        self._model_error: Optional[Exception] = None
+        self._model_error: Exception | None = None
         self._vocab_cache: dict[tuple[str, str], tuple[list[str], Any, np.ndarray]] = {}
         self._init_lock = threading.Lock()
 
     @classmethod
     def get(
         cls,
-        config: Optional[NiclipEngineConfig] = None,
+        config: NiclipEngineConfig | None = None,
         *,
         force_reload: bool = False,
-    ) -> "NiclipEngine":
+    ) -> NiclipEngine:
         with cls._lock:
             if cls._instance is None or force_reload:
                 cfg = config or NiclipEngineConfig.from_env()
@@ -195,8 +196,8 @@ class NiclipEngine:
 
     def get_vocabulary_index(
         self,
-        vocabulary_type: Optional[str] = None,
-        index_type: Optional[str] = None,
+        vocabulary_type: str | None = None,
+        index_type: str | None = None,
     ):
         vocab_type = vocabulary_type or self.config.vocabulary_type
         idx_type = index_type or self.config.index_type
@@ -235,17 +236,15 @@ class NiclipEngine:
         model = self._ensure_model()
         if model is None:
             raise RuntimeError("NiCLIP model not available")
-        return model.predict_from_nifti(
-            nifti_path, top_k=top_k, use_bayes=use_bayes
-        )
+        return model.predict_from_nifti(nifti_path, top_k=top_k, use_bayes=use_bayes)
 
     def search(
         self,
         query: str,
         *,
         top_k: int = 10,
-        vocabulary_type: Optional[str] = None,
-        index_type: Optional[str] = None,
+        vocabulary_type: str | None = None,
+        index_type: str | None = None,
     ) -> list[dict[str, Any]]:
         vocab, index, priors = self.get_vocabulary_index(
             vocabulary_type=vocabulary_type, index_type=index_type
@@ -263,7 +262,9 @@ class NiclipEngine:
                     "item": vocab[idx],
                     "similarity": float(dist),
                     "vocabulary_index": int(idx),
-                    "prior_probability": float(priors[idx]) if idx < len(priors) else None,
+                    "prior_probability": (
+                        float(priors[idx]) if idx < len(priors) else None
+                    ),
                 }
             )
         return results

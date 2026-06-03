@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import math
 import re
-from pathlib import Path
 from typing import Any
 
 from brain_researcher.semantics.taxonomy.matcher import normalize_text
@@ -70,7 +69,9 @@ def _canonicalize_candidate_label(label: str) -> str | None:
     return None
 
 
-def _normalize_candidates(raw_candidates: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+def _normalize_candidates(
+    raw_candidates: list[dict[str, Any]] | None,
+) -> list[dict[str, Any]]:
     normalized: list[dict[str, Any]] = []
     seen: set[tuple[str, str, str]] = set()
     for entry in raw_candidates or []:
@@ -133,14 +134,16 @@ def _parse_scanner_overrides(query: str) -> dict[str, Any]:
         scanner["tr_sec"] = float(tr_match.group("value"))
     if dummy_match:
         scanner["dummy_scans"] = int(dummy_match.group("value"))
-    if (
-        "planned_duration_sec" in scanner
-        and "tr_sec" in scanner
-    ):
+    if "planned_duration_sec" in scanner and "tr_sec" in scanner:
         dummy_scans = int(scanner.get("dummy_scans", 0))
-        scanner["n_volumes"] = int(
-            math.ceil(float(scanner["planned_duration_sec"]) / float(scanner["tr_sec"]))
-        ) + dummy_scans
+        scanner["n_volumes"] = (
+            int(
+                math.ceil(
+                    float(scanner["planned_duration_sec"]) / float(scanner["tr_sec"])
+                )
+            )
+            + dummy_scans
+        )
     return scanner
 
 
@@ -206,7 +209,9 @@ def plan_task_from_prompt(
             raise ValueError(
                 "plan_task_from_prompt requires either raw_candidates or a task_matcher"
             )
-        matcher_candidates = task_matcher.match_candidates(query_text, top_k=top_k) or []
+        matcher_candidates = (
+            task_matcher.match_candidates(query_text, top_k=top_k) or []
+        )
 
     normalized_candidates = _normalize_candidates(matcher_candidates)
     unique_candidate_paradigms: list[str] = []
@@ -231,7 +236,9 @@ def plan_task_from_prompt(
             "resolution": "ambiguous",
             "paradigm": None,
             "reason": "multiple_supported_paradigm_candidates",
-            "clarifying_questions": _clarifying_questions(unique_candidate_paradigms[:2]),
+            "clarifying_questions": _clarifying_questions(
+                unique_candidate_paradigms[:2]
+            ),
             "candidates": normalized_candidates,
             "overrides": {},
         }
@@ -242,7 +249,9 @@ def plan_task_from_prompt(
     prompt_provenance = {
         "query": query_text,
         "planner": "behavior.plan_task_from_prompt",
-        "candidate_label": normalized_candidates[0]["label"] if normalized_candidates else paradigm,
+        "candidate_label": (
+            normalized_candidates[0]["label"] if normalized_candidates else paradigm
+        ),
         "resolved_overrides": overrides,
         "unresolved_fields": [],
     }

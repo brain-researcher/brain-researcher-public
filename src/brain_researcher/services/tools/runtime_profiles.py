@@ -8,7 +8,6 @@ from typing import Any
 
 from brain_researcher.config.paths import resolve_from_config
 
-
 _DEFAULT_RUNTIME_PACKAGE_ALIASES: dict[str, str] = {
     # Runtime-aligned canonical tool IDs that should resolve to Neurodesk
     # package families rather than remain as opaque identifiers.

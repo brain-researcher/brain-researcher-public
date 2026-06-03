@@ -4,7 +4,7 @@ This module provides prompt templates for the LLM tool router to select
 appropriate tools based on user goals and context.
 """
 
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from brain_researcher.services.tools.spec import ToolSpec
@@ -98,7 +98,7 @@ def format_tool_summary(spec: "ToolSpec", verbose: bool = False) -> str:
 
 def build_router_prompt(
     goal: str,
-    candidates: List["ToolSpec"],
+    candidates: list["ToolSpec"],
     context: str = "",
     verbose: bool = False,
 ) -> str:
@@ -124,7 +124,7 @@ def build_router_prompt(
     )
 
 
-def build_minimal_router_prompt(goal: str, candidates: List["ToolSpec"]) -> str:
+def build_minimal_router_prompt(goal: str, candidates: list["ToolSpec"]) -> str:
     """Build a minimal router prompt for token efficiency.
 
     Args:

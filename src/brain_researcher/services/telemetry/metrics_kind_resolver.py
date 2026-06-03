@@ -8,9 +8,10 @@ configurable mapping so metrics remain low-cardinality and actionable.
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
+from typing import Any
 
 import yaml
 
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 CONFIG_PATH = PROJECT_ROOT / "configs" / "metrics" / "kinds.yaml"
 
-DEFAULT_PIPELINE_TO_KIND: Dict[str, str] = {
+DEFAULT_PIPELINE_TO_KIND: dict[str, str] = {
     "glm_first_level": JobKind.GLM.value,
     "glm_second_level": JobKind.GLM.value,
     "glm": JobKind.GLM.value,
@@ -40,7 +41,7 @@ DEFAULT_PIPELINE_TO_KIND: Dict[str, str] = {
     "planner": JobKind.PLANNER.value,
 }
 
-DEFAULT_TOOL_TO_KIND: Dict[str, str] = {
+DEFAULT_TOOL_TO_KIND: dict[str, str] = {
     "fsl-feat": JobKind.GLM.value,
     "fitlins": JobKind.GLM.value,
     "nilearn-firstlevel": JobKind.GLM.value,
@@ -54,28 +55,32 @@ DEFAULT_TOOL_TO_KIND: Dict[str, str] = {
 }
 
 
-def _normalize_kind(value: Optional[str]) -> str:
+def _normalize_kind(value: str | None) -> str:
     if not value:
         return JobKind.OTHER.value
     value = value.lower()
     try:
         return JobKind(value).value
     except ValueError:
-        logger.debug("Unknown job kind '%s' – defaulting to %s", value, JobKind.OTHER.value)
+        logger.debug(
+            "Unknown job kind '%s' – defaulting to %s", value, JobKind.OTHER.value
+        )
         return JobKind.OTHER.value
 
 
-def _sanitize_mapping(raw: Mapping[str, Any]) -> Dict[str, str]:
-    sanitized: Dict[str, str] = {}
+def _sanitize_mapping(raw: Mapping[str, Any]) -> dict[str, str]:
+    sanitized: dict[str, str] = {}
     for key, raw_kind in raw.items():
         if not key:
             continue
-        sanitized[key.lower()] = _normalize_kind(str(raw_kind) if raw_kind is not None else None)
+        sanitized[key.lower()] = _normalize_kind(
+            str(raw_kind) if raw_kind is not None else None
+        )
     return sanitized
 
 
 @lru_cache(maxsize=1)
-def load_job_kind_mapping() -> Dict[str, Dict[str, str]]:
+def load_job_kind_mapping() -> dict[str, dict[str, str]]:
     """
     Load the pipeline/tool mapping used for resolving job kinds.
 
@@ -91,12 +96,14 @@ def load_job_kind_mapping() -> Dict[str, Dict[str, str]]:
             pipeline_map.update(_sanitize_mapping(data.get("pipeline_to_kind", {})))
             tool_map.update(_sanitize_mapping(data.get("tool_to_kind", {})))
         except Exception as exc:  # pragma: no cover - best-effort logging
-            logger.warning("Failed to load metrics kind config at %s: %s", CONFIG_PATH, exc)
+            logger.warning(
+                "Failed to load metrics kind config at %s: %s", CONFIG_PATH, exc
+            )
 
     return {"pipeline": pipeline_map, "tool": tool_map}
 
 
-def _match_pipeline(name: Optional[str], mapping: Mapping[str, str]) -> Optional[str]:
+def _match_pipeline(name: str | None, mapping: Mapping[str, str]) -> str | None:
     if not name:
         return None
     candidate = name.lower()
@@ -110,7 +117,9 @@ def _match_pipeline(name: Optional[str], mapping: Mapping[str, str]) -> Optional
     return None
 
 
-def _extract_pipeline(request: Any, payload: Mapping[str, Any], metadata: Mapping[str, Any]) -> Optional[str]:
+def _extract_pipeline(
+    request: Any, payload: Mapping[str, Any], metadata: Mapping[str, Any]
+) -> str | None:
     if request:
         pipeline = getattr(request, "pipeline", None)
         if pipeline:
@@ -121,7 +130,9 @@ def _extract_pipeline(request: Any, payload: Mapping[str, Any], metadata: Mappin
     return None
 
 
-def _extract_canonical_op(request: Any, payload: Mapping[str, Any], metadata: Mapping[str, Any]) -> Optional[str]:
+def _extract_canonical_op(
+    request: Any, payload: Mapping[str, Any], metadata: Mapping[str, Any]
+) -> str | None:
     op = None
     if request:
         op = getattr(request, "canonical_op", None)
@@ -137,7 +148,11 @@ def _extract_canonical_op(request: Any, payload: Mapping[str, Any], metadata: Ma
     return None
 
 
-def _extract_tool(metadata: Mapping[str, Any], payload: Mapping[str, Any], parameters: Mapping[str, Any]) -> Optional[str]:
+def _extract_tool(
+    metadata: Mapping[str, Any],
+    payload: Mapping[str, Any],
+    parameters: Mapping[str, Any],
+) -> str | None:
     tool = parameters.get("tool") or parameters.get("tool_name")
     tool = tool or metadata.get("tool_name")
     tool = tool or payload.get("tool_name")
@@ -148,8 +163,8 @@ def _extract_tool(metadata: Mapping[str, Any], payload: Mapping[str, Any], param
 
 def resolve_job_kind(
     request: Any = None,
-    payload: Optional[Mapping[str, Any]] = None,
-    metadata: Optional[Mapping[str, Any]] = None,
+    payload: Mapping[str, Any] | None = None,
+    metadata: Mapping[str, Any] | None = None,
 ) -> str:
     """
     Resolve the JobKind label for the given request/payload.

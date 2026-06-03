@@ -1,0 +1,79 @@
+{
+  "description": "Reference to the policy that governed a run/event.",
+  "properties": {
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Human-readable notes",
+      "title": "Notes"
+    },
+    "policy_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Checksum in the form sha256:<hex> when available",
+      "title": "Policy Hash"
+    },
+    "policy_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Policy identifier",
+      "title": "Policy Id"
+    },
+    "policy_source": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Where the policy came from (file/env/url)",
+      "title": "Policy Source"
+    },
+    "schema_version": {
+      "const": "policy-ref-v1",
+      "default": "policy-ref-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "thresholds": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional thresholds used by the policy",
+      "title": "Thresholds"
+    }
+  },
+  "title": "PolicyRefV1",
+  "type": "object"
+}

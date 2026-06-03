@@ -2,13 +2,11 @@
 Tests for FSL FLIRT registration tool implementation.
 """
 
-import json
 import os
-import subprocess
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -29,7 +27,7 @@ class TestFSLFLIRTArgs(unittest.TestCase):
         args = FSLFLIRTArgs(
             input_file="/data/moving.nii.gz",
             reference_file="/data/fixed.nii.gz",
-            output_file="/data/registered.nii.gz"
+            output_file="/data/registered.nii.gz",
         )
 
         assert args.input_file == "/data/moving.nii.gz"
@@ -45,7 +43,7 @@ class TestFSLFLIRTArgs(unittest.TestCase):
             reference_file="/data/fixed.nii.gz",
             output_file="/data/registered.nii.gz",
             output_matrix="/data/transform.mat",
-            init_matrix="/data/init.mat"
+            init_matrix="/data/init.mat",
         )
 
         assert args.output_matrix == "/data/transform.mat"
@@ -59,7 +57,7 @@ class TestFSLFLIRTArgs(unittest.TestCase):
                 input_file="input.nii",
                 reference_file="ref.nii",
                 output_file="out.nii",
-                dof=dof
+                dof=dof,
             )
             assert args.dof == dof
 
@@ -69,7 +67,7 @@ class TestFSLFLIRTArgs(unittest.TestCase):
                 input_file="input.nii",
                 reference_file="ref.nii",
                 output_file="out.nii",
-                dof=5  # Too low
+                dof=5,  # Too low
             )
 
     def test_search_ranges(self):
@@ -80,7 +78,7 @@ class TestFSLFLIRTArgs(unittest.TestCase):
             output_file="out.nii",
             search_range_x=(-45, 45),
             search_range_y=(-30, 30),
-            search_range_z=(-60, 60)
+            search_range_z=(-60, 60),
         )
 
         assert args.search_range_x == (-45, 45)
@@ -96,7 +94,7 @@ class TestFSLFLIRTArgs(unittest.TestCase):
                 input_file="input.nii",
                 reference_file="ref.nii",
                 output_file="out.nii",
-                interp_method=method
+                interp_method=method,
             )
             assert args.interp_method == method
 
@@ -114,14 +112,12 @@ class TestFSLFLIRTTool(unittest.TestCase):
         assert "linear" in self.tool.get_tool_description().lower()
         assert self.tool.get_args_schema() == FSLFLIRTArgs
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_basic_registration(self, mock_run):
         """Test basic registration execution."""
         # Mock successful FLIRT execution
         mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="FLIRT registration completed",
-            stderr=""
+            returncode=0, stdout="FLIRT registration completed", stderr=""
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -134,9 +130,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
             Path(ref_file).touch()
 
             result = self.tool._run(
-                input_file=input_file,
-                reference_file=ref_file,
-                output_file=output_file
+                input_file=input_file, reference_file=ref_file, output_file=output_file
             )
 
             assert result.status == "success"
@@ -151,8 +145,10 @@ class TestFSLFLIRTTool(unittest.TestCase):
             assert "-ref" in call_args
             assert "-out" in call_args
 
-    @patch("brain_researcher.services.tools.fsl_flirt_tool.render_registration_checkerboard_png")
-    @patch('subprocess.run')
+    @patch(
+        "brain_researcher.services.tools.fsl_flirt_tool.render_registration_checkerboard_png"
+    )
+    @patch("subprocess.run")
     def test_registration_emits_qc_png_when_registered_output_exists(
         self,
         mock_run,
@@ -180,14 +176,10 @@ class TestFSLFLIRTTool(unittest.TestCase):
             assert result.data["outputs"]["qc_png"].endswith("_qc.png")
             mock_render.assert_called_once()
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_registration_with_matrix(self, mock_run):
         """Test registration with transformation matrix output."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             input_file = os.path.join(temp_dir, "moving.nii.gz")
@@ -202,7 +194,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
                 input_file=input_file,
                 reference_file=ref_file,
                 output_file=output_file,
-                output_matrix=matrix_file
+                output_matrix=matrix_file,
             )
 
             assert result.status == "success"
@@ -213,14 +205,10 @@ class TestFSLFLIRTTool(unittest.TestCase):
             matrix_idx = call_args.index("-omat")
             assert call_args[matrix_idx + 1] == matrix_file
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_registration_with_init_matrix(self, mock_run):
         """Test registration with initial transformation."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             input_file = os.path.join(temp_dir, "moving.nii.gz")
@@ -236,7 +224,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
                 input_file=input_file,
                 reference_file=ref_file,
                 output_file=output_file,
-                init_matrix=init_matrix
+                init_matrix=init_matrix,
             )
 
             assert result.status == "success"
@@ -246,14 +234,10 @@ class TestFSLFLIRTTool(unittest.TestCase):
             init_idx = call_args.index("-init")
             assert call_args[init_idx + 1] == init_matrix
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_rigid_registration(self, mock_run):
         """Test rigid body registration (6 DOF)."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             input_file = os.path.join(temp_dir, "moving.nii.gz")
@@ -267,7 +251,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
                 input_file=input_file,
                 reference_file=ref_file,
                 output_file=output_file,
-                dof=6  # Rigid body
+                dof=6,  # Rigid body
             )
 
             assert result.status == "success"
@@ -277,20 +261,16 @@ class TestFSLFLIRTTool(unittest.TestCase):
             dof_idx = call_args.index("-dof")
             assert call_args[dof_idx + 1] == "6"
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_cost_functions(self, mock_run):
         """Test different cost functions."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         cost_functions = [
             FLIRTCostFunction.CORRELATION_RATIO,
             FLIRTCostFunction.MUTUAL_INFO,
             FLIRTCostFunction.LEAST_SQUARES,
-            FLIRTCostFunction.NORMALIZED_CORRELATION
+            FLIRTCostFunction.NORMALIZED_CORRELATION,
         ]
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -304,7 +284,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
                     input_file=input_file,
                     reference_file=ref_file,
                     output_file=os.path.join(temp_dir, f"out_{cost_func}.nii.gz"),
-                    cost_function=cost_func
+                    cost_function=cost_func,
                 )
 
                 assert result.status == "success"
@@ -314,14 +294,10 @@ class TestFSLFLIRTTool(unittest.TestCase):
                 cost_idx = call_args.index("-cost")
                 assert call_args[cost_idx + 1] == cost_func.value
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_search_methods(self, mock_run):
         """Test different search methods."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             input_file = os.path.join(temp_dir, "moving.nii.gz")
@@ -334,21 +310,17 @@ class TestFSLFLIRTTool(unittest.TestCase):
                 input_file=input_file,
                 reference_file=ref_file,
                 output_file=os.path.join(temp_dir, "out_global.nii.gz"),
-                search_method=FLIRTSearchMethod.GLOBAL_SEARCH
+                search_method=FLIRTSearchMethod.GLOBAL_SEARCH,
             )
 
             assert result.status == "success"
             call_args = mock_run.call_args[0][0]
             assert "-searchrx" in call_args  # Global search uses full search ranges
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_search_ranges(self, mock_run):
         """Test custom search ranges."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             input_file = os.path.join(temp_dir, "moving.nii.gz")
@@ -363,7 +335,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
                 search_range_x=(-45, 45),
                 search_range_y=(-30, 30),
                 search_range_z=(-60, 60),
-                search_method=FLIRTSearchMethod.GLOBAL_SEARCH
+                search_method=FLIRTSearchMethod.GLOBAL_SEARCH,
             )
 
             assert result.status == "success"
@@ -374,14 +346,10 @@ class TestFSLFLIRTTool(unittest.TestCase):
             assert float(call_args[rx_idx + 1]) == -45
             assert float(call_args[rx_idx + 2]) == 45
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_interpolation_methods(self, mock_run):
         """Test different interpolation methods."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         interp_methods = ["nearestneighbour", "trilinear", "sinc", "spline"]
 
@@ -396,7 +364,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
                     input_file=input_file,
                     reference_file=ref_file,
                     output_file=os.path.join(temp_dir, f"out_{method}.nii.gz"),
-                    interp_method=method
+                    interp_method=method,
                 )
 
                 assert result.status == "success"
@@ -406,13 +374,11 @@ class TestFSLFLIRTTool(unittest.TestCase):
                 interp_idx = call_args.index("-interp")
                 assert call_args[interp_idx + 1] == method
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_verbose_output(self, mock_run):
         """Test verbose output option."""
         mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="Registration details...",
-            stderr=""
+            returncode=0, stdout="Registration details...", stderr=""
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -425,7 +391,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
                 input_file=input_file,
                 reference_file=ref_file,
                 output_file=os.path.join(temp_dir, "out.nii.gz"),
-                verbose=True
+                verbose=True,
             )
 
             assert result.status == "success"
@@ -438,7 +404,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
         result = self.tool._run(
             input_file="/nonexistent/input.nii.gz",
             reference_file="/nonexistent/ref.nii.gz",
-            output_file="/tmp/out.nii.gz"
+            output_file="/tmp/out.nii.gz",
         )
 
         assert result.status == "error"
@@ -453,19 +419,17 @@ class TestFSLFLIRTTool(unittest.TestCase):
             result = self.tool._run(
                 input_file=input_file,
                 reference_file="/nonexistent/ref.nii.gz",
-                output_file="/tmp/out.nii.gz"
+                output_file="/tmp/out.nii.gz",
             )
 
             assert result.status == "error"
             assert "not found" in result.error.lower()
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_registration_failure(self, mock_run):
         """Test handling of FLIRT execution failure."""
         mock_run.return_value = MagicMock(
-            returncode=1,
-            stdout="",
-            stderr="Error: Registration failed"
+            returncode=1, stdout="", stderr="Error: Registration failed"
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -477,20 +441,16 @@ class TestFSLFLIRTTool(unittest.TestCase):
             result = self.tool._run(
                 input_file=input_file,
                 reference_file=ref_file,
-                output_file=os.path.join(temp_dir, "out.nii.gz")
+                output_file=os.path.join(temp_dir, "out.nii.gz"),
             )
 
             assert result.status == "error"
             assert "Registration failed" in result.error
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_apply_transformation(self, mock_run):
         """Test applying existing transformation matrix."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             input_file = os.path.join(temp_dir, "moving.nii.gz")
@@ -507,7 +467,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
                 input_file=input_file,
                 reference_file=ref_file,
                 output_file=output_file,
-                transformation_matrix=matrix_file
+                transformation_matrix=matrix_file,
             )
 
             assert result.status == "success"
@@ -520,14 +480,10 @@ class TestFSLFLIRTTool(unittest.TestCase):
             assert "-init" in call_args
             assert "-applyxfm" in call_args
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_invert_transformation(self, mock_run):
         """Test inverting transformation matrix."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             input_matrix = os.path.join(temp_dir, "forward.mat")
@@ -536,8 +492,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
             Path(input_matrix).touch()
 
             result = self.tool.invert_transformation(
-                input_matrix=input_matrix,
-                output_matrix=output_matrix
+                input_matrix=input_matrix, output_matrix=output_matrix
             )
 
             assert result.status == "success"
@@ -547,14 +502,10 @@ class TestFSLFLIRTTool(unittest.TestCase):
             assert "-omat" in call_args
             assert "-inverse" in call_args
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_concatenate_transformations(self, mock_run):
         """Test concatenating transformation matrices."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="",
-            stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             matrix1 = os.path.join(temp_dir, "transform1.mat")
@@ -565,9 +516,7 @@ class TestFSLFLIRTTool(unittest.TestCase):
             Path(matrix2).touch()
 
             result = self.tool.concatenate_transformations(
-                matrix1=matrix1,
-                matrix2=matrix2,
-                output_matrix=output_matrix
+                matrix1=matrix1, matrix2=matrix2, output_matrix=output_matrix
             )
 
             assert result.status == "success"

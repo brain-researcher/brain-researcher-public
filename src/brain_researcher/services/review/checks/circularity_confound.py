@@ -259,7 +259,9 @@ _SAME_DATA_TOKENS = frozenset(
 )
 
 
-def _double_dipping_sections(context: Mapping[str, object]) -> list[Mapping[str, object]]:
+def _double_dipping_sections(
+    context: Mapping[str, object],
+) -> list[Mapping[str, object]]:
     return [
         context,
         _nested_mapping(context, "selection"),
@@ -311,9 +313,7 @@ def double_dipping_check(bundle: CodeReviewBundle) -> ReviewFinding | None:
             evidence.append(f"review_context.{prov_key}.{key}=True")
     if _explicit_bool(provenance.get("selection_test_independence")) is False:
         triggered = True
-        evidence.append(
-            f"review_context.{prov_key}.selection_test_independence=False"
-        )
+        evidence.append(f"review_context.{prov_key}.selection_test_independence=False")
 
     # 2. Selection source is a same-data token.
     source_hit = _first_present([provenance], _SELECTION_SOURCE_KEYS)
@@ -428,7 +428,7 @@ def _covariate_canon_set(sections: list[Mapping[str, object]]) -> set[str] | Non
             if value in (None, ""):
                 continue
             names = _string_list(value)
-            if names or isinstance(value, (list, tuple, Mapping)):
+            if names or isinstance(value, list | tuple | Mapping):
                 found = True
             for name in names:
                 canon.add(_canonical_variable(name))
@@ -489,14 +489,12 @@ def _significant_demographic_variables(
                     if _explicit_bool(entry) is True:
                         flagged.add(_canonical_variable(str(var_name)))
         # List form.
-        elif isinstance(block, Iterable) and not isinstance(block, (str, bytes)):
+        elif isinstance(block, Iterable) and not isinstance(block, str | bytes):
             for entry in block:
                 if not isinstance(entry, Mapping):
                     continue
                 var_name = (
-                    entry.get("variable")
-                    or entry.get("name")
-                    or entry.get("var")
+                    entry.get("variable") or entry.get("name") or entry.get("var")
                 )
                 if var_name in (None, ""):
                     continue

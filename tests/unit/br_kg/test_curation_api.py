@@ -1,10 +1,14 @@
 """Unit tests for curation API."""
 
 import pytest
-from datetime import datetime
+
 from brain_researcher.services.br_kg.api.curation import (
-    CurationWorkflow, CurationItem, ValidationStatus,
-    ValidationRequest, BatchRequest, BatchOperation
+    BatchOperation,
+    BatchRequest,
+    CurationItem,
+    CurationWorkflow,
+    ValidationRequest,
+    ValidationStatus,
 )
 
 
@@ -23,7 +27,7 @@ class TestCurationWorkflow:
             type="concept",
             data={"name": "test_concept", "definition": "A test concept"},
             submitted_by="test_user",
-            confidence_score=0.85
+            confidence_score=0.85,
         )
 
     def test_submit_for_review(self, workflow, sample_item):
@@ -42,7 +46,7 @@ class TestCurationWorkflow:
             item_id=sample_item.id,
             action=ValidationStatus.APPROVED,
             comment="Looks good",
-            confidence=0.95
+            confidence=0.95,
         )
 
         validated = workflow.validate_item(request, "reviewer1")
@@ -60,7 +64,7 @@ class TestCurationWorkflow:
         request = ValidationRequest(
             item_id=sample_item.id,
             action=ValidationStatus.REJECTED,
-            comment="Incorrect definition"
+            comment="Incorrect definition",
         )
 
         validated = workflow.validate_item(request, "reviewer2")
@@ -74,17 +78,14 @@ class TestCurationWorkflow:
         items = []
         for i in range(5):
             item = CurationItem(
-                type="concept",
-                data={"name": f"concept_{i}"},
-                submitted_by="test_user"
+                type="concept", data={"name": f"concept_{i}"}, submitted_by="test_user"
             )
             workflow.submit_for_review(item)
             items.append(item)
 
         # Batch approve
         request = BatchRequest(
-            item_ids=[item.id for item in items],
-            operation=BatchOperation.APPROVE
+            item_ids=[item.id for item in items], operation=BatchOperation.APPROVE
         )
 
         results = workflow.batch_operation(request, "batch_reviewer")
@@ -103,7 +104,7 @@ class TestCurationWorkflow:
         request = BatchRequest(
             item_ids=[sample_item.id],
             operation=BatchOperation.TAG,
-            params={"tags": ["important", "reviewed"]}
+            params={"tags": ["important", "reviewed"]},
         )
 
         results = workflow.batch_operation(request, "tagger")
@@ -118,12 +119,12 @@ class TestCurationWorkflow:
         item1 = CurationItem(
             type="concept",
             data={"name": "concept1", "prop1": "value1"},
-            submitted_by="user1"
+            submitted_by="user1",
         )
         item2 = CurationItem(
             type="concept",
             data={"name": "concept2", "prop2": "value2"},
-            submitted_by="user2"
+            submitted_by="user2",
         )
 
         workflow.submit_for_review(item1)
@@ -133,7 +134,7 @@ class TestCurationWorkflow:
         request = BatchRequest(
             item_ids=[item1.id],
             operation=BatchOperation.MERGE,
-            params={"target_id": item2.id}
+            params={"target_id": item2.id},
         )
 
         results = workflow.batch_operation(request, "merger")
@@ -153,13 +154,13 @@ class TestCurationWorkflow:
             type="concept",
             data={"name": "high_conf"},
             submitted_by="user",
-            confidence_score=0.9
+            confidence_score=0.9,
         )
         low_conf = CurationItem(
             type="concept",
             data={"name": "low_conf"},
             submitted_by="user",
-            confidence_score=0.3
+            confidence_score=0.3,
         )
 
         workflow.submit_for_review(high_conf)
@@ -183,14 +184,13 @@ class TestCurationWorkflow:
                 type="concept" if i < 5 else "relation",
                 data={"name": f"item_{i}"},
                 submitted_by="user",
-                confidence_score=0.5 + i * 0.05
+                confidence_score=0.5 + i * 0.05,
             )
             workflow.submit_for_review(item)
 
             if i < 3:
                 request = ValidationRequest(
-                    item_id=item.id,
-                    action=ValidationStatus.APPROVED
+                    item_id=item.id, action=ValidationStatus.APPROVED
                 )
                 workflow.validate_item(request, "reviewer")
 

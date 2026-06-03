@@ -97,7 +97,9 @@ class ContrastAnalyzer:
             z_map, threshold=threshold, min_size=min_size
         )
 
-        construct_count = sum(len(item.get("constructs", [])) for item in constructs or [])
+        construct_count = sum(
+            len(item.get("constructs", [])) for item in constructs or []
+        )
         utility_score = float(
             min(
                 1.0,
@@ -131,7 +133,9 @@ class ContrastAnalyzer:
         """Analyze every contrast directory under a dataset root."""
         dataset_root = Path(dataset_path)
         results: dict[str, dict[str, Any]] = {}
-        for contrast_dir in sorted(path for path in dataset_root.iterdir() if path.is_dir()):
+        for contrast_dir in sorted(
+            path for path in dataset_root.iterdir() if path.is_dir()
+        ):
             z_map = contrast_dir / "z_map.nii.gz"
             if not z_map.exists():
                 continue

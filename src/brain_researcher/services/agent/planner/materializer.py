@@ -15,19 +15,18 @@ For PR-3, this enables:
 from __future__ import annotations
 
 import secrets
-from typing import List, Optional
 
 from brain_researcher.services.agent.planner.selection import SelectionCandidate
 from brain_researcher.services.shared.planner.models import (
+    Domain,
+    Modality,
     Plan,
     PlanDAG,
     StepSpec,
-    ArtifactSpec,
-    Domain,
-    Modality,
-    ResourceType,
 )
-from brain_researcher.services.tools.catalog_loader import resolve_primary_runtime_tool_id
+from brain_researcher.services.tools.catalog_loader import (
+    resolve_primary_runtime_tool_id,
+)
 
 
 def _canonical_tool_id(raw_tool_id: str | None) -> str:
@@ -39,7 +38,7 @@ def materialize_simple_plan(
     candidate: SelectionCandidate,
     query: str,
     domain: Domain = "neuroimaging",
-    modality: Optional[List[Modality]] = None,
+    modality: list[Modality] | None = None,
 ) -> Plan:
     """Convert SelectionCandidate to single-step Plan.
 
@@ -67,7 +66,7 @@ def materialize_simple_plan(
         tool=_canonical_tool_id(tool.id),
         consumes={},  # No explicit inputs for single-step plan
         produces={},  # No explicit outputs tracked yet
-        params={},    # Parameters would come from user in full implementation
+        params={},  # Parameters would come from user in full implementation
         runtime_kind=tool.runtime_kind,  # Propagate backend type from catalog
     )
 
@@ -92,19 +91,21 @@ def materialize_simple_plan(
             "metadata_quality": candidate.metadata_score,
             "resource_fit": candidate.resource_fit_score,  # PR-3
         },
-        warnings=[] if candidate.preflight_passed else [
-            f"Preflight checks failed: {candidate.preflight_detail}"
-        ],
+        warnings=(
+            []
+            if candidate.preflight_passed
+            else [f"Preflight checks failed: {candidate.preflight_detail}"]
+        ),
     )
 
     return plan
 
 
 def materialize_plan_with_alternatives(
-    candidates: List[SelectionCandidate],
+    candidates: list[SelectionCandidate],
     query: str,
     domain: Domain = "neuroimaging",
-    modality: Optional[List[Modality]] = None,
+    modality: list[Modality] | None = None,
     include_top_n: int = 3,
 ) -> Plan:
     """Convert multiple candidates to Plan with alternatives.
@@ -137,14 +138,16 @@ def materialize_plan_with_alternatives(
     # Add alternatives to estimates
     alternatives = []
     for i, candidate in enumerate(candidates[1:include_top_n], start=2):
-        alternatives.append({
-            "rank": i,
-            "tool_id": _canonical_tool_id(candidate.tool.id),
-            "tool_name": candidate.tool.name,
-            "score": candidate.final_score,
-            "explanation": candidate.explanation,
-            "preflight_passed": candidate.preflight_passed,
-        })
+        alternatives.append(
+            {
+                "rank": i,
+                "tool_id": _canonical_tool_id(candidate.tool.id),
+                "tool_name": candidate.tool.name,
+                "score": candidate.final_score,
+                "explanation": candidate.explanation,
+                "preflight_passed": candidate.preflight_passed,
+            }
+        )
 
     if alternatives:
         plan.estimates["alternatives"] = alternatives
@@ -200,10 +203,10 @@ def create_plan_preview(
 
 
 def materialize_multi_step_plan(
-    candidates: List[SelectionCandidate],
+    candidates: list[SelectionCandidate],
     query: str,
     domain: Domain = "neuroimaging",
-    modality: Optional[List[Modality]] = None,
+    modality: list[Modality] | None = None,
 ) -> Plan:
     """Create multi-step plan from multiple candidates (PR-3 stub).
 
@@ -232,7 +235,7 @@ def materialize_multi_step_plan(
     for i, candidate in enumerate(candidates, start=1):
         step = StepSpec(
             id=f"step_{i:03d}",
-                tool=_canonical_tool_id(candidate.tool.id),
+            tool=_canonical_tool_id(candidate.tool.id),
             consumes={},  # TODO: infer from tool metadata
             produces={},  # TODO: infer from tool metadata
             params={},
@@ -261,12 +264,17 @@ def materialize_multi_step_plan(
         estimates={
             "confidence": avg_score,
             "step_count": len(steps),
-            "avg_intent_match": sum(c.intent_match_score for c in candidates) / len(candidates),
+            "avg_intent_match": sum(c.intent_match_score for c in candidates)
+            / len(candidates),
             "all_preflight_passed": all_passed,
         },
-        warnings=[] if all_passed else [
-            f"Some steps failed preflight: {[c.tool.id for c in candidates if not c.preflight_passed]}"
-        ],
+        warnings=(
+            []
+            if all_passed
+            else [
+                f"Some steps failed preflight: {[c.tool.id for c in candidates if not c.preflight_passed]}"
+            ]
+        ),
     )
 
     # Add step-level estimates

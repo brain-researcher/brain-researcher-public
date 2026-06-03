@@ -1420,7 +1420,7 @@ def main() -> int:
     parser.add_argument(
         "--results-root",
         type=Path,
-        default=Path("docs/prompts/brain_researcher_hybrid/reports"),
+        default=Path("docs/use_cases/brain_researcher_hybrid/reports"),
         help="Root path containing report/demo artifacts",
     )
     parser.add_argument(

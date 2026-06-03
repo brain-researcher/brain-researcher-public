@@ -12,15 +12,16 @@ from __future__ import annotations
 import collections
 import hashlib
 import json
-from typing import Any, Deque, Dict, Iterable, List, Tuple
+from collections.abc import Iterable
+from typing import Any
 
 
 class FakeGraphDB:
     """Lightweight graph helper for unit tests."""
 
     def __init__(self) -> None:
-        self._nodes: Dict[str, Dict[str, Any]] = {}
-        self._relationships: List[Dict[str, Any]] = []
+        self._nodes: dict[str, dict[str, Any]] = {}
+        self._relationships: list[dict[str, Any]] = []
         self._rel_counter = 0
 
     # ---------------------------------------------------------------------#
@@ -29,11 +30,11 @@ class FakeGraphDB:
     def create_node(
         self,
         labels: str | Iterable[str],
-        properties: Dict[str, Any] | None = None,
+        properties: dict[str, Any] | None = None,
         node_id: str | None = None,
     ) -> str:
         """Create an in-memory node."""
-        props: Dict[str, Any] = dict(properties or {})
+        props: dict[str, Any] = dict(properties or {})
         label_list = list(labels) if not isinstance(labels, str) else [labels]
 
         if node_id is None:
@@ -45,7 +46,9 @@ class FakeGraphDB:
                     for k, v in props.items()
                     if k in {"name", "pmid", "doi", "concept_id", "x", "y", "z"}
                 } or {k: v for k, v in props.items() if k != "labels"}
-                digest_input = f"{'-'.join(label_list)}-{json.dumps(key_props, sort_keys=True)}"
+                digest_input = (
+                    f"{'-'.join(label_list)}-{json.dumps(key_props, sort_keys=True)}"
+                )
                 node_id = hashlib.md5(digest_input.encode()).hexdigest()
 
         stored = dict(props)
@@ -58,7 +61,7 @@ class FakeGraphDB:
         start_node: str,
         end_node: str,
         rel_type: str,
-        properties: Dict[str, Any] | None = None,
+        properties: dict[str, Any] | None = None,
     ) -> str | bool:
         """Create an in-memory relationship."""
         if start_node not in self._nodes or end_node not in self._nodes:
@@ -76,8 +79,8 @@ class FakeGraphDB:
     def find_nodes(
         self,
         labels: str | Iterable[str] | None = None,
-        properties: Dict[str, Any] | None = None,
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+        properties: dict[str, Any] | None = None,
+    ) -> list[tuple[str, dict[str, Any]]]:
         """Return nodes matching label/property filters."""
         if isinstance(labels, str):
             label_filter = {labels}
@@ -87,7 +90,7 @@ class FakeGraphDB:
             label_filter = set(labels)
 
         props = properties or {}
-        results: List[Tuple[str, Dict[str, Any]]] = []
+        results: list[tuple[str, dict[str, Any]]] = []
         for node_id, node_data in self._nodes.items():
             node_labels = set(node_data.get("labels", []))
             if label_filter and not (label_filter & node_labels):
@@ -107,9 +110,9 @@ class FakeGraphDB:
         start_node: str | None = None,
         end_node: str | None = None,
         rel_type: str | None = None,
-    ) -> List[Tuple[str, str, Dict[str, Any]]]:
+    ) -> list[tuple[str, str, dict[str, Any]]]:
         """Return relationships matching the supplied filters."""
-        results: List[Tuple[str, str, Dict[str, Any]]] = []
+        results: list[tuple[str, str, dict[str, Any]]] = []
         for rel in self._relationships:
             if start_node and rel["start"] != start_node:
                 continue
@@ -120,7 +123,7 @@ class FakeGraphDB:
             results.append((rel["start"], rel["end"], dict(rel["data"])))
         return results
 
-    def get_node(self, node_id: str) -> Dict[str, Any] | None:
+    def get_node(self, node_id: str) -> dict[str, Any] | None:
         node = self._nodes.get(node_id)
         return dict(node) if node is not None else None
 
@@ -140,14 +143,16 @@ class FakeGraphDB:
         self,
         start_node_id: str,
         depth: int = 2,
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Perform a bounded breadth-first traversal."""
         if start_node_id not in self._nodes:
             raise ValueError(f"Node {start_node_id} not found in graph")
 
         visited: set[str] = set()
-        queue: Deque[Tuple[str, int]] = collections.deque([(start_node_id, 0)])
-        edges: List[Dict[str, Any]] = []
+        queue: collections.deque[tuple[str, int]] = collections.deque(
+            [(start_node_id, 0)]
+        )
+        edges: list[dict[str, Any]] = []
 
         while queue:
             current, current_depth = queue.popleft()
@@ -198,8 +203,8 @@ class FakeGraphDB:
             for node_id in visited
         ]
 
-        deduped_edges: List[Dict[str, Any]] = []
-        seen: set[Tuple[str, str, str]] = set()
+        deduped_edges: list[dict[str, Any]] = []
+        seen: set[tuple[str, str, str]] = set()
         for edge in edges:
             key = (edge["start"], edge["end"], edge["type"])
             if key not in seen:

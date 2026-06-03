@@ -5,23 +5,15 @@ These tests ensure that the API contracts are honored and that
 frontend-backend integration remains stable.
 """
 
-import pytest
-import json
 from datetime import datetime
-from typing import Dict, Any
-from hypothesis import given, strategies as st, settings
-from hypothesis.provisional import urls
-import httpx
+
+import pytest
 from fastapi.testclient import TestClient
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 # Import the enhanced orchestrator app
 from brain_researcher.services.orchestrator.main_enhanced import app
-from brain_researcher.services.orchestrator.models import (
-    JobStatus, StepStatus, ErrorCode, PipelineType,
-    RunRequest, ThreadRequest, MessageRequest,
-    DatasetSearchRequest, LoginRequest, SignupRequest,
-    NotificationMarkReadRequest, UIConfiguration
-)
 
 # Test client
 client = TestClient(app)
@@ -29,6 +21,7 @@ client = TestClient(app)
 # ============================================================================
 # Contract Tests for Core Endpoints
 # ============================================================================
+
 
 class TestHealthEndpoint:
     """Contract tests for /health endpoint."""
@@ -49,22 +42,29 @@ class TestHealthEndpoint:
         assert "version" in data
 
         # Verify service health structure
-        for service_name, service_data in data["services"].items():
+        for _service_name, service_data in data["services"].items():
             assert "name" in service_data
             assert "status" in service_data
-            assert service_data["status"] in ["healthy", "degraded", "unhealthy", "unavailable"]
+            assert service_data["status"] in [
+                "healthy",
+                "degraded",
+                "unhealthy",
+                "unavailable",
+            ]
             if "latency_ms" in service_data:
-                assert isinstance(service_data["latency_ms"], (int, type(None)))
+                assert isinstance(service_data["latency_ms"], int | type(None))
 
     def test_health_performance_requirement(self):
         """Test that health check responds within 200ms."""
         import time
+
         start = time.time()
         response = client.get("/health")
         duration = (time.time() - start) * 1000
 
         assert response.status_code == 200
         assert duration < 200, f"Health check took {duration}ms, should be < 200ms"
+
 
 class TestRunEndpoint:
     """Contract tests for /run endpoint."""
@@ -75,14 +75,11 @@ class TestRunEndpoint:
             "prompt": "Run GLM analysis on motor task",
             "pipeline": "glm",
             "dataset_id": "motor-task-001",
-            "parameters": {
-                "smoothing": 6,
-                "threshold": 0.001
-            },
+            "parameters": {"smoothing": 6, "threshold": 0.001},
             "copilot": True,
             "demo_mode": False,
             "timeout_seconds": 300,
-            "priority": 5
+            "priority": 5,
         }
 
         response = client.post("/run", json=request_data)
@@ -105,7 +102,7 @@ class TestRunEndpoint:
     @given(
         prompt=st.text(min_size=1, max_size=5000),
         smoothing=st.floats(min_value=0, max_value=12),
-        threshold=st.floats(min_value=0.0001, max_value=0.9999)
+        threshold=st.floats(min_value=0.0001, max_value=0.9999),
     )
     @settings(max_examples=10)
     def test_run_parameter_validation(self, prompt, smoothing, threshold):
@@ -113,10 +110,7 @@ class TestRunEndpoint:
         request_data = {
             "prompt": prompt,
             "pipeline": "glm",
-            "parameters": {
-                "smoothing": smoothing,
-                "threshold": threshold
-            }
+            "parameters": {"smoothing": smoothing, "threshold": threshold},
         }
 
         response = client.post("/run", json=request_data)
@@ -133,7 +127,7 @@ class TestRunEndpoint:
             "pipeline": "glm",
             "dataset_id": "motor-task-sample",
             "demo_mode": True,
-            "cache_key": "demo_test"
+            "cache_key": "demo_test",
         }
 
         response = client.post("/run", json=request_data)
@@ -150,16 +144,16 @@ class TestRunEndpoint:
             assert job_data["status"] == "completed"
             assert len(job_data["artifacts"]) > 0
 
+
 class TestJobEndpoints:
     """Contract tests for job management endpoints."""
 
     def test_job_retrieval_contract(self):
         """Test job retrieval endpoint contract."""
         # First create a job
-        create_response = client.post("/run", json={
-            "prompt": "Test job",
-            "pipeline": "custom"
-        })
+        create_response = client.post(
+            "/run", json={"prompt": "Test job", "pipeline": "custom"}
+        )
         job_id = create_response.json()["job_id"]
 
         # Retrieve the job
@@ -172,7 +166,15 @@ class TestJobEndpoints:
         assert "id" in data
         assert data["id"] == job_id
         assert "status" in data
-        assert data["status"] in ["pending", "queued", "running", "completed", "failed", "cancelled", "timeout"]
+        assert data["status"] in [
+            "pending",
+            "queued",
+            "running",
+            "completed",
+            "failed",
+            "cancelled",
+            "timeout",
+        ]
         assert "prompt" in data
         assert "steps" in data
         assert isinstance(data["steps"], list)
@@ -196,10 +198,9 @@ class TestJobEndpoints:
     def test_job_provenance_contract(self):
         """Test provenance endpoint contract (UI-004)."""
         # Create a job
-        create_response = client.post("/run", json={
-            "prompt": "Test provenance",
-            "dataset_id": "test-dataset"
-        })
+        create_response = client.post(
+            "/run", json={"prompt": "Test provenance", "dataset_id": "test-dataset"}
+        )
         job_id = create_response.json()["job_id"]
 
         # Get provenance
@@ -226,6 +227,7 @@ class TestJobEndpoints:
             assert "target" in edge
             assert "relationship" in edge
 
+
 class TestThreadEndpoints:
     """Contract tests for thread management (UI-003)."""
 
@@ -233,10 +235,7 @@ class TestThreadEndpoints:
         """Test thread creation endpoint."""
         request_data = {
             "title": "Test Analysis Thread",
-            "context": {
-                "dataset_id": "test-dataset",
-                "previous_jobs": []
-            }
+            "context": {"dataset_id": "test-dataset", "previous_jobs": []},
         }
 
         response = client.post("/threads", json=request_data)
@@ -256,21 +255,15 @@ class TestThreadEndpoints:
     def test_message_addition_contract(self):
         """Test message addition to thread."""
         # Create thread
-        thread_response = client.post("/threads", json={
-            "title": "Test Thread"
-        })
+        thread_response = client.post("/threads", json={"title": "Test Thread"})
         thread_id = thread_response.json()["thread_id"]
 
         # Add message
         message_data = {
             "content": "Run analysis on this data",
             "attachments": [
-                {
-                    "type": "file",
-                    "name": "data.csv",
-                    "data": "base64_encoded_data"
-                }
-            ]
+                {"type": "file", "name": "data.csv", "data": "base64_encoded_data"}
+            ],
         }
 
         response = client.post(f"/threads/{thread_id}/messages", json=message_data)
@@ -285,16 +278,14 @@ class TestThreadEndpoints:
     def test_message_history_contract(self):
         """Test message history retrieval."""
         # Create thread
-        thread_response = client.post("/threads", json={
-            "title": "History Test"
-        })
+        thread_response = client.post("/threads", json={"title": "History Test"})
         thread_id = thread_response.json()["thread_id"]
 
         # Add some messages
         for i in range(3):
-            client.post(f"/threads/{thread_id}/messages", json={
-                "content": f"Message {i}"
-            })
+            client.post(
+                f"/threads/{thread_id}/messages", json={"content": f"Message {i}"}
+            )
 
         # Get history
         response = client.get(f"/threads/{thread_id}/messages?limit=10")
@@ -316,6 +307,7 @@ class TestThreadEndpoints:
             assert msg["role"] in ["user", "assistant", "system"]
             assert "content" in msg
             assert "timestamp" in msg
+
 
 class TestDatasetEndpoints:
     """Contract tests for dataset management (UI-006/007)."""
@@ -354,7 +346,7 @@ class TestDatasetEndpoints:
             {"modality": ["fMRI"]},
             {"n_subjects_min": 10, "n_subjects_max": 50},
             {"tasks": ["motor", "rest"]},
-            {"has_derivatives": True}
+            {"has_derivatives": True},
         ]
 
         for filter_params in filters:
@@ -365,7 +357,7 @@ class TestDatasetEndpoints:
 
     @given(
         page=st.integers(min_value=1, max_value=100),
-        limit=st.integers(min_value=1, max_value=100)
+        limit=st.integers(min_value=1, max_value=100),
     )
     @settings(max_examples=5)
     def test_dataset_pagination_bounds(self, page, limit):
@@ -383,15 +375,9 @@ class TestDatasetEndpoints:
         search_request = {
             "query": {
                 "text": "motor cortex",
-                "filters": {
-                    "n_subjects": {"min": 15, "max": 50},
-                    "modality": ["fMRI"]
-                }
+                "filters": {"n_subjects": {"min": 15, "max": 50}, "modality": ["fMRI"]},
             },
-            "options": {
-                "include_similar": True,
-                "similarity_threshold": 0.7
-            }
+            "options": {"include_similar": True, "similarity_threshold": 0.7},
         }
 
         response = client.post("/datasets/search", json=search_request)
@@ -404,19 +390,20 @@ class TestDatasetEndpoints:
             assert "query_id" in data["search_metadata"]
             assert "processing_time_ms" in data["search_metadata"]
 
+
 # ============================================================================
 # Error Path Tests
 # ============================================================================
+
 
 class TestErrorHandling:
     """Test error handling and edge cases."""
 
     def test_invalid_pipeline_type(self):
         """Test handling of invalid pipeline type."""
-        response = client.post("/run", json={
-            "prompt": "Test",
-            "pipeline": "invalid_pipeline"
-        })
+        response = client.post(
+            "/run", json={"prompt": "Test", "pipeline": "invalid_pipeline"}
+        )
         assert response.status_code == 422  # Validation error
 
     def test_missing_required_fields(self):
@@ -431,27 +418,31 @@ class TestErrorHandling:
     def test_oversized_prompt(self):
         """Test handling of oversized prompt."""
         huge_prompt = "x" * 10000  # Exceeds 5000 char limit
-        response = client.post("/run", json={
-            "prompt": huge_prompt
-        })
+        response = client.post("/run", json={"prompt": huge_prompt})
         assert response.status_code == 422
 
     def test_invalid_parameter_ranges(self):
         """Test parameter range validation."""
         # Smoothing out of range
-        response = client.post("/run", json={
-            "prompt": "Test",
-            "pipeline": "glm",
-            "parameters": {"smoothing": 15}  # Max is 12
-        })
+        response = client.post(
+            "/run",
+            json={
+                "prompt": "Test",
+                "pipeline": "glm",
+                "parameters": {"smoothing": 15},  # Max is 12
+            },
+        )
         assert response.status_code == 422
 
         # Threshold out of range
-        response = client.post("/run", json={
-            "prompt": "Test",
-            "pipeline": "glm",
-            "parameters": {"threshold": 1.5}  # Max is 1
-        })
+        response = client.post(
+            "/run",
+            json={
+                "prompt": "Test",
+                "pipeline": "glm",
+                "parameters": {"threshold": 1.5},  # Max is 1
+            },
+        )
         assert response.status_code == 422
 
     def test_thread_not_found(self):
@@ -475,13 +466,14 @@ class TestErrorHandling:
     def test_concurrent_job_creation(self):
         """Test handling of concurrent job creation."""
         import asyncio
+
         import aiohttp
 
         async def create_job():
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     "http://localhost:3001/run",
-                    json={"prompt": "Concurrent test", "priority": 10}
+                    json={"prompt": "Concurrent test", "priority": 10},
                 ) as response:
                     return await response.json()
 
@@ -497,9 +489,11 @@ class TestErrorHandling:
 
         # Would run with asyncio.run(test_concurrent())
 
+
 # ============================================================================
 # SSE/WebSocket Contract Tests
 # ============================================================================
+
 
 class TestRealTimeEndpoints:
     """Test real-time communication contracts."""
@@ -508,7 +502,7 @@ class TestRealTimeEndpoints:
         """Test SSE event format compliance."""
         # Create a job
         response = client.post("/run", json={"prompt": "SSE test"})
-        job_id = response.json()["job_id"]
+        response.json()["job_id"]
 
         # Connect to SSE endpoint
         # Note: TestClient doesn't support SSE, this is pseudo-code
@@ -534,9 +528,11 @@ class TestRealTimeEndpoints:
         # Would verify ping messages are sent every 30s
         pass
 
+
 # ============================================================================
 # Performance and Load Tests
 # ============================================================================
+
 
 class TestPerformanceRequirements:
     """Test performance requirements are met."""
@@ -563,9 +559,11 @@ class TestPerformanceRequirements:
         assert response.status_code == 200
         assert duration < 2000, f"Job creation took {duration}ms, should be < 2000ms"
 
+
 # ============================================================================
 # Authentication Contract Tests (UI-011)
 # ============================================================================
+
 
 class TestAuthenticationEndpoints:
     """Contract tests for authentication endpoints."""
@@ -577,7 +575,7 @@ class TestAuthenticationEndpoints:
             "email": "testuser@example.com",
             "password": "securepass123",
             "full_name": "Test User",
-            "accept_terms": True
+            "accept_terms": True,
         }
 
         response = client.post("/auth/signup", json=signup_data)
@@ -605,11 +603,7 @@ class TestAuthenticationEndpoints:
 
     def test_login_contract(self):
         """Test user login endpoint contract."""
-        login_data = {
-            "username": "demo",
-            "password": "demo123",
-            "remember_me": False
-        }
+        login_data = {"username": "demo", "password": "demo123", "remember_me": False}
 
         response = client.post("/auth/login", json=login_data)
         assert response.status_code == 200
@@ -623,10 +617,9 @@ class TestAuthenticationEndpoints:
     def test_me_endpoint_contract(self):
         """Test current user endpoint contract."""
         # First login to get token
-        login_response = client.post("/auth/login", json={
-            "username": "demo",
-            "password": "demo123"
-        })
+        login_response = client.post(
+            "/auth/login", json={"username": "demo", "password": "demo123"}
+        )
         token = login_response.json()["access_token"]
 
         # Test /auth/me endpoint
@@ -643,9 +636,7 @@ class TestAuthenticationEndpoints:
 
     def test_password_reset_contract(self):
         """Test password reset endpoint contract."""
-        reset_data = {
-            "email": "demo@brain-researcher.ai"
-        }
+        reset_data = {"email": "demo@brain-researcher.ai"}
 
         response = client.post("/auth/reset-password", json=reset_data)
         assert response.status_code == 200
@@ -658,7 +649,7 @@ class TestAuthenticationEndpoints:
         oauth_data = {
             "provider": "github",
             "code": "mock_oauth_code",
-            "redirect_uri": "http://localhost:3000/auth/callback"
+            "redirect_uri": "http://localhost:3000/auth/callback",
         }
 
         response = client.post("/auth/oauth/github", json=oauth_data)
@@ -668,9 +659,11 @@ class TestAuthenticationEndpoints:
         assert "access_token" in data
         assert "user" in data
 
+
 # ============================================================================
 # UI Configuration Contract Tests (UI-015)
 # ============================================================================
+
 
 class TestUIConfigurationEndpoints:
     """Contract tests for UI configuration endpoints."""
@@ -712,11 +705,16 @@ class TestUIConfigurationEndpoints:
 
         data = response.json()
         # Should adjust pagination for mobile
-        assert data["pagination"]["default_page_size"] <= data["pagination"]["mobile_page_size"]
+        assert (
+            data["pagination"]["default_page_size"]
+            <= data["pagination"]["mobile_page_size"]
+        )
+
 
 # ============================================================================
 # Enhanced Error Response Tests (UI-013)
 # ============================================================================
+
 
 class TestEnhancedErrorHandling:
     """Test enhanced error response format."""
@@ -750,10 +748,7 @@ class TestEnhancedErrorHandling:
 
     def test_validation_error_enhancement(self):
         """Test validation error includes helpful suggestions."""
-        invalid_run_data = {
-            "prompt": "x" * 10000,  # Too long
-            "pipeline": "glm"
-        }
+        invalid_run_data = {"prompt": "x" * 10000, "pipeline": "glm"}  # Too long
 
         response = client.post("/run", json=invalid_run_data)
         assert response.status_code == 422
@@ -762,9 +757,11 @@ class TestEnhancedErrorHandling:
         data = response.json()
         assert "detail" in data
 
+
 # ============================================================================
 # Progress Tracking Tests (UI-014)
 # ============================================================================
+
 
 class TestProgressTracking:
     """Test job progress tracking features."""
@@ -772,10 +769,9 @@ class TestProgressTracking:
     def test_job_progress_structure(self):
         """Test job includes progress information."""
         # Create a job
-        job_response = client.post("/run", json={
-            "prompt": "Test progress tracking",
-            "pipeline": "glm"
-        })
+        job_response = client.post(
+            "/run", json={"prompt": "Test progress tracking", "pipeline": "glm"}
+        )
         job_id = job_response.json()["job_id"]
 
         # Get job details
@@ -794,9 +790,11 @@ class TestProgressTracking:
             assert 0 <= progress["percentage"] <= 100
             assert 0 <= progress["current_step"] <= progress["total_steps"]
 
+
 # ============================================================================
 # Integration Tests with Mock Services
 # ============================================================================
+
 
 class TestServiceIntegration:
     """Test integration with backend services."""
@@ -804,19 +802,21 @@ class TestServiceIntegration:
     @pytest.fixture
     def mock_agent_service(self, monkeypatch):
         """Mock Agent service responses."""
+
         async def mock_execute_query(*args, **kwargs):
             return {"result": "mocked", "status": "success"}
 
         monkeypatch.setattr(
-            "main_enhanced.EnhancedAgentClient.execute_query",
-            mock_execute_query
+            "main_enhanced.EnhancedAgentClient.execute_query", mock_execute_query
         )
 
     @pytest.fixture
     def mock_br_kg_service(self, monkeypatch):
         """Mock BR-KG service responses."""
+
         async def mock_search_datasets(*args, **kwargs):
-            from models import DatasetSearchResponse, Dataset, DatasetSource, Modality
+            from models import Dataset, DatasetSearchResponse, DatasetSource, Modality
+
             return DatasetSearchResponse(
                 datasets=[
                     Dataset(
@@ -830,16 +830,15 @@ class TestServiceIntegration:
                         tasks=["mock"],
                         size_gb=1.0,
                         has_derivatives=False,
-                        last_updated=datetime.utcnow()
+                        last_updated=datetime.utcnow(),
                     )
                 ],
                 pagination={"page": 1, "limit": 20, "total_items": 1, "total_pages": 1},
-                facets={}
+                facets={},
             )
 
         monkeypatch.setattr(
-            "main_enhanced.EnhancedBRKGClient.search_datasets",
-            mock_search_datasets
+            "main_enhanced.EnhancedBRKGClient.search_datasets", mock_search_datasets
         )
 
     def test_graceful_degradation(self, mock_agent_service, mock_br_kg_service):
@@ -854,16 +853,18 @@ class TestServiceIntegration:
         data = response.json()
         assert len(data["datasets"]) > 0
 
+
 # ============================================================================
 # Hypothesis-based Property Tests
 # ============================================================================
+
 
 class TestPropertyBasedValidation:
     """Property-based tests for robust validation."""
 
     @given(
         thread_title=st.text(min_size=1, max_size=200),
-        message_content=st.text(min_size=1, max_size=10000)
+        message_content=st.text(min_size=1, max_size=10000),
     )
     @settings(max_examples=20)
     def test_thread_message_properties(self, thread_title, message_content):
@@ -874,15 +875,15 @@ class TestPropertyBasedValidation:
         thread_id = thread_response.json()["thread_id"]
 
         # Add message
-        msg_response = client.post(f"/threads/{thread_id}/messages", json={
-            "content": message_content
-        })
+        msg_response = client.post(
+            f"/threads/{thread_id}/messages", json={"content": message_content}
+        )
         assert msg_response.status_code == 200
 
     @given(
         query_text=st.text(min_size=1, max_size=500),
         page=st.integers(min_value=1, max_value=100),
-        limit=st.integers(min_value=1, max_value=100)
+        limit=st.integers(min_value=1, max_value=100),
     )
     @settings(max_examples=10)
     def test_dataset_search_properties(self, query_text, page, limit):
@@ -893,6 +894,7 @@ class TestPropertyBasedValidation:
         data = response.json()
         assert len(data["datasets"]) <= limit
         assert data["pagination"]["page"] == page
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

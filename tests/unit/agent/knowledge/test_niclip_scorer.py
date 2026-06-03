@@ -1,20 +1,19 @@
 """Unit tests for niclip_scorer.py."""
 
-import asyncio
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
 
+from brain_researcher.services.agent.knowledge.evidence_models import (
+    EvidenceBundle,
+    EvidenceSourceType,
+)
 from brain_researcher.services.agent.knowledge.niclip_scorer import (
     NiCLIPConnector,
     NiCLIPScorer,
     ScoredConcept,
     create_niclip_scorer,
-)
-from brain_researcher.services.agent.knowledge.evidence_models import (
-    EvidenceBundle,
-    EvidenceSourceType,
 )
 
 

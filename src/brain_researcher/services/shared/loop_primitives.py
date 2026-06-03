@@ -553,7 +553,11 @@ def _load_json_component(
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:  # pragma: no cover - defensive
-        return None, "unreadable", f"{component_name} is unreadable: {type(exc).__name__}"
+        return (
+            None,
+            "unreadable",
+            f"{component_name} is unreadable: {type(exc).__name__}",
+        )
     if isinstance(payload, dict | list):
         return payload, "present", None
     return (

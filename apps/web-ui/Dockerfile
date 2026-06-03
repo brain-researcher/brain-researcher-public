@@ -21,7 +21,7 @@ RUN npm run sync:monaco
 # Copy configs for static catalog data (workflows, datasets, tools)
 COPY configs/ ./configs/
 # Copy prompt/result artifacts used by demo replay pages
-COPY docs/prompts/brain_researcher_hybrid/ ./docs/prompts/brain_researcher_hybrid/
+COPY docs/use_cases/brain_researcher_hybrid/ ./docs/use_cases/brain_researcher_hybrid/
 COPY docs/runbooks/ ./docs/runbooks/
 COPY docs/figures/ ./docs/figures/
 

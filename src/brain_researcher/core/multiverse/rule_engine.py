@@ -9,7 +9,7 @@ it easier to extend with constraints/priors later.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from brain_researcher.core.multiverse.confounds import (
     CONF_FAMILY_AXES,
@@ -21,12 +21,12 @@ from brain_researcher.core.multiverse.spec_family import generate_spec_family
 @dataclass
 class DecisionPoint:
     name: str
-    options: List[str]
+    options: list[str]
     rationale: str
-    weights: Optional[Dict[str, float]] = None
+    weights: dict[str, float] | None = None
 
 
-def _ordered_options(options: List[str], weights: Optional[Dict[str, float]]) -> List[str]:
+def _ordered_options(options: list[str], weights: dict[str, float] | None) -> list[str]:
     if not weights:
         return options
     ordered = sorted(weights.items(), key=lambda kv: kv[1], reverse=True)
@@ -50,8 +50,10 @@ def _normalize_presence(dist: dict[str, Any] | None) -> dict[str, float] | None:
     return {"present": present / total, "absent": absent / total}
 
 
-def _extract_confounds_family_priors(pri: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
-    family_priors: Dict[str, Dict[str, float]] = {}
+def _extract_confounds_family_priors(
+    pri: dict[str, Any],
+) -> dict[str, dict[str, float]]:
+    family_priors: dict[str, dict[str, float]] = {}
     for axis in CONF_FAMILY_AXES:
         normalized = _normalize_presence(pri.get(axis))
         if normalized:
@@ -65,10 +67,10 @@ def _extract_confounds_family_priors(pri: Dict[str, Any]) -> Dict[str, Dict[str,
 
 
 def _build_family_selections(
-    family_priors: Dict[str, Dict[str, float]],
+    family_priors: dict[str, dict[str, float]],
     *,
     max_variants: int,
-) -> List[Dict[str, bool]]:
+) -> list[dict[str, bool]]:
     if not family_priors:
         return []
 
@@ -78,10 +80,10 @@ def _build_family_selections(
     }
     base = enforce_motion_consistency(base)
 
-    selections: List[Dict[str, bool]] = []
+    selections: list[dict[str, bool]] = []
     seen: set[tuple[tuple[str, bool], ...]] = set()
 
-    def _add(selection: Dict[str, bool]) -> None:
+    def _add(selection: dict[str, bool]) -> None:
         key = tuple(sorted(selection.items()))
         if key in seen:
             return
@@ -92,7 +94,7 @@ def _build_family_selections(
     if max_variants <= 1:
         return selections
 
-    candidates: List[tuple[float, str]] = []
+    candidates: list[tuple[float, str]] = []
     for axis, dist in family_priors.items():
         present = dist.get("present", 0.0)
         absent = dist.get("absent", 0.0)
@@ -111,7 +113,7 @@ def _build_family_selections(
     return selections
 
 
-def _confound_family_label(families: Dict[str, bool]) -> str:
+def _confound_family_label(families: dict[str, bool]) -> str:
     present = [axis.replace("confounds_", "") for axis, val in families.items() if val]
     if not present:
         return "Confound families: none"
@@ -119,12 +121,12 @@ def _confound_family_label(families: Dict[str, bool]) -> str:
 
 
 def generate_variants(
-    priors: Optional[Dict[str, Any]],
+    priors: dict[str, Any] | None,
     max_models: int,
     use_priors: bool = True,
     seed: int = 0,
-    axis_overrides: Optional[Dict[str, List[Any]]] = None,
-) -> List[Dict[str, Any]]:
+    axis_overrides: dict[str, list[Any]] | None = None,
+) -> list[dict[str, Any]]:
     """
     Return a list of variant dicts with rationale.
     """
@@ -137,7 +139,7 @@ def generate_variants(
         seed=seed,
         axis_overrides=axis_overrides,
     )
-    variants: List[Dict[str, Any]] = []
+    variants: list[dict[str, Any]] = []
     for spec in spec_family:
         decision_points = spec.get("decision_points", {})
         families = decision_points.get("confounds_families")
@@ -148,7 +150,9 @@ def generate_variants(
         conf = decision_points.get("confounds")
         hp = decision_points.get("high_pass")
         if hrf:
-            rationale.append(f"HRF basis choices commonly varied across GLM analyses: {hrf}")
+            rationale.append(
+                f"HRF basis choices commonly varied across GLM analyses: {hrf}"
+            )
         if conf:
             rationale.append(f"Motion + aCompCor strategies: {conf}")
         if hp is not None:

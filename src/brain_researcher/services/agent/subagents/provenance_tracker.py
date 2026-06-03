@@ -1,21 +1,19 @@
 """Execution provenance tracking for agent workflows."""
 
-import json
-import uuid
 import hashlib
-from typing import Any, Dict, List, Optional, Tuple, Union
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
-from enum import Enum
-from pathlib import Path
-import pickle
+import json
 import sqlite3
 import threading
-from collections import defaultdict
+import uuid
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any, Optional
 
 # Try to import networkx for lineage graphs
 try:
     import networkx as nx
+
     NETWORKX_AVAILABLE = True
 except ImportError:
     NETWORKX_AVAILABLE = False
@@ -50,14 +48,14 @@ class ExecutionMetadata:
     """Metadata for an execution."""
 
     execution_id: str
-    parent_id: Optional[str] = None
-    workflow_id: Optional[str] = None
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
+    parent_id: str | None = None
+    workflow_id: str | None = None
+    user_id: str | None = None
+    session_id: str | None = None
     timestamp: datetime = field(default_factory=datetime.now)
-    environment: Dict[str, str] = field(default_factory=dict)
-    tags: List[str] = field(default_factory=list)
-    custom_metadata: Dict[str, Any] = field(default_factory=dict)
+    environment: dict[str, str] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    custom_metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -70,15 +68,15 @@ class ExecutionNode:
     tool_name: str
     status: ExecutionStatus
     started_at: datetime
-    completed_at: Optional[datetime] = None
-    duration_seconds: Optional[float] = None
-    input_parameters: Dict[str, Any] = field(default_factory=dict)
+    completed_at: datetime | None = None
+    duration_seconds: float | None = None
+    input_parameters: dict[str, Any] = field(default_factory=dict)
     output_data: Any = None
-    error: Optional[str] = None
+    error: str | None = None
     retry_count: int = 0
-    dependencies: List[str] = field(default_factory=list)
-    artifacts: List['Artifact'] = field(default_factory=list)
-    metrics: Dict[str, float] = field(default_factory=dict)
+    dependencies: list[str] = field(default_factory=list)
+    artifacts: list["Artifact"] = field(default_factory=list)
+    metrics: dict[str, float] = field(default_factory=dict)
 
     def calculate_duration(self):
         """Calculate execution duration."""
@@ -86,24 +84,26 @@ class ExecutionNode:
             delta = self.completed_at - self.started_at
             self.duration_seconds = delta.total_seconds()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'node_id': self.node_id,
-            'execution_id': self.execution_id,
-            'operation_name': self.operation_name,
-            'tool_name': self.tool_name,
-            'status': self.status.value,
-            'started_at': self.started_at.isoformat(),
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
-            'duration_seconds': self.duration_seconds,
-            'input_parameters': self.input_parameters,
-            'output_data': str(self.output_data) if self.output_data else None,
-            'error': self.error,
-            'retry_count': self.retry_count,
-            'dependencies': self.dependencies,
-            'artifacts': [a.to_dict() for a in self.artifacts],
-            'metrics': self.metrics
+            "node_id": self.node_id,
+            "execution_id": self.execution_id,
+            "operation_name": self.operation_name,
+            "tool_name": self.tool_name,
+            "status": self.status.value,
+            "started_at": self.started_at.isoformat(),
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
+            "duration_seconds": self.duration_seconds,
+            "input_parameters": self.input_parameters,
+            "output_data": str(self.output_data) if self.output_data else None,
+            "error": self.error,
+            "retry_count": self.retry_count,
+            "dependencies": self.dependencies,
+            "artifacts": [a.to_dict() for a in self.artifacts],
+            "metrics": self.metrics,
         }
 
 
@@ -114,12 +114,12 @@ class Artifact:
     artifact_id: str
     name: str
     type: ArtifactType
-    path: Optional[str] = None
-    content: Optional[Any] = None
+    path: str | None = None
+    content: Any | None = None
     size_bytes: int = 0
-    checksum: Optional[str] = None
+    checksum: str | None = None
     created_at: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def calculate_checksum(self):
         """Calculate checksum for artifact content."""
@@ -134,17 +134,17 @@ class Artifact:
             self.checksum = hashlib.sha256(data).hexdigest()
             self.size_bytes = len(data)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'artifact_id': self.artifact_id,
-            'name': self.name,
-            'type': self.type.value,
-            'path': self.path,
-            'size_bytes': self.size_bytes,
-            'checksum': self.checksum,
-            'created_at': self.created_at.isoformat(),
-            'metadata': self.metadata
+            "artifact_id": self.artifact_id,
+            "name": self.name,
+            "type": self.type.value,
+            "path": self.path,
+            "size_bytes": self.size_bytes,
+            "checksum": self.checksum,
+            "created_at": self.created_at.isoformat(),
+            "metadata": self.metadata,
         }
 
 
@@ -154,12 +154,12 @@ class ExecutionTrace:
 
     execution_id: str
     metadata: ExecutionMetadata
-    nodes: List[ExecutionNode]
-    artifacts: List[Artifact]
+    nodes: list[ExecutionNode]
+    artifacts: list[Artifact]
     status: ExecutionStatus
     started_at: datetime
-    completed_at: Optional[datetime] = None
-    total_duration_seconds: Optional[float] = None
+    completed_at: datetime | None = None
+    total_duration_seconds: float | None = None
 
     def calculate_total_duration(self):
         """Calculate total execution duration."""
@@ -167,7 +167,7 @@ class ExecutionTrace:
             delta = self.completed_at - self.started_at
             self.total_duration_seconds = delta.total_seconds()
 
-    def get_lineage_graph(self) -> Optional['nx.DiGraph']:
+    def get_lineage_graph(self) -> Optional["nx.DiGraph"]:
         """Get execution lineage as directed graph.
 
         Returns:
@@ -185,7 +185,7 @@ class ExecutionTrace:
                 operation=node.operation_name,
                 tool=node.tool_name,
                 status=node.status.value,
-                duration=node.duration_seconds
+                duration=node.duration_seconds,
             )
 
         # Add edges based on dependencies
@@ -195,7 +195,7 @@ class ExecutionTrace:
 
         return G
 
-    def get_critical_path(self) -> List[str]:
+    def get_critical_path(self) -> list[str]:
         """Get critical path through execution.
 
         Returns:
@@ -210,21 +210,23 @@ class ExecutionTrace:
 
         # Find longest path (critical path)
         try:
-            return nx.dag_longest_path(G, weight='duration')
+            return nx.dag_longest_path(G, weight="duration")
         except:
             return []
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'execution_id': self.execution_id,
-            'metadata': asdict(self.metadata),
-            'nodes': [n.to_dict() for n in self.nodes],
-            'artifacts': [a.to_dict() for a in self.artifacts],
-            'status': self.status.value,
-            'started_at': self.started_at.isoformat(),
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
-            'total_duration_seconds': self.total_duration_seconds
+            "execution_id": self.execution_id,
+            "metadata": asdict(self.metadata),
+            "nodes": [n.to_dict() for n in self.nodes],
+            "artifacts": [a.to_dict() for a in self.artifacts],
+            "status": self.status.value,
+            "started_at": self.started_at.isoformat(),
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
+            "total_duration_seconds": self.total_duration_seconds,
         }
 
 
@@ -248,7 +250,8 @@ class ProvenanceStore:
             cursor = self.conn.cursor()
 
             # Executions table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS executions (
                     execution_id TEXT PRIMARY KEY,
                     parent_id TEXT,
@@ -261,10 +264,12 @@ class ProvenanceStore:
                     duration_seconds REAL,
                     metadata TEXT
                 )
-            """)
+            """
+            )
 
             # Nodes table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS nodes (
                     node_id TEXT PRIMARY KEY,
                     execution_id TEXT,
@@ -281,20 +286,24 @@ class ProvenanceStore:
                     metrics TEXT,
                     FOREIGN KEY (execution_id) REFERENCES executions(execution_id)
                 )
-            """)
+            """
+            )
 
             # Dependencies table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS dependencies (
                     node_id TEXT,
                     dependency_id TEXT,
                     PRIMARY KEY (node_id, dependency_id),
                     FOREIGN KEY (node_id) REFERENCES nodes(node_id)
                 )
-            """)
+            """
+            )
 
             # Artifacts table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS artifacts (
                     artifact_id TEXT PRIMARY KEY,
                     node_id TEXT,
@@ -307,14 +316,25 @@ class ProvenanceStore:
                     metadata TEXT,
                     FOREIGN KEY (node_id) REFERENCES nodes(node_id)
                 )
-            """)
+            """
+            )
 
             # Create indexes
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_execution_status ON executions(status)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_execution_user ON executions(user_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_execution_workflow ON executions(workflow_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_node_execution ON nodes(execution_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_artifact_node ON artifacts(node_id)")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_execution_status ON executions(status)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_execution_user ON executions(user_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_execution_workflow ON executions(workflow_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_node_execution ON nodes(execution_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_artifact_node ON artifacts(node_id)"
+            )
 
             self.conn.commit()
 
@@ -328,77 +348,89 @@ class ProvenanceStore:
             cursor = self.conn.cursor()
 
             # Save execution
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR REPLACE INTO executions
                 (execution_id, parent_id, workflow_id, user_id, session_id,
                  status, started_at, completed_at, duration_seconds, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                trace.execution_id,
-                trace.metadata.parent_id,
-                trace.metadata.workflow_id,
-                trace.metadata.user_id,
-                trace.metadata.session_id,
-                trace.status.value,
-                trace.started_at,
-                trace.completed_at,
-                trace.total_duration_seconds,
-                json.dumps(asdict(trace.metadata))
-            ))
+            """,
+                (
+                    trace.execution_id,
+                    trace.metadata.parent_id,
+                    trace.metadata.workflow_id,
+                    trace.metadata.user_id,
+                    trace.metadata.session_id,
+                    trace.status.value,
+                    trace.started_at,
+                    trace.completed_at,
+                    trace.total_duration_seconds,
+                    json.dumps(asdict(trace.metadata)),
+                ),
+            )
 
             # Save nodes
             for node in trace.nodes:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT OR REPLACE INTO nodes
                     (node_id, execution_id, operation_name, tool_name, status,
                      started_at, completed_at, duration_seconds, input_parameters,
                      output_data, error, retry_count, metrics)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    node.node_id,
-                    node.execution_id,
-                    node.operation_name,
-                    node.tool_name,
-                    node.status.value,
-                    node.started_at,
-                    node.completed_at,
-                    node.duration_seconds,
-                    json.dumps(node.input_parameters),
-                    str(node.output_data) if node.output_data else None,
-                    node.error,
-                    node.retry_count,
-                    json.dumps(node.metrics)
-                ))
+                """,
+                    (
+                        node.node_id,
+                        node.execution_id,
+                        node.operation_name,
+                        node.tool_name,
+                        node.status.value,
+                        node.started_at,
+                        node.completed_at,
+                        node.duration_seconds,
+                        json.dumps(node.input_parameters),
+                        str(node.output_data) if node.output_data else None,
+                        node.error,
+                        node.retry_count,
+                        json.dumps(node.metrics),
+                    ),
+                )
 
                 # Save dependencies
                 for dep in node.dependencies:
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT OR REPLACE INTO dependencies (node_id, dependency_id)
                         VALUES (?, ?)
-                    """, (node.node_id, dep))
+                    """,
+                        (node.node_id, dep),
+                    )
 
                 # Save artifacts
                 for artifact in node.artifacts:
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT OR REPLACE INTO artifacts
                         (artifact_id, node_id, name, type, path, size_bytes,
                          checksum, created_at, metadata)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        artifact.artifact_id,
-                        node.node_id,
-                        artifact.name,
-                        artifact.type.value,
-                        artifact.path,
-                        artifact.size_bytes,
-                        artifact.checksum,
-                        artifact.created_at,
-                        json.dumps(artifact.metadata)
-                    ))
+                    """,
+                        (
+                            artifact.artifact_id,
+                            node.node_id,
+                            artifact.name,
+                            artifact.type.value,
+                            artifact.path,
+                            artifact.size_bytes,
+                            artifact.checksum,
+                            artifact.created_at,
+                            json.dumps(artifact.metadata),
+                        ),
+                    )
 
             self.conn.commit()
 
-    def get_execution(self, execution_id: str) -> Optional[ExecutionTrace]:
+    def get_execution(self, execution_id: str) -> ExecutionTrace | None:
         """Get execution trace by ID.
 
         Args:
@@ -411,9 +443,12 @@ class ProvenanceStore:
             cursor = self.conn.cursor()
 
             # Get execution
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM executions WHERE execution_id = ?
-            """, (execution_id,))
+            """,
+                (execution_id,),
+            )
 
             row = cursor.fetchone()
             if not row:
@@ -427,16 +462,19 @@ class ProvenanceStore:
                 workflow_id=row[2],
                 user_id=row[3],
                 session_id=row[4],
-                timestamp=datetime.fromisoformat(metadata_dict['timestamp']),
-                environment=metadata_dict.get('environment', {}),
-                tags=metadata_dict.get('tags', []),
-                custom_metadata=metadata_dict.get('custom_metadata', {})
+                timestamp=datetime.fromisoformat(metadata_dict["timestamp"]),
+                environment=metadata_dict.get("environment", {}),
+                tags=metadata_dict.get("tags", []),
+                custom_metadata=metadata_dict.get("custom_metadata", {}),
             )
 
             # Get nodes
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM nodes WHERE execution_id = ?
-            """, (execution_id,))
+            """,
+                (execution_id,),
+            )
 
             nodes = []
             for node_row in cursor.fetchall():
@@ -446,26 +484,36 @@ class ProvenanceStore:
                     operation_name=node_row[2],
                     tool_name=node_row[3],
                     status=ExecutionStatus(node_row[4]),
-                    started_at=datetime.fromisoformat(node_row[5]) if node_row[5] else None,
-                    completed_at=datetime.fromisoformat(node_row[6]) if node_row[6] else None,
+                    started_at=(
+                        datetime.fromisoformat(node_row[5]) if node_row[5] else None
+                    ),
+                    completed_at=(
+                        datetime.fromisoformat(node_row[6]) if node_row[6] else None
+                    ),
                     duration_seconds=node_row[7],
                     input_parameters=json.loads(node_row[8]) if node_row[8] else {},
                     output_data=node_row[9],
                     error=node_row[10],
                     retry_count=node_row[11],
-                    metrics=json.loads(node_row[12]) if node_row[12] else {}
+                    metrics=json.loads(node_row[12]) if node_row[12] else {},
                 )
 
                 # Get dependencies
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT dependency_id FROM dependencies WHERE node_id = ?
-                """, (node.node_id,))
+                """,
+                    (node.node_id,),
+                )
                 node.dependencies = [dep[0] for dep in cursor.fetchall()]
 
                 # Get artifacts
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM artifacts WHERE node_id = ?
-                """, (node.node_id,))
+                """,
+                    (node.node_id,),
+                )
 
                 for artifact_row in cursor.fetchall():
                     artifact = Artifact(
@@ -475,8 +523,12 @@ class ProvenanceStore:
                         path=artifact_row[4],
                         size_bytes=artifact_row[5],
                         checksum=artifact_row[6],
-                        created_at=datetime.fromisoformat(artifact_row[7]) if artifact_row[7] else None,
-                        metadata=json.loads(artifact_row[8]) if artifact_row[8] else {}
+                        created_at=(
+                            datetime.fromisoformat(artifact_row[7])
+                            if artifact_row[7]
+                            else None
+                        ),
+                        metadata=json.loads(artifact_row[8]) if artifact_row[8] else {},
                     )
                     node.artifacts.append(artifact)
 
@@ -491,18 +543,20 @@ class ProvenanceStore:
                 status=ExecutionStatus(row[5]),
                 started_at=datetime.fromisoformat(row[6]) if row[6] else None,
                 completed_at=datetime.fromisoformat(row[7]) if row[7] else None,
-                total_duration_seconds=row[8]
+                total_duration_seconds=row[8],
             )
 
             return trace
 
-    def query_executions(self,
-                        user_id: Optional[str] = None,
-                        workflow_id: Optional[str] = None,
-                        status: Optional[ExecutionStatus] = None,
-                        start_date: Optional[datetime] = None,
-                        end_date: Optional[datetime] = None,
-                        limit: int = 100) -> List[ExecutionTrace]:
+    def query_executions(
+        self,
+        user_id: str | None = None,
+        workflow_id: str | None = None,
+        status: ExecutionStatus | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        limit: int = 100,
+    ) -> list[ExecutionTrace]:
         """Query executions with filters.
 
         Args:
@@ -554,7 +608,7 @@ class ProvenanceStore:
 
             return traces
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get provenance statistics.
 
         Returns:
@@ -567,38 +621,44 @@ class ProvenanceStore:
 
             # Total executions
             cursor.execute("SELECT COUNT(*) FROM executions")
-            stats['total_executions'] = cursor.fetchone()[0]
+            stats["total_executions"] = cursor.fetchone()[0]
 
             # Executions by status
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT status, COUNT(*) FROM executions
                 GROUP BY status
-            """)
-            stats['by_status'] = dict(cursor.fetchall())
+            """
+            )
+            stats["by_status"] = dict(cursor.fetchall())
 
             # Average duration
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT AVG(duration_seconds) FROM executions
                 WHERE duration_seconds IS NOT NULL
-            """)
-            stats['avg_duration_seconds'] = cursor.fetchone()[0]
+            """
+            )
+            stats["avg_duration_seconds"] = cursor.fetchone()[0]
 
             # Total nodes
             cursor.execute("SELECT COUNT(*) FROM nodes")
-            stats['total_nodes'] = cursor.fetchone()[0]
+            stats["total_nodes"] = cursor.fetchone()[0]
 
             # Total artifacts
             cursor.execute("SELECT COUNT(*) FROM artifacts")
-            stats['total_artifacts'] = cursor.fetchone()[0]
+            stats["total_artifacts"] = cursor.fetchone()[0]
 
             # Most used tools
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT tool_name, COUNT(*) as count FROM nodes
                 GROUP BY tool_name
                 ORDER BY count DESC
                 LIMIT 10
-            """)
-            stats['top_tools'] = dict(cursor.fetchall())
+            """
+            )
+            stats["top_tools"] = dict(cursor.fetchall())
 
             return stats
 
@@ -606,22 +666,24 @@ class ProvenanceStore:
 class ProvenanceTracker:
     """Main provenance tracking interface."""
 
-    def __init__(self, store: Optional[ProvenanceStore] = None):
+    def __init__(self, store: ProvenanceStore | None = None):
         """Initialize provenance tracker.
 
         Args:
             store: Provenance store (creates in-memory if None)
         """
         self.store = store or ProvenanceStore()
-        self.active_executions: Dict[str, ExecutionTrace] = {}
-        self.active_nodes: Dict[str, ExecutionNode] = {}
+        self.active_executions: dict[str, ExecutionTrace] = {}
+        self.active_nodes: dict[str, ExecutionNode] = {}
 
-    def start_execution(self,
-                       workflow_id: Optional[str] = None,
-                       user_id: Optional[str] = None,
-                       session_id: Optional[str] = None,
-                       parent_id: Optional[str] = None,
-                       tags: List[str] = None) -> str:
+    def start_execution(
+        self,
+        workflow_id: str | None = None,
+        user_id: str | None = None,
+        session_id: str | None = None,
+        parent_id: str | None = None,
+        tags: list[str] = None,
+    ) -> str:
         """Start tracking a new execution.
 
         Args:
@@ -642,7 +704,7 @@ class ProvenanceTracker:
             workflow_id=workflow_id,
             user_id=user_id,
             session_id=session_id,
-            tags=tags or []
+            tags=tags or [],
         )
 
         trace = ExecutionTrace(
@@ -651,19 +713,21 @@ class ProvenanceTracker:
             nodes=[],
             artifacts=[],
             status=ExecutionStatus.RUNNING,
-            started_at=datetime.now()
+            started_at=datetime.now(),
         )
 
         self.active_executions[execution_id] = trace
 
         return execution_id
 
-    def start_operation(self,
-                       execution_id: str,
-                       operation_name: str,
-                       tool_name: str,
-                       input_parameters: Dict[str, Any] = None,
-                       dependencies: List[str] = None) -> str:
+    def start_operation(
+        self,
+        execution_id: str,
+        operation_name: str,
+        tool_name: str,
+        input_parameters: dict[str, Any] = None,
+        dependencies: list[str] = None,
+    ) -> str:
         """Start tracking an operation within an execution.
 
         Args:
@@ -689,7 +753,7 @@ class ProvenanceTracker:
             status=ExecutionStatus.RUNNING,
             started_at=datetime.now(),
             input_parameters=input_parameters or {},
-            dependencies=dependencies or []
+            dependencies=dependencies or [],
         )
 
         self.active_nodes[node_id] = node
@@ -697,11 +761,13 @@ class ProvenanceTracker:
 
         return node_id
 
-    def complete_operation(self,
-                          node_id: str,
-                          output_data: Any = None,
-                          artifacts: List[Artifact] = None,
-                          metrics: Dict[str, float] = None):
+    def complete_operation(
+        self,
+        node_id: str,
+        output_data: Any = None,
+        artifacts: list[Artifact] = None,
+        metrics: dict[str, float] = None,
+    ):
         """Complete an operation.
 
         Args:
@@ -787,12 +853,14 @@ class ProvenanceTracker:
         # Clean up
         del self.active_executions[execution_id]
 
-    def add_artifact(self,
-                    node_id: str,
-                    name: str,
-                    artifact_type: ArtifactType,
-                    content: Any = None,
-                    path: str = None) -> str:
+    def add_artifact(
+        self,
+        node_id: str,
+        name: str,
+        artifact_type: ArtifactType,
+        content: Any = None,
+        path: str = None,
+    ) -> str:
         """Add artifact to operation.
 
         Args:
@@ -815,7 +883,7 @@ class ProvenanceTracker:
             name=name,
             type=artifact_type,
             content=content,
-            path=path
+            path=path,
         )
 
         artifact.calculate_checksum()
@@ -824,7 +892,7 @@ class ProvenanceTracker:
 
         return artifact_id
 
-    def get_execution_trace(self, execution_id: str) -> Optional[ExecutionTrace]:
+    def get_execution_trace(self, execution_id: str) -> ExecutionTrace | None:
         """Get execution trace.
 
         Args:
@@ -840,7 +908,7 @@ class ProvenanceTracker:
         # Check store
         return self.store.get_execution(execution_id)
 
-    def query_executions(self, **kwargs) -> List[ExecutionTrace]:
+    def query_executions(self, **kwargs) -> list[ExecutionTrace]:
         """Query execution history.
 
         Args:
@@ -851,7 +919,7 @@ class ProvenanceTracker:
         """
         return self.store.query_executions(**kwargs)
 
-    def get_lineage(self, artifact_id: str) -> Dict[str, Any]:
+    def get_lineage(self, artifact_id: str) -> dict[str, Any]:
         """Get lineage for an artifact.
 
         Args:
@@ -864,9 +932,12 @@ class ProvenanceTracker:
         with self.store.lock:
             cursor = self.store.conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT node_id FROM artifacts WHERE artifact_id = ?
-            """, (artifact_id,))
+            """,
+                (artifact_id,),
+            )
 
             row = cursor.fetchone()
             if not row:
@@ -875,10 +946,13 @@ class ProvenanceTracker:
             node_id = row[0]
 
             # Get node information
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT execution_id, operation_name, tool_name
                 FROM nodes WHERE node_id = ?
-            """, (node_id,))
+            """,
+                (node_id,),
+            )
 
             node_row = cursor.fetchone()
             if not node_row:
@@ -893,39 +967,47 @@ class ProvenanceTracker:
 
             # Build lineage
             lineage = {
-                'artifact_id': artifact_id,
-                'node_id': node_id,
-                'execution_id': execution_id,
-                'operation': node_row[1],
-                'tool': node_row[2],
-                'upstream': [],
-                'downstream': []
+                "artifact_id": artifact_id,
+                "node_id": node_id,
+                "execution_id": execution_id,
+                "operation": node_row[1],
+                "tool": node_row[2],
+                "upstream": [],
+                "downstream": [],
             }
 
             # Find upstream nodes (dependencies)
             node = next((n for n in trace.nodes if n.node_id == node_id), None)
             if node:
                 for dep_id in node.dependencies:
-                    dep_node = next((n for n in trace.nodes if n.node_id == dep_id), None)
+                    dep_node = next(
+                        (n for n in trace.nodes if n.node_id == dep_id), None
+                    )
                     if dep_node:
-                        lineage['upstream'].append({
-                            'node_id': dep_id,
-                            'operation': dep_node.operation_name,
-                            'artifacts': [a.artifact_id for a in dep_node.artifacts]
-                        })
+                        lineage["upstream"].append(
+                            {
+                                "node_id": dep_id,
+                                "operation": dep_node.operation_name,
+                                "artifacts": [
+                                    a.artifact_id for a in dep_node.artifacts
+                                ],
+                            }
+                        )
 
             # Find downstream nodes (nodes that depend on this one)
             for other_node in trace.nodes:
                 if node_id in other_node.dependencies:
-                    lineage['downstream'].append({
-                        'node_id': other_node.node_id,
-                        'operation': other_node.operation_name,
-                        'artifacts': [a.artifact_id for a in other_node.artifacts]
-                    })
+                    lineage["downstream"].append(
+                        {
+                            "node_id": other_node.node_id,
+                            "operation": other_node.operation_name,
+                            "artifacts": [a.artifact_id for a in other_node.artifacts],
+                        }
+                    )
 
             return lineage
 
-    def export_trace(self, execution_id: str, format: str = 'json') -> str:
+    def export_trace(self, execution_id: str, format: str = "json") -> str:
         """Export execution trace.
 
         Args:
@@ -939,17 +1021,17 @@ class ProvenanceTracker:
         if not trace:
             raise ValueError(f"Execution {execution_id} not found")
 
-        if format == 'json':
+        if format == "json":
             return json.dumps(trace.to_dict(), indent=2)
 
-        elif format == 'dot':
+        elif format == "dot":
             # Export as Graphviz DOT format
-            lines = ['digraph execution {']
-            lines.append('  rankdir=TB;')
+            lines = ["digraph execution {"]
+            lines.append("  rankdir=TB;")
 
             # Add nodes
             for node in trace.nodes:
-                color = 'green' if node.status == ExecutionStatus.COMPLETED else 'red'
+                color = "green" if node.status == ExecutionStatus.COMPLETED else "red"
                 label = f"{node.operation_name}\\n{node.tool_name}"
                 lines.append(f'  "{node.node_id}" [label="{label}", color={color}];')
 
@@ -958,15 +1040,15 @@ class ProvenanceTracker:
                 for dep in node.dependencies:
                     lines.append(f'  "{dep}" -> "{node.node_id}";')
 
-            lines.append('}')
-            return '\n'.join(lines)
+            lines.append("}")
+            return "\n".join(lines)
 
         else:
             raise ValueError(f"Unknown format: {format}")
 
 
 # Global tracker instance
-_global_tracker: Optional[ProvenanceTracker] = None
+_global_tracker: ProvenanceTracker | None = None
 
 
 def get_provenance_tracker() -> ProvenanceTracker:

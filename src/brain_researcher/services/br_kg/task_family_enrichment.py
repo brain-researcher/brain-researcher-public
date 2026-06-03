@@ -168,7 +168,9 @@ def _load_candidate_tasks_neo4j(
     if scope_terms:
         where_terms.append("(" + " OR ".join(scope_terms) + ")")
     if config.only_missing_family:
-        where_terms.append("NOT EXISTS { MATCH (t)-[:BELONGS_TO_FAMILY]->(:TaskFamily) }")
+        where_terms.append(
+            "NOT EXISTS { MATCH (t)-[:BELONGS_TO_FAMILY]->(:TaskFamily) }"
+        )
 
     where_clause = " WHERE " + " AND ".join(where_terms) if where_terms else ""
     limit_clause = f" LIMIT {int(config.limit)}" if config.limit else ""

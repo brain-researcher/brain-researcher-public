@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -16,20 +17,20 @@ class MVPADecodingParameters:
 
     img: str
     labels: Sequence[Any]
-    mask_img: Optional[str]
+    mask_img: str | None
     classifier: str
     cv_folds: int
     standardize: bool
-    smoothing_fwhm: Optional[float]
-    feature_selection: Optional[str]
-    n_features: Optional[int]
+    smoothing_fwhm: float | None
+    feature_selection: str | None
+    n_features: int | None
     permutations: int
     n_jobs: int
-    output_dir: Optional[str]
-    seed: Optional[int]
+    output_dir: str | None
+    seed: int | None
 
 
-def mvpa_decoding_from_payload(payload: Dict[str, Any]) -> MVPADecodingParameters:
+def mvpa_decoding_from_payload(payload: dict[str, Any]) -> MVPADecodingParameters:
     labels = payload.get("labels")
     if isinstance(labels, str) and Path(labels).exists():
         labels_path = Path(labels)
@@ -71,7 +72,9 @@ def _load_data(img: str) -> np.ndarray:
     return np.asarray(data, dtype=float)
 
 
-def _cross_val_scores(params: MVPADecodingParameters, data: np.ndarray) -> Tuple[np.ndarray, bool]:
+def _cross_val_scores(
+    params: MVPADecodingParameters, data: np.ndarray
+) -> tuple[np.ndarray, bool]:
     try:
         from sklearn.linear_model import LogisticRegression
         from sklearn.model_selection import KFold
@@ -105,7 +108,7 @@ def _cross_val_scores(params: MVPADecodingParameters, data: np.ndarray) -> Tuple
     return np.asarray(scores, dtype=float), True
 
 
-def run_mvpa_decoding(params: MVPADecodingParameters) -> Dict[str, Any]:
+def run_mvpa_decoding(params: MVPADecodingParameters) -> dict[str, Any]:
     data = _load_data(params.img)
     if len(params.labels) != data.shape[0]:
         raise ValueError("labels length must match number of samples in img.")
@@ -115,7 +118,9 @@ def run_mvpa_decoding(params: MVPADecodingParameters) -> Dict[str, Any]:
     pvalue = None
     if params.permutations > 0:
         null_scores = rng.permutation(scores)  # crude fallback
-        pvalue = float((np.sum(null_scores >= scores.mean()) + 1) / (len(null_scores) + 1))
+        pvalue = float(
+            (np.sum(null_scores >= scores.mean()) + 1) / (len(null_scores) + 1)
+        )
 
     summary = {
         "classifier": params.classifier,
@@ -125,7 +130,7 @@ def run_mvpa_decoding(params: MVPADecodingParameters) -> Dict[str, Any]:
         "used_sklearn": used_sklearn,
     }
 
-    outputs: Dict[str, Optional[str]] = {"summary": None, "scores": None}
+    outputs: dict[str, str | None] = {"summary": None, "scores": None}
     if params.output_dir:
         out_dir = Path(params.output_dir)
         out_dir.mkdir(parents=True, exist_ok=True)

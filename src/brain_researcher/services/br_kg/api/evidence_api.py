@@ -12,7 +12,8 @@ via `get_db()` and returns JSON shaped for frontend consumption.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Iterable, List
+from collections.abc import Iterable
+from typing import Any
 
 from flask import Blueprint, jsonify, request
 
@@ -28,23 +29,28 @@ def _ensure_neo4j() -> Neo4jGraphDB:
     """Return a Neo4jGraphDB or raise if fallback would be SQLite."""
     db = get_db()
     if not isinstance(db, Neo4jGraphDB):
-        raise RuntimeError("Evidence API requires Neo4j backend; SQLite mock not supported.")
+        raise RuntimeError(
+            "Evidence API requires Neo4j backend; SQLite mock not supported."
+        )
     return db
 
 
-def _serialize_node(node: Any) -> Dict[str, Any]:
+def _serialize_node(node: Any) -> dict[str, Any]:
     """Convert neo4j.Node to plain dict with labels."""
     if node is None:
         return {}
     data = dict(node)
     labels = list(node.labels) if hasattr(node, "labels") else []
     data["labels"] = labels
-    data.setdefault("id", getattr(node, "id", None) or (node.get("id") if hasattr(node, "get") else None))
+    data.setdefault(
+        "id",
+        getattr(node, "id", None) or (node.get("id") if hasattr(node, "get") else None),
+    )
     data.setdefault("element_id", getattr(node, "element_id", None))
     return data
 
 
-def _serialize_relationship(rel: Any) -> Dict[str, Any]:
+def _serialize_relationship(rel: Any) -> dict[str, Any]:
     """Convert neo4j.Relationship to plain dict with type."""
     if rel is None:
         return {}
@@ -57,7 +63,7 @@ def _serialize_relationship(rel: Any) -> Dict[str, Any]:
     return props
 
 
-def _unique_by_id(items: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _unique_by_id(items: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     seen = set()
     out = []
     for item in items:
@@ -75,7 +81,7 @@ def _fetch_concept_evidence(
     pub_limit: int,
     coord_limit: int,
     task_limit: int,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     cypher = """
     MATCH (t:Term {id:$concept_id})
     OPTIONAL MATCH (t)<-[ht:HAS_TERM]-(p:Publication)
@@ -144,7 +150,7 @@ def _fetch_concept_evidence(
 
 def _fetch_dataset_task_context(
     db: Neo4jGraphDB, dataset_id: str, task: str, limit: int
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     cypher = """
     MATCH (d:Dataset {id:$dataset_id})-[:HAS_TASK]->(t:Task {name:$task})
     OPTIONAL MATCH (t)-[:HAS_CONTRAST]->(c:Contrast)
@@ -170,7 +176,7 @@ def _fetch_dataset_task_context(
     }
 
 
-def _fetch_job_peaks(db: Neo4jGraphDB, job_id: str, limit: int) -> Dict[str, Any]:
+def _fetch_job_peaks(db: Neo4jGraphDB, job_id: str, limit: int) -> dict[str, Any]:
     cypher = """
     MATCH (r:Result {job_id:$job_id})-[:HAS_PEAK]->(p:Peak)
     RETURN r, collect(p)[0..$limit] AS peaks

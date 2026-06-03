@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -19,11 +19,11 @@ class BrainSimulationParameters:
     dt: float
     noise_level: float
     connectivity_strength: float
-    seed: Optional[int]
+    seed: int | None
     output_dir: str
 
 
-def brain_simulation_from_payload(payload: Dict[str, Any]) -> BrainSimulationParameters:
+def brain_simulation_from_payload(payload: dict[str, Any]) -> BrainSimulationParameters:
     """Construct parameters from payload."""
 
     return BrainSimulationParameters(
@@ -37,7 +37,7 @@ def brain_simulation_from_payload(payload: Dict[str, Any]) -> BrainSimulationPar
     )
 
 
-def _simulate_activity(params: BrainSimulationParameters) -> Dict[str, np.ndarray]:
+def _simulate_activity(params: BrainSimulationParameters) -> dict[str, np.ndarray]:
     rng = np.random.default_rng(params.seed)
     t = np.arange(0, params.duration, params.dt)
 
@@ -56,7 +56,7 @@ def _simulate_activity(params: BrainSimulationParameters) -> Dict[str, np.ndarra
     return {"time": t, "activity": activity}
 
 
-def run_brain_simulation(params: BrainSimulationParameters) -> Dict[str, Any]:
+def run_brain_simulation(params: BrainSimulationParameters) -> dict[str, Any]:
     """Execute fallback brain simulation."""
 
     outputs = _simulate_activity(params)
@@ -79,7 +79,9 @@ def run_brain_simulation(params: BrainSimulationParameters) -> Dict[str, Any]:
         "connectivity_strength": params.connectivity_strength,
         "mean_activity": float(np.mean(activity)),
         "std_activity": float(np.std(activity)),
-        "peak_frequency": float(np.abs(np.fft.rfft(activity)).argmax() / params.duration),
+        "peak_frequency": float(
+            np.abs(np.fft.rfft(activity)).argmax() / params.duration
+        ),
         "used_full_backend": False,
     }
 

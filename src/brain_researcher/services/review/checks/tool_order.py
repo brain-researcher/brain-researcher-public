@@ -5,64 +5,76 @@ from __future__ import annotations
 from brain_researcher.core.contracts.code_review import CodeReviewBundle, ReviewFinding
 
 # Tool sets for ordering checks
-_REGISTRATION_TOOLS = frozenset({
-    "coreg_register",
-    "coreg_apply_xfm",
-    "fsl_flirt",
-    "fsl_fnirt",
-    "ants_registration",
-    "antsRegistration",
-    "mri_robust_register",
-    "spm_normalise",
-    "spm_coreg",
-})
+_REGISTRATION_TOOLS = frozenset(
+    {
+        "coreg_register",
+        "coreg_apply_xfm",
+        "fsl_flirt",
+        "fsl_fnirt",
+        "ants_registration",
+        "antsRegistration",
+        "mri_robust_register",
+        "spm_normalise",
+        "spm_coreg",
+    }
+)
 
-_ATLAS_TOOLS = frozenset({
-    "parcellation_fetch",
-    "label_transfer",
-    "dmri_parcellate_connectome",
-    "nilearn_fetch_atlas",
-    "extract_timeseries",
-    "atlas_apply",
-    "atlas_label",
-})
+_ATLAS_TOOLS = frozenset(
+    {
+        "parcellation_fetch",
+        "label_transfer",
+        "dmri_parcellate_connectome",
+        "nilearn_fetch_atlas",
+        "extract_timeseries",
+        "atlas_apply",
+        "atlas_label",
+    }
+)
 
-_SKULL_STRIP_TOOLS = frozenset({
-    "bet",
-    "antsBrainExtraction",
-    "hd_bet",
-    "mri_synthstrip",
-    "fsl_bet",
-    "skull_strip",
-})
+_SKULL_STRIP_TOOLS = frozenset(
+    {
+        "bet",
+        "antsBrainExtraction",
+        "hd_bet",
+        "mri_synthstrip",
+        "fsl_bet",
+        "skull_strip",
+    }
+)
 
-_GLM_TOOLS = frozenset({
-    "glm_fit",
-    "glm_first_level",
-    "spm_glm",
-    "nilearn_first_level_model",
-    "glm_contrasts",
-    "first_level_model",
-    "fsl_feat",
-    "fsl_film_gls",
-})
+_GLM_TOOLS = frozenset(
+    {
+        "glm_fit",
+        "glm_first_level",
+        "spm_glm",
+        "nilearn_first_level_model",
+        "glm_contrasts",
+        "first_level_model",
+        "fsl_feat",
+        "fsl_film_gls",
+    }
+)
 
-_CONFOUND_TOOLS = frozenset({
-    "confound_regression",
-    "regress_confounds",
-    "nilearn_clean_img",
-    "fsl_regfilt",
-    "aroma_denoise",
-    "fmriprep_confounds",
-    "extract_confounds",
-})
+_CONFOUND_TOOLS = frozenset(
+    {
+        "confound_regression",
+        "regress_confounds",
+        "nilearn_clean_img",
+        "fsl_regfilt",
+        "aroma_denoise",
+        "fmriprep_confounds",
+        "extract_confounds",
+    }
+)
 
 
 def _tool_name(step: dict) -> str:
     return str(step.get("tool") or "").lower()
 
 
-def registration_before_atlas_analysis(bundle: CodeReviewBundle) -> ReviewFinding | None:
+def registration_before_atlas_analysis(
+    bundle: CodeReviewBundle,
+) -> ReviewFinding | None:
     """Return a finding if any atlas step comes before any registration step."""
     steps = bundle.plan_steps
     first_reg_idx: int | None = None
@@ -94,7 +106,9 @@ def registration_before_atlas_analysis(bundle: CodeReviewBundle) -> ReviewFindin
     return None
 
 
-def skull_stripping_before_registration(bundle: CodeReviewBundle) -> ReviewFinding | None:
+def skull_stripping_before_registration(
+    bundle: CodeReviewBundle,
+) -> ReviewFinding | None:
     """Return a finding if a registration step appears before skull-stripping."""
     steps = bundle.plan_steps
     first_reg_idx: int | None = None

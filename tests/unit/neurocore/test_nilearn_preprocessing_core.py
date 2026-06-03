@@ -8,13 +8,13 @@ import pandas as pd
 import pytest
 
 import brain_researcher.services.tools.atlas_utils as atlas_utils
+import brain_researcher.services.tools.params.nilearn_preprocessing as nilearn_preprocessing
 from brain_researcher.services.tools.params import (
     NiftiMaskerParameters,
     ROIExtractionParameters,
     run_nifti_masker,
     run_roi_extraction,
 )
-import brain_researcher.services.tools.params.nilearn_preprocessing as nilearn_preprocessing
 from brain_researcher.services.tools.params.nilearn_preprocessing import _resolve_atlas
 
 

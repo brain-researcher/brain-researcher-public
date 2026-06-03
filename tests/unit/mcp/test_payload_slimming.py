@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+
 from brain_researcher.services.mcp import runstore
 
 
@@ -47,7 +48,7 @@ def _write_run_fixture(
     for relpath, content in (files or {}).items():
         path = run_dir / relpath
         path.parent.mkdir(parents=True, exist_ok=True)
-        if isinstance(content, (dict, list)):
+        if isinstance(content, dict | list):
             path.write_text(json.dumps(content), encoding="utf-8")
         else:
             path.write_text(str(content), encoding="utf-8")
@@ -181,9 +182,9 @@ def test_run_bundle_get_omits_all_null_sections_by_default(tmp_path, monkeypatch
     assert slim_context["claim_contract"]["primary_claim"] == (
         "Connectivity changed after QC."
     )
-    assert "$.analysis_bundle.review_context.design_model" in slim[
-        "omitted_null_sections"
-    ]
+    assert (
+        "$.analysis_bundle.review_context.design_model" in slim["omitted_null_sections"]
+    )
 
     assert full["ok"] is True
     assert full["verbose"] is True

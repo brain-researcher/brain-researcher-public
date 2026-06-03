@@ -36,12 +36,14 @@ def safe_runs_execute_async():
                 )
             run = get_job_service().create_async_plan_run(
                 plan=plan,
-                origin=str(origin)
-                if isinstance(origin, str) and origin.strip()
-                else None,
-                run_id=requested_run_id.strip()
-                if isinstance(requested_run_id, str) and requested_run_id.strip()
-                else None,
+                origin=(
+                    str(origin) if isinstance(origin, str) and origin.strip() else None
+                ),
+                run_id=(
+                    requested_run_id.strip()
+                    if isinstance(requested_run_id, str) and requested_run_id.strip()
+                    else None
+                ),
             )
         else:
             tool_id = data.get("tool_id")
@@ -61,12 +63,14 @@ def safe_runs_execute_async():
                 params=params,
                 work_dir=work_dir if isinstance(work_dir, str) else None,
                 output_dir=output_dir if isinstance(output_dir, str) else None,
-                origin=str(origin)
-                if isinstance(origin, str) and origin.strip()
-                else None,
-                run_id=requested_run_id.strip()
-                if isinstance(requested_run_id, str) and requested_run_id.strip()
-                else None,
+                origin=(
+                    str(origin) if isinstance(origin, str) and origin.strip() else None
+                ),
+                run_id=(
+                    requested_run_id.strip()
+                    if isinstance(requested_run_id, str) and requested_run_id.strip()
+                    else None
+                ),
             )
     except ValueError as exc:
         return create_error_response("INVALID_PARAMETER", str(exc), 400)
@@ -76,14 +80,17 @@ def safe_runs_execute_async():
             "TOOL_ERROR", f"Execution queue failed: {exc}", 500
         )
 
-    return jsonify(
-        {
-            "ok": True,
-            **run,
-            "execution_mode": "agent_async",
-            "execution_type": execution_type,
-        }
-    ), 202
+    return (
+        jsonify(
+            {
+                "ok": True,
+                **run,
+                "execution_mode": "agent_async",
+                "execution_type": execution_type,
+            }
+        ),
+        202,
+    )
 
 
 def internal_run_status(run_id: str):
@@ -164,9 +171,11 @@ def internal_run_cancel(run_id: str):
     reason = data.get("reason")
     cancelled = get_job_service().cancel_run(
         run_id,
-        reason=str(reason)
-        if isinstance(reason, str) and reason.strip()
-        else "User requested",
+        reason=(
+            str(reason)
+            if isinstance(reason, str) and reason.strip()
+            else "User requested"
+        ),
     )
     if not cancelled:
         return create_error_response(
@@ -178,10 +187,25 @@ def internal_run_cancel(run_id: str):
 def register(app):
     """Register the /runs/* routes on the Flask app (called each import)."""
     from brain_researcher.services.agent.web_service import rate_limit
-    app.add_url_rule('/runs/execute_async', methods=['POST'], view_func=rate_limit(max_per_minute=20)(safe_runs_execute_async))
-    app.add_url_rule('/runs/<run_id>', methods=['GET'], view_func=internal_run_status)
-    app.add_url_rule('/runs/<run_id>/logs', methods=['GET'], view_func=internal_run_logs)
-    app.add_url_rule('/runs/<run_id>/metrics', methods=['GET'], view_func=internal_run_metrics)
-    app.add_url_rule('/runs/<run_id>/bundle', methods=['GET'], view_func=internal_run_bundle)
-    app.add_url_rule('/runs/<run_id>/scorecard', methods=['GET'], view_func=internal_run_scorecard)
-    app.add_url_rule('/runs/<run_id>/cancel', methods=['POST'], view_func=internal_run_cancel)
+
+    app.add_url_rule(
+        "/runs/execute_async",
+        methods=["POST"],
+        view_func=rate_limit(max_per_minute=20)(safe_runs_execute_async),
+    )
+    app.add_url_rule("/runs/<run_id>", methods=["GET"], view_func=internal_run_status)
+    app.add_url_rule(
+        "/runs/<run_id>/logs", methods=["GET"], view_func=internal_run_logs
+    )
+    app.add_url_rule(
+        "/runs/<run_id>/metrics", methods=["GET"], view_func=internal_run_metrics
+    )
+    app.add_url_rule(
+        "/runs/<run_id>/bundle", methods=["GET"], view_func=internal_run_bundle
+    )
+    app.add_url_rule(
+        "/runs/<run_id>/scorecard", methods=["GET"], view_func=internal_run_scorecard
+    )
+    app.add_url_rule(
+        "/runs/<run_id>/cancel", methods=["POST"], view_func=internal_run_cancel
+    )

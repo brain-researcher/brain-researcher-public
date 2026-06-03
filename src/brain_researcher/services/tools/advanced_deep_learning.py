@@ -3,25 +3,24 @@ Advanced deep learning models for neuroimaging.
 Implements Vision Transformers, 3D CNNs, Graph Neural Networks, and more.
 """
 
-import logging
-import time
-from typing import Dict, Any, List, Optional, Tuple
-import numpy as np
-from pathlib import Path
 import json
-from dataclasses import dataclass
+import logging
 from enum import Enum
+from pathlib import Path
+from typing import Any
 
 try:
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
-    from torch.utils.data import Dataset, DataLoader
+    from torch.utils.data import DataLoader, Dataset
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict
+
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 logger = logging.getLogger(__name__)
@@ -29,11 +28,13 @@ logger = logging.getLogger(__name__)
 
 class DLInput(BaseModel):
     """Base input model for deep learning tools."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class ModelArchitecture(Enum):
     """Deep learning model architectures."""
+
     VISION_TRANSFORMER = "vit"
     CNN_3D = "cnn3d"
     GRAPH_NEURAL_NETWORK = "gnn"
@@ -48,7 +49,11 @@ class AdvancedDeepLearningTools:
     """Advanced deep learning tools for neuroimaging."""
 
     def __init__(self):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if TORCH_AVAILABLE else None
+        self.device = (
+            torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            if TORCH_AVAILABLE
+            else None
+        )
 
     def get_all_tools(self):
         """Return all advanced DL tools."""
@@ -60,7 +65,7 @@ class AdvancedDeepLearningTools:
             UNet3DTool(),
             ResNet3DTool(),
             DenseNet3DTool(),
-            TransformerEncoderTool()
+            TransformerEncoderTool(),
         ]
 
 
@@ -81,31 +86,27 @@ class VisionTransformerTool(NeuroToolWrapper):
 
     def _run(
         self,
-        input_shape: Tuple[int, int, int] = (64, 64, 64),
+        input_shape: tuple[int, int, int] = (64, 64, 64),
         patch_size: int = 8,
         n_classes: int = 2,
         hidden_dim: int = 768,
         n_heads: int = 12,
         n_layers: int = 12,
         task: str = "classification",
-        output_dir: Optional[str] = None,
-        **kwargs
+        output_dir: str | None = None,
+        **kwargs,
     ) -> ToolResult:
         """Run Vision Transformer model."""
         try:
             if not TORCH_AVAILABLE:
-                return ToolResult(
-                    status="error",
-                    error="PyTorch not available"
-                )
+                return ToolResult(status="error", error="PyTorch not available")
 
             output_path = Path(output_dir or "vit_output")
             output_path.mkdir(parents=True, exist_ok=True)
 
             # Create ViT model
             model = self._create_vit_model(
-                input_shape, patch_size, n_classes,
-                hidden_dim, n_heads, n_layers
+                input_shape, patch_size, n_classes, hidden_dim, n_heads, n_layers
             )
 
             # Generate synthetic data for demo
@@ -114,9 +115,7 @@ class VisionTransformerTool(NeuroToolWrapper):
             )
 
             # Train model (simplified)
-            metrics = self._train_model(
-                model, data, labels, task, epochs=5
-            )
+            metrics = self._train_model(model, data, labels, task, epochs=5)
 
             # Save model
             model_path = output_path / "vit_model.pth"
@@ -132,14 +131,14 @@ class VisionTransformerTool(NeuroToolWrapper):
                 "n_heads": n_heads,
                 "n_layers": n_layers,
                 "n_parameters": sum(p.numel() for p in model.parameters()),
-                "device": str(self.device)
+                "device": str(self.device),
             }
 
-            with open(output_path / "model_architecture.json", 'w') as f:
+            with open(output_path / "model_architecture.json", "w") as f:
                 json.dump(arch_info, f, indent=2)
 
             # Save training metrics
-            with open(output_path / "training_metrics.json", 'w') as f:
+            with open(output_path / "training_metrics.json", "w") as f:
                 json.dump(metrics, f, indent=2)
 
             return ToolResult(
@@ -148,14 +147,14 @@ class VisionTransformerTool(NeuroToolWrapper):
                     "outputs": {
                         "model": str(model_path),
                         "architecture": str(output_path / "model_architecture.json"),
-                        "metrics": str(output_path / "training_metrics.json")
+                        "metrics": str(output_path / "training_metrics.json"),
                     },
                     "summary": {
                         **arch_info,
                         "final_loss": metrics["final_loss"],
-                        "final_accuracy": metrics.get("final_accuracy", 0)
-                    }
-                }
+                        "final_accuracy": metrics.get("final_accuracy", 0),
+                    },
+                },
             )
 
         except Exception as e:
@@ -164,12 +163,12 @@ class VisionTransformerTool(NeuroToolWrapper):
 
     def _create_vit_model(
         self,
-        input_shape: Tuple[int, int, int],
+        input_shape: tuple[int, int, int],
         patch_size: int,
         n_classes: int,
         hidden_dim: int,
         n_heads: int,
-        n_layers: int
+        n_layers: int,
     ) -> nn.Module:
         """Create Vision Transformer model."""
 
@@ -180,14 +179,14 @@ class VisionTransformerTool(NeuroToolWrapper):
                 super().__init__()
                 self.volume_size = volume_size
                 self.patch_size = patch_size
-                self.n_patches = (volume_size[0] // patch_size) * \
-                               (volume_size[1] // patch_size) * \
-                               (volume_size[2] // patch_size)
+                self.n_patches = (
+                    (volume_size[0] // patch_size)
+                    * (volume_size[1] // patch_size)
+                    * (volume_size[2] // patch_size)
+                )
 
                 self.projection = nn.Conv3d(
-                    1, hidden_dim,
-                    kernel_size=patch_size,
-                    stride=patch_size
+                    1, hidden_dim, kernel_size=patch_size, stride=patch_size
                 )
 
             def forward(self, x):
@@ -199,8 +198,9 @@ class VisionTransformerTool(NeuroToolWrapper):
         class VisionTransformer3D(nn.Module):
             """3D Vision Transformer for neuroimaging."""
 
-            def __init__(self, volume_size, patch_size, n_classes,
-                        hidden_dim, n_heads, n_layers):
+            def __init__(
+                self, volume_size, patch_size, n_classes, hidden_dim, n_heads, n_layers
+            ):
                 super().__init__()
 
                 self.patch_embed = PatchEmbedding3D(volume_size, patch_size, hidden_dim)
@@ -212,8 +212,11 @@ class VisionTransformerTool(NeuroToolWrapper):
 
                 # Transformer encoder
                 encoder_layer = nn.TransformerEncoderLayer(
-                    hidden_dim, n_heads, dim_feedforward=hidden_dim * 4,
-                    dropout=0.1, activation='gelu'
+                    hidden_dim,
+                    n_heads,
+                    dim_feedforward=hidden_dim * 4,
+                    dropout=0.1,
+                    activation="gelu",
                 )
                 self.transformer = nn.TransformerEncoder(encoder_layer, n_layers)
 
@@ -247,16 +250,12 @@ class VisionTransformerTool(NeuroToolWrapper):
                 return output
 
         return VisionTransformer3D(
-            input_shape, patch_size, n_classes,
-            hidden_dim, n_heads, n_layers
+            input_shape, patch_size, n_classes, hidden_dim, n_heads, n_layers
         ).to(self.device)
 
     def _generate_synthetic_data(
-        self,
-        n_samples: int,
-        shape: Tuple[int, int, int],
-        n_classes: int
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        self, n_samples: int, shape: tuple[int, int, int], n_classes: int
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Generate synthetic brain imaging data."""
         # Create synthetic volumes
         data = torch.randn(n_samples, 1, *shape) * 0.1
@@ -280,8 +279,8 @@ class VisionTransformerTool(NeuroToolWrapper):
         data: torch.Tensor,
         labels: torch.Tensor,
         task: str,
-        epochs: int
-    ) -> Dict[str, Any]:
+        epochs: int,
+    ) -> dict[str, Any]:
         """Train the model (simplified)."""
         model.train()
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
@@ -298,7 +297,7 @@ class VisionTransformerTool(NeuroToolWrapper):
         dataset = torch.utils.data.TensorDataset(data, labels)
         loader = DataLoader(dataset, batch_size=16, shuffle=True)
 
-        for epoch in range(epochs):
+        for _epoch in range(epochs):
             epoch_loss = 0
             correct = 0
             total = 0
@@ -330,7 +329,7 @@ class VisionTransformerTool(NeuroToolWrapper):
             "losses": losses,
             "accuracies": accuracies,
             "final_loss": losses[-1],
-            "final_accuracy": accuracies[-1] if accuracies else 0
+            "final_accuracy": accuracies[-1] if accuracies else 0,
         }
 
 
@@ -351,20 +350,17 @@ class CNN3DTool(NeuroToolWrapper):
 
     def _run(
         self,
-        input_shape: Tuple[int, int, int] = (64, 64, 64),
+        input_shape: tuple[int, int, int] = (64, 64, 64),
         n_classes: int = 2,
-        n_filters: List[int] = None,
+        n_filters: list[int] = None,
         task: str = "classification",
-        output_dir: Optional[str] = None,
-        **kwargs
+        output_dir: str | None = None,
+        **kwargs,
     ) -> ToolResult:
         """Run 3D CNN model."""
         try:
             if not TORCH_AVAILABLE:
-                return ToolResult(
-                    status="error",
-                    error="PyTorch not available"
-                )
+                return ToolResult(status="error", error="PyTorch not available")
 
             output_path = Path(output_dir or "cnn3d_output")
             output_path.mkdir(parents=True, exist_ok=True)
@@ -381,7 +377,7 @@ class CNN3DTool(NeuroToolWrapper):
             )
 
             # Train model
-            metrics = self._train_model(model, data, labels, epochs=3)
+            self._train_model(model, data, labels, epochs=3)
 
             # Save model
             model_path = output_path / "cnn3d_model.pth"
@@ -393,10 +389,10 @@ class CNN3DTool(NeuroToolWrapper):
                 "input_shape": input_shape,
                 "n_classes": n_classes,
                 "n_filters": n_filters,
-                "n_parameters": sum(p.numel() for p in model.parameters())
+                "n_parameters": sum(p.numel() for p in model.parameters()),
             }
 
-            with open(output_path / "model_info.json", 'w') as f:
+            with open(output_path / "model_info.json", "w") as f:
                 json.dump(info, f, indent=2)
 
             return ToolResult(
@@ -404,10 +400,10 @@ class CNN3DTool(NeuroToolWrapper):
                 data={
                     "outputs": {
                         "model": str(model_path),
-                        "info": str(output_path / "model_info.json")
+                        "info": str(output_path / "model_info.json"),
                     },
-                    "summary": info
-                }
+                    "summary": info,
+                },
             )
 
         except Exception as e:
@@ -415,10 +411,7 @@ class CNN3DTool(NeuroToolWrapper):
             return ToolResult(status="error", error=str(e))
 
     def _create_cnn3d_model(
-        self,
-        input_shape: Tuple[int, int, int],
-        n_classes: int,
-        n_filters: List[int]
+        self, input_shape: tuple[int, int, int], n_classes: int, n_filters: list[int]
     ) -> nn.Module:
         """Create 3D CNN model."""
 
@@ -429,13 +422,17 @@ class CNN3DTool(NeuroToolWrapper):
                 layers = []
                 in_channels = 1
 
-                for i, out_channels in enumerate(n_filters):
-                    layers.extend([
-                        nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
-                        nn.BatchNorm3d(out_channels),
-                        nn.ReLU(inplace=True),
-                        nn.MaxPool3d(2)
-                    ])
+                for _i, out_channels in enumerate(n_filters):
+                    layers.extend(
+                        [
+                            nn.Conv3d(
+                                in_channels, out_channels, kernel_size=3, padding=1
+                            ),
+                            nn.BatchNorm3d(out_channels),
+                            nn.ReLU(inplace=True),
+                            nn.MaxPool3d(2),
+                        ]
+                    )
                     in_channels = out_channels
 
                 self.features = nn.Sequential(*layers)
@@ -449,7 +446,7 @@ class CNN3DTool(NeuroToolWrapper):
                     nn.Linear(n_features, 256),
                     nn.ReLU(inplace=True),
                     nn.Dropout(0.5),
-                    nn.Linear(256, n_classes)
+                    nn.Linear(256, n_classes),
                 )
 
             def forward(self, x):
@@ -461,11 +458,8 @@ class CNN3DTool(NeuroToolWrapper):
         return CNN3D(input_shape, n_classes, n_filters).to(self.device)
 
     def _generate_synthetic_data(
-        self,
-        n_samples: int,
-        shape: Tuple[int, int, int],
-        n_classes: int
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        self, n_samples: int, shape: tuple[int, int, int], n_classes: int
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Generate synthetic data."""
         data = torch.randn(n_samples, 1, *shape) * 0.1
         labels = torch.randint(0, n_classes, (n_samples,))
@@ -480,12 +474,8 @@ class CNN3DTool(NeuroToolWrapper):
         return data.to(self.device), labels.to(self.device)
 
     def _train_model(
-        self,
-        model: nn.Module,
-        data: torch.Tensor,
-        labels: torch.Tensor,
-        epochs: int
-    ) -> Dict[str, Any]:
+        self, model: nn.Module, data: torch.Tensor, labels: torch.Tensor, epochs: int
+    ) -> dict[str, Any]:
         """Train the model."""
         model.train()
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -493,7 +483,7 @@ class CNN3DTool(NeuroToolWrapper):
 
         losses = []
 
-        for epoch in range(epochs):
+        for _epoch in range(epochs):
             optimizer.zero_grad()
             outputs = model(data)
             loss = criterion(outputs, labels)
@@ -526,28 +516,26 @@ class GraphNeuralNetworkTool(NeuroToolWrapper):
         n_classes: int = 2,
         hidden_dim: int = 128,
         n_layers: int = 3,
-        output_dir: Optional[str] = None,
-        **kwargs
+        output_dir: str | None = None,
+        **kwargs,
     ) -> ToolResult:
         """Run Graph Neural Network."""
         try:
             if not TORCH_AVAILABLE:
-                return ToolResult(
-                    status="error",
-                    error="PyTorch not available"
-                )
+                return ToolResult(status="error", error="PyTorch not available")
 
             output_path = Path(output_dir or "gnn_output")
             output_path.mkdir(parents=True, exist_ok=True)
 
             # Create GNN model
-            model = self._create_gnn_model(
-                n_features, hidden_dim, n_classes, n_layers
-            )
+            model = self._create_gnn_model(n_features, hidden_dim, n_classes, n_layers)
 
             # Generate synthetic graph data
             graphs, labels = self._generate_graph_data(
-                n_samples=50, n_nodes=n_nodes, n_features=n_features, n_classes=n_classes
+                n_samples=50,
+                n_nodes=n_nodes,
+                n_features=n_features,
+                n_classes=n_classes,
             )
 
             # Train model
@@ -565,10 +553,10 @@ class GraphNeuralNetworkTool(NeuroToolWrapper):
                 "n_classes": n_classes,
                 "hidden_dim": hidden_dim,
                 "n_layers": n_layers,
-                "n_parameters": sum(p.numel() for p in model.parameters())
+                "n_parameters": sum(p.numel() for p in model.parameters()),
             }
 
-            with open(output_path / "gnn_info.json", 'w') as f:
+            with open(output_path / "gnn_info.json", "w") as f:
                 json.dump(info, f, indent=2)
 
             return ToolResult(
@@ -576,13 +564,10 @@ class GraphNeuralNetworkTool(NeuroToolWrapper):
                 data={
                     "outputs": {
                         "model": str(model_path),
-                        "info": str(output_path / "gnn_info.json")
+                        "info": str(output_path / "gnn_info.json"),
                     },
-                    "summary": {
-                        **info,
-                        "final_loss": metrics["final_loss"]
-                    }
-                }
+                    "summary": {**info, "final_loss": metrics["final_loss"]},
+                },
             )
 
         except Exception as e:
@@ -590,11 +575,7 @@ class GraphNeuralNetworkTool(NeuroToolWrapper):
             return ToolResult(status="error", error=str(e))
 
     def _create_gnn_model(
-        self,
-        n_features: int,
-        hidden_dim: int,
-        n_classes: int,
-        n_layers: int
+        self, n_features: int, hidden_dim: int, n_classes: int, n_layers: int
     ) -> nn.Module:
         """Create GNN model."""
 
@@ -632,7 +613,7 @@ class GraphNeuralNetworkTool(NeuroToolWrapper):
                 self.dropout = nn.Dropout(0.5)
 
             def forward(self, x, adj):
-                for i, layer in enumerate(self.layers[:-1]):
+                for _i, layer in enumerate(self.layers[:-1]):
                     x = layer(x, adj)
                     x = F.relu(x)
                     x = self.dropout(x)
@@ -648,17 +629,13 @@ class GraphNeuralNetworkTool(NeuroToolWrapper):
         return GNN(n_features, hidden_dim, n_classes, n_layers).to(self.device)
 
     def _generate_graph_data(
-        self,
-        n_samples: int,
-        n_nodes: int,
-        n_features: int,
-        n_classes: int
-    ) -> Tuple[List, torch.Tensor]:
+        self, n_samples: int, n_nodes: int, n_features: int, n_classes: int
+    ) -> tuple[list, torch.Tensor]:
         """Generate synthetic graph data."""
         graphs = []
         labels = torch.randint(0, n_classes, (n_samples,))
 
-        for i in range(n_samples):
+        for _i in range(n_samples):
             # Node features
             x = torch.randn(n_nodes, n_features)
 
@@ -673,7 +650,7 @@ class GraphNeuralNetworkTool(NeuroToolWrapper):
             # Normalize
             deg = adj.sum(dim=1)
             deg_inv_sqrt = deg.pow(-0.5)
-            deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
+            deg_inv_sqrt[deg_inv_sqrt == float("inf")] = 0
             adj = deg_inv_sqrt.view(-1, 1) * adj * deg_inv_sqrt.view(1, -1)
 
             graphs.append((x.to(self.device), adj.to(self.device)))
@@ -681,12 +658,8 @@ class GraphNeuralNetworkTool(NeuroToolWrapper):
         return graphs, labels.to(self.device)
 
     def _train_gnn(
-        self,
-        model: nn.Module,
-        graphs: List,
-        labels: torch.Tensor,
-        epochs: int
-    ) -> Dict[str, Any]:
+        self, model: nn.Module, graphs: list, labels: torch.Tensor, epochs: int
+    ) -> dict[str, Any]:
         """Train GNN model."""
         model.train()
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -694,7 +667,7 @@ class GraphNeuralNetworkTool(NeuroToolWrapper):
 
         losses = []
 
-        for epoch in range(epochs):
+        for _epoch in range(epochs):
             total_loss = 0
 
             for i, (x, adj) in enumerate(graphs):
@@ -703,7 +676,7 @@ class GraphNeuralNetworkTool(NeuroToolWrapper):
                 # Add batch dimension
                 x = x.unsqueeze(0)
                 adj = adj.unsqueeze(0)
-                label = labels[i:i+1]
+                label = labels[i : i + 1]
 
                 output = model(x, adj)
                 loss = criterion(output, label)
@@ -737,10 +710,10 @@ class AutoencoderTool(NeuroToolWrapper):
 
     def _run(
         self,
-        input_shape: Tuple[int, int, int] = (64, 64, 64),
+        input_shape: tuple[int, int, int] = (64, 64, 64),
         latent_dim: int = 128,
-        output_dir: Optional[str] = None,
-        **kwargs
+        output_dir: str | None = None,
+        **kwargs,
     ) -> ToolResult:
         """Run Variational Autoencoder."""
         try:
@@ -764,15 +737,17 @@ class AutoencoderTool(NeuroToolWrapper):
                 status="success",
                 data={
                     "outputs": {"model": str(output_path / "vae_model.pth")},
-                    "summary": {"latent_dim": latent_dim, "final_loss": losses[-1]}
-                }
+                    "summary": {"latent_dim": latent_dim, "final_loss": losses[-1]},
+                },
             )
 
         except Exception as e:
             logger.error(f"VAE failed: {e}")
             return ToolResult(status="error", error=str(e))
 
-    def _create_vae(self, input_shape: Tuple[int, int, int], latent_dim: int) -> nn.Module:
+    def _create_vae(
+        self, input_shape: tuple[int, int, int], latent_dim: int
+    ) -> nn.Module:
         """Create VAE model."""
 
         class VAE(nn.Module):
@@ -800,12 +775,16 @@ class AutoencoderTool(NeuroToolWrapper):
                 # Decoder
                 self.fc_decode = nn.Linear(latent_dim, self.flatten_size)
                 self.decoder = nn.Sequential(
-                    nn.ConvTranspose3d(128, 64, 3, stride=2, padding=1, output_padding=1),
+                    nn.ConvTranspose3d(
+                        128, 64, 3, stride=2, padding=1, output_padding=1
+                    ),
                     nn.ReLU(),
-                    nn.ConvTranspose3d(64, 32, 3, stride=2, padding=1, output_padding=1),
+                    nn.ConvTranspose3d(
+                        64, 32, 3, stride=2, padding=1, output_padding=1
+                    ),
                     nn.ReLU(),
                     nn.ConvTranspose3d(32, 1, 3, stride=2, padding=1, output_padding=1),
-                    nn.Sigmoid()
+                    nn.Sigmoid(),
                 )
 
             def encode(self, x):
@@ -833,20 +812,22 @@ class AutoencoderTool(NeuroToolWrapper):
 
         return VAE(input_shape, latent_dim).to(self.device)
 
-    def _train_vae(self, model: nn.Module, data: torch.Tensor, epochs: int) -> List[float]:
+    def _train_vae(
+        self, model: nn.Module, data: torch.Tensor, epochs: int
+    ) -> list[float]:
         """Train VAE."""
         model.train()
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
         losses = []
 
-        for epoch in range(epochs):
+        for _epoch in range(epochs):
             optimizer.zero_grad()
 
             recon, mu, logvar = model(data)
 
             # Reconstruction loss
-            recon_loss = F.mse_loss(recon, data, reduction='sum')
+            recon_loss = F.mse_loss(recon, data, reduction="sum")
 
             # KL divergence
             kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
@@ -877,10 +858,10 @@ class UNet3DTool(NeuroToolWrapper):
 
     def _run(
         self,
-        input_shape: Tuple[int, int, int] = (64, 64, 64),
+        input_shape: tuple[int, int, int] = (64, 64, 64),
         n_classes: int = 4,
-        output_dir: Optional[str] = None,
-        **kwargs
+        output_dir: str | None = None,
+        **kwargs,
     ) -> ToolResult:
         """Run 3D U-Net."""
         try:
@@ -903,9 +884,9 @@ class UNet3DTool(NeuroToolWrapper):
                     "summary": {
                         "architecture": "unet_3d",
                         "n_classes": n_classes,
-                        "n_parameters": sum(p.numel() for p in model.parameters())
-                    }
-                }
+                        "n_parameters": sum(p.numel() for p in model.parameters()),
+                    },
+                },
             )
 
         except Exception as e:
@@ -924,7 +905,7 @@ class UNet3DTool(NeuroToolWrapper):
                     nn.ReLU(inplace=True),
                     nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1),
                     nn.BatchNorm3d(out_channels),
-                    nn.ReLU(inplace=True)
+                    nn.ReLU(inplace=True),
                 )
 
             def forward(self, x):
@@ -1012,8 +993,8 @@ class ResNet3DTool(NeuroToolWrapper):
         self,
         depth: int = 50,
         n_classes: int = 2,
-        output_dir: Optional[str] = None,
-        **kwargs
+        output_dir: str | None = None,
+        **kwargs,
     ) -> ToolResult:
         """Run 3D ResNet."""
         try:
@@ -1036,9 +1017,9 @@ class ResNet3DTool(NeuroToolWrapper):
                     "summary": {
                         "architecture": f"resnet3d_{depth}",
                         "n_classes": n_classes,
-                        "n_parameters": sum(p.numel() for p in model.parameters())
-                    }
-                }
+                        "n_parameters": sum(p.numel() for p in model.parameters()),
+                    },
+                },
             )
 
         except Exception as e:
@@ -1061,7 +1042,7 @@ class ResNet3DTool(NeuroToolWrapper):
                 if stride != 1 or in_channels != out_channels:
                     self.shortcut = nn.Sequential(
                         nn.Conv3d(in_channels, out_channels, 1, stride),
-                        nn.BatchNorm3d(out_channels)
+                        nn.BatchNorm3d(out_channels),
                     )
 
             def forward(self, x):
@@ -1143,8 +1124,8 @@ class DenseNet3DTool(NeuroToolWrapper):
         self,
         growth_rate: int = 32,
         n_classes: int = 2,
-        output_dir: Optional[str] = None,
-        **kwargs
+        output_dir: str | None = None,
+        **kwargs,
     ) -> ToolResult:
         """Run 3D DenseNet."""
         try:
@@ -1167,9 +1148,9 @@ class DenseNet3DTool(NeuroToolWrapper):
                     "summary": {
                         "architecture": "densenet_3d",
                         "growth_rate": growth_rate,
-                        "n_classes": n_classes
-                    }
-                }
+                        "n_classes": n_classes,
+                    },
+                },
             )
 
         except Exception as e:
@@ -1223,7 +1204,7 @@ class DenseNet3DTool(NeuroToolWrapper):
                 self.trans1 = nn.Sequential(
                     nn.BatchNorm3d(n_channels),
                     nn.Conv3d(n_channels, n_channels // 2, 1),
-                    nn.AvgPool3d(2)
+                    nn.AvgPool3d(2),
                 )
                 n_channels = n_channels // 2
 
@@ -1274,8 +1255,8 @@ class TransformerEncoderTool(NeuroToolWrapper):
         n_classes: int = 2,
         n_heads: int = 8,
         n_layers: int = 6,
-        output_dir: Optional[str] = None,
-        **kwargs
+        output_dir: str | None = None,
+        **kwargs,
     ) -> ToolResult:
         """Run Transformer encoder."""
         try:
@@ -1286,9 +1267,7 @@ class TransformerEncoderTool(NeuroToolWrapper):
             output_path.mkdir(parents=True, exist_ok=True)
 
             # Create Transformer model
-            model = self._create_transformer(
-                n_features, n_classes, n_heads, n_layers
-            )
+            model = self._create_transformer(n_features, n_classes, n_heads, n_layers)
 
             # Save model
             torch.save(model.state_dict(), output_path / "transformer_model.pth")
@@ -1302,9 +1281,9 @@ class TransformerEncoderTool(NeuroToolWrapper):
                         "seq_length": seq_length,
                         "n_features": n_features,
                         "n_heads": n_heads,
-                        "n_layers": n_layers
-                    }
-                }
+                        "n_layers": n_layers,
+                    },
+                },
             )
 
         except Exception as e:
@@ -1312,11 +1291,7 @@ class TransformerEncoderTool(NeuroToolWrapper):
             return ToolResult(status="error", error=str(e))
 
     def _create_transformer(
-        self,
-        n_features: int,
-        n_classes: int,
-        n_heads: int,
-        n_layers: int
+        self, n_features: int, n_classes: int, n_heads: int, n_layers: int
     ) -> nn.Module:
         """Create Transformer model."""
 
@@ -1327,9 +1302,7 @@ class TransformerEncoderTool(NeuroToolWrapper):
                 self.pos_encoder = nn.Parameter(torch.randn(1, 1000, n_features))
 
                 encoder_layer = nn.TransformerEncoderLayer(
-                    n_features, n_heads,
-                    dim_feedforward=n_features * 4,
-                    dropout=0.1
+                    n_features, n_heads, dim_feedforward=n_features * 4, dropout=0.1
                 )
                 self.transformer = nn.TransformerEncoder(encoder_layer, n_layers)
 
@@ -1353,7 +1326,9 @@ class TransformerEncoderTool(NeuroToolWrapper):
 
                 return x
 
-        return TransformerClassifier(n_features, n_classes, n_heads, n_layers).to(self.device)
+        return TransformerClassifier(n_features, n_classes, n_heads, n_layers).to(
+            self.device
+        )
 
 
 def get_all_advanced_dl_tools():

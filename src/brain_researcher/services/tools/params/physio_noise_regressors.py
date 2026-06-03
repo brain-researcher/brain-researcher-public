@@ -309,7 +309,9 @@ def merge_scan_confounds_tables(
         df = _read_physio_table(table_path, None)
         numeric_df = df.select_dtypes(include=[np.number]).copy()
         if numeric_df.empty:
-            raise ValueError(f"Confounds table '{table_path}' did not contain numeric columns")
+            raise ValueError(
+                f"Confounds table '{table_path}' did not contain numeric columns"
+            )
         numeric_df = numeric_df.replace([np.inf, -np.inf], np.nan).fillna(0.0)
         if merged is None:
             merged = numeric_df.reset_index(drop=True)

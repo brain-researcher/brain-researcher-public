@@ -13,11 +13,13 @@ This module provides tools for causal inference in neuroimaging:
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Any
+
 import numpy as np
-from scipy import signal, stats, linalg
+from pydantic import BaseModel, ConfigDict, Field
+from scipy import signal, stats
 from scipy.stats import chi2
-from pydantic import BaseModel, Field, ConfigDict
+
 from brain_researcher.core.analysis.value_domain_router import (
     contracts_for,
     evaluate_value_domain,
@@ -30,13 +32,18 @@ logger = logging.getLogger(__name__)
 
 class CausalityAnalysisInput(BaseModel):
     """Input model for causality analysis."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    time_series: np.ndarray = Field(..., description="Time series data (time x regions)")
-    lag_order: Optional[int] = Field(default=1, description="Model order for autoregressive models")
-    sampling_rate: Optional[float] = Field(default=1.0, description="Sampling rate in Hz")
-    method: Optional[str] = Field(default="granger", description="Causality method")
-    output_dir: Optional[str] = Field(
+    time_series: np.ndarray = Field(
+        ..., description="Time series data (time x regions)"
+    )
+    lag_order: int | None = Field(
+        default=1, description="Model order for autoregressive models"
+    )
+    sampling_rate: float | None = Field(default=1.0, description="Sampling rate in Hz")
+    method: str | None = Field(default="granger", description="Causality method")
+    output_dir: str | None = Field(
         default=None,
         description="Optional directory for review sidecars (e.g. value-domain diagnostics)",
     )
@@ -57,22 +64,19 @@ class GrangerCausalityTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CausalityAnalysisInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run Granger causality analysis."""
         try:
             input_data = CausalityAnalysisInput(**kwargs)
 
             # Compute Granger causality matrix
             gc_matrix = self._compute_granger_causality(
-                input_data.time_series,
-                input_data.lag_order
+                input_data.time_series, input_data.lag_order
             )
 
             # Compute significance
             p_values = self._test_significance(
-                input_data.time_series,
-                gc_matrix,
-                input_data.lag_order
+                input_data.time_series, gc_matrix, input_data.lag_order
             )
 
             return {
@@ -80,7 +84,9 @@ class GrangerCausalityTool(NeuroToolWrapper):
                 "causality_matrix": gc_matrix.tolist(),
                 "p_values": p_values.tolist(),
                 "lag_order": input_data.lag_order,
-                "significant_connections": self._get_significant_connections(gc_matrix, p_values)
+                "significant_connections": self._get_significant_connections(
+                    gc_matrix, p_values
+                ),
             }
 
         except Exception as e:
@@ -105,22 +111,28 @@ class GrangerCausalityTool(NeuroToolWrapper):
         n = len(x) - lag
 
         # Create lagged matrices
-        X_lag = np.column_stack([x[lag-i:-i] for i in range(1, lag+1)])
-        Y_lag = np.column_stack([y[lag-i:-i] for i in range(1, lag+1)])
+        X_lag = np.column_stack([x[lag - i : -i] for i in range(1, lag + 1)])
+        Y_lag = np.column_stack([y[lag - i : -i] for i in range(1, lag + 1)])
         y_target = y[lag:]
 
         # Restricted model (only Y lags)
-        rss_r = np.sum((y_target - Y_lag @ np.linalg.lstsq(Y_lag, y_target, rcond=None)[0])**2)
+        rss_r = np.sum(
+            (y_target - Y_lag @ np.linalg.lstsq(Y_lag, y_target, rcond=None)[0]) ** 2
+        )
 
         # Unrestricted model (X and Y lags)
         XY_lag = np.column_stack([X_lag, Y_lag])
-        rss_u = np.sum((y_target - XY_lag @ np.linalg.lstsq(XY_lag, y_target, rcond=None)[0])**2)
+        rss_u = np.sum(
+            (y_target - XY_lag @ np.linalg.lstsq(XY_lag, y_target, rcond=None)[0]) ** 2
+        )
 
         # F-statistic
-        f_stat = ((rss_r - rss_u) / lag) / (rss_u / (n - 2*lag))
+        f_stat = ((rss_r - rss_u) / lag) / (rss_u / (n - 2 * lag))
         return f_stat
 
-    def _test_significance(self, data: np.ndarray, gc_matrix: np.ndarray, lag: int) -> np.ndarray:
+    def _test_significance(
+        self, data: np.ndarray, gc_matrix: np.ndarray, lag: int
+    ) -> np.ndarray:
         """Test significance of Granger causality."""
         n_time, n_regions = data.shape
         p_values = np.ones((n_regions, n_regions))
@@ -130,13 +142,14 @@ class GrangerCausalityTool(NeuroToolWrapper):
                 if i != j:
                     # F-test p-value
                     df1 = lag
-                    df2 = n_time - 2*lag
+                    df2 = n_time - 2 * lag
                     p_values[i, j] = 1 - stats.f.cdf(gc_matrix[i, j], df1, df2)
 
         return p_values
 
-    def _get_significant_connections(self, gc_matrix: np.ndarray, p_values: np.ndarray,
-                                    alpha: float = 0.05) -> List[Dict]:
+    def _get_significant_connections(
+        self, gc_matrix: np.ndarray, p_values: np.ndarray, alpha: float = 0.05
+    ) -> list[dict]:
         """Get significant causal connections."""
         connections = []
         n_regions = gc_matrix.shape[0]
@@ -144,12 +157,14 @@ class GrangerCausalityTool(NeuroToolWrapper):
         for i in range(n_regions):
             for j in range(n_regions):
                 if i != j and p_values[i, j] < alpha:
-                    connections.append({
-                        "from": i,
-                        "to": j,
-                        "strength": float(gc_matrix[i, j]),
-                        "p_value": float(p_values[i, j])
-                    })
+                    connections.append(
+                        {
+                            "from": i,
+                            "to": j,
+                            "strength": float(gc_matrix[i, j]),
+                            "p_value": float(p_values[i, j]),
+                        }
+                    )
 
         return connections
 
@@ -169,7 +184,7 @@ class DynamicCausalModelingTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CausalityAnalysisInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run DCM analysis."""
         try:
             input_data = CausalityAnalysisInput(**kwargs)
@@ -190,13 +205,15 @@ class DynamicCausalModelingTool(NeuroToolWrapper):
             return {
                 "status": "success",
                 "intrinsic_connectivity": A_matrix.tolist(),
-                "modulatory_effects": B_matrix.tolist() if B_matrix is not None else None,
+                "modulatory_effects": (
+                    B_matrix.tolist() if B_matrix is not None else None
+                ),
                 "input_effects": C_matrix.tolist(),
                 "model_evidence": float(model_evidence),
                 "parameters": {
                     "n_regions": n_regions,
-                    "n_timepoints": input_data.time_series.shape[0]
-                }
+                    "n_timepoints": input_data.time_series.shape[0],
+                },
             }
 
         except Exception as e:
@@ -222,11 +239,11 @@ class DynamicCausalModelingTool(NeuroToolWrapper):
                 if j < i:
                     A[i, j] = coeff
                 elif j >= i:
-                    A[i, j+1] = coeff
+                    A[i, j + 1] = coeff
 
         return A
 
-    def _estimate_modulatory_effects(self, data: np.ndarray) -> Optional[np.ndarray]:
+    def _estimate_modulatory_effects(self, data: np.ndarray) -> np.ndarray | None:
         """Estimate modulatory effects (B matrices)."""
         # Simplified: assume no modulatory inputs for basic DCM
         return None
@@ -242,8 +259,9 @@ class DynamicCausalModelingTool(NeuroToolWrapper):
 
         return C / np.max(C) if np.max(C) > 0 else C
 
-    def _compute_model_evidence(self, data: np.ndarray, A: np.ndarray,
-                               B: Optional[np.ndarray], C: np.ndarray) -> float:
+    def _compute_model_evidence(
+        self, data: np.ndarray, A: np.ndarray, B: np.ndarray | None, C: np.ndarray
+    ) -> float:
         """Compute approximate model evidence using free energy."""
         n_time, n_regions = data.shape
 
@@ -253,14 +271,14 @@ class DynamicCausalModelingTool(NeuroToolWrapper):
 
         for t in range(1, n_time):
             # Simple linear DCM prediction
-            predicted[t] = predicted[t-1] + A @ predicted[t-1] * 0.01
+            predicted[t] = predicted[t - 1] + A @ predicted[t - 1] * 0.01
 
         # Compute residual sum of squares
         rss = np.sum((data - predicted) ** 2)
 
         # Approximate free energy (negative of model evidence)
         n_params = np.sum(A != 0) + len(C)
-        free_energy = -0.5 * (n_time * np.log(rss/n_time) + n_params * np.log(n_time))
+        free_energy = -0.5 * (n_time * np.log(rss / n_time) + n_params * np.log(n_time))
 
         return free_energy
 
@@ -280,15 +298,14 @@ class TransferEntropyTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CausalityAnalysisInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run transfer entropy analysis."""
         try:
             input_data = CausalityAnalysisInput(**kwargs)
 
             # Compute transfer entropy matrix
             te_matrix = self._compute_transfer_entropy(
-                input_data.time_series,
-                input_data.lag_order
+                input_data.time_series, input_data.lag_order
             )
 
             # Compute normalized transfer entropy
@@ -302,7 +319,7 @@ class TransferEntropyTool(NeuroToolWrapper):
                 "transfer_entropy": te_matrix.tolist(),
                 "normalized_te": normalized_te.tolist(),
                 "dominant_flow": dominant_flow,
-                "total_information_flow": float(np.sum(te_matrix))
+                "total_information_flow": float(np.sum(te_matrix)),
             }
 
         except Exception as e:
@@ -318,16 +335,15 @@ class TransferEntropyTool(NeuroToolWrapper):
         n_bins = 10
         data_discrete = np.zeros_like(data, dtype=int)
         for i in range(n_regions):
-            data_discrete[:, i] = np.digitize(data[:, i],
-                                             np.histogram(data[:, i], n_bins)[1][:-1])
+            data_discrete[:, i] = np.digitize(
+                data[:, i], np.histogram(data[:, i], n_bins)[1][:-1]
+            )
 
         for i in range(n_regions):
             for j in range(n_regions):
                 if i != j:
                     te_matrix[i, j] = self._calculate_te(
-                        data_discrete[:, i],
-                        data_discrete[:, j],
-                        lag
+                        data_discrete[:, i], data_discrete[:, j], lag
                     )
 
         return te_matrix
@@ -371,20 +387,24 @@ class TransferEntropyTool(NeuroToolWrapper):
             return te_matrix / total_te
         return te_matrix
 
-    def _identify_dominant_flow(self, te_matrix: np.ndarray) -> List[Dict]:
+    def _identify_dominant_flow(self, te_matrix: np.ndarray) -> list[dict]:
         """Identify dominant information flow paths."""
         # Get top connections
-        threshold = np.percentile(te_matrix[te_matrix > 0], 75) if np.any(te_matrix > 0) else 0
+        threshold = (
+            np.percentile(te_matrix[te_matrix > 0], 75) if np.any(te_matrix > 0) else 0
+        )
         dominant = []
 
         for i in range(te_matrix.shape[0]):
             for j in range(te_matrix.shape[1]):
                 if te_matrix[i, j] > threshold:
-                    dominant.append({
-                        "from": int(i),
-                        "to": int(j),
-                        "transfer_entropy": float(te_matrix[i, j])
-                    })
+                    dominant.append(
+                        {
+                            "from": int(i),
+                            "to": int(j),
+                            "transfer_entropy": float(te_matrix[i, j]),
+                        }
+                    )
 
         return sorted(dominant, key=lambda x: x["transfer_entropy"], reverse=True)
 
@@ -404,18 +424,19 @@ class StructuralEquationModelingTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CausalityAnalysisInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run SEM analysis."""
         try:
             input_data = CausalityAnalysisInput(**kwargs)
 
             # Define model structure (simplified)
-            model_structure = self._define_model_structure(input_data.time_series.shape[1])
+            model_structure = self._define_model_structure(
+                input_data.time_series.shape[1]
+            )
 
             # Estimate SEM parameters
             path_coefficients = self._estimate_path_coefficients(
-                input_data.time_series,
-                model_structure
+                input_data.time_series, model_structure
             )
 
             # Value-domain gate (record-or-raise, lenient). The sample covariance
@@ -427,7 +448,7 @@ class StructuralEquationModelingTool(NeuroToolWrapper):
             # statistic is still computed with pinv (well-defined for a singular
             # matrix and reproducible); the recorded ``critical`` diagnostic marks
             # the fit indices invalid so reviewers do not interpret them.
-            value_domain_sink: List[Dict[str, Any]] = []
+            value_domain_sink: list[dict[str, Any]] = []
 
             # Compute model fit indices
             fit_indices = self._compute_fit_indices(
@@ -443,9 +464,7 @@ class StructuralEquationModelingTool(NeuroToolWrapper):
             # review_context by bundle_builder). When an output_dir IS supplied we
             # also drop the standard sidecar so the rglob-based discovery path works.
             if input_data.output_dir:
-                write_value_domain_diagnostics(
-                    value_domain_sink, input_data.output_dir
-                )
+                write_value_domain_diagnostics(value_domain_sink, input_data.output_dir)
 
             return {
                 "status": "success",
@@ -460,7 +479,7 @@ class StructuralEquationModelingTool(NeuroToolWrapper):
             logger.error(f"SEM analysis failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _define_model_structure(self, n_regions: int) -> Dict[str, List[int]]:
+    def _define_model_structure(self, n_regions: int) -> dict[str, list[int]]:
         """Define a default hierarchical model structure."""
         structure = {}
 
@@ -478,15 +497,16 @@ class StructuralEquationModelingTool(NeuroToolWrapper):
 
         return structure
 
-    def _estimate_path_coefficients(self, data: np.ndarray,
-                                   structure: Dict[str, List[int]]) -> Dict[str, float]:
+    def _estimate_path_coefficients(
+        self, data: np.ndarray, structure: dict[str, list[int]]
+    ) -> dict[str, float]:
         """Estimate path coefficients using maximum likelihood."""
         coefficients = {}
 
         for source, targets in structure.items():
             for target in targets:
                 # Simple regression to estimate path coefficient
-                X = data[:, source:source+1]
+                X = data[:, source : source + 1]
                 y = data[:, target]
 
                 coeff = np.linalg.lstsq(X, y, rcond=None)[0][0]
@@ -494,10 +514,13 @@ class StructuralEquationModelingTool(NeuroToolWrapper):
 
         return coefficients
 
-    def _compute_fit_indices(self, data: np.ndarray, coefficients: Dict[str, float],
-                            structure: Dict[str, List[int]],
-                            value_domain_sink: Optional[List[Dict[str, Any]]] = None,
-                            ) -> Dict[str, float]:
+    def _compute_fit_indices(
+        self,
+        data: np.ndarray,
+        coefficients: dict[str, float],
+        structure: dict[str, list[int]],
+        value_domain_sink: list[dict[str, Any]] | None = None,
+    ) -> dict[str, float]:
         """Compute model fit indices."""
         n_samples, n_vars = data.shape
 
@@ -540,19 +563,22 @@ class StructuralEquationModelingTool(NeuroToolWrapper):
             "df": df,
             "p_value": float(1 - chi2.cdf(chi2_stat, df)) if df > 0 else 1.0,
             "rmsea": float(rmsea),
-            "cfi": float(cfi)
+            "cfi": float(cfi),
         }
 
-    def _compute_implied_covariance(self, coefficients: Dict[str, float],
-                                   structure: Dict[str, List[int]],
-                                   n_vars: int) -> np.ndarray:
+    def _compute_implied_covariance(
+        self,
+        coefficients: dict[str, float],
+        structure: dict[str, list[int]],
+        n_vars: int,
+    ) -> np.ndarray:
         """Compute implied covariance matrix from path coefficients."""
         # Initialize with identity (unit variances)
         implied = np.eye(n_vars)
 
         # Add path contributions
         for path, coeff in coefficients.items():
-            source, target = map(int, path.split('->'))
+            source, target = map(int, path.split("->"))
             implied[target, source] = coeff
             implied[source, target] = coeff
 
@@ -574,26 +600,27 @@ class DirectedInformationTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CausalityAnalysisInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run directed information analysis."""
         try:
             input_data = CausalityAnalysisInput(**kwargs)
 
             # Compute directed information matrix
             di_matrix = self._compute_directed_information(
-                input_data.time_series,
-                input_data.lag_order
+                input_data.time_series, input_data.lag_order
             )
 
             # Compute instantaneous causality
-            inst_causality = self._compute_instantaneous_causality(input_data.time_series)
+            inst_causality = self._compute_instantaneous_causality(
+                input_data.time_series
+            )
 
             return {
                 "status": "success",
                 "directed_information": di_matrix.tolist(),
                 "instantaneous_causality": inst_causality.tolist(),
                 "total_directed_info": float(np.sum(di_matrix)),
-                "asymmetry_index": self._compute_asymmetry(di_matrix)
+                "asymmetry_index": self._compute_asymmetry(di_matrix),
             }
 
         except Exception as e:
@@ -619,12 +646,14 @@ class DirectedInformationTool(NeuroToolWrapper):
 
         for t in range(lag, len(x)):
             # Conditional mutual information at each time step
-            x_past = x[t-lag:t]
-            y_past = y[t-lag:t]
+            x_past = x[t - lag : t]
+            y_past = y[t - lag : t]
 
             # Simplified: use correlation as proxy for mutual information
             mi_cond = np.abs(np.corrcoef(x[t], y[t])[0, 1])
-            mi_uncond = np.abs(np.corrcoef(x_past, y_past)[0, 1]) if len(x_past) > 1 else 0
+            mi_uncond = (
+                np.abs(np.corrcoef(x_past, y_past)[0, 1]) if len(x_past) > 1 else 0
+            )
 
             di += max(0, mi_cond - mi_uncond)
 
@@ -637,7 +666,7 @@ class DirectedInformationTool(NeuroToolWrapper):
         pcorr = np.zeros((n_regions, n_regions))
 
         for i in range(n_regions):
-            for j in range(i+1, n_regions):
+            for j in range(i + 1, n_regions):
                 # Partial correlation controlling for other regions
                 others = [k for k in range(n_regions) if k != i and k != j]
                 if others:
@@ -649,17 +678,24 @@ class DirectedInformationTool(NeuroToolWrapper):
 
         return pcorr
 
-    def _partial_correlation(self, data: np.ndarray, i: int, j: int,
-                            control: List[int]) -> float:
+    def _partial_correlation(
+        self, data: np.ndarray, i: int, j: int, control: list[int]
+    ) -> float:
         """Compute partial correlation between i and j controlling for others."""
         # Regress out control variables
         X_control = data[:, control]
 
         # Residuals for i
-        resid_i = data[:, i] - X_control @ np.linalg.lstsq(X_control, data[:, i], rcond=None)[0]
+        resid_i = (
+            data[:, i]
+            - X_control @ np.linalg.lstsq(X_control, data[:, i], rcond=None)[0]
+        )
 
         # Residuals for j
-        resid_j = data[:, j] - X_control @ np.linalg.lstsq(X_control, data[:, j], rcond=None)[0]
+        resid_j = (
+            data[:, j]
+            - X_control @ np.linalg.lstsq(X_control, data[:, j], rcond=None)[0]
+        )
 
         # Correlation of residuals
         return np.corrcoef(resid_i, resid_j)[0, 1]
@@ -690,7 +726,7 @@ class PhaseTransferEntropyTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CausalityAnalysisInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run phase transfer entropy analysis."""
         try:
             input_data = CausalityAnalysisInput(**kwargs)
@@ -709,7 +745,7 @@ class PhaseTransferEntropyTool(NeuroToolWrapper):
                 "phase_transfer_entropy": pte_matrix.tolist(),
                 "phase_lag_index": pli_matrix.tolist(),
                 "dominant_phase_flow": self._identify_phase_leaders(pte_matrix),
-                "mean_phase_coherence": float(np.mean(np.abs(pli_matrix)))
+                "mean_phase_coherence": float(np.mean(np.abs(pli_matrix))),
             }
 
         except Exception as e:
@@ -736,7 +772,7 @@ class PhaseTransferEntropyTool(NeuroToolWrapper):
         # Discretize phases into bins
         n_bins = 18  # 20-degree bins
         phases_discrete = np.zeros_like(phases, dtype=int)
-        bins = np.linspace(-np.pi, np.pi, n_bins+1)
+        bins = np.linspace(-np.pi, np.pi, n_bins + 1)
 
         for i in range(n_regions):
             phases_discrete[:, i] = np.digitize(phases[:, i], bins) - 1
@@ -746,9 +782,7 @@ class PhaseTransferEntropyTool(NeuroToolWrapper):
             for j in range(n_regions):
                 if i != j:
                     pte_matrix[i, j] = self._calculate_te(
-                        phases_discrete[:, i],
-                        phases_discrete[:, j],
-                        lag
+                        phases_discrete[:, i], phases_discrete[:, j], lag
                     )
 
         return pte_matrix
@@ -759,7 +793,7 @@ class PhaseTransferEntropyTool(NeuroToolWrapper):
         pli_matrix = np.zeros((n_regions, n_regions))
 
         for i in range(n_regions):
-            for j in range(i+1, n_regions):
+            for j in range(i + 1, n_regions):
                 # Phase difference
                 phase_diff = phases[:, i] - phases[:, j]
 
@@ -770,7 +804,7 @@ class PhaseTransferEntropyTool(NeuroToolWrapper):
 
         return pli_matrix
 
-    def _identify_phase_leaders(self, pte_matrix: np.ndarray) -> List[Dict]:
+    def _identify_phase_leaders(self, pte_matrix: np.ndarray) -> list[dict]:
         """Identify phase-leading regions."""
         # Compute net phase transfer
         net_transfer = np.sum(pte_matrix, axis=1) - np.sum(pte_matrix, axis=0)
@@ -778,11 +812,13 @@ class PhaseTransferEntropyTool(NeuroToolWrapper):
         leaders = []
         for i, net in enumerate(net_transfer):
             if net > 0:
-                leaders.append({
-                    "region": int(i),
-                    "net_phase_transfer": float(net),
-                    "is_leader": True
-                })
+                leaders.append(
+                    {
+                        "region": int(i),
+                        "net_phase_transfer": float(net),
+                        "is_leader": True,
+                    }
+                )
 
         return sorted(leaders, key=lambda x: x["net_phase_transfer"], reverse=True)
 
@@ -802,7 +838,7 @@ class ConvergentCrossMappingTool(NeuroToolWrapper):
     def get_args_schema(self):
         return CausalityAnalysisInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run CCM analysis."""
         try:
             input_data = CausalityAnalysisInput(**kwargs)
@@ -812,18 +848,10 @@ class ConvergentCrossMappingTool(NeuroToolWrapper):
             tau = self._estimate_time_delay(input_data.time_series)
 
             # Compute CCM matrix
-            ccm_matrix = self._compute_ccm(
-                input_data.time_series,
-                embed_dim,
-                tau
-            )
+            ccm_matrix = self._compute_ccm(input_data.time_series, embed_dim, tau)
 
             # Test for convergence
-            convergence = self._test_convergence(
-                input_data.time_series,
-                embed_dim,
-                tau
-            )
+            convergence = self._test_convergence(input_data.time_series, embed_dim, tau)
 
             return {
                 "status": "success",
@@ -831,7 +859,7 @@ class ConvergentCrossMappingTool(NeuroToolWrapper):
                 "convergence_test": convergence,
                 "embedding_dimension": embed_dim,
                 "time_delay": int(tau),
-                "nonlinear_coupling": self._assess_nonlinearity(ccm_matrix)
+                "nonlinear_coupling": self._assess_nonlinearity(ccm_matrix),
             }
 
         except Exception as e:
@@ -845,13 +873,13 @@ class ConvergentCrossMappingTool(NeuroToolWrapper):
         tau = 1
 
         for i in range(data.shape[1]):
-            acf = np.correlate(data[:, i], data[:, i], mode='full')
-            acf = acf[len(acf)//2:]
+            acf = np.correlate(data[:, i], data[:, i], mode="full")
+            acf = acf[len(acf) // 2 :]
             acf = acf / acf[0]
 
             # Find first minimum
-            for t in range(1, min(tau_max, len(acf)-1)):
-                if acf[t] < acf[t-1] and acf[t] < acf[t+1]:
+            for t in range(1, min(tau_max, len(acf) - 1)):
+                if acf[t] < acf[t - 1] and acf[t] < acf[t + 1]:
                     tau = max(tau, t)
                     break
 
@@ -871,8 +899,9 @@ class ConvergentCrossMappingTool(NeuroToolWrapper):
 
         return ccm_matrix
 
-    def _ccm_predict(self, x: np.ndarray, y: np.ndarray,
-                     embed_dim: int, tau: int) -> float:
+    def _ccm_predict(
+        self, x: np.ndarray, y: np.ndarray, embed_dim: int, tau: int
+    ) -> float:
         """Predict x from y using CCM."""
         # Create shadow manifold for y
         y_embedded = self._embed_series(y, embed_dim, tau)
@@ -888,7 +917,7 @@ class ConvergentCrossMappingTool(NeuroToolWrapper):
         for i in range(len(y_embedded)):
             # Find k nearest neighbors (excluding self)
             k = min(embed_dim + 1, len(y_embedded) - 1)
-            distances = np.sum((y_embedded - y_embedded[i])**2, axis=1)
+            distances = np.sum((y_embedded - y_embedded[i]) ** 2, axis=1)
             distances[i] = np.inf
             nn_indices = np.argpartition(distances, k)[:k]
 
@@ -913,14 +942,14 @@ class ConvergentCrossMappingTool(NeuroToolWrapper):
 
         embedded = np.zeros((n, dim))
         for i in range(dim):
-            embedded[:, i] = series[i*tau:i*tau + n]
+            embedded[:, i] = series[i * tau : i * tau + n]
 
         return embedded
 
-    def _test_convergence(self, data: np.ndarray, embed_dim: int, tau: int) -> Dict:
+    def _test_convergence(self, data: np.ndarray, embed_dim: int, tau: int) -> dict:
         """Test CCM convergence with library size."""
         n_regions = data.shape[1]
-        library_sizes = [50, 100, 200, min(400, data.shape[0]//2)]
+        library_sizes = [50, 100, 200, min(400, data.shape[0] // 2)]
 
         convergence_results = {}
         for i in range(min(3, n_regions)):  # Test first 3 regions
@@ -930,10 +959,7 @@ class ConvergentCrossMappingTool(NeuroToolWrapper):
                     for lib_size in library_sizes:
                         if lib_size < data.shape[0]:
                             ccm_val = self._ccm_predict(
-                                data[:lib_size, i],
-                                data[:lib_size, j],
-                                embed_dim,
-                                tau
+                                data[:lib_size, i], data[:lib_size, j], embed_dim, tau
                             )
                             ccm_values.append(ccm_val)
 
@@ -942,7 +968,7 @@ class ConvergentCrossMappingTool(NeuroToolWrapper):
                         trend = np.polyfit(range(len(ccm_values)), ccm_values, 1)[0]
                         convergence_results[f"{i}->{j}"] = {
                             "converges": trend > 0,
-                            "trend": float(trend)
+                            "trend": float(trend),
                         }
 
         return convergence_results
@@ -964,21 +990,21 @@ class PartialDirectedCoherenceTool(NeuroToolWrapper):
         return "partial_directed_coherence"
 
     def get_tool_description(self) -> str:
-        return "Compute Partial Directed Coherence (PDC) for frequency-resolved causality"
+        return (
+            "Compute Partial Directed Coherence (PDC) for frequency-resolved causality"
+        )
 
     def get_args_schema(self):
         return CausalityAnalysisInput
 
-    def _run(self, **kwargs) -> Dict[str, Any]:
+    def _run(self, **kwargs) -> dict[str, Any]:
         """Run PDC analysis."""
         try:
             input_data = CausalityAnalysisInput(**kwargs)
 
             # Compute PDC across frequencies
             freqs, pdc_matrix = self._compute_pdc(
-                input_data.time_series,
-                input_data.lag_order,
-                input_data.sampling_rate
+                input_data.time_series, input_data.lag_order, input_data.sampling_rate
             )
 
             # Identify peak frequencies
@@ -986,9 +1012,7 @@ class PartialDirectedCoherenceTool(NeuroToolWrapper):
 
             # Compute directed coherence
             dc_matrix = self._compute_directed_coherence(
-                input_data.time_series,
-                input_data.lag_order,
-                input_data.sampling_rate
+                input_data.time_series, input_data.lag_order, input_data.sampling_rate
             )
 
             return {
@@ -997,15 +1021,16 @@ class PartialDirectedCoherenceTool(NeuroToolWrapper):
                 "pdc_spectrum": pdc_matrix.tolist(),
                 "peak_frequencies": peak_freqs,
                 "directed_coherence": dc_matrix.tolist(),
-                "mean_pdc": self._compute_mean_pdc(pdc_matrix)
+                "mean_pdc": self._compute_mean_pdc(pdc_matrix),
             }
 
         except Exception as e:
             logger.error(f"PDC analysis failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _compute_pdc(self, data: np.ndarray, order: int,
-                     fs: float) -> Tuple[np.ndarray, np.ndarray]:
+    def _compute_pdc(
+        self, data: np.ndarray, order: int, fs: float
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Compute Partial Directed Coherence."""
         n_time, n_regions = data.shape
 
@@ -1014,7 +1039,7 @@ class PartialDirectedCoherenceTool(NeuroToolWrapper):
 
         # Frequency points
         n_freqs = 256
-        freqs = np.linspace(0, fs/2, n_freqs)
+        freqs = np.linspace(0, fs / 2, n_freqs)
 
         # Initialize PDC matrix
         pdc = np.zeros((n_regions, n_regions, n_freqs))
@@ -1026,7 +1051,9 @@ class PartialDirectedCoherenceTool(NeuroToolWrapper):
             # PDC calculation
             for i in range(n_regions):
                 for j in range(n_regions):
-                    pdc[i, j, f_idx] = np.abs(A_f[j, i])**2 / np.sum(np.abs(A_f[:, i])**2)
+                    pdc[i, j, f_idx] = np.abs(A_f[j, i]) ** 2 / np.sum(
+                        np.abs(A_f[:, i]) ** 2
+                    )
 
         return freqs, pdc
 
@@ -1053,12 +1080,13 @@ class PartialDirectedCoherenceTool(NeuroToolWrapper):
         # Reshape to (n_regions, n_regions, order)
         ar_coeffs = np.zeros((n_regions, n_regions, order))
         for p in range(order):
-            ar_coeffs[:, :, p] = coeffs[:, p*n_regions:(p+1)*n_regions]
+            ar_coeffs[:, :, p] = coeffs[:, p * n_regions : (p + 1) * n_regions]
 
         return ar_coeffs
 
-    def _compute_transfer_matrix(self, ar_coeffs: np.ndarray,
-                                freq: float, fs: float) -> np.ndarray:
+    def _compute_transfer_matrix(
+        self, ar_coeffs: np.ndarray, freq: float, fs: float
+    ) -> np.ndarray:
         """Compute frequency-domain transfer matrix."""
         n_regions = ar_coeffs.shape[0]
         order = ar_coeffs.shape[2]
@@ -1073,8 +1101,9 @@ class PartialDirectedCoherenceTool(NeuroToolWrapper):
 
         return np.linalg.inv(A_f)
 
-    def _compute_directed_coherence(self, data: np.ndarray, order: int,
-                                   fs: float) -> np.ndarray:
+    def _compute_directed_coherence(
+        self, data: np.ndarray, order: int, fs: float
+    ) -> np.ndarray:
         """Compute Directed Coherence (DC)."""
         # Simplified: compute average DC across frequencies
         freqs, pdc = self._compute_pdc(data, order, fs)
@@ -1085,22 +1114,23 @@ class PartialDirectedCoherenceTool(NeuroToolWrapper):
 
         # Define frequency bands
         bands = {
-            'delta': (0.5, 4),
-            'theta': (4, 8),
-            'alpha': (8, 13),
-            'beta': (13, 30),
-            'gamma': (30, 100)
+            "delta": (0.5, 4),
+            "theta": (4, 8),
+            "alpha": (8, 13),
+            "beta": (13, 30),
+            "gamma": (30, 100),
         }
 
-        for band_name, (f_min, f_max) in bands.items():
+        for _band_name, (f_min, f_max) in bands.items():
             band_idx = np.where((freqs >= f_min) & (freqs <= f_max))[0]
             if len(band_idx) > 0:
                 dc_matrix += np.mean(pdc[:, :, band_idx], axis=2)
 
         return dc_matrix / len(bands)
 
-    def _identify_peak_frequencies(self, pdc: np.ndarray,
-                                  freqs: np.ndarray) -> List[Dict]:
+    def _identify_peak_frequencies(
+        self, pdc: np.ndarray, freqs: np.ndarray
+    ) -> list[dict]:
         """Identify peak frequencies in PDC spectrum."""
         peaks = []
         n_regions = pdc.shape[0]
@@ -1115,29 +1145,31 @@ class PartialDirectedCoherenceTool(NeuroToolWrapper):
                     if len(peak_idx) > 0:
                         # Get strongest peak
                         max_idx = peak_idx[np.argmax(pdc_ij[peak_idx])]
-                        peaks.append({
-                            "from": int(i),
-                            "to": int(j),
-                            "frequency": float(freqs[max_idx]),
-                            "strength": float(pdc_ij[max_idx])
-                        })
+                        peaks.append(
+                            {
+                                "from": int(i),
+                                "to": int(j),
+                                "frequency": float(freqs[max_idx]),
+                                "strength": float(pdc_ij[max_idx]),
+                            }
+                        )
 
         return sorted(peaks, key=lambda x: x["strength"], reverse=True)[:10]
 
-    def _compute_mean_pdc(self, pdc: np.ndarray) -> Dict[str, float]:
+    def _compute_mean_pdc(self, pdc: np.ndarray) -> dict[str, float]:
         """Compute mean PDC across frequency bands."""
         # Average across standard frequency bands
         return {
             "overall": float(np.mean(pdc)),
             "max": float(np.max(pdc)),
-            "asymmetry": float(np.mean(np.abs(pdc - np.transpose(pdc, (1, 0, 2)))))
+            "asymmetry": float(np.mean(np.abs(pdc - np.transpose(pdc, (1, 0, 2))))),
         }
 
 
 class CausalityAnalysisTools:
     """Collection of causality analysis tools."""
 
-    def get_all_tools(self) -> List[NeuroToolWrapper]:
+    def get_all_tools(self) -> list[NeuroToolWrapper]:
         """Get all causality analysis tools."""
         return [
             GrangerCausalityTool(),
@@ -1147,5 +1179,5 @@ class CausalityAnalysisTools:
             DirectedInformationTool(),
             PhaseTransferEntropyTool(),
             ConvergentCrossMappingTool(),
-            PartialDirectedCoherenceTool()
+            PartialDirectedCoherenceTool(),
         ]

@@ -1,34 +1,34 @@
 """Tests for tool selection and scoring system."""
 
-import pytest
 from dataclasses import dataclass
-from typing import List, Optional
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
+from brain_researcher.services.agent.planner.preflight import (
+    PreflightCheck,
+    PreflightReport,
+    PreflightStatus,
+)
+from brain_researcher.services.agent.planner.selection import (
+    _score_resource_fit,  # PR-3
+)
 from brain_researcher.services.agent.planner.selection import (
     SelectionCandidate,
-    select_tools,
-    explain_selection,
-    _score_intent_match,
     _score_description_relevance,
+    _score_intent_match,
     _score_metadata,
-    _score_resource_fit,  # PR-3
-    load_scoring_weights,
-    clear_scoring_weights_cache,
     apply_constraints,
-)
-from brain_researcher.services.agent.planner.preflight import (
-    PreflightReport,
-    PreflightCheck,
-    PreflightStatus,
+    clear_scoring_weights_cache,
+    explain_selection,
+    load_scoring_weights,
+    select_tools,
 )
 
 # Import shared test helpers
 from .helpers import (
     MockContainer,
-    MockPython,
     MockMetadata,
+    MockPython,
     MockResources,
     MockToolCapability,
 )
@@ -211,15 +211,32 @@ def test_select_tools_masks_disallowed_candidates_before_scoring(monkeypatch):
         runtime_kind="python",
     )
 
-    monkeypatch.setattr(sel, "match_intents", lambda query, modality=None: ["skull_strip"])
-    monkeypatch.setattr(sel, "search_by_capability", lambda capability, include_local_first=False: [allowed, disallowed])
-    monkeypatch.setattr(sel, "search_by_modality", lambda modality, include_local_first=False: [allowed, disallowed])
-    monkeypatch.setattr(sel, "search_by_intent", lambda intent_id, include_local_first=False: [allowed, disallowed])
+    monkeypatch.setattr(
+        sel, "match_intents", lambda query, modality=None: ["skull_strip"]
+    )
+    monkeypatch.setattr(
+        sel,
+        "search_by_capability",
+        lambda capability, include_local_first=False: [allowed, disallowed],
+    )
+    monkeypatch.setattr(
+        sel,
+        "search_by_modality",
+        lambda modality, include_local_first=False: [allowed, disallowed],
+    )
+    monkeypatch.setattr(
+        sel,
+        "search_by_intent",
+        lambda intent_id, include_local_first=False: [allowed, disallowed],
+    )
     monkeypatch.setattr(
         sel,
         "load_hierarchical_config",
         lambda modality=None, operator=None, environment=None: {
-            "policy": {"constraints": {}, "scoring": {"weights": load_scoring_weights()}}
+            "policy": {
+                "constraints": {},
+                "scoring": {"weights": load_scoring_weights()},
+            }
         },
     )
     monkeypatch.setattr(
@@ -589,7 +606,9 @@ class TestSelectToolsIntegration:
     @patch("brain_researcher.services.agent.planner.selection.match_intents")
     @patch("brain_researcher.services.agent.planner.selection.search_by_capability")
     @patch("brain_researcher.services.agent.planner.selection.preflight_batch")
-    def test_select_tools_max_results(self, mock_preflight, mock_search, mock_intents, monkeypatch):
+    def test_select_tools_max_results(
+        self, mock_preflight, mock_search, mock_intents, monkeypatch
+    ):
         """Test that max_results limits output."""
         # Phase 1.4: Set strategy to diverse_topk to allow multiple results
         monkeypatch.setenv("BR_PLANNER_STRATEGY", "diverse_topk")
@@ -746,7 +765,6 @@ class TestScoringEnhancements:
 
     def test_resource_fit_scoring_cvmfs_container(self):
         """Test resource fit scoring for CVMFS container tools."""
-        from brain_researcher.services.agent.planner.selection import _score_resource_fit
 
         tool = MockToolCapability(
             id="fsl.bet.run",
@@ -759,12 +777,16 @@ class TestScoringEnhancements:
 
         # Mock preflight report - CVMFS accessible
         from brain_researcher.services.agent.planner.preflight import PreflightStatus
+
         preflight = PreflightReport(
             tool_id="fsl.bet.run",
             passed=True,
             checks={
                 "container_image": PreflightCheck(
-                    "container_image", True, "CVMFS accessible", PreflightStatus.CVMFS_AVAILABLE
+                    "container_image",
+                    True,
+                    "CVMFS accessible",
+                    PreflightStatus.CVMFS_AVAILABLE,
                 ),
                 "python_import": PreflightCheck(
                     "python_import", True, "not-required", PreflightStatus.NOT_REQUIRED
@@ -779,7 +801,6 @@ class TestScoringEnhancements:
 
     def test_resource_fit_scoring_python_tool(self):
         """Test resource fit scoring for Python tools."""
-        from brain_researcher.services.agent.planner.selection import _score_resource_fit
 
         tool = MockToolCapability(
             id="python.numpy.test",
@@ -792,15 +813,22 @@ class TestScoringEnhancements:
 
         # Mock preflight report - import successful
         from brain_researcher.services.agent.planner.preflight import PreflightStatus
+
         preflight = PreflightReport(
             tool_id="python.numpy.test",
             passed=True,
             checks={
                 "container_image": PreflightCheck(
-                    "container_image", True, "not-required", PreflightStatus.NOT_REQUIRED
+                    "container_image",
+                    True,
+                    "not-required",
+                    PreflightStatus.NOT_REQUIRED,
                 ),
                 "python_import": PreflightCheck(
-                    "python_import", True, "module imported successfully", PreflightStatus.IMPORT_SUCCESS
+                    "python_import",
+                    True,
+                    "module imported successfully",
+                    PreflightStatus.IMPORT_SUCCESS,
                 ),
             },
         )
@@ -812,7 +840,6 @@ class TestScoringEnhancements:
 
     def test_resource_fit_scoring_unavailable(self):
         """Test resource fit scoring when resources unavailable."""
-        from brain_researcher.services.agent.planner.selection import _score_resource_fit
 
         tool = MockToolCapability(
             id="missing.tool",
@@ -825,12 +852,16 @@ class TestScoringEnhancements:
 
         # Mock preflight report - CVMFS not mounted
         from brain_researcher.services.agent.planner.preflight import PreflightStatus
+
         preflight = PreflightReport(
             tool_id="missing.tool",
             passed=False,
             checks={
                 "container_image": PreflightCheck(
-                    "container_image", False, "CVMFS not mounted", PreflightStatus.NOT_AVAILABLE
+                    "container_image",
+                    False,
+                    "CVMFS not mounted",
+                    PreflightStatus.NOT_AVAILABLE,
                 ),
                 "python_import": PreflightCheck(
                     "python_import", True, "not-required", PreflightStatus.NOT_REQUIRED
@@ -958,10 +989,16 @@ class TestScoringEnhancements:
         )
 
         # High quality should mention "excellent" or "good"
-        assert "excellent" in high_candidate.explanation.lower() or "good" in high_candidate.explanation.lower()
+        assert (
+            "excellent" in high_candidate.explanation.lower()
+            or "good" in high_candidate.explanation.lower()
+        )
 
         # Low quality should mention "partial" or "setup"
-        assert "partial" in low_candidate.explanation.lower() or "setup" in low_candidate.explanation.lower()
+        assert (
+            "partial" in low_candidate.explanation.lower()
+            or "setup" in low_candidate.explanation.lower()
+        )
 
     def test_explain_selection_includes_resource_fit(self):
         """Test that explain_selection output includes resource fit score."""
@@ -1008,7 +1045,10 @@ class TestScoringEnhancements:
             scoring_weights=load_scoring_weights(),
             intent_match_score=0.8,
             preflight_passed=True,
-            preflight_detail={"python_import": "passed", "container_image": "not-required"},
+            preflight_detail={
+                "python_import": "passed",
+                "container_image": "not-required",
+            },
             description_score=0.6,
             metadata_score=0.7,
             resource_fit_score=0.9,
@@ -1029,6 +1069,7 @@ class TestConstraintFiltering:
 
     def test_gpu_requirement_filters_cpu_tools(self):
         """gpu_required_if should drop tools without GPU resources."""
+
         class Resources:
             def __init__(self, gpu: bool):
                 self.gpu = gpu
@@ -1082,7 +1123,9 @@ class TestConstraintFiltering:
             }
         }
 
-        filtered = apply_constraints(candidates, config, matched_operators=["deep_denoise"])
+        filtered = apply_constraints(
+            candidates, config, matched_operators=["deep_denoise"]
+        )
         assert len(filtered) == 1
         assert filtered[0].tool.id == "gpu.tool"
 
@@ -1149,8 +1192,10 @@ class TestConstraintFiltering:
     def test_weights_sum_validation(self):
         """Test that weight validation warns if sum != 1.0."""
         import os
-        from brain_researcher.services.agent.planner.selection import load_scoring_weights
-        import logging
+
+        from brain_researcher.services.agent.planner.selection import (
+            load_scoring_weights,
+        )
 
         # Set weights that don't sum to 1.0
         os.environ["BR_SCORE_WEIGHT_INTENT_MATCH"] = "0.50"
@@ -1161,15 +1206,21 @@ class TestConstraintFiltering:
 
         try:
             # Should load but log warning (sum = 1.7)
-            with patch('brain_researcher.services.agent.planner.selection.logger') as mock_logger:
+            with patch(
+                "brain_researcher.services.agent.planner.selection.logger"
+            ) as mock_logger:
                 clear_scoring_weights_cache()
                 load_scoring_weights()
                 mock_logger.warning.assert_called()
         finally:
             # Cleanup
-            for key in ["BR_SCORE_WEIGHT_INTENT_MATCH", "BR_SCORE_WEIGHT_PREFLIGHT",
-                        "BR_SCORE_WEIGHT_DESCRIPTION", "BR_SCORE_WEIGHT_METADATA",
-                        "BR_SCORE_WEIGHT_RESOURCE_FIT"]:
+            for key in [
+                "BR_SCORE_WEIGHT_INTENT_MATCH",
+                "BR_SCORE_WEIGHT_PREFLIGHT",
+                "BR_SCORE_WEIGHT_DESCRIPTION",
+                "BR_SCORE_WEIGHT_METADATA",
+                "BR_SCORE_WEIGHT_RESOURCE_FIT",
+            ]:
                 os.environ.pop(key, None)
             clear_scoring_weights_cache()
 
@@ -1182,8 +1233,10 @@ class TestPhase14HierarchicalOverrides:
 
     def _setup_preflight(self, mock_preflight, reports):
         """Helper to configure preflight_batch mock with proper side_effect."""
+
         def _side_effect(tools, *_args, **_kwargs):
             return {tool.id: reports[tool.id] for tool in tools}
+
         mock_preflight.side_effect = _side_effect
 
     @patch("brain_researcher.services.agent.planner.selection.match_intents")
@@ -1234,10 +1287,14 @@ class TestPhase14HierarchicalOverrides:
                 True,
                 {
                     "container_image": PreflightCheck(
-                        "container_image", True, status_code=PreflightStatus.NOT_REQUIRED
+                        "container_image",
+                        True,
+                        status_code=PreflightStatus.NOT_REQUIRED,
                     ),
                     "python_import": PreflightCheck(
-                        "python_import", True, status_code=PreflightStatus.IMPORT_SUCCESS
+                        "python_import",
+                        True,
+                        status_code=PreflightStatus.IMPORT_SUCCESS,
                     ),
                 },
             ),
@@ -1246,7 +1303,9 @@ class TestPhase14HierarchicalOverrides:
                 True,
                 {
                     "container_image": PreflightCheck(
-                        "container_image", False, status_code=PreflightStatus.NOT_AVAILABLE
+                        "container_image",
+                        False,
+                        status_code=PreflightStatus.NOT_AVAILABLE,
                     ),
                     "python_import": PreflightCheck(
                         "python_import", False, status_code=PreflightStatus.NOT_REQUIRED
@@ -1311,10 +1370,14 @@ class TestPhase14HierarchicalOverrides:
                 True,
                 {
                     "container_image": PreflightCheck(
-                        "container_image", True, status_code=PreflightStatus.NOT_REQUIRED
+                        "container_image",
+                        True,
+                        status_code=PreflightStatus.NOT_REQUIRED,
                     ),
                     "python_import": PreflightCheck(
-                        "python_import", True, status_code=PreflightStatus.IMPORT_SUCCESS
+                        "python_import",
+                        True,
+                        status_code=PreflightStatus.IMPORT_SUCCESS,
                     ),
                 },
             ),
@@ -1323,7 +1386,9 @@ class TestPhase14HierarchicalOverrides:
                 True,
                 {
                     "container_image": PreflightCheck(
-                        "container_image", True, status_code=PreflightStatus.LOCAL_AVAILABLE
+                        "container_image",
+                        True,
+                        status_code=PreflightStatus.LOCAL_AVAILABLE,
                     ),
                     "python_import": PreflightCheck(
                         "python_import", True, status_code=PreflightStatus.NOT_REQUIRED
@@ -1405,10 +1470,15 @@ class TestPhase14HierarchicalOverrides:
 
         finally:
             # Cleanup
-            for key in ["BR_SCORE_WEIGHT_LATENCY_PRED", "BR_SCORE_WEIGHT_INTENT_MATCH",
-                        "BR_SCORE_WEIGHT_PREFLIGHT", "BR_SCORE_WEIGHT_DESCRIPTION",
-                        "BR_SCORE_WEIGHT_METADATA", "BR_SCORE_WEIGHT_RESOURCE_FIT",
-                        "BR_SCORE_WEIGHT_HISTORICAL_QUALITY"]:
+            for key in [
+                "BR_SCORE_WEIGHT_LATENCY_PRED",
+                "BR_SCORE_WEIGHT_INTENT_MATCH",
+                "BR_SCORE_WEIGHT_PREFLIGHT",
+                "BR_SCORE_WEIGHT_DESCRIPTION",
+                "BR_SCORE_WEIGHT_METADATA",
+                "BR_SCORE_WEIGHT_RESOURCE_FIT",
+                "BR_SCORE_WEIGHT_HISTORICAL_QUALITY",
+            ]:
                 os.environ.pop(key, None)
             clear_scoring_weights_cache()
 
@@ -1430,6 +1500,7 @@ class TestPhase14HierarchicalOverrides:
         Task 4.4: End-to-end test verifying gpu_required_if constraint
         filters to only GPU-capable tools.
         """
+
         # Create GPU-capable and CPU-only tools with resources
         @dataclass(frozen=True)
         class MockResources:
@@ -1479,8 +1550,9 @@ class TestPhase14HierarchicalOverrides:
 
         # Should return only GPU-capable tool
         assert len(result) == 1
-        assert result[0].tool.id == "gpu.denoise", \
-            "GPU constraint should filter to only GPU-capable tools"
+        assert (
+            result[0].tool.id == "gpu.denoise"
+        ), "GPU constraint should filter to only GPU-capable tools"
         assert result[0].tool.resources.gpu is True
 
 
@@ -1495,7 +1567,12 @@ def test_budget_constraint_masks_reason():
         resources=SimpleNamespace(gpu=False),
         pricing=SimpleNamespace(estimated_cost_usd=25.0),
     )
-    weights = {"intent_match": 1.0, "description": 0.0, "metadata": 0.0, "resource_fit": 0.0}
+    weights = {
+        "intent_match": 1.0,
+        "description": 0.0,
+        "metadata": 0.0,
+        "resource_fit": 0.0,
+    }
     cand = SelectionCandidate(
         tool=expensive_tool,
         intent_match_score=1.0,
@@ -1527,7 +1604,9 @@ def test_intent_router_emits_mask_reason_when_no_intent(monkeypatch):
     monkeypatch.setattr(selection_mod, "plan_operations", lambda req: [])
 
     mask_reasons = []
-    req = PlanRequest(pipeline="nonsense pipeline", domain="neuroimaging", modality=["fmri"])
+    req = PlanRequest(
+        pipeline="nonsense pipeline", domain="neuroimaging", modality=["fmri"]
+    )
     plan = selection_mod.choose_tool_intent_router(req, mask_reasons_out=mask_reasons)
 
     assert plan is None

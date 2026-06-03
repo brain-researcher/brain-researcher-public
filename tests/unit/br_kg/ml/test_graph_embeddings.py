@@ -7,37 +7,38 @@ This module tests the graph embedding functionality including:
 - Visualization and model persistence
 """
 
-import pytest
-import numpy as np
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, List, Any, Tuple
-import tempfile
 import os
+import tempfile
+from unittest.mock import Mock, patch
+
+import numpy as np
+import pytest
 
 # Import the modules to test
 try:
     from brain_researcher.services.br_kg.ml.graph_embeddings import (
+        BaseGraphEmbedder,
+        DeepWalkEmbedder,
+        EmbeddingConfig,
+        EmbeddingType,
+        Graph2VecEmbedder,
         GraphEmbedder,
         Node2VecEmbedder,
-        DeepWalkEmbedder,
-        Graph2VecEmbedder,
-        BaseGraphEmbedder,
-        EmbeddingConfig,
-        EmbeddingType
     )
 except ImportError:
     # Fallback if absolute imports don't work
-    import sys
     import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+    import sys
+
+    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
     from brain_researcher.services.br_kg.ml.graph_embeddings import (
+        BaseGraphEmbedder,
+        DeepWalkEmbedder,
+        EmbeddingConfig,
+        EmbeddingType,
+        Graph2VecEmbedder,
         GraphEmbedder,
         Node2VecEmbedder,
-        DeepWalkEmbedder,
-        Graph2VecEmbedder,
-        BaseGraphEmbedder,
-        EmbeddingConfig,
-        EmbeddingType
     )
 
 
@@ -45,8 +46,19 @@ except ImportError:
 class MockWord2Vec:
     """Mock Word2Vec for testing."""
 
-    def __init__(self, sentences, vector_size=100, window=5, min_count=1, workers=4,
-                 sg=1, epochs=5, alpha=0.025, hs=0, negative=5):
+    def __init__(
+        self,
+        sentences,
+        vector_size=100,
+        window=5,
+        min_count=1,
+        workers=4,
+        sg=1,
+        epochs=5,
+        alpha=0.025,
+        hs=0,
+        negative=5,
+    ):
         self.vector_size = vector_size
         self.window = window
         self.min_count = min_count
@@ -141,7 +153,7 @@ class TestEmbeddingConfig:
             window_size=5,
             workers=2,
             learning_rate=0.01,
-            epochs=10
+            epochs=10,
         )
 
         assert config.embedding_type == EmbeddingType.DEEPWALK
@@ -156,9 +168,7 @@ class TestEmbeddingConfig:
     def test_to_dict(self):
         """Test converting config to dictionary."""
         config = EmbeddingConfig(
-            embedding_type=EmbeddingType.GRAPH2VEC,
-            dimensions=256,
-            wl_iterations=4
+            embedding_type=EmbeddingType.GRAPH2VEC, dimensions=256, wl_iterations=4
         )
 
         config_dict = config.to_dict()
@@ -176,8 +186,12 @@ class TestBaseGraphEmbedder:
     @pytest.fixture
     def mock_deps(self):
         """Mock dependencies."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE', True):
-            with patch('brain_researcher.services.br_kg.ml.graph_embeddings.nx', MockNetworkX):
+        with patch(
+            "brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE", True
+        ):
+            with patch(
+                "brain_researcher.services.br_kg.ml.graph_embeddings.nx", MockNetworkX
+            ):
                 yield
 
     def test_initialization_with_deps(self, mock_deps):
@@ -193,7 +207,9 @@ class TestBaseGraphEmbedder:
 
     def test_initialization_without_deps(self):
         """Test initialization failure without dependencies."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE', False):
+        with patch(
+            "brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE", False
+        ):
             config = EmbeddingConfig(embedding_type=EmbeddingType.NODE2VEC)
 
             with pytest.raises(ImportError, match="NetworkX and gensim are required"):
@@ -229,10 +245,7 @@ class TestBaseGraphEmbedder:
         embedder = BaseGraphEmbedder(config)
 
         # Add test embeddings
-        embeddings = {
-            "node1": np.array([1.0, 2.0]),
-            "node2": np.array([3.0, 4.0])
-        }
+        embeddings = {"node1": np.array([1.0, 2.0]), "node2": np.array([3.0, 4.0])}
         embedder.embeddings = embeddings
 
         result = embedder.get_all_embeddings()
@@ -251,7 +264,7 @@ class TestBaseGraphEmbedder:
         embedder.embeddings = {
             "node1": np.array([1.0, 0.0]),
             "node2": np.array([0.0, 1.0]),
-            "node3": np.array([1.0, 0.0])  # Same as node1
+            "node3": np.array([1.0, 0.0]),  # Same as node1
         }
 
         # Test similarity
@@ -280,7 +293,7 @@ class TestBaseGraphEmbedder:
             "target": np.array([1.0, 0.0]),
             "similar": np.array([0.9, 0.1]),  # Very similar
             "different": np.array([0.0, 1.0]),  # Orthogonal
-            "opposite": np.array([-1.0, 0.0])  # Opposite
+            "opposite": np.array([-1.0, 0.0]),  # Opposite
         }
 
         similar_nodes = embedder.most_similar("target", topn=2)
@@ -302,8 +315,8 @@ class TestBaseGraphEmbedder:
             "nodes": ["A", "B", "C"],
             "edges": [
                 {"start": "A", "end": "B"},
-                {"source": "B", "target": "C", "properties": {"weight": 2.0}}
-            ]
+                {"source": "B", "target": "C", "properties": {"weight": 2.0}},
+            ],
         }
 
         graph = embedder._create_networkx_graph(graph_data)
@@ -323,9 +336,16 @@ class TestNode2VecEmbedder:
     @pytest.fixture
     def mock_deps(self):
         """Mock dependencies."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE', True):
-            with patch('brain_researcher.services.br_kg.ml.graph_embeddings.nx', MockNetworkX):
-                with patch('brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec', MockWord2Vec):
+        with patch(
+            "brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE", True
+        ):
+            with patch(
+                "brain_researcher.services.br_kg.ml.graph_embeddings.nx", MockNetworkX
+            ):
+                with patch(
+                    "brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec",
+                    MockWord2Vec,
+                ):
                     yield
 
     def test_initialization(self, mock_deps):
@@ -339,10 +359,7 @@ class TestNode2VecEmbedder:
     def test_initialization_with_config(self, mock_deps):
         """Test initialization with custom config."""
         config = EmbeddingConfig(
-            embedding_type=EmbeddingType.NODE2VEC,
-            p=2.0,
-            q=0.5,
-            dimensions=64
+            embedding_type=EmbeddingType.NODE2VEC, p=2.0, q=0.5, dimensions=64
         )
         embedder = Node2VecEmbedder(config)
 
@@ -365,10 +382,7 @@ class TestNode2VecEmbedder:
 
         graph_data = {
             "nodes": ["A", "B", "C"],
-            "edges": [
-                {"start": "A", "end": "B"},
-                {"start": "B", "end": "C"}
-            ]
+            "edges": [{"start": "A", "end": "B"}, {"start": "B", "end": "C"}],
         }
 
         result = embedder.fit(graph_data)
@@ -389,8 +403,8 @@ class TestNode2VecEmbedder:
                 {"start": "A", "end": "B"},
                 {"start": "B", "end": "C"},
                 {"start": "C", "end": "D"},
-                {"start": "A", "end": "C"}
-            ]
+                {"start": "A", "end": "C"},
+            ],
         }
 
         embedder.graph = embedder._create_networkx_graph(graph_data)
@@ -416,8 +430,8 @@ class TestNode2VecEmbedder:
                 {"start": "A", "end": "B"},
                 {"start": "B", "end": "C"},
                 {"start": "B", "end": "D"},
-                {"start": "A", "end": "C"}  # Creates triangle A-B-C
-            ]
+                {"start": "A", "end": "C"},  # Creates triangle A-B-C
+            ],
         }
 
         embedder.graph = embedder._create_networkx_graph(graph_data)
@@ -435,9 +449,16 @@ class TestDeepWalkEmbedder:
     @pytest.fixture
     def mock_deps(self):
         """Mock dependencies."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE', True):
-            with patch('brain_researcher.services.br_kg.ml.graph_embeddings.nx', MockNetworkX):
-                with patch('brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec', MockWord2Vec):
+        with patch(
+            "brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE", True
+        ):
+            with patch(
+                "brain_researcher.services.br_kg.ml.graph_embeddings.nx", MockNetworkX
+            ):
+                with patch(
+                    "brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec",
+                    MockWord2Vec,
+                ):
                     yield
 
     def test_initialization(self, mock_deps):
@@ -452,10 +473,7 @@ class TestDeepWalkEmbedder:
 
         graph_data = {
             "nodes": ["A", "B", "C"],
-            "edges": [
-                {"start": "A", "end": "B"},
-                {"start": "B", "end": "C"}
-            ]
+            "edges": [{"start": "A", "end": "B"}, {"start": "B", "end": "C"}],
         }
 
         result = embedder.fit(graph_data)
@@ -469,10 +487,7 @@ class TestDeepWalkEmbedder:
 
         graph_data = {
             "nodes": ["A", "B", "C"],
-            "edges": [
-                {"start": "A", "end": "B"},
-                {"start": "B", "end": "C"}
-            ]
+            "edges": [{"start": "A", "end": "B"}, {"start": "B", "end": "C"}],
         }
 
         embedder.graph = embedder._create_networkx_graph(graph_data)
@@ -492,9 +507,16 @@ class TestGraph2VecEmbedder:
     @pytest.fixture
     def mock_deps(self):
         """Mock dependencies."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE', True):
-            with patch('brain_researcher.services.br_kg.ml.graph_embeddings.nx', MockNetworkX):
-                with patch('brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec', MockWord2Vec):
+        with patch(
+            "brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE", True
+        ):
+            with patch(
+                "brain_researcher.services.br_kg.ml.graph_embeddings.nx", MockNetworkX
+            ):
+                with patch(
+                    "brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec",
+                    MockWord2Vec,
+                ):
                     yield
 
     def test_initialization(self, mock_deps):
@@ -511,10 +533,7 @@ class TestGraph2VecEmbedder:
         graph_data = {
             "graph_id": "test_graph",
             "nodes": ["A", "B", "C"],
-            "edges": [
-                {"start": "A", "end": "B"},
-                {"start": "B", "end": "C"}
-            ]
+            "edges": [{"start": "A", "end": "B"}, {"start": "B", "end": "C"}],
         }
 
         result = embedder.fit(graph_data)
@@ -531,13 +550,13 @@ class TestGraph2VecEmbedder:
             {
                 "graph_id": "graph1",
                 "nodes": ["A", "B"],
-                "edges": [{"start": "A", "end": "B"}]
+                "edges": [{"start": "A", "end": "B"}],
             },
             {
                 "graph_id": "graph2",
                 "nodes": ["X", "Y", "Z"],
-                "edges": [{"start": "X", "end": "Y"}, {"start": "Y", "end": "Z"}]
-            }
+                "edges": [{"start": "X", "end": "Y"}, {"start": "Y", "end": "Z"}],
+            },
         ]
 
         result = embedder.fit(graphs)
@@ -575,9 +594,16 @@ class TestGraphEmbedder:
     @pytest.fixture
     def mock_deps(self):
         """Mock dependencies."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE', True):
-            with patch('brain_researcher.services.br_kg.ml.graph_embeddings.nx', MockNetworkX):
-                with patch('brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec', MockWord2Vec):
+        with patch(
+            "brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE", True
+        ):
+            with patch(
+                "brain_researcher.services.br_kg.ml.graph_embeddings.nx", MockNetworkX
+            ):
+                with patch(
+                    "brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec",
+                    MockWord2Vec,
+                ):
                     yield
 
     def test_initialization_node2vec(self, mock_deps):
@@ -645,7 +671,7 @@ class TestGraphEmbedder:
 
     def test_visualization_without_matplotlib(self, mock_deps):
         """Test visualization when matplotlib is not available."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.plt', None):
+        with patch("brain_researcher.services.br_kg.ml.graph_embeddings.plt", None):
             embedder = GraphEmbedder(EmbeddingType.NODE2VEC)
 
             result = embedder.visualize_embeddings()
@@ -654,7 +680,7 @@ class TestGraphEmbedder:
 
     def test_visualization_empty_embeddings(self, mock_deps):
         """Test visualization with empty embeddings."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.plt', Mock()):
+        with patch("brain_researcher.services.br_kg.ml.graph_embeddings.plt", Mock()):
             embedder = GraphEmbedder(EmbeddingType.NODE2VEC)
 
             # Mock empty embeddings
@@ -666,21 +692,27 @@ class TestGraphEmbedder:
 
     def test_visualization_with_embeddings(self, mock_deps):
         """Test visualization with actual embeddings."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.plt') as mock_plt:
-            with patch('brain_researcher.services.br_kg.ml.graph_embeddings.TSNE') as mock_tsne:
+        with patch(
+            "brain_researcher.services.br_kg.ml.graph_embeddings.plt"
+        ) as mock_plt:
+            with patch(
+                "brain_researcher.services.br_kg.ml.graph_embeddings.TSNE"
+            ) as mock_tsne:
                 embedder = GraphEmbedder(EmbeddingType.NODE2VEC)
 
                 # Mock embeddings
                 mock_embeddings = {
                     "node1": np.array([1.0, 2.0, 3.0]),
                     "node2": np.array([4.0, 5.0, 6.0]),
-                    "node3": np.array([7.0, 8.0, 9.0])
+                    "node3": np.array([7.0, 8.0, 9.0]),
                 }
                 embedder.get_all_embeddings = Mock(return_value=mock_embeddings)
 
                 # Mock t-SNE
                 mock_tsne_instance = Mock()
-                mock_tsne_instance.fit_transform.return_value = np.array([[1, 2], [3, 4], [5, 6]])
+                mock_tsne_instance.fit_transform.return_value = np.array(
+                    [[1, 2], [3, 4], [5, 6]]
+                )
                 mock_tsne.return_value = mock_tsne_instance
 
                 # Mock matplotlib
@@ -728,7 +760,7 @@ class TestGraphEmbedder:
 
         mock_embeddings = {
             "node1": np.array([1.0, 2.0, 3.0, 4.0]),
-            "node2": np.array([5.0, 6.0, 7.0, 8.0])
+            "node2": np.array([5.0, 6.0, 7.0, 8.0]),
         }
         embedder.get_all_embeddings = Mock(return_value=mock_embeddings)
         embedder.embedder.vocabulary = {"node1", "node2", "node3"}
@@ -748,9 +780,16 @@ class TestModelPersistence:
     @pytest.fixture
     def mock_deps(self):
         """Mock dependencies."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE', True):
-            with patch('brain_researcher.services.br_kg.ml.graph_embeddings.nx', MockNetworkX):
-                with patch('brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec', MockWord2Vec):
+        with patch(
+            "brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE", True
+        ):
+            with patch(
+                "brain_researcher.services.br_kg.ml.graph_embeddings.nx", MockNetworkX
+            ):
+                with patch(
+                    "brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec",
+                    MockWord2Vec,
+                ):
                     yield
 
     def test_save_load_embeddings(self, mock_deps):
@@ -760,12 +799,12 @@ class TestModelPersistence:
         # Set up test data
         test_embeddings = {
             "node1": np.array([1.0, 2.0, 3.0]),
-            "node2": np.array([4.0, 5.0, 6.0])
+            "node2": np.array([4.0, 5.0, 6.0]),
         }
         embedder.embeddings = test_embeddings
         embedder.vocabulary = {"node1", "node2"}
 
-        with tempfile.NamedTemporaryFile(suffix='.pkl', delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
@@ -781,8 +820,7 @@ class TestModelPersistence:
             assert "node1" in new_embedder.embeddings
             assert "node2" in new_embedder.embeddings
             np.testing.assert_array_equal(
-                new_embedder.embeddings["node1"],
-                test_embeddings["node1"]
+                new_embedder.embeddings["node1"], test_embeddings["node1"]
             )
             assert new_embedder.vocabulary == {"node1", "node2"}
 
@@ -796,7 +834,9 @@ class TestDependencyHandling:
 
     def test_missing_dependencies(self):
         """Test ImportError when dependencies are missing."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE', False):
+        with patch(
+            "brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE", False
+        ):
             config = EmbeddingConfig(embedding_type=EmbeddingType.NODE2VEC)
 
             with pytest.raises(ImportError, match="NetworkX and gensim are required"):
@@ -819,9 +859,16 @@ class TestEmbeddingIntegration:
     @pytest.fixture
     def mock_deps(self):
         """Mock dependencies."""
-        with patch('brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE', True):
-            with patch('brain_researcher.services.br_kg.ml.graph_embeddings.nx', MockNetworkX):
-                with patch('brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec', MockWord2Vec):
+        with patch(
+            "brain_researcher.services.br_kg.ml.graph_embeddings.DEPS_AVAILABLE", True
+        ):
+            with patch(
+                "brain_researcher.services.br_kg.ml.graph_embeddings.nx", MockNetworkX
+            ):
+                with patch(
+                    "brain_researcher.services.br_kg.ml.graph_embeddings.Word2Vec",
+                    MockWord2Vec,
+                ):
                     yield
 
     def test_end_to_end_node2vec(self, mock_deps):
@@ -835,8 +882,8 @@ class TestEmbeddingIntegration:
                 {"start": "C", "end": "D"},
                 {"start": "D", "end": "E"},
                 {"start": "A", "end": "C"},  # Create some cycles
-                {"start": "B", "end": "D"}
-            ]
+                {"start": "B", "end": "D"},
+            ],
         }
 
         # Configure and train embeddings
@@ -846,7 +893,7 @@ class TestEmbeddingIntegration:
             walk_length=10,
             num_walks=5,
             p=1.0,
-            q=1.0
+            q=1.0,
         )
 
         embedder = GraphEmbedder(EmbeddingType.NODE2VEC, config)
@@ -877,8 +924,8 @@ class TestEmbeddingIntegration:
                 "nodes": ["Alice", "Bob", "Charlie"],
                 "edges": [
                     {"start": "Alice", "end": "Bob"},
-                    {"start": "Bob", "end": "Charlie"}
-                ]
+                    {"start": "Bob", "end": "Charlie"},
+                ],
             },
             {
                 "graph_id": "protein_network",
@@ -887,15 +934,13 @@ class TestEmbeddingIntegration:
                     {"start": "P1", "end": "P2"},
                     {"start": "P2", "end": "P3"},
                     {"start": "P3", "end": "P4"},
-                    {"start": "P1", "end": "P4"}
-                ]
-            }
+                    {"start": "P1", "end": "P4"},
+                ],
+            },
         ]
 
         config = EmbeddingConfig(
-            embedding_type=EmbeddingType.GRAPH2VEC,
-            dimensions=32,
-            wl_iterations=2
+            embedding_type=EmbeddingType.GRAPH2VEC, dimensions=32, wl_iterations=2
         )
 
         embedder = GraphEmbedder(EmbeddingType.GRAPH2VEC, config)
@@ -918,8 +963,8 @@ class TestEmbeddingIntegration:
                 {"start": "A", "end": "B"},
                 {"start": "B", "end": "C"},
                 {"start": "C", "end": "D"},
-                {"start": "A", "end": "D"}
-            ]
+                {"start": "A", "end": "D"},
+            ],
         }
 
         methods = [EmbeddingType.NODE2VEC, EmbeddingType.DEEPWALK]

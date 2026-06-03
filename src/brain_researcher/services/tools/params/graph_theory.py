@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -18,11 +17,11 @@ class GraphTheoryParameters:
     output_dir: str
     graph_type: str
     threshold_method: str
-    threshold_value: Optional[float]
+    threshold_value: float | None
     compute_basic_metrics: bool
-    basic_metrics: List[str]
+    basic_metrics: list[str]
     compute_centrality: bool
-    centrality_metrics: List[str]
+    centrality_metrics: list[str]
     detect_communities: bool
     community_method: str
     detect_hubs: bool
@@ -30,7 +29,7 @@ class GraphTheoryParameters:
     compute_rich_club: bool
     compute_small_world: bool
     compute_efficiency: bool
-    efficiency_types: List[str]
+    efficiency_types: list[str]
     test_robustness: bool
     removal_fraction: float
     permutation_test: bool
@@ -39,10 +38,10 @@ class GraphTheoryParameters:
     save_communities: bool
     save_processed_graph: bool
     visualize: bool
-    random_state: Optional[int]
+    random_state: int | None
 
 
-def graph_theory_from_payload(payload: Dict[str, object]) -> GraphTheoryParameters:
+def graph_theory_from_payload(payload: dict[str, object]) -> GraphTheoryParameters:
     """Normalise payload into graph theory parameters."""
 
     output_dir = payload.get("output_dir") or Path.cwd() / "graph_theory"
@@ -54,9 +53,18 @@ def graph_theory_from_payload(payload: Dict[str, object]) -> GraphTheoryParamete
         threshold_method=str(payload.get("threshold_method", "proportional")),
         threshold_value=payload.get("threshold_value"),
         compute_basic_metrics=bool(payload.get("compute_basic_metrics", True)),
-        basic_metrics=list(payload.get("basic_metrics", ["degree", "strength", "clustering", "path_length"])),
+        basic_metrics=list(
+            payload.get(
+                "basic_metrics", ["degree", "strength", "clustering", "path_length"]
+            )
+        ),
         compute_centrality=bool(payload.get("compute_centrality", True)),
-        centrality_metrics=list(payload.get("centrality_metrics", ["betweenness", "eigenvector", "pagerank", "closeness"])),
+        centrality_metrics=list(
+            payload.get(
+                "centrality_metrics",
+                ["betweenness", "eigenvector", "pagerank", "closeness"],
+            )
+        ),
         detect_communities=bool(payload.get("detect_communities", True)),
         community_method=str(payload.get("community_method", "louvain")),
         detect_hubs=bool(payload.get("detect_hubs", True)),
@@ -64,7 +72,9 @@ def graph_theory_from_payload(payload: Dict[str, object]) -> GraphTheoryParamete
         compute_rich_club=bool(payload.get("compute_rich_club", False)),
         compute_small_world=bool(payload.get("compute_small_world", True)),
         compute_efficiency=bool(payload.get("compute_efficiency", True)),
-        efficiency_types=list(payload.get("efficiency_types", ["global", "local", "nodal"])),
+        efficiency_types=list(
+            payload.get("efficiency_types", ["global", "local", "nodal"])
+        ),
         test_robustness=bool(payload.get("test_robustness", False)),
         removal_fraction=float(payload.get("removal_fraction", 0.5)),
         permutation_test=bool(payload.get("permutation_test", False)),
@@ -89,7 +99,9 @@ def _load_matrix(path: str) -> np.ndarray:
     raise ValueError(f"Unsupported connectivity format for {path}")
 
 
-def _threshold_matrix(matrix: np.ndarray, method: str, value: Optional[float]) -> np.ndarray:
+def _threshold_matrix(
+    matrix: np.ndarray, method: str, value: float | None
+) -> np.ndarray:
     adj = matrix.copy()
     if method == "absolute" and value is not None:
         adj[np.abs(adj) < value] = 0.0
@@ -101,7 +113,7 @@ def _threshold_matrix(matrix: np.ndarray, method: str, value: Optional[float]) -
     elif method == "mst":
         # simple spanning-tree approximation using absolute weights
         temp = np.abs(adj)
-        visited = set([0])
+        visited = {0}
         result = np.zeros_like(adj)
         while len(visited) < adj.shape[0]:
             best = None
@@ -124,8 +136,8 @@ def _threshold_matrix(matrix: np.ndarray, method: str, value: Optional[float]) -
     return adj
 
 
-def _basic_metrics(adj: np.ndarray, metrics: List[str]) -> Dict[str, Dict[str, float]]:
-    out: Dict[str, Dict[str, float]] = {}
+def _basic_metrics(adj: np.ndarray, metrics: list[str]) -> dict[str, dict[str, float]]:
+    out: dict[str, dict[str, float]] = {}
     weights = np.abs(adj)
     degree = (weights != 0).sum(axis=1)
     strength = weights.sum(axis=1)
@@ -149,14 +161,18 @@ def _basic_metrics(adj: np.ndarray, metrics: List[str]) -> Dict[str, Dict[str, f
             "std": float(np.std(coeff)),
         }
     if "path_length" in metrics:
-        density = float(np.count_nonzero(adj) / (adj.shape[0] * (adj.shape[0] - 1))) if adj.shape[0] > 1 else 0.0
+        density = (
+            float(np.count_nonzero(adj) / (adj.shape[0] * (adj.shape[0] - 1)))
+            if adj.shape[0] > 1
+            else 0.0
+        )
         path_estimate = float(1.0 / (density + 1e-6))
         out["path_length"] = {"estimate": path_estimate}
     return out
 
 
-def _centrality(metrics: List[str], adj: np.ndarray) -> Dict[str, Dict[str, float]]:
-    out: Dict[str, Dict[str, float]] = {}
+def _centrality(metrics: list[str], adj: np.ndarray) -> dict[str, dict[str, float]]:
+    out: dict[str, dict[str, float]] = {}
     n = adj.shape[0]
     weights = np.abs(adj)
     if "betweenness" in metrics:
@@ -181,7 +197,9 @@ def _centrality(metrics: List[str], adj: np.ndarray) -> Dict[str, Dict[str, floa
     return out
 
 
-def _community_assignments(adj: np.ndarray, rng: np.random.Generator, method: str) -> Dict[str, object]:
+def _community_assignments(
+    adj: np.ndarray, rng: np.random.Generator, method: str
+) -> dict[str, object]:
     n = adj.shape[0]
     n_comm = max(2, int(np.sqrt(n) // 1))
     assignments = rng.integers(0, n_comm, size=n)
@@ -194,7 +212,7 @@ def _community_assignments(adj: np.ndarray, rng: np.random.Generator, method: st
     }
 
 
-def _hub_summary(adj: np.ndarray, method: str) -> Dict[str, object]:
+def _hub_summary(adj: np.ndarray, method: str) -> dict[str, object]:
     weights = np.abs(adj)
     if method == "degree":
         scores = (weights != 0).sum(axis=1)
@@ -207,7 +225,7 @@ def _hub_summary(adj: np.ndarray, method: str) -> Dict[str, object]:
     return {"method": method, "threshold": threshold, "indices": hubs}
 
 
-def _rich_club(adj: np.ndarray) -> Dict[str, float]:
+def _rich_club(adj: np.ndarray) -> dict[str, float]:
     deg = (np.abs(adj) != 0).sum(axis=1)
     k = np.arange(1, max(int(deg.max()), 2))
     if k.size == 0:
@@ -224,10 +242,10 @@ def _rich_club(adj: np.ndarray) -> Dict[str, float]:
     return {"k_values": k.tolist(), "rich_club": rc}
 
 
-def _efficiency(adj: np.ndarray, types: List[str]) -> Dict[str, float]:
+def _efficiency(adj: np.ndarray, types: list[str]) -> dict[str, float]:
     density = float(np.count_nonzero(adj)) / max(adj.shape[0] * (adj.shape[0] - 1), 1)
     base = 1.0 / (1 + np.exp(-density * 10))
-    out: Dict[str, float] = {}
+    out: dict[str, float] = {}
     if "global" in types:
         out["global"] = base
     if "local" in types:
@@ -237,7 +255,7 @@ def _efficiency(adj: np.ndarray, types: List[str]) -> Dict[str, float]:
     return out
 
 
-def run_graph_theory(params: GraphTheoryParameters) -> Dict[str, object]:
+def run_graph_theory(params: GraphTheoryParameters) -> dict[str, object]:
     if params.random_state is not None:
         np.random.seed(int(params.random_state))
     rng = np.random.default_rng(params.random_state)
@@ -250,7 +268,7 @@ def run_graph_theory(params: GraphTheoryParameters) -> Dict[str, object]:
 
     adj = _threshold_matrix(matrix, params.threshold_method, params.threshold_value)
 
-    metrics: Dict[str, object] = {}
+    metrics: dict[str, object] = {}
     if params.compute_basic_metrics:
         metrics["basic"] = _basic_metrics(adj, params.basic_metrics)
     if params.compute_centrality:
@@ -258,7 +276,9 @@ def run_graph_theory(params: GraphTheoryParameters) -> Dict[str, object]:
     if params.compute_efficiency:
         metrics["efficiency"] = _efficiency(adj, params.efficiency_types)
     if params.compute_small_world:
-        density = float(np.count_nonzero(adj)) / max(adj.shape[0] * (adj.shape[0] - 1), 1)
+        density = float(np.count_nonzero(adj)) / max(
+            adj.shape[0] * (adj.shape[0] - 1), 1
+        )
         metrics["small_world"] = {"sigma_estimate": float(1 + density)}
     if params.compute_rich_club:
         metrics["rich_club"] = _rich_club(adj)
@@ -289,7 +309,7 @@ def run_graph_theory(params: GraphTheoryParameters) -> Dict[str, object]:
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {
+    outputs: dict[str, str | None] = {
         "metrics": None,
         "communities": None,
         "processed_graph": None,

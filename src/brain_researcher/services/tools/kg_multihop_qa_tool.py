@@ -124,9 +124,7 @@ class KGMultihopQATool(NeuroToolWrapper):
         super().__init__()
         self.query_service = query_service or QueryService()
         self.runtime_seed_mapper_mode = (
-            os.environ.get("BR_KG_MULTIHOP_RUNTIME_SEED_MAPPER", "auto")
-            .strip()
-            .lower()
+            os.environ.get("BR_KG_MULTIHOP_RUNTIME_SEED_MAPPER", "auto").strip().lower()
         )
         self._runtime_mapper: Any | None = None
         self._runtime_mapper_initialized = False
@@ -224,7 +222,11 @@ class KGMultihopQATool(NeuroToolWrapper):
     @staticmethod
     def _resolve_max_seed_entities(relation_question: bool) -> int:
         raw = os.getenv(
-            "BR_KG_MULTIHOP_MAX_SEED_ENTITIES_REL" if relation_question else "BR_KG_MULTIHOP_MAX_SEED_ENTITIES",
+            (
+                "BR_KG_MULTIHOP_MAX_SEED_ENTITIES_REL"
+                if relation_question
+                else "BR_KG_MULTIHOP_MAX_SEED_ENTITIES"
+            ),
             "2" if relation_question else "6",
         )
         try:
@@ -502,7 +504,15 @@ class KGMultihopQATool(NeuroToolWrapper):
 
     @staticmethod
     def _node_label(node: dict[str, Any]) -> str:
-        for key in ("label", "name", "id", "concept_id", "task_id", "region_id", "kg_id"):
+        for key in (
+            "label",
+            "name",
+            "id",
+            "concept_id",
+            "task_id",
+            "region_id",
+            "kg_id",
+        ):
             value = node.get(key)
             if value:
                 return str(value)
@@ -550,7 +560,9 @@ class KGMultihopQATool(NeuroToolWrapper):
             ),
             default=0,
         )
-        seed_labels = ", ".join(entity["label"] for entity in seed_entities[:3] if entity.get("label"))
+        seed_labels = ", ".join(
+            entity["label"] for entity in seed_entities[:3] if entity.get("label")
+        )
         if not seed_labels:
             seed_labels = ", ".join(entity["kg_id"] for entity in seed_entities[:3])
         preview = cls._format_path_preview(paths[0])
@@ -809,8 +821,8 @@ class KGMultihopQATool(NeuroToolWrapper):
 
         seed_extract_started = time.monotonic()
         search_terms = self._extract_search_terms(args.question)
-        search_terms, runtime_seed_mapper_meta = self._augment_seed_terms_with_runtime_mapping(
-            search_terms=search_terms
+        search_terms, runtime_seed_mapper_meta = (
+            self._augment_seed_terms_with_runtime_mapping(search_terms=search_terms)
         )
         seed_extract_ms = (time.monotonic() - seed_extract_started) * 1000.0
 
@@ -1038,11 +1050,15 @@ class KGMultihopQATool(NeuroToolWrapper):
                     "nodes": list(fallback_nodes.values()),
                     "edges": fallback_edges[:max_results],
                 }
-                warnings.append("Used neighbors fallback because multi-hop traversal returned no paths")
+                warnings.append(
+                    "Used neighbors fallback because multi-hop traversal returned no paths"
+                )
                 fallback_used = True
             fallback_ms = (time.monotonic() - fallback_started) * 1000.0
         elif not paths and budget_exhausted:
-            warnings.append("Skipped neighbors fallback because runtime budget was exhausted")
+            warnings.append(
+                "Skipped neighbors fallback because runtime budget was exhausted"
+            )
 
         subgraph = full_subgraph if args.return_subgraph else {"nodes": [], "edges": []}
         if not args.return_subgraph:

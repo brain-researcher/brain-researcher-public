@@ -14,15 +14,16 @@ This module consolidates parameters from:
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
-
+from typing import Any
 
 # =============================================================================
 # Utility Functions
 # =============================================================================
 
-def _as_tuple(values: Iterable[str] | str | None) -> Tuple[str, ...]:
+
+def _as_tuple(values: Iterable[str] | str | None) -> tuple[str, ...]:
     """Normalize list/string to tuple."""
     if values is None:
         return ()
@@ -56,6 +57,7 @@ def _coerce_float(value: Any, *, default: float | None = None) -> float | None:
 # FitLins Parameters (NEW - migrated from FitLinsConfig)
 # =============================================================================
 
+
 @dataclass(frozen=True)
 class FitLinsParameters:
     """Immutable FitLins configuration.
@@ -63,13 +65,14 @@ class FitLinsParameters:
     Migrated from FitLinsConfig dataclass to follow the frozen dataclass
     pattern used by FMRIPrepParameters and QSIPrepParameters.
     """
+
     bids_dir: str
     output_dir: str
     analysis_level: str = "dataset"
     model: str | None = None
     derivatives_dir: str | None = None
-    participant_label: Tuple[str, ...] = field(default_factory=tuple)
-    exclude_participant: Tuple[str, ...] = field(default_factory=tuple)
+    participant_label: tuple[str, ...] = field(default_factory=tuple)
+    exclude_participant: tuple[str, ...] = field(default_factory=tuple)
     work_dir: str | None = None
     space: str | None = None
     desc: str | None = None
@@ -78,7 +81,7 @@ class FitLinsParameters:
     hrf_model: str | None = None
     drift_model: str | None = None
     drift_order: int | None = None
-    include_confounds: Tuple[str, ...] = field(default_factory=tuple)
+    include_confounds: tuple[str, ...] = field(default_factory=tuple)
     confound_strategy: str | None = None
     confounds_file: str | None = None
     confounds_target_file: str | None = None
@@ -88,21 +91,23 @@ class FitLinsParameters:
     estimator: str | None = None
     reports_only: bool = False
     write_graph: bool = False
-    ignore: Tuple[str, ...] = field(default_factory=tuple)
-    force_index: Tuple[str, ...] = field(default_factory=tuple)
-    extra_args: Tuple[str, ...] = field(default_factory=tuple)
+    ignore: tuple[str, ...] = field(default_factory=tuple)
+    force_index: tuple[str, ...] = field(default_factory=tuple)
+    extra_args: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "participant_label", _as_tuple(self.participant_label))
-        object.__setattr__(self, "exclude_participant", _as_tuple(self.exclude_participant))
+        object.__setattr__(
+            self, "exclude_participant", _as_tuple(self.exclude_participant)
+        )
         object.__setattr__(self, "include_confounds", _as_tuple(self.include_confounds))
         object.__setattr__(self, "ignore", _as_tuple(self.ignore))
         object.__setattr__(self, "force_index", _as_tuple(self.force_index))
         object.__setattr__(self, "extra_args", _as_tuple(self.extra_args))
 
-    def command(self, include_executable: bool = True) -> List[str]:
+    def command(self, include_executable: bool = True) -> list[str]:
         """Build FitLins CLI command."""
-        cmd: List[str] = []
+        cmd: list[str] = []
         if include_executable:
             cmd.append("fitlins")
 
@@ -136,31 +141,34 @@ class FitLinsParameters:
         cmd.extend(self.extra_args)
         return cmd
 
-    def env(self) -> Dict[str, str]:
+    def env(self) -> dict[str, str]:
         """Return environment variables for FitLins execution."""
-        env: Dict[str, str] = {}
+        env: dict[str, str] = {}
         if self.work_dir:
             env["FITLINS_WORK_DIR"] = self.work_dir
         return env
 
 
-def build_fitlins_command(params: FitLinsParameters, *, include_executable: bool = True) -> List[str]:
+def build_fitlins_command(
+    params: FitLinsParameters, *, include_executable: bool = True
+) -> list[str]:
     """Build fitlins CLI command from parameters."""
     return params.command(include_executable=include_executable)
 
 
-def build_fitlins_env(params: FitLinsParameters) -> Dict[str, str]:
+def build_fitlins_env(params: FitLinsParameters) -> dict[str, str]:
     """Build FitLins environment variables."""
     return params.env()
 
 
 def fitlins_from_payload(payload: Mapping[str, Any]) -> FitLinsParameters:
     """Create FitLinsParameters from dict payload."""
+
     def _seq(name: str) -> Sequence[str]:
         value = payload.get(name)
         if value is None:
             return ()
-        if isinstance(value, (list, tuple, set)):
+        if isinstance(value, list | tuple | set):
             return tuple(str(v) for v in value)
         return (str(value),)
 
@@ -174,7 +182,9 @@ def fitlins_from_payload(payload: Mapping[str, Any]) -> FitLinsParameters:
         output_dir=str(payload["output_dir"]),
         analysis_level=str(payload.get("analysis_level", "dataset")),
         model=payload.get("model") or None,
-        derivatives_dir=payload.get("derivatives_dir") or payload.get("derivatives") or None,
+        derivatives_dir=payload.get("derivatives_dir")
+        or payload.get("derivatives")
+        or None,
         participant_label=_as_tuple(_seq("participant_label")),
         exclude_participant=_as_tuple(_seq("exclude_participant")),
         work_dir=payload.get("work_dir") or None,
@@ -204,6 +214,7 @@ def fitlins_from_payload(payload: Mapping[str, Any]) -> FitLinsParameters:
 # fMRIPrep Parameters (MOVED from neurocore/fmriprep.py)
 # =============================================================================
 
+
 @dataclass(frozen=True)
 class FMRIPrepParameters:
     """Normalised configuration for fMRIPrep command construction.
@@ -212,13 +223,14 @@ class FMRIPrepParameters:
     MCP ToolHub can share validation/command-building logic without importing
     heavy execution dependencies.
     """
+
     bids_dir: str
     output_dir: str
     analysis_level: str = "participant"
-    participant_label: Tuple[str, ...] = field(default_factory=tuple)
+    participant_label: tuple[str, ...] = field(default_factory=tuple)
     work_dir: str | None = None
     fs_license_file: str | None = None
-    output_spaces: Tuple[str, ...] = field(default_factory=tuple)
+    output_spaces: tuple[str, ...] = field(default_factory=tuple)
     skip_bids_validation: bool = False
     use_aroma: bool = False
     cifti_output: str | bool | None = None
@@ -242,7 +254,7 @@ class FMRIPrepParameters:
     dummy_scans: int | None = None
     use_syn_sdc: str | bool | None = None
     force_syn: bool = False
-    extra_args: Tuple[str, ...] = field(default_factory=tuple)
+    extra_args: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -251,9 +263,9 @@ class FMRIPrepParameters:
         object.__setattr__(self, "output_spaces", _as_tuple(self.output_spaces))
         object.__setattr__(self, "extra_args", _as_tuple(self.extra_args))
 
-    def command(self, include_executable: bool = True) -> List[str]:
+    def command(self, include_executable: bool = True) -> list[str]:
         """Render the CLI invocation list for fMRIPrep."""
-        cmd: List[str] = []
+        cmd: list[str] = []
 
         if include_executable:
             cmd.append("fmriprep")
@@ -349,24 +361,26 @@ class FMRIPrepParameters:
 
         return cmd
 
-    def to_command_args(self) -> List[str]:
+    def to_command_args(self) -> list[str]:
         """Backward-compatible alias for command()."""
         return self.command(include_executable=True)
 
-    def env(self) -> Dict[str, str]:
+    def env(self) -> dict[str, str]:
         """Return environment variables required for execution."""
-        env: Dict[str, str] = {}
+        env: dict[str, str] = {}
         if self.fs_license_file:
             env["FS_LICENSE"] = self.fs_license_file
         return env
 
 
-def build_fmriprep_command(params: FMRIPrepParameters, *, include_executable: bool = True) -> List[str]:
+def build_fmriprep_command(
+    params: FMRIPrepParameters, *, include_executable: bool = True
+) -> list[str]:
     """Convenience wrapper for callers that only need the command."""
     return params.command(include_executable=include_executable)
 
 
-def build_fmriprep_env(params: FMRIPrepParameters) -> Dict[str, str]:
+def build_fmriprep_env(params: FMRIPrepParameters) -> dict[str, str]:
     """Convenience wrapper for environment construction."""
     return params.env()
 
@@ -377,16 +391,17 @@ def fmriprep_from_payload(payload: Mapping[str, Any]) -> FMRIPrepParameters:
     This helper sanitises optional fields (e.g. participant labels coming in as
     a single string) to keep the dataclass immutable and predictable.
     """
+
     def _get_sequence(name: str) -> Sequence[str]:
         value = payload.get(name)
         if value is None:
             return ()
-        if isinstance(value, (list, tuple, set)):
+        if isinstance(value, list | tuple | set):
             return tuple(str(v) for v in value)
         return (str(value),)
 
     extra_args = payload.get("extra_args") or ()
-    if isinstance(extra_args, (list, tuple, set)):
+    if isinstance(extra_args, list | tuple | set):
         extra_args = tuple(str(v) for v in extra_args)
     else:
         extra_args = (str(extra_args),)
@@ -433,8 +448,12 @@ def fmriprep_from_payload(payload: Mapping[str, Any]) -> FMRIPrepParameters:
         skull_strip_fixed_seed=bool(payload.get("skull_strip_fixed_seed", False)),
         bold2t1w_init=str(payload.get("bold2t1w_init", "register")),
         bold2t1w_dof=_coerce_int(payload.get("bold2t1w_dof"), default=6) or 6,
-        fd_spike_threshold=_coerce_float(payload.get("fd_spike_threshold"), default=0.5) or 0.5,
-        dvars_spike_threshold=_coerce_float(payload.get("dvars_spike_threshold"), default=1.5) or 1.5,
+        fd_spike_threshold=_coerce_float(payload.get("fd_spike_threshold"), default=0.5)
+        or 0.5,
+        dvars_spike_threshold=_coerce_float(
+            payload.get("dvars_spike_threshold"), default=1.5
+        )
+        or 1.5,
         me_output_echos=bool(payload.get("me_output_echos", False)),
         medial_surface_nan=bool(payload.get("medial_surface_nan", False)),
         dummy_scans=_coerce_int(payload.get("dummy_scans")),
@@ -448,13 +467,15 @@ def fmriprep_from_payload(payload: Mapping[str, Any]) -> FMRIPrepParameters:
 # QSIPrep Parameters (MOVED from neurocore/qsiprep.py)
 # =============================================================================
 
+
 @dataclass(frozen=True)
 class QSIPrepParameters:
     """Normalised configuration for QSIPrep invocation."""
+
     bids_dir: str
     output_dir: str
     analysis_level: str = "participant"
-    participant_label: Tuple[str, ...] = field(default_factory=tuple)
+    participant_label: tuple[str, ...] = field(default_factory=tuple)
     work_dir: str | None = None
     fs_license_file: str | None = None
     bids_filter_file: str | None = None
@@ -479,7 +500,7 @@ class QSIPrepParameters:
     notrack: bool = True
     resource_monitor: bool = False
     verbose: int = 1
-    extra_args: Tuple[str, ...] = field(default_factory=tuple)
+    extra_args: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "participant_label", _as_tuple(self.participant_label))
@@ -489,9 +510,9 @@ class QSIPrepParameters:
         if distortion_value is not None and str(distortion_value).lower() != "none":
             object.__setattr__(self, "use_syn_sdc", True)
 
-    def command(self, include_executable: bool = True) -> List[str]:
+    def command(self, include_executable: bool = True) -> list[str]:
         """Build QSIPrep CLI command."""
-        cmd: List[str] = []
+        cmd: list[str] = []
         if include_executable:
             cmd.append("qsiprep")
 
@@ -550,35 +571,38 @@ class QSIPrepParameters:
 
         return cmd
 
-    def env(self) -> Dict[str, str]:
+    def env(self) -> dict[str, str]:
         """Return environment variables for QSIPrep execution."""
         if self.fs_license_file:
             return {"FS_LICENSE": self.fs_license_file}
         return {}
 
 
-def build_qsiprep_command(params: QSIPrepParameters, *, include_executable: bool = True) -> List[str]:
+def build_qsiprep_command(
+    params: QSIPrepParameters, *, include_executable: bool = True
+) -> list[str]:
     """Build qsiprep CLI command from parameters."""
     return params.command(include_executable=include_executable)
 
 
-def build_qsiprep_env(params: QSIPrepParameters) -> Dict[str, str]:
+def build_qsiprep_env(params: QSIPrepParameters) -> dict[str, str]:
     """Build QSIPrep environment variables."""
     return params.env()
 
 
 def qsiprep_from_payload(payload: Mapping[str, Any]) -> QSIPrepParameters:
     """Create QSIPrepParameters from dict payload."""
+
     def _seq(name: str) -> Sequence[str]:
         value = payload.get(name)
         if value is None:
             return ()
-        if isinstance(value, (list, tuple, set)):
+        if isinstance(value, list | tuple | set):
             return tuple(str(v) for v in value)
         return (str(value),)
 
     extra_args = payload.get("extra_args") or ()
-    if isinstance(extra_args, (list, tuple, set)):
+    if isinstance(extra_args, list | tuple | set):
         extra_args_tuple = tuple(str(v) for v in extra_args)
     else:
         extra_args_tuple = (str(extra_args),)
@@ -596,7 +620,11 @@ def qsiprep_from_payload(payload: Mapping[str, Any]) -> QSIPrepParameters:
         work_dir=payload.get("work_dir") or None,
         fs_license_file=payload.get("fs_license_file") or payload.get("fs_license"),
         bids_filter_file=payload.get("bids_filter_file") or None,
-        denoise_method=str(payload.get("denoise_method", "patch2self")) if payload.get("denoise_method") is not None else None,
+        denoise_method=(
+            str(payload.get("denoise_method", "patch2self"))
+            if payload.get("denoise_method") is not None
+            else None
+        ),
         distortion_correction=payload.get("distortion_correction"),
         use_syn_sdc=use_syn_sdc,
         hmc_model=payload.get("hmc_model", "3dSHORE"),
@@ -604,10 +632,15 @@ def qsiprep_from_payload(payload: Mapping[str, Any]) -> QSIPrepParameters:
         b0_threshold=_coerce_float(payload.get("b0_threshold"), default=100.0),
         output_resolution=payload.get("output_resolution") or None,
         skip_bids_validation=bool(payload.get("skip_bids_validation", False)),
-        impute_slice_threshold=_coerce_float(payload.get("impute_slice_threshold"), default=0.0) or 0.0,
+        impute_slice_threshold=_coerce_float(
+            payload.get("impute_slice_threshold"), default=0.0
+        )
+        or 0.0,
         skull_strip_template=payload.get("skull_strip_template", "OASIS"),
         skull_strip_fixed_seed=bool(payload.get("skull_strip_fixed_seed", False)),
-        force_spatial_normalization=bool(payload.get("force_spatial_normalization", True)),
+        force_spatial_normalization=bool(
+            payload.get("force_spatial_normalization", True)
+        ),
         shoreline_iters=_coerce_int(payload.get("shoreline_iters"), default=2),
         write_graph=bool(payload.get("write_graph", False)),
         n_cpus=_coerce_int(payload.get("n_cpus")),
@@ -625,6 +658,7 @@ def qsiprep_from_payload(payload: Mapping[str, Any]) -> QSIPrepParameters:
 # MRIQC Parameters (MOVED from neurocore/mriqc.py)
 # =============================================================================
 
+
 @dataclass(frozen=True)
 class MRIQCParameters:
     """Normalised configuration for MRIQC CLI invocation."""
@@ -632,10 +666,10 @@ class MRIQCParameters:
     bids_dir: str
     output_dir: str
     analysis_level: str = "participant"
-    participant_label: Tuple[str, ...] = field(default_factory=tuple)
-    session_id: Tuple[str, ...] = field(default_factory=tuple)
-    run_id: Tuple[str, ...] = field(default_factory=tuple)
-    modalities: Tuple[str, ...] = field(default_factory=tuple)
+    participant_label: tuple[str, ...] = field(default_factory=tuple)
+    session_id: tuple[str, ...] = field(default_factory=tuple)
+    run_id: tuple[str, ...] = field(default_factory=tuple)
+    modalities: tuple[str, ...] = field(default_factory=tuple)
     work_dir: str | None = None
     bids_filter_file: str | None = None
     dsname: str | None = None
@@ -646,7 +680,7 @@ class MRIQCParameters:
     verbose_reports: bool = False
     no_sub: bool = False
     random_seed: int | None = None
-    extra_args: Tuple[str, ...] = field(default_factory=tuple)
+    extra_args: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "participant_label", _as_tuple(self.participant_label))
@@ -655,9 +689,9 @@ class MRIQCParameters:
         object.__setattr__(self, "modalities", _as_tuple(self.modalities))
         object.__setattr__(self, "extra_args", _as_tuple(self.extra_args))
 
-    def command(self, include_executable: bool = True) -> List[str]:
+    def command(self, include_executable: bool = True) -> list[str]:
         """Build MRIQC CLI command."""
-        cmd: List[str] = []
+        cmd: list[str] = []
         if include_executable:
             cmd.append("mriqc")
 
@@ -696,33 +730,36 @@ class MRIQCParameters:
 
         return cmd
 
-    def env(self) -> Dict[str, str]:
+    def env(self) -> dict[str, str]:
         """Return environment variables for MRIQC execution."""
         return {}
 
 
-def build_mriqc_command(params: MRIQCParameters, *, include_executable: bool = True) -> List[str]:
+def build_mriqc_command(
+    params: MRIQCParameters, *, include_executable: bool = True
+) -> list[str]:
     """Build mriqc CLI command from parameters."""
     return params.command(include_executable=include_executable)
 
 
-def build_mriqc_env(params: MRIQCParameters) -> Dict[str, str]:
+def build_mriqc_env(params: MRIQCParameters) -> dict[str, str]:
     """Build MRIQC environment variables."""
     return params.env()
 
 
 def mriqc_from_payload(payload: Mapping[str, Any]) -> MRIQCParameters:
     """Create MRIQCParameters from dict payload."""
+
     def _seq(name: str) -> Sequence[str]:
         value = payload.get(name)
         if value is None:
             return ()
-        if isinstance(value, (list, tuple, set)):
+        if isinstance(value, list | tuple | set):
             return tuple(str(v) for v in value)
         return (str(value),)
 
     extra_args = payload.get("extra_args") or ()
-    if isinstance(extra_args, (list, tuple, set)):
+    if isinstance(extra_args, list | tuple | set):
         extra_args_tuple = tuple(str(v) for v in extra_args)
     else:
         extra_args_tuple = (str(extra_args),)

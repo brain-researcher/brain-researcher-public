@@ -12,7 +12,11 @@ from brain_researcher.services.br_kg.etl.dataset_task_linker import (
 )
 
 
-def _config(enable_fuzzy: bool = True, fuzzy_threshold: float = 0.8, ignore_blacklist: bool = False):
+def _config(
+    enable_fuzzy: bool = True,
+    fuzzy_threshold: float = 0.8,
+    ignore_blacklist: bool = False,
+):
     return TaskMappingConfig(
         blacklist={"rest"},
         remove_suffixes=[" task", " paradigm"],
@@ -26,7 +30,9 @@ def _config(enable_fuzzy: bool = True, fuzzy_threshold: float = 0.8, ignore_blac
 @pytest.fixture(autouse=True)
 def _default_to_legacy_normalization(monkeypatch):
     monkeypatch.delenv(dataset_task_linker._LEGACY_NORMALIZATION_ENV, raising=False)
-    monkeypatch.setattr(dataset_task_linker, "_load_task_matching_profile", lambda: None)
+    monkeypatch.setattr(
+        dataset_task_linker, "_load_task_matching_profile", lambda: None
+    )
 
 
 def test_normalize_task_applies_replacements_and_suffixes():
@@ -46,7 +52,9 @@ def test_normalize_task_prefers_matching_profile_normalization(monkeypatch):
 
     normalization = _Normalization()
     profile = type("StubProfile", (), {"normalization": normalization})()
-    monkeypatch.setattr(dataset_task_linker, "_load_task_matching_profile", lambda: profile)
+    monkeypatch.setattr(
+        dataset_task_linker, "_load_task_matching_profile", lambda: profile
+    )
 
     config = _config(enable_fuzzy=False)
     assert normalize_task("N-back task", config) == "profile-normalized"
@@ -57,9 +65,15 @@ def test_normalize_task_falls_back_to_legacy_when_profile_returns_empty(monkeypa
     profile = type(
         "StubProfile",
         (),
-        {"normalization": type("StubNormalization", (), {"normalize": staticmethod(lambda *_: "")})()},
+        {
+            "normalization": type(
+                "StubNormalization", (), {"normalize": staticmethod(lambda *_: "")}
+            )()
+        },
     )()
-    monkeypatch.setattr(dataset_task_linker, "_load_task_matching_profile", lambda: profile)
+    monkeypatch.setattr(
+        dataset_task_linker, "_load_task_matching_profile", lambda: profile
+    )
 
     config = _config(enable_fuzzy=False)
     assert normalize_task("N-back task", config) == "nback"
@@ -77,7 +91,9 @@ def test_normalize_task_legacy_toggle_forces_rollback_path(monkeypatch):
             )()
         },
     )()
-    monkeypatch.setattr(dataset_task_linker, "_load_task_matching_profile", lambda: profile)
+    monkeypatch.setattr(
+        dataset_task_linker, "_load_task_matching_profile", lambda: profile
+    )
     monkeypatch.setenv(dataset_task_linker._LEGACY_NORMALIZATION_ENV, "1")
 
     config = _config(enable_fuzzy=False)
@@ -109,7 +125,9 @@ def test_match_task_alias_and_blacklist():
 def test_match_task_blacklist_terms_and_regex():
     config = _config(enable_fuzzy=False)
     config.blacklist_terms.add("partlycloudy")
-    config.blacklist_patterns.append(re.compile(r"^todo[: _-]*full[: _-]*task[: _-]*name", re.IGNORECASE))
+    config.blacklist_patterns.append(
+        re.compile(r"^todo[: _-]*full[: _-]*task[: _-]*name", re.IGNORECASE)
+    )
 
     task_rows = [
         {
@@ -161,7 +179,10 @@ def test_load_taxonomy_aliases(tmp_path):
                     {
                         "id": "sf_test",
                         "paradigms": [
-                            {"name": "Visual Search", "aliases": ["Visual Search Task", "VS"]},
+                            {
+                                "name": "Visual Search",
+                                "aliases": ["Visual Search Task", "VS"],
+                            },
                         ],
                     }
                 ],

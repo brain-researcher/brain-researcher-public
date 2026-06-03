@@ -685,7 +685,9 @@ class GabrielMeasurementLoader:
             return [path for path in resolved if path.exists() and path.is_file()]
 
         default_path = self.candidate_only_review_queue_path.expanduser().resolve()
-        return [default_path] if default_path.exists() and default_path.is_file() else []
+        return (
+            [default_path] if default_path.exists() and default_path.is_file() else []
+        )
 
     def _parse_candidate_only_queue_payload(
         self,
@@ -886,9 +888,19 @@ class GabrielMeasurementLoader:
             return True
 
         normalized_label = re.sub(r"[^a-z0-9]+", " ", target_label).strip()
-        if normalized_label in {"fmri", "eeg", "meg", "fmri study", "eeg study", "meg study"}:
+        if normalized_label in {
+            "fmri",
+            "eeg",
+            "meg",
+            "fmri study",
+            "eeg study",
+            "meg study",
+        }:
             return True
-        if "multi voxel pattern analysis" in normalized_label or "mvpa" in normalized_label:
+        if (
+            "multi voxel pattern analysis" in normalized_label
+            or "mvpa" in normalized_label
+        ):
             return True
         if "simultaneous eeg fmri" in normalized_label:
             return True
@@ -902,7 +914,8 @@ class GabrielMeasurementLoader:
         quality_profile: str,
     ) -> dict[str, Any] | None:
         if (
-            quality_profile in GabrielMeasurementLoader.BENCHMARK_TITLE_ONLY_SUPPRESSION_PROFILES
+            quality_profile
+            in GabrielMeasurementLoader.BENCHMARK_TITLE_ONLY_SUPPRESSION_PROFILES
             and "candidate_only_title_generic_reroute" in reasons
         ):
             target = dict(record.get("target") or {})

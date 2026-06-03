@@ -4,18 +4,13 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
-from brain_researcher.services.tools.niwrap.executor import execute_niwrap_tool
 
+from brain_researcher.services.tools.niwrap.executor import execute_niwrap_tool
 from brain_researcher.services.tools.qc_rendering import (
     render_registration_checkerboard_png,
-)
-from brain_researcher.services.tools.params import (
-    ANTsRegistrationParameters,
-    ants_registration_from_payload,
-    run_ants_registration,
 )
 from brain_researcher.services.tools.spec import (
     ToolQCPrecheckConfig,
@@ -35,19 +30,33 @@ class ANTsRegistrationArgs(BaseModel):
 
     fixed_image: str = Field(description="Fixed/reference image")
     moving_image: str = Field(description="Moving/source image")
-    output_prefix: str = Field(description="Output prefix for transforms and warped images")
-    transform_type: str = Field(default="SyN", description="Transform model (Rigid/Affine/SyN)")
+    output_prefix: str = Field(
+        description="Output prefix for transforms and warped images"
+    )
+    transform_type: str = Field(
+        default="SyN", description="Transform model (Rigid/Affine/SyN)"
+    )
     metric: str = Field(default="MI", description="Similarity metric (MI, CC, etc.)")
-    convergence: str = Field(default="[1000x500x250x100,1e-6,10]", description="Convergence schedule")
-    shrink_factors: str = Field(default="8x4x2x1", description="Multi-resolution shrink factors")
-    smoothing_sigmas: str = Field(default="3x2x1x0vox", description="Smoothing sigmas schedule")
+    convergence: str = Field(
+        default="[1000x500x250x100,1e-6,10]", description="Convergence schedule"
+    )
+    shrink_factors: str = Field(
+        default="8x4x2x1", description="Multi-resolution shrink factors"
+    )
+    smoothing_sigmas: str = Field(
+        default="3x2x1x0vox", description="Smoothing sigmas schedule"
+    )
     interpolation: str = Field(default="Linear", description="Interpolation method")
-    use_histogram_matching: bool = Field(default=True, description="Apply histogram matching")
+    use_histogram_matching: bool = Field(
+        default=True, description="Apply histogram matching"
+    )
     dimension: int = Field(default=3, description="Image dimensionality")
     float_precision: bool = Field(default=False, description="Use float precision")
     verbose: bool = Field(default=True, description="Verbose output")
     num_threads: int = Field(default=1, description="Threads for execution")
-    extra_args: Optional[List[str]] = Field(default=None, description="Additional antsRegistration arguments")
+    extra_args: list[str] | None = Field(
+        default=None, description="Additional antsRegistration arguments"
+    )
 
 
 QC_SPEC = ToolQCSpec(
@@ -90,9 +99,7 @@ class ANTsRegistrationTool(NeuroToolWrapper):
         return "ants_registration"
 
     def get_tool_description(self) -> str:
-        return (
-            "Perform ANTs image registration producing warped outputs and transforms. Delegates to NiWrap Boutiques definition ants.antsRegistration.run."
-        )
+        return "Perform ANTs image registration producing warped outputs and transforms. Delegates to NiWrap Boutiques definition ants.antsRegistration.run."
 
     def get_args_schema(self):
         return ANTsRegistrationArgs
@@ -150,7 +157,7 @@ class ANTsRegistrationTool(NeuroToolWrapper):
             logger.warning("Failed to render ANTs QC PNG: %s", exc)
 
 
-def get_all_tools() -> List[NeuroToolWrapper]:
+def get_all_tools() -> list[NeuroToolWrapper]:
     return [ANTsRegistrationTool()]
 
 
@@ -158,7 +165,7 @@ class ANTsTools:
     """Back-compat collection wrapper for registry imports."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         return get_all_tools()
 
 

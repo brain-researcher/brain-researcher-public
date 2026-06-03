@@ -4,11 +4,12 @@ Shared helpers for XCP-D command construction.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, Mapping, Sequence, Tuple
+from typing import Any
 
 
-def _tuple(values: Iterable[str] | str | None) -> Tuple[str, ...]:
+def _tuple(values: Iterable[str] | str | None) -> tuple[str, ...]:
     if values is None:
         return ()
     if isinstance(values, str):
@@ -24,19 +25,19 @@ class XCPDParameters:
     fmriprep_dir: str
     output_dir: str
     analysis_level: str = "participant"
-    participant_label: Tuple[str, ...] = field(default_factory=tuple)
+    participant_label: tuple[str, ...] = field(default_factory=tuple)
     work_dir: str | None = None
     denoising_strategy: str = "36P"
     parcellation: str | None = None
     smoothing: str = "6"
     fd_threshold: float = 0.5
     despike: bool = True
-    bandpass_filter: Tuple[float, float] | None = (0.01, 0.1)
+    bandpass_filter: tuple[float, float] | None = (0.01, 0.1)
     output_type: str = "full"
     cifti: bool = False
     n_cpus: int | None = None
     mem_gb: float | None = None
-    extra_args: Tuple[str, ...] = field(default_factory=tuple)
+    extra_args: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "participant_label", _tuple(self.participant_label))
@@ -94,15 +95,17 @@ class XCPDParameters:
 
         return cmd
 
-    def env(self) -> Dict[str, str]:
+    def env(self) -> dict[str, str]:
         return {}
 
 
-def build_xcpd_command(params: XCPDParameters, *, include_executable: bool = True) -> list[str]:
+def build_xcpd_command(
+    params: XCPDParameters, *, include_executable: bool = True
+) -> list[str]:
     return params.command(include_executable=include_executable)
 
 
-def build_xcpd_env(params: XCPDParameters) -> Dict[str, str]:
+def build_xcpd_env(params: XCPDParameters) -> dict[str, str]:
     return params.env()
 
 
@@ -111,12 +114,12 @@ def xcpd_from_payload(payload: Mapping[str, Any]) -> XCPDParameters:
         value = payload.get(name)
         if value is None:
             return ()
-        if isinstance(value, (list, tuple, set)):
+        if isinstance(value, list | tuple | set):
             return tuple(str(v) for v in value)
         return (str(value),)
 
     extra_args = payload.get("extra_args") or ()
-    if isinstance(extra_args, (list, tuple, set)):
+    if isinstance(extra_args, list | tuple | set):
         extra_args_tuple = tuple(str(v) for v in extra_args)
     else:
         extra_args_tuple = (str(extra_args),)
@@ -124,7 +127,7 @@ def xcpd_from_payload(payload: Mapping[str, Any]) -> XCPDParameters:
     bandpass = payload.get("bandpass_filter", (0.01, 0.1))
     if bandpass is None:
         bandpass_filter = None
-    elif isinstance(bandpass, (list, tuple)) and len(bandpass) == 2:
+    elif isinstance(bandpass, list | tuple) and len(bandpass) == 2:
         bandpass_filter = (float(bandpass[0]), float(bandpass[1]))
     else:
         bandpass_filter = None

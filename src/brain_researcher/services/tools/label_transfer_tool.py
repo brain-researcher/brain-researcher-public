@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,14 +13,12 @@ class LabelTransferArgs(BaseModel):
     """Arguments for label transfer across spatial references."""
 
     source_labels: str = Field(description="Source parcellation/atlas volume")
-    transform_matrix: str = Field(
-        description="Transformation matrix to target space"
-    )
+    transform_matrix: str = Field(description="Transformation matrix to target space")
     reference_image: str = Field(description="Target space reference image")
     interpolation: str = Field(
         default="nearest", description="Interpolation method (nearest for labels)"
     )
-    output_dir: Optional[str] = Field(
+    output_dir: str | None = Field(
         default=None, description="Directory to store transferred labels"
     )
 

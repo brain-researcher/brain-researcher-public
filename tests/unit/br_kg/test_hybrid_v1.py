@@ -1,8 +1,8 @@
 from brain_researcher.services.br_kg.query_service import KGNodeSummary
 from brain_researcher.services.br_kg.search.hybrid_v1 import (
+    _HYBRID_CACHE,
     HybridConfig,
     hybrid_search_v1,
-    _HYBRID_CACHE,
 )
 
 

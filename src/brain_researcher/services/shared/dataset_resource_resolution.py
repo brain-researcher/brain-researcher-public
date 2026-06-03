@@ -1626,9 +1626,11 @@ def collect_dataset_resources(
         dataset_metadata={
             "tasks": list(candidate.tasks or []),
             "modalities": list(candidate.modalities or []),
-            "license": candidate.license.value
-            if hasattr(candidate.license, "value")
-            else str(candidate.license or ""),
+            "license": (
+                candidate.license.value
+                if hasattr(candidate.license, "value")
+                else str(candidate.license or "")
+            ),
         },
         mount_status=mount_status,
     )
@@ -1680,9 +1682,11 @@ def resolve_dataset_reference(
         display_name=candidate.short_name or candidate.name,
         source_repo=candidate.source_repo,
         primary_url=str(candidate.primary_url) if candidate.primary_url else None,
-        local_path=resources.local_path
-        if resources
-        else _path_from_mounts(candidate.dataset_id, mounts),
+        local_path=(
+            resources.local_path
+            if resources
+            else _path_from_mounts(candidate.dataset_id, mounts)
+        ),
         kg_node_id=kg_node,
         bids_path=resources.bids_path if resources else None,
         remote_url=str(candidate.primary_url) if candidate.primary_url else None,

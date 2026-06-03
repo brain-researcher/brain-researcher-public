@@ -81,7 +81,9 @@ def resolve_project_paths(
 
     shared_paths = resolve_line_paths("discovery", root=raw_paths["project_root"])
     project_root = shared_paths.project_root
-    closed_loop_root = shared_paths.checkpoint_root or (project_root / "artifacts" / "closed_loop")
+    closed_loop_root = shared_paths.checkpoint_root or (
+        project_root / "artifacts" / "closed_loop"
+    )
     return TribeProjectPaths(
         config_path=resolved_config,
         data_root=canonicalize_line_path(raw_paths["data_root"], "discovery"),
@@ -100,7 +102,9 @@ def resolve_project_paths(
         prediction_root=canonicalize_line_path(
             raw_paths["prediction_root"], "discovery"
         ),
-        tribe_cache_root=canonicalize_line_path(raw_paths["tribe_cache_root"], "discovery"),
+        tribe_cache_root=canonicalize_line_path(
+            raw_paths["tribe_cache_root"], "discovery"
+        ),
         closed_loop_root=closed_loop_root,
         hypothesis_ledger_path=closed_loop_root / "tribe_hypothesis_ledger.jsonl",
     )

@@ -11,11 +11,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
 
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
 
 
 @dataclass
@@ -36,10 +35,10 @@ class ToolEntry:
     id: str
     name: str
     description: str
-    tags: List[str] = field(default_factory=list)
-    image: Optional[str] = None
-    aliases: List[str] = field(default_factory=list)
-    category: Optional[str] = None
+    tags: list[str] = field(default_factory=list)
+    image: str | None = None
+    aliases: list[str] = field(default_factory=list)
+    category: str | None = None
 
 
 class ToolIndex:
@@ -52,8 +51,8 @@ class ToolIndex:
 
     def __init__(
         self,
-        entries: List[ToolEntry],
-        synonyms: Optional[Dict[str, List[str]]] = None,
+        entries: list[ToolEntry],
+        synonyms: dict[str, list[str]] | None = None,
     ):
         """
         Build a TF-IDF index from tool entries.
@@ -66,9 +65,7 @@ class ToolIndex:
         self.synonyms = synonyms or {}
 
         # Build corpus: concatenate name, description, tags, and aliases
-        self.corpus = [
-            self._build_document(entry) for entry in entries
-        ]
+        self.corpus = [self._build_document(entry) for entry in entries]
 
         # Create TF-IDF vectorizer with bigrams for better phrase matching
         self.vectorizer = TfidfVectorizer(
@@ -122,7 +119,7 @@ class ToolIndex:
         query = query.lower().strip()
 
         # Split into tokens and expand each
-        tokens = re.split(r'\s+', query)
+        tokens = re.split(r"\s+", query)
         expanded = [query]  # Include original query
 
         for token in tokens:
@@ -135,7 +132,7 @@ class ToolIndex:
 
         return " ".join(expanded)
 
-    def search(self, query: str, k: int = 8) -> List[Tuple[ToolEntry, float]]:
+    def search(self, query: str, k: int = 8) -> list[tuple[ToolEntry, float]]:
         """
         Search for tools matching the query.
 
@@ -170,7 +167,7 @@ class ToolIndex:
 
         return results
 
-    def get_tool_by_id(self, tool_id: str) -> Optional[ToolEntry]:
+    def get_tool_by_id(self, tool_id: str) -> ToolEntry | None:
         """
         Retrieve a tool entry by its ID.
 
@@ -185,7 +182,7 @@ class ToolIndex:
                 return entry
         return None
 
-    def get_tools_by_category(self, category: str) -> List[ToolEntry]:
+    def get_tools_by_category(self, category: str) -> list[ToolEntry]:
         """
         Get all tools in a specific category.
 
@@ -196,7 +193,8 @@ class ToolIndex:
             List of tools in that category
         """
         return [
-            entry for entry in self.entries
+            entry
+            for entry in self.entries
             if entry.category and entry.category.lower() == category.lower()
         ]
 

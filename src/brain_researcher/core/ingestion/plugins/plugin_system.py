@@ -4,25 +4,18 @@ This module provides a plugin system for custom data sources with interfaces,
 validation, examples, and documentation.
 """
 
-import logging
+import ast
 import importlib
 import importlib.util
 import inspect
-import sys
-import os
-from typing import Dict, List, Any, Optional, Type, Callable, Tuple
+import logging
+from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-import json
-import yaml
-from abc import ABC, abstractmethod
-from collections import defaultdict
-import hashlib
-from functools import lru_cache
-import tempfile
-import ast
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -30,26 +23,31 @@ logger = logging.getLogger(__name__)
 # Custom Exception Classes
 class PluginError(Exception):
     """Base exception for plugin system errors."""
+
     pass
 
 
 class PluginLoadError(PluginError):
     """Plugin loading errors."""
+
     pass
 
 
 class PluginValidationError(PluginError):
     """Plugin validation errors."""
+
     pass
 
 
 class PluginSecurityError(PluginError):
     """Plugin security errors."""
+
     pass
 
 
 class PluginConfigurationError(PluginError):
     """Plugin configuration errors."""
+
     pass
 
 
@@ -71,9 +69,9 @@ class PluginMetadata:
     author: str
     description: str
     data_source_type: str
-    supported_formats: List[str]
-    dependencies: List[str] = field(default_factory=list)
-    configuration_schema: Dict[str, Any] = field(default_factory=dict)
+    supported_formats: list[str]
+    dependencies: list[str] = field(default_factory=list)
+    configuration_schema: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -82,8 +80,8 @@ class PluginConfig:
 
     enabled: bool = True
     auto_start: bool = False
-    config_params: Dict[str, Any] = field(default_factory=dict)
-    retry_policy: Dict[str, Any] = field(default_factory=dict)
+    config_params: dict[str, Any] = field(default_factory=dict)
+    retry_policy: dict[str, Any] = field(default_factory=dict)
 
 
 class DataSourcePlugin(ABC):
@@ -99,7 +97,7 @@ class DataSourcePlugin(ABC):
         pass
 
     @abstractmethod
-    def validate_config(self, config: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    def validate_config(self, config: dict[str, Any]) -> tuple[bool, list[str]]:
         """Validate plugin configuration.
 
         Args:
@@ -111,7 +109,7 @@ class DataSourcePlugin(ABC):
         pass
 
     @abstractmethod
-    def connect(self, config: Dict[str, Any]) -> bool:
+    def connect(self, config: dict[str, Any]) -> bool:
         """Connect to data source.
 
         Args:
@@ -133,10 +131,8 @@ class DataSourcePlugin(ABC):
 
     @abstractmethod
     def fetch_data(
-        self,
-        query: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+        self, query: dict[str, Any] | None = None, limit: int | None = None
+    ) -> list[dict[str, Any]]:
         """Fetch data from source.
 
         Args:
@@ -149,7 +145,7 @@ class DataSourcePlugin(ABC):
         pass
 
     @abstractmethod
-    def transform_data(self, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def transform_data(self, data: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Transform data to standard format.
 
         Args:
@@ -160,7 +156,7 @@ class DataSourcePlugin(ABC):
         """
         pass
 
-    def validate_data(self, data: List[Dict[str, Any]]) -> Tuple[bool, List[str]]:
+    def validate_data(self, data: list[dict[str, Any]]) -> tuple[bool, list[str]]:
         """Validate fetched data.
 
         Args:
@@ -177,7 +173,7 @@ class DataSourcePlugin(ABC):
 
         return len(errors) == 0, errors
 
-    def get_schema(self) -> Dict[str, Any]:
+    def get_schema(self) -> dict[str, Any]:
         """Get data schema.
 
         Returns:
@@ -185,7 +181,7 @@ class DataSourcePlugin(ABC):
         """
         return {}
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get plugin statistics.
 
         Returns:
@@ -207,19 +203,19 @@ class PluginManager:
         self.plugin_dir.mkdir(parents=True, exist_ok=True)
 
         # Registered plugins
-        self.plugins: Dict[str, DataSourcePlugin] = {}
-        self.plugin_configs: Dict[str, PluginConfig] = {}
-        self.plugin_status: Dict[str, PluginStatus] = {}
+        self.plugins: dict[str, DataSourcePlugin] = {}
+        self.plugin_configs: dict[str, PluginConfig] = {}
+        self.plugin_status: dict[str, PluginStatus] = {}
 
         # Plugin instances
-        self.active_plugins: Dict[str, DataSourcePlugin] = {}
+        self.active_plugins: dict[str, DataSourcePlugin] = {}
 
         # Statistics
         self.stats = {
             "plugins_loaded": 0,
             "plugins_active": 0,
             "data_fetched": defaultdict(int),
-            "errors": defaultdict(int)
+            "errors": defaultdict(int),
         }
 
         # Plugin discovery cache
@@ -228,17 +224,44 @@ class PluginManager:
 
         # Security settings
         self.allowed_imports = {
-            'typing', 'dataclasses', 'datetime', 'enum', 'json', 'yaml',
-            'logging', 'pathlib', 'abc', 'collections', 're', 'hashlib',
-            'requests', 'urllib', 'http', 'ssl', 'base64'
+            "typing",
+            "dataclasses",
+            "datetime",
+            "enum",
+            "json",
+            "yaml",
+            "logging",
+            "pathlib",
+            "abc",
+            "collections",
+            "re",
+            "hashlib",
+            "requests",
+            "urllib",
+            "http",
+            "ssl",
+            "base64",
         }
         self.forbidden_functions = {
-            'eval', 'exec', '__import__', 'open', 'file', 'input', 'raw_input',
-            'compile', 'globals', 'locals', 'vars', 'dir', 'getattr', 'setattr',
-            'delattr', 'hasattr'
+            "eval",
+            "exec",
+            "__import__",
+            "open",
+            "file",
+            "input",
+            "raw_input",
+            "compile",
+            "globals",
+            "locals",
+            "vars",
+            "dir",
+            "getattr",
+            "setattr",
+            "delattr",
+            "hasattr",
         }
 
-    def discover_plugins(self, use_cache: bool = True) -> List[str]:
+    def discover_plugins(self, use_cache: bool = True) -> list[str]:
         """Discover available plugins with caching.
 
         Args:
@@ -248,11 +271,13 @@ class PluginManager:
             List of discovered plugin names
         """
         # Check cache first
-        if use_cache and 'plugins' in self._discovery_cache:
-            cache_entry = self._discovery_cache['plugins']
-            if (datetime.now() - cache_entry['timestamp']).total_seconds() < self._cache_expiry:
+        if use_cache and "plugins" in self._discovery_cache:
+            cache_entry = self._discovery_cache["plugins"]
+            if (
+                datetime.now() - cache_entry["timestamp"]
+            ).total_seconds() < self._cache_expiry:
                 logger.debug("Using cached plugin discovery results")
-                return cache_entry['plugins']
+                return cache_entry["plugins"]
 
         discovered = []
 
@@ -263,10 +288,7 @@ class PluginManager:
 
             try:
                 # Import module
-                spec = importlib.util.spec_from_file_location(
-                    file_path.stem,
-                    file_path
-                )
+                spec = importlib.util.spec_from_file_location(file_path.stem, file_path)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
 
@@ -277,9 +299,11 @@ class PluginManager:
 
                 # Find plugin classes
                 for name, obj in inspect.getmembers(module):
-                    if (inspect.isclass(obj) and
-                        issubclass(obj, DataSourcePlugin) and
-                        obj != DataSourcePlugin):
+                    if (
+                        inspect.isclass(obj)
+                        and issubclass(obj, DataSourcePlugin)
+                        and obj != DataSourcePlugin
+                    ):
 
                         plugin_name = f"{file_path.stem}.{name}"
                         discovered.append(plugin_name)
@@ -287,20 +311,20 @@ class PluginManager:
                         logger.info(f"Discovered plugin: {plugin_name}")
 
             except Exception as e:
-                logger.error(f"Error discovering plugins in {file_path}: {e}", exc_info=True)
+                logger.error(
+                    f"Error discovering plugins in {file_path}: {e}", exc_info=True
+                )
 
         # Cache the results
-        self._discovery_cache['plugins'] = {
-            'plugins': discovered,
-            'timestamp': datetime.now()
+        self._discovery_cache["plugins"] = {
+            "plugins": discovered,
+            "timestamp": datetime.now(),
         }
 
         return discovered
 
     def load_plugin(
-        self,
-        plugin_path: str,
-        config: Optional[Dict[str, Any]] = None
+        self, plugin_path: str, config: dict[str, Any] | None = None
     ) -> bool:
         """Load a plugin.
 
@@ -331,15 +355,16 @@ class PluginManager:
 
                 # Validate plugin source
                 if not self._validate_plugin_source(module_path):
-                    raise PluginSecurityError(f"Plugin source validation failed: {module_path}")
+                    raise PluginSecurityError(
+                        f"Plugin source validation failed: {module_path}"
+                    )
 
                 # Load module safely
-                spec = importlib.util.spec_from_file_location(
-                    module_name,
-                    module_path
-                )
+                spec = importlib.util.spec_from_file_location(module_name, module_path)
                 if spec is None or spec.loader is None:
-                    raise PluginLoadError(f"Could not create module spec for {module_path}")
+                    raise PluginLoadError(
+                        f"Could not create module spec for {module_path}"
+                    )
 
                 module = importlib.util.module_from_spec(spec)
 
@@ -378,7 +403,9 @@ class PluginManager:
             logger.error(f"Plugin error loading {plugin_path}: {e}")
             return False
         except Exception as e:
-            logger.error(f"Unexpected error loading plugin {plugin_path}: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error loading plugin {plugin_path}: {e}", exc_info=True
+            )
             return False
 
     def activate_plugin(self, plugin_name: str) -> bool:
@@ -464,9 +491,9 @@ class PluginManager:
     def fetch_from_plugin(
         self,
         plugin_name: str,
-        query: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+        query: dict[str, Any] | None = None,
+        limit: int | None = None,
+    ) -> list[dict[str, Any]]:
         """Fetch data from a plugin.
 
         Args:
@@ -502,11 +529,13 @@ class PluginManager:
             return transformed_data
 
         except Exception as e:
-            logger.error(f"Error fetching from plugin {plugin_name}: {e}", exc_info=True)
+            logger.error(
+                f"Error fetching from plugin {plugin_name}: {e}", exc_info=True
+            )
             self.stats["errors"][plugin_name] += 1
             return []
 
-    def get_plugin_info(self, plugin_name: str) -> Dict[str, Any]:
+    def get_plugin_info(self, plugin_name: str) -> dict[str, Any]:
         """Get plugin information.
 
         Args:
@@ -530,23 +559,22 @@ class PluginManager:
             "data_source_type": metadata.data_source_type,
             "supported_formats": metadata.supported_formats,
             "schema": plugin.get_schema() if plugin_name in self.active_plugins else {},
-            "statistics": plugin.get_statistics() if plugin_name in self.active_plugins else {}
+            "statistics": (
+                plugin.get_statistics() if plugin_name in self.active_plugins else {}
+            ),
         }
 
         return info
 
-    def list_plugins(self) -> List[Dict[str, Any]]:
+    def list_plugins(self) -> list[dict[str, Any]]:
         """List all plugins.
 
         Returns:
             List of plugin information
         """
-        return [
-            self.get_plugin_info(name)
-            for name in self.plugins.keys()
-        ]
+        return [self.get_plugin_info(name) for name in self.plugins.keys()]
 
-    def validate_plugin(self, plugin_path: str) -> Tuple[bool, List[str]]:
+    def validate_plugin(self, plugin_path: str) -> tuple[bool, list[str]]:
         """Validate a plugin before loading.
 
         Args:
@@ -574,10 +602,7 @@ class PluginManager:
                 errors.append("Plugin source validation failed")
                 return False, errors
 
-            spec = importlib.util.spec_from_file_location(
-                module_name,
-                module_path
-            )
+            spec = importlib.util.spec_from_file_location(module_name, module_path)
             if spec is None or spec.loader is None:
                 errors.append("Could not create module spec")
                 return False, errors
@@ -606,7 +631,7 @@ class PluginManager:
                 "connect",
                 "disconnect",
                 "fetch_data",
-                "transform_data"
+                "transform_data",
             ]
 
             for method in required_methods:
@@ -630,10 +655,7 @@ class PluginManager:
         return len(errors) == 0, errors
 
     def generate_plugin_template(
-        self,
-        name: str,
-        data_source_type: str,
-        output_path: Optional[str] = None
+        self, name: str, data_source_type: str, output_path: str | None = None
     ) -> str:
         """Generate a plugin template.
 
@@ -785,7 +807,7 @@ class {name}Plugin(DataSourcePlugin):
             True if plugin source is safe
         """
         try:
-            with open(plugin_path, 'r', encoding='utf-8') as f:
+            with open(plugin_path, encoding="utf-8") as f:
                 source_code = f.read()
 
             # Parse the AST to check for dangerous operations
@@ -799,20 +821,29 @@ class {name}Plugin(DataSourcePlugin):
             for node in ast.walk(tree):
                 # Check for dangerous function calls
                 if isinstance(node, ast.Call):
-                    if isinstance(node.func, ast.Name) and node.func.id in self.forbidden_functions:
-                        logger.error(f"Forbidden function {node.func.id} found in plugin {plugin_path}")
+                    if (
+                        isinstance(node.func, ast.Name)
+                        and node.func.id in self.forbidden_functions
+                    ):
+                        logger.error(
+                            f"Forbidden function {node.func.id} found in plugin {plugin_path}"
+                        )
                         return False
 
                 # Check for dangerous imports
                 elif isinstance(node, ast.Import):
                     for alias in node.names:
                         if not self._is_allowed_import(alias.name):
-                            logger.error(f"Forbidden import {alias.name} found in plugin {plugin_path}")
+                            logger.error(
+                                f"Forbidden import {alias.name} found in plugin {plugin_path}"
+                            )
                             return False
 
                 elif isinstance(node, ast.ImportFrom):
                     if node.module and not self._is_allowed_import(node.module):
-                        logger.error(f"Forbidden import from {node.module} found in plugin {plugin_path}")
+                        logger.error(
+                            f"Forbidden import from {node.module} found in plugin {plugin_path}"
+                        )
                         return False
 
             # Check file size (prevent extremely large plugins)
@@ -855,7 +886,7 @@ class {name}Plugin(DataSourcePlugin):
         self._discovery_cache.clear()
         logger.info("Plugin discovery cache cleared")
 
-    def get_plugin_security_info(self, plugin_name: str) -> Dict[str, Any]:
+    def get_plugin_security_info(self, plugin_name: str) -> dict[str, Any]:
         """Get security information about a plugin.
 
         Args:
@@ -877,12 +908,16 @@ class {name}Plugin(DataSourcePlugin):
             "plugin_name": plugin_name,
             "source_validated": False,
             "file_size": 0,
-            "last_modified": None
+            "last_modified": None,
         }
 
         if plugin_path and plugin_path.exists():
-            security_info["source_validated"] = self._validate_plugin_source(plugin_path)
+            security_info["source_validated"] = self._validate_plugin_source(
+                plugin_path
+            )
             security_info["file_size"] = plugin_path.stat().st_size
-            security_info["last_modified"] = datetime.fromtimestamp(plugin_path.stat().st_mtime).isoformat()
+            security_info["last_modified"] = datetime.fromtimestamp(
+                plugin_path.stat().st_mtime
+            ).isoformat()
 
         return security_info

@@ -10,7 +10,7 @@ import inspect
 import logging
 import os
 from pathlib import Path
-from typing import Any, Optional, Dict, List, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,9 @@ try:
     from langchain_core.tools import StructuredTool
 except ImportError:  # pragma: no cover
     from langchain.tools import StructuredTool
+
 from langchain_community.vectorstores import FAISS
+
 from brain_researcher.core.utils import configure_mne_environment
 from brain_researcher.services.tools.dependency_inspector import (
     ManifestLoadError,
@@ -27,7 +29,7 @@ from brain_researcher.services.tools.dependency_inspector import (
 )
 
 # Import base classes
-from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
+from brain_researcher.services.tools.tool_base import NeuroToolWrapper
 
 # Back-compat alias
 NeuroToolWrapper = NeuroToolWrapper
@@ -43,100 +45,100 @@ NeuroToolWrapper = NeuroToolWrapper
 # )
 CAPABILITIES = {}  # Empty dict to avoid breaking code below
 
+from brain_researcher.services.tools.afni_clustsim_tool import AFNITools
+
 # Import legacy individual tools (will be gradually replaced by capabilities)
 from brain_researcher.services.tools.ants_tool import ANTsTools
 from brain_researcher.services.tools.archive_tools import ArchiveTools
-from brain_researcher.services.tools.bids_tools import BIDSTools
-from brain_researcher.services.tools.fmri_tools import FMRITools
-from brain_researcher.services.tools.fmriprep_tool import FMRIPrepTools
-from brain_researcher.services.tools.fsl_feat_tool import FSLFEATTools
-from brain_researcher.services.tools.fsl_melodic_tool import FSLMELODICTools
-from brain_researcher.services.tools.fsl_bet_tool import FSLBETTools
-from brain_researcher.services.tools.fsl_flirt_tool import FSLFLIRTTools
-from brain_researcher.services.tools.fsl_fnirt_tool import FSLFNIRTTools
-from brain_researcher.services.tools.fsl_bedpostx_tool import FSLBEDPOSTXTools
-from brain_researcher.services.tools.mne_preprocessing_tool import MNEPreprocessingTools
-from brain_researcher.services.tools.mne_ica_tool import MNEICATools
-from brain_researcher.services.tools.mne_timefreq_tool import MNETimeFreqTools
-from brain_researcher.services.tools.statsmodels_glm_tool import StatsmodelsGLMTools
-from brain_researcher.services.tools.br_kg_tools import BRKGTools
-from brain_researcher.services.tools.kg_novelty_tools import KGNoveltyTools
-from brain_researcher.services.tools.br_kg_query_tool import BRKGQueryTools
-
-# from brain_researcher.services.tools.neurosynth_tools import NeuroSynthTools  # Temporarily disabled - numpy compatibility issue
-from brain_researcher.services.tools.neurodesk_tools import NeurodeskTools
 from brain_researcher.services.tools.behavior_tools import BehaviorTools
-from brain_researcher.services.tools.nwb_tools import NWBTools
-from brain_researcher.services.tools.pipeline_tools import PipelineTools
+from brain_researcher.services.tools.bids_tools import BIDSTools
+from brain_researcher.services.tools.br_kg_query_tool import BRKGQueryTools
+from brain_researcher.services.tools.br_kg_tools import BRKGTools
+from brain_researcher.services.tools.canonical_runtime_adapter import (
+    CanonicalRuntimeAdapter,
+)
+from brain_researcher.services.tools.conn_tool import CONNTools
+from brain_researcher.services.tools.cpac_tool import CPACTools
 from brain_researcher.services.tools.dataset_resources_tool import (
     DatasetDescribeTool,
     DatasetResourcesTool,
 )
-from brain_researcher.services.tools.openneuro_tool import OpenNeuroTools
-from brain_researcher.services.tools.jobs_tool import JobsTools
-from brain_researcher.services.tools.qc_tools import QCTools
-from brain_researcher.services.tools.qsiprep_tool import QSIPrepTools
-from brain_researcher.services.tools.xcpd_tool import XCPDTools
-from brain_researcher.services.tools.spm12_tool import SPM12Tools
-
-# Import new organized Nilearn modules
-from brain_researcher.services.tools.nilearn_glm import register_glm_tools
-from brain_researcher.services.tools.nilearn_connectivity import (
-    register_connectivity_tools,
-)
-from brain_researcher.services.tools.nilearn_viz import register_nilearn_viz_tools
-from brain_researcher.services.tools.nilearn_preprocessing import (
-    register_preprocessing_tools,
-)
-from brain_researcher.services.tools.nilearn_mvpa import register_mvpa_tools
-from brain_researcher.services.tools.freesurfer_tool import FreeSurferTools
-from brain_researcher.services.tools.conn_tool import CONNTools
-from brain_researcher.services.tools.nipype_tool import NipypeTools
-from brain_researcher.services.tools.mixed_effects_tool import MixedEffectsTools
+from brain_researcher.services.tools.dl_pytorch_tool import DLPyTorchTools
 from brain_researcher.services.tools.fitlins_tool import FitLinsTools
+from brain_researcher.services.tools.fmri_tools import FMRITools
+from brain_researcher.services.tools.fmriprep_tool import FMRIPrepTools
+from brain_researcher.services.tools.freesurfer_tool import FreeSurferTools
+from brain_researcher.services.tools.fsl_bedpostx_tool import FSLBEDPOSTXTools
+from brain_researcher.services.tools.fsl_bet_tool import FSLBETTools
+from brain_researcher.services.tools.fsl_feat_tool import FSLFEATTools
 from brain_researcher.services.tools.fsl_fix_tool import FSLFIXTools
+from brain_researcher.services.tools.fsl_flirt_tool import FSLFLIRTTools
+from brain_researcher.services.tools.fsl_fnirt_tool import FSLFNIRTTools
+from brain_researcher.services.tools.fsl_melodic_tool import FSLMELODICTools
 from brain_researcher.services.tools.fsl_palm_tool import FSLPALMTools
-from brain_researcher.services.tools.mne_source_tool import MNESourceTools
-from brain_researcher.services.tools.metadata_schema import normalize_tags
+from brain_researcher.services.tools.grandmaster_tools import GrandMasterTools
+from brain_researcher.services.tools.hcp_workbench_tool import HCPWorkbenchTools
+from brain_researcher.services.tools.jobs_tool import JobsTools
+from brain_researcher.services.tools.kg_novelty_tools import KGNoveltyTools
 from brain_researcher.services.tools.metadata_loader import inject_metadata
-from brain_researcher.services.tools.spec import spec_from_tool
+from brain_researcher.services.tools.mixed_effects_tool import MixedEffectsTools
 from brain_researcher.services.tools.mne_connectivity_tool import MNEConnectivityTools
-from brain_researcher.services.tools.permutation_testing_tool import (
-    PermutationTestingTools,
-)
+from brain_researcher.services.tools.mne_ica_tool import MNEICATools
+from brain_researcher.services.tools.mne_preprocessing_tool import MNEPreprocessingTools
+from brain_researcher.services.tools.mne_source_tool import MNESourceTools
+from brain_researcher.services.tools.mne_timefreq_tool import MNETimeFreqTools
 from brain_researcher.services.tools.multiple_comparison_tool import (
     MultipleComparisonTools,
 )
-from brain_researcher.services.tools.cpac_tool import CPACTools
-from brain_researcher.services.tools.hcp_workbench_tool import HCPWorkbenchTools
-from brain_researcher.services.tools.afni_clustsim_tool import AFNITools
+from brain_researcher.services.tools.neuroassistant_tools import NeuroassistantTools
+
+# from brain_researcher.services.tools.neurosynth_tools import NeuroSynthTools  # Temporarily disabled - numpy compatibility issue
+from brain_researcher.services.tools.neurodesk_tools import NeurodeskTools
+from brain_researcher.services.tools.nilearn_connectivity import (
+    register_connectivity_tools,
+)
+
+# Import new organized Nilearn modules
+from brain_researcher.services.tools.nilearn_glm import register_glm_tools
+from brain_researcher.services.tools.nilearn_mvpa import register_mvpa_tools
+from brain_researcher.services.tools.nilearn_preprocessing import (
+    register_preprocessing_tools,
+)
+from brain_researcher.services.tools.nilearn_viz import register_nilearn_viz_tools
+from brain_researcher.services.tools.nipype_runner_tool import NipypeRunnerTools
+from brain_researcher.services.tools.nipype_tool import NipypeTools
+from brain_researcher.services.tools.nwb_tools import NWBTools
+from brain_researcher.services.tools.openneuro_tool import OpenNeuroTools
+from brain_researcher.services.tools.permutation_testing_tool import (
+    PermutationTestingTools,
+)
+from brain_researcher.services.tools.pipeline_search_tool import PipelineSearchTool
+from brain_researcher.services.tools.pipeline_tools import PipelineTools
+from brain_researcher.services.tools.qc_tools import QCTools
+from brain_researcher.services.tools.qsiprep_tool import QSIPrepTools
+from brain_researcher.services.tools.spec import spec_from_tool
+from brain_researcher.services.tools.spm12_tool import SPM12Tools
+from brain_researcher.services.tools.statsmodels_glm_tool import StatsmodelsGLMTools
 from brain_researcher.services.tools.workflow_fallback_tools import (
     WorkflowFallbackTools,
 )
-from brain_researcher.services.tools.nipype_runner_tool import NipypeRunnerTools
-from brain_researcher.services.tools.dl_pytorch_tool import DLPyTorchTools
-from brain_researcher.services.tools.neuroassistant_tools import NeuroassistantTools
-from brain_researcher.services.tools.pipeline_search_tool import PipelineSearchTool
-from brain_researcher.services.tools.grandmaster_tools import GrandMasterTools
-from brain_researcher.services.tools.canonical_runtime_adapter import (
-    CanonicalRuntimeAdapter,
-)
+from brain_researcher.services.tools.xcpd_tool import XCPDTools
 
 # from brain_researcher.services.tools.nilearn_tools import NilearnTools  # Temporarily disabled - causes import hang
 
 # Import new integration modules (relocated into the tools layer in round 2 of
 # the services-layer DAG work; previously lived under ``services.agent``).
 try:
-    from brain_researcher.services.tools.subscription_integration import (
-        AgentSubscriptionManager,
-    )
-    from brain_researcher.services.tools.streaming_integration import (
-        AgentStreamingManager,
-    )
     from brain_researcher.services.tools.deduplication_integration import (
         AgentDataDeduplication,
     )
     from brain_researcher.services.tools.plugin_integration import AgentPluginManager
+    from brain_researcher.services.tools.streaming_integration import (
+        AgentStreamingManager,
+    )
+    from brain_researcher.services.tools.subscription_integration import (
+        AgentSubscriptionManager,
+    )
 
     INTEGRATIONS_AVAILABLE = True
 except ImportError as e:
@@ -200,7 +202,7 @@ def _truthy(value: str | None) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _iter_auto_registry_tools() -> List[NeuroToolWrapper]:
+def _iter_auto_registry_tools() -> list[NeuroToolWrapper]:
     """
     Discover modality-prefixed stub tools without hardcoding imports.
 
@@ -209,7 +211,7 @@ def _iter_auto_registry_tools() -> List[NeuroToolWrapper]:
     already wired up elsewhere in this registry.
     """
 
-    instances: List[NeuroToolWrapper] = []
+    instances: list[NeuroToolWrapper] = []
 
     for module_path in TOOLS_DIR.glob("*_tool.py"):
         stem = module_path.stem
@@ -328,10 +330,10 @@ class ToolRegistry:
 
         # Integration managers
         self.enable_integrations = enable_integrations and INTEGRATIONS_AVAILABLE
-        self.subscription_manager: Optional[AgentSubscriptionManager] = None
-        self.streaming_manager: Optional[AgentStreamingManager] = None
-        self.deduplication_manager: Optional[AgentDataDeduplication] = None
-        self.plugin_manager: Optional[AgentPluginManager] = None
+        self.subscription_manager: AgentSubscriptionManager | None = None
+        self.streaming_manager: AgentStreamingManager | None = None
+        self.deduplication_manager: AgentDataDeduplication | None = None
+        self.plugin_manager: AgentPluginManager | None = None
 
         # Integration statistics
         self.integration_stats = {
@@ -529,6 +531,7 @@ class ToolRegistry:
             "BR_CAPABILITIES_YAML", "capabilities.gemini_cli.yaml"
         )
         from brain_researcher.config.paths import get_config_root
+
         catalog_dir = get_config_root() / "catalog"
         for fname in [f.strip() for f in yaml_files.split(",") if f.strip()]:
             path = catalog_dir / fname
@@ -1544,8 +1547,8 @@ class ToolRegistry:
 
             from brain_researcher.services.tools.enhanced_meta_analysis import (
                 CoordinateMetaAnalysisTool,
-                ImageBasedMetaAnalysisTool,
                 EffectSizeMetaAnalysisTool,
+                ImageBasedMetaAnalysisTool,
                 LiteratureMiningTool,
                 NetworkMetaAnalysisTool,
             )
@@ -1661,77 +1664,62 @@ class ToolRegistry:
             self.register_tool(tool)
 
         # Register Clinical Decision Support Tool (reach 131 tools)
-        from brain_researcher.services.tools.clinical_decision_support import (
-            ClinicalDecisionSupport,
-        )
 
         # Note: Pipeline orchestration is handled by LangGraph, not as a tool
         # self.register_tool(ClinicalDecisionSupport())
-
         # TODO: Register additional tool categories when implemented
         # # Register Brain Simulation tools (8 tools)
         # from brain_researcher.services.tools.brain_simulation import BrainSimulationTools
         # brain_sim_tools = BrainSimulationTools()
         # for tool in brain_sim_tools.get_all_tools():
         #     self.register_tool(tool)
-
         # # Register Advanced Deep Learning tools (8 tools)
         # from brain_researcher.services.tools.advanced_deep_learning import AdvancedDeepLearningTools
         # adv_dl_tools = AdvancedDeepLearningTools()
         # for tool in adv_dl_tools.get_all_tools():
         #     self.register_tool(tool)
-
         # # Register Multimodal Fusion tools (8 tools)
         # from brain_researcher.services.tools.multimodal_fusion import MultimodalFusionTools
         # mm_fusion_tools = MultimodalFusionTools()
         # for tool in mm_fusion_tools.get_all_tools():
         #     self.register_tool(tool)
-
         # # Register Causality Analysis tools (8 tools)
         # from brain_researcher.services.tools.causality_analysis import CausalityAnalysisTools
         # causality_tools = CausalityAnalysisTools()
         # for tool in causality_tools.get_all_tools():
         #     self.register_tool(tool)
-
         # # Register Cloud-Native Processing tools (8 tools)
         # from brain_researcher.services.tools.cloud_native_processing import CloudNativeProcessingTools
         # cloud_tools = CloudNativeProcessingTools()
         # for tool in cloud_tools.get_all_tools():
         #     self.register_tool(tool)
-
         # # Register Genetics/Genomics tools (8 tools)
         # from brain_researcher.services.tools.genetics_genomics_tools import GeneticsGenomicsTools
         # genetics_tools = GeneticsGenomicsTools()
         # for tool in genetics_tools.get_all_tools():
         #     self.register_tool(tool)
-
         # # Register PET Imaging tools (6 tools)
         # from brain_researcher.services.tools.pet_imaging_tools import PETImagingTools
         # pet_tools = PETImagingTools()
         # for tool in pet_tools.get_all_tools():
         #     self.register_tool(tool)
-
         # # Register Optical Imaging tools (5 tools)
         # from brain_researcher.services.tools.optical_imaging_tools import OpticalImagingTools
         # optical_tools = OpticalImagingTools()
         # for tool in optical_tools.get_all_tools():
         #     self.register_tool(tool)
-
         # # Register Interactive Visualization tools (5 tools)
         # from brain_researcher.services.tools.interactive_visualization_tools import InteractiveVisualizationTools
         # viz_tools = InteractiveVisualizationTools()
         # for tool in viz_tools.get_all_tools():
         #     self.register_tool(tool)
-
         # Register Nilearn tools
         # Temporarily disabled - causes import hang
         # nilearn_tools = NilearnTools()
         # for tool in nilearn_tools.get_all_tools():
         #     self.register_tool(tool)
-
         # Could also discover tools from directory
         # self._discover_from_directory("tools/custom")
-
         # Automatically pick up modality-prefixed stub tools (ieeg_*, dmri_*, etc.)
         self._register_prefixed_stub_tools()
 
@@ -1759,7 +1747,7 @@ class ToolRegistry:
         logger.debug(f"Registered tool: {tool_name}")
 
     # Thin runtime accessor for routing/execution layers
-    def get_runtime_tool(self, tool_id: str) -> Optional[NeuroToolWrapper]:
+    def get_runtime_tool(self, tool_id: str) -> NeuroToolWrapper | None:
         """Return the underlying runtime tool instance by id."""
 
         return self.tools.get(tool_id)

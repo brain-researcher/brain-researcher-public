@@ -11,7 +11,10 @@ def test_connectivity_measures_is_exposed_as_meeg_sensor_connectivity() -> None:
     assert spec.modalities == ["meg", "eeg"]
     assert spec.intents == ["connectivity_measures"]
     assert "M/EEG sensor-space connectivity" in spec.description
-    assert spec.search_hint == "meeg sensor space connectivity mne epochs meg eeg pli wpli plv"
+    assert (
+        spec.search_hint
+        == "meeg sensor space connectivity mne epochs meg eeg pli wpli plv"
+    )
 
 
 def test_connectivity_measures_retrieval_is_meeg_not_fmri() -> None:

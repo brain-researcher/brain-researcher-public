@@ -61,7 +61,7 @@ def test_resolve_fulltext_index_prefers_candidates(monkeypatch):
 
 def test_build_fulltext_query_multiterm():
     query = qs._build_fulltext_query("motor cortex")
-    assert "\"motor cortex\"" in query
+    assert '"motor cortex"' in query
     assert "motor AND cortex" in query
     assert "motor OR cortex" in query
 

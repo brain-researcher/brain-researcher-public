@@ -130,7 +130,9 @@ def test_ingest_uses_balanced_profile_and_updates_manifest(
         def load(self, mode: str = "spine"):
             del mode
             config = FakeLoader.captured_config or {}
-            input_paths = [str(Path(p).resolve()) for p in config.get("input_paths", [])]
+            input_paths = [
+                str(Path(p).resolve()) for p in config.get("input_paths", [])
+            ]
             checkpoint_path = Path(config["ingest_checkpoint_path"])
             files_payload = {}
             per_file = {}
@@ -171,7 +173,9 @@ def test_ingest_uses_balanced_profile_and_updates_manifest(
     monkeypatch.setattr(gg, "require_neo4j_db", lambda preload_cache=False: DummyDB())
     monkeypatch.setattr(gg, "GabrielMeasurementLoader", FakeLoader)
 
-    generator = gg.GabrielPipelineGenerator(output_root=tmp_path, cache_dir=tmp_path / "cache")
+    generator = gg.GabrielPipelineGenerator(
+        output_root=tmp_path, cache_dir=tmp_path / "cache"
+    )
     result = generator.ingest(
         manifest_path=manifest_path,
         mode="spine",
@@ -282,7 +286,9 @@ def test_ingest_rejects_exact_id_migration_only_manifest(
 
 
 def test_parse_json_payload_salvages_fenced_trailing_commas(tmp_path: Path) -> None:
-    generator = gg.GabrielPipelineGenerator(output_root=tmp_path, cache_dir=tmp_path / "cache")
+    generator = gg.GabrielPipelineGenerator(
+        output_root=tmp_path, cache_dir=tmp_path / "cache"
+    )
     response_text = """
 Here is the JSON:
 ```json
@@ -480,7 +486,9 @@ def test_generate_from_pubget_extracted_data(monkeypatch, tmp_path: Path) -> Non
 
 
 def test_heuristic_record_emits_structured_method_block(tmp_path: Path) -> None:
-    generator = gg.GabrielPipelineGenerator(output_root=tmp_path, cache_dir=tmp_path / "cache")
+    generator = gg.GabrielPipelineGenerator(
+        output_root=tmp_path, cache_dir=tmp_path / "cache"
+    )
     record = generator._heuristic_record(
         gg.PublicationSeed(
             paper_id="pmid:777",
@@ -508,7 +516,9 @@ def test_heuristic_record_emits_structured_method_block(tmp_path: Path) -> None:
 def test_finalize_record_preserves_unknown_method_fields_without_forcing_false(
     tmp_path: Path,
 ) -> None:
-    generator = gg.GabrielPipelineGenerator(output_root=tmp_path, cache_dir=tmp_path / "cache")
+    generator = gg.GabrielPipelineGenerator(
+        output_root=tmp_path, cache_dir=tmp_path / "cache"
+    )
     publication = gg.PublicationSeed(
         paper_id="pmid:778",
         pmid="778",
@@ -521,13 +531,39 @@ def test_finalize_record_preserves_unknown_method_fields_without_forcing_false(
     record = generator._finalize_record(
         publication=publication,
         base_record={
-            "target": {"type": "Task", "label": "Semantic Localizer", "id": "task:semantic_localizer"},
-            "mapping": {"canonical_id": "task:semantic_localizer", "mapping_type": "exact", "mapping_confidence": 0.9},
-            "claim": {"text": "Semantic localizer engaged the language system.", "polarity": "supports", "claim_strength": 0.7},
-            "evidence": {"quote": "A semantic localizer was used.", "section": "abstract", "locatable": True, "direct_quote": True, "has_statistical_detail": False},
+            "target": {
+                "type": "Task",
+                "label": "Semantic Localizer",
+                "id": "task:semantic_localizer",
+            },
+            "mapping": {
+                "canonical_id": "task:semantic_localizer",
+                "mapping_type": "exact",
+                "mapping_confidence": 0.9,
+            },
+            "claim": {
+                "text": "Semantic localizer engaged the language system.",
+                "polarity": "supports",
+                "claim_strength": 0.7,
+            },
+            "evidence": {
+                "quote": "A semantic localizer was used.",
+                "section": "abstract",
+                "locatable": True,
+                "direct_quote": True,
+                "has_statistical_detail": False,
+            },
             "method": {
-                "operationalization": {"status": "clear", "quote": "A semantic localizer was used.", "section": "abstract"},
-                "preregistration": {"status": "unknown", "quote": None, "section": "unknown"},
+                "operationalization": {
+                    "status": "clear",
+                    "quote": "A semantic localizer was used.",
+                    "section": "abstract",
+                },
+                "preregistration": {
+                    "status": "unknown",
+                    "quote": None,
+                    "section": "unknown",
+                },
             },
             "signals": {"mention_frequency": 1, "max_frequency": 5},
         },
@@ -620,9 +656,8 @@ def test_ingest_candidate_only_uses_loader_and_updates_manifest(
     assert result["source_quality_profile"] == "balanced_marginal"
     assert result["stats"]["queue_rows_loaded"] == 1
     assert FakeLoader.captured_config is not None
-    assert (
-        FakeLoader.captured_config["candidate_only_review_queue_path"]
-        == str(queue_path.resolve())
+    assert FakeLoader.captured_config["candidate_only_review_queue_path"] == str(
+        queue_path.resolve()
     )
     assert FakeLoader.captured_queue_paths == [str(queue_path.resolve())]
     assert FakeLoader.captured_quality_profile == "balanced_marginal"
@@ -634,7 +669,9 @@ def test_ingest_candidate_only_uses_loader_and_updates_manifest(
     assert updated_manifest["candidate_lane_ingest"]["stats"]["queue_rows_loaded"] == 1
 
 
-def test_ingest_candidate_only_queue_path_overrides_manifest(monkeypatch, tmp_path: Path) -> None:
+def test_ingest_candidate_only_queue_path_overrides_manifest(
+    monkeypatch, tmp_path: Path
+) -> None:
     queue_path = tmp_path / "review_queue_candidate_only.jsonl"
     queue_path.write_text("{}\n", encoding="utf-8")
 

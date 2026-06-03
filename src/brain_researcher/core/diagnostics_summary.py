@@ -72,11 +72,15 @@ def build_diagnostics_summary(
     if blocking_count:
         codes[f"job_state:{str(job_state).lower()}"] += 1
         if job_error_message:
-            sample_errors.append({"scope": "job", "message": str(job_error_message)[:800]})
+            sample_errors.append(
+                {"scope": "job", "message": str(job_error_message)[:800]}
+            )
 
     # Plan warnings (planner output).
     if plan_warnings:
-        warning_count += len([w for w in plan_warnings if isinstance(w, str) and w.strip()])
+        warning_count += len(
+            [w for w in plan_warnings if isinstance(w, str) and w.strip()]
+        )
         for w in plan_warnings:
             if not isinstance(w, str) or not w.strip():
                 continue
@@ -99,22 +103,34 @@ def build_diagnostics_summary(
         else:
             warning_count += 1
         if len(sample_errors) < 5 and (blocking or severity in {"error", "critical"}):
-            sample_errors.append({
-                "scope": "violation",
-                "code": code,
-                "message": v.get("message"),
-                "stage": v.get("where", {}).get("stage") if isinstance(v.get("where"), dict) else None,
-            })
+            sample_errors.append(
+                {
+                    "scope": "violation",
+                    "code": code,
+                    "message": v.get("message"),
+                    "stage": (
+                        v.get("where", {}).get("stage")
+                        if isinstance(v.get("where"), dict)
+                        else None
+                    ),
+                }
+            )
         elif len(sample_warnings) < 5:
-            sample_warnings.append({
-                "scope": "violation",
-                "code": code,
-                "message": v.get("message"),
-                "stage": v.get("where", {}).get("stage") if isinstance(v.get("where"), dict) else None,
-            })
+            sample_warnings.append(
+                {
+                    "scope": "violation",
+                    "code": code,
+                    "message": v.get("message"),
+                    "stage": (
+                        v.get("where", {}).get("stage")
+                        if isinstance(v.get("where"), dict)
+                        else None
+                    ),
+                }
+            )
 
     # Step summaries (from provenance.json child_runs).
-    for step in (step_summaries or []):
+    for step in step_summaries or []:
         if not isinstance(step, dict):
             continue
         state = str(step.get("state") or "unknown").lower()
@@ -159,7 +175,9 @@ def build_diagnostics_summary(
                     if isinstance(s, str) and s.strip():
                         next_actions.append(s.strip())
 
-            msg = step.get("error") or step.get("error_message") or step.get("last_error")
+            msg = (
+                step.get("error") or step.get("error_message") or step.get("last_error")
+            )
             if msg and len(sample_errors) < 5:
                 sample_errors.append(
                     {
@@ -175,7 +193,7 @@ def build_diagnostics_summary(
             codes[f"step_state:{state}"] += 1
 
     # Artifact checksum statuses.
-    for art in (artifacts or []):
+    for art in artifacts or []:
         if not isinstance(art, dict):
             continue
         status = art.get("checksum_status")
@@ -203,12 +221,20 @@ def build_diagnostics_summary(
         # Nothing to do; blocking_count already 0.
         pass
 
-    top_codes = [{"code": code, "count": count} for code, count in codes.most_common(top_k_codes)]
-    recommended = [{"action": a} for a in _dedupe_preserve_order(next_actions)[:max_next_actions]]
+    top_codes = [
+        {"code": code, "count": count} for code, count in codes.most_common(top_k_codes)
+    ]
+    recommended = [
+        {"action": a} for a in _dedupe_preserve_order(next_actions)[:max_next_actions]
+    ]
 
     return {
         "schema_version": "diagnostics-v1",
-        "counts": {"warning": warning_count, "error": error_count, "blocking": blocking_count},
+        "counts": {
+            "warning": warning_count,
+            "error": error_count,
+            "blocking": blocking_count,
+        },
         "top_codes": top_codes,
         "recommended_next_actions": recommended,
         "sample_errors": sample_errors,

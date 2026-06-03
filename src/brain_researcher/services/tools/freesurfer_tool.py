@@ -8,11 +8,10 @@ volume measurements, and quality control metrics.
 
 import json
 import os
-import tempfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -21,8 +20,8 @@ from brain_researcher.services.tools.params import (
     build_freesurfer_command,
     build_freesurfer_env,
 )
-from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 from brain_researcher.services.tools.spec import ToolSpec
+from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 
 class ReconAllStage(str, Enum):
@@ -65,13 +64,13 @@ class FreeSurferConfig:
     license_file: str = "/opt/freesurfer/license.txt"
     n_threads: int = 1
     use_gpu: bool = False
-    expert_opts: Optional[str] = None
+    expert_opts: str | None = None
     hippocampal_subfields: bool = False
     brainstem_structures: bool = False
     thalamic_nuclei: bool = False
     use_3T: bool = True  # Use 3T atlas
 
-    def get_environment(self) -> Dict[str, str]:
+    def get_environment(self) -> dict[str, str]:
         """Get FreeSurfer environment variables."""
         env = {
             "SUBJECTS_DIR": self.subjects_dir,
@@ -101,43 +100,30 @@ class FreeSurferReconAllArgs(BaseModel):
     subjects_dir: str = Field(description="FreeSurfer subjects directory")
     stage: str = Field(
         default="all",
-        description="Processing stage (autorecon1, autorecon2, autorecon3, all)"
+        description="Processing stage (autorecon1, autorecon2, autorecon3, all)",
     )
-    t2_image: Optional[str] = Field(
-        default=None,
-        description="Optional T2-weighted image for improved pial surface"
+    t2_image: str | None = Field(
+        default=None, description="Optional T2-weighted image for improved pial surface"
     )
-    flair_image: Optional[str] = Field(
-        default=None,
-        description="Optional FLAIR image for improved pial surface"
+    flair_image: str | None = Field(
+        default=None, description="Optional FLAIR image for improved pial surface"
     )
-    expert_file: Optional[str] = Field(
-        default=None,
-        description="Expert options file"
-    )
+    expert_file: str | None = Field(default=None, description="Expert options file")
     hippocampal_subfields: bool = Field(
-        default=False,
-        description="Run hippocampal subfield segmentation"
+        default=False, description="Run hippocampal subfield segmentation"
     )
     brainstem: bool = Field(
-        default=False,
-        description="Run brainstem structure segmentation"
+        default=False, description="Run brainstem structure segmentation"
     )
     thalamus: bool = Field(
-        default=False,
-        description="Run thalamic nuclei segmentation"
+        default=False, description="Run thalamic nuclei segmentation"
     )
-    parallel: bool = Field(
-        default=False,
-        description="Use parallel processing"
-    )
+    parallel: bool = Field(default=False, description="Use parallel processing")
     n_threads: int = Field(
-        default=1,
-        description="Number of threads for parallel processing"
+        default=1, description="Number of threads for parallel processing"
     )
     use_gpu: bool = Field(
-        default=False,
-        description="Use GPU acceleration if available"
+        default=False, description="Use GPU acceleration if available"
     )
 
 
@@ -157,7 +143,7 @@ class FreeSurferReconAllTool(NeuroToolWrapper):
     def get_args_schema(self) -> type[BaseModel]:
         return FreeSurferReconAllArgs
 
-    def _find_freesurfer_license(self) -> Optional[str]:
+    def _find_freesurfer_license(self) -> str | None:
         """Locate a FreeSurfer license file if available."""
         possible_locations = [
             os.path.expanduser("~/.freesurfer/license.txt"),
@@ -179,9 +165,9 @@ class FreeSurferReconAllTool(NeuroToolWrapper):
         subject_id: str,
         subjects_dir: str,
         stage: str = "all",
-        t2_image: Optional[str] = None,
-        flair_image: Optional[str] = None,
-        expert_file: Optional[str] = None,
+        t2_image: str | None = None,
+        flair_image: str | None = None,
+        expert_file: str | None = None,
         hippocampal_subfields: bool = False,
         brainstem: bool = False,
         thalamus: bool = False,
@@ -193,10 +179,7 @@ class FreeSurferReconAllTool(NeuroToolWrapper):
 
         # Validate inputs
         if not os.path.exists(t1_image):
-            return ToolResult(
-                status="error",
-                error=f"T1 image not found: {t1_image}"
-            )
+            return ToolResult(status="error", error=f"T1 image not found: {t1_image}")
 
         # Create subjects directory if needed
         Path(subjects_dir).mkdir(parents=True, exist_ok=True)
@@ -208,8 +191,12 @@ class FreeSurferReconAllTool(NeuroToolWrapper):
             t1_image=t1_image,
             stage=stage,
             t2_image=t2_image if t2_image and os.path.exists(t2_image) else None,
-            flair_image=flair_image if flair_image and os.path.exists(flair_image) else None,
-            expert_file=expert_file if expert_file and os.path.exists(expert_file) else None,
+            flair_image=(
+                flair_image if flair_image and os.path.exists(flair_image) else None
+            ),
+            expert_file=(
+                expert_file if expert_file and os.path.exists(expert_file) else None
+            ),
             hippocampal_subfields=hippocampal_subfields,
             brainstem=brainstem,
             thalamus=thalamus,
@@ -226,25 +213,13 @@ class FreeSurferReconAllTool(NeuroToolWrapper):
         post_commands = []
 
         if hippocampal_subfields:
-            post_commands.append([
-                "segmentHA_T1.sh",
-                subject_id,
-                subjects_dir
-            ])
+            post_commands.append(["segmentHA_T1.sh", subject_id, subjects_dir])
 
         if brainstem:
-            post_commands.append([
-                "segmentBS.sh",
-                subject_id,
-                subjects_dir
-            ])
+            post_commands.append(["segmentBS.sh", subject_id, subjects_dir])
 
         if thalamus:
-            post_commands.append([
-                "segmentThalamicNuclei.sh",
-                subject_id,
-                subjects_dir
-            ])
+            post_commands.append(["segmentThalamicNuclei.sh", subject_id, subjects_dir])
 
         # Create script for execution
         script_lines = [
@@ -257,12 +232,7 @@ class FreeSurferReconAllTool(NeuroToolWrapper):
         for key, value in env.items():
             script_lines.append(f"export {key}='{value}'")
 
-        script_lines.extend([
-            "",
-            "# Run recon-all",
-            " ".join(command_tokens),
-            ""
-        ])
+        script_lines.extend(["", "# Run recon-all", " ".join(command_tokens), ""])
 
         # Add post-processing commands
         if post_commands:
@@ -286,11 +256,11 @@ class FreeSurferReconAllTool(NeuroToolWrapper):
                 "additional_segmentations": {
                     "hippocampal_subfields": hippocampal_subfields,
                     "brainstem": brainstem,
-                    "thalamus": thalamus
+                    "thalamus": thalamus,
                 },
                 "estimated_time": self._estimate_processing_time(stage),
-                "environment": env
-            }
+                "environment": env,
+            },
         )
 
     def _estimate_processing_time(self, stage: str) -> str:
@@ -299,7 +269,7 @@ class FreeSurferReconAllTool(NeuroToolWrapper):
             "autorecon1": "30-60 minutes",
             "autorecon2": "4-6 hours",
             "autorecon3": "1-2 hours",
-            "all": "6-10 hours"
+            "all": "6-10 hours",
         }
         return times.get(stage, "Unknown")
 
@@ -353,24 +323,19 @@ class FreeSurferParcellationArgs(BaseModel):
     subjects_dir: str = Field(description="FreeSurfer subjects directory")
     atlas: str = Field(
         default="aparc",
-        description="Parcellation atlas (aparc, aparc.a2009s, aparc.DKTatlas)"
+        description="Parcellation atlas (aparc, aparc.a2009s, aparc.DKTatlas)",
     )
     hemisphere: str = Field(
-        default="both",
-        description="Hemisphere to process (lh, rh, both)"
+        default="both", description="Hemisphere to process (lh, rh, both)"
     )
     measure: str = Field(
         default="thickness",
-        description="Measure to extract (thickness, area, volume, curv)"
+        description="Measure to extract (thickness, area, volume, curv)",
     )
     output_format: str = Field(
-        default="stats",
-        description="Output format (stats, table, json)"
+        default="stats", description="Output format (stats, table, json)"
     )
-    output_file: Optional[str] = Field(
-        default=None,
-        description="Output file path"
-    )
+    output_file: str | None = Field(default=None, description="Output file path")
 
 
 class FreeSurferParcellationTool(NeuroToolWrapper):
@@ -396,7 +361,7 @@ class FreeSurferParcellationTool(NeuroToolWrapper):
         hemisphere: str = "both",
         measure: str = "thickness",
         output_format: str = "stats",
-        output_file: Optional[str] = None,
+        output_file: str | None = None,
     ) -> ToolResult:
         """Extract parcellation statistics."""
 
@@ -404,8 +369,7 @@ class FreeSurferParcellationTool(NeuroToolWrapper):
         subject_path = Path(subjects_dir) / subject_id
         if not subject_path.exists():
             return ToolResult(
-                status="error",
-                error=f"Subject directory not found: {subject_path}"
+                status="error", error=f"Subject directory not found: {subject_path}"
             )
 
         # Determine hemispheres to process
@@ -427,10 +391,12 @@ class FreeSurferParcellationTool(NeuroToolWrapper):
                 # Generate stats if not exists
                 cmd = [
                     "mris_anatomical_stats",
-                    "-a", str(subject_path / "label" / f"{hemi}.{atlas}.annot"),
-                    "-f", str(stats_file),
+                    "-a",
+                    str(subject_path / "label" / f"{hemi}.{atlas}.annot"),
+                    "-f",
+                    str(stats_file),
                     subject_id,
-                    hemi
+                    hemi,
                 ]
                 commands.append(" ".join(cmd))
             if output_format == "stats":
@@ -443,11 +409,16 @@ class FreeSurferParcellationTool(NeuroToolWrapper):
 
                 cmd = [
                     "aparcstats2table",
-                    "--subjects", subject_id,
-                    "--hemi", hemi,
-                    "--parc", atlas,
-                    "--meas", measure,
-                    "--tablefile", table_file
+                    "--subjects",
+                    subject_id,
+                    "--hemi",
+                    hemi,
+                    "--parc",
+                    atlas,
+                    "--meas",
+                    measure,
+                    "--tablefile",
+                    table_file,
                 ]
 
                 commands.append(" ".join(cmd))
@@ -468,7 +439,7 @@ class FreeSurferParcellationTool(NeuroToolWrapper):
             "set -e",
             "",
             f"export SUBJECTS_DIR='{subjects_dir}'",
-            ""
+            "",
         ]
 
         for cmd in commands:
@@ -488,8 +459,8 @@ class FreeSurferParcellationTool(NeuroToolWrapper):
                 "output_format": output_format,
                 "output_files": output_files,
                 "commands": commands,
-                "script_file": str(script_file)
-            }
+                "script_file": str(script_file),
+            },
         )
 
 
@@ -504,16 +475,14 @@ class FreeSurferVolumetricArgs(BaseModel):
     subject_id: str = Field(description="Subject identifier")
     subjects_dir: str = Field(description="FreeSurfer subjects directory")
     segmentation: str = Field(
-        default="aseg",
-        description="Segmentation to use (aseg, aparc+aseg, wmparc)"
+        default="aseg", description="Segmentation to use (aseg, aparc+aseg, wmparc)"
     )
-    measure_file: Optional[str] = Field(
-        default=None,
-        description="Output measurements file"
+    measure_file: str | None = Field(
+        default=None, description="Output measurements file"
     )
     etiv_only: bool = Field(
         default=False,
-        description="Extract only eTIV (estimated total intracranial volume)"
+        description="Extract only eTIV (estimated total intracranial volume)",
     )
 
 
@@ -537,7 +506,7 @@ class FreeSurferVolumetricTool(NeuroToolWrapper):
         subject_id: str,
         subjects_dir: str,
         segmentation: str = "aseg",
-        measure_file: Optional[str] = None,
+        measure_file: str | None = None,
         etiv_only: bool = False,
     ) -> ToolResult:
         """Extract volumetric measurements."""
@@ -546,16 +515,14 @@ class FreeSurferVolumetricTool(NeuroToolWrapper):
         subject_path = Path(subjects_dir) / subject_id
         if not subject_path.exists():
             return ToolResult(
-                status="error",
-                error=f"Subject directory not found: {subject_path}"
+                status="error", error=f"Subject directory not found: {subject_path}"
             )
 
         # Check segmentation file
         seg_file = subject_path / "mri" / f"{segmentation}.mgz"
         if not seg_file.exists():
             return ToolResult(
-                status="error",
-                error=f"Segmentation file not found: {seg_file}"
+                status="error", error=f"Segmentation file not found: {seg_file}"
             )
 
         commands = []
@@ -565,9 +532,11 @@ class FreeSurferVolumetricTool(NeuroToolWrapper):
             # Extract only eTIV
             cmd = [
                 "mri_segstats",
-                "--seg", str(seg_file),
+                "--seg",
+                str(seg_file),
                 "--etiv-only",
-                "--subject", subject_id
+                "--subject",
+                subject_id,
             ]
             commands.append(" ".join(cmd))
 
@@ -577,11 +546,15 @@ class FreeSurferVolumetricTool(NeuroToolWrapper):
 
             cmd = [
                 "mri_segstats",
-                "--seg", str(seg_file),
-                "--sum", stats_file,
-                "--pv", str(subject_path / "mri" / "norm.mgz"),
-                "--subject", subject_id,
-                "--etiv"
+                "--seg",
+                str(seg_file),
+                "--sum",
+                stats_file,
+                "--pv",
+                str(subject_path / "mri" / "norm.mgz"),
+                "--subject",
+                subject_id,
+                "--etiv",
             ]
 
             # Add color table for proper labeling
@@ -596,9 +569,12 @@ class FreeSurferVolumetricTool(NeuroToolWrapper):
             # Also create a summary table
             table_cmd = [
                 "asegstats2table",
-                "--subjects", subject_id,
-                "--meas", "volume",
-                "--tablefile", f"{subject_id}_volumes.txt"
+                "--subjects",
+                subject_id,
+                "--meas",
+                "volume",
+                "--tablefile",
+                f"{subject_id}_volumes.txt",
             ]
             commands.append(" ".join(table_cmd))
             output_files.append(f"{subject_id}_volumes.txt")
@@ -609,7 +585,7 @@ class FreeSurferVolumetricTool(NeuroToolWrapper):
             "set -e",
             "",
             f"export SUBJECTS_DIR='{subjects_dir}'",
-            ""
+            "",
         ]
 
         for cmd in commands:
@@ -627,8 +603,8 @@ class FreeSurferVolumetricTool(NeuroToolWrapper):
                 "output_files": output_files,
                 "commands": commands,
                 "script_file": str(script_file),
-                "etiv_only": etiv_only
-            }
+                "etiv_only": etiv_only,
+            },
         )
 
 
@@ -643,14 +619,10 @@ class FreeSurferQCArgs(BaseModel):
     subject_id: str = Field(description="Subject identifier")
     subjects_dir: str = Field(description="FreeSurfer subjects directory")
     output_dir: str = Field(description="Output directory for QC reports")
-    checks: List[str] = Field(
-        default=["surfaces", "aseg", "aparc", "snr"],
-        description="QC checks to perform"
+    checks: list[str] = Field(
+        default=["surfaces", "aseg", "aparc", "snr"], description="QC checks to perform"
     )
-    screenshots: bool = Field(
-        default=True,
-        description="Generate screenshot images"
-    )
+    screenshots: bool = Field(default=True, description="Generate screenshot images")
 
 
 class FreeSurferQCTool(NeuroToolWrapper):
@@ -674,7 +646,7 @@ class FreeSurferQCTool(NeuroToolWrapper):
         subject_id: str,
         subjects_dir: str,
         output_dir: str,
-        checks: List[str] = None,
+        checks: list[str] = None,
         screenshots: bool = True,
     ) -> ToolResult:
         """Run quality control checks."""
@@ -686,8 +658,7 @@ class FreeSurferQCTool(NeuroToolWrapper):
         subject_path = Path(subjects_dir) / subject_id
         if not subject_path.exists():
             return ToolResult(
-                status="error",
-                error=f"Subject directory not found: {subject_path}"
+                status="error", error=f"Subject directory not found: {subject_path}"
             )
 
         # Create output directory
@@ -703,7 +674,7 @@ class FreeSurferQCTool(NeuroToolWrapper):
             for hemi in ["lh", "rh"]:
                 euler_cmd = [
                     "mris_euler_number",
-                    str(subject_path / "surf" / f"{hemi}.orig")
+                    str(subject_path / "surf" / f"{hemi}.orig"),
                 ]
                 commands.append(" ".join(euler_cmd))
 
@@ -715,9 +686,12 @@ class FreeSurferQCTool(NeuroToolWrapper):
 
                         screenshot_cmd = [
                             "freeview",
-                            "-f", str(subject_path / "surf" / f"{hemi}.{surf}"),
-                            "-viewport", "3d",
-                            "-ss", str(screenshot_file)
+                            "-f",
+                            str(subject_path / "surf" / f"{hemi}.{surf}"),
+                            "-viewport",
+                            "3d",
+                            "-ss",
+                            str(screenshot_file),
                         ]
                         commands.append(" ".join(screenshot_cmd))
                         output_files.append(str(screenshot_file))
@@ -727,9 +701,12 @@ class FreeSurferQCTool(NeuroToolWrapper):
             # Check segmentation stats
             aseg_cmd = [
                 "mri_segstats",
-                "--seg", str(subject_path / "mri" / "aseg.mgz"),
-                "--sum", str(qc_dir / f"{subject_id}_aseg_stats.txt"),
-                "--subject", subject_id
+                "--seg",
+                str(subject_path / "mri" / "aseg.mgz"),
+                "--sum",
+                str(qc_dir / f"{subject_id}_aseg_stats.txt"),
+                "--subject",
+                subject_id,
             ]
             commands.append(" ".join(aseg_cmd))
             output_files.append(str(qc_dir / f"{subject_id}_aseg_stats.txt"))
@@ -740,10 +717,13 @@ class FreeSurferQCTool(NeuroToolWrapper):
 
                 screenshot_cmd = [
                     "freeview",
-                    "-v", str(subject_path / "mri" / "brain.mgz"),
+                    "-v",
+                    str(subject_path / "mri" / "brain.mgz"),
                     str(subject_path / "mri" / "aseg.mgz:colormap=lut:opacity=0.2"),
-                    "-viewport", "coronal",
-                    "-ss", str(aseg_screenshot)
+                    "-viewport",
+                    "coronal",
+                    "-ss",
+                    str(aseg_screenshot),
                 ]
                 commands.append(" ".join(screenshot_cmd))
                 output_files.append(str(aseg_screenshot))
@@ -754,9 +734,10 @@ class FreeSurferQCTool(NeuroToolWrapper):
                 # Check parcellation stats
                 parc_cmd = [
                     "mris_anatomical_stats",
-                    "-a", str(subject_path / "label" / f"{hemi}.aparc.annot"),
+                    "-a",
+                    str(subject_path / "label" / f"{hemi}.aparc.annot"),
                     subject_id,
-                    hemi
+                    hemi,
                 ]
                 commands.append(" ".join(parc_cmd))
 
@@ -769,7 +750,8 @@ class FreeSurferQCTool(NeuroToolWrapper):
                 str(subject_path / "surf"),
                 str(subject_path / "mri" / "norm.mgz"),
                 str(subject_path / "mri" / "aseg.mgz"),
-                ">", str(snr_file)
+                ">",
+                str(snr_file),
             ]
             commands.append(" ".join(snr_cmd))
             output_files.append(str(snr_file))
@@ -782,7 +764,7 @@ class FreeSurferQCTool(NeuroToolWrapper):
             f"export SUBJECTS_DIR='{subjects_dir}'",
             "",
             "echo 'Running FreeSurfer QC checks...'",
-            ""
+            "",
         ]
 
         for i, cmd in enumerate(commands, 1):
@@ -802,7 +784,7 @@ class FreeSurferQCTool(NeuroToolWrapper):
             "checks_performed": checks,
             "screenshots_generated": screenshots,
             "output_files": output_files,
-            "qc_directory": str(qc_dir)
+            "qc_directory": str(qc_dir),
         }
 
         report_file = qc_dir / f"{subject_id}_qc_report.json"
@@ -817,8 +799,8 @@ class FreeSurferQCTool(NeuroToolWrapper):
                 "report_file": str(report_file),
                 "script_file": str(script_file),
                 "commands": commands,
-                "n_checks": len(commands)
-            }
+                "n_checks": len(commands),
+            },
         )
 
 
@@ -831,7 +813,7 @@ class FreeSurferTools:
     """Collection of FreeSurfer tools."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         """Get all FreeSurfer tools."""
         return [
             FreeSurferReconAllTool(),

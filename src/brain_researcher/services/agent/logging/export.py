@@ -7,10 +7,10 @@ formats suitable for training, analysis, and evaluation.
 
 import csv
 import json
-from datetime import datetime, timedelta
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import pandas as pd
 
@@ -31,11 +31,7 @@ class LogExporter:
             log_path: Path to log directory. When omitted, use the canonical
                 metadata root plus compatible legacy read aliases.
         """
-        self.log_path = (
-            Path(log_path)
-            if log_path is not None
-            else get_metadata_root()
-        )
+        self.log_path = Path(log_path) if log_path is not None else get_metadata_root()
         self.read_roots = (
             (self.log_path.resolve(),)
             if log_path is not None
@@ -45,8 +41,8 @@ class LogExporter:
     def export_for_training(
         self,
         output_file: str,
-        filters: Optional[Dict[str, Any]] = None,
-        format: str = 'jsonl'
+        filters: dict[str, Any] | None = None,
+        format: str = "jsonl",
     ) -> int:
         """
         Export logs for model training.
@@ -66,19 +62,17 @@ class LogExporter:
         training_data = self._transform_for_training(logs)
 
         # Export in requested format
-        if format == 'jsonl':
+        if format == "jsonl":
             return self._export_jsonl(training_data, output_file)
-        elif format == 'csv':
+        elif format == "csv":
             return self._export_csv(training_data, output_file)
-        elif format == 'parquet':
+        elif format == "parquet":
             return self._export_parquet(training_data, output_file)
         else:
             raise ValueError(f"Unsupported format: {format}")
 
     def export_conversation_pairs(
-        self,
-        output_file: str,
-        min_quality_score: float = 0.7
+        self, output_file: str, min_quality_score: float = 0.7
     ) -> int:
         """
         Export query-response pairs for conversational training.
@@ -97,7 +91,7 @@ class LogExporter:
 
         for run_id, phases in runs.items():
             # Must have all three phases
-            if not all(p in phases for p in ['planning', 'execution', 'review']):
+            if not all(p in phases for p in ["planning", "execution", "review"]):
                 continue
 
             # Calculate quality score
@@ -108,31 +102,39 @@ class LogExporter:
 
             # Extract conversation pair
             pair = {
-                'instruction': phases['planning'].get('request', {}).get('query', ''),
-                'input': json.dumps(phases['planning'].get('request', {}).get('tool_candidates', [])),
-                'output': json.dumps({
-                    'selected_tool': phases['execution'].get('request', {}).get('selected_tool'),
-                    'parameters': phases['execution'].get('args', {}).get('args_resolved', {}),
-                    'result': phases['review'].get('review', {}).get('status')
-                }),
-                'quality_score': quality,
-                'run_id': run_id,
-                'timestamp': phases['planning'].get('timestamps', {}).get('ts_event_utc')
+                "instruction": phases["planning"].get("request", {}).get("query", ""),
+                "input": json.dumps(
+                    phases["planning"].get("request", {}).get("tool_candidates", [])
+                ),
+                "output": json.dumps(
+                    {
+                        "selected_tool": phases["execution"]
+                        .get("request", {})
+                        .get("selected_tool"),
+                        "parameters": phases["execution"]
+                        .get("args", {})
+                        .get("args_resolved", {}),
+                        "result": phases["review"].get("review", {}).get("status"),
+                    }
+                ),
+                "quality_score": quality,
+                "run_id": run_id,
+                "timestamp": phases["planning"]
+                .get("timestamps", {})
+                .get("ts_event_utc"),
             }
 
             pairs.append(pair)
 
         # Write pairs
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             for pair in pairs:
-                f.write(json.dumps(pair) + '\n')
+                f.write(json.dumps(pair) + "\n")
 
         return len(pairs)
 
     def export_tool_usage_dataset(
-        self,
-        output_file: str,
-        include_failures: bool = False
+        self, output_file: str, include_failures: bool = False
     ) -> int:
         """
         Export tool usage patterns for tool selection training.
@@ -147,42 +149,44 @@ class LogExporter:
         tool_usage = []
 
         # Load execution logs
-        exec_logs = self._load_logs({'phase': 'execution'})
+        exec_logs = self._load_logs({"phase": "execution"})
 
         for log in exec_logs:
             # Skip failures if requested
-            if not include_failures and log.get('status') != 'SUCCESS':
+            if not include_failures and log.get("status") != "SUCCESS":
                 continue
 
             # Extract tool usage pattern
             usage = {
-                'query': log.get('request', {}).get('query', ''),
-                'tool': log.get('request', {}).get('selected_tool', ''),
-                'parameters_raw': log.get('args', {}).get('args_raw', {}),
-                'parameters_resolved': log.get('args', {}).get('args_resolved', {}),
-                'validation_ok': log.get('args', {}).get('validation', {}).get('ok', False),
-                'execution_time_ms': log.get('timestamps', {}).get('perf', {}).get('duration_ms', 0),
-                'success': log.get('status') == 'SUCCESS'
+                "query": log.get("request", {}).get("query", ""),
+                "tool": log.get("request", {}).get("selected_tool", ""),
+                "parameters_raw": log.get("args", {}).get("args_raw", {}),
+                "parameters_resolved": log.get("args", {}).get("args_resolved", {}),
+                "validation_ok": log.get("args", {})
+                .get("validation", {})
+                .get("ok", False),
+                "execution_time_ms": log.get("timestamps", {})
+                .get("perf", {})
+                .get("duration_ms", 0),
+                "success": log.get("status") == "SUCCESS",
             }
 
             # Add environment context
-            if 'execution' in log and 'env' in log['execution']:
-                usage['environment'] = log['execution']['env']
+            if "execution" in log and "env" in log["execution"]:
+                usage["environment"] = log["execution"]["env"]
 
             tool_usage.append(usage)
 
         # Export as JSONL
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             for usage in tool_usage:
-                f.write(json.dumps(usage) + '\n')
+                f.write(json.dumps(usage) + "\n")
 
         return len(tool_usage)
 
     def export_evaluation_dataset(
-        self,
-        output_dir: str,
-        split_ratio: Tuple[float, float, float] = (0.8, 0.1, 0.1)
-    ) -> Dict[str, int]:
+        self, output_dir: str, split_ratio: tuple[float, float, float] = (0.8, 0.1, 0.1)
+    ) -> dict[str, int]:
         """
         Export dataset split for evaluation (train/val/test).
 
@@ -201,8 +205,9 @@ class LogExporter:
         # Load all complete runs
         runs = self._group_by_run()
         complete_runs = [
-            run_id for run_id, phases in runs.items()
-            if all(p in phases for p in ['planning', 'execution', 'review'])
+            run_id
+            for run_id, phases in runs.items()
+            if all(p in phases for p in ["planning", "execution", "review"])
         ]
 
         # Shuffle and split
@@ -213,8 +218,8 @@ class LogExporter:
         val_size = int(n * split_ratio[1])
 
         train_runs = complete_runs[:train_size]
-        val_runs = complete_runs[train_size:train_size + val_size]
-        test_runs = complete_runs[train_size + val_size:]
+        val_runs = complete_runs[train_size : train_size + val_size]
+        test_runs = complete_runs[train_size + val_size :]
 
         # Export each split
         output_path = Path(output_dir)
@@ -223,46 +228,50 @@ class LogExporter:
         stats = {}
 
         for split_name, run_ids in [
-            ('train', train_runs),
-            ('val', val_runs),
-            ('test', test_runs)
+            ("train", train_runs),
+            ("val", val_runs),
+            ("test", test_runs),
         ]:
             split_file = output_path / f"{split_name}.jsonl"
             count = 0
 
-            with open(split_file, 'w') as f:
+            with open(split_file, "w") as f:
                 for run_id in run_ids:
                     # Export all phases for this run
-                    for phase in ['planning', 'execution', 'review']:
+                    for phase in ["planning", "execution", "review"]:
                         if phase in runs[run_id]:
-                            f.write(json.dumps(runs[run_id][phase]) + '\n')
+                            f.write(json.dumps(runs[run_id][phase]) + "\n")
                             count += 1
 
             stats[split_name] = count
 
         # Write split metadata
-        meta_file = output_path / 'metadata.json'
-        with open(meta_file, 'w') as f:
-            json.dump({
-                'total_runs': len(complete_runs),
-                'split_ratio': split_ratio,
-                'splits': {
-                    'train': len(train_runs),
-                    'val': len(val_runs),
-                    'test': len(test_runs)
+        meta_file = output_path / "metadata.json"
+        with open(meta_file, "w") as f:
+            json.dump(
+                {
+                    "total_runs": len(complete_runs),
+                    "split_ratio": split_ratio,
+                    "splits": {
+                        "train": len(train_runs),
+                        "val": len(val_runs),
+                        "test": len(test_runs),
+                    },
+                    "records_per_split": stats,
+                    "created_at": datetime.now().isoformat(),
                 },
-                'records_per_split': stats,
-                'created_at': datetime.now().isoformat()
-            }, f, indent=2)
+                f,
+                indent=2,
+            )
 
         return stats
 
     def generate_analytics_report(
         self,
         output_file: str,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None
-    ) -> Dict[str, Any]:
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict[str, Any]:
         """
         Generate comprehensive analytics report.
 
@@ -277,79 +286,79 @@ class LogExporter:
         # Load logs within date range
         filters = {}
         if start_date:
-            filters['start_date'] = start_date
+            filters["start_date"] = start_date
         if end_date:
-            filters['end_date'] = end_date
+            filters["end_date"] = end_date
 
         logs = self._load_logs(filters)
 
         # Compute analytics
         analytics = {
-            'date_range': {
-                'start': start_date or 'all',
-                'end': end_date or 'all'
-            },
-            'total_logs': len(logs),
-            'by_phase': defaultdict(int),
-            'by_status': defaultdict(int),
-            'by_tool': defaultdict(int),
-            'execution_times': [],
-            'daily_activity': defaultdict(int),
-            'error_analysis': defaultdict(list)
+            "date_range": {"start": start_date or "all", "end": end_date or "all"},
+            "total_logs": len(logs),
+            "by_phase": defaultdict(int),
+            "by_status": defaultdict(int),
+            "by_tool": defaultdict(int),
+            "execution_times": [],
+            "daily_activity": defaultdict(int),
+            "error_analysis": defaultdict(list),
         }
 
         for log in logs:
             # Phase distribution
-            phase = log.get('phase', 'unknown')
-            analytics['by_phase'][phase] += 1
+            phase = log.get("phase", "unknown")
+            analytics["by_phase"][phase] += 1
 
             # Status distribution
-            status = log.get('status', 'unknown')
-            analytics['by_status'][status] += 1
+            status = log.get("status", "unknown")
+            analytics["by_status"][status] += 1
 
             # Tool usage
-            if 'request' in log and 'selected_tool' in log['request']:
-                tool = log['request']['selected_tool']
-                analytics['by_tool'][tool] += 1
+            if "request" in log and "selected_tool" in log["request"]:
+                tool = log["request"]["selected_tool"]
+                analytics["by_tool"][tool] += 1
 
             # Execution times
-            if 'timestamps' in log and 'perf' in log['timestamps']:
-                duration = log['timestamps']['perf'].get('duration_ms', 0)
-                analytics['execution_times'].append(duration)
+            if "timestamps" in log and "perf" in log["timestamps"]:
+                duration = log["timestamps"]["perf"].get("duration_ms", 0)
+                analytics["execution_times"].append(duration)
 
             # Daily activity
-            if 'timestamps' in log and 'ts_event_utc' in log['timestamps']:
-                date = log['timestamps']['ts_event_utc'][:10]
-                analytics['daily_activity'][date] += 1
+            if "timestamps" in log and "ts_event_utc" in log["timestamps"]:
+                date = log["timestamps"]["ts_event_utc"][:10]
+                analytics["daily_activity"][date] += 1
 
             # Error analysis
-            if log.get('status') == 'FAILED' and 'errors' in log:
-                for error in log['errors']:
-                    analytics['error_analysis'][phase].append(error)
+            if log.get("status") == "FAILED" and "errors" in log:
+                for error in log["errors"]:
+                    analytics["error_analysis"][phase].append(error)
 
         # Compute statistics
-        if analytics['execution_times']:
-            analytics['execution_stats'] = {
-                'mean_ms': sum(analytics['execution_times']) / len(analytics['execution_times']),
-                'min_ms': min(analytics['execution_times']),
-                'max_ms': max(analytics['execution_times']),
-                'median_ms': sorted(analytics['execution_times'])[len(analytics['execution_times']) // 2]
+        if analytics["execution_times"]:
+            analytics["execution_stats"] = {
+                "mean_ms": sum(analytics["execution_times"])
+                / len(analytics["execution_times"]),
+                "min_ms": min(analytics["execution_times"]),
+                "max_ms": max(analytics["execution_times"]),
+                "median_ms": sorted(analytics["execution_times"])[
+                    len(analytics["execution_times"]) // 2
+                ],
             }
 
         # Convert defaultdicts to regular dicts for JSON serialization
-        analytics['by_phase'] = dict(analytics['by_phase'])
-        analytics['by_status'] = dict(analytics['by_status'])
-        analytics['by_tool'] = dict(analytics['by_tool'])
-        analytics['daily_activity'] = dict(analytics['daily_activity'])
-        analytics['error_analysis'] = dict(analytics['error_analysis'])
+        analytics["by_phase"] = dict(analytics["by_phase"])
+        analytics["by_status"] = dict(analytics["by_status"])
+        analytics["by_tool"] = dict(analytics["by_tool"])
+        analytics["daily_activity"] = dict(analytics["daily_activity"])
+        analytics["error_analysis"] = dict(analytics["error_analysis"])
 
         # Write report
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(analytics, f, indent=2)
 
         return analytics
 
-    def _load_logs(self, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def _load_logs(self, filters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         """
         Load logs from disk with optional filtering.
 
@@ -367,13 +376,13 @@ class LogExporter:
             # Check date filter
             file_date = jsonl_file.stem  # YYYY-MM-DD
 
-            if 'start_date' in filters and file_date < filters['start_date']:
+            if "start_date" in filters and file_date < filters["start_date"]:
                 continue
-            if 'end_date' in filters and file_date > filters['end_date']:
+            if "end_date" in filters and file_date > filters["end_date"]:
                 continue
 
             # Load logs from file
-            with open(jsonl_file, 'r') as f:
+            with open(jsonl_file) as f:
                 for line in f:
                     if not line.strip():
                         continue
@@ -382,11 +391,17 @@ class LogExporter:
                         log = json.loads(line)
 
                         # Apply filters
-                        if 'phase' in filters and log.get('phase') != filters['phase']:
+                        if "phase" in filters and log.get("phase") != filters["phase"]:
                             continue
-                        if 'status' in filters and log.get('status') != filters['status']:
+                        if (
+                            "status" in filters
+                            and log.get("status") != filters["status"]
+                        ):
                             continue
-                        if 'run_id' in filters and log.get('run_id') != filters['run_id']:
+                        if (
+                            "run_id" in filters
+                            and log.get("run_id") != filters["run_id"]
+                        ):
                             continue
 
                         dedupe_key = json.dumps(log, sort_keys=True, ensure_ascii=False)
@@ -400,23 +415,22 @@ class LogExporter:
 
         # Sort by timestamp
         logs.sort(
-            key=lambda x: x.get('timestamps', {}).get('ts_event_utc', ''),
-            reverse=False
+            key=lambda x: x.get("timestamps", {}).get("ts_event_utc", ""), reverse=False
         )
 
         return logs
 
-    def _iter_session_files(self) -> List[Path]:
+    def _iter_session_files(self) -> list[Path]:
         """Return session JSONL files across all readable metadata roots."""
 
         session_files: list[Path] = []
         seen_paths: set[str] = set()
 
         for root in self.read_roots:
-            session_dir = root / 'sessions'
+            session_dir = root / "sessions"
             if not session_dir.exists():
                 continue
-            for jsonl_file in sorted(session_dir.glob('*.jsonl')):
+            for jsonl_file in sorted(session_dir.glob("*.jsonl")):
                 resolved = str(jsonl_file.resolve())
                 if resolved in seen_paths:
                     continue
@@ -425,7 +439,7 @@ class LogExporter:
 
         return session_files
 
-    def _group_by_run(self) -> Dict[str, Dict[str, Any]]:
+    def _group_by_run(self) -> dict[str, dict[str, Any]]:
         """
         Group logs by run_id and phase.
 
@@ -437,15 +451,15 @@ class LogExporter:
         logs = self._load_logs()
 
         for log in logs:
-            run_id = log.get('run_id')
-            phase = log.get('phase')
+            run_id = log.get("run_id")
+            phase = log.get("phase")
 
             if run_id and phase:
                 runs[run_id][phase] = log
 
         return dict(runs)
 
-    def _calculate_quality_score(self, phases: Dict[str, Any]) -> float:
+    def _calculate_quality_score(self, phases: dict[str, Any]) -> float:
         """
         Calculate quality score for a complete run.
 
@@ -458,19 +472,24 @@ class LogExporter:
         score = 0.0
 
         # Check execution success
-        if phases.get('execution', {}).get('status') == 'SUCCESS':
+        if phases.get("execution", {}).get("status") == "SUCCESS":
             score += 0.4
 
         # Check review pass
-        if phases.get('review', {}).get('review', {}).get('status') == 'PASS':
+        if phases.get("review", {}).get("review", {}).get("status") == "PASS":
             score += 0.3
 
         # Check validation
-        if phases.get('execution', {}).get('args', {}).get('validation', {}).get('ok'):
+        if phases.get("execution", {}).get("args", {}).get("validation", {}).get("ok"):
             score += 0.2
 
         # Check execution time (penalize very slow)
-        exec_time = phases.get('execution', {}).get('timestamps', {}).get('perf', {}).get('duration_ms', 0)
+        exec_time = (
+            phases.get("execution", {})
+            .get("timestamps", {})
+            .get("perf", {})
+            .get("duration_ms", 0)
+        )
         if 0 < exec_time < 5000:  # Under 5 seconds
             score += 0.1
         elif exec_time > 30000:  # Over 30 seconds
@@ -478,7 +497,9 @@ class LogExporter:
 
         return max(0.0, min(1.0, score))
 
-    def _transform_for_training(self, logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _transform_for_training(
+        self, logs: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """
         Transform logs into training-friendly format.
 
@@ -492,41 +513,47 @@ class LogExporter:
 
         for log in logs:
             # Skip incomplete logs
-            if 'request' not in log or 'query' not in log['request']:
+            if "request" not in log or "query" not in log["request"]:
                 continue
 
             # Create training record
             record = {
-                'query': log['request']['query'],
-                'phase': log.get('phase'),
-                'tool': log['request'].get('selected_tool'),
-                'success': log.get('status') == 'SUCCESS',
-                'duration_ms': log.get('timestamps', {}).get('perf', {}).get('duration_ms', 0)
+                "query": log["request"]["query"],
+                "phase": log.get("phase"),
+                "tool": log["request"].get("selected_tool"),
+                "success": log.get("status") == "SUCCESS",
+                "duration_ms": log.get("timestamps", {})
+                .get("perf", {})
+                .get("duration_ms", 0),
             }
 
             # Add parameters for execution phase
-            if log.get('phase') == 'execution' and 'args' in log:
-                record['parameters_raw'] = json.dumps(log['args'].get('args_raw', {}))
-                record['parameters_resolved'] = json.dumps(log['args'].get('args_resolved', {}))
-                record['validation_ok'] = log['args'].get('validation', {}).get('ok', False)
+            if log.get("phase") == "execution" and "args" in log:
+                record["parameters_raw"] = json.dumps(log["args"].get("args_raw", {}))
+                record["parameters_resolved"] = json.dumps(
+                    log["args"].get("args_resolved", {})
+                )
+                record["validation_ok"] = (
+                    log["args"].get("validation", {}).get("ok", False)
+                )
 
             # Add review data
-            if log.get('phase') == 'review' and 'review' in log:
-                record['review_status'] = log['review'].get('status')
-                record['review_checks'] = len(log['review'].get('checks', []))
+            if log.get("phase") == "review" and "review" in log:
+                record["review_status"] = log["review"].get("status")
+                record["review_checks"] = len(log["review"].get("checks", []))
 
             training_data.append(record)
 
         return training_data
 
-    def _export_jsonl(self, data: List[Dict[str, Any]], output_file: str) -> int:
+    def _export_jsonl(self, data: list[dict[str, Any]], output_file: str) -> int:
         """Export data as JSONL."""
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             for record in data:
-                f.write(json.dumps(record) + '\n')
+                f.write(json.dumps(record) + "\n")
         return len(data)
 
-    def _export_csv(self, data: List[Dict[str, Any]], output_file: str) -> int:
+    def _export_csv(self, data: list[dict[str, Any]], output_file: str) -> int:
         """Export data as CSV."""
         if not data:
             return 0
@@ -537,14 +564,14 @@ class LogExporter:
             keys.update(record.keys())
 
         # Write CSV
-        with open(output_file, 'w', newline='') as f:
+        with open(output_file, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=sorted(keys))
             writer.writeheader()
             writer.writerows(data)
 
         return len(data)
 
-    def _export_parquet(self, data: List[Dict[str, Any]], output_file: str) -> int:
+    def _export_parquet(self, data: list[dict[str, Any]], output_file: str) -> int:
         """Export data as Parquet."""
         if not data:
             return 0

@@ -8,11 +8,12 @@ import json
 import logging
 import os
 import re
+from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
 from math import isinf, isnan
 from pathlib import Path
 from time import monotonic
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 # Load environment variables from a .env file (if present) before anything else
 try:  # optional dependency
@@ -191,9 +192,9 @@ from brain_researcher.services.br_kg.request_params import (  # noqa: F401
     _parse_source_mode_query_param,
     _parse_task_scope_query_param,
 )
-from brain_researcher.services.br_kg.task_family_matcher import (
+from brain_researcher.services.br_kg.task_family_matcher import (  # noqa: F401  (re-export: lens_routes lazy-imports + tests patch app.build_task_family_tree)
     TaskFamilyMatcher,
-    build_task_family_tree,  # noqa: F401  (re-export: lens_routes lazy-imports + tests patch app.build_task_family_tree)
+    build_task_family_tree,
 )
 
 try:  # optional semantic helpers (may be absent in older deployments)
@@ -290,7 +291,7 @@ def _sanitize(obj):
         return None if isnan(obj) or isinf(obj) else obj
     if isinstance(obj, dict):
         return {k: _sanitize(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple)):
+    if isinstance(obj, list | tuple):
         return [_sanitize(v) for v in obj]
     return obj
 
@@ -502,9 +503,7 @@ def _env_bool(name: str, default: bool) -> bool:
 
 BR_KG_VERIFIED_CONFIDENCE_MIN = _env_float("BR_KG_VERIFIED_CONFIDENCE_MIN", 0.6)
 BR_KG_TASK_FAMILY_MATCH_ENABLED = _env_bool("BR_KG_TASK_FAMILY_MATCH_ENABLED", True)
-BR_KG_TASK_FAMILY_AGGRESSIVE_MODE = _env_bool(
-    "BR_KG_TASK_FAMILY_AGGRESSIVE_MODE", True
-)
+BR_KG_TASK_FAMILY_AGGRESSIVE_MODE = _env_bool("BR_KG_TASK_FAMILY_AGGRESSIVE_MODE", True)
 BR_KG_DISEASE_CONNECTED_FIRST = _env_bool("BR_KG_DISEASE_CONNECTED_FIRST", True)
 BR_KG_TASK_FAMILY_PROFILE = (
     os.environ.get("BR_KG_TASK_FAMILY_PROFILE", "legacy").strip().lower()
@@ -531,9 +530,7 @@ if BR_KG_TASK_FAMILY_PROFILE not in _TASK_FAMILY_PROFILE_DEFAULTS:
         BR_KG_TASK_FAMILY_PROFILE,
     )
     BR_KG_TASK_FAMILY_PROFILE = "legacy"
-_TASK_FAMILY_PROFILE_DEFAULT = _TASK_FAMILY_PROFILE_DEFAULTS[
-    BR_KG_TASK_FAMILY_PROFILE
-]
+_TASK_FAMILY_PROFILE_DEFAULT = _TASK_FAMILY_PROFILE_DEFAULTS[BR_KG_TASK_FAMILY_PROFILE]
 BR_KG_TASK_FAMILY_FUZZY_THRESHOLD = _env_float(
     "BR_KG_TASK_FAMILY_FUZZY_THRESHOLD",
     _TASK_FAMILY_PROFILE_DEFAULT["fuzzy_threshold"],
@@ -754,7 +751,7 @@ def _cache_header_response(
 
 
 def _empty_counts() -> dict[str, int]:
-    return {key: 0 for key in LENS_EVIDENCE_KEYS}
+    return dict.fromkeys(LENS_EVIDENCE_KEYS, 0)
 
 
 def _empty_groups() -> dict[str, list[dict[str, Any]]]:
@@ -862,9 +859,7 @@ def _normalize_confidence_metadata(
     normalization_basis = (
         "edge_confidence"
         if raw_confidence is not None
-        else "edge_confidence_tier"
-        if tier_value
-        else None
+        else "edge_confidence_tier" if tier_value else None
     )
     approximate_rule_applied = False
 
@@ -2005,37 +2000,46 @@ def readiness_check():
 def health_stats():
     """Return Neo4j node/relationship counts for aggregated health checks."""
     if neo4j_db is None:
-        return jsonify(
-            {
-                "status": "unavailable",
-                "backend": "neo4j_required",
-                "node_count": 0,
-                "relationship_count": 0,
-            }
-        ), 503
+        return (
+            jsonify(
+                {
+                    "status": "unavailable",
+                    "backend": "neo4j_required",
+                    "node_count": 0,
+                    "relationship_count": 0,
+                }
+            ),
+            503,
+        )
 
     try:
         stats = neo4j_db.get_stats()
-        return jsonify(
-            {
-                "status": "ok",
-                "backend": stats.get("backend", "neo4j"),
-                "node_count": stats.get("total_nodes", 0),
-                "relationship_count": stats.get("total_relationships", 0),
-                "node_labels": stats.get("node_labels", []),
-                "relationship_types": stats.get("relationship_types", []),
-            }
-        ), 200
+        return (
+            jsonify(
+                {
+                    "status": "ok",
+                    "backend": stats.get("backend", "neo4j"),
+                    "node_count": stats.get("total_nodes", 0),
+                    "relationship_count": stats.get("total_relationships", 0),
+                    "node_labels": stats.get("node_labels", []),
+                    "relationship_types": stats.get("relationship_types", []),
+                }
+            ),
+            200,
+        )
     except Exception as exc:
         logger.error("health_stats failed: %s", exc)
-        return jsonify(
-            {
-                "status": "error",
-                "error": str(exc),
-                "node_count": 0,
-                "relationship_count": 0,
-            }
-        ), 500
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "error": str(exc),
+                    "node_count": 0,
+                    "relationship_count": 0,
+                }
+            ),
+            500,
+        )
 
 
 @app.route("/health/live-evidence")
@@ -2058,16 +2062,19 @@ def health_live_evidence():
         if BR_KG_LENSES_V1 and api_key_present and file_search_store_configured
         else "degraded"
     )
-    return jsonify(
-        {
-            "status": status,
-            "service": "br_kg-glmfitlins",
-            "lenses_v1_enabled": bool(BR_KG_LENSES_V1),
-            "api_key_present": api_key_present,
-            "file_search_store_configured": file_search_store_configured,
-            "file_search_stores_count": len(store_names),
-        }
-    ), 200
+    return (
+        jsonify(
+            {
+                "status": status,
+                "service": "br_kg-glmfitlins",
+                "lenses_v1_enabled": bool(BR_KG_LENSES_V1),
+                "api_key_present": api_key_present,
+                "file_search_store_configured": file_search_store_configured,
+                "file_search_stores_count": len(store_names),
+            }
+        ),
+        200,
+    )
 
 
 # Prometheus metrics endpoint
@@ -2258,7 +2265,7 @@ def list_persisted_queries():
         ip_address=request.remote_addr,
     ) as profile:
         queries = []
-        for query_id, query in QUERIES.items():
+        for _query_id, query in QUERIES.items():
             queries.append(
                 {
                     "id": query.id,
@@ -2367,9 +2374,7 @@ def behavior_to_fmri_retrieval_endpoint():
             max_paths=int(payload.get("max_paths", 20)),
             max_regions_per_map=int(payload.get("max_regions_per_map", 8)),
             max_behavior_neighbors=int(payload.get("max_behavior_neighbors", 4)),
-            min_behavior_similarity=float(
-                payload.get("min_behavior_similarity", 0.0)
-            ),
+            min_behavior_similarity=float(payload.get("min_behavior_similarity", 0.0)),
             db=neo4j_db,
         )
     except ValueError as exc:
@@ -2856,9 +2861,9 @@ def get_graph_data():
     edge_limit = max(limit * 2, 50)
 
     def sanitize(value):
-        if isinstance(value, (str, int, float, bool)) or value is None:
+        if isinstance(value, str | int | float | bool) or value is None:
             return value
-        if isinstance(value, (datetime, date, time)):
+        if isinstance(value, datetime | date | time):
             return value.isoformat()
         if isinstance(value, list):
             return [sanitize(v) for v in value]
@@ -3004,9 +3009,9 @@ def query_graph():
     def sanitize(value):
         from datetime import date, datetime, time
 
-        if isinstance(value, (str, int, float, bool)) or value is None:
+        if isinstance(value, str | int | float | bool) or value is None:
             return value
-        if isinstance(value, (datetime, date, time)):
+        if isinstance(value, datetime | date | time):
             return value.isoformat()
         if isinstance(value, list):
             return [sanitize(v) for v in value]

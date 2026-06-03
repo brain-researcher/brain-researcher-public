@@ -76,7 +76,12 @@ _CONTRADICTION_TOKENS = (
 _SUFFICIENCY_TOKENS = ("sufficient", "fully explains", "accounts for")
 _NECESSITY_TOKENS = ("necessary", "required for", "depends on")
 _PROXY_TOKENS = ("proxy", "marker", "readout", "index of")
-_GENERALIZATION_TOKENS = ("generalizes", "generalise", "across contexts", "across cohorts")
+_GENERALIZATION_TOKENS = (
+    "generalizes",
+    "generalise",
+    "across contexts",
+    "across cohorts",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -113,7 +118,9 @@ def _sentence_candidates(publication: PublicationSeed) -> list[tuple[str, str]]:
         for sentence in re.split(r"(?<=[.!?])\s+", publication.body.strip()):
             cleaned = sentence.strip()
             if cleaned:
-                section = "results" if STAT_DETAIL_PATTERN.search(cleaned) else "unknown"
+                section = (
+                    "results" if STAT_DETAIL_PATTERN.search(cleaned) else "unknown"
+                )
                 candidates.append((section, cleaned[:600]))
     if not candidates and publication.title.strip():
         candidates.append(("title", publication.title.strip()[:600]))
@@ -302,7 +309,9 @@ def _infer_assumption_metadata(
 # ---------------------------------------------------------------------------
 
 
-def _first_rule_hit(text: str, rules: list[tuple[str, str, str]]) -> tuple[str, str, str] | None:
+def _first_rule_hit(
+    text: str, rules: list[tuple[str, str, str]]
+) -> tuple[str, str, str] | None:
     for keyword, label, mapped_id in rules:
         if keyword in text:
             return keyword, label, mapped_id

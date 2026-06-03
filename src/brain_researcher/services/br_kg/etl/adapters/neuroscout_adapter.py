@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 from .base import EvidenceAdapter
 
@@ -8,15 +8,17 @@ from .base import EvidenceAdapter
 class NeuroscoutAdapter(EvidenceAdapter):
     """Adapter retrieving Neuroscout feature annotations for contrasts."""
 
-    def __init__(self, *, data_path: Optional[str] = None) -> None:
-        super().__init__(data_path=data_path, default_source="neuroscout", default_score_key="value")
+    def __init__(self, *, data_path: str | None = None) -> None:
+        super().__init__(
+            data_path=data_path, default_source="neuroscout", default_score_key="value"
+        )
 
     def fetch(
         self,
         *,
-        contrast_ids: Optional[Iterable[str]] = None,
-        feature_names: Optional[Iterable[str]] = None,
-    ) -> List[dict]:
+        contrast_ids: Iterable[str] | None = None,
+        feature_names: Iterable[str] | None = None,
+    ) -> list[dict]:
         feature_set = frozenset(feature_names or [])
         contrast_set = frozenset(contrast_ids or [])
         records = []

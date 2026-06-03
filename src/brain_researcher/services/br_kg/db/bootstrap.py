@@ -21,7 +21,9 @@ def get_db(*, require_neo4j: bool = True, preload_cache: bool = False):
 def seed(db: Any) -> None:
     """Seed a tiny demo graph used by smoke tests."""
 
-    concept = db.create_node("Concept", {"id": "trm_working_memory", "name": "working memory"})
+    concept = db.create_node(
+        "Concept", {"id": "trm_working_memory", "name": "working memory"}
+    )
     task = db.create_node("Task", {"id": "tsk_nback", "name": "n-back"})
     pub = db.create_node(
         "Publication",

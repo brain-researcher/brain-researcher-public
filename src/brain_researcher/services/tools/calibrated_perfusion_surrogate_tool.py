@@ -28,14 +28,20 @@ class CalibratedPerfusionSurrogateArgs(BaseModel):
     )
     output_dir: str | None = Field(default=None, description="Directory for outputs")
 
-    m0_file: str | None = Field(default=None, description="Optional M0 calibration image")
+    m0_file: str | None = Field(
+        default=None, description="Optional M0 calibration image"
+    )
     asl_type: str = Field(default="pcasl", description="Acquisition type")
     labeling_duration: float = Field(default=1.8, description="Labeling duration (s)")
     post_labeling_delay: list[float] = Field(
         default_factory=lambda: [2.0], description="Post-labeling delays (s)"
     )
-    multi_delay: bool = Field(default=False, description="Whether multiple PLDs were acquired")
-    delays: list[float] | None = Field(default=None, description="Explicit multi-delay list")
+    multi_delay: bool = Field(
+        default=False, description="Whether multiple PLDs were acquired"
+    )
+    delays: list[float] | None = Field(
+        default=None, description="Explicit multi-delay list"
+    )
     use_m0: bool = Field(default=True, description="Use M0 for calibration")
     m0_scale: float = Field(default=1.0, description="Scale factor applied to M0")
     cbf_units: str = Field(default="ml/100g/min", description="Units for CBF reporting")
@@ -48,16 +54,32 @@ class CalibratedPerfusionSurrogateArgs(BaseModel):
     save_perfusion_weighted: bool = Field(
         default=True, description="Persist perfusion-weighted map"
     )
-    visualize: bool = Field(default=True, description="Generate summary visualization assets")
+    visualize: bool = Field(
+        default=True, description="Generate summary visualization assets"
+    )
     random_seed: int | None = Field(default=42, description="Deterministic seed")
 
-    signal_column: str | None = Field(default=None, description="Explicit signal column name")
-    time_column: str | None = Field(default=None, description="Explicit time column in seconds")
-    delimiter: str | None = Field(default=None, description="Optional delimiter override")
-    events_file: str | None = Field(default=None, description="Optional breath-hold events TSV/CSV/parquet")
-    event_onset_column: str = Field(default="onset", description="Event onset column name")
-    event_duration_column: str = Field(default="duration", description="Event duration column name")
-    event_type_column: str | None = Field(default=None, description="Optional event type/label column")
+    signal_column: str | None = Field(
+        default=None, description="Explicit signal column name"
+    )
+    time_column: str | None = Field(
+        default=None, description="Explicit time column in seconds"
+    )
+    delimiter: str | None = Field(
+        default=None, description="Optional delimiter override"
+    )
+    events_file: str | None = Field(
+        default=None, description="Optional breath-hold events TSV/CSV/parquet"
+    )
+    event_onset_column: str = Field(
+        default="onset", description="Event onset column name"
+    )
+    event_duration_column: str = Field(
+        default="duration", description="Event duration column name"
+    )
+    event_type_column: str | None = Field(
+        default=None, description="Optional event type/label column"
+    )
     breath_hold_label: str = Field(
         default="breath_hold",
         description="Case-insensitive label used to select breath-hold rows",
@@ -76,13 +98,23 @@ class CalibratedPerfusionSurrogateArgs(BaseModel):
         default=None,
         description="Optional expected number of scans when the signal is scan-aligned",
     )
-    scan_start_s: float = Field(default=0.0, description="Start offset for the first scan or time sample")
+    scan_start_s: float = Field(
+        default=0.0, description="Start offset for the first scan or time sample"
+    )
     lag_min_s: float = Field(default=0.0, description="Minimum lag to scan in seconds")
     lag_max_s: float = Field(default=20.0, description="Maximum lag to scan in seconds")
-    lag_step_s: float = Field(default=0.5, description="Step size for lag scan in seconds")
-    baseline_window_s: float = Field(default=10.0, description="Pre-event baseline window in seconds")
-    standardize: bool = Field(default=True, description="Standardize the detrended signal and lag regressors")
-    detrend: bool = Field(default=True, description="Remove a linear trend before lag fitting")
+    lag_step_s: float = Field(
+        default=0.5, description="Step size for lag scan in seconds"
+    )
+    baseline_window_s: float = Field(
+        default=10.0, description="Pre-event baseline window in seconds"
+    )
+    standardize: bool = Field(
+        default=True, description="Standardize the detrended signal and lag regressors"
+    )
+    detrend: bool = Field(
+        default=True, description="Remove a linear trend before lag fitting"
+    )
 
 
 class CalibratedPerfusionSurrogateTool(NeuroToolWrapper):
@@ -106,9 +138,13 @@ class CalibratedPerfusionSurrogateTool(NeuroToolWrapper):
             args = CalibratedPerfusionSurrogateArgs(**kwargs)
             payload = args.model_dump(exclude_none=True)
             if "output_dir" not in payload:
-                payload["output_dir"] = str(Path.cwd() / "calibrated_perfusion_surrogate")
+                payload["output_dir"] = str(
+                    Path.cwd() / "calibrated_perfusion_surrogate"
+                )
 
-            params: CalibratedPerfusionSurrogateParameters = calibrated_perfusion_surrogate_from_payload(payload)
+            params: CalibratedPerfusionSurrogateParameters = (
+                calibrated_perfusion_surrogate_from_payload(payload)
+            )
             result = run_calibrated_perfusion_surrogate(params)
             return ToolResult(status="success", data=result)
         except Exception as exc:  # pragma: no cover - defensive wrapper

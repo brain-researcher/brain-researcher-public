@@ -30,6 +30,7 @@ runner = CliRunner()
 # Unit Tests for Helpers
 # ============================================================================
 
+
 class TestParseKeyValuePairs:
     """Test parameter parsing"""
 
@@ -38,15 +39,13 @@ class TestParseKeyValuePairs:
         assert result == {"infile": "/data/brain.nii.gz"}
 
     def test_multiple_params(self):
-        result = parse_key_value_pairs([
-            "infile=/data/brain.nii.gz",
-            "threshold=0.5",
-            "verbose=true"
-        ])
+        result = parse_key_value_pairs(
+            ["infile=/data/brain.nii.gz", "threshold=0.5", "verbose=true"]
+        )
         assert result == {
             "infile": "/data/brain.nii.gz",
             "threshold": "0.5",
-            "verbose": "true"
+            "verbose": "true",
         }
 
     def test_param_with_equals_in_value(self):
@@ -65,6 +64,7 @@ class TestParseKeyValuePairs:
 # ============================================================================
 # Integration Tests for Commands
 # ============================================================================
+
 
 class TestAgentRun:
     """Test br agent run command"""
@@ -92,12 +92,18 @@ class TestAgentRun:
         """Test run with multiple parameters"""
         mock_post.return_value = {"job_id": "run_xyz789"}
 
-        result = runner.invoke(app, [
-            "run", "skull strip",
-            "--param", "infile=/data/T1.nii.gz",
-            "--param", "threshold=0.5",
-            "--no-wait"
-        ])
+        result = runner.invoke(
+            app,
+            [
+                "run",
+                "skull strip",
+                "--param",
+                "infile=/data/T1.nii.gz",
+                "--param",
+                "threshold=0.5",
+                "--no-wait",
+            ],
+        )
 
         assert result.exit_code == 0
 
@@ -106,7 +112,7 @@ class TestAgentRun:
         payload = call_args[1]["json_data"]
         assert payload["parameters"] == {
             "infile": "/data/T1.nii.gz",
-            "threshold": "0.5"
+            "threshold": "0.5",
         }
 
     @patch("brain_researcher.cli.commands.agent_commands.api_get_sync")
@@ -119,7 +125,9 @@ class TestAgentRun:
         result = runner.invoke(app, ["run", "skull strip", "--wait"])
 
         assert result.exit_code == 0
-        assert "succeeded" in result.stdout.lower() or "completed" in result.stdout.lower()
+        assert (
+            "succeeded" in result.stdout.lower() or "completed" in result.stdout.lower()
+        )
 
         # Should have polled at least once
         mock_get.assert_called()
@@ -129,11 +137,9 @@ class TestAgentRun:
         """Test forcing specific tool"""
         mock_post.return_value = {"job_id": "run_tool123"}
 
-        result = runner.invoke(app, [
-            "run", "skull strip",
-            "--tool", "fsl_bet",
-            "--no-wait"
-        ])
+        result = runner.invoke(
+            app, ["run", "skull strip", "--tool", "fsl_bet", "--no-wait"]
+        )
 
         assert result.exit_code == 0
 
@@ -149,17 +155,25 @@ class TestAgentRun:
         mock_post.side_effect = [
             {
                 "intent": "skull strip",
-                "candidates": [{"tool_id": "fsl_bet", "tool_name": "bet", "score": 0.85, "preflight_ok": True, "reason": "OK"}],
-                "chosen": {"tool_id": "fsl_bet", "tool_name": "bet", "score": 0.85}
+                "candidates": [
+                    {
+                        "tool_id": "fsl_bet",
+                        "tool_name": "bet",
+                        "score": 0.85,
+                        "preflight_ok": True,
+                        "reason": "OK",
+                    }
+                ],
+                "chosen": {"tool_id": "fsl_bet", "tool_name": "bet", "score": 0.85},
             },
-            {"job_id": "run_advisor123"}
+            {"job_id": "run_advisor123"},
         ]
 
-        result = runner.invoke(app, [
-            "run", "skull strip",
-            "--planner-mode", "advisor",
-            "--no-wait"
-        ], input="y\n")  # Confirm execution
+        result = runner.invoke(
+            app,
+            ["run", "skull strip", "--planner-mode", "advisor", "--no-wait"],
+            input="y\n",
+        )  # Confirm execution
 
         assert result.exit_code == 0
         assert "run_advisor123" in result.stdout
@@ -173,14 +187,14 @@ class TestAgentRun:
         mock_post.return_value = {
             "intent": "skull strip",
             "candidates": [],
-            "chosen": None
+            "chosen": None,
         }
 
-        result = runner.invoke(app, [
-            "run", "skull strip",
-            "--planner-mode", "advisor",
-            "--no-wait"
-        ], input="n\n")  # Decline execution
+        result = runner.invoke(
+            app,
+            ["run", "skull strip", "--planner-mode", "advisor", "--no-wait"],
+            input="n\n",
+        )  # Decline execution
 
         assert result.exit_code == 0
         assert "cancelled" in result.stdout.lower()
@@ -192,6 +206,7 @@ class TestAgentRun:
     def test_run_connection_error(self, mock_post):
         """Test error handling for connection errors"""
         import httpx
+
         mock_post.side_effect = httpx.ConnectError("Connection failed")
 
         result = runner.invoke(app, ["run", "skull strip", "--no-wait"])
@@ -208,11 +223,23 @@ class TestAgentPlan:
         mock_post.return_value = {
             "intent": "skull strip",
             "candidates": [
-                {"tool_id": "fsl_bet", "tool_name": "bet", "score": 0.85, "preflight_ok": True, "reason": "All checks passed"},
-                {"tool_id": "afni.3dSkullStrip", "tool_name": "3dSkullStrip", "score": 0.79, "preflight_ok": False, "reason": "Image not found"}
+                {
+                    "tool_id": "fsl_bet",
+                    "tool_name": "bet",
+                    "score": 0.85,
+                    "preflight_ok": True,
+                    "reason": "All checks passed",
+                },
+                {
+                    "tool_id": "afni.3dSkullStrip",
+                    "tool_name": "3dSkullStrip",
+                    "score": 0.79,
+                    "preflight_ok": False,
+                    "reason": "Image not found",
+                },
             ],
             "chosen": {"tool_id": "fsl_bet", "tool_name": "bet", "score": 0.85},
-            "plan_id": "plan_abc123"
+            "plan_id": "plan_abc123",
         }
 
         result = runner.invoke(app, ["plan", "skull strip"])
@@ -235,33 +262,37 @@ class TestAgentPlan:
         mock_post.return_value = {
             "intent": "segment tissue",
             "candidates": [],
-            "chosen": None
+            "chosen": None,
         }
 
-        result = runner.invoke(app, [
-            "plan", "segment tissue",
-            "--param", "infile=/data/T1.nii.gz",
-            "--param", "classes=3"
-        ])
+        result = runner.invoke(
+            app,
+            [
+                "plan",
+                "segment tissue",
+                "--param",
+                "infile=/data/T1.nii.gz",
+                "--param",
+                "classes=3",
+            ],
+        )
 
         assert result.exit_code == 0
 
         # Check constraints were passed
         call_args = mock_post.call_args
         payload = call_args[1]["json_data"]
-        assert payload["constraints"] == {
-            "infile": "/data/T1.nii.gz",
-            "classes": "3"
-        }
+        assert payload["constraints"] == {"infile": "/data/T1.nii.gz", "classes": "3"}
 
     @patch("brain_researcher.cli.commands.agent_commands.api_post_sync")
     def test_plan_error_handling(self, mock_post):
         """Test error handling in plan command"""
         import httpx
+
         mock_post.side_effect = httpx.HTTPStatusError(
             "501 Not Implemented",
             request=Mock(),
-            response=Mock(status_code=501, json=lambda: {"detail": "Planner disabled"})
+            response=Mock(status_code=501, json=lambda: {"detail": "Planner disabled"}),
         )
 
         result = runner.invoke(app, ["plan", "skull strip"])
@@ -309,7 +340,9 @@ class TestAutoresearchCommands:
                 worktree_path="/tmp/cand_001",
                 patch_rationale="Improve required-param validation",
                 validation_slice_id="tool_param_fill_failure",
-                local_check_commands=["pytest -q tests/unit/mcp/test_local_mcp_server.py"],
+                local_check_commands=[
+                    "pytest -q tests/unit/mcp/test_local_mcp_server.py"
+                ],
                 created_at="2026-03-10T10:00:00+00:00",
             )
         ]
@@ -420,9 +453,7 @@ class TestAutoresearchCommands:
                 "golden_principles": [
                     {"id": "terminal_run_invariant", "title": "Terminal Run Invariant"}
                 ],
-                "hot_surfaces": [
-                    {"surface": "trace_bundle_integrity", "weight": 8}
-                ],
+                "hot_surfaces": [{"surface": "trace_bundle_integrity", "weight": 8}],
             },
             "persisted_files": ["/tmp/repo_repair_context_latest.json"],
             "warnings": [],

@@ -15,10 +15,12 @@ This module provides tools for genetic and genomic analysis in neuroscience:
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Any
+
 import numpy as np
-from scipy import stats, cluster
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+from scipy import stats
+
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 logger = logging.getLogger(__name__)
@@ -30,14 +32,21 @@ class _NumpyArgs(BaseModel):
 
 class GeneticsGenomicsInput(BaseModel):
     """Input model for genetics/genomics analysis."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="ignore")
 
-    genetic_data: Optional[np.ndarray] = Field(default=None, description="Genetic data matrix")
-    expression_data: Optional[np.ndarray] = Field(default=None, description="Gene expression data")
-    phenotype_data: Optional[np.ndarray] = Field(default=None, description="Phenotype data")
-    variant_info: Optional[Dict] = Field(default=None, description="Variant information")
-    gene_list: Optional[List[str]] = Field(default=None, description="List of gene names")
-    metadata: Optional[Dict] = Field(default=None, description="Sample metadata")
+    genetic_data: np.ndarray | None = Field(
+        default=None, description="Genetic data matrix"
+    )
+    expression_data: np.ndarray | None = Field(
+        default=None, description="Gene expression data"
+    )
+    phenotype_data: np.ndarray | None = Field(
+        default=None, description="Phenotype data"
+    )
+    variant_info: dict | None = Field(default=None, description="Variant information")
+    gene_list: list[str] | None = Field(default=None, description="List of gene names")
+    metadata: dict | None = Field(default=None, description="Sample metadata")
 
 
 class GWASAnalysisTool(NeuroToolWrapper):
@@ -67,13 +76,17 @@ class GWASAnalysisTool(NeuroToolWrapper):
                 genetic_data, phenotype = self._generate_synthetic_gwas_data()
             else:
                 genetic_data = input_data.genetic_data
-                phenotype = input_data.phenotype_data or np.random.randn(genetic_data.shape[0])
+                phenotype = input_data.phenotype_data or np.random.randn(
+                    genetic_data.shape[0]
+                )
 
             # Single SNP association tests
             associations = self._single_snp_association(genetic_data, phenotype)
 
             # Multiple testing correction
-            corrected_pvals = self._multiple_testing_correction(associations["p_values"])
+            corrected_pvals = self._multiple_testing_correction(
+                associations["p_values"]
+            )
 
             # Manhattan plot data
             manhattan_data = self._prepare_manhattan_plot(associations, corrected_pvals)
@@ -105,10 +118,14 @@ class GWASAnalysisTool(NeuroToolWrapper):
 
                 pd.DataFrame(summary_rows).to_csv(summary_path, index=False)
             else:
-                summary_path.write_text("snp_index,beta,p_value,corrected_p\n", encoding="utf-8")
+                summary_path.write_text(
+                    "snp_index,beta,p_value,corrected_p\n", encoding="utf-8"
+                )
 
             manhattan_path = output_dir / "manhattan.json"
-            manhattan_path.write_text(json.dumps(manhattan_data, indent=2), encoding="utf-8")
+            manhattan_path.write_text(
+                json.dumps(manhattan_data, indent=2), encoding="utf-8"
+            )
 
             qq_path = output_dir / "qq_plot.json"
             qq_path.write_text(json.dumps(qq_data, indent=2), encoding="utf-8")
@@ -136,14 +153,15 @@ class GWASAnalysisTool(NeuroToolWrapper):
             logger.error(f"GWAS analysis failed: {e}")
             return ToolResult(status="error", error=str(e), data={})
 
-    def _generate_synthetic_gwas_data(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _generate_synthetic_gwas_data(self) -> tuple[np.ndarray, np.ndarray]:
         """Generate synthetic GWAS data."""
         n_samples = 1000
         n_snps = 10000
 
         # Generate genotype data (0, 1, 2 coding)
-        genetic_data = np.random.choice([0, 1, 2], size=(n_samples, n_snps),
-                                       p=[0.25, 0.5, 0.25])
+        genetic_data = np.random.choice(
+            [0, 1, 2], size=(n_samples, n_snps), p=[0.25, 0.5, 0.25]
+        )
 
         # Generate phenotype with some causal SNPs
         phenotype = np.random.randn(n_samples)
@@ -161,8 +179,9 @@ class GWASAnalysisTool(NeuroToolWrapper):
 
         return genetic_data, phenotype
 
-    def _single_snp_association(self, genetic_data: np.ndarray,
-                               phenotype: np.ndarray) -> Dict[str, np.ndarray]:
+    def _single_snp_association(
+        self, genetic_data: np.ndarray, phenotype: np.ndarray
+    ) -> dict[str, np.ndarray]:
         """Perform single SNP association tests."""
         n_snps = genetic_data.shape[1]
         betas = np.zeros(n_snps)
@@ -195,10 +214,10 @@ class GWASAnalysisTool(NeuroToolWrapper):
                 p_values[i] = 1.0
 
         return {
-            'betas': betas,
-            'std_errors': std_errors,
-            't_stats': t_stats,
-            'p_values': p_values
+            "betas": betas,
+            "std_errors": std_errors,
+            "t_stats": t_stats,
+            "p_values": p_values,
         }
 
     def _multiple_testing_correction(self, p_values: np.ndarray) -> np.ndarray:
@@ -215,22 +234,23 @@ class GWASAnalysisTool(NeuroToolWrapper):
         maf = np.minimum(allele_freq, 1 - allele_freq)
         return maf
 
-    def _prepare_manhattan_plot(self, associations: Dict,
-                               corrected_pvals: np.ndarray) -> Dict[str, List]:
+    def _prepare_manhattan_plot(
+        self, associations: dict, corrected_pvals: np.ndarray
+    ) -> dict[str, list]:
         """Prepare data for Manhattan plot."""
         # Simulate chromosome positions
-        n_snps = len(associations['p_values'])
+        n_snps = len(associations["p_values"])
         chromosomes = np.random.randint(1, 23, n_snps)
         positions = np.random.randint(1, 250000000, n_snps)
 
         return {
-            'chromosomes': chromosomes.tolist()[:100],  # Limit for output
-            'positions': positions.tolist()[:100],
-            'neg_log_p': (-np.log10(associations['p_values'] + 1e-300))[:100].tolist(),
-            'significant': (corrected_pvals < 0.05)[:100].tolist()
+            "chromosomes": chromosomes.tolist()[:100],  # Limit for output
+            "positions": positions.tolist()[:100],
+            "neg_log_p": (-np.log10(associations["p_values"] + 1e-300))[:100].tolist(),
+            "significant": (corrected_pvals < 0.05)[:100].tolist(),
         }
 
-    def _prepare_qq_plot(self, p_values: np.ndarray) -> Dict[str, List]:
+    def _prepare_qq_plot(self, p_values: np.ndarray) -> dict[str, list]:
         """Prepare data for QQ plot."""
         # Sort p-values
         sorted_p = np.sort(p_values)
@@ -240,14 +260,14 @@ class GWASAnalysisTool(NeuroToolWrapper):
         expected = np.arange(1, n + 1) / (n + 1)
 
         # Limit points for visualization
-        indices = np.linspace(0, n-1, min(1000, n), dtype=int)
+        indices = np.linspace(0, n - 1, min(1000, n), dtype=int)
 
         return {
-            'observed': (-np.log10(sorted_p[indices] + 1e-300)).tolist(),
-            'expected': (-np.log10(expected[indices] + 1e-300)).tolist()
+            "observed": (-np.log10(sorted_p[indices] + 1e-300)).tolist(),
+            "expected": (-np.log10(expected[indices] + 1e-300)).tolist(),
         }
 
-    def _gene_based_analysis(self, associations: Dict) -> Dict[str, Any]:
+    def _gene_based_analysis(self, associations: dict) -> dict[str, Any]:
         """Perform gene-based analysis."""
         # Simulate gene mapping
         n_genes = 100
@@ -256,20 +276,23 @@ class GWASAnalysisTool(NeuroToolWrapper):
         for _ in range(n_genes):
             # Combine p-values for SNPs in gene (Fisher's method)
             n_snps_in_gene = np.random.randint(1, 20)
-            snp_indices = np.random.choice(len(associations['p_values']),
-                                         n_snps_in_gene, replace=False)
+            snp_indices = np.random.choice(
+                len(associations["p_values"]), n_snps_in_gene, replace=False
+            )
 
             # Fisher's combined probability test
-            chi2_stat = -2 * np.sum(np.log(associations['p_values'][snp_indices] + 1e-300))
+            chi2_stat = -2 * np.sum(
+                np.log(associations["p_values"][snp_indices] + 1e-300)
+            )
             gene_p = 1 - stats.chi2.cdf(chi2_stat, 2 * n_snps_in_gene)
             gene_p_values.append(gene_p)
 
         gene_p_values = np.array(gene_p_values)
 
         return {
-            'n_genes': n_genes,
-            'significant_genes': int(np.sum(gene_p_values < 0.05 / n_genes)),
-            'top_gene_p': float(np.min(gene_p_values))
+            "n_genes": n_genes,
+            "significant_genes": int(np.sum(gene_p_values < 0.05 / n_genes)),
+            "top_gene_p": float(np.min(gene_p_values)),
         }
 
     def _calculate_lambda_gc(self, p_values: np.ndarray) -> float:
@@ -285,29 +308,36 @@ class GWASAnalysisTool(NeuroToolWrapper):
 
         return lambda_gc
 
-    def _get_top_associations(self, associations: Dict,
-                             corrected_pvals: np.ndarray) -> List[Dict]:
+    def _get_top_associations(
+        self, associations: dict, corrected_pvals: np.ndarray
+    ) -> list[dict]:
         """Get top associated SNPs."""
         # Get top 10 SNPs
-        top_indices = np.argsort(associations['p_values'])[:10]
+        top_indices = np.argsort(associations["p_values"])[:10]
 
         top_snps = []
         for idx in top_indices:
-            top_snps.append({
-                'snp_index': int(idx),
-                'beta': float(associations['betas'][idx]),
-                'p_value': float(associations['p_values'][idx]),
-                'corrected_p': float(corrected_pvals[idx])
-            })
+            top_snps.append(
+                {
+                    "snp_index": int(idx),
+                    "beta": float(associations["betas"][idx]),
+                    "p_value": float(associations["p_values"][idx]),
+                    "corrected_p": float(corrected_pvals[idx]),
+                }
+            )
 
         return top_snps
 
 
 class ImagingGeneticsArgs(_NumpyArgs):
-    genotype_file: Optional[str] = Field(default=None, description="Genotype file path")
-    imaging_features: Optional[np.ndarray] = Field(default=None, description="Imaging feature matrix")
-    method: str = Field(default="univariate", description="univariate | multivariate | pls")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    genotype_file: str | None = Field(default=None, description="Genotype file path")
+    imaging_features: np.ndarray | None = Field(
+        default=None, description="Imaging feature matrix"
+    )
+    method: str = Field(
+        default="univariate", description="univariate | multivariate | pls"
+    )
+    output_dir: str | None = Field(default=None, description="Output directory")
 
 
 class ImagingGeneticsTool(NeuroToolWrapper):
@@ -350,12 +380,14 @@ class ImagingGeneticsTool(NeuroToolWrapper):
 
 
 class PolygenicRiskScoreArgs(BaseModel):
-    summary_stats: Optional[str] = Field(default=None, description="GWAS summary statistics")
-    target_genotypes: Optional[str] = Field(default=None, description="Target genotypes")
+    summary_stats: str | None = Field(
+        default=None, description="GWAS summary statistics"
+    )
+    target_genotypes: str | None = Field(default=None, description="Target genotypes")
     p_threshold: float = Field(default=0.05, description="P-value threshold")
     method: str = Field(default="p_value", description="PRS method")
-    trait: Optional[str] = Field(default=None, description="Trait name")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    trait: str | None = Field(default=None, description="Trait name")
+    output_dir: str | None = Field(default=None, description="Output directory")
 
 
 class PolygeneticRiskScoreTool(NeuroToolWrapper):
@@ -370,7 +402,7 @@ class PolygeneticRiskScoreTool(NeuroToolWrapper):
     def get_args_schema(self):
         return PolygenicRiskScoreArgs
 
-    def _categorize_risk(self, prs_standardized: np.ndarray) -> List[str]:
+    def _categorize_risk(self, prs_standardized: np.ndarray) -> list[str]:
         categories = []
         for value in prs_standardized:
             if value < -1:
@@ -408,16 +440,20 @@ class PolygeneticRiskScoreTool(NeuroToolWrapper):
 
 
 class GeneExpressionMappingArgs(_NumpyArgs):
-    map_file: Optional[str] = Field(
+    map_file: str | None = Field(
         default=None,
         description="Optional NIfTI map to associate with expression profiles (used by workflows).",
     )
-    gene_list: Optional[List[str]] = Field(default=None, description="Gene list")
-    brain_regions: Optional[List[str]] = Field(default=None, description="Brain regions")
-    expression_data: Optional[np.ndarray] = Field(default=None, description="Expression matrix")
-    correlation_threshold: float = Field(default=0.5, description="Correlation threshold")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
-    output_file: Optional[str] = Field(
+    gene_list: list[str] | None = Field(default=None, description="Gene list")
+    brain_regions: list[str] | None = Field(default=None, description="Brain regions")
+    expression_data: np.ndarray | None = Field(
+        default=None, description="Expression matrix"
+    )
+    correlation_threshold: float = Field(
+        default=0.5, description="Correlation threshold"
+    )
+    output_dir: str | None = Field(default=None, description="Output directory")
+    output_file: str | None = Field(
         default=None,
         description="Optional output CSV path (used by workflows expecting gene_enrichment.csv).",
     )
@@ -435,11 +471,13 @@ class GeneExpressionMappingTool(NeuroToolWrapper):
     def get_args_schema(self):
         return GeneExpressionMappingArgs
 
-    def _find_coexpression_modules(self, expression: np.ndarray, threshold: float = 0.7) -> List[List[int]]:
+    def _find_coexpression_modules(
+        self, expression: np.ndarray, threshold: float = 0.7
+    ) -> list[list[int]]:
         corr = np.corrcoef(expression)
         n_genes = corr.shape[0]
         visited = set()
-        modules: List[List[int]] = []
+        modules: list[list[int]] = []
         for i in range(n_genes):
             if i in visited:
                 continue
@@ -465,7 +503,7 @@ class GeneExpressionMappingTool(NeuroToolWrapper):
         # If a map is provided, derive a deterministic seed from its summary stats so
         # repeated runs yield stable (though still synthetic) rankings.
         seed = 42
-        map_summary: Dict[str, Any] = {}
+        map_summary: dict[str, Any] = {}
         if args.map_file:
             try:
                 import nibabel as nib  # local import: optional dependency
@@ -488,14 +526,20 @@ class GeneExpressionMappingTool(NeuroToolWrapper):
         rng = np.random.default_rng(seed)
         genes = args.gene_list or [f"GENE_{i}" for i in range(n_genes)]
         gene_scores = rng.normal(size=len(genes))
-        ranked = sorted(zip(genes, gene_scores), key=lambda x: x[1], reverse=True)
+        ranked = sorted(
+            zip(genes, gene_scores, strict=False), key=lambda x: x[1], reverse=True
+        )
 
         top_genes = [g for g, _ in ranked[: min(5, len(ranked))]]
         regions = [f"Region_{i}" for i in range(min(5, n_regions))]
 
         output_dir = Path(args.output_dir or Path.cwd() / "gene_enrichment")
         output_dir.mkdir(parents=True, exist_ok=True)
-        out_path = Path(args.output_file) if args.output_file else output_dir / "gene_enrichment.csv"
+        out_path = (
+            Path(args.output_file)
+            if args.output_file
+            else output_dir / "gene_enrichment.csv"
+        )
         out_path = out_path.expanduser().resolve()
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -531,11 +575,15 @@ class GeneExpressionMappingTool(NeuroToolWrapper):
 
 
 class HeritabilityAnalysisArgs(_NumpyArgs):
-    phenotype_data: Optional[np.ndarray] = Field(default=None, description="Phenotype vector")
-    kinship_matrix: Optional[np.ndarray] = Field(default=None, description="Kinship matrix")
+    phenotype_data: np.ndarray | None = Field(
+        default=None, description="Phenotype vector"
+    )
+    kinship_matrix: np.ndarray | None = Field(
+        default=None, description="Kinship matrix"
+    )
     study_type: str = Field(default="twin", description="Study type")
     method: str = Field(default="ace", description="ACE | GCTA")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    output_dir: str | None = Field(default=None, description="Output directory")
 
 
 class HeritabilityAnalysisTool(NeuroToolWrapper):
@@ -550,7 +598,9 @@ class HeritabilityAnalysisTool(NeuroToolWrapper):
     def get_args_schema(self):
         return HeritabilityAnalysisArgs
 
-    def _simple_heritability(self, phenotypes: np.ndarray, kinship: np.ndarray) -> Dict[str, float]:
+    def _simple_heritability(
+        self, phenotypes: np.ndarray, kinship: np.ndarray
+    ) -> dict[str, float]:
         if phenotypes.size == 0:
             return {"h2": 0.0}
         phen_var = np.var(phenotypes)
@@ -562,8 +612,16 @@ class HeritabilityAnalysisTool(NeuroToolWrapper):
 
     def _run(self, **kwargs) -> ToolResult:
         args = HeritabilityAnalysisArgs(**kwargs)
-        phenotypes = args.phenotype_data if args.phenotype_data is not None else np.random.randn(100)
-        kinship = args.kinship_matrix if args.kinship_matrix is not None else np.eye(len(phenotypes)) * 0.5
+        phenotypes = (
+            args.phenotype_data
+            if args.phenotype_data is not None
+            else np.random.randn(100)
+        )
+        kinship = (
+            args.kinship_matrix
+            if args.kinship_matrix is not None
+            else np.eye(len(phenotypes)) * 0.5
+        )
 
         h2 = self._simple_heritability(phenotypes, kinship)["h2"]
 
@@ -581,11 +639,13 @@ class HeritabilityAnalysisTool(NeuroToolWrapper):
 
 
 class GeneBrainNetworkArgs(_NumpyArgs):
-    expression_data: Optional[np.ndarray] = Field(default=None, description="Expression matrix")
-    gene_list: Optional[List[str]] = Field(default=None, description="Gene list")
+    expression_data: np.ndarray | None = Field(
+        default=None, description="Expression matrix"
+    )
+    gene_list: list[str] | None = Field(default=None, description="Gene list")
     network_method: str = Field(default="correlation", description="Correlation | MI")
     module_detection: bool = Field(default=True, description="Detect modules")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    output_dir: str | None = Field(default=None, description="Output directory")
 
 
 class GeneBrainNetworkTool(NeuroToolWrapper):
@@ -600,7 +660,7 @@ class GeneBrainNetworkTool(NeuroToolWrapper):
     def get_args_schema(self):
         return GeneBrainNetworkArgs
 
-    def _calculate_network_metrics(self, network: np.ndarray) -> Dict[str, float]:
+    def _calculate_network_metrics(self, network: np.ndarray) -> dict[str, float]:
         n_nodes = network.shape[0]
         n_edges = int(np.sum(network) / 2)
         density = n_edges / max(n_nodes * (n_nodes - 1) / 2, 1)
@@ -617,7 +677,11 @@ class GeneBrainNetworkTool(NeuroToolWrapper):
     def _run(self, **kwargs) -> ToolResult:
         args = GeneBrainNetworkArgs(**kwargs)
         n_genes = 40
-        expression = args.expression_data if args.expression_data is not None else np.random.randn(n_genes, 20)
+        expression = (
+            args.expression_data
+            if args.expression_data is not None
+            else np.random.randn(n_genes, 20)
+        )
         corr = np.corrcoef(expression)
         network = (corr > 0.6).astype(int)
         np.fill_diagonal(network, 0)
@@ -638,11 +702,15 @@ class GeneBrainNetworkTool(NeuroToolWrapper):
 
 
 class EpigeneticsArgs(_NumpyArgs):
-    methylation_data: Optional[np.ndarray] = Field(default=None, description="Methylation matrix")
-    sample_groups: Optional[List[str]] = Field(default=None, description="Sample groups")
-    cpg_sites: Optional[List[str]] = Field(default=None, description="CpG sites")
-    analysis_type: str = Field(default="differential", description="differential | age_prediction")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    methylation_data: np.ndarray | None = Field(
+        default=None, description="Methylation matrix"
+    )
+    sample_groups: list[str] | None = Field(default=None, description="Sample groups")
+    cpg_sites: list[str] | None = Field(default=None, description="CpG sites")
+    analysis_type: str = Field(
+        default="differential", description="differential | age_prediction"
+    )
+    output_dir: str | None = Field(default=None, description="Output directory")
 
 
 class EpigeneticsTool(NeuroToolWrapper):
@@ -657,7 +725,9 @@ class EpigeneticsTool(NeuroToolWrapper):
     def get_args_schema(self):
         return EpigeneticsArgs
 
-    def _generate_synthetic_methylation(self) -> Tuple[np.ndarray, List[str], List[str]]:
+    def _generate_synthetic_methylation(
+        self,
+    ) -> tuple[np.ndarray, list[str], list[str]]:
         n_samples = 100
         n_cpg = 1000
         methylation = np.clip(np.random.beta(2, 5, size=(n_samples, n_cpg)), 0, 1)
@@ -682,11 +752,15 @@ class EpigeneticsTool(NeuroToolWrapper):
 
 
 class PharmacogeneticsArgs(_NumpyArgs):
-    genotype_data: Optional[np.ndarray] = Field(default=None, description="Genotype matrix")
-    drug_list: Optional[List[str]] = Field(default=None, description="Drug list")
-    variant_list: Optional[List[str]] = Field(default=None, description="Variant list")
-    analysis_type: str = Field(default="dosing", description="dosing | efficacy | adverse_events")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    genotype_data: np.ndarray | None = Field(
+        default=None, description="Genotype matrix"
+    )
+    drug_list: list[str] | None = Field(default=None, description="Drug list")
+    variant_list: list[str] | None = Field(default=None, description="Variant list")
+    analysis_type: str = Field(
+        default="dosing", description="dosing | efficacy | adverse_events"
+    )
+    output_dir: str | None = Field(default=None, description="Output directory")
 
 
 class PharmacogeneticsTool(NeuroToolWrapper):
@@ -701,7 +775,9 @@ class PharmacogeneticsTool(NeuroToolWrapper):
     def get_args_schema(self):
         return PharmacogeneticsArgs
 
-    def _generate_synthetic_pharmaco_data(self) -> Tuple[np.ndarray, List[str], List[str]]:
+    def _generate_synthetic_pharmaco_data(
+        self,
+    ) -> tuple[np.ndarray, list[str], list[str]]:
         n_individuals = 50
         n_variants = 10
         genotypes = np.random.choice([0, 1, 2], size=(n_individuals, n_variants))
@@ -710,9 +786,9 @@ class PharmacogeneticsTool(NeuroToolWrapper):
         return genotypes, variants, drugs
 
     def _dosing_recommendations(
-        self, genotypes: np.ndarray, variants: List[str], drugs: List[str]
-    ) -> Dict[str, List[Dict[str, Any]]]:
-        recommendations: Dict[str, List[Dict[str, Any]]] = {}
+        self, genotypes: np.ndarray, variants: list[str], drugs: list[str]
+    ) -> dict[str, list[dict[str, Any]]]:
+        recommendations: dict[str, list[dict[str, Any]]] = {}
         for drug in drugs:
             recs = []
             for idx in range(genotypes.shape[0]):
@@ -720,7 +796,9 @@ class PharmacogeneticsTool(NeuroToolWrapper):
                 recs.append(
                     {
                         "dose_adjustment": dose,
-                        "phenotype": "normal_metabolizer" if dose < 0.6 else "slow_metabolizer",
+                        "phenotype": (
+                            "normal_metabolizer" if dose < 0.6 else "slow_metabolizer"
+                        ),
                     }
                 )
             recommendations[drug] = recs
@@ -746,7 +824,7 @@ class PharmacogeneticsTool(NeuroToolWrapper):
 class GeneticsGenomicsTools:
     """Collection of genetics and genomics analysis tools."""
 
-    def get_all_tools(self) -> List[NeuroToolWrapper]:
+    def get_all_tools(self) -> list[NeuroToolWrapper]:
         """Get all genetics/genomics tools."""
         return [
             GWASAnalysisTool(),

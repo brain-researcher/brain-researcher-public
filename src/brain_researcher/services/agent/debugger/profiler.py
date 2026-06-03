@@ -4,29 +4,25 @@ Provides performance profiling capabilities for DAG workflow execution
 including timing analysis, memory usage tracking, and flamegraph generation.
 """
 
-import asyncio
-import json
 import logging
-import time
-import sys
-import gc
-import psutil
-import threading
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Set, Tuple, Callable
-from dataclasses import dataclass, asdict, field
-from enum import Enum
 import statistics
+import threading
+import time
 import tracemalloc
 from collections import defaultdict, deque
-import os
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
+import psutil
 
 logger = logging.getLogger(__name__)
 
 
 class ProfilingType(str, Enum):
     """Types of profiling"""
+
     CPU = "cpu"
     MEMORY = "memory"
     IO = "io"
@@ -36,6 +32,7 @@ class ProfilingType(str, Enum):
 
 class ResourceType(str, Enum):
     """Types of resources to monitor"""
+
     CPU_PERCENT = "cpu_percent"
     MEMORY_RSS = "memory_rss"
     MEMORY_VMS = "memory_vms"
@@ -51,6 +48,7 @@ class ResourceType(str, Enum):
 @dataclass
 class ResourceSnapshot:
     """Snapshot of system resources at a point in time"""
+
     timestamp: datetime
     cpu_percent: float
     memory_rss: int  # Resident Set Size in bytes
@@ -62,15 +60,15 @@ class ResourceSnapshot:
     network_io_recv: int  # Bytes received
     threads: int
     file_descriptors: int
-    custom_metrics: Dict[str, float] = field(default_factory=dict)
+    custom_metrics: dict[str, float] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         data = asdict(self)
-        data['timestamp'] = self.timestamp.isoformat()
+        data["timestamp"] = self.timestamp.isoformat()
         return data
 
     @staticmethod
-    def capture() -> 'ResourceSnapshot':
+    def capture() -> "ResourceSnapshot":
         """Capture current system resource snapshot"""
         process = psutil.Process()
 
@@ -107,7 +105,7 @@ class ResourceSnapshot:
 
         # Get file descriptor count
         try:
-            file_descriptors = process.num_fds() if hasattr(process, 'num_fds') else 0
+            file_descriptors = process.num_fds() if hasattr(process, "num_fds") else 0
         except (AttributeError, psutil.AccessDenied):
             file_descriptors = 0
 
@@ -122,25 +120,26 @@ class ResourceSnapshot:
             network_io_sent=net_sent,
             network_io_recv=net_recv,
             threads=threads,
-            file_descriptors=file_descriptors
+            file_descriptors=file_descriptors,
         )
 
 
 @dataclass
 class NodeProfile:
     """Performance profile for a single node"""
+
     node_id: str
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
     cpu_time: float = 0.0  # CPU time in seconds
     wall_time: float = 0.0  # Wall clock time in seconds
     memory_peak: int = 0  # Peak memory usage in bytes
     memory_allocated: int = 0  # Total memory allocated in bytes
     io_operations: int = 0  # Number of I/O operations
     network_calls: int = 0  # Number of network calls
-    child_profiles: Dict[str, 'NodeProfile'] = field(default_factory=dict)
-    resource_snapshots: List[ResourceSnapshot] = field(default_factory=list)
-    custom_metrics: Dict[str, Any] = field(default_factory=dict)
+    child_profiles: dict[str, "NodeProfile"] = field(default_factory=dict)
+    resource_snapshots: list[ResourceSnapshot] = field(default_factory=list)
+    custom_metrics: dict[str, Any] = field(default_factory=dict)
 
     def finish(self):
         """Mark profile as finished"""
@@ -148,65 +147,69 @@ class NodeProfile:
             self.end_time = datetime.utcnow()
             self.wall_time = (self.end_time - self.start_time).total_seconds()
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         data = asdict(self)
-        data['start_time'] = self.start_time.isoformat()
+        data["start_time"] = self.start_time.isoformat()
         if self.end_time:
-            data['end_time'] = self.end_time.isoformat()
-        data['resource_snapshots'] = [snap.to_dict() for snap in self.resource_snapshots]
+            data["end_time"] = self.end_time.isoformat()
+        data["resource_snapshots"] = [
+            snap.to_dict() for snap in self.resource_snapshots
+        ]
         return data
 
 
 @dataclass
 class ProfilingSession:
     """A profiling session for an entire execution"""
+
     session_id: str
     dag_id: str
     start_time: datetime
-    end_time: Optional[datetime] = None
-    node_profiles: Dict[str, NodeProfile] = field(default_factory=dict)
-    global_snapshots: List[ResourceSnapshot] = field(default_factory=list)
+    end_time: datetime | None = None
+    node_profiles: dict[str, NodeProfile] = field(default_factory=dict)
+    global_snapshots: list[ResourceSnapshot] = field(default_factory=list)
     profiling_overhead_ms: float = 0.0
-    enabled_profiling_types: Set[ProfilingType] = field(default_factory=set)
+    enabled_profiling_types: set[ProfilingType] = field(default_factory=set)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         data = asdict(self)
-        data['start_time'] = self.start_time.isoformat()
+        data["start_time"] = self.start_time.isoformat()
         if self.end_time:
-            data['end_time'] = self.end_time.isoformat()
-        data['node_profiles'] = {k: v.to_dict() for k, v in self.node_profiles.items()}
-        data['global_snapshots'] = [snap.to_dict() for snap in self.global_snapshots]
-        data['enabled_profiling_types'] = list(self.enabled_profiling_types)
+            data["end_time"] = self.end_time.isoformat()
+        data["node_profiles"] = {k: v.to_dict() for k, v in self.node_profiles.items()}
+        data["global_snapshots"] = [snap.to_dict() for snap in self.global_snapshots]
+        data["enabled_profiling_types"] = list(self.enabled_profiling_types)
         return data
 
 
 @dataclass
 class PerformanceAnalysis:
     """Analysis results of profiling data"""
+
     session_id: str
     analysis_time: datetime
     total_execution_time: float
 
     # Timing analysis
-    slowest_nodes: List[Dict[str, Any]] = field(default_factory=list)
-    fastest_nodes: List[Dict[str, Any]] = field(default_factory=list)
-    timing_statistics: Dict[str, float] = field(default_factory=dict)
+    slowest_nodes: list[dict[str, Any]] = field(default_factory=list)
+    fastest_nodes: list[dict[str, Any]] = field(default_factory=list)
+    timing_statistics: dict[str, float] = field(default_factory=dict)
 
     # Memory analysis
     memory_peak: int = 0
     memory_growth_rate: float = 0.0  # bytes per second
-    memory_hotspots: List[Dict[str, Any]] = field(default_factory=list)
+    memory_hotspots: list[dict[str, Any]] = field(default_factory=list)
 
     # Resource analysis
-    cpu_utilization: Dict[str, float] = field(default_factory=dict)
-    io_analysis: Dict[str, Any] = field(default_factory=dict)
+    cpu_utilization: dict[str, float] = field(default_factory=dict)
+    io_analysis: dict[str, Any] = field(default_factory=dict)
 
     # Optimization recommendations
-    recommendations: List[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         data = asdict(self)
-        data['analysis_time'] = self.analysis_time.isoformat()
+        data["analysis_time"] = self.analysis_time.isoformat()
         return data
 
 
@@ -232,57 +235,69 @@ class MemoryTracker:
             self.tracking = False
             logger.info("Stopped memory tracking")
 
-    def take_snapshot(self, label: str = None) -> Dict[str, Any]:
+    def take_snapshot(self, label: str = None) -> dict[str, Any]:
         """Take a memory snapshot"""
         if not self.tracking:
             return {}
 
         snapshot = tracemalloc.take_snapshot()
-        top_stats = snapshot.statistics('lineno')
+        top_stats = snapshot.statistics("lineno")
 
         total_size = sum(stat.size for stat in top_stats)
 
         # Get top memory consumers
         top_consumers = []
         for i, stat in enumerate(top_stats[:10]):
-            top_consumers.append({
-                'rank': i + 1,
-                'filename': stat.traceback.format()[-1] if stat.traceback else 'unknown',
-                'size_bytes': stat.size,
-                'size_mb': stat.size / 1024 / 1024,
-                'count': stat.count
-            })
+            top_consumers.append(
+                {
+                    "rank": i + 1,
+                    "filename": (
+                        stat.traceback.format()[-1] if stat.traceback else "unknown"
+                    ),
+                    "size_bytes": stat.size,
+                    "size_mb": stat.size / 1024 / 1024,
+                    "count": stat.count,
+                }
+            )
 
         snapshot_data = {
-            'label': label,
-            'timestamp': datetime.utcnow().isoformat(),
-            'total_size_bytes': total_size,
-            'total_size_mb': total_size / 1024 / 1024,
-            'top_consumers': top_consumers
+            "label": label,
+            "timestamp": datetime.utcnow().isoformat(),
+            "total_size_bytes": total_size,
+            "total_size_mb": total_size / 1024 / 1024,
+            "top_consumers": top_consumers,
         }
 
         self.snapshots.append(snapshot_data)
         return snapshot_data
 
-    def compare_snapshots(self, snapshot1_idx: int, snapshot2_idx: int) -> Dict[str, Any]:
+    def compare_snapshots(
+        self, snapshot1_idx: int, snapshot2_idx: int
+    ) -> dict[str, Any]:
         """Compare two memory snapshots"""
-        if (snapshot1_idx >= len(self.snapshots) or
-            snapshot2_idx >= len(self.snapshots)):
+        if snapshot1_idx >= len(self.snapshots) or snapshot2_idx >= len(self.snapshots):
             return {}
 
         snap1 = self.snapshots[snapshot1_idx]
         snap2 = self.snapshots[snapshot2_idx]
 
-        size_diff = snap2['total_size_bytes'] - snap1['total_size_bytes']
+        size_diff = snap2["total_size_bytes"] - snap1["total_size_bytes"]
 
         return {
-            'snapshot1': snap1['label'],
-            'snapshot2': snap2['label'],
-            'size_difference_bytes': size_diff,
-            'size_difference_mb': size_diff / 1024 / 1024,
-            'growth_rate_mb_per_sec': size_diff / 1024 / 1024 / max(1,
-                (datetime.fromisoformat(snap2['timestamp']) -
-                 datetime.fromisoformat(snap1['timestamp'])).total_seconds())
+            "snapshot1": snap1["label"],
+            "snapshot2": snap2["label"],
+            "size_difference_bytes": size_diff,
+            "size_difference_mb": size_diff / 1024 / 1024,
+            "growth_rate_mb_per_sec": size_diff
+            / 1024
+            / 1024
+            / max(
+                1,
+                (
+                    datetime.fromisoformat(snap2["timestamp"])
+                    - datetime.fromisoformat(snap1["timestamp"])
+                ).total_seconds(),
+            ),
         }
 
 
@@ -323,13 +338,15 @@ class ResourceMonitor:
                 logger.error(f"Resource monitoring error: {e}")
                 time.sleep(1.0)
 
-    def get_snapshots(self, limit: int = None) -> List[ResourceSnapshot]:
+    def get_snapshots(self, limit: int = None) -> list[ResourceSnapshot]:
         """Get recent resource snapshots"""
         if limit:
             return list(self.snapshots)[-limit:]
         return list(self.snapshots)
 
-    def get_resource_timeline(self, resource_type: ResourceType) -> List[Tuple[datetime, float]]:
+    def get_resource_timeline(
+        self, resource_type: ResourceType
+    ) -> list[tuple[datetime, float]]:
         """Get timeline for a specific resource type"""
         timeline = []
 
@@ -368,14 +385,10 @@ class FlamegraphGenerator:
     def __init__(self):
         pass
 
-    def generate_flamegraph_data(self, session: ProfilingSession) -> Dict[str, Any]:
+    def generate_flamegraph_data(self, session: ProfilingSession) -> dict[str, Any]:
         """Generate flamegraph data from profiling session"""
         # Build call stack structure
-        root_node = {
-            'name': 'root',
-            'value': 0,
-            'children': {}
-        }
+        root_node = {"name": "root", "value": 0, "children": {}}
 
         # Process each node profile
         for node_id, profile in session.node_profiles.items():
@@ -383,36 +396,35 @@ class FlamegraphGenerator:
 
             # Add child profiles
             for child_id, child_profile in profile.child_profiles.items():
-                self._add_to_flamegraph(root_node, [node_id, child_id], child_profile.wall_time)
+                self._add_to_flamegraph(
+                    root_node, [node_id, child_id], child_profile.wall_time
+                )
 
         # Convert to flamegraph format
         return self._convert_to_flamegraph_format(root_node)
 
-    def _add_to_flamegraph(self, root: Dict, path: List[str], value: float):
+    def _add_to_flamegraph(self, root: dict, path: list[str], value: float):
         """Add a path to the flamegraph structure"""
         current = root
 
         for node_name in path:
-            if node_name not in current['children']:
-                current['children'][node_name] = {
-                    'name': node_name,
-                    'value': 0,
-                    'children': {}
+            if node_name not in current["children"]:
+                current["children"][node_name] = {
+                    "name": node_name,
+                    "value": 0,
+                    "children": {},
                 }
-            current = current['children'][node_name]
-            current['value'] += value
+            current = current["children"][node_name]
+            current["value"] += value
 
-    def _convert_to_flamegraph_format(self, node: Dict) -> Dict[str, Any]:
+    def _convert_to_flamegraph_format(self, node: dict) -> dict[str, Any]:
         """Convert internal format to flamegraph format"""
-        result = {
-            'name': node['name'],
-            'value': node['value']
-        }
+        result = {"name": node["name"], "value": node["value"]}
 
-        if node['children']:
-            result['children'] = [
+        if node["children"]:
+            result["children"] = [
                 self._convert_to_flamegraph_format(child)
-                for child in node['children'].values()
+                for child in node["children"].values()
             ]
 
         return result
@@ -422,8 +434,8 @@ class WorkflowProfiler:
     """Main workflow profiler"""
 
     def __init__(self):
-        self.active_sessions: Dict[str, ProfilingSession] = {}
-        self.completed_sessions: Dict[str, ProfilingSession] = {}
+        self.active_sessions: dict[str, ProfilingSession] = {}
+        self.completed_sessions: dict[str, ProfilingSession] = {}
 
         # Components
         self.memory_tracker = MemoryTracker()
@@ -431,13 +443,13 @@ class WorkflowProfiler:
         self.flamegraph_generator = FlamegraphGenerator()
 
         # Analysis cache
-        self.analysis_cache: Dict[str, PerformanceAnalysis] = {}
+        self.analysis_cache: dict[str, PerformanceAnalysis] = {}
 
         logger.info("Workflow profiler initialized")
 
-    async def start_profiling_session(self,
-                                    dag_id: str,
-                                    profiling_types: Set[ProfilingType] = None) -> str:
+    async def start_profiling_session(
+        self, dag_id: str, profiling_types: set[ProfilingType] = None
+    ) -> str:
         """Start a new profiling session"""
         session_id = f"profile_{dag_id}_{int(time.time())}"
 
@@ -448,7 +460,7 @@ class WorkflowProfiler:
             session_id=session_id,
             dag_id=dag_id,
             start_time=datetime.utcnow(),
-            enabled_profiling_types=profiling_types
+            enabled_profiling_types=profiling_types,
         )
 
         self.active_sessions[session_id] = session
@@ -472,13 +484,19 @@ class WorkflowProfiler:
         session.end_time = datetime.utcnow()
 
         # Stop monitoring if no other active sessions need it
-        if not any(ProfilingType.MEMORY in s.enabled_profiling_types
-                  for s in self.active_sessions.values() if s.session_id != session_id):
+        if not any(
+            ProfilingType.MEMORY in s.enabled_profiling_types
+            for s in self.active_sessions.values()
+            if s.session_id != session_id
+        ):
             self.memory_tracker.stop_tracking()
 
-        if not any(ProfilingType.CPU in s.enabled_profiling_types or
-                  ProfilingType.IO in s.enabled_profiling_types
-                  for s in self.active_sessions.values() if s.session_id != session_id):
+        if not any(
+            ProfilingType.CPU in s.enabled_profiling_types
+            or ProfilingType.IO in s.enabled_profiling_types
+            for s in self.active_sessions.values()
+            if s.session_id != session_id
+        ):
             self.resource_monitor.stop_monitoring()
 
         # Move to completed sessions
@@ -488,17 +506,14 @@ class WorkflowProfiler:
         logger.info(f"Ended profiling session {session_id}")
         return True
 
-    async def profile_node(self, session_id: str, node_id: str) -> Optional[str]:
+    async def profile_node(self, session_id: str, node_id: str) -> str | None:
         """Start profiling a specific node"""
         if session_id not in self.active_sessions:
             return None
 
         session = self.active_sessions[session_id]
 
-        profile = NodeProfile(
-            node_id=node_id,
-            start_time=datetime.utcnow()
-        )
+        profile = NodeProfile(node_id=node_id, start_time=datetime.utcnow())
 
         # Take initial snapshots
         if ProfilingType.MEMORY in session.enabled_profiling_types:
@@ -510,8 +525,10 @@ class WorkflowProfiler:
 
     async def finish_node_profile(self, session_id: str, node_id: str) -> bool:
         """Finish profiling a specific node"""
-        if (session_id not in self.active_sessions or
-            node_id not in self.active_sessions[session_id].node_profiles):
+        if (
+            session_id not in self.active_sessions
+            or node_id not in self.active_sessions[session_id].node_profiles
+        ):
             return False
 
         session = self.active_sessions[session_id]
@@ -528,21 +545,24 @@ class WorkflowProfiler:
             # Get snapshots from the time window of node execution
             snapshots = self.resource_monitor.get_snapshots()
             node_snapshots = [
-                snap for snap in snapshots
-                if profile.start_time <= snap.timestamp <= (profile.end_time or datetime.utcnow())
+                snap
+                for snap in snapshots
+                if profile.start_time
+                <= snap.timestamp
+                <= (profile.end_time or datetime.utcnow())
             ]
             profile.resource_snapshots = node_snapshots
 
         return True
 
-    async def add_custom_metric(self,
-                              session_id: str,
-                              node_id: str,
-                              metric_name: str,
-                              metric_value: Any) -> bool:
+    async def add_custom_metric(
+        self, session_id: str, node_id: str, metric_name: str, metric_value: Any
+    ) -> bool:
         """Add a custom metric to node profile"""
-        if (session_id not in self.active_sessions or
-            node_id not in self.active_sessions[session_id].node_profiles):
+        if (
+            session_id not in self.active_sessions
+            or node_id not in self.active_sessions[session_id].node_profiles
+        ):
             return False
 
         profile = self.active_sessions[session_id].node_profiles[node_id]
@@ -550,7 +570,7 @@ class WorkflowProfiler:
 
         return True
 
-    async def get_profiling_session(self, session_id: str) -> Optional[ProfilingSession]:
+    async def get_profiling_session(self, session_id: str) -> ProfilingSession | None:
         """Get profiling session data"""
         if session_id in self.active_sessions:
             return self.active_sessions[session_id]
@@ -558,7 +578,7 @@ class WorkflowProfiler:
             return self.completed_sessions[session_id]
         return None
 
-    async def analyze_performance(self, session_id: str) -> Optional[PerformanceAnalysis]:
+    async def analyze_performance(self, session_id: str) -> PerformanceAnalysis | None:
         """Analyze performance data from profiling session"""
 
         # Check cache first
@@ -576,42 +596,51 @@ class WorkflowProfiler:
             total_time = (datetime.utcnow() - session.start_time).total_seconds()
 
         # Analyze node timings
-        node_times = [(node_id, profile.wall_time)
-                     for node_id, profile in session.node_profiles.items()
-                     if profile.wall_time > 0]
+        node_times = [
+            (node_id, profile.wall_time)
+            for node_id, profile in session.node_profiles.items()
+            if profile.wall_time > 0
+        ]
 
         node_times.sort(key=lambda x: x[1], reverse=True)
 
         slowest_nodes = [
             {
-                'node_id': node_id,
-                'wall_time_seconds': wall_time,
-                'percentage_of_total': (wall_time / total_time * 100) if total_time > 0 else 0
+                "node_id": node_id,
+                "wall_time_seconds": wall_time,
+                "percentage_of_total": (
+                    (wall_time / total_time * 100) if total_time > 0 else 0
+                ),
             }
             for node_id, wall_time in node_times[:5]
         ]
 
         fastest_nodes = [
             {
-                'node_id': node_id,
-                'wall_time_seconds': wall_time,
-                'percentage_of_total': (wall_time / total_time * 100) if total_time > 0 else 0
+                "node_id": node_id,
+                "wall_time_seconds": wall_time,
+                "percentage_of_total": (
+                    (wall_time / total_time * 100) if total_time > 0 else 0
+                ),
             }
             for node_id, wall_time in node_times[-5:]
         ]
 
         # Timing statistics
-        wall_times = [profile.wall_time for profile in session.node_profiles.values()
-                     if profile.wall_time > 0]
+        wall_times = [
+            profile.wall_time
+            for profile in session.node_profiles.values()
+            if profile.wall_time > 0
+        ]
 
         timing_stats = {}
         if wall_times:
             timing_stats = {
-                'mean': statistics.mean(wall_times),
-                'median': statistics.median(wall_times),
-                'min': min(wall_times),
-                'max': max(wall_times),
-                'std_dev': statistics.stdev(wall_times) if len(wall_times) > 1 else 0.0
+                "mean": statistics.mean(wall_times),
+                "median": statistics.median(wall_times),
+                "min": min(wall_times),
+                "max": max(wall_times),
+                "std_dev": statistics.stdev(wall_times) if len(wall_times) > 1 else 0.0,
             }
 
         # Memory analysis
@@ -623,13 +652,15 @@ class WorkflowProfiler:
                 memory_peak = profile.memory_peak
 
             if profile.memory_peak > 0:
-                memory_hotspots.append({
-                    'node_id': node_id,
-                    'memory_peak_bytes': profile.memory_peak,
-                    'memory_peak_mb': profile.memory_peak / 1024 / 1024
-                })
+                memory_hotspots.append(
+                    {
+                        "node_id": node_id,
+                        "memory_peak_bytes": profile.memory_peak,
+                        "memory_peak_mb": profile.memory_peak / 1024 / 1024,
+                    }
+                )
 
-        memory_hotspots.sort(key=lambda x: x['memory_peak_bytes'], reverse=True)
+        memory_hotspots.sort(key=lambda x: x["memory_peak_bytes"], reverse=True)
         memory_hotspots = memory_hotspots[:5]
 
         # CPU utilization analysis
@@ -639,9 +670,9 @@ class WorkflowProfiler:
                 cpu_values = [snap.cpu_percent for snap in profile.resource_snapshots]
                 if cpu_values:
                     cpu_utilization[node_id] = {
-                        'mean': statistics.mean(cpu_values),
-                        'max': max(cpu_values),
-                        'min': min(cpu_values)
+                        "mean": statistics.mean(cpu_values),
+                        "max": max(cpu_values),
+                        "min": min(cpu_values),
                     }
 
         # Generate recommendations
@@ -649,7 +680,7 @@ class WorkflowProfiler:
 
         if slowest_nodes:
             slowest = slowest_nodes[0]
-            if slowest['percentage_of_total'] > 50:
+            if slowest["percentage_of_total"] > 50:
                 recommendations.append(
                     f"Node '{slowest['node_id']}' takes {slowest['percentage_of_total']:.1f}% "
                     f"of execution time. Consider optimizing this node."
@@ -657,14 +688,14 @@ class WorkflowProfiler:
 
         if memory_hotspots:
             hottest = memory_hotspots[0]
-            if hottest['memory_peak_mb'] > 1000:  # > 1GB
+            if hottest["memory_peak_mb"] > 1000:  # > 1GB
                 recommendations.append(
                     f"Node '{hottest['node_id']}' uses {hottest['memory_peak_mb']:.1f}MB "
                     f"of memory. Consider memory optimization."
                 )
 
         if timing_stats and len(wall_times) > 1:
-            if timing_stats['std_dev'] > timing_stats['mean']:
+            if timing_stats["std_dev"] > timing_stats["mean"]:
                 recommendations.append(
                     "High variance in node execution times detected. "
                     "Consider load balancing or investigating inconsistent performance."
@@ -681,7 +712,7 @@ class WorkflowProfiler:
             memory_peak=memory_peak,
             memory_hotspots=memory_hotspots,
             cpu_utilization=cpu_utilization,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
         # Cache analysis
@@ -689,7 +720,7 @@ class WorkflowProfiler:
 
         return analysis
 
-    async def generate_flamegraph(self, session_id: str) -> Optional[Dict[str, Any]]:
+    async def generate_flamegraph(self, session_id: str) -> dict[str, Any] | None:
         """Generate flamegraph data for session"""
         session = await self.get_profiling_session(session_id)
         if not session:
@@ -697,7 +728,9 @@ class WorkflowProfiler:
 
         return self.flamegraph_generator.generate_flamegraph_data(session)
 
-    async def find_optimization_opportunities(self, session_id: str) -> List[Dict[str, Any]]:
+    async def find_optimization_opportunities(
+        self, session_id: str
+    ) -> list[dict[str, Any]]:
         """Find optimization opportunities in profiling data"""
         analysis = await self.analyze_performance(session_id)
         if not analysis:
@@ -707,55 +740,65 @@ class WorkflowProfiler:
 
         # CPU optimization opportunities
         for node_id, cpu_stats in analysis.cpu_utilization.items():
-            if cpu_stats['mean'] < 20:  # Low CPU usage
-                opportunities.append({
-                    'type': 'cpu_underutilization',
-                    'node_id': node_id,
-                    'description': f"Node '{node_id}' has low CPU utilization ({cpu_stats['mean']:.1f}%). "
-                              f"Consider parallelizing or combining with other operations.",
-                    'priority': 'medium'
-                })
-            elif cpu_stats['mean'] > 90:  # High CPU usage
-                opportunities.append({
-                    'type': 'cpu_bottleneck',
-                    'node_id': node_id,
-                    'description': f"Node '{node_id}' has high CPU utilization ({cpu_stats['mean']:.1f}%). "
-                              f"Consider optimizing algorithms or scaling resources.",
-                    'priority': 'high'
-                })
+            if cpu_stats["mean"] < 20:  # Low CPU usage
+                opportunities.append(
+                    {
+                        "type": "cpu_underutilization",
+                        "node_id": node_id,
+                        "description": f"Node '{node_id}' has low CPU utilization ({cpu_stats['mean']:.1f}%). "
+                        f"Consider parallelizing or combining with other operations.",
+                        "priority": "medium",
+                    }
+                )
+            elif cpu_stats["mean"] > 90:  # High CPU usage
+                opportunities.append(
+                    {
+                        "type": "cpu_bottleneck",
+                        "node_id": node_id,
+                        "description": f"Node '{node_id}' has high CPU utilization ({cpu_stats['mean']:.1f}%). "
+                        f"Consider optimizing algorithms or scaling resources.",
+                        "priority": "high",
+                    }
+                )
 
         # Memory optimization opportunities
         for hotspot in analysis.memory_hotspots:
-            if hotspot['memory_peak_mb'] > 500:  # > 500MB
-                opportunities.append({
-                    'type': 'memory_optimization',
-                    'node_id': hotspot['node_id'],
-                    'description': f"Node '{hotspot['node_id']}' uses {hotspot['memory_peak_mb']:.1f}MB "
-                              f"of memory. Consider implementing memory pooling or streaming.",
-                    'priority': 'high' if hotspot['memory_peak_mb'] > 1000 else 'medium'
-                })
+            if hotspot["memory_peak_mb"] > 500:  # > 500MB
+                opportunities.append(
+                    {
+                        "type": "memory_optimization",
+                        "node_id": hotspot["node_id"],
+                        "description": f"Node '{hotspot['node_id']}' uses {hotspot['memory_peak_mb']:.1f}MB "
+                        f"of memory. Consider implementing memory pooling or streaming.",
+                        "priority": (
+                            "high" if hotspot["memory_peak_mb"] > 1000 else "medium"
+                        ),
+                    }
+                )
 
         # Parallelization opportunities
         if len(analysis.slowest_nodes) > 1:
-            slow_nodes = [node['node_id'] for node in analysis.slowest_nodes[:3]]
-            opportunities.append({
-                'type': 'parallelization',
-                'node_ids': slow_nodes,
-                'description': f"Consider parallelizing nodes {slow_nodes} if they are independent.",
-                'priority': 'medium'
-            })
+            slow_nodes = [node["node_id"] for node in analysis.slowest_nodes[:3]]
+            opportunities.append(
+                {
+                    "type": "parallelization",
+                    "node_ids": slow_nodes,
+                    "description": f"Consider parallelizing nodes {slow_nodes} if they are independent.",
+                    "priority": "medium",
+                }
+            )
 
         return opportunities
 
-    def get_profiler_statistics(self) -> Dict[str, Any]:
+    def get_profiler_statistics(self) -> dict[str, Any]:
         """Get profiler statistics"""
         return {
-            'active_sessions': len(self.active_sessions),
-            'completed_sessions': len(self.completed_sessions),
-            'total_sessions': len(self.active_sessions) + len(self.completed_sessions),
-            'memory_tracking_active': self.memory_tracker.tracking,
-            'resource_monitoring_active': self.resource_monitor.monitoring,
-            'cached_analyses': len(self.analysis_cache),
-            'memory_snapshots': len(self.memory_tracker.snapshots),
-            'resource_snapshots': len(self.resource_monitor.snapshots)
+            "active_sessions": len(self.active_sessions),
+            "completed_sessions": len(self.completed_sessions),
+            "total_sessions": len(self.active_sessions) + len(self.completed_sessions),
+            "memory_tracking_active": self.memory_tracker.tracking,
+            "resource_monitoring_active": self.resource_monitor.monitoring,
+            "cached_analyses": len(self.analysis_cache),
+            "memory_snapshots": len(self.memory_tracker.snapshots),
+            "resource_snapshots": len(self.resource_monitor.snapshots),
         }

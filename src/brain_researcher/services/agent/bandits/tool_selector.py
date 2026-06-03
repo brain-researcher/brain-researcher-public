@@ -1,14 +1,15 @@
 """Bandit-based tool selector for neuroimaging agent."""
 
-import numpy as np
-import logging
-from typing import Dict, List, Optional, Tuple, Any, Union
-from datetime import datetime, timedelta
-from dataclasses import dataclass
-from enum import Enum
 import json
+import logging
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any
 
-from .contextual_bandit import ContextualBandit, BanditAction, Context, BanditFeedback
+import numpy as np
+
+from .contextual_bandit import BanditAction, BanditFeedback, Context
 from .thompson_sampling import ThompsonSampling
 from .ucb_algorithm import LinUCB, UCBAlgorithm
 
@@ -29,12 +30,13 @@ class TaskType(Enum):
 @dataclass
 class ToolDefinition:
     """Definition of a neuroimaging tool."""
+
     name: str
     description: str
-    task_types: List[TaskType]
-    parameters: Dict[str, Any]
+    task_types: list[TaskType]
+    parameters: dict[str, Any]
     expected_execution_time: float
-    resource_requirements: Dict[str, float]
+    resource_requirements: dict[str, float]
     cost_estimate: float
     quality_score: float = 0.8
     reliability_score: float = 0.9
@@ -43,6 +45,7 @@ class ToolDefinition:
 @dataclass
 class TaskContext:
     """Context for tool selection."""
+
     task_type: TaskType
     data_size: float  # MB
     data_complexity: float  # 0-1 scale
@@ -51,9 +54,9 @@ class TaskContext:
     time_constraints: float  # seconds
     quality_requirements: float  # 0-1 scale
     user_expertise: float  # 0-1 scale
-    previous_tools_used: List[str]
-    session_history: List[Dict[str, Any]]
-    user_preferences: Dict[str, Any]
+    previous_tools_used: list[str]
+    session_history: list[dict[str, Any]]
+    user_preferences: dict[str, Any]
 
 
 class FeatureExtractor:
@@ -78,7 +81,7 @@ class FeatureExtractor:
             "user_expertise",
             "session_length",
             "recent_failures",
-            "tool_diversity"
+            "tool_diversity",
         ]
 
         self.feature_dim = len(self.feature_names)
@@ -96,27 +99,33 @@ class FeatureExtractor:
             TaskType.VISUALIZATION: 4,
             TaskType.QUALITY_CHECK: 5,
             TaskType.DATA_EXPORT: 6,
-            TaskType.PARAMETER_OPTIMIZATION: 7
+            TaskType.PARAMETER_OPTIMIZATION: 7,
         }
 
         if task_context.task_type in task_type_features:
             features[task_type_features[task_context.task_type]] = 1.0
 
         # Normalized data size (log scale, normalized to 0-1)
-        features[8] = min(1.0, np.log(max(1, task_context.data_size)) / np.log(10000))  # 10GB max
+        features[8] = min(
+            1.0, np.log(max(1, task_context.data_size)) / np.log(10000)
+        )  # 10GB max
 
         # Data complexity
         features[9] = task_context.data_complexity
 
         # Memory ratio (available / required)
         estimated_memory_need = task_context.data_size * 2  # Rough estimate
-        features[10] = min(1.0, task_context.available_memory / max(1, estimated_memory_need))
+        features[10] = min(
+            1.0, task_context.available_memory / max(1, estimated_memory_need)
+        )
 
         # CPU cores normalized
         features[11] = min(1.0, task_context.available_cpu_cores / 32)  # 32 cores max
 
         # Time pressure (inverse of available time)
-        features[12] = max(0, 1.0 - task_context.time_constraints / 3600)  # 1 hour reference
+        features[12] = max(
+            0, 1.0 - task_context.time_constraints / 3600
+        )  # 1 hour reference
 
         # Quality requirements
         features[13] = task_context.quality_requirements
@@ -130,7 +139,8 @@ class FeatureExtractor:
         # Recent failures rate
         if len(task_context.session_history) > 0:
             recent_failures = sum(
-                1 for item in task_context.session_history[-10:]
+                1
+                for item in task_context.session_history[-10:]
                 if not item.get("success", True)
             )
             features[16] = recent_failures / min(10, len(task_context.session_history))
@@ -146,7 +156,7 @@ class FeatureExtractor:
 
         return features
 
-    def get_feature_names(self) -> List[str]:
+    def get_feature_names(self) -> list[str]:
         """Get list of feature names."""
         return self.feature_names.copy()
 
@@ -156,9 +166,9 @@ class BanditToolSelector:
 
     def __init__(
         self,
-        tools: List[ToolDefinition],
+        tools: list[ToolDefinition],
         algorithm: str = "thompson_sampling",
-        algorithm_params: Optional[Dict[str, Any]] = None
+        algorithm_params: dict[str, Any] | None = None,
     ):
         self.tools = tools
         self.tool_name_to_id = {tool.name: i for i, tool in enumerate(tools)}
@@ -172,7 +182,7 @@ class BanditToolSelector:
                 description=tool.description,
                 parameters=tool.parameters,
                 cost=tool.cost_estimate,
-                expected_time=tool.expected_execution_time
+                expected_time=tool.expected_execution_time,
             )
             bandit_actions.append(action)
 
@@ -188,21 +198,21 @@ class BanditToolSelector:
                 n_arms=len(tools),
                 context_dim=context_dim,
                 actions=bandit_actions,
-                **algorithm_params
+                **algorithm_params,
             )
         elif algorithm == "linucb":
             self.bandit = LinUCB(
                 n_arms=len(tools),
                 context_dim=context_dim,
                 actions=bandit_actions,
-                **algorithm_params
+                **algorithm_params,
             )
         elif algorithm == "ucb":
             self.bandit = UCBAlgorithm(
                 n_arms=len(tools),
                 context_dim=context_dim,
                 actions=bandit_actions,
-                **algorithm_params
+                **algorithm_params,
             )
         else:
             raise ValueError(f"Unknown algorithm: {algorithm}")
@@ -213,15 +223,17 @@ class BanditToolSelector:
         self.selection_history = []
         self.performance_by_task = {task_type: [] for task_type in TaskType}
 
-        logger.info(f"Initialized BanditToolSelector with {len(tools)} tools using {algorithm}")
+        logger.info(
+            f"Initialized BanditToolSelector with {len(tools)} tools using {algorithm}"
+        )
 
     def select_tool(
         self,
         task_context: TaskContext,
-        available_tools: Optional[List[str]] = None,
+        available_tools: list[str] | None = None,
         exploit: bool = False,
-        return_ranking: bool = False
-    ) -> Union[str, Tuple[str, List[Tuple[str, float]]]]:
+        return_ranking: bool = False,
+    ) -> str | tuple[str, list[tuple[str, float]]]:
         """Select best tool for given task context.
 
         Args:
@@ -241,9 +253,9 @@ class BanditToolSelector:
                 "task_type": task_context.task_type.value,
                 "data_size": task_context.data_size,
                 "time_constraints": task_context.time_constraints,
-                "quality_requirements": task_context.quality_requirements
+                "quality_requirements": task_context.quality_requirements,
             },
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
 
         # Filter available tools
@@ -257,8 +269,10 @@ class BanditToolSelector:
             # Check tool compatibility with task type
             available_arm_ids = []
             for i, tool in enumerate(self.tools):
-                if (task_context.task_type in tool.task_types or
-                    len(tool.task_types) == 0):  # Universal tools
+                if (
+                    task_context.task_type in tool.task_types
+                    or len(tool.task_types) == 0
+                ):  # Universal tools
                     available_arm_ids.append(i)
 
         if not available_arm_ids:
@@ -266,9 +280,7 @@ class BanditToolSelector:
 
         # Select tool using bandit
         selected_arm_id, selection_info = self.bandit.select_arm(
-            context_obj,
-            available_arms=available_arm_ids,
-            exploit=exploit
+            context_obj, available_arms=available_arm_ids, exploit=exploit
         )
 
         selected_tool = self.tools[selected_arm_id]
@@ -280,11 +292,13 @@ class BanditToolSelector:
             "selected_tool": selected_tool.name,
             "available_tools": [self.tools[i].name for i in available_arm_ids],
             "selection_info": selection_info,
-            "exploit": exploit
+            "exploit": exploit,
         }
         self.selection_history.append(selection_record)
 
-        logger.debug(f"Selected tool '{selected_tool.name}' for {task_context.task_type.value} task")
+        logger.debug(
+            f"Selected tool '{selected_tool.name}' for {task_context.task_type.value} task"
+        )
 
         if return_ranking:
             # Generate tool ranking
@@ -297,9 +311,9 @@ class BanditToolSelector:
         self,
         task_context: TaskContext,
         tool_name: str,
-        performance_metrics: Dict[str, Any],
+        performance_metrics: dict[str, Any],
         execution_time: float,
-        success: bool
+        success: bool,
     ) -> None:
         """Update tool performance based on execution results.
 
@@ -327,9 +341,9 @@ class BanditToolSelector:
             features=context_vector,
             metadata={
                 "task_type": task_context.task_type.value,
-                "tool_name": tool_name
+                "tool_name": tool_name,
             },
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
 
         # Create feedback object
@@ -340,28 +354,30 @@ class BanditToolSelector:
             execution_time=execution_time,
             success=success,
             metadata=performance_metrics,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
 
         # Update bandit
         self.bandit.update(context_obj, tool_id, reward, feedback)
 
         # Track performance by task type
-        self.performance_by_task[task_context.task_type].append({
-            "tool": tool_name,
-            "reward": reward,
-            "success": success,
-            "execution_time": execution_time,
-            "timestamp": datetime.utcnow()
-        })
+        self.performance_by_task[task_context.task_type].append(
+            {
+                "tool": tool_name,
+                "reward": reward,
+                "success": success,
+                "execution_time": execution_time,
+                "timestamp": datetime.utcnow(),
+            }
+        )
 
-        logger.debug(f"Updated performance for tool '{tool_name}' with reward {reward:.3f}")
+        logger.debug(
+            f"Updated performance for tool '{tool_name}' with reward {reward:.3f}"
+        )
 
     def get_tool_recommendations(
-        self,
-        task_context: TaskContext,
-        top_k: int = 3
-    ) -> List[Dict[str, Any]]:
+        self, task_context: TaskContext, top_k: int = 3
+    ) -> list[dict[str, Any]]:
         """Get top-k tool recommendations with explanations.
 
         Args:
@@ -372,20 +388,18 @@ class BanditToolSelector:
             List of tool recommendations with metadata
         """
         context_vector = self.feature_extractor.extract_features(task_context)
-        context_obj = Context(features=context_vector, metadata={}, timestamp=datetime.utcnow())
+        Context(features=context_vector, metadata={}, timestamp=datetime.utcnow())
 
         # Get compatible tools
         compatible_tools = []
         for i, tool in enumerate(self.tools):
-            if (task_context.task_type in tool.task_types or
-                len(tool.task_types) == 0):
+            if task_context.task_type in tool.task_types or len(tool.task_types) == 0:
                 compatible_tools.append(i)
 
         # Predict rewards for compatible tools
-        if hasattr(self.bandit, 'predict_rewards'):
+        if hasattr(self.bandit, "predict_rewards"):
             predicted_rewards = self.bandit.predict_rewards(
-                context_vector.reshape(1, -1),
-                arms=compatible_tools
+                context_vector.reshape(1, -1), arms=compatible_tools
             )[0]
         else:
             # Fallback: use current estimates
@@ -397,17 +411,16 @@ class BanditToolSelector:
 
         # Get uncertainty estimates if available
         uncertainties = None
-        if hasattr(self.bandit, 'get_uncertainty_estimates'):
+        if hasattr(self.bandit, "get_uncertainty_estimates"):
             try:
                 uncertainties = self.bandit.get_uncertainty_estimates(
-                    context_vector.reshape(1, -1),
-                    arms=compatible_tools
+                    context_vector.reshape(1, -1), arms=compatible_tools
                 )[0]
             except:
                 pass
 
         # Rank tools by predicted reward
-        tool_rankings = list(zip(compatible_tools, predicted_rewards))
+        tool_rankings = list(zip(compatible_tools, predicted_rewards, strict=False))
         tool_rankings.sort(key=lambda x: x[1], reverse=True)
 
         recommendations = []
@@ -431,7 +444,7 @@ class BanditToolSelector:
                 "total_uses": int(stats["total_pulls"]),
                 "explanation": explanation,
                 "estimated_time": tool.expected_execution_time,
-                "resource_requirements": tool.resource_requirements
+                "resource_requirements": tool.resource_requirements,
             }
 
             if uncertainties is not None:
@@ -443,10 +456,8 @@ class BanditToolSelector:
         return recommendations
 
     def get_performance_summary(
-        self,
-        task_type: Optional[TaskType] = None,
-        time_window_hours: int = 24
-    ) -> Dict[str, Any]:
+        self, task_type: TaskType | None = None, time_window_hours: int = 24
+    ) -> dict[str, Any]:
         """Get performance summary for tool selection.
 
         Args:
@@ -492,7 +503,7 @@ class BanditToolSelector:
                     "uses": 0,
                     "successes": 0,
                     "total_reward": 0.0,
-                    "total_time": 0.0
+                    "total_time": 0.0,
                 }
 
             tool_stats[tool_name]["uses"] += 1
@@ -520,11 +531,11 @@ class BanditToolSelector:
             "tool_statistics": tool_stats,
             "bandit_statistics": bandit_stats,
             "algorithm": self.algorithm_name,
-            "total_tools": len(self.tools)
+            "total_tools": len(self.tools),
         }
 
         # Feature importance if available
-        if hasattr(self.bandit, 'get_feature_importance'):
+        if hasattr(self.bandit, "get_feature_importance"):
             importance = self.bandit.get_feature_importance()
             feature_names = self.feature_extractor.get_feature_names()
 
@@ -554,24 +565,21 @@ class BanditToolSelector:
                     "resource_requirements": tool.resource_requirements,
                     "cost_estimate": tool.cost_estimate,
                     "quality_score": tool.quality_score,
-                    "reliability_score": tool.reliability_score
+                    "reliability_score": tool.reliability_score,
                 }
                 for tool in self.tools
             ],
             "algorithm_name": self.algorithm_name,
             "performance_by_task": {
                 task_type.value: [
-                    {
-                        **perf,
-                        "timestamp": perf["timestamp"].isoformat()
-                    }
+                    {**perf, "timestamp": perf["timestamp"].isoformat()}
                     for perf in performances
                 ]
                 for task_type, performances in self.performance_by_task.items()
-            }
+            },
         }
 
-        with open(f"{filepath}_selector.json", 'w') as f:
+        with open(f"{filepath}_selector.json", "w") as f:
             json.dump(state, f, indent=2)
 
         logger.info(f"Saved tool selector state to {filepath}")
@@ -579,7 +587,7 @@ class BanditToolSelector:
     def load_state(self, filepath: str) -> None:
         """Load tool selector state."""
         # Load selector state
-        with open(f"{filepath}_selector.json", 'r') as f:
+        with open(f"{filepath}_selector.json") as f:
             state = json.load(f)
 
         # Reconstruct tools
@@ -594,7 +602,7 @@ class BanditToolSelector:
                 resource_requirements=tool_data["resource_requirements"],
                 cost_estimate=tool_data["cost_estimate"],
                 quality_score=tool_data.get("quality_score", 0.8),
-                reliability_score=tool_data.get("reliability_score", 0.9)
+                reliability_score=tool_data.get("reliability_score", 0.9),
             )
             self.tools.append(tool)
 
@@ -621,9 +629,9 @@ class BanditToolSelector:
     def _calculate_reward(
         self,
         task_context: TaskContext,
-        performance_metrics: Dict[str, Any],
+        performance_metrics: dict[str, Any],
         execution_time: float,
-        success: bool
+        success: bool,
     ) -> float:
         """Calculate reward for tool performance."""
         if not success:
@@ -659,10 +667,8 @@ class BanditToolSelector:
         return reward
 
     def _rank_tools(
-        self,
-        context: Context,
-        available_arm_ids: List[int]
-    ) -> List[Tuple[str, float]]:
+        self, context: Context, available_arm_ids: list[int]
+    ) -> list[tuple[str, float]]:
         """Rank available tools by expected performance."""
         rankings = []
 
@@ -670,10 +676,9 @@ class BanditToolSelector:
             tool = self.tools[arm_id]
 
             # Get expected reward
-            if hasattr(self.bandit, 'predict_rewards'):
+            if hasattr(self.bandit, "predict_rewards"):
                 expected_reward = self.bandit.predict_rewards(
-                    context.features.reshape(1, -1),
-                    arms=[arm_id]
+                    context.features.reshape(1, -1), arms=[arm_id]
                 )[0, 0]
             else:
                 stats = self.bandit.get_arm_statistics(arm_id)
@@ -691,7 +696,7 @@ class BanditToolSelector:
         tool: ToolDefinition,
         task_context: TaskContext,
         predicted_reward: float,
-        stats: Dict[str, Any]
+        stats: dict[str, Any],
     ) -> str:
         """Generate human-readable explanation for tool recommendation."""
         explanations = []

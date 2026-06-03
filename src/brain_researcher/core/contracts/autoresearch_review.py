@@ -70,7 +70,9 @@ class AutoresearchReviewBundle(BaseModel):
     latest_summary: AutoresearchIterationSummary | None = None
     best_summary: AutoresearchIterationSummary | None = None
     recent_iterations: list[AutoresearchIterationSummary] = Field(default_factory=list)
-    component_summaries: list[AutoresearchComponentSummary] = Field(default_factory=list)
+    component_summaries: list[AutoresearchComponentSummary] = Field(
+        default_factory=list
+    )
     quality_summary: dict[str, Any] = Field(default_factory=dict)
     claim_strength_declared: str | None = None
     validation_missing_declared: list[str] = Field(default_factory=list)

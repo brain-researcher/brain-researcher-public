@@ -1,13 +1,14 @@
 """Base contextual bandit implementation for multi-armed bandit problems."""
 
-import numpy as np
+import json
 import logging
-from typing import Dict, List, Optional, Tuple, Any, Union
 from abc import ABC, abstractmethod
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
-from collections import defaultdict, deque
-import json
+from typing import Any
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -15,10 +16,11 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BanditAction:
     """Represents a bandit arm/action with metadata."""
+
     id: int
     name: str
     description: str
-    parameters: Dict[str, Any]
+    parameters: dict[str, Any]
     cost: float = 0.0
     expected_time: float = 0.0
 
@@ -26,22 +28,24 @@ class BanditAction:
 @dataclass
 class Context:
     """Context information for contextual bandits."""
+
     features: np.ndarray
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     timestamp: datetime
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
+    user_id: str | None = None
+    session_id: str | None = None
 
 
 @dataclass
 class BanditFeedback:
     """Feedback from bandit action execution."""
+
     context: Context
     action_id: int
     reward: float
     execution_time: float
     success: bool
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     timestamp: datetime
 
 
@@ -52,9 +56,9 @@ class ContextualBandit(ABC):
         self,
         n_arms: int,
         context_dim: int,
-        actions: Optional[List[BanditAction]] = None,
+        actions: list[BanditAction] | None = None,
         exploration_bonus: float = 1.0,
-        decay_rate: float = 0.99
+        decay_rate: float = 0.99,
     ):
         self.n_arms = n_arms
         self.context_dim = context_dim
@@ -68,7 +72,9 @@ class ContextualBandit(ABC):
         else:
             # Create default actions
             self.actions = {
-                i: BanditAction(id=i, name=f"action_{i}", description=f"Action {i}", parameters={})
+                i: BanditAction(
+                    id=i, name=f"action_{i}", description=f"Action {i}", parameters={}
+                )
                 for i in range(n_arms)
             }
 
@@ -91,7 +97,7 @@ class ContextualBandit(ABC):
                 "count": 0,
                 "success_rate": 0.0,
                 "avg_execution_time": 0.0,
-                "recent_rewards": deque(maxlen=100)
+                "recent_rewards": deque(maxlen=100),
             }
             for i in range(n_arms)
         }
@@ -101,10 +107,10 @@ class ContextualBandit(ABC):
     @abstractmethod
     def select_arm(
         self,
-        context: Union[np.ndarray, Context],
-        available_arms: Optional[List[int]] = None,
-        exploit: bool = False
-    ) -> Tuple[int, Dict[str, Any]]:
+        context: np.ndarray | Context,
+        available_arms: list[int] | None = None,
+        exploit: bool = False,
+    ) -> tuple[int, dict[str, Any]]:
         """Select an arm given context.
 
         Args:
@@ -119,10 +125,10 @@ class ContextualBandit(ABC):
 
     def update(
         self,
-        context: Union[np.ndarray, Context],
+        context: np.ndarray | Context,
         action: int,
         reward: float,
-        feedback: Optional[BanditFeedback] = None
+        feedback: BanditFeedback | None = None,
     ) -> None:
         """Update bandit with observed reward.
 
@@ -138,11 +144,13 @@ class ContextualBandit(ABC):
             self.contexts.append(context)
         else:
             context_vector = context
-            self.contexts.append(Context(
-                features=context_vector.copy(),
-                metadata={},
-                timestamp=datetime.utcnow()
-            ))
+            self.contexts.append(
+                Context(
+                    features=context_vector.copy(),
+                    metadata={},
+                    timestamp=datetime.utcnow(),
+                )
+            )
 
         # Update history
         self.action_history.append(action)
@@ -184,7 +192,7 @@ class ContextualBandit(ABC):
         if self.training_step % 100 == 0:
             self._decay_history()
 
-    def get_arm_statistics(self, arm_id: int) -> Dict[str, float]:
+    def get_arm_statistics(self, arm_id: int) -> dict[str, float]:
         """Get statistics for a specific arm."""
         if arm_id not in range(self.n_arms):
             raise ValueError(f"Invalid arm_id: {arm_id}")
@@ -194,16 +202,22 @@ class ContextualBandit(ABC):
         stats = {
             "total_pulls": int(self.action_counts[arm_id]),
             "total_reward": float(self.total_rewards[arm_id]),
-            "average_reward": float(self.total_rewards[arm_id] / max(1, self.action_counts[arm_id])),
+            "average_reward": float(
+                self.total_rewards[arm_id] / max(1, self.action_counts[arm_id])
+            ),
             "success_rate": float(perf["success_rate"]),
             "avg_execution_time": float(perf["avg_execution_time"]),
-            "recent_performance": float(np.mean(perf["recent_rewards"])) if perf["recent_rewards"] else 0.0,
-            "confidence": self._calculate_confidence(arm_id)
+            "recent_performance": (
+                float(np.mean(perf["recent_rewards"]))
+                if perf["recent_rewards"]
+                else 0.0
+            ),
+            "confidence": self._calculate_confidence(arm_id),
         }
 
         return stats
 
-    def get_overall_statistics(self) -> Dict[str, Any]:
+    def get_overall_statistics(self) -> dict[str, Any]:
         """Get overall bandit statistics."""
         total_pulls = int(np.sum(self.action_counts))
 
@@ -211,7 +225,7 @@ class ContextualBandit(ABC):
             return {"message": "No actions taken yet"}
 
         # Calculate exploration vs exploitation ratio
-        if hasattr(self, '_exploration_count'):
+        if hasattr(self, "_exploration_count"):
             exploration_rate = self._exploration_count / total_pulls
         else:
             exploration_rate = 0.5  # Default estimate
@@ -233,15 +247,17 @@ class ContextualBandit(ABC):
                 str(i): float(count / total_pulls)
                 for i, count in enumerate(self.action_counts)
             },
-            "recent_regret": float(np.mean(self.regret_history[-100:])) if len(self.regret_history) >= 100 else 0.0
+            "recent_regret": (
+                float(np.mean(self.regret_history[-100:]))
+                if len(self.regret_history) >= 100
+                else 0.0
+            ),
         }
 
         return stats
 
     def predict_rewards(
-        self,
-        contexts: np.ndarray,
-        arms: Optional[List[int]] = None
+        self, contexts: np.ndarray, arms: list[int] | None = None
     ) -> np.ndarray:
         """Predict rewards for given contexts and arms."""
         arms = arms or list(range(self.n_arms))
@@ -257,7 +273,7 @@ class ContextualBandit(ABC):
 
         return predictions
 
-    def get_feature_importance(self) -> Dict[str, float]:
+    def get_feature_importance(self) -> dict[str, float]:
         """Get importance of context features (if applicable)."""
         # Base implementation returns uniform importance
         return {f"feature_{i}": 1.0 / self.context_dim for i in range(self.context_dim)}
@@ -280,7 +296,7 @@ class ContextualBandit(ABC):
                     "description": v.description,
                     "parameters": v.parameters,
                     "cost": v.cost,
-                    "expected_time": v.expected_time
+                    "expected_time": v.expected_time,
                 }
                 for k, v in self.actions.items()
             },
@@ -290,23 +306,23 @@ class ContextualBandit(ABC):
                     "count": v["count"],
                     "success_rate": v["success_rate"],
                     "avg_execution_time": v["avg_execution_time"],
-                    "recent_rewards": list(v["recent_rewards"])
+                    "recent_rewards": list(v["recent_rewards"]),
                 }
                 for k, v in self.action_performance.items()
-            }
+            },
         }
 
         # Add algorithm-specific state
         state.update(self._get_algorithm_state())
 
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(state, f, indent=2)
 
         logger.info(f"Saved bandit state to {filepath}")
 
     def load_state(self, filepath: str) -> None:
         """Load bandit state from file."""
-        with open(filepath, 'r') as f:
+        with open(filepath) as f:
             state = json.load(f)
 
         self.n_arms = state["n_arms"]
@@ -331,7 +347,7 @@ class ContextualBandit(ABC):
                 "count": v["count"],
                 "success_rate": v["success_rate"],
                 "avg_execution_time": v["avg_execution_time"],
-                "recent_rewards": deque(v["recent_rewards"], maxlen=100)
+                "recent_rewards": deque(v["recent_rewards"], maxlen=100),
             }
 
         # Load algorithm-specific state
@@ -357,7 +373,7 @@ class ContextualBandit(ABC):
                 "count": 0,
                 "success_rate": 0.0,
                 "avg_execution_time": 0.0,
-                "recent_rewards": deque(maxlen=100)
+                "recent_rewards": deque(maxlen=100),
             }
             for i in range(self.n_arms)
         }
@@ -401,16 +417,16 @@ class ContextualBandit(ABC):
                 self.feedback_history = self.feedback_history[-keep_size:]
 
     @abstractmethod
-    def _get_algorithm_state(self) -> Dict[str, Any]:
+    def _get_algorithm_state(self) -> dict[str, Any]:
         """Get algorithm-specific state for saving."""
         return {}
 
     @abstractmethod
-    def _set_algorithm_state(self, state: Dict[str, Any]) -> None:
+    def _set_algorithm_state(self, state: dict[str, Any]) -> None:
         """Set algorithm-specific state from loaded data."""
         pass
 
-    def _extract_context_features(self, context: Union[np.ndarray, Context]) -> np.ndarray:
+    def _extract_context_features(self, context: np.ndarray | Context) -> np.ndarray:
         """Extract feature vector from context."""
         if isinstance(context, Context):
             return context.features
@@ -421,10 +437,12 @@ class ContextualBandit(ABC):
         exp_values = np.exp((values - np.max(values)) / temperature)
         return exp_values / np.sum(exp_values)
 
-    def _upper_confidence_bound(self, arm_id: int, confidence_level: float = 2.0) -> float:
+    def _upper_confidence_bound(
+        self, arm_id: int, confidence_level: float = 2.0
+    ) -> float:
         """Calculate upper confidence bound for an arm."""
         if self.action_counts[arm_id] == 0:
-            return float('inf')  # Infinite uncertainty for unobserved arms
+            return float("inf")  # Infinite uncertainty for unobserved arms
 
         mean_reward = self.total_rewards[arm_id] / self.action_counts[arm_id]
         total_count = np.sum(self.action_counts)
@@ -438,7 +456,7 @@ class ContextualBandit(ABC):
 
         return mean_reward + confidence_radius
 
-    def get_arm_rankings(self) -> List[Tuple[int, float, str]]:
+    def get_arm_rankings(self) -> list[tuple[int, float, str]]:
         """Get arms ranked by performance with confidence."""
         rankings = []
 

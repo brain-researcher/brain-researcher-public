@@ -10,7 +10,7 @@ candidate shapes (catalog-driven vs intent-router debug rows).
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from brain_researcher.services.agent.planner_state import (
     PlannerEvent,
@@ -19,7 +19,7 @@ from brain_researcher.services.agent.planner_state import (
 )
 
 
-def _float_or_none(value: Any) -> Optional[float]:
+def _float_or_none(value: Any) -> float | None:
     try:
         if value is None:
             return None
@@ -28,7 +28,7 @@ def _float_or_none(value: Any) -> Optional[float]:
         return None
 
 
-def _candidate_tool_id(candidate: Dict[str, Any]) -> Optional[str]:
+def _candidate_tool_id(candidate: dict[str, Any]) -> str | None:
     return (
         candidate.get("tool_id")
         or candidate.get("tool")
@@ -36,25 +36,25 @@ def _candidate_tool_id(candidate: Dict[str, Any]) -> Optional[str]:
     )
 
 
-def _candidate_tool_name(candidate: Dict[str, Any]) -> Optional[str]:
+def _candidate_tool_name(candidate: dict[str, Any]) -> str | None:
     return (
         candidate.get("tool_name") or candidate.get("tool") or candidate.get("tool_id")
     )
 
 
-def _candidate_score(candidate: Dict[str, Any]) -> Optional[float]:
+def _candidate_score(candidate: dict[str, Any]) -> float | None:
     # Catalog selection uses final_score; intent-router debug uses score.
     return _float_or_none(candidate.get("final_score", candidate.get("score")))
 
 
 def build_planner_trace(
-    plan_payload: Dict[str, Any],
+    plan_payload: dict[str, Any],
     *,
-    request_payload: Optional[Dict[str, Any]] = None,
-) -> Tuple[List[PlannerEvent], Dict[str, Any]]:
+    request_payload: dict[str, Any] | None = None,
+) -> tuple[list[PlannerEvent], dict[str, Any]]:
     """Build planner events + final state from a plan payload dict."""
 
-    events: List[PlannerEvent] = []
+    events: list[PlannerEvent] = []
 
     pipeline = (request_payload or {}).get("pipeline") or plan_payload.get("query")
     mode = plan_payload.get("mode")
@@ -67,16 +67,18 @@ def build_planner_trace(
                 "mode": mode,
                 "routing_diagnostics": plan_payload.get("routing_diagnostics"),
             },
-            diff={
-                "routing_diagnostics_set": plan_payload.get("routing_diagnostics"),
-            }
-            if isinstance(plan_payload.get("routing_diagnostics"), dict)
-            else {},
+            diff=(
+                {
+                    "routing_diagnostics_set": plan_payload.get("routing_diagnostics"),
+                }
+                if isinstance(plan_payload.get("routing_diagnostics"), dict)
+                else {}
+            ),
         )
     )
 
     # Candidates from catalog selection (preferred) or debug selection reasons.
-    candidates: List[Dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = []
     if isinstance(plan_payload.get("candidates"), list):
         candidates = list(plan_payload["candidates"])
     elif isinstance(plan_payload.get("selection_reasons"), list):
@@ -103,8 +105,8 @@ def build_planner_trace(
         step_id = step.get("id") or f"step_{idx + 1:03d}"
         dag_branch_steps.append({"step_id": step_id, "tool_id": tool_id})
 
-    hypothesis_ids: List[str] = []
-    branch_ids: List[str] = []
+    hypothesis_ids: list[str] = []
+    branch_ids: list[str] = []
 
     for idx, candidate in enumerate(candidates):
         tool_id = _candidate_tool_id(candidate)

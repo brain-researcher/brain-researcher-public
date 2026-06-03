@@ -5,14 +5,15 @@ Verifies that python tools execute in-process without GPU allocation,
 while container tools go through resource allocation.
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 from brain_researcher.services.agent.tool_executor import (
-    ToolExecutor,
-    ToolExecutionRequest,
     ExecutionBackend,
     ToolCategory,
+    ToolExecutionRequest,
+    ToolExecutor,
 )
 from brain_researcher.services.tools.tool_base import BRKGToolWrapper, ToolResult
 
@@ -47,7 +48,9 @@ class TestGPUAllocationExemption:
         executor = ToolExecutor()
         # Mock resource manager to track allocations
         executor.resource_manager = Mock()
-        executor.resource_manager.request_resources = Mock(return_value=Mock(allocation_id="test_alloc"))
+        executor.resource_manager.request_resources = Mock(
+            return_value=Mock(allocation_id="test_alloc")
+        )
         executor.resource_manager.release_resources = Mock()
         return executor
 
@@ -63,6 +66,7 @@ class TestGPUAllocationExemption:
         """
         # Register the tool
         from brain_researcher.services.tools.tool_registry import ToolRegistry
+
         registry = ToolRegistry()
         registry.register_tool(python_tool)
 
@@ -76,7 +80,7 @@ class TestGPUAllocationExemption:
         )
 
         # Execute
-        with patch.object(tool_executor, '_get_tool', return_value=python_tool):
+        with patch.object(tool_executor, "_get_tool", return_value=python_tool):
             result = tool_executor.execute(request)
 
         # Verify execution succeeded
@@ -107,15 +111,17 @@ class TestGPUAllocationExemption:
         mock_tool.execution_backend = "container"
 
         # Mock command generation to avoid actual execution
-        with patch.object(tool_executor, '_get_tool', return_value=mock_tool):
-            with patch.object(tool_executor, '_execute_command_generation') as mock_exec:
+        with patch.object(tool_executor, "_get_tool", return_value=mock_tool):
+            with patch.object(
+                tool_executor, "_execute_command_generation"
+            ) as mock_exec:
                 mock_exec.return_value = Mock(
                     status="success",
                     execution_id="test_exec_002",
                     tool_name="fsl_bet",
                     result={"command": "bet brain.nii brain_mask.nii"},
                 )
-                result = tool_executor.execute(request)
+                tool_executor.execute(request)
 
         # Verify command generation was used (container path)
         # Note: _execute_command_generation doesn't allocate resources either,
@@ -142,10 +148,10 @@ class TestGPUAllocationExemption:
         mock_tool.execution_backend = "api"
         mock_tool._run = Mock(return_value={"status": "success", "data": "test"})
 
-        with patch.object(tool_executor, '_get_tool', return_value=mock_tool):
-            with patch.object(tool_executor, '_execute_with_timeout') as mock_timeout:
+        with patch.object(tool_executor, "_get_tool", return_value=mock_tool):
+            with patch.object(tool_executor, "_execute_with_timeout") as mock_timeout:
                 mock_timeout.return_value = Mock(status="success")
-                result = tool_executor.execute(request)
+                tool_executor.execute(request)
 
         # Verify resource allocation was called for API backend
         assert tool_executor.resource_manager.request_resources.called
@@ -159,7 +165,9 @@ class TestGPUAllocationExemption:
             parameters={},
             runtime_kind="python",
         )
-        assert tool_executor._determine_backend(python_request) == ExecutionBackend.PYTHON
+        assert (
+            tool_executor._determine_backend(python_request) == ExecutionBackend.PYTHON
+        )
 
         # Container tool request (default)
         container_request = ToolExecutionRequest(
@@ -168,7 +176,10 @@ class TestGPUAllocationExemption:
             parameters={},
             runtime_kind="container",
         )
-        assert tool_executor._determine_backend(container_request) == ExecutionBackend.CONTAINER
+        assert (
+            tool_executor._determine_backend(container_request)
+            == ExecutionBackend.CONTAINER
+        )
 
         # API tool request
         api_request = ToolExecutionRequest(
@@ -190,6 +201,7 @@ class TestGPUAllocationExemption:
 
         # Register the tool
         from brain_researcher.services.tools.tool_registry import ToolRegistry
+
         registry = ToolRegistry()
         registry.register_tool(python_tool)
 
@@ -201,7 +213,7 @@ class TestGPUAllocationExemption:
         )
 
         # Execute
-        with patch.object(tool_executor, '_get_tool', return_value=python_tool):
+        with patch.object(tool_executor, "_get_tool", return_value=python_tool):
             result = tool_executor.execute(request)
 
         # Verify execution succeeded immediately (no queuing)

@@ -3,12 +3,12 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 from brain_researcher.services.tools.spec import ToolSpec
+from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -17,40 +17,78 @@ class FSLFNIRTArgs(BaseModel):
     """Arguments for FSL FNIRT non-linear registration."""
 
     in_file: str = Field(description="Input image to be registered (NIfTI format)")
-    ref_file: str = Field(description="Reference/template image (e.g., MNI152 template)")
+    ref_file: str = Field(
+        description="Reference/template image (e.g., MNI152 template)"
+    )
     output_dir: str = Field(description="Output directory for results")
 
-    out_file: Optional[str] = Field(default=None, description="Output warped image name")
-    field_file: Optional[str] = Field(default=None, description="Output warp field file")
-    jacobian_file: Optional[str] = Field(default=None, description="Output Jacobian determinant file")
-    affine_file: Optional[str] = Field(default=None, description="Initial affine transformation matrix")
-    in_intensitymap_file: Optional[str] = Field(default=None, description="Input intensity mapping file")
-    config_file: Optional[str] = Field(default=None, description="Configuration file name or path")
+    out_file: str | None = Field(default=None, description="Output warped image name")
+    field_file: str | None = Field(default=None, description="Output warp field file")
+    jacobian_file: str | None = Field(
+        default=None, description="Output Jacobian determinant file"
+    )
+    affine_file: str | None = Field(
+        default=None, description="Initial affine transformation matrix"
+    )
+    in_intensitymap_file: str | None = Field(
+        default=None, description="Input intensity mapping file"
+    )
+    config_file: str | None = Field(
+        default=None, description="Configuration file name or path"
+    )
 
-    warp_resolution: Optional[str] = Field(default="10,10,10", description="Warp field resolution in mm")
-    spline_order: Optional[int] = Field(default=3, description="Spline order for warping")
-    regularization_lambda: Optional[str] = Field(default=None, description="Regularization parameter(s)")
-    regularization_model: Optional[str] = Field(default="bending_energy", description="Regularization model")
-    max_iterations: Optional[str] = Field(default="5,5,5,5", description="Iterations per resolution level")
-    subsample_levels: Optional[str] = Field(default="4,2,1,1", description="Subsampling levels")
+    warp_resolution: str | None = Field(
+        default="10,10,10", description="Warp field resolution in mm"
+    )
+    spline_order: int | None = Field(default=3, description="Spline order for warping")
+    regularization_lambda: str | None = Field(
+        default=None, description="Regularization parameter(s)"
+    )
+    regularization_model: str | None = Field(
+        default="bending_energy", description="Regularization model"
+    )
+    max_iterations: str | None = Field(
+        default="5,5,5,5", description="Iterations per resolution level"
+    )
+    subsample_levels: str | None = Field(
+        default="4,2,1,1", description="Subsampling levels"
+    )
 
-    intensity_mapping: Optional[bool] = Field(default=False, description="Use intensity mapping/bias correction")
-    intensity_mapping_order: Optional[int] = Field(default=5, description="Polynomial order for intensity mapping")
+    intensity_mapping: bool | None = Field(
+        default=False, description="Use intensity mapping/bias correction"
+    )
+    intensity_mapping_order: int | None = Field(
+        default=5, description="Polynomial order for intensity mapping"
+    )
 
-    ref_mask: Optional[str] = Field(default=None, description="Reference image mask file")
-    in_mask: Optional[str] = Field(default=None, description="Input image mask file")
-    apply_ref_mask: Optional[int] = Field(default=1, description="Apply reference mask (0/1)")
-    apply_in_mask: Optional[int] = Field(default=1, description="Apply input mask (0/1)")
+    ref_mask: str | None = Field(default=None, description="Reference image mask file")
+    in_mask: str | None = Field(default=None, description="Input image mask file")
+    apply_ref_mask: int | None = Field(
+        default=1, description="Apply reference mask (0/1)"
+    )
+    apply_in_mask: int | None = Field(default=1, description="Apply input mask (0/1)")
 
-    in_smoothing: Optional[str] = Field(default=None, description="Input smoothing sigma values")
-    ref_smoothing: Optional[str] = Field(default=None, description="Reference smoothing sigma values")
+    in_smoothing: str | None = Field(
+        default=None, description="Input smoothing sigma values"
+    )
+    ref_smoothing: str | None = Field(
+        default=None, description="Reference smoothing sigma values"
+    )
 
-    use_gradient_images: Optional[bool] = Field(default=False, description="Use gradient magnitude images")
-    jacobian_range: Optional[str] = Field(default="0.01,100.0", description="Allowable Jacobian range")
-    derive_from_ref: Optional[bool] = Field(default=False, description="Derive field from reference to input")
+    use_gradient_images: bool | None = Field(
+        default=False, description="Use gradient magnitude images"
+    )
+    jacobian_range: str | None = Field(
+        default="0.01,100.0", description="Allowable Jacobian range"
+    )
+    derive_from_ref: bool | None = Field(
+        default=False, description="Derive field from reference to input"
+    )
 
-    verbose: Optional[bool] = Field(default=False, description="Verbose output")
-    debug: Optional[bool] = Field(default=False, description="Debug mode (keep intermediate files)")
+    verbose: bool | None = Field(default=False, description="Verbose output")
+    debug: bool | None = Field(
+        default=False, description="Debug mode (keep intermediate files)"
+    )
 
 
 _FSL_FNIRT_SCHEMA = FSLFNIRTArgs.model_json_schema()
@@ -193,7 +231,7 @@ class FSLFNIRTTool(NeuroToolWrapper):
                 data={"command": command_str},
             )
 
-        outputs: Dict[str, Any] = {
+        outputs: dict[str, Any] = {
             "warped_image": out_file,
             "warp_field": field_file,
         }
@@ -309,7 +347,7 @@ class FSLFNIRTTool(NeuroToolWrapper):
         )
 
 
-def get_all_tools() -> List[NeuroToolWrapper]:
+def get_all_tools() -> list[NeuroToolWrapper]:
     """Public factory for registry discovery."""
     return [FSLFNIRTTool()]
 
@@ -318,7 +356,7 @@ class FSLFNIRTTools:
     """Back-compat collection wrapper for registry imports."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         return get_all_tools()
 
 

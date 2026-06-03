@@ -133,9 +133,8 @@ def test_register_handlers_uses_base_url():
 
     runtime = SimpleNamespace(
         APIHandler=type("FakeAPIHandler", (), {}),
-        url_path_join=lambda *parts: "/" + "/".join(
-            part.strip("/") for part in parts if part and part.strip("/")
-        ),
+        url_path_join=lambda *parts: "/"
+        + "/".join(part.strip("/") for part in parts if part and part.strip("/")),
         web=SimpleNamespace(authenticated=lambda func: func),
     )
     serverapp = SimpleNamespace(
@@ -176,7 +175,9 @@ def test_issue_bridge_session_reuses_existing_state():
     )
 
     first = issue_bridge_session(settings)
-    second = issue_bridge_session(settings, requested_session_id=first.bridge_session_id)
+    second = issue_bridge_session(
+        settings, requested_session_id=first.bridge_session_id
+    )
 
     assert second.bridge_session_id == first.bridge_session_id
     assert second.created_at_epoch == first.created_at_epoch
@@ -248,7 +249,10 @@ async def test_proxy_mcp_request_binds_upstream_session(monkeypatch):
         bridge_session=bound_session,
     )
 
-    assert first.headers["X-Brain-Researcher-Bridge-Session"] == bridge_session.bridge_session_id
+    assert (
+        first.headers["X-Brain-Researcher-Bridge-Session"]
+        == bridge_session.bridge_session_id
+    )
     assert first.headers["x-brain-researcher-upstream-session-bound"] == "true"
     assert second.headers["x-brain-researcher-upstream-session-bound"] == "true"
     assert bound_session is not None

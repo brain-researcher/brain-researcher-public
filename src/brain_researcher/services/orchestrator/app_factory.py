@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,7 +19,10 @@ from fastapi.responses import JSONResponse
 
 from brain_researcher.services.shared.api_version import API_VERSION, set_api_version
 from brain_researcher.services.shared.settings import get_settings
-from brain_researcher.services.shared.trace_headers import get_trace_id, set_trace_headers
+from brain_researcher.services.shared.trace_headers import (
+    get_trace_id,
+    set_trace_headers,
+)
 
 from . import env as env_module
 from . import metrics as metrics_module
@@ -27,7 +30,9 @@ from . import metrics as metrics_module
 logger = logging.getLogger(__name__)
 
 
-def _include_optional_routers(app: FastAPI, routers: Iterable[Optional[APIRouter]]) -> None:
+def _include_optional_routers(
+    app: FastAPI, routers: Iterable[APIRouter | None]
+) -> None:
     for router in routers:
         if router is not None:
             app.include_router(router)
@@ -116,8 +121,8 @@ def create_app(
     version: str,
     allowed_origins: list[str],
     lifespan=None,
-    optional_routers: Iterable[Optional[APIRouter]] = (),
-    trace_logger: Optional[logging.Logger] = None,
+    optional_routers: Iterable[APIRouter | None] = (),
+    trace_logger: logging.Logger | None = None,
 ) -> FastAPI:
     """Create and configure the orchestrator FastAPI app."""
 

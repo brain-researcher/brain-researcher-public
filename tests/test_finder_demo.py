@@ -4,11 +4,10 @@ Demo script to test the complete Finder API flow.
 Run this to verify the Finder system is working end-to-end.
 """
 
-import requests
 import json
-from typing import Dict, Any
 import sys
 
+import requests
 
 BASE_URL = "http://localhost:5000"
 
@@ -21,14 +20,11 @@ def test_natural_language_parsing():
         "fMRI motor task",
         "structural MRI studies",
         "working memory fMRI after 2020",
-        "resting state healthy controls"
+        "resting state healthy controls",
     ]
 
     for query in queries:
-        response = requests.post(
-            f"{BASE_URL}/kg/suggestFilters",
-            json={"text": query}
-        )
+        response = requests.post(f"{BASE_URL}/kg/suggestFilters", json={"text": query})
 
         if response.status_code == 200:
             filters = response.json()["filters"]
@@ -46,10 +42,7 @@ def test_facet_counting():
     print("\n=== Testing Facet Counting ===")
 
     # Test without filters
-    response = requests.post(
-        f"{BASE_URL}/kg/facets",
-        json={"filters": []}
-    )
+    response = requests.post(f"{BASE_URL}/kg/facets", json={"filters": []})
 
     if response.status_code == 200:
         facets = response.json()["facets"]
@@ -64,10 +57,7 @@ def test_facet_counting():
 
     # Test with filter
     filters = [{"facet": "modality", "op": "=", "value": "fmri"}]
-    response = requests.post(
-        f"{BASE_URL}/kg/facets",
-        json={"filters": filters}
-    )
+    response = requests.post(f"{BASE_URL}/kg/facets", json={"filters": filters})
 
     if response.status_code == 200:
         print("\nFacets filtered by modality=fmri:")
@@ -87,12 +77,7 @@ def test_dataset_search():
     # Search without filters
     response = requests.post(
         f"{BASE_URL}/kg/searchDatasets",
-        json={
-            "filters": [],
-            "sort": "readiness",
-            "limit": 5,
-            "offset": 0
-        }
+        json={"filters": [], "sort": "readiness", "limit": 5, "offset": 0},
     )
 
     if response.status_code == 200:
@@ -102,7 +87,9 @@ def test_dataset_search():
         for ds in datasets:
             readiness = ds["readiness"]
             print(f"\n- {ds['name']} (ID: {ds['id']})")
-            print(f"  Readiness: {readiness['color']} (score: {readiness['score']:.2f})")
+            print(
+                f"  Readiness: {readiness['color']} (score: {readiness['score']:.2f})"
+            )
             print(f"  Reason: {readiness['reason']}")
     else:
         print(f"Error searching datasets: {response.status_code}")
@@ -111,17 +98,12 @@ def test_dataset_search():
     # Search with filters
     filters = [
         {"facet": "modality", "op": "=", "value": "fmri"},
-        {"facet": "task", "op": "=", "value": "motor"}
+        {"facet": "task", "op": "=", "value": "motor"},
     ]
 
     response = requests.post(
         f"{BASE_URL}/kg/searchDatasets",
-        json={
-            "filters": filters,
-            "sort": "relevance",
-            "limit": 3,
-            "offset": 0
-        }
+        json={"filters": filters, "sort": "relevance", "limit": 3, "offset": 0},
     )
 
     if response.status_code == 200:
@@ -142,12 +124,7 @@ def test_dataset_explanation():
 
     # First get a dataset ID
     response = requests.post(
-        f"{BASE_URL}/kg/searchDatasets",
-        json={
-            "filters": [],
-            "limit": 1,
-            "offset": 0
-        }
+        f"{BASE_URL}/kg/searchDatasets", json={"filters": [], "limit": 1, "offset": 0}
     )
 
     if response.status_code != 200:
@@ -175,13 +152,13 @@ def test_dataset_explanation():
             print(f"\nDescription: {explanation['description'][:200]}...")
 
         evidence = explanation.get("evidence", {})
-        print(f"\nEvidence:")
+        print("\nEvidence:")
         print(f"  - Papers: {len(evidence.get('papers', []))}")
         print(f"  - Methods: {len(evidence.get('methods', []))}")
         print(f"  - Derivatives: {len(evidence.get('derivatives', []))}")
 
         graph = explanation.get("graph", {})
-        print(f"\nKnowledge Graph:")
+        print("\nKnowledge Graph:")
         print(f"  - Nodes: {len(graph.get('nodes', []))}")
         print(f"  - Edges: {len(graph.get('edges', []))}")
 
@@ -192,7 +169,7 @@ def test_dataset_explanation():
                 node_type = node.get("type", "unknown")
                 node_types[node_type] = node_types.get(node_type, 0) + 1
 
-            print(f"\nNode types:")
+            print("\nNode types:")
             for ntype, count in node_types.items():
                 print(f"    - {ntype}: {count}")
     elif response.status_code == 404:
@@ -213,10 +190,7 @@ def test_complete_workflow():
     user_query = "fMRI motor task studies"
     print(f"\n1. User query: '{user_query}'")
 
-    response = requests.post(
-        f"{BASE_URL}/kg/suggestFilters",
-        json={"text": user_query}
-    )
+    response = requests.post(f"{BASE_URL}/kg/suggestFilters", json={"text": user_query})
 
     if response.status_code != 200:
         print("Failed at step 1")
@@ -227,10 +201,7 @@ def test_complete_workflow():
 
     # Step 2: Get facet counts with filters
     print("\n2. Getting facet counts...")
-    response = requests.post(
-        f"{BASE_URL}/kg/facets",
-        json={"filters": filters}
-    )
+    response = requests.post(f"{BASE_URL}/kg/facets", json={"filters": filters})
 
     if response.status_code != 200:
         print("Failed at step 2")
@@ -243,12 +214,7 @@ def test_complete_workflow():
     print("\n3. Searching datasets...")
     response = requests.post(
         f"{BASE_URL}/kg/searchDatasets",
-        json={
-            "filters": filters,
-            "sort": "readiness",
-            "limit": 5,
-            "offset": 0
-        }
+        json={"filters": filters, "sort": "readiness", "limit": 5, "offset": 0},
     )
 
     if response.status_code != 200:
@@ -267,9 +233,11 @@ def test_complete_workflow():
 
         if response.status_code == 200:
             explanation = response.json()
-            print(f"   Successfully retrieved explanation")
+            print("   Successfully retrieved explanation")
             print(f"   Readiness: {explanation['readiness']['color']}")
-            print(f"   Evidence items: {sum(len(v) for v in explanation['evidence'].values())}")
+            print(
+                f"   Evidence items: {sum(len(v) for v in explanation['evidence'].values())}"
+            )
             print(f"   Graph nodes: {len(explanation['graph']['nodes'])}")
         else:
             print(f"   Failed to get explanation: {response.status_code}")
@@ -289,11 +257,15 @@ def main():
         response = requests.get(f"{BASE_URL}/health")
         if response.status_code != 200:
             print(f"❌ BR-KG service not healthy at {BASE_URL}")
-            print("Please start the service with: python -m brain_researcher.services.br_kg.app")
+            print(
+                "Please start the service with: python -m brain_researcher.services.br_kg.app"
+            )
             return 1
     except requests.ConnectionError:
         print(f"❌ Cannot connect to BR-KG service at {BASE_URL}")
-        print("Please start the service with: python -m brain_researcher.services.br_kg.app")
+        print(
+            "Please start the service with: python -m brain_researcher.services.br_kg.app"
+        )
         return 1
 
     print(f"✅ BR-KG service is running at {BASE_URL}")
@@ -304,7 +276,7 @@ def main():
         ("Facet Counting", test_facet_counting),
         ("Dataset Search", test_dataset_search),
         ("Dataset Explanation", test_dataset_explanation),
-        ("Complete Workflow", test_complete_workflow)
+        ("Complete Workflow", test_complete_workflow),
     ]
 
     results = []

@@ -5,21 +5,23 @@ Tracks data flow through ingestion, transformation, and analysis pipelines.
 Provides full traceability and impact analysis.
 """
 
-import uuid
-import json
-from datetime import datetime
-from typing import Dict, List, Optional, Set, Any, Tuple
-from dataclasses import dataclass, field, asdict
-from enum import Enum
 import hashlib
-from pathlib import Path
-import networkx as nx
-from collections import defaultdict
+import json
 import pickle
+import uuid
+from collections import defaultdict
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any
+
+import networkx as nx
 
 
 class LineageEventType(Enum):
     """Types of lineage events"""
+
     INGESTION = "ingestion"
     TRANSFORMATION = "transformation"
     VALIDATION = "validation"
@@ -31,6 +33,7 @@ class LineageEventType(Enum):
 
 class DataSourceType(Enum):
     """Types of data sources"""
+
     FILE = "file"
     DATABASE = "database"
     API = "api"
@@ -41,17 +44,18 @@ class DataSourceType(Enum):
 @dataclass
 class DataEntity:
     """Represents a data entity in the lineage graph"""
+
     entity_id: str
     name: str
     entity_type: str
     source_type: DataSourceType
     location: str
-    schema_version: Optional[str] = None
-    checksum: Optional[str] = None
-    size_bytes: Optional[int] = None
-    record_count: Optional[int] = None
+    schema_version: str | None = None
+    checksum: str | None = None
+    size_bytes: int | None = None
+    record_count: int | None = None
     created_at: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def calculate_checksum(self, data: bytes) -> str:
         """Calculate checksum for data"""
@@ -62,35 +66,37 @@ class DataEntity:
 @dataclass
 class LineageEvent:
     """Represents a lineage event (transformation, etc.)"""
+
     event_id: str
     event_type: LineageEventType
-    input_entities: List[str]  # Entity IDs
-    output_entities: List[str]  # Entity IDs
+    input_entities: list[str]  # Entity IDs
+    output_entities: list[str]  # Entity IDs
     operation: str
     operator: str  # User or system that performed operation
     timestamp: datetime
-    duration_ms: Optional[int] = None
+    duration_ms: int | None = None
     success: bool = True
-    error_message: Optional[str] = None
-    parameters: Dict[str, Any] = field(default_factory=dict)
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    error_message: str | None = None
+    parameters: dict[str, Any] = field(default_factory=dict)
+    metrics: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class LineageRelationship:
     """Represents a relationship between entities"""
+
     source_id: str
     target_id: str
     relationship_type: str
     event_id: str
     confidence: float = 1.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class DataLineageTracker:
     """Tracks data lineage across the system"""
 
-    def __init__(self, storage_path: Optional[Path] = None):
+    def __init__(self, storage_path: Path | None = None):
         """
         Initialize lineage tracker
 
@@ -101,18 +107,18 @@ class DataLineageTracker:
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
         # In-memory storage
-        self.entities: Dict[str, DataEntity] = {}
-        self.events: Dict[str, LineageEvent] = {}
-        self.relationships: List[LineageRelationship] = []
+        self.entities: dict[str, DataEntity] = {}
+        self.events: dict[str, LineageEvent] = {}
+        self.relationships: list[LineageRelationship] = []
 
         # Lineage graph
         self.graph = nx.DiGraph()
 
         # Indexes for fast lookup
-        self.entity_by_name: Dict[str, Set[str]] = defaultdict(set)
-        self.events_by_entity: Dict[str, Set[str]] = defaultdict(set)
-        self.entity_children: Dict[str, Set[str]] = defaultdict(set)
-        self.entity_parents: Dict[str, Set[str]] = defaultdict(set)
+        self.entity_by_name: dict[str, set[str]] = defaultdict(set)
+        self.events_by_entity: dict[str, set[str]] = defaultdict(set)
+        self.entity_children: dict[str, set[str]] = defaultdict(set)
+        self.entity_parents: dict[str, set[str]] = defaultdict(set)
 
         # Load existing lineage
         self._load_lineage()
@@ -124,9 +130,9 @@ class DataLineageTracker:
         entity_name: str,
         entity_type: str,
         operator: str,
-        schema_version: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> Tuple[str, str]:
+        schema_version: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> tuple[str, str]:
         """
         Track data ingestion
 
@@ -142,7 +148,7 @@ class DataLineageTracker:
             source_type=source_type,
             location=source_location,
             schema_version=schema_version,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         # Create ingestion event
@@ -155,7 +161,7 @@ class DataLineageTracker:
             operation=f"Ingest from {source_type.value}",
             operator=operator,
             timestamp=datetime.now(),
-            parameters={"source": source_location}
+            parameters={"source": source_location},
         )
 
         # Store
@@ -166,14 +172,14 @@ class DataLineageTracker:
 
     def track_transformation(
         self,
-        input_entity_ids: List[str],
+        input_entity_ids: list[str],
         output_entity_name: str,
         output_entity_type: str,
         operation: str,
         operator: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        metrics: Optional[Dict[str, Any]] = None
-    ) -> Tuple[str, str]:
+        parameters: dict[str, Any] | None = None,
+        metrics: dict[str, Any] | None = None,
+    ) -> tuple[str, str]:
         """
         Track data transformation
 
@@ -188,7 +194,7 @@ class DataLineageTracker:
             entity_type=output_entity_type,
             source_type=DataSourceType.MANUAL,
             location="derived",
-            metadata={"derived_from": input_entity_ids}
+            metadata={"derived_from": input_entity_ids},
         )
 
         # Create transformation event
@@ -202,7 +208,7 @@ class DataLineageTracker:
             operator=operator,
             timestamp=datetime.now(),
             parameters=parameters or {},
-            metrics=metrics or {}
+            metrics=metrics or {},
         )
 
         # Create relationships
@@ -211,7 +217,7 @@ class DataLineageTracker:
                 source_id=input_id,
                 target_id=output_entity_id,
                 relationship_type="transformed_to",
-                event_id=event_id
+                event_id=event_id,
             )
             self.relationships.append(relationship)
 
@@ -227,8 +233,8 @@ class DataLineageTracker:
         validation_type: str,
         operator: str,
         success: bool,
-        error_message: Optional[str] = None,
-        metrics: Optional[Dict[str, Any]] = None
+        error_message: str | None = None,
+        metrics: dict[str, Any] | None = None,
     ) -> str:
         """
         Track data validation
@@ -247,18 +253,15 @@ class DataLineageTracker:
             timestamp=datetime.now(),
             success=success,
             error_message=error_message,
-            metrics=metrics or {}
+            metrics=metrics or {},
         )
 
         self._add_event(event)
         return event_id
 
     def get_entity_lineage(
-        self,
-        entity_id: str,
-        direction: str = "both",
-        max_depth: Optional[int] = None
-    ) -> Dict[str, Any]:
+        self, entity_id: str, direction: str = "both", max_depth: int | None = None
+    ) -> dict[str, Any]:
         """
         Get lineage for an entity
 
@@ -277,39 +280,34 @@ class DataLineageTracker:
             "entity": asdict(self.entities[entity_id]),
             "upstream": [],
             "downstream": [],
-            "events": []
+            "events": [],
         }
 
         if direction in ["upstream", "both"]:
             # Trace upstream (ancestors)
             upstream = self._trace_ancestors(entity_id, max_depth)
             result["upstream"] = [
-                asdict(self.entities[eid]) for eid in upstream
-                if eid in self.entities
+                asdict(self.entities[eid]) for eid in upstream if eid in self.entities
             ]
 
         if direction in ["downstream", "both"]:
             # Trace downstream (descendants)
             downstream = self._trace_descendants(entity_id, max_depth)
             result["downstream"] = [
-                asdict(self.entities[eid]) for eid in downstream
-                if eid in self.entities
+                asdict(self.entities[eid]) for eid in downstream if eid in self.entities
             ]
 
         # Get related events
         event_ids = self.events_by_entity.get(entity_id, set())
         result["events"] = [
-            asdict(self.events[eid]) for eid in event_ids
-            if eid in self.events
+            asdict(self.events[eid]) for eid in event_ids if eid in self.events
         ]
 
         return result
 
     def get_impact_analysis(
-        self,
-        entity_id: str,
-        change_type: str = "modification"
-    ) -> Dict[str, Any]:
+        self, entity_id: str, change_type: str = "modification"
+    ) -> dict[str, Any]:
         """
         Analyze impact of changes to an entity
 
@@ -331,11 +329,9 @@ class DataLineageTracker:
         for eid in affected_entities:
             if eid in self.entities:
                 entity = self.entities[eid]
-                impact_by_type[entity.entity_type].append({
-                    "id": eid,
-                    "name": entity.name,
-                    "location": entity.location
-                })
+                impact_by_type[entity.entity_type].append(
+                    {"id": eid, "name": entity.name, "location": entity.location}
+                )
 
         # Calculate impact metrics
         total_affected = len(affected_entities)
@@ -346,13 +342,10 @@ class DataLineageTracker:
             "total_affected_entities": total_affected,
             "affected_by_type": dict(impact_by_type),
             "affected_entity_ids": list(affected_entities),
-            "risk_level": self._calculate_risk_level(total_affected)
+            "risk_level": self._calculate_risk_level(total_affected),
         }
 
-    def find_data_sources(
-        self,
-        entity_id: str
-    ) -> List[Dict[str, Any]]:
+    def find_data_sources(self, entity_id: str) -> list[dict[str, Any]]:
         """
         Find original data sources for an entity
 
@@ -375,7 +368,7 @@ class DataLineageTracker:
 
         return sources
 
-    def validate_lineage_integrity(self) -> Dict[str, Any]:
+    def validate_lineage_integrity(self) -> dict[str, Any]:
         """
         Validate lineage graph integrity
 
@@ -387,46 +380,50 @@ class DataLineageTracker:
         # Check for orphaned entities
         for entity_id in self.entities:
             if entity_id not in self.graph:
-                issues.append({
-                    "type": "orphaned_entity",
-                    "entity_id": entity_id,
-                    "message": "Entity not in lineage graph"
-                })
+                issues.append(
+                    {
+                        "type": "orphaned_entity",
+                        "entity_id": entity_id,
+                        "message": "Entity not in lineage graph",
+                    }
+                )
 
         # Check for cycles
         if not nx.is_directed_acyclic_graph(self.graph):
             cycles = list(nx.simple_cycles(self.graph))
             for cycle in cycles:
-                issues.append({
-                    "type": "cycle_detected",
-                    "entities": cycle,
-                    "message": "Circular dependency detected"
-                })
+                issues.append(
+                    {
+                        "type": "cycle_detected",
+                        "entities": cycle,
+                        "message": "Circular dependency detected",
+                    }
+                )
 
         # Check for missing entities in events
         for event in self.events.values():
             for entity_id in event.input_entities + event.output_entities:
                 if entity_id not in self.entities:
-                    issues.append({
-                        "type": "missing_entity",
-                        "event_id": event.event_id,
-                        "entity_id": entity_id,
-                        "message": "Entity referenced in event but not found"
-                    })
+                    issues.append(
+                        {
+                            "type": "missing_entity",
+                            "event_id": event.event_id,
+                            "entity_id": entity_id,
+                            "message": "Entity referenced in event but not found",
+                        }
+                    )
 
         return {
             "valid": len(issues) == 0,
             "issues": issues,
             "total_entities": len(self.entities),
             "total_events": len(self.events),
-            "total_relationships": len(self.relationships)
+            "total_relationships": len(self.relationships),
         }
 
     def export_lineage_graph(
-        self,
-        format: str = "json",
-        output_path: Optional[Path] = None
-    ) -> Optional[str]:
+        self, format: str = "json", output_path: Path | None = None
+    ) -> str | None:
         """
         Export lineage graph
 
@@ -441,7 +438,7 @@ class DataLineageTracker:
             data = {
                 "entities": {k: asdict(v) for k, v in self.entities.items()},
                 "events": {k: asdict(v) for k, v in self.events.items()},
-                "relationships": [asdict(r) for r in self.relationships]
+                "relationships": [asdict(r) for r in self.relationships],
             }
 
             # Custom JSON encoder for datetime
@@ -463,6 +460,7 @@ class DataLineageTracker:
                 return None
             # Return GraphML as string
             import io
+
             buffer = io.BytesIO()
             nx.write_graphml(self.graph, buffer)
             return buffer.getvalue().decode()
@@ -470,8 +468,12 @@ class DataLineageTracker:
         elif format == "dot":
             dot_lines = ["digraph lineage {"]
             for edge in self.graph.edges():
-                source_name = self.entities[edge[0]].name if edge[0] in self.entities else edge[0]
-                target_name = self.entities[edge[1]].name if edge[1] in self.entities else edge[1]
+                source_name = (
+                    self.entities[edge[0]].name if edge[0] in self.entities else edge[0]
+                )
+                target_name = (
+                    self.entities[edge[1]].name if edge[1] in self.entities else edge[1]
+                )
                 dot_lines.append(f'  "{source_name}" -> "{target_name}";')
             dot_lines.append("}")
             dot_str = "\n".join(dot_lines)
@@ -508,9 +510,9 @@ class DataLineageTracker:
     def _trace_ancestors(
         self,
         entity_id: str,
-        max_depth: Optional[int] = None,
-        visited: Optional[Set[str]] = None
-    ) -> Set[str]:
+        max_depth: int | None = None,
+        visited: set[str] | None = None,
+    ) -> set[str]:
         """Recursively trace ancestors"""
         if visited is None:
             visited = set()
@@ -525,9 +527,7 @@ class DataLineageTracker:
 
         for parent_id in self.entity_parents.get(entity_id, []):
             self._trace_ancestors(
-                parent_id,
-                max_depth - 1 if max_depth else None,
-                visited
+                parent_id, max_depth - 1 if max_depth else None, visited
             )
 
         return visited
@@ -535,9 +535,9 @@ class DataLineageTracker:
     def _trace_descendants(
         self,
         entity_id: str,
-        max_depth: Optional[int] = None,
-        visited: Optional[Set[str]] = None
-    ) -> Set[str]:
+        max_depth: int | None = None,
+        visited: set[str] | None = None,
+    ) -> set[str]:
         """Recursively trace descendants"""
         if visited is None:
             visited = set()
@@ -552,9 +552,7 @@ class DataLineageTracker:
 
         for child_id in self.entity_children.get(entity_id, []):
             self._trace_descendants(
-                child_id,
-                max_depth - 1 if max_depth else None,
-                visited
+                child_id, max_depth - 1 if max_depth else None, visited
             )
 
         return visited
@@ -576,11 +574,14 @@ class DataLineageTracker:
         """Save lineage to disk"""
         lineage_file = self.storage_path / "lineage.pkl"
         with open(lineage_file, "wb") as f:
-            pickle.dump({
-                "entities": self.entities,
-                "events": self.events,
-                "relationships": self.relationships
-            }, f)
+            pickle.dump(
+                {
+                    "entities": self.entities,
+                    "events": self.events,
+                    "relationships": self.relationships,
+                },
+                f,
+            )
 
     def _load_lineage(self):
         """Load lineage from disk"""
@@ -605,16 +606,23 @@ class DataLineageTracker:
 # Custom exceptions
 class LineageException(Exception):
     """Base exception for lineage errors"""
+
     pass
+
 
 class EntityNotFoundException(LineageException):
     """Entity not found in lineage"""
+
     pass
+
 
 class CyclicDependencyException(LineageException):
     """Cyclic dependency detected in lineage"""
+
     pass
+
 
 class LineageIntegrityException(LineageException):
     """Lineage integrity validation failed"""
+
     pass

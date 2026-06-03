@@ -5,15 +5,15 @@ Verifies that when catalog loading fails, the system falls back gracefully
 to legacy mode and logs appropriate error messages.
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, Mock
-import os
 
 from brain_researcher.services.agent.planner.catalog_loader import (
+    CapabilityIndex,
     get_capability_index,
     get_catalog_status,
     get_planner_source,
-    CapabilityIndex,
 )
 
 

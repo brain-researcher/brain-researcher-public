@@ -9,7 +9,6 @@ from typing import Any
 
 import yaml
 
-
 _REGISTRY_ENV = "BR_WORKFLOW_REPO_REGISTRY"
 
 

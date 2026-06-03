@@ -1,11 +1,10 @@
 """Neural network architectures for RL policies and value functions."""
 
-import numpy as np
-import logging
-from typing import Dict, List, Optional, Tuple, Any
-from abc import ABC, abstractmethod
 import json
-import pickle
+import logging
+from abc import ABC
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 class BaseNetwork(ABC):
     """Base class for neural networks with numpy implementation."""
 
-    def __init__(self, input_dim: int, output_dim: int, hidden_dims: List[int]):
+    def __init__(self, input_dim: int, output_dim: int, hidden_dims: list[int]):
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.hidden_dims = hidden_dims
@@ -52,7 +51,9 @@ class BaseNetwork(ABC):
         """Forward pass through the network."""
         activation = x
 
-        for i, (weight, bias) in enumerate(zip(self.weights, self.biases)):
+        for i, (weight, bias) in enumerate(
+            zip(self.weights, self.biases, strict=False)
+        ):
             activation = np.dot(activation, weight) + bias
 
             # Apply ReLU to hidden layers
@@ -67,7 +68,9 @@ class BaseNetwork(ABC):
         activations = [x]
         current_activation = x
 
-        for i, (weight, bias) in enumerate(zip(self.weights, self.biases)):
+        for i, (weight, bias) in enumerate(
+            zip(self.weights, self.biases, strict=False)
+        ):
             z = np.dot(current_activation, weight) + bias
 
             if i < len(self.weights) - 1:  # Hidden layers
@@ -92,10 +95,13 @@ class BaseNetwork(ABC):
             weight_grad += self.weight_decay * self.weights[i]
 
             # Update with momentum
-            self.weight_momentum[i] = (self.momentum * self.weight_momentum[i] -
-                                     self.learning_rate * weight_grad)
-            self.bias_momentum[i] = (self.momentum * self.bias_momentum[i] -
-                                   self.learning_rate * bias_grad)
+            self.weight_momentum[i] = (
+                self.momentum * self.weight_momentum[i]
+                - self.learning_rate * weight_grad
+            )
+            self.bias_momentum[i] = (
+                self.momentum * self.bias_momentum[i] - self.learning_rate * bias_grad
+            )
 
             self.weights[i] += self.weight_momentum[i]
             self.biases[i] += self.bias_momentum[i]
@@ -117,26 +123,26 @@ class BaseNetwork(ABC):
     def save(self, filepath: str) -> None:
         """Save network parameters."""
         params = {
-            'weights': [w.tolist() for w in self.weights],
-            'biases': [b.tolist() for b in self.biases],
-            'input_dim': self.input_dim,
-            'output_dim': self.output_dim,
-            'hidden_dims': self.hidden_dims
+            "weights": [w.tolist() for w in self.weights],
+            "biases": [b.tolist() for b in self.biases],
+            "input_dim": self.input_dim,
+            "output_dim": self.output_dim,
+            "hidden_dims": self.hidden_dims,
         }
 
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(params, f)
 
     def load(self, filepath: str) -> None:
         """Load network parameters."""
-        with open(filepath, 'r') as f:
+        with open(filepath) as f:
             params = json.load(f)
 
-        self.weights = [np.array(w) for w in params['weights']]
-        self.biases = [np.array(b) for b in params['biases']]
-        self.input_dim = params['input_dim']
-        self.output_dim = params['output_dim']
-        self.hidden_dims = params['hidden_dims']
+        self.weights = [np.array(w) for w in params["weights"]]
+        self.biases = [np.array(b) for b in params["biases"]]
+        self.input_dim = params["input_dim"]
+        self.output_dim = params["output_dim"]
+        self.hidden_dims = params["hidden_dims"]
 
         # Reinitialize momentum terms
         self.weight_momentum = [np.zeros_like(w) for w in self.weights]
@@ -146,7 +152,7 @@ class BaseNetwork(ABC):
 class PolicyNetwork(BaseNetwork):
     """Policy network for action selection."""
 
-    def __init__(self, state_dim: int, action_dim: int, hidden_dims: List[int] = None):
+    def __init__(self, state_dim: int, action_dim: int, hidden_dims: list[int] = None):
         hidden_dims = hidden_dims or [256, 128]
         super().__init__(state_dim, action_dim, hidden_dims)
         self.temperature = 1.0
@@ -164,7 +170,9 @@ class PolicyNetwork(BaseNetwork):
 
         return probabilities
 
-    def select_action(self, state: np.ndarray, deterministic: bool = False) -> Tuple[int, float]:
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> tuple[int, float]:
         """Select action from policy."""
         if len(state.shape) == 1:
             state = state.reshape(1, -1)
@@ -193,7 +201,7 @@ class PolicyNetwork(BaseNetwork):
 class QNetwork(BaseNetwork):
     """Q-value network for action-value estimation."""
 
-    def __init__(self, state_dim: int, action_dim: int, hidden_dims: List[int] = None):
+    def __init__(self, state_dim: int, action_dim: int, hidden_dims: list[int] = None):
         hidden_dims = hidden_dims or [256, 128, 64]
         super().__init__(state_dim, action_dim, hidden_dims)
 
@@ -208,7 +216,7 @@ class QNetwork(BaseNetwork):
             return q_values[0, action]
         return q_values[action]
 
-    def get_best_action(self, state: np.ndarray) -> Tuple[int, float]:
+    def get_best_action(self, state: np.ndarray) -> tuple[int, float]:
         """Get action with highest Q-value."""
         q_values = self.get_q_values(state)
         if len(q_values.shape) == 2:
@@ -223,7 +231,7 @@ class QNetwork(BaseNetwork):
 class ValueNetwork(BaseNetwork):
     """State value network."""
 
-    def __init__(self, state_dim: int, hidden_dims: List[int] = None):
+    def __init__(self, state_dim: int, hidden_dims: list[int] = None):
         hidden_dims = hidden_dims or [256, 128]
         super().__init__(state_dim, 1, hidden_dims)  # Output dim is 1 for value
 
@@ -238,7 +246,7 @@ class ValueNetwork(BaseNetwork):
 class DuelingQNetwork(BaseNetwork):
     """Dueling Q-network architecture."""
 
-    def __init__(self, state_dim: int, action_dim: int, hidden_dims: List[int] = None):
+    def __init__(self, state_dim: int, action_dim: int, hidden_dims: list[int] = None):
         hidden_dims = hidden_dims or [256, 128]
         super().__init__(state_dim, action_dim + 1, hidden_dims)  # +1 for value stream
         self.action_dim = action_dim
@@ -261,7 +269,7 @@ class DuelingQNetwork(BaseNetwork):
         """Get Q-values for all actions."""
         return self.forward(state)
 
-    def get_value_advantage(self, state: np.ndarray) -> Tuple[float, np.ndarray]:
+    def get_value_advantage(self, state: np.ndarray) -> tuple[float, np.ndarray]:
         """Get separate value and advantage estimates."""
         features = super().forward(state)
 
@@ -277,8 +285,13 @@ class DuelingQNetwork(BaseNetwork):
 class EnsembleQNetwork:
     """Ensemble of Q-networks for uncertainty estimation."""
 
-    def __init__(self, state_dim: int, action_dim: int, num_networks: int = 3,
-                 hidden_dims: List[int] = None):
+    def __init__(
+        self,
+        state_dim: int,
+        action_dim: int,
+        num_networks: int = 3,
+        hidden_dims: list[int] = None,
+    ):
         self.networks = []
         self.num_networks = num_networks
 
@@ -286,7 +299,7 @@ class EnsembleQNetwork:
             network = QNetwork(state_dim, action_dim, hidden_dims)
             self.networks.append(network)
 
-    def get_q_values_ensemble(self, state: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def get_q_values_ensemble(self, state: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Get Q-values and uncertainty from ensemble."""
         all_q_values = []
 
@@ -302,7 +315,9 @@ class EnsembleQNetwork:
 
         return mean_q, std_q
 
-    def get_best_action_with_uncertainty(self, state: np.ndarray) -> Tuple[int, float, float]:
+    def get_best_action_with_uncertainty(
+        self, state: np.ndarray
+    ) -> tuple[int, float, float]:
         """Get best action with uncertainty estimate."""
         mean_q, std_q = self.get_q_values_ensemble(state)
 
@@ -316,12 +331,13 @@ class EnsembleQNetwork:
 
         return best_action, best_q_value, uncertainty
 
-    def train_ensemble(self, states: np.ndarray, targets: np.ndarray,
-                      bootstrap: bool = True) -> List[float]:
+    def train_ensemble(
+        self, states: np.ndarray, targets: np.ndarray, bootstrap: bool = True
+    ) -> list[float]:
         """Train ensemble with optional bootstrapping."""
         losses = []
 
-        for i, network in enumerate(self.networks):
+        for _i, network in enumerate(self.networks):
             if bootstrap:
                 # Bootstrap sampling
                 indices = np.random.choice(len(states), len(states), replace=True)
@@ -355,8 +371,13 @@ class EnsembleQNetwork:
 class NoisyNetwork(BaseNetwork):
     """Noisy network for exploration."""
 
-    def __init__(self, state_dim: int, action_dim: int, hidden_dims: List[int] = None,
-                 noise_std: float = 0.1):
+    def __init__(
+        self,
+        state_dim: int,
+        action_dim: int,
+        hidden_dims: list[int] = None,
+        noise_std: float = 0.1,
+    ):
         super().__init__(state_dim, action_dim, hidden_dims)
         self.noise_std = noise_std
         self.training = True
@@ -372,7 +393,9 @@ class NoisyNetwork(BaseNetwork):
 
             # Forward with noisy weights
             activation = x
-            for i, (weight, bias) in enumerate(zip(noisy_weights, self.biases)):
+            for i, (weight, bias) in enumerate(
+                zip(noisy_weights, self.biases, strict=False)
+            ):
                 activation = np.dot(activation, weight) + bias
                 if i < len(self.weights) - 1:
                     activation = np.maximum(0, activation)

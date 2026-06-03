@@ -6,7 +6,6 @@ planning phase validation.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +21,7 @@ class PETCoregArgs(BaseModel):
         default="rigid",
         description="Registration method: 'rigid' (6 DOF) or 'affine' (12 DOF)",
     )
-    output_dir: Optional[str] = Field(
+    output_dir: str | None = Field(
         default=None, description="Directory to store coregistration outputs"
     )
 
@@ -43,9 +42,7 @@ class PETCoregTool(NeuroToolWrapper):
         return "pet_coreg"
 
     def get_tool_description(self) -> str:
-        return (
-            "Coregister PET volume to T1-weighted anatomical space using rigid or affine registration."
-        )
+        return "Coregister PET volume to T1-weighted anatomical space using rigid or affine registration."
 
     def get_args_schema(self):
         return PETCoregArgs

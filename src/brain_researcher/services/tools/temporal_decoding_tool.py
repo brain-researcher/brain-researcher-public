@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from brain_researcher.services.tools.params import (
     TemporalDecodingParameters,
-    temporal_decoding_from_payload,
     run_temporal_decoding,
+    temporal_decoding_from_payload,
 )
 from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
 
@@ -25,13 +24,13 @@ class TemporalDecodingArgs(BaseModel):
 
     data_file: str = Field(description="Path to time series data")
     labels_file: str = Field(description="Path to labels")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    output_dir: str | None = Field(default=None, description="Output directory")
     method: str = Field(default="sliding_window", description="Decoding method")
     classifier: str = Field(default="lda", description="Classifier type")
-    window_size: Optional[int] = Field(default=None, description="Window size")
+    window_size: int | None = Field(default=None, description="Window size")
     window_step: int = Field(default=1, description="Window step")
     cv_folds: int = Field(default=5, description="Cross-validation folds")
-    random_state: Optional[int] = Field(default=42, description="Random seed")
+    random_state: int | None = Field(default=42, description="Random seed")
     save_accuracies: bool = Field(default=True, description="Persist accuracy trace")
     save_patterns: bool = Field(default=True, description="Persist temporal patterns")
 

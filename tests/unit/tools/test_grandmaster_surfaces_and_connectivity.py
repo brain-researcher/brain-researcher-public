@@ -24,7 +24,6 @@ import pytest
 
 from brain_researcher.services.tools.runner import execute_tool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 OUT_ROOT = PROJECT_ROOT / "out" / "tmp_tests"
 OUT_ROOT.mkdir(parents=True, exist_ok=True)
@@ -32,13 +31,11 @@ os.environ.setdefault("TMPDIR", str(OUT_ROOT))
 
 
 @pytest.mark.skipif(
-    not (
-        PROJECT_ROOT / "data/br-kg/raw/neuromaps/annotations/margulies2016"
-    ).exists(),
+    not (PROJECT_ROOT / "data/br-kg/raw/neuromaps/annotations/margulies2016").exists(),
     reason="neuromaps reference data not present",
 )
 def test_compare_surface_maps_spin():
-    neuromaps = pytest.importorskip("neuromaps")
+    pytest.importorskip("neuromaps")
     """Spin-test comparison on fsLR32k gradients with small permutations."""
     base = PROJECT_ROOT / "data/br-kg/raw/neuromaps/annotations/margulies2016"
     g3_l = (

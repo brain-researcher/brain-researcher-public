@@ -23,10 +23,6 @@ REQUIRED_SUBSTRINGS = {
     # write repository instructions into AGENTS.md instead") — its
     # required-substring contract is consolidated into the AGENTS.md
     # block above.
-    "tests/security/README.md": (
-        "bandit -r src/brain_researcher/ -f json -o bandit-report.json",
-        "semgrep --config=tests/security/sast/semgrep.yml src/brain_researcher/",
-    ),
     "scripts/services/start_services.sh": (
         'start_service "agent" 8000 "http://127.0.0.1:8000/health" 45 \\',
         'start_service "mcp" 7000 "http://127.0.0.1:7000/healthz" 45 \\',
@@ -65,10 +61,6 @@ FORBIDDEN_SUBSTRINGS = {
         "`gateway/`: legacy single-port compatibility gateway",
         "`api_gateway/`: legacy full-gateway compatibility assets",
     ),
-    "tests/security/README.md": (
-        "bandit -r brain_researcher/ -f json -o bandit-report.json",
-        "semgrep --config=tests/security/sast/semgrep.yml brain_researcher/",
-    ),
     "scripts/services/start_services.sh": (
         "python brain_researcher/services/br_kg/app.py",
         "npm run start",
@@ -86,7 +78,6 @@ def test_active_guidance_files_use_canonical_source_tree_paths() -> None:
             assert needle in text, f"Missing expected text in {relpath}: {needle}"
 
 
-
 def test_active_guidance_files_do_not_reintroduce_stale_source_tree_paths() -> None:
     for relpath, forbidden_substrings in FORBIDDEN_SUBSTRINGS.items():
         text = (REPO_ROOT / relpath).read_text(encoding="utf-8")
@@ -94,17 +85,14 @@ def test_active_guidance_files_do_not_reintroduce_stale_source_tree_paths() -> N
             assert needle not in text, f"Found stale guidance in {relpath}: {needle}"
 
 
-
 def test_top_level_legacy_brain_researcher_tree_has_no_python_sources() -> None:
     legacy_root = REPO_ROOT / "brain_researcher"
     legacy_py_files = sorted(
-        str(path.relative_to(REPO_ROOT))
-        for path in legacy_root.rglob("*.py")
+        str(path.relative_to(REPO_ROOT)) for path in legacy_root.rglob("*.py")
     )
     assert legacy_py_files == []
 
     legacy_pkg_markers = sorted(
-        str(path.relative_to(REPO_ROOT))
-        for path in legacy_root.rglob("__init__.py")
+        str(path.relative_to(REPO_ROOT)) for path in legacy_root.rglob("__init__.py")
     )
     assert legacy_pkg_markers == []

@@ -314,9 +314,7 @@ def deepxiv(
     )
     if action_err is not None:
         return action_err
-    search_mode = coerce_enum(
-        search_mode, _DEEPXIV_SEARCH_MODE_ALIASES, "hybrid"
-    )
+    search_mode = coerce_enum(search_mode, _DEEPXIV_SEARCH_MODE_ALIASES, "hybrid")
 
     try:
         reader = _get_deepxiv_reader()

@@ -7,36 +7,36 @@ This module tests the Graph Neural Network functionality including:
 - Model persistence and evaluation
 """
 
-import pytest
-import numpy as np
-from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, List, Any, Tuple
-import tempfile
 import os
+import tempfile
+from unittest.mock import Mock, patch
+
+import numpy as np
+import pytest
 
 # Import the modules to test
 try:
     from brain_researcher.services.br_kg.ml.gnn_models import (
+        GNNConfig,
+        GNNModelType,
         GNNPredictor,
+        GraphAttentionNetwork,
         GraphConvolutionalNetwork,
         GraphSAGE,
-        GraphAttentionNetwork,
-        GNNConfig,
-        GNNModelType
     )
 except ImportError:
     # Fallback if absolute imports don't work
-    import sys
     import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+    import sys
+
+    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
     from brain_researcher.services.br_kg.ml.gnn_models import (
+        GNNConfig,
+        GNNModelType,
         GNNPredictor,
+        GraphAttentionNetwork,
         GraphConvolutionalNetwork,
         GraphSAGE,
-        GraphAttentionNetwork,
-        GNNConfig,
-        GNNModelType
     )
 
 
@@ -45,11 +45,11 @@ class MockTensor:
     """Mock tensor for testing without PyTorch."""
 
     def __init__(self, data=None, dtype=None):
-        if isinstance(data, (list, np.ndarray)):
+        if isinstance(data, list | np.ndarray):
             self.data = np.array(data)
         else:
             self.data = data if data is not None else np.array([])
-        self.shape = self.data.shape if hasattr(self.data, 'shape') else (0,)
+        self.shape = self.data.shape if hasattr(self.data, "shape") else (0,)
         self._dtype = dtype
 
     def size(self, dim=None):
@@ -115,11 +115,7 @@ class TestGNNConfig:
 
     def test_default_config(self):
         """Test default configuration values."""
-        config = GNNConfig(
-            model_type=GNNModelType.GCN,
-            input_dim=128,
-            output_dim=64
-        )
+        config = GNNConfig(model_type=GNNModelType.GCN, input_dim=128, output_dim=64)
 
         assert config.model_type == GNNModelType.GCN
         assert config.input_dim == 128
@@ -140,7 +136,7 @@ class TestGNNConfig:
             dropout=0.3,
             heads=4,
             learning_rate=0.01,
-            epochs=100
+            epochs=100,
         )
 
         assert config.model_type == GNNModelType.GAT
@@ -156,9 +152,7 @@ class TestGNNConfig:
     def test_to_dict(self):
         """Test converting config to dictionary."""
         config = GNNConfig(
-            model_type=GNNModelType.GRAPHSAGE,
-            input_dim=100,
-            output_dim=50
+            model_type=GNNModelType.GRAPHSAGE, input_dim=100, output_dim=50
         )
 
         config_dict = config.to_dict()
@@ -176,7 +170,9 @@ class TestGNNModels:
     @pytest.fixture
     def mock_torch(self):
         """Mock PyTorch components."""
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.TORCH_AVAILABLE', True):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.TORCH_AVAILABLE", True
+        ):
             # Mock torch components
             mock_torch = Mock()
             mock_nn = Mock()
@@ -202,7 +198,7 @@ class TestGNNModels:
             mock_nn.Linear = MockModule
 
             with patch.multiple(
-                'brain_researcher.services.br_kg.ml.gnn_models',
+                "brain_researcher.services.br_kg.ml.gnn_models",
                 torch=mock_torch,
                 nn=mock_nn,
                 F=mock_f,
@@ -210,7 +206,7 @@ class TestGNNModels:
                 GCNConv=Mock,
                 SAGEConv=Mock,
                 GATConv=Mock,
-                Data=Mock
+                Data=Mock,
             ):
                 yield mock_torch
 
@@ -221,10 +217,10 @@ class TestGNNModels:
             input_dim=10,
             output_dim=5,
             hidden_dim=8,
-            num_layers=2
+            num_layers=2,
         )
 
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.GCNConv', MockModule):
+        with patch("brain_researcher.services.br_kg.ml.gnn_models.GCNConv", MockModule):
             model = GraphConvolutionalNetwork(config)
 
             assert model.config == config
@@ -233,13 +229,12 @@ class TestGNNModels:
     def test_graphsage_initialization(self, mock_torch):
         """Test GraphSAGE model initialization."""
         config = GNNConfig(
-            model_type=GNNModelType.GRAPHSAGE,
-            input_dim=10,
-            output_dim=5,
-            num_layers=3
+            model_type=GNNModelType.GRAPHSAGE, input_dim=10, output_dim=5, num_layers=3
         )
 
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.SAGEConv', MockModule):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.SAGEConv", MockModule
+        ):
             model = GraphSAGE(config)
 
             assert model.config == config
@@ -252,10 +247,10 @@ class TestGNNModels:
             input_dim=10,
             output_dim=5,
             heads=4,
-            num_layers=2
+            num_layers=2,
         )
 
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.GATConv', MockModule):
+        with patch("brain_researcher.services.br_kg.ml.gnn_models.GATConv", MockModule):
             model = GraphAttentionNetwork(config)
 
             assert model.config == config
@@ -268,17 +263,25 @@ class TestGNNPredictor:
     @pytest.fixture
     def mock_torch_available(self):
         """Mock PyTorch availability."""
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.TORCH_AVAILABLE', True):
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.torch') as mock_torch:
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.TORCH_AVAILABLE", True
+        ):
+            with patch(
+                "brain_researcher.services.br_kg.ml.gnn_models.torch"
+            ) as mock_torch:
                 mock_torch.device.return_value = "cpu"
                 mock_torch.cuda.is_available.return_value = False
                 mock_torch.zeros.return_value = MockTensor(np.zeros((10, 5)))
                 mock_torch.tensor.return_value = MockTensor()
                 mock_torch.eye.return_value = MockTensor(np.eye(10))
                 mock_torch.ones.return_value = MockTensor(np.ones(10))
-                mock_torch.sum = lambda x, dim=None: MockTensor(np.sum(x.data, axis=dim))
+                mock_torch.sum = lambda x, dim=None: MockTensor(
+                    np.sum(x.data, axis=dim)
+                )
                 mock_torch.sigmoid = lambda x: MockTensor(1 / (1 + np.exp(-x.data)))
-                mock_torch.cat = lambda tensors, dim=0: MockTensor(np.concatenate([t.data for t in tensors], axis=dim))
+                mock_torch.cat = lambda tensors, dim=0: MockTensor(
+                    np.concatenate([t.data for t in tensors], axis=dim)
+                )
                 yield mock_torch
 
     def test_predictor_initialization(self, mock_torch_available):
@@ -294,8 +297,11 @@ class TestGNNPredictor:
         """Test building GCN model."""
         predictor = GNNPredictor(GNNModelType.GCN)
 
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.GraphConvolutionalNetwork', MockModule):
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.Adam', Mock):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.GraphConvolutionalNetwork",
+            MockModule,
+        ):
+            with patch("brain_researcher.services.br_kg.ml.gnn_models.Adam", Mock):
                 predictor.build_model(input_dim=10, output_dim=5, hidden_dim=8)
 
                 assert predictor.config is not None
@@ -309,8 +315,10 @@ class TestGNNPredictor:
         """Test building GraphSAGE model."""
         predictor = GNNPredictor(GNNModelType.GRAPHSAGE)
 
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.GraphSAGE', MockModule):
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.Adam', Mock):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.GraphSAGE", MockModule
+        ):
+            with patch("brain_researcher.services.br_kg.ml.gnn_models.Adam", Mock):
                 predictor.build_model(input_dim=15, output_dim=8)
 
                 assert predictor.config.model_type == GNNModelType.GRAPHSAGE
@@ -321,8 +329,11 @@ class TestGNNPredictor:
         """Test building GAT model."""
         predictor = GNNPredictor(GNNModelType.GAT)
 
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.GraphAttentionNetwork', MockModule):
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.Adam', Mock):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.GraphAttentionNetwork",
+            MockModule,
+        ):
+            with patch("brain_researcher.services.br_kg.ml.gnn_models.Adam", Mock):
                 predictor.build_model(input_dim=20, output_dim=10, heads=4)
 
                 assert predictor.config.model_type == GNNModelType.GAT
@@ -344,22 +355,26 @@ class TestGNNPredictor:
             "nodes": ["node1", "node2", "node3"],
             "edges": [
                 {"start": "node1", "end": "node2"},
-                {"start": "node2", "end": "node3"}
+                {"start": "node2", "end": "node3"},
             ],
             "node_features": {
                 "node1": [1.0, 2.0, 3.0],
                 "node2": [4.0, 5.0, 6.0],
-                "node3": [7.0, 8.0, 9.0]
-            }
+                "node3": [7.0, 8.0, 9.0],
+            },
         }
 
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.Data', Mock) as mock_data:
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.torch') as mock_torch:
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.Data", Mock
+        ) as mock_data:
+            with patch(
+                "brain_researcher.services.br_kg.ml.gnn_models.torch"
+            ) as mock_torch:
                 mock_torch.zeros.return_value = MockTensor(np.zeros((3, 3)))
                 mock_torch.tensor.return_value = MockTensor()
                 mock_torch.eye.return_value = MockTensor(np.eye(3))
 
-                data = predictor.prepare_graph_data(graph_data)
+                predictor.prepare_graph_data(graph_data)
 
                 # Should create Data object with features and edges
                 mock_data.assert_called_once()
@@ -370,15 +385,17 @@ class TestGNNPredictor:
 
         graph_data = {
             "nodes": ["node1", "node2"],
-            "edges": [{"start": "node1", "end": "node2"}]
+            "edges": [{"start": "node1", "end": "node2"}],
         }
 
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.Data', Mock):
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.torch') as mock_torch:
+        with patch("brain_researcher.services.br_kg.ml.gnn_models.Data", Mock):
+            with patch(
+                "brain_researcher.services.br_kg.ml.gnn_models.torch"
+            ) as mock_torch:
                 mock_torch.eye.return_value = MockTensor(np.eye(2))
                 mock_torch.tensor.return_value = MockTensor()
 
-                data = predictor.prepare_graph_data(graph_data)
+                predictor.prepare_graph_data(graph_data)
 
                 # Should use identity matrix as features
                 mock_torch.eye.assert_called_with(2, dtype=mock_torch.float)
@@ -389,7 +406,9 @@ class TestGNNPredictor:
 
         # Mock model and optimizer
         mock_model = Mock()
-        mock_model.predict_node_class.return_value = MockTensor(np.array([[0.8, 0.2], [0.3, 0.7], [0.6, 0.4]]))
+        mock_model.predict_node_class.return_value = MockTensor(
+            np.array([[0.8, 0.2], [0.3, 0.7], [0.6, 0.4]])
+        )
         mock_model.train = Mock()
         mock_model.eval = Mock()
         predictor.model = mock_model
@@ -403,13 +422,13 @@ class TestGNNPredictor:
             input_dim=5,
             output_dim=2,
             epochs=2,  # Short training for testing
-            early_stopping_patience=1
+            early_stopping_patience=1,
         )
 
         # Test data
         graph_data = {
             "nodes": ["node1", "node2", "node3"],
-            "edges": [{"start": "node1", "end": "node2"}]
+            "edges": [{"start": "node1", "end": "node2"}],
         }
 
         labels = {"node1": 0, "node2": 1, "node3": 0}
@@ -417,14 +436,16 @@ class TestGNNPredictor:
         val_mask = ["node3"]
 
         # Mock data preparation
-        with patch.object(predictor, 'prepare_graph_data') as mock_prep:
+        with patch.object(predictor, "prepare_graph_data") as mock_prep:
             mock_data = Mock()
             mock_data.x = MockTensor(np.random.randn(3, 5))
             mock_data.edge_index = MockTensor(np.array([[0, 1], [1, 2]]))
             mock_prep.return_value = mock_data
 
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.torch') as mock_torch:
-                with patch('brain_researcher.services.br_kg.ml.gnn_models.F') as mock_f:
+            with patch(
+                "brain_researcher.services.br_kg.ml.gnn_models.torch"
+            ) as mock_torch:
+                with patch("brain_researcher.services.br_kg.ml.gnn_models.F") as mock_f:
                     # Mock tensor operations
                     mock_torch.zeros.return_value = MockTensor(np.zeros(3))
                     mock_torch.tensor.return_value = MockTensor()
@@ -453,17 +474,16 @@ class TestGNNPredictor:
 
         # Mock model
         mock_model = Mock()
-        mock_model.predict_links.return_value = MockTensor(np.array([0.8, 0.3, 0.9, 0.1]))
+        mock_model.predict_links.return_value = MockTensor(
+            np.array([0.8, 0.3, 0.9, 0.1])
+        )
         predictor.model = mock_model
 
         mock_optimizer = Mock()
         predictor.optimizer = mock_optimizer
 
         predictor.config = GNNConfig(
-            model_type=GNNModelType.GCN,
-            input_dim=5,
-            output_dim=10,
-            epochs=2
+            model_type=GNNModelType.GCN, input_dim=5, output_dim=10, epochs=2
         )
 
         # Test data
@@ -471,20 +491,24 @@ class TestGNNPredictor:
         positive_edges = [("A", "B"), ("C", "D")]
         negative_edges = [("A", "C"), ("B", "D")]
 
-        with patch.object(predictor, 'prepare_graph_data') as mock_prep:
+        with patch.object(predictor, "prepare_graph_data") as mock_prep:
             mock_data = Mock()
             mock_data.x = MockTensor(np.random.randn(4, 5))
             mock_data.edge_index = MockTensor(np.array([[0, 1], [2, 3]]))
             mock_prep.return_value = mock_data
 
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.torch') as mock_torch:
-                with patch('brain_researcher.services.br_kg.ml.gnn_models.F') as mock_f:
+            with patch(
+                "brain_researcher.services.br_kg.ml.gnn_models.torch"
+            ) as mock_torch:
+                with patch("brain_researcher.services.br_kg.ml.gnn_models.F") as mock_f:
                     # Mock tensor operations
                     mock_torch.tensor.return_value = MockTensor()
                     mock_torch.zeros.return_value = MockTensor(np.zeros((2, 0)))
                     mock_torch.ones.return_value = MockTensor(np.ones(2))
                     mock_torch.cat.return_value = MockTensor(np.array([0, 1, 2, 3]))
-                    mock_f.binary_cross_entropy.return_value = Mock(item=lambda: 0.3, backward=Mock())
+                    mock_f.binary_cross_entropy.return_value = Mock(
+                        item=lambda: 0.3, backward=Mock()
+                    )
 
                     results = predictor.train_link_prediction(
                         graph_data, positive_edges, negative_edges
@@ -506,16 +530,18 @@ class TestGNNPredictor:
 
         graph_data = {
             "nodes": ["node1", "node2", "node3"],
-            "edges": [{"start": "node1", "end": "node2"}]
+            "edges": [{"start": "node1", "end": "node2"}],
         }
 
-        with patch.object(predictor, 'prepare_graph_data') as mock_prep:
+        with patch.object(predictor, "prepare_graph_data") as mock_prep:
             mock_data = Mock()
             mock_data.x = MockTensor(np.random.randn(3, 5))
             mock_data.edge_index = MockTensor()
             mock_prep.return_value = mock_data
 
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.torch') as mock_torch:
+            with patch(
+                "brain_researcher.services.br_kg.ml.gnn_models.torch"
+            ) as mock_torch:
                 mock_torch.no_grad.return_value.__enter__ = Mock()
                 mock_torch.no_grad.return_value.__exit__ = Mock()
 
@@ -531,22 +557,30 @@ class TestGNNPredictor:
 
         # Mock model
         mock_model = Mock()
-        mock_model.predict_node_class.return_value = MockTensor(np.array([[0.8, 0.2], [0.3, 0.7]]))
+        mock_model.predict_node_class.return_value = MockTensor(
+            np.array([[0.8, 0.2], [0.3, 0.7]])
+        )
         mock_model.eval = Mock()
         predictor.model = mock_model
 
         graph_data = {"nodes": ["node1", "node2"], "edges": []}
 
-        with patch.object(predictor, 'prepare_graph_data') as mock_prep:
+        with patch.object(predictor, "prepare_graph_data") as mock_prep:
             mock_prep.return_value = Mock()
 
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.torch') as mock_torch:
-                with patch('brain_researcher.services.br_kg.ml.gnn_models.F') as mock_f:
+            with patch(
+                "brain_researcher.services.br_kg.ml.gnn_models.torch"
+            ) as mock_torch:
+                with patch("brain_researcher.services.br_kg.ml.gnn_models.F") as mock_f:
                     mock_torch.no_grad.return_value.__enter__ = Mock()
                     mock_torch.no_grad.return_value.__exit__ = Mock()
-                    mock_f.softmax.return_value = MockTensor(np.array([[0.7, 0.3], [0.4, 0.6]]))
+                    mock_f.softmax.return_value = MockTensor(
+                        np.array([[0.7, 0.3], [0.4, 0.6]])
+                    )
 
-                    results = predictor.predict(graph_data, task_type="node_classification", num_classes=2)
+                    results = predictor.predict(
+                        graph_data, task_type="node_classification", num_classes=2
+                    )
 
                     assert "predictions" in results
                     assert "probabilities" in results
@@ -565,18 +599,18 @@ class TestGNNPredictor:
         graph_data = {"nodes": ["A", "B", "C"], "edges": []}
         test_edges = [("A", "B"), ("B", "C")]
 
-        with patch.object(predictor, 'prepare_graph_data') as mock_prep:
+        with patch.object(predictor, "prepare_graph_data") as mock_prep:
             mock_prep.return_value = Mock()
 
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.torch') as mock_torch:
+            with patch(
+                "brain_researcher.services.br_kg.ml.gnn_models.torch"
+            ) as mock_torch:
                 mock_torch.no_grad.return_value.__enter__ = Mock()
                 mock_torch.no_grad.return_value.__exit__ = Mock()
                 mock_torch.tensor.return_value = MockTensor()
 
                 results = predictor.predict(
-                    graph_data,
-                    task_type="link_prediction",
-                    test_edges=test_edges
+                    graph_data, task_type="link_prediction", test_edges=test_edges
                 )
 
                 assert "link_probabilities" in results
@@ -588,19 +622,24 @@ class TestGNNPredictor:
         predictor = GNNPredictor(GNNModelType.GCN)
 
         # Build model
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.GraphConvolutionalNetwork', MockModule):
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.Adam', Mock):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.GraphConvolutionalNetwork",
+            MockModule,
+        ):
+            with patch("brain_researcher.services.br_kg.ml.gnn_models.Adam", Mock):
                 predictor.build_model(input_dim=10, output_dim=5)
 
         # Add training history
         predictor.training_history = [{"epoch": 1, "loss": 0.5}]
 
-        with tempfile.NamedTemporaryFile(suffix='.pt', delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
             # Test saving
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.torch') as mock_torch:
+            with patch(
+                "brain_researcher.services.br_kg.ml.gnn_models.torch"
+            ) as mock_torch:
                 mock_torch.save = Mock()
 
                 predictor.save_model(tmp_path)
@@ -618,15 +657,17 @@ class TestGNNPredictor:
                 "model_state_dict": {"layer1.weight": MockTensor()},
                 "config": predictor.config.to_dict(),
                 "model_type": GNNModelType.GCN.value,
-                "training_history": [{"epoch": 1, "loss": 0.5}]
+                "training_history": [{"epoch": 1, "loss": 0.5}],
             }
 
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.torch') as mock_torch:
+            with patch(
+                "brain_researcher.services.br_kg.ml.gnn_models.torch"
+            ) as mock_torch:
                 mock_torch.load.return_value = mock_save_data
 
                 new_predictor = GNNPredictor(GNNModelType.GCN)
 
-                with patch.object(new_predictor, 'build_model') as mock_build:
+                with patch.object(new_predictor, "build_model") as mock_build:
                     new_predictor.load_model(tmp_path)
 
                     mock_build.assert_called_once()
@@ -663,8 +704,11 @@ class TestGNNPredictor:
         assert info["status"] == "not_built"
 
         # After building model
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.GraphAttentionNetwork', MockModule):
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.Adam', Mock):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.GraphAttentionNetwork",
+            MockModule,
+        ):
+            with patch("brain_researcher.services.br_kg.ml.gnn_models.Adam", Mock):
                 predictor.build_model(input_dim=10, output_dim=5)
 
                 info = predictor.get_model_info()
@@ -678,8 +722,11 @@ class TestGNNPredictor:
         """Test error for unsupported prediction task type."""
         predictor = GNNPredictor(GNNModelType.GCN)
 
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.GraphConvolutionalNetwork', MockModule):
-            with patch('brain_researcher.services.br_kg.ml.gnn_models.Adam', Mock):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.GraphConvolutionalNetwork",
+            MockModule,
+        ):
+            with patch("brain_researcher.services.br_kg.ml.gnn_models.Adam", Mock):
                 predictor.build_model(input_dim=10, output_dim=5)
 
         graph_data = {"nodes": ["A"], "edges": []}
@@ -693,19 +740,29 @@ class TestTorchUnavailable:
 
     def test_import_error_on_model_creation(self):
         """Test ImportError when PyTorch is not available."""
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.TORCH_AVAILABLE', False):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.TORCH_AVAILABLE", False
+        ):
             config = GNNConfig(GNNModelType.GCN, input_dim=10, output_dim=5)
 
-            with pytest.raises(ImportError, match="PyTorch and PyTorch Geometric are required"):
+            with pytest.raises(
+                ImportError, match="PyTorch and PyTorch Geometric are required"
+            ):
                 GraphConvolutionalNetwork(config)
 
-            with pytest.raises(ImportError, match="PyTorch and PyTorch Geometric are required"):
+            with pytest.raises(
+                ImportError, match="PyTorch and PyTorch Geometric are required"
+            ):
                 GraphSAGE(config)
 
-            with pytest.raises(ImportError, match="PyTorch and PyTorch Geometric are required"):
+            with pytest.raises(
+                ImportError, match="PyTorch and PyTorch Geometric are required"
+            ):
                 GraphAttentionNetwork(config)
 
-            with pytest.raises(ImportError, match="PyTorch and PyTorch Geometric are required"):
+            with pytest.raises(
+                ImportError, match="PyTorch and PyTorch Geometric are required"
+            ):
                 GNNPredictor(GNNModelType.GCN)
 
 
@@ -718,18 +775,19 @@ class TestGNNIntegration:
         # This test would run with actual PyTorch if available
         # For now, we mock the entire workflow
 
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.TORCH_AVAILABLE', True):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.TORCH_AVAILABLE", True
+        ):
             # Create synthetic graph data
             graph_data = {
                 "nodes": [f"node_{i}" for i in range(10)],
                 "edges": [
-                    {"start": f"node_{i}", "end": f"node_{(i+1)%10}"}
-                    for i in range(10)
+                    {"start": f"node_{i}", "end": f"node_{(i+1)%10}"} for i in range(10)
                 ],
                 "node_features": {
-                    f"node_{i}": [float(i % 3), float((i+1) % 3), float((i+2) % 3)]
+                    f"node_{i}": [float(i % 3), float((i + 1) % 3), float((i + 2) % 3)]
                     for i in range(10)
-                }
+                },
             }
 
             # Labels for 3-class classification
@@ -738,12 +796,12 @@ class TestGNNIntegration:
             predictor = GNNPredictor(GNNModelType.GCN)
 
             # Mock the entire training process
-            with patch.object(predictor, 'build_model') as mock_build:
-                with patch.object(predictor, 'train_node_classification') as mock_train:
+            with patch.object(predictor, "build_model") as mock_build:
+                with patch.object(predictor, "train_node_classification") as mock_train:
                     mock_train.return_value = {
                         "best_val_acc": 0.85,
                         "final_loss": 0.2,
-                        "training_history": [{"epoch": 1, "loss": 0.5}]
+                        "training_history": [{"epoch": 1, "loss": 0.5}],
                     }
 
                     # Build and train model
@@ -756,18 +814,19 @@ class TestGNNIntegration:
 
     def test_end_to_end_link_prediction(self):
         """Test complete link prediction workflow with synthetic data."""
-        with patch('brain_researcher.services.br_kg.ml.gnn_models.TORCH_AVAILABLE', True):
+        with patch(
+            "brain_researcher.services.br_kg.ml.gnn_models.TORCH_AVAILABLE", True
+        ):
             # Create synthetic graph data
             graph_data = {
                 "nodes": [f"node_{i}" for i in range(6)],
                 "edges": [
                     {"start": "node_0", "end": "node_1"},
-                    {"start": "node_2", "end": "node_3"}
+                    {"start": "node_2", "end": "node_3"},
                 ],
                 "node_features": {
-                    f"node_{i}": [float(i), float(i*2)]
-                    for i in range(6)
-                }
+                    f"node_{i}": [float(i), float(i * 2)] for i in range(6)
+                },
             }
 
             # Positive and negative edge examples
@@ -776,12 +835,12 @@ class TestGNNIntegration:
 
             predictor = GNNPredictor(GNNModelType.GRAPHSAGE)
 
-            with patch.object(predictor, 'build_model'):
-                with patch.object(predictor, 'train_link_prediction') as mock_train:
+            with patch.object(predictor, "build_model"):
+                with patch.object(predictor, "train_link_prediction") as mock_train:
                     mock_train.return_value = {
                         "best_val_auc": 0.78,
                         "final_loss": 0.4,
-                        "training_history": [{"epoch": 1, "loss": 0.6}]
+                        "training_history": [{"epoch": 1, "loss": 0.6}],
                     }
 
                     predictor.build_model(input_dim=2, output_dim=8)

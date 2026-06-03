@@ -4,27 +4,24 @@ Implements multiple load balancing strategies for task distribution
 in the distributed brain researcher agent system.
 """
 
-import asyncio
+import hashlib
 import json
 import logging
-import time
-import hashlib
-import random
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple, Set
-from dataclasses import dataclass, asdict
-from enum import Enum
-from collections import defaultdict, deque
 import statistics
+import time
+from collections import defaultdict, deque
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from enum import Enum
 
 import redis.asyncio as redis
-
 
 logger = logging.getLogger(__name__)
 
 
 class LoadBalancingStrategy(str, Enum):
     """Available load balancing strategies"""
+
     ROUND_ROBIN = "round_robin"
     LEAST_LOADED = "least_loaded"
     CONSISTENT_HASH = "consistent_hash"
@@ -36,6 +33,7 @@ class LoadBalancingStrategy(str, Enum):
 
 class NodeCapability(str, Enum):
     """Node capability types"""
+
     CPU_INTENSIVE = "cpu_intensive"
     MEMORY_INTENSIVE = "memory_intensive"
     GPU_COMPUTE = "gpu_compute"
@@ -47,16 +45,17 @@ class NodeCapability(str, Enum):
 @dataclass
 class TaskRequirements:
     """Task resource and capability requirements"""
+
     cpu_cores: float = 1.0
     memory_gb: float = 1.0
     gpu_memory_gb: float = 0.0
     network_mbps: float = 0.0
     storage_gb: float = 0.0
     estimated_duration: float = 60.0  # seconds
-    capabilities: List[NodeCapability] = None
-    locality_preferences: List[str] = None  # preferred regions/zones
-    affinity_labels: Dict[str, str] = None
-    anti_affinity_labels: Dict[str, str] = None
+    capabilities: list[NodeCapability] = None
+    locality_preferences: list[str] = None  # preferred regions/zones
+    affinity_labels: dict[str, str] = None
+    anti_affinity_labels: dict[str, str] = None
 
     def __post_init__(self):
         if self.capabilities is None:
@@ -72,6 +71,7 @@ class TaskRequirements:
 @dataclass
 class NodeMetrics:
     """Real-time node performance metrics"""
+
     node_id: str
     cpu_utilization: float  # 0-100%
     memory_utilization: float  # 0-100%
@@ -83,10 +83,10 @@ class NodeMetrics:
     average_response_time: float = 0.0  # milliseconds
     success_rate: float = 100.0  # percentage
     last_updated: datetime = None
-    capabilities: List[NodeCapability] = None
+    capabilities: list[NodeCapability] = None
     region: str = "default"
     zone: str = "default"
-    labels: Dict[str, str] = None
+    labels: dict[str, str] = None
 
     def __post_init__(self):
         if self.last_updated is None:
@@ -99,19 +99,19 @@ class NodeMetrics:
     def overall_utilization(self) -> float:
         """Calculate overall node utilization"""
         weights = {
-            'cpu': 0.4,
-            'memory': 0.3,
-            'gpu': 0.2,
-            'network': 0.05,
-            'storage': 0.05
+            "cpu": 0.4,
+            "memory": 0.3,
+            "gpu": 0.2,
+            "network": 0.05,
+            "storage": 0.05,
         }
 
         return (
-            weights['cpu'] * self.cpu_utilization +
-            weights['memory'] * self.memory_utilization +
-            weights['gpu'] * self.gpu_utilization +
-            weights['network'] * self.network_utilization +
-            weights['storage'] * self.storage_utilization
+            weights["cpu"] * self.cpu_utilization
+            + weights["memory"] * self.memory_utilization
+            + weights["gpu"] * self.gpu_utilization
+            + weights["network"] * self.network_utilization
+            + weights["storage"] * self.storage_utilization
         )
 
     def can_handle_task(self, requirements: TaskRequirements) -> bool:
@@ -130,18 +130,18 @@ class NodeMetrics:
 
         return True
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary"""
         data = asdict(self)
         if self.last_updated:
-            data['last_updated'] = self.last_updated.isoformat()
+            data["last_updated"] = self.last_updated.isoformat()
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict) -> 'NodeMetrics':
+    def from_dict(cls, data: dict) -> "NodeMetrics":
         """Create from dictionary"""
-        if 'last_updated' in data and data['last_updated']:
-            data['last_updated'] = datetime.fromisoformat(data['last_updated'])
+        if "last_updated" in data and data["last_updated"]:
+            data["last_updated"] = datetime.fromisoformat(data["last_updated"])
         return cls(**data)
 
 
@@ -151,15 +151,17 @@ class RoundRobinStrategy:
     def __init__(self):
         self.current_index = 0
 
-    async def select_node(self,
-                         nodes: List[NodeMetrics],
-                         task_requirements: TaskRequirements) -> Optional[NodeMetrics]:
+    async def select_node(
+        self, nodes: list[NodeMetrics], task_requirements: TaskRequirements
+    ) -> NodeMetrics | None:
         """Select node using round-robin strategy"""
         if not nodes:
             return None
 
         # Filter nodes that can handle the task
-        capable_nodes = [node for node in nodes if node.can_handle_task(task_requirements)]
+        capable_nodes = [
+            node for node in nodes if node.can_handle_task(task_requirements)
+        ]
 
         if not capable_nodes:
             return None
@@ -174,15 +176,17 @@ class RoundRobinStrategy:
 class LeastLoadedStrategy:
     """Least-loaded load balancing strategy"""
 
-    async def select_node(self,
-                         nodes: List[NodeMetrics],
-                         task_requirements: TaskRequirements) -> Optional[NodeMetrics]:
+    async def select_node(
+        self, nodes: list[NodeMetrics], task_requirements: TaskRequirements
+    ) -> NodeMetrics | None:
         """Select node with least load"""
         if not nodes:
             return None
 
         # Filter nodes that can handle the task
-        capable_nodes = [node for node in nodes if node.can_handle_task(task_requirements)]
+        capable_nodes = [
+            node for node in nodes if node.can_handle_task(task_requirements)
+        ]
 
         if not capable_nodes:
             return None
@@ -198,8 +202,8 @@ class ConsistentHashStrategy:
 
     def __init__(self, replicas: int = 150):
         self.replicas = replicas
-        self.ring: Dict[int, str] = {}  # hash -> node_id
-        self.nodes: Set[str] = set()
+        self.ring: dict[int, str] = {}  # hash -> node_id
+        self.nodes: set[str] = set()
 
     def add_node(self, node_id: str):
         """Add node to hash ring"""
@@ -223,7 +227,7 @@ class ConsistentHashStrategy:
         for key in keys_to_remove:
             del self.ring[key]
 
-    def update_nodes(self, node_ids: List[str]):
+    def update_nodes(self, node_ids: list[str]):
         """Update hash ring with current nodes"""
         current_nodes = set(node_ids)
 
@@ -237,10 +241,12 @@ class ConsistentHashStrategy:
             if node_id not in self.nodes:
                 self.add_node(node_id)
 
-    async def select_node(self,
-                         nodes: List[NodeMetrics],
-                         task_requirements: TaskRequirements,
-                         task_id: str = None) -> Optional[NodeMetrics]:
+    async def select_node(
+        self,
+        nodes: list[NodeMetrics],
+        task_requirements: TaskRequirements,
+        task_id: str = None,
+    ) -> NodeMetrics | None:
         """Select node using consistent hashing"""
         if not nodes:
             return None
@@ -270,7 +276,9 @@ class ConsistentHashStrategy:
 
         # Find node metrics for selected node
         for node in nodes:
-            if node.node_id == selected_node_id and node.can_handle_task(task_requirements):
+            if node.node_id == selected_node_id and node.can_handle_task(
+                task_requirements
+            ):
                 return node
 
         # If selected node can't handle task, fall back to least loaded
@@ -288,22 +296,25 @@ class WorkStealingStrategy:
     def __init__(self, steal_threshold: float = 0.3):
         self.steal_threshold = steal_threshold  # Steal if utilization < threshold
 
-    async def select_node(self,
-                         nodes: List[NodeMetrics],
-                         task_requirements: TaskRequirements) -> Optional[NodeMetrics]:
+    async def select_node(
+        self, nodes: list[NodeMetrics], task_requirements: TaskRequirements
+    ) -> NodeMetrics | None:
         """Select node using work stealing logic"""
         if not nodes:
             return None
 
         # Filter nodes that can handle the task
-        capable_nodes = [node for node in nodes if node.can_handle_task(task_requirements)]
+        capable_nodes = [
+            node for node in nodes if node.can_handle_task(task_requirements)
+        ]
 
         if not capable_nodes:
             return None
 
         # Find nodes with low utilization (good candidates for work stealing)
         underutilized_nodes = [
-            node for node in capable_nodes
+            node
+            for node in capable_nodes
             if node.overall_utilization() < self.steal_threshold * 100
         ]
 
@@ -318,9 +329,9 @@ class WorkStealingStrategy:
 class ResourceAwareStrategy:
     """Resource-aware load balancing strategy"""
 
-    async def select_node(self,
-                         nodes: List[NodeMetrics],
-                         task_requirements: TaskRequirements) -> Optional[NodeMetrics]:
+    async def select_node(
+        self, nodes: list[NodeMetrics], task_requirements: TaskRequirements
+    ) -> NodeMetrics | None:
         """Select node based on resource requirements"""
         if not nodes:
             return None
@@ -342,9 +353,9 @@ class ResourceAwareStrategy:
         scored_nodes.sort(key=lambda x: x[0], reverse=True)
         return scored_nodes[0][1]
 
-    def _calculate_resource_score(self,
-                                 node: NodeMetrics,
-                                 requirements: TaskRequirements) -> float:
+    def _calculate_resource_score(
+        self, node: NodeMetrics, requirements: TaskRequirements
+    ) -> float:
         """Calculate resource match score for a node"""
         score = 0.0
 
@@ -384,15 +395,17 @@ class ResourceAwareStrategy:
 class LocalityAwareStrategy:
     """Locality-aware load balancing strategy"""
 
-    async def select_node(self,
-                         nodes: List[NodeMetrics],
-                         task_requirements: TaskRequirements) -> Optional[NodeMetrics]:
+    async def select_node(
+        self, nodes: list[NodeMetrics], task_requirements: TaskRequirements
+    ) -> NodeMetrics | None:
         """Select node considering locality preferences"""
         if not nodes:
             return None
 
         # Filter nodes that can handle the task
-        capable_nodes = [node for node in nodes if node.can_handle_task(task_requirements)]
+        capable_nodes = [
+            node for node in nodes if node.can_handle_task(task_requirements)
+        ]
 
         if not capable_nodes:
             return None
@@ -413,9 +426,9 @@ class LocalityAwareStrategy:
 
         return min(top_nodes, key=lambda x: x.overall_utilization())
 
-    def _calculate_locality_score(self,
-                                 node: NodeMetrics,
-                                 requirements: TaskRequirements) -> float:
+    def _calculate_locality_score(
+        self, node: NodeMetrics, requirements: TaskRequirements
+    ) -> float:
         """Calculate locality preference score"""
         score = 0.0
 
@@ -429,7 +442,8 @@ class LocalityAwareStrategy:
         # Affinity labels
         if requirements.affinity_labels:
             matches = sum(
-                1 for key, value in requirements.affinity_labels.items()
+                1
+                for key, value in requirements.affinity_labels.items()
                 if node.labels.get(key) == value
             )
             score += matches * 3.0
@@ -437,7 +451,8 @@ class LocalityAwareStrategy:
         # Anti-affinity labels (negative score)
         if requirements.anti_affinity_labels:
             matches = sum(
-                1 for key, value in requirements.anti_affinity_labels.items()
+                1
+                for key, value in requirements.anti_affinity_labels.items()
                 if node.labels.get(key) == value
             )
             score -= matches * 5.0
@@ -455,16 +470,20 @@ class AdaptiveStrategy:
             LoadBalancingStrategy.CONSISTENT_HASH: ConsistentHashStrategy(),
             LoadBalancingStrategy.WORK_STEALING: WorkStealingStrategy(),
             LoadBalancingStrategy.RESOURCE_AWARE: ResourceAwareStrategy(),
-            LoadBalancingStrategy.LOCALITY_AWARE: LocalityAwareStrategy()
+            LoadBalancingStrategy.LOCALITY_AWARE: LocalityAwareStrategy(),
         }
 
         # Strategy selection history for learning
-        self.performance_history: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
+        self.performance_history: dict[str, deque] = defaultdict(
+            lambda: deque(maxlen=100)
+        )
 
-    async def select_node(self,
-                         nodes: List[NodeMetrics],
-                         task_requirements: TaskRequirements,
-                         task_id: str = None) -> Optional[NodeMetrics]:
+    async def select_node(
+        self,
+        nodes: list[NodeMetrics],
+        task_requirements: TaskRequirements,
+        task_id: str = None,
+    ) -> NodeMetrics | None:
         """Adaptively select best strategy and node"""
         if not nodes:
             return None
@@ -475,21 +494,27 @@ class AdaptiveStrategy:
 
         # Select node using chosen strategy
         if strategy_name == LoadBalancingStrategy.CONSISTENT_HASH:
-            selected_node = await strategy.select_node(nodes, task_requirements, task_id)
+            selected_node = await strategy.select_node(
+                nodes, task_requirements, task_id
+            )
         else:
             selected_node = await strategy.select_node(nodes, task_requirements)
 
         return selected_node
 
-    def _choose_strategy(self,
-                        nodes: List[NodeMetrics],
-                        requirements: TaskRequirements) -> LoadBalancingStrategy:
+    def _choose_strategy(
+        self, nodes: list[NodeMetrics], requirements: TaskRequirements
+    ) -> LoadBalancingStrategy:
         """Choose best strategy based on current conditions"""
 
         # Calculate cluster metrics
         total_nodes = len(nodes)
-        avg_utilization = statistics.mean([node.overall_utilization() for node in nodes])
-        utilization_variance = statistics.variance([node.overall_utilization() for node in nodes])
+        avg_utilization = statistics.mean(
+            [node.overall_utilization() for node in nodes]
+        )
+        utilization_variance = statistics.variance(
+            [node.overall_utilization() for node in nodes]
+        )
 
         # Strategy selection logic
         if total_nodes <= 2:
@@ -499,7 +524,12 @@ class AdaptiveStrategy:
             return LoadBalancingStrategy.LOCALITY_AWARE
 
         elif requirements.gpu_memory_gb > 0 or any(
-            cap in [NodeCapability.GPU_COMPUTE, NodeCapability.CPU_INTENSIVE, NodeCapability.MEMORY_INTENSIVE]
+            cap
+            in [
+                NodeCapability.GPU_COMPUTE,
+                NodeCapability.CPU_INTENSIVE,
+                NodeCapability.MEMORY_INTENSIVE,
+            ]
             for cap in requirements.capabilities
         ):
             return LoadBalancingStrategy.RESOURCE_AWARE
@@ -526,9 +556,11 @@ class AdaptiveStrategy:
 class DistributedLoadBalancer:
     """Main distributed load balancer"""
 
-    def __init__(self,
-                 redis_client: redis.Redis,
-                 default_strategy: LoadBalancingStrategy = LoadBalancingStrategy.ADAPTIVE):
+    def __init__(
+        self,
+        redis_client: redis.Redis,
+        default_strategy: LoadBalancingStrategy = LoadBalancingStrategy.ADAPTIVE,
+    ):
         self.redis = redis_client
         self.default_strategy = default_strategy
 
@@ -540,19 +572,21 @@ class DistributedLoadBalancer:
             LoadBalancingStrategy.WORK_STEALING: WorkStealingStrategy(),
             LoadBalancingStrategy.RESOURCE_AWARE: ResourceAwareStrategy(),
             LoadBalancingStrategy.LOCALITY_AWARE: LocalityAwareStrategy(),
-            LoadBalancingStrategy.ADAPTIVE: AdaptiveStrategy()
+            LoadBalancingStrategy.ADAPTIVE: AdaptiveStrategy(),
         }
 
         # Metrics collection
-        self.node_metrics: Dict[str, NodeMetrics] = {}
+        self.node_metrics: dict[str, NodeMetrics] = {}
         self.metrics_ttl = 300  # 5 minutes
 
         logger.info(f"Initialized load balancer with strategy: {default_strategy}")
 
-    async def select_node(self,
-                         task_requirements: TaskRequirements,
-                         strategy: LoadBalancingStrategy = None,
-                         task_id: str = None) -> Optional[str]:
+    async def select_node(
+        self,
+        task_requirements: TaskRequirements,
+        strategy: LoadBalancingStrategy = None,
+        task_id: str = None,
+    ) -> str | None:
         """Select best node for task execution"""
         try:
             # Use specified strategy or default
@@ -570,9 +604,13 @@ class DistributedLoadBalancer:
             selected_strategy = self.strategies[strategy]
 
             if strategy == LoadBalancingStrategy.CONSISTENT_HASH:
-                selected_node = await selected_strategy.select_node(nodes, task_requirements, task_id)
+                selected_node = await selected_strategy.select_node(
+                    nodes, task_requirements, task_id
+                )
             else:
-                selected_node = await selected_strategy.select_node(nodes, task_requirements)
+                selected_node = await selected_strategy.select_node(
+                    nodes, task_requirements
+                )
 
             if selected_node:
                 logger.debug(f"Selected node {selected_node.node_id} using {strategy}")
@@ -594,13 +632,15 @@ class DistributedLoadBalancer:
             await self.redis.setex(
                 f"node_metrics:{node_metrics.node_id}",
                 self.metrics_ttl,
-                json.dumps(node_metrics.to_dict())
+                json.dumps(node_metrics.to_dict()),
             )
 
         except Exception as e:
-            logger.error(f"Failed to update node metrics for {node_metrics.node_id}: {e}")
+            logger.error(
+                f"Failed to update node metrics for {node_metrics.node_id}: {e}"
+            )
 
-    async def get_load_balancing_stats(self) -> Dict:
+    async def get_load_balancing_stats(self) -> dict:
         """Get load balancing statistics"""
         nodes = await self._get_active_node_metrics()
 
@@ -608,10 +648,14 @@ class DistributedLoadBalancer:
             return {"error": "No active nodes"}
 
         total_capacity = sum(100 - node.overall_utilization() for node in nodes)
-        avg_utilization = statistics.mean([node.overall_utilization() for node in nodes])
+        avg_utilization = statistics.mean(
+            [node.overall_utilization() for node in nodes]
+        )
 
         utilizations = [node.overall_utilization() for node in nodes]
-        utilization_variance = statistics.variance(utilizations) if len(utilizations) > 1 else 0
+        utilization_variance = (
+            statistics.variance(utilizations) if len(utilizations) > 1 else 0
+        )
 
         return {
             "total_nodes": len(nodes),
@@ -624,13 +668,13 @@ class DistributedLoadBalancer:
                     "utilization": node.overall_utilization(),
                     "active_tasks": node.active_tasks,
                     "queue_length": node.queue_length,
-                    "capabilities": [cap.value for cap in node.capabilities]
+                    "capabilities": [cap.value for cap in node.capabilities],
                 }
                 for node in nodes
-            ]
+            ],
         }
 
-    async def rebalance_cluster(self) -> Dict:
+    async def rebalance_cluster(self) -> dict:
         """Trigger cluster rebalancing"""
         try:
             # Get current load distribution
@@ -640,32 +684,30 @@ class DistributedLoadBalancer:
                 return stats
 
             # Check if rebalancing is needed
-            if stats["utilization_variance"] < 100:  # Low variance, no rebalancing needed
-                return {
-                    "action": "none",
-                    "reason": "Load is already well balanced"
-                }
+            if (
+                stats["utilization_variance"] < 100
+            ):  # Low variance, no rebalancing needed
+                return {"action": "none", "reason": "Load is already well balanced"}
 
             # Publish rebalancing event
             await self.redis.publish(
                 "cluster:rebalance",
-                json.dumps({
-                    "timestamp": datetime.utcnow().isoformat(),
-                    "stats": stats,
-                    "action": "rebalance_requested"
-                })
+                json.dumps(
+                    {
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "stats": stats,
+                        "action": "rebalance_requested",
+                    }
+                ),
             )
 
-            return {
-                "action": "rebalance_triggered",
-                "stats": stats
-            }
+            return {"action": "rebalance_triggered", "stats": stats}
 
         except Exception as e:
             logger.error(f"Cluster rebalancing failed: {e}")
             return {"error": str(e)}
 
-    async def _get_active_node_metrics(self) -> List[NodeMetrics]:
+    async def _get_active_node_metrics(self) -> list[NodeMetrics]:
         """Get metrics for all active nodes"""
         try:
             nodes = []
@@ -679,7 +721,9 @@ class DistributedLoadBalancer:
                         node_metrics = NodeMetrics.from_dict(metrics_dict)
 
                         # Check if metrics are recent
-                        time_since_update = datetime.utcnow() - node_metrics.last_updated
+                        time_since_update = (
+                            datetime.utcnow() - node_metrics.last_updated
+                        )
                         if time_since_update.total_seconds() < self.metrics_ttl:
                             nodes.append(node_metrics)
 

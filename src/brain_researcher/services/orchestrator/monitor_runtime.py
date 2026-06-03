@@ -229,9 +229,7 @@ def _slack_bot_token() -> str | None:
 
 
 def _discord_public_key() -> str | None:
-    return os.getenv("BR_MONITOR_DISCORD_PUBLIC_KEY") or os.getenv(
-        "DISCORD_PUBLIC_KEY"
-    )
+    return os.getenv("BR_MONITOR_DISCORD_PUBLIC_KEY") or os.getenv("DISCORD_PUBLIC_KEY")
 
 
 def _strip_slack_mentions(text: str) -> str:
@@ -245,7 +243,9 @@ def _decode_discord_hex_key(value: str) -> bytes:
 class MonitorRuntime:
     """Owns persistent monitor refresh and external chat bridge dispatch."""
 
-    def __init__(self, app: Any | None = None, poll_seconds: int = _DEFAULT_POLL_SECONDS):
+    def __init__(
+        self, app: Any | None = None, poll_seconds: int = _DEFAULT_POLL_SECONDS
+    ):
         self._app = app
         self._poll_seconds = max(5, int(poll_seconds))
         self._task: asyncio.Task[Any] | None = None
@@ -499,7 +499,9 @@ class MonitorRuntime:
 
         if action_token == "cancel":
             result = await self._cancel_monitor(monitor, request=request)
-            refreshed = await self.refresh_monitor(await self._require_monitor(monitor_id))
+            refreshed = await self.refresh_monitor(
+                await self._require_monitor(monitor_id)
+            )
             return {
                 "ok": True,
                 "monitor": refreshed.model_dump(mode="json"),
@@ -508,7 +510,9 @@ class MonitorRuntime:
 
         if action_token == "retry":
             result = await self._retry_monitor(monitor)
-            refreshed = await self.refresh_monitor(await self._require_monitor(monitor_id))
+            refreshed = await self.refresh_monitor(
+                await self._require_monitor(monitor_id)
+            )
             return {
                 "ok": True,
                 "monitor": refreshed.model_dump(mode="json"),
@@ -519,7 +523,9 @@ class MonitorRuntime:
             refreshed = await self._ack_monitor(monitor)
             return {"ok": True, "monitor": refreshed.model_dump(mode="json")}
 
-        raise HTTPException(status_code=400, detail=f"Unsupported monitor action: {action}")
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported monitor action: {action}"
+        )
 
     async def mirror_thread_message_outbound(self, message: Message) -> None:
         if not message.thread_id:
@@ -527,7 +533,9 @@ class MonitorRuntime:
         store = await get_state_store()
         if store is None:
             return
-        bridges = await store.list_chat_bridges(thread_id=message.thread_id, platform="slack")
+        bridges = await store.list_chat_bridges(
+            thread_id=message.thread_id, platform="slack"
+        )
         if not bridges:
             return
         for raw in bridges:
@@ -544,9 +552,13 @@ class MonitorRuntime:
                     thread_ts=bridge.config.get("thread_ts"),
                 )
             except Exception:
-                logger.exception("Failed to mirror thread %s to Slack", message.thread_id)
+                logger.exception(
+                    "Failed to mirror thread %s to Slack", message.thread_id
+                )
 
-    async def handle_slack_events(self, body: bytes, headers: dict[str, str]) -> dict[str, Any]:
+    async def handle_slack_events(
+        self, body: bytes, headers: dict[str, str]
+    ) -> dict[str, Any]:
         self._verify_slack_request(body, headers)
         payload = json.loads(body.decode("utf-8"))
         if payload.get("type") == "url_verification":
@@ -567,7 +579,9 @@ class MonitorRuntime:
         if not channel_id:
             return {"ok": True}
 
-        bridge = await self._resolve_slack_bridge(channel_id=channel_id, thread_ts=thread_ts)
+        bridge = await self._resolve_slack_bridge(
+            channel_id=channel_id, thread_ts=thread_ts
+        )
         if bridge is None:
             return {"ok": True}
 
@@ -609,9 +623,13 @@ class MonitorRuntime:
         else:
             from urllib.parse import parse_qs
 
-            payload_text = (parse_qs(form_payload, keep_blank_values=True).get("payload") or [None])[0]
+            payload_text = (
+                parse_qs(form_payload, keep_blank_values=True).get("payload") or [None]
+            )[0]
         if payload_text is None:
-            raise HTTPException(status_code=400, detail="Missing Slack interaction payload")
+            raise HTTPException(
+                status_code=400, detail="Missing Slack interaction payload"
+            )
         payload = json.loads(payload_text)
         actions = payload.get("actions") or []
         if not actions:
@@ -620,7 +638,9 @@ class MonitorRuntime:
         try:
             value = json.loads(action.get("value") or "{}")
         except json.JSONDecodeError as exc:
-            raise HTTPException(status_code=400, detail="Invalid Slack action payload") from exc
+            raise HTTPException(
+                status_code=400, detail="Invalid Slack action payload"
+            ) from exc
         result = await self.perform_action(
             str(value.get("monitor_id") or ""),
             str(value.get("action") or ""),
@@ -752,10 +772,14 @@ class MonitorRuntime:
         )
         threads_db[thread_id] = thread
         messages_db.setdefault(thread_id, [])
-        await store.upsert_thread(thread_id=thread_id, thread=thread.model_dump(mode="json"))
+        await store.upsert_thread(
+            thread_id=thread_id, thread=thread.model_dump(mode="json")
+        )
         return thread_id
 
-    async def _load_thread_messages(self, thread_ref: str, limit: int = 100) -> list[Message]:
+    async def _load_thread_messages(
+        self, thread_ref: str, limit: int = 100
+    ) -> list[Message]:
         if not thread_ref:
             return []
         thread_id = _normalize_thread_id(thread_ref)
@@ -780,22 +804,34 @@ class MonitorRuntime:
                 update={
                     "source_type": MonitorSourceType.BR_JOB,
                     "source_ref": source_ref,
-                    "control_capabilities": self._control_capabilities(MonitorSourceType.BR_JOB),
+                    "control_capabilities": self._control_capabilities(
+                        MonitorSourceType.BR_JOB
+                    ),
                 }
             )
-        if source_ref and not source_ref.startswith("thread_") and source_ref != monitor.thread_id:
+        if (
+            source_ref
+            and not source_ref.startswith("thread_")
+            and source_ref != monitor.thread_id
+        ):
             run_monitor = monitor.model_copy(
                 update={
                     "source_type": MonitorSourceType.MCP_RUN,
                     "source_ref": source_ref,
-                    "control_capabilities": self._control_capabilities(MonitorSourceType.MCP_RUN),
+                    "control_capabilities": self._control_capabilities(
+                        MonitorSourceType.MCP_RUN
+                    ),
                 }
             )
             run_snapshot = await self._probe_mcp_run(run_monitor)
-            if str(run_snapshot.get("status_reason") or "").strip() not in {
-                "run_not_found",
-                "",
-            } or run_snapshot.get("status") != MonitorStatus.UNKNOWN:
+            if (
+                str(run_snapshot.get("status_reason") or "").strip()
+                not in {
+                    "run_not_found",
+                    "",
+                }
+                or run_snapshot.get("status") != MonitorStatus.UNKNOWN
+            ):
                 return run_monitor
 
         thread_ref = monitor.thread_id or source_ref
@@ -811,7 +847,9 @@ class MonitorRuntime:
                         update={
                             "source_type": MonitorSourceType.BR_JOB,
                             "source_ref": str(candidate),
-                            "control_capabilities": self._control_capabilities(MonitorSourceType.BR_JOB),
+                            "control_capabilities": self._control_capabilities(
+                                MonitorSourceType.BR_JOB
+                            ),
                         }
                     )
             candidate = (message.metadata or {}).get("run_id")
@@ -820,11 +858,16 @@ class MonitorRuntime:
                     update={
                         "source_type": MonitorSourceType.MCP_RUN,
                         "source_ref": str(candidate),
-                        "control_capabilities": self._control_capabilities(MonitorSourceType.MCP_RUN),
+                        "control_capabilities": self._control_capabilities(
+                            MonitorSourceType.MCP_RUN
+                        ),
                     }
                 )
                 run_snapshot = await self._probe_mcp_run(run_monitor)
-                if str(run_snapshot.get("status_reason") or "").strip() != "run_not_found":
+                if (
+                    str(run_snapshot.get("status_reason") or "").strip()
+                    != "run_not_found"
+                ):
                     return run_monitor
         return None
 
@@ -833,7 +876,9 @@ class MonitorRuntime:
         log_paths: list[str] = []
         logs_dir = run_dir / "logs"
         if logs_dir.exists():
-            log_paths.extend(str(path) for path in sorted(logs_dir.rglob("*")) if path.is_file())
+            log_paths.extend(
+                str(path) for path in sorted(logs_dir.rglob("*")) if path.is_file()
+            )
         for candidate_name in ("stdout.txt", "stderr.txt"):
             candidate = run_dir / candidate_name
             if candidate.exists():
@@ -893,16 +938,24 @@ class MonitorRuntime:
     async def _probe_br_job(self, monitor: MonitoredExecution) -> dict[str, Any]:
         source_ref = monitor.source_ref
         job = jobs_db.get(source_ref)
-        job_adapter = getattr(self._app.state, "job_adapter", None) if self._app else None
+        job_adapter = (
+            getattr(self._app.state, "job_adapter", None) if self._app else None
+        )
         if job is None and job_adapter is not None:
             try:
                 job = await job_adapter.get_job(source_ref)
             except Exception:
-                logger.debug("JobAdapter lookup failed for %s", source_ref, exc_info=True)
+                logger.debug(
+                    "JobAdapter lookup failed for %s", source_ref, exc_info=True
+                )
 
         if job is None:
             return {
-                "status": monitor.status if _status_is_terminal(monitor.status) else MonitorStatus.UNKNOWN,
+                "status": (
+                    monitor.status
+                    if _status_is_terminal(monitor.status)
+                    else MonitorStatus.UNKNOWN
+                ),
                 "status_reason": "job_not_found",
                 "progress": monitor.progress,
                 "log_sources": monitor.log_sources,
@@ -998,12 +1051,16 @@ class MonitorRuntime:
             from brain_researcher.services.mcp import server as mcp_server
         except Exception as exc:
             logger.debug(
-                "MCP server import failed while probing %s", monitor.source_ref, exc_info=True
+                "MCP server import failed while probing %s",
+                monitor.source_ref,
+                exc_info=True,
             )
             return {
-                "status": monitor.status
-                if _status_is_terminal(monitor.status)
-                else MonitorStatus.UNKNOWN,
+                "status": (
+                    monitor.status
+                    if _status_is_terminal(monitor.status)
+                    else MonitorStatus.UNKNOWN
+                ),
                 "status_reason": f"mcp_server_unavailable:{exc}",
                 "progress": monitor.progress,
                 "log_sources": monitor.log_sources,
@@ -1013,9 +1070,11 @@ class MonitorRuntime:
         run_payload = mcp_server.run_get(monitor.source_ref)
         if run_payload.get("ok") is not True:
             return {
-                "status": monitor.status
-                if _status_is_terminal(monitor.status)
-                else MonitorStatus.UNKNOWN,
+                "status": (
+                    monitor.status
+                    if _status_is_terminal(monitor.status)
+                    else MonitorStatus.UNKNOWN
+                ),
                 "status_reason": "run_not_found",
                 "progress": monitor.progress,
                 "log_sources": monitor.log_sources,
@@ -1035,7 +1094,9 @@ class MonitorRuntime:
             log_sources.update(self._discover_run_log_sources(Path(run_dir_raw)))
 
         steps = run.get("steps") or []
-        step_statuses = [str((step or {}).get("status") or "").strip().lower() for step in steps]
+        step_statuses = [
+            str((step or {}).get("status") or "").strip().lower() for step in steps
+        ]
         completed_steps = sum(
             1
             for status in step_statuses
@@ -1066,7 +1127,9 @@ class MonitorRuntime:
         session_summary = ""
         if isinstance(active_step, dict):
             session_summary = _summarize_text(
-                active_step.get("title") or active_step.get("step_id") or "MCP run in progress."
+                active_step.get("title")
+                or active_step.get("step_id")
+                or "MCP run in progress."
             )
         elif isinstance(failed_step, dict):
             session_summary = _summarize_text(
@@ -1111,7 +1174,9 @@ class MonitorRuntime:
             },
         }
 
-    async def _probe_coding_session(self, monitor: MonitoredExecution) -> dict[str, Any]:
+    async def _probe_coding_session(
+        self, monitor: MonitoredExecution
+    ) -> dict[str, Any]:
         delegate = await self._resolve_coding_session_delegate(monitor)
         if delegate is not None:
             snapshot = await self._probe_monitor(delegate)
@@ -1136,7 +1201,8 @@ class MonitorRuntime:
         messages = await self._load_thread_messages(thread_ref)
         latest_message = messages[-1] if messages else None
         latest_assistant = next(
-            (message for message in reversed(messages) if message.role == "assistant"), None
+            (message for message in reversed(messages) if message.role == "assistant"),
+            None,
         )
         latest_user = next(
             (message for message in reversed(messages) if message.role == "user"), None
@@ -1170,9 +1236,9 @@ class MonitorRuntime:
             "metadata": {
                 "thread_id": _normalize_thread_id(thread_ref),
                 "latest_role": latest_role,
-                "last_message_at": latest_message.timestamp.isoformat()
-                if latest_message
-                else None,
+                "last_message_at": (
+                    latest_message.timestamp.isoformat() if latest_message else None
+                ),
                 "session_summary": session_summary,
                 "message_count": len(messages),
             },
@@ -1198,7 +1264,9 @@ class MonitorRuntime:
             store = getattr(self._app.state, "job_store", None) if self._app else None
             text_by_stream: dict[str, str] = {}
             if store is not None and hasattr(store, "iter_logs"):
-                chunks = await store.iter_logs(job_id=monitor.source_ref, start_offset=0, stream=None)
+                chunks = await store.iter_logs(
+                    job_id=monitor.source_ref, start_offset=0, stream=None
+                )
                 grouped: dict[str, list[str]] = {"stdout": [], "stderr": []}
                 for chunk in chunks:
                     if chunk.stream in grouped:
@@ -1207,7 +1275,9 @@ class MonitorRuntime:
                         )
                 for stream_name, parts in grouped.items():
                     if parts:
-                        text_by_stream[stream_name] = _tail_lines("".join(parts), request.tail)
+                        text_by_stream[stream_name] = _tail_lines(
+                            "".join(parts), request.tail
+                        )
             if not text_by_stream:
                 text_by_stream = self._tail_file_logs(
                     monitor.log_sources,
@@ -1238,7 +1308,11 @@ class MonitorRuntime:
         if monitor.source_type == MonitorSourceType.CODING_SESSION:
             delegate = await self._resolve_coding_session_delegate(monitor)
             if delegate is None:
-                return {"stdout": None, "stderr": None, "log_sources": monitor.log_sources}
+                return {
+                    "stdout": None,
+                    "stderr": None,
+                    "log_sources": monitor.log_sources,
+                }
             return await self._tail_logs(delegate, request=request)
 
         return {
@@ -1293,11 +1367,16 @@ class MonitorRuntime:
         self, monitor: MonitoredExecution, *, request: MonitorActionRequest
     ) -> dict[str, Any]:
         if "cancel" not in monitor.control_capabilities:
-            raise HTTPException(status_code=400, detail="Cancel is not supported for this monitor")
+            raise HTTPException(
+                status_code=400, detail="Cancel is not supported for this monitor"
+            )
 
         if monitor.source_type == MonitorSourceType.BR_JOB:
             if self._app is None:
-                raise HTTPException(status_code=503, detail="BR job cancellation requires the orchestrator app runtime")
+                raise HTTPException(
+                    status_code=503,
+                    detail="BR job cancellation requires the orchestrator app runtime",
+                )
             payload = await self._call_app_post(
                 f"/api/jobs/{monitor.source_ref}/cancel",
                 params={"reason": request.reason or "Monitor requested cancellation"},
@@ -1313,7 +1392,9 @@ class MonitorRuntime:
             cmd = ["scancel", monitor.source_ref]
             proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
             if proc.returncode != 0:
-                raise HTTPException(status_code=400, detail=proc.stderr.strip() or "scancel failed")
+                raise HTTPException(
+                    status_code=400, detail=proc.stderr.strip() or "scancel failed"
+                )
             await self._append_monitor_event(
                 monitor,
                 "monitor.cancel_requested",
@@ -1355,7 +1436,9 @@ class MonitorRuntime:
                     )
                 payload = await self._call_app_post(
                     f"/api/jobs/{delegate.source_ref}/cancel",
-                    params={"reason": request.reason or "Session requested cancellation"},
+                    params={
+                        "reason": request.reason or "Session requested cancellation"
+                    },
                 )
             elif delegate.source_type == MonitorSourceType.MCP_RUN:
                 from brain_researcher.services.mcp import server as mcp_server
@@ -1409,9 +1492,14 @@ class MonitorRuntime:
 
     async def _retry_monitor(self, monitor: MonitoredExecution) -> dict[str, Any]:
         if "retry" not in monitor.control_capabilities:
-            raise HTTPException(status_code=400, detail="Retry is not supported for this monitor")
+            raise HTTPException(
+                status_code=400, detail="Retry is not supported for this monitor"
+            )
         if monitor.source_type != MonitorSourceType.BR_JOB or self._app is None:
-            raise HTTPException(status_code=400, detail="Retry is only supported for Brain Researcher jobs")
+            raise HTTPException(
+                status_code=400,
+                detail="Retry is only supported for Brain Researcher jobs",
+            )
         payload = await self._call_app_post(f"/api/jobs/{monitor.source_ref}/retry")
         await self._append_monitor_event(
             monitor, "monitor.retry_requested", {"action": "retry", "result": payload}
@@ -1466,7 +1554,8 @@ class MonitorRuntime:
                     await self._post_discord_webhook(
                         webhook_url=bridge.config["webhook_url"],
                         text=body,
-                        username=bridge.config.get("display_name") or "Brain Researcher",
+                        username=bridge.config.get("display_name")
+                        or "Brain Researcher",
                     )
             except Exception:
                 logger.exception(
@@ -1484,9 +1573,11 @@ class MonitorRuntime:
         notif_type = (
             NotificationType.JOB_FAILED
             if monitor.status == MonitorStatus.FAILED
-            else NotificationType.JOB_COMPLETE
-            if monitor.status in {MonitorStatus.COMPLETED, MonitorStatus.CANCELLED}
-            else NotificationType.SYSTEM_ALERT
+            else (
+                NotificationType.JOB_COMPLETE
+                if monitor.status in {MonitorStatus.COMPLETED, MonitorStatus.CANCELLED}
+                else NotificationType.SYSTEM_ALERT
+            )
         )
         priority = (
             NotificationPriority.HIGH
@@ -1501,7 +1592,9 @@ class MonitorRuntime:
             title=title,
             message=body,
             data={"monitor_id": monitor.id, "thread_id": monitor.thread_id},
-            action_url=f"/chat?thread={monitor.thread_id}" if monitor.thread_id else None,
+            action_url=(
+                f"/chat?thread={monitor.thread_id}" if monitor.thread_id else None
+            ),
             action_text="Open thread" if monitor.thread_id else None,
         )
         await store.upsert_notification(notification.model_dump(mode="json"))
@@ -1580,7 +1673,10 @@ class MonitorRuntime:
         self, *, thread_id: str, content: str, metadata: dict[str, Any]
     ) -> dict[str, Any]:
         if self._app is None:
-            raise HTTPException(status_code=503, detail="Chat mirroring requires the orchestrator app runtime")
+            raise HTTPException(
+                status_code=503,
+                detail="Chat mirroring requires the orchestrator app runtime",
+            )
         return await self._call_app_post(
             f"/threads/{thread_id}/messages",
             json_body={"content": content, "attachments": [], "metadata": metadata},
@@ -1615,11 +1711,13 @@ class MonitorRuntime:
         )
         signature = headers.get("x-slack-signature") or headers.get("X-Slack-Signature")
         if not timestamp or not signature:
-            raise HTTPException(status_code=401, detail="Missing Slack signature headers")
+            raise HTTPException(
+                status_code=401, detail="Missing Slack signature headers"
+            )
         base = f"v0:{timestamp}:".encode() + body
-        expected = "v0=" + hmac.new(
-            secret.encode("utf-8"), base, hashlib.sha256
-        ).hexdigest()
+        expected = (
+            "v0=" + hmac.new(secret.encode("utf-8"), base, hashlib.sha256).hexdigest()
+        )
         if not hmac.compare_digest(expected, signature):
             raise HTTPException(status_code=401, detail="Invalid Slack signature")
 
@@ -1634,7 +1732,9 @@ class MonitorRuntime:
             "X-Signature-Timestamp"
         )
         if not signature or not timestamp:
-            raise HTTPException(status_code=401, detail="Missing Discord signature headers")
+            raise HTTPException(
+                status_code=401, detail="Missing Discord signature headers"
+            )
         try:
             from cryptography.exceptions import InvalidSignature
             from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -1652,14 +1752,18 @@ class MonitorRuntime:
         try:
             verifier.verify(bytes.fromhex(signature), timestamp.encode("utf-8") + body)
         except InvalidSignature as exc:
-            raise HTTPException(status_code=401, detail="Invalid Discord signature") from exc
+            raise HTTPException(
+                status_code=401, detail="Invalid Discord signature"
+            ) from exc
 
     async def _post_slack_message(
         self, *, channel_id: str, text: str, thread_ts: str | None
     ) -> str | None:
         token = _slack_bot_token()
         if not token:
-            raise HTTPException(status_code=503, detail="Slack bot token is not configured")
+            raise HTTPException(
+                status_code=503, detail="Slack bot token is not configured"
+            )
         payload: dict[str, Any] = {"channel": channel_id, "text": text}
         if thread_ts:
             payload["thread_ts"] = thread_ts
@@ -1684,4 +1788,6 @@ class MonitorRuntime:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(webhook_url, json=payload)
         if response.status_code >= 400:
-            raise HTTPException(status_code=502, detail="Discord webhook delivery failed")
+            raise HTTPException(
+                status_code=502, detail="Discord webhook delivery failed"
+            )

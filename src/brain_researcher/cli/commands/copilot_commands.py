@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -18,7 +17,7 @@ app = typer.Typer(help="Copilot assistance: suggestions, autocomplete, learning"
 console = Console()
 
 
-def _parse_json_arg(arg: Optional[str]) -> dict:
+def _parse_json_arg(arg: str | None) -> dict:
     if not arg:
         return {}
     # If it's a file path, read it
@@ -44,7 +43,7 @@ def _get_copilot() -> CopilotAssistant:
 @app.command("suggest")
 def suggest(
     query: str = typer.Argument(..., help="Natural language task description"),
-    metadata: Optional[str] = typer.Option(
+    metadata: str | None = typer.Option(
         None, "--metadata", "-m", help="Dataset metadata as JSON or file path"
     ),
     k: int = typer.Option(5, "--k", help="Number of suggestions to return"),
@@ -70,10 +69,10 @@ def suggest(
 @app.command("autocomplete")
 def autocomplete(
     tool: str = typer.Argument(..., help="Tool name to complete params for"),
-    params: Optional[str] = typer.Option(
+    params: str | None = typer.Option(
         None, "--params", "-p", help="Partial params as JSON or file path"
     ),
-    metadata: Optional[str] = typer.Option(
+    metadata: str | None = typer.Option(
         None, "--metadata", "-m", help="Dataset metadata as JSON or file path"
     ),
 ):
@@ -88,7 +87,7 @@ def autocomplete(
 @app.command("learn")
 def learn(
     tool: str = typer.Argument(..., help="Tool name selected by the user"),
-    accepted_params: Optional[str] = typer.Option(
+    accepted_params: str | None = typer.Option(
         None, "--params", "-p", help="Accepted params as JSON or file path"
     ),
 ):
@@ -144,4 +143,6 @@ def demo(
             for s in copilot.suggest_tools(query, k=k)
         ]
 
-    console.print(JSON.from_data({"api_url": base, "query": query, "suggestions": suggestions}))
+    console.print(
+        JSON.from_data({"api_url": base, "query": query, "suggestions": suggestions})
+    )

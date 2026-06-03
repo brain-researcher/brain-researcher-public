@@ -13,7 +13,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class MemoryEntry:
     role: str
     content: str
     created_at: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class ConversationMemory:
@@ -48,7 +48,7 @@ class ConversationMemory:
             self.store_path.write_text("# Agent memory log\n\n", encoding="utf-8")
         if not self.json_path.exists():
             self.json_path.touch()
-        self._cache: Dict[str, List[MemoryEntry]] | None = None
+        self._cache: dict[str, list[MemoryEntry]] | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -58,7 +58,7 @@ class ConversationMemory:
         thread_id: str,
         role: str,
         content: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> MemoryEntry:
         entry = MemoryEntry(
             thread_id=thread_id,
@@ -73,7 +73,7 @@ class ConversationMemory:
         self._persist(cache)
         return entry
 
-    def get_recent(self, thread_id: str, limit: int = 5) -> List[MemoryEntry]:
+    def get_recent(self, thread_id: str, limit: int = 5) -> list[MemoryEntry]:
         cache = self._load_cache()
         return list(cache.get(thread_id, [])[-limit:])
 
@@ -86,19 +86,17 @@ class ConversationMemory:
         lines = ["## Recent memory"]
         for entry in entries:
             meta = f" meta={json.dumps(entry.metadata)}" if entry.metadata else ""
-            lines.append(
-                f"- [{entry.created_at}] ({entry.role}) {entry.content}{meta}"
-            )
+            lines.append(f"- [{entry.created_at}] ({entry.role}) {entry.content}{meta}")
         return "\n".join(lines) + "\n"
 
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
-    def _load_cache(self) -> Dict[str, List[MemoryEntry]]:
+    def _load_cache(self) -> dict[str, list[MemoryEntry]]:
         if self._cache is not None:
             return self._cache
 
-        cache: Dict[str, List[MemoryEntry]] = {}
+        cache: dict[str, list[MemoryEntry]] = {}
         for line in self.json_path.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
@@ -112,9 +110,9 @@ class ConversationMemory:
         self._cache = cache
         return cache
 
-    def _persist(self, cache: Dict[str, List[MemoryEntry]]) -> None:
-        lines: List[str] = []
-        md_lines: List[str] = ["# Agent memory log", ""]
+    def _persist(self, cache: dict[str, list[MemoryEntry]]) -> None:
+        lines: list[str] = []
+        md_lines: list[str] = ["# Agent memory log", ""]
         for thread_id, entries in cache.items():
             md_lines.append(f"## Thread {thread_id}")
             for entry in entries:
@@ -130,7 +128,9 @@ class ConversationMemory:
                 )
             md_lines.append("")
 
-        self.json_path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+        self.json_path.write_text(
+            "\n".join(lines) + ("\n" if lines else ""), encoding="utf-8"
+        )
         self.store_path.write_text("\n".join(md_lines) + "\n", encoding="utf-8")
         self._cache = cache
 

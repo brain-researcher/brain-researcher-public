@@ -16,22 +16,24 @@ import json
 import logging
 import os
 import time
-from dataclasses import dataclass, asdict
-from typing import Any, Dict, Optional
+from dataclasses import dataclass
+from typing import Any
 
 from brain_researcher.services.agent.planner.config_loader import load_planner_config
 
 
-def _load_cache_settings() -> Dict[str, Any]:
+def _load_cache_settings() -> dict[str, Any]:
     """Load cache-related settings from planner config."""
     config = load_planner_config("preflight.yaml")
     return config.get("cache", {})
+
 
 logger = logging.getLogger(__name__)
 
 # Try to import Redis, fallback gracefully if unavailable
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -41,6 +43,7 @@ except ImportError:
 @dataclass
 class CacheEntry:
     """Cache entry with value and expiration."""
+
     value: Any
     expires_at: float  # Unix timestamp
 
@@ -60,8 +63,8 @@ class PreflightCache:
 
     def __init__(
         self,
-        ttl_seconds: Optional[int] = None,
-        redis_url: Optional[str] = None,
+        ttl_seconds: int | None = None,
+        redis_url: str | None = None,
     ):
         """Initialize cache.
 
@@ -85,7 +88,7 @@ class PreflightCache:
 
         # Try Redis connection
         redis_url = redis_url or os.getenv("BR_REDIS_URL")
-        self._redis_client: Optional[Any] = None
+        self._redis_client: Any | None = None
         self._use_redis = False
 
         if redis_url and REDIS_AVAILABLE:
@@ -107,12 +110,12 @@ class PreflightCache:
                 self._redis_client = None
 
         # Fallback in-memory store
-        self._memory_store: Dict[str, CacheEntry] = {}
+        self._memory_store: dict[str, CacheEntry] = {}
 
         if not self._use_redis:
             logger.info("Using in-memory TTL cache")
 
-    def get(self, key: str) -> Optional[Dict[str, Any]]:
+    def get(self, key: str) -> dict[str, Any] | None:
         """Retrieve value from cache.
 
         Args:
@@ -141,7 +144,7 @@ class PreflightCache:
 
         return None
 
-    def set(self, key: str, value: Dict[str, Any]) -> None:
+    def set(self, key: str, value: dict[str, Any]) -> None:
         """Store value in cache with TTL.
 
         Args:
@@ -165,7 +168,7 @@ class PreflightCache:
             expires_at=time.time() + self.ttl_seconds,
         )
 
-    def get_many(self, keys: list[str]) -> Dict[str, Optional[Dict[str, Any]]]:
+    def get_many(self, keys: list[str]) -> dict[str, dict[str, Any] | None]:
         """Batch get multiple keys.
 
         Args:
@@ -184,7 +187,7 @@ class PreflightCache:
                     pipe.get(f"preflight:{key}")
                 redis_values = pipe.execute()
 
-                for key, value in zip(keys, redis_values):
+                for key, value in zip(keys, redis_values, strict=False):
                     if value:
                         results[key] = json.loads(value)
                     else:
@@ -201,7 +204,7 @@ class PreflightCache:
 
         return results
 
-    def set_many(self, items: Dict[str, Dict[str, Any]]) -> None:
+    def set_many(self, items: dict[str, dict[str, Any]]) -> None:
         """Batch set multiple key-value pairs.
 
         Args:
@@ -260,8 +263,7 @@ class PreflightCache:
         """
         now = time.time()
         expired_keys = [
-            key for key, entry in self._memory_store.items()
-            if now >= entry.expires_at
+            key for key, entry in self._memory_store.items() if now >= entry.expires_at
         ]
 
         for key in expired_keys:
@@ -314,7 +316,7 @@ def compute_tool_digest(tool: Any) -> str:
 
 
 # Global cache instance
-_global_cache: Optional[PreflightCache] = None
+_global_cache: PreflightCache | None = None
 
 
 def get_preflight_cache() -> PreflightCache:

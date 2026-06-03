@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 from urllib.parse import urlencode
 
 from flask import Blueprint, jsonify, request, send_file
@@ -41,14 +41,16 @@ DEFAULT_TEMPLATE = os.getenv("BR_KG_VIZ_DEFAULT_TEMPLATE", "mni152").strip() or 
 DEFAULT_DATASET = os.getenv("BR_KG_VIZ_DEFAULT_DATASET", "openneuro/ds000114").strip()
 
 
-def _parse_path_list(env_name: str, defaults: Sequence[Path]) -> List[Path]:
+def _parse_path_list(env_name: str, defaults: Sequence[Path]) -> list[Path]:
     raw = os.getenv(env_name, "").strip()
     if raw:
-        candidates = [Path(item).expanduser() for item in raw.split(os.pathsep) if item.strip()]
+        candidates = [
+            Path(item).expanduser() for item in raw.split(os.pathsep) if item.strip()
+        ]
     else:
         candidates = list(defaults)
 
-    unique: List[Path] = []
+    unique: list[Path] = []
     seen = set()
     for path in candidates:
         key = str(path)
@@ -132,7 +134,7 @@ def _is_nifti(path: Path) -> bool:
     return path.is_file() and path.name.endswith(_NIFTI_EXTENSIONS)
 
 
-def _sorted_nifti_files(directory: Path) -> List[Path]:
+def _sorted_nifti_files(directory: Path) -> list[Path]:
     results = [p for p in directory.glob("*.nii*") if _is_nifti(p)]
     return sorted(results)
 
@@ -148,12 +150,12 @@ def _build_viz_url(endpoint: str, **params: str) -> str:
     return f"/api/viz/brain/{endpoint}{f'?{qs}' if qs else ''}"
 
 
-def _resolve_template_file(template: Optional[str] = None) -> Optional[Path]:
+def _resolve_template_file(template: str | None = None) -> Path | None:
     requested = (template or DEFAULT_TEMPLATE).strip()
     if not requested:
         requested = DEFAULT_TEMPLATE
 
-    names: List[str]
+    names: list[str]
     if requested.endswith(".nii") or requested.endswith(".nii.gz"):
         names = [requested]
     else:
@@ -162,17 +164,21 @@ def _resolve_template_file(template: Optional[str] = None) -> Optional[Path]:
     for root in _existing_dirs(TEMPLATE_ROOTS):
         for name in names:
             candidate = (root / name).resolve()
-            if candidate.exists() and _is_within_root(candidate, root) and candidate.is_file():
+            if (
+                candidate.exists()
+                and _is_within_root(candidate, root)
+                and candidate.is_file()
+            ):
                 return candidate
     return None
 
 
-def _discover_dataset_dirs(limit: int = 64) -> List[Tuple[str, Path]]:
-    discovered: List[Tuple[str, Path]] = []
+def _discover_dataset_dirs(limit: int = 64) -> list[tuple[str, Path]]:
+    discovered: list[tuple[str, Path]] = []
     seen = set()
 
     for root in _existing_dirs(DATASET_ROOTS):
-        candidates: List[Tuple[str, Path]] = []
+        candidates: list[tuple[str, Path]] = []
         for ds_dir in sorted(root.glob("ds*")):
             if ds_dir.is_dir():
                 candidates.append((ds_dir.name, ds_dir))
@@ -195,12 +201,16 @@ def _discover_dataset_dirs(limit: int = 64) -> List[Tuple[str, Path]]:
     return discovered
 
 
-def _resolve_dataset_dir(dataset_id: Optional[str]) -> Tuple[str, Optional[Path]]:
+def _resolve_dataset_dir(dataset_id: str | None) -> tuple[str, Path | None]:
     if dataset_id:
         normalized = _sanitize_dataset_id(dataset_id)
         for root in _existing_dirs(DATASET_ROOTS):
             candidate = (root / normalized).resolve()
-            if candidate.exists() and candidate.is_dir() and _is_within_root(candidate, root):
+            if (
+                candidate.exists()
+                and candidate.is_dir()
+                and _is_within_root(candidate, root)
+            ):
                 return normalized, candidate
         return normalized, None
 
@@ -219,21 +229,23 @@ def _resolve_dataset_dir(dataset_id: Optional[str]) -> Tuple[str, Optional[Path]
     return "", None
 
 
-def _normalize_subject(raw: Optional[str]) -> Optional[str]:
+def _normalize_subject(raw: str | None) -> str | None:
     if not raw:
         return None
     value = _sanitize_segment(raw, label="subject")
     return value if value.startswith("sub-") else f"sub-{value}"
 
 
-def _normalize_session(raw: Optional[str]) -> Optional[str]:
+def _normalize_session(raw: str | None) -> str | None:
     if not raw:
         return None
     value = _sanitize_segment(raw, label="session")
     return value if value.startswith("ses-") else f"ses-{value}"
 
 
-def _resolve_scope_dir(dataset_dir: Path, subject: Optional[str], session: Optional[str]) -> Optional[Path]:
+def _resolve_scope_dir(
+    dataset_dir: Path, subject: str | None, session: str | None
+) -> Path | None:
     scope = dataset_dir
 
     if subject:
@@ -251,7 +263,7 @@ def _resolve_scope_dir(dataset_dir: Path, subject: Optional[str], session: Optio
     return scope
 
 
-def _find_first_matching(scope_dir: Path, patterns: Sequence[str]) -> Optional[Path]:
+def _find_first_matching(scope_dir: Path, patterns: Sequence[str]) -> Path | None:
     for pattern in patterns:
         for candidate in scope_dir.rglob(pattern):
             if _is_nifti(candidate):
@@ -262,10 +274,10 @@ def _find_first_matching(scope_dir: Path, patterns: Sequence[str]) -> Optional[P
 def _select_dataset_files(
     dataset_dir: Path,
     *,
-    subject: Optional[str],
-    session: Optional[str],
-    task: Optional[str],
-) -> Tuple[Optional[Path], Optional[Path]]:
+    subject: str | None,
+    session: str | None,
+    task: str | None,
+) -> tuple[Path | None, Path | None]:
     scope_dir = _resolve_scope_dir(dataset_dir, subject, session)
     if scope_dir is None:
         return None, None
@@ -280,7 +292,7 @@ def _select_dataset_files(
         token = _sanitize_segment(task, label="task").lower()
         task_token = f"task-{token}"
 
-    overlay_patterns: List[str] = []
+    overlay_patterns: list[str] = []
     if task_token:
         overlay_patterns.extend(
             [
@@ -292,7 +304,15 @@ def _select_dataset_files(
             ]
         )
 
-    overlay_patterns.extend(["*zmap*.nii.gz", "*tmap*.nii.gz", "*stat*.nii.gz", "*_bold.nii.gz", "*_bold.nii"])
+    overlay_patterns.extend(
+        [
+            "*zmap*.nii.gz",
+            "*tmap*.nii.gz",
+            "*stat*.nii.gz",
+            "*_bold.nii.gz",
+            "*_bold.nii",
+        ]
+    )
     overlay_file = _find_first_matching(scope_dir, overlay_patterns)
 
     if overlay_file is None and volume_file is not None:
@@ -301,11 +321,15 @@ def _select_dataset_files(
     return volume_file, overlay_file
 
 
-def _resolve_job_dir(job_id: str) -> Optional[Path]:
+def _resolve_job_dir(job_id: str) -> Path | None:
     safe_job_id = _sanitize_segment(job_id, label="job_id")
     for root in _existing_dirs(JOB_ROOTS):
         candidate = (root / safe_job_id).resolve()
-        if candidate.exists() and candidate.is_dir() and _is_within_root(candidate, root):
+        if (
+            candidate.exists()
+            and candidate.is_dir()
+            and _is_within_root(candidate, root)
+        ):
             return candidate
     return None
 
@@ -318,7 +342,9 @@ def _safe_join(root: Path, relpath: str) -> Path:
     return candidate
 
 
-def _resolve_job_file(job_dir: Path, *, kind: str, overlay_name: Optional[str], relpath: Optional[str]) -> Optional[Path]:
+def _resolve_job_file(
+    job_dir: Path, *, kind: str, overlay_name: str | None, relpath: str | None
+) -> Path | None:
     if relpath:
         candidate = _safe_join(job_dir, relpath)
         return candidate if _is_nifti(candidate) else None
@@ -342,12 +368,12 @@ def _resolve_job_file(job_dir: Path, *, kind: str, overlay_name: Optional[str], 
 def _resolve_dataset_file(
     *,
     dataset_id: str,
-    subject: Optional[str],
-    session: Optional[str],
-    task: Optional[str],
-    relpath: Optional[str],
+    subject: str | None,
+    session: str | None,
+    task: str | None,
+    relpath: str | None,
     kind: str,
-) -> Optional[Path]:
+) -> Path | None:
     normalized_dataset, dataset_dir = _resolve_dataset_dir(dataset_id)
     if not normalized_dataset or dataset_dir is None:
         return None
@@ -386,7 +412,7 @@ def get_brain_config():
     task = request.args.get("task")
 
     base_template_url = _build_viz_url("base", template=DEFAULT_TEMPLATE)
-    config: Dict[str, object] = {
+    config: dict[str, object] = {
         "baseVolume": base_template_url,
         "baseVolumeFallback": base_template_url,
         "overlays": [],
@@ -514,7 +540,9 @@ def list_available_datasets():
             )
 
         subjects = sorted(
-            path.name for path in dataset_dir.glob("sub-*") if path.exists() and path.is_dir()
+            path.name
+            for path in dataset_dir.glob("sub-*")
+            if path.exists() and path.is_dir()
         )
         return jsonify(
             {

@@ -6,11 +6,11 @@ import pytest
 
 from brain_researcher.core.contracts.code_review import CodeReviewBundle
 from brain_researcher.services.review.claim_provenance import (
-    build_claim_provenance_gate,
     ClaimProvenance,
+    RunProvenanceIndex,
+    build_claim_provenance_gate,
     build_run_provenance_index,
     coerce_claims,
-    RunProvenanceIndex,
     validate_claim_provenance,
 )
 
@@ -41,7 +41,11 @@ def test_fully_traceable_claim_passes():
 
 @pytest.mark.unit
 def test_missing_provenance_fails_under_require_full():
-    claims = [ClaimProvenance(claim_id="c1", statement="x", artifact_path="derivatives/fc/netmats1.npy")]
+    claims = [
+        ClaimProvenance(
+            claim_id="c1", statement="x", artifact_path="derivatives/fc/netmats1.npy"
+        )
+    ]
     [v] = validate_claim_provenance(claims, _index(), require_full=True)
     assert not v.ok and not v.has_provenance
     assert any("code_ref" in i for i in v.issues)
@@ -119,7 +123,9 @@ def test_bare_tool_resolves_against_step_scoped_ref():
 
 @pytest.mark.unit
 def test_require_full_false_allows_artifact_only():
-    claims = [ClaimProvenance(claim_id="c1", artifact_path="derivatives/fc/netmats1.npy")]
+    claims = [
+        ClaimProvenance(claim_id="c1", artifact_path="derivatives/fc/netmats1.npy")
+    ]
     [v] = validate_claim_provenance(claims, _index(), require_full=False)
     assert v.has_provenance and v.ok
 

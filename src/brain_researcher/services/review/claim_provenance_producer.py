@@ -105,7 +105,9 @@ def _normalize_sha(value: Any) -> str | None:
     return text or None
 
 
-def _match_manifest(ref: Any, manifest_index: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+def _match_manifest(
+    ref: Any, manifest_index: dict[str, dict[str, Any]]
+) -> dict[str, Any] | None:
     norm = _normalize_path(ref)
     if not norm:
         return None
@@ -142,8 +144,10 @@ def _code_ref_for_artifact(
                 cnorm = _normalize_path(candidate) or candidate.lower()
                 if not cnorm:
                     continue
-                if cnorm == norm or norm.startswith(cnorm.rstrip("/") + "/") or (
-                    base and base in cnorm
+                if (
+                    cnorm == norm
+                    or norm.startswith(cnorm.rstrip("/") + "/")
+                    or (base and base in cnorm)
                 ):
                     return _format_code_ref(step)
     if len(steps) == 1:
@@ -154,7 +158,7 @@ def _code_ref_for_artifact(
 def _flatten_strs(value: Any) -> list[str]:
     if isinstance(value, str):
         return [value]
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         out: list[str] = []
         for item in value:
             out.extend(_flatten_strs(item))
@@ -175,7 +179,9 @@ def _format_code_ref(step: dict[str, Any]) -> str:
     return tool
 
 
-def _claim_candidate_refs(claim: Any, evidence_by_id: dict[str, Any]) -> list[tuple[str, Any]]:
+def _claim_candidate_refs(
+    claim: Any, evidence_by_id: dict[str, Any]
+) -> list[tuple[str, Any]]:
     """Yield (evidence_id, ref) candidates for a claim, de-duplicated.
 
     Resolves each ``evidence_id`` to the evidence item's ``ref``/``payload_ref``;
@@ -285,9 +291,7 @@ def attach_claim_artifact_provenance(
             extra["artifact_provenance"] = records
             summary.claims_provenanced += 1
         else:
-            summary.unprovenanced_claim_ids.append(
-                str(getattr(claim, "claim_id", ""))
-            )
+            summary.unprovenanced_claim_ids.append(str(getattr(claim, "claim_id", "")))
 
     return summary
 

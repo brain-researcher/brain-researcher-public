@@ -1,8 +1,9 @@
 """Cache management API endpoints (P2.5)."""
 
-from fastapi import APIRouter, HTTPException, Query, Body
-from typing import Optional, Dict, Any
 import logging
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/cache", tags=["cache"])
@@ -11,9 +12,10 @@ logger = logging.getLogger(__name__)
 
 class CacheResolveRequest(BaseModel):
     """Request model for POST /api/cache/resolve."""
+
     tool: str
-    tool_version: Optional[str] = None
-    parameters: Dict[str, Any] = {}
+    tool_version: str | None = None
+    parameters: dict[str, Any] = {}
     container_image: str = ""
 
 
@@ -59,8 +61,8 @@ async def resolve_from_params(request: CacheResolveRequest):
     Raises:
         503: Cache not enabled
     """
-    from .main_enhanced import cache_store
     from .cache_key import build_cache_key
+    from .main_enhanced import cache_store
 
     if not cache_store:
         raise HTTPException(503, "Cache not enabled (BR_CACHE_ENABLED=false)")
@@ -118,8 +120,10 @@ async def get_cache_stats():
 
 @router.delete("")
 async def clear_cache(
-    tool_version: Optional[str] = Query(None, description="Clear entries for specific tool version"),
-    git_sha: Optional[str] = Query(None, description="Clear entries for specific git SHA"),
+    tool_version: str | None = Query(
+        None, description="Clear entries for specific tool version"
+    ),
+    git_sha: str | None = Query(None, description="Clear entries for specific git SHA"),
 ):
     """Clear cache entries.
 

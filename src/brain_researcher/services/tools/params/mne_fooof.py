@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -15,23 +15,23 @@ from brain_researcher.core.utils import configure_mne_environment
 @dataclass(frozen=True)
 class MNEFOOOFParameters:
     output_dir: str
-    freq_range: Tuple[float, float] = (1.0, 40.0)
-    peak_width_limits: Tuple[float, float] = (0.5, 12.0)
+    freq_range: tuple[float, float] = (1.0, 40.0)
+    peak_width_limits: tuple[float, float] = (0.5, 12.0)
     max_n_peaks: int = 6
     min_peak_height: float = 0.0
     peak_threshold: float = 2.0
     aperiodic_mode: str = "fixed"
-    raw_file: Optional[str] = None
-    epochs_file: Optional[str] = None
-    psd_file: Optional[str] = None
-    picks: Optional[Tuple[str, ...]] = None
+    raw_file: str | None = None
+    epochs_file: str | None = None
+    psd_file: str | None = None
+    picks: tuple[str, ...] | None = None
     group_mode: bool = False
     save_model: bool = True
     save_report: bool = True
     save_plots: bool = True
 
 
-def _ensure_path(path: Optional[str]) -> Optional[str]:
+def _ensure_path(path: str | None) -> str | None:
     if path is None:
         return None
     p = Path(path)
@@ -40,7 +40,9 @@ def _ensure_path(path: Optional[str]) -> Optional[str]:
     return str(p)
 
 
-def _fit_aperiodic(freqs: np.ndarray, psd: np.ndarray) -> tuple[float, float, np.ndarray]:
+def _fit_aperiodic(
+    freqs: np.ndarray, psd: np.ndarray
+) -> tuple[float, float, np.ndarray]:
     log_freqs = np.log10(freqs)
     log_power = np.log10(psd)
     design = np.column_stack([np.ones_like(log_freqs), -log_freqs])
@@ -63,7 +65,9 @@ def _extract_peaks(
 
     offset, exponent, aperiodic_fit = _fit_aperiodic(freqs, psd)
     residual = np.log10(psd) - aperiodic_fit
-    peaks, props = find_peaks(residual, height=min_peak_height, prominence=peak_threshold)
+    peaks, props = find_peaks(
+        residual, height=min_peak_height, prominence=peak_threshold
+    )
     peak_params: list[list[float]] = []
     if peaks.size:
         widths, _, _, _ = peak_widths(residual, peaks, rel_height=0.5)
@@ -81,12 +85,12 @@ def _extract_peaks(
     return [offset, exponent], peak_params
 
 
-def mne_fooof_from_payload(payload: Dict[str, Any]) -> MNEFOOOFParameters:
+def mne_fooof_from_payload(payload: dict[str, Any]) -> MNEFOOOFParameters:
     picks = payload.get("picks")
     picks_tuple = None
     if isinstance(picks, str):
         picks_tuple = (picks,)
-    elif isinstance(picks, (list, tuple)):
+    elif isinstance(picks, list | tuple):
         picks_tuple = tuple(picks)
     return MNEFOOOFParameters(
         output_dir=str(payload["output_dir"]),
@@ -107,7 +111,7 @@ def mne_fooof_from_payload(payload: Dict[str, Any]) -> MNEFOOOFParameters:
     )
 
 
-def run_mne_fooof(params: MNEFOOOFParameters) -> Dict[str, Any]:
+def run_mne_fooof(params: MNEFOOOFParameters) -> dict[str, Any]:
     output_dir = Path(params.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -125,9 +129,13 @@ def run_mne_fooof(params: MNEFOOOFParameters) -> Dict[str, Any]:
             freqs = loaded["freqs"]
         else:
             psd = np.load(psd_path)
-            freqs = np.linspace(params.freq_range[0], params.freq_range[1], psd.shape[-1])
+            freqs = np.linspace(
+                params.freq_range[0], params.freq_range[1], psd.shape[-1]
+            )
     elif params.epochs_file:
-        epochs = mne.read_epochs(_ensure_path(params.epochs_file), preload=True, verbose=False)
+        epochs = mne.read_epochs(
+            _ensure_path(params.epochs_file), preload=True, verbose=False
+        )
         info = epochs.info
         spectrum = epochs.compute_psd(
             method="welch",
@@ -139,7 +147,9 @@ def run_mne_fooof(params: MNEFOOOFParameters) -> Dict[str, Any]:
         data = spectrum.get_data()
         psd = data.mean(axis=0)
     elif params.raw_file:
-        raw = mne.io.read_raw_fif(_ensure_path(params.raw_file), preload=True, verbose=False)
+        raw = mne.io.read_raw_fif(
+            _ensure_path(params.raw_file), preload=True, verbose=False
+        )
         info = raw.info
         spectrum = raw.compute_psd(
             method="welch",
@@ -177,8 +187,12 @@ def run_mne_fooof(params: MNEFOOOFParameters) -> Dict[str, Any]:
             )
             fg_group.fit(freqs, psd)
             fooof_summary = {
-                "aperiodic_params": [ap.tolist() for ap in fg_group.get_params("aperiodic_params")],
-                "peak_params": [pk.tolist() for pk in fg_group.get_params("peak_params")],
+                "aperiodic_params": [
+                    ap.tolist() for ap in fg_group.get_params("aperiodic_params")
+                ],
+                "peak_params": [
+                    pk.tolist() for pk in fg_group.get_params("peak_params")
+                ],
                 "n_channels": psd.shape[0],
             }
         else:
@@ -245,6 +259,7 @@ def run_mne_fooof(params: MNEFOOOFParameters) -> Dict[str, Any]:
     plots = {}
     if params.save_plots:
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 

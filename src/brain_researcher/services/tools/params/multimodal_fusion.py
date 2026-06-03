@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional
 
 import numpy as np
 
@@ -14,17 +13,19 @@ import numpy as np
 class MultimodalFusionParameters:
     """Configuration for multimodal fusion."""
 
-    structural_file: Optional[str]
-    functional_file: Optional[str]
+    structural_file: str | None
+    functional_file: str | None
     output_dir: str
     fusion_method: str
     n_components: int
-    random_state: Optional[int]
+    random_state: int | None
     save_fused: bool
     save_components: bool
 
 
-def multimodal_fusion_from_payload(payload: Dict[str, object]) -> MultimodalFusionParameters:
+def multimodal_fusion_from_payload(
+    payload: dict[str, object],
+) -> MultimodalFusionParameters:
     """Construct parameters from payload."""
 
     return MultimodalFusionParameters(
@@ -39,7 +40,7 @@ def multimodal_fusion_from_payload(payload: Dict[str, object]) -> MultimodalFusi
     )
 
 
-def _load_modality(path: Optional[str], rng: np.random.Generator) -> np.ndarray:
+def _load_modality(path: str | None, rng: np.random.Generator) -> np.ndarray:
     if not path:
         return rng.normal(size=(120, 50))
 
@@ -77,10 +78,10 @@ def _truncate_components(data: np.ndarray, n_components: int) -> np.ndarray:
     if data.shape[1] <= n_components:
         return data
     u, s, vh = np.linalg.svd(data, full_matrices=False)
-    return (u[:, :n_components] * s[:n_components])
+    return u[:, :n_components] * s[:n_components]
 
 
-def run_multimodal_fusion(params: MultimodalFusionParameters) -> Dict[str, object]:
+def run_multimodal_fusion(params: MultimodalFusionParameters) -> dict[str, object]:
     """Execute fallback multimodal fusion."""
 
     rng = np.random.default_rng(params.random_state)
@@ -105,8 +106,12 @@ def run_multimodal_fusion(params: MultimodalFusionParameters) -> Dict[str, objec
 
     fused = _truncate_components(fused, params.n_components)
 
-    correlation_before = float(np.corrcoef(structural.mean(axis=1), functional.mean(axis=1))[0, 1])
-    correlation_after = float(np.corrcoef(fused.mean(axis=1), structural.mean(axis=1))[0, 1])
+    correlation_before = float(
+        np.corrcoef(structural.mean(axis=1), functional.mean(axis=1))[0, 1]
+    )
+    correlation_after = float(
+        np.corrcoef(fused.mean(axis=1), structural.mean(axis=1))[0, 1]
+    )
     variance_struct = float(np.var(structural))
     variance_func = float(np.var(functional))
     variance_fused = float(np.var(fused))
@@ -114,7 +119,11 @@ def run_multimodal_fusion(params: MultimodalFusionParameters) -> Dict[str, objec
     out_dir = Path(params.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    outputs: Dict[str, Optional[str]] = {"summary": None, "fused_features": None, "components": None}
+    outputs: dict[str, str | None] = {
+        "summary": None,
+        "fused_features": None,
+        "components": None,
+    }
 
     if params.save_fused:
         fused_path = out_dir / "fused_features.npy"

@@ -21,12 +21,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from brain_researcher.services.knowledge.evidence.base import (
-    EvidenceBundle,
     EvidenceQuery,
     EvidenceResult,
     EvidenceSourceType,
@@ -34,7 +33,6 @@ from brain_researcher.services.knowledge.evidence.base import (
 from brain_researcher.services.knowledge.planner import (
     DecisionType,
     EvidenceAggregator,
-    KnowledgePlan,
     KnowledgePlanner,
 )
 
@@ -50,7 +48,7 @@ class QueryKGInput(BaseModel):
     """Input for knowledge graph query."""
 
     query: str = Field(description="Search text for KG concepts and brain regions")
-    node_types: Optional[List[str]] = Field(
+    node_types: list[str] | None = Field(
         default=None,
         description="Filter by node types: 'Concept', 'BrainRegion', etc.",
     )
@@ -61,11 +59,11 @@ class SearchDatasetsInput(BaseModel):
     """Input for dataset search."""
 
     query: str = Field(description="Search text for datasets")
-    modality: Optional[str] = Field(
+    modality: str | None = Field(
         default=None,
         description="Filter by modality: 'fmri', 'eeg', 'meg', etc.",
     )
-    min_subjects: Optional[int] = Field(
+    min_subjects: int | None = Field(
         default=None,
         description="Minimum number of subjects required",
     )
@@ -83,11 +81,11 @@ class SearchLiteratureInput(BaseModel):
     """Input for literature search."""
 
     query: str = Field(description="Search text for literature")
-    year_min: Optional[int] = Field(
+    year_min: int | None = Field(
         default=None,
         description="Minimum publication year",
     )
-    year_max: Optional[int] = Field(
+    year_max: int | None = Field(
         default=None,
         description="Maximum publication year",
     )
@@ -109,7 +107,7 @@ class GatherEvidenceInput(BaseModel):
     """Input for evidence gathering."""
 
     query: str = Field(description="The query to gather evidence for")
-    source_types: Optional[List[str]] = Field(
+    source_types: list[str] | None = Field(
         default=None,
         description="Sources to query: 'kg', 'pubmed', 'datasets', 'tools', 'niclip'",
     )
@@ -123,7 +121,7 @@ class BuildPlanInput(BaseModel):
     """Input for knowledge plan building."""
 
     query: str = Field(description="The neuroimaging question")
-    force_intent: Optional[str] = Field(
+    force_intent: str | None = Field(
         default=None,
         description="Force intent: 'explanation', 'dataset_selection', 'pipeline_recommendation', 'concept_lookup'",
     )
@@ -156,9 +154,9 @@ class ToolResult(BaseModel):
     """Standard result type for knowledge tools."""
 
     status: str = Field(description="'success' or 'error'")
-    data: Optional[Dict[str, Any]] = Field(default=None)
-    error: Optional[str] = Field(default=None)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    data: dict[str, Any] | None = Field(default=None)
+    error: str | None = Field(default=None)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +167,7 @@ class ToolResult(BaseModel):
 def _run_async(coro):
     """Run async coroutine from sync context."""
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
     except RuntimeError:
         return asyncio.run(coro)
 
@@ -192,7 +190,7 @@ def _run_async(coro):
     return result_box["value"]
 
 
-def _format_results(results: List[EvidenceResult]) -> List[Dict[str, Any]]:
+def _format_results(results: list[EvidenceResult]) -> list[dict[str, Any]]:
     """Format evidence results for tool output."""
     return [
         {
@@ -209,7 +207,9 @@ def _format_results(results: List[EvidenceResult]) -> List[Dict[str, Any]]:
     ]
 
 
-def _parse_source_types(source_strs: Optional[List[str]]) -> Optional[List[EvidenceSourceType]]:
+def _parse_source_types(
+    source_strs: list[str] | None,
+) -> list[EvidenceSourceType] | None:
     """Parse source type strings to enums."""
     if not source_strs:
         return None
@@ -232,7 +232,7 @@ def _parse_source_types(source_strs: Optional[List[str]]) -> Optional[List[Evide
     return result if result else None
 
 
-def _parse_decision_type(intent_str: Optional[str]) -> Optional[DecisionType]:
+def _parse_decision_type(intent_str: str | None) -> DecisionType | None:
     """Parse intent string to DecisionType."""
     if not intent_str:
         return None
@@ -254,7 +254,7 @@ def _parse_decision_type(intent_str: Optional[str]) -> Optional[DecisionType]:
 
 def query_kg(
     query: str,
-    node_types: Optional[List[str]] = None,
+    node_types: list[str] | None = None,
     limit: int = 10,
 ) -> ToolResult:
     """Query knowledge graph for concepts and brain regions.
@@ -301,8 +301,8 @@ def query_kg(
 
 def search_datasets(
     query: str,
-    modality: Optional[str] = None,
-    min_subjects: Optional[int] = None,
+    modality: str | None = None,
+    min_subjects: int | None = None,
     limit: int = 10,
 ) -> ToolResult:
     """Search dataset catalog.
@@ -384,8 +384,8 @@ def search_tools(
 
 def search_literature(
     query: str,
-    year_min: Optional[int] = None,
-    year_max: Optional[int] = None,
+    year_min: int | None = None,
+    year_max: int | None = None,
     limit: int = 10,
 ) -> ToolResult:
     """Search PubMed/literature.
@@ -482,7 +482,7 @@ def query_niclip(
 
 def gather_evidence(
     query: str,
-    source_types: Optional[List[str]] = None,
+    source_types: list[str] | None = None,
     limit_per_source: int = 10,
 ) -> ToolResult:
     """Gather evidence from multiple sources.
@@ -537,7 +537,7 @@ def gather_evidence(
 
 def build_plan(
     query: str,
-    force_intent: Optional[str] = None,
+    force_intent: str | None = None,
     use_llm: bool = True,
 ) -> ToolResult:
     """Build a knowledge plan with intent classification.
@@ -648,9 +648,9 @@ def explain(
                 "niclip_concepts": niclip_concepts,
             },
             metadata={
-                "evidence_count": plan.evidence_bundle.total_count
-                if plan.evidence_bundle
-                else 0,
+                "evidence_count": (
+                    plan.evidence_bundle.total_count if plan.evidence_bundle else 0
+                ),
             },
         )
 
@@ -725,7 +725,7 @@ TOOL_DEFINITIONS = [
 ]
 
 
-def get_tool_definitions() -> List[Dict[str, Any]]:
+def get_tool_definitions() -> list[dict[str, Any]]:
     """Get all tool definitions for registration.
 
     Returns:
@@ -734,7 +734,7 @@ def get_tool_definitions() -> List[Dict[str, Any]]:
     return TOOL_DEFINITIONS.copy()
 
 
-def get_tool_by_name(name: str) -> Optional[Dict[str, Any]]:
+def get_tool_by_name(name: str) -> dict[str, Any] | None:
     """Get a tool definition by name.
 
     Args:

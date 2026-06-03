@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 """Quick test script to verify new features are working."""
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent))
+
 
 def test_batch_processor():
     """Test the batch processing system."""
     print("\n=== Testing Batch Processor ===")
 
     from brain_researcher.core.ingestion.batch.processor import (
-        JobQueue, Job, JobPriority, JobStatus, BatchProcessor
+        Job,
+        JobPriority,
+        JobQueue,
     )
 
     # Create job queue
@@ -25,7 +28,7 @@ def test_batch_processor():
         job_id="test_001",
         job_type="test_ingestion",
         priority=JobPriority.HIGH,
-        params={"test": True}
+        params={"test": True},
     )
 
     # Submit job
@@ -53,7 +56,8 @@ def test_vector_search():
     print("\n=== Testing Vector Search ===")
 
     from brain_researcher.services.br_kg.search.vector_search import (
-        VectorSearchEngine, VectorBackend
+        VectorBackend,
+        VectorSearchEngine,
     )
 
     # Create vector search engine with FAISS
@@ -62,7 +66,8 @@ def test_vector_search():
 
     # Test data
     import numpy as np
-    vectors = np.random.randn(100, 768).astype('float32')
+
+    vectors = np.random.randn(100, 768).astype("float32")
     metadata = [{"id": f"doc_{i}", "text": f"Document {i}"} for i in range(100)]
 
     # Add vectors
@@ -70,14 +75,16 @@ def test_vector_search():
     print(f"✓ Added {len(vectors)} vectors to index")
 
     # Search
-    query_vector = np.random.randn(1, 768).astype('float32')
+    query_vector = np.random.randn(1, 768).astype("float32")
     results = engine.search(query_vector[0], k=5)
     print(f"✓ Search returned {len(results)} results")
 
     # Show top result
     if results:
         top_result = results[0]
-        print(f"  Top result: ID={top_result['metadata']['id']}, Score={top_result['score']:.3f}")
+        print(
+            f"  Top result: ID={top_result['metadata']['id']}, Score={top_result['score']:.3f}"
+        )
 
     return True
 
@@ -87,7 +94,8 @@ def test_query_optimizer():
     print("\n=== Testing Query Optimizer ===")
 
     from brain_researcher.services.br_kg.optimization.query_optimizer import (
-        QueryOptimizer, OptimizationStrategy
+        OptimizationStrategy,
+        QueryOptimizer,
     )
 
     # Create optimizer
@@ -123,7 +131,9 @@ def test_authentication():
     print("\n=== Testing Authentication System ===")
 
     from brain_researcher.services.br_kg.auth.authentication import (
-        AuthenticationManager, Role, Permission
+        AuthenticationManager,
+        Permission,
+        Role,
     )
 
     # Create auth manager
@@ -135,7 +145,7 @@ def test_authentication():
         email="test@example.com",
         username="testuser",
         password="testpass123",
-        role=Role.RESEARCHER
+        role=Role.RESEARCHER,
     )
     print(f"✓ User created: {user.username} (Role: {user.role.value})")
 
@@ -154,16 +164,16 @@ def test_authentication():
 
     # Create API key
     api_key = auth.create_api_key(
-        user,
-        name="Test API Key",
-        scopes=["read:concepts", "read:tasks"]
+        user, name="Test API Key", scopes=["read:concepts", "read:tasks"]
     )
     print(f"✓ API key created: {api_key[:20]}...")
 
     # Check permissions
     can_write = auth.check_permission(user, Permission.WRITE_CONCEPTS)
     can_admin = auth.check_permission(user, Permission.MANAGE_USERS)
-    print(f"✓ Permission check - Write concepts: {can_write}, Manage users: {can_admin}")
+    print(
+        f"✓ Permission check - Write concepts: {can_write}, Manage users: {can_admin}"
+    )
 
     # Log audit event
     auth.log_audit(
@@ -171,7 +181,7 @@ def test_authentication():
         action="TEST_ACTION",
         resource="TestResource",
         resource_id="test_123",
-        success=True
+        success=True,
     )
     print(f"✓ Audit event logged ({len(auth.audit_logs)} total events)")
 
@@ -183,19 +193,23 @@ def test_performance_optimizer():
     print("\n=== Testing Performance Optimizer ===")
 
     from brain_researcher.services.br_kg.graph.performance_optimizer import (
-        PerformanceOptimizer, optimize_database
+        PerformanceOptimizer,
     )
 
     # Mock database connection
     class MockDB:
         def cursor(self):
             return self
+
         def execute(self, query):
             pass
+
         def commit(self):
             pass
+
         def fetchone(self):
             return [100]
+
         def fetchall(self):
             return []
 
@@ -217,7 +231,7 @@ def test_performance_optimizer():
 
     # Benchmark
     metrics = optimizer.benchmark_performance()
-    print(f"✓ Performance benchmark:")
+    print("✓ Performance benchmark:")
     print(f"  Node count: {metrics.get('node_count', 0)}")
     print(f"  Read time: {metrics.get('read_time_ms', 0):.2f}ms")
     print(f"  Throughput: {metrics.get('read_throughput', 0):.0f} nodes/sec")

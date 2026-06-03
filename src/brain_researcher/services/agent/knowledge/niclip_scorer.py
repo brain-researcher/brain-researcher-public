@@ -15,7 +15,6 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -59,7 +58,7 @@ class NiCLIPScorer:
 
     def __init__(
         self,
-        niclip_data_path: Optional[str] = None,
+        niclip_data_path: str | None = None,
         vocabulary_type: str = "cogatlas_task-names",
         top_k: int = 10,
     ):
@@ -84,11 +83,11 @@ class NiCLIPScorer:
 
         # Lazy-loaded service and cache
         self._service = None
-        self._available: Optional[bool] = None
+        self._available: bool | None = None
         self._engine = None
 
         # Cached vocabulary data
-        self._vocab_cache: Optional[Tuple[List[str], np.ndarray, np.ndarray]] = None
+        self._vocab_cache: tuple[list[str], np.ndarray, np.ndarray] | None = None
 
     def _get_service(self):
         """Lazy-load the NiCLIP embedding service."""
@@ -120,7 +119,7 @@ class NiCLIPScorer:
                     self._service = None
         return self._service
 
-    def _get_vocabulary(self) -> Optional[Tuple[List[str], np.ndarray, np.ndarray]]:
+    def _get_vocabulary(self) -> tuple[list[str], np.ndarray, np.ndarray] | None:
         """Get cached vocabulary, embeddings, and priors."""
         if self._vocab_cache is not None:
             return self._vocab_cache
@@ -155,7 +154,7 @@ class NiCLIPScorer:
         self._available = vocab_data is not None and len(vocab_data[0]) > 0
         return self._available
 
-    def score_text_keyword(self, text: str) -> List[ScoredConcept]:
+    def score_text_keyword(self, text: str) -> list[ScoredConcept]:
         """Score text against vocabulary using keyword matching.
 
         This is a fast scoring method that doesn't require embeddings.
@@ -190,8 +189,8 @@ class NiCLIPScorer:
                 term_words = set(term_lower.split())
                 overlap = query_words.intersection(term_words)
                 if overlap:
-                    base_score = 0.4 * len(overlap) / max(
-                        len(query_words), len(term_words)
+                    base_score = (
+                        0.4 * len(overlap) / max(len(query_words), len(term_words))
                     )
                 else:
                     continue  # Skip if no overlap
@@ -214,9 +213,7 @@ class NiCLIPScorer:
         scored.sort(key=lambda x: x.score, reverse=True)
         return scored[: self._top_k]
 
-    def score_text_semantic(
-        self, query_embedding: np.ndarray
-    ) -> List[ScoredConcept]:
+    def score_text_semantic(self, query_embedding: np.ndarray) -> list[ScoredConcept]:
         """Score using a pre-computed embedding vector.
 
         This provides full semantic similarity using FAISS.
@@ -244,7 +241,7 @@ class NiCLIPScorer:
             )
 
             scored = []
-            for dist, idx in zip(distances, indices):
+            for dist, idx in zip(distances, indices, strict=False):
                 if idx < 0 or idx >= len(vocab):
                     continue
 
@@ -253,9 +250,9 @@ class NiCLIPScorer:
                         term=vocab[idx],
                         score=float(dist),  # Cosine similarity
                         vocabulary_index=int(idx),
-                        prior_probability=float(priors[idx])
-                        if idx < len(priors)
-                        else 0.5,
+                        prior_probability=(
+                            float(priors[idx]) if idx < len(priors) else 0.5
+                        ),
                         vocabulary_type=self._vocabulary_type,
                     )
                 )
@@ -283,12 +280,12 @@ class NiCLIPScorer:
 
         # Average of top-k scores, weighted toward top matches
         weights = [1.0 / (i + 1) for i in range(len(scored))]
-        weighted_sum = sum(s.score * w for s, w in zip(scored, weights))
+        weighted_sum = sum(s.score * w for s, w in zip(scored, weights, strict=False))
         total_weight = sum(weights)
 
         return weighted_sum / total_weight if total_weight > 0 else 0.0
 
-    def get_evidence_items(self, query: str, limit: int = 5) -> List[EvidenceItem]:
+    def get_evidence_items(self, query: str, limit: int = 5) -> list[EvidenceItem]:
         """Get evidence items from NiCLIP matches.
 
         Args:
@@ -356,7 +353,7 @@ class NiCLIPConnector:
 
     def __init__(
         self,
-        niclip_data_path: Optional[str] = None,
+        niclip_data_path: str | None = None,
         vocabulary_type: str = "cogatlas_task-names",
     ):
         """Initialize the NiCLIP connector.
@@ -378,7 +375,7 @@ class NiCLIPConnector:
     def source_type(self) -> EvidenceSourceType:
         return EvidenceSourceType.NICLIP
 
-    async def search(self, query: str, limit: int = 10) -> List[EvidenceItem]:
+    async def search(self, query: str, limit: int = 10) -> list[EvidenceItem]:
         """Search for NiCLIP matches.
 
         Args:
@@ -400,7 +397,7 @@ class NiCLIPConnector:
 
 # Factory function for easy creation
 def create_niclip_scorer(
-    data_path: Optional[str] = None,
+    data_path: str | None = None,
     vocabulary_type: str = "cogatlas_task-names",
 ) -> NiCLIPScorer:
     """Create a NiCLIP scorer with sensible defaults.

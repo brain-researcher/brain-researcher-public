@@ -4,19 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
-from collections import deque
+from collections.abc import Iterable
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Iterable, List, Optional
-
-import logging
 
 from brain_researcher.config.paths import get_data_root
 
-from .models import _is_test_env
-
-from .models import TelemetryEvent
+from .models import TelemetryEvent, _is_test_env
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +22,9 @@ class TelemetryEventStore:
 
     def __init__(
         self,
-        base_dir: Optional[os.PathLike[str] | str] = None,
+        base_dir: os.PathLike[str] | str | None = None,
         *,
-        retention_days: Optional[int] = None,
+        retention_days: int | None = None,
     ) -> None:
         configured_dir = base_dir or os.getenv("TELEMETRY_DATA_DIR")
         data_root = (
@@ -41,22 +37,22 @@ class TelemetryEventStore:
         self.events_file = self.base_path / "events.ndjson"
         self.retention_days = retention_days
         self._write_locks: dict[int, asyncio.Lock] = {}
-        self._last_prune: Optional[datetime] = None
+        self._last_prune: datetime | None = None
 
     def load_recent_events(
         self,
-        max_age_days: Optional[int] = None,
-        limit: Optional[int] = 5000,
-    ) -> List[TelemetryEvent]:
+        max_age_days: int | None = None,
+        limit: int | None = 5000,
+    ) -> list[TelemetryEvent]:
         """Load recent events from disk (best-effort)."""
         if not self.events_file.exists():
             return []
 
-        cutoff: Optional[datetime] = None
+        cutoff: datetime | None = None
         if max_age_days:
             cutoff = datetime.utcnow() - timedelta(days=max_age_days)
 
-        events: List[TelemetryEvent] = []
+        events: list[TelemetryEvent] = []
         try:
             with self.events_file.open("r", encoding="utf-8") as fp:
                 for line in fp:
@@ -67,7 +63,9 @@ class TelemetryEventStore:
                         payload = json.loads(line)
                         event = TelemetryEvent(**payload)
                     except Exception:
-                        logger.warning("Skipping malformed telemetry event line", exc_info=True)
+                        logger.warning(
+                            "Skipping malformed telemetry event line", exc_info=True
+                        )
                         continue
                     if cutoff and event.timestamp < cutoff:
                         continue
@@ -85,7 +83,9 @@ class TelemetryEventStore:
         if not batch:
             return
 
-        lines = "\n".join(json.dumps(evt.model_dump(mode="json")) for evt in batch) + "\n"
+        lines = (
+            "\n".join(json.dumps(evt.model_dump(mode="json")) for evt in batch) + "\n"
+        )
         async with self._get_write_lock():
             if _is_test_env():
                 # Avoid executor deadlocks in test harnesses.
@@ -100,7 +100,9 @@ class TelemetryEventStore:
         batch = list(events)
         if not batch:
             return
-        lines = "\n".join(json.dumps(evt.model_dump(mode="json")) for evt in batch) + "\n"
+        lines = (
+            "\n".join(json.dumps(evt.model_dump(mode="json")) for evt in batch) + "\n"
+        )
         self._append_text(lines)
         self._maybe_prune_sync()
 
@@ -149,7 +151,10 @@ class TelemetryEventStore:
             return
         temp_path = self.events_file.with_suffix(".tmp")
         kept = 0
-        with self.events_file.open("r", encoding="utf-8") as src, temp_path.open("w", encoding="utf-8") as dst:
+        with (
+            self.events_file.open("r", encoding="utf-8") as src,
+            temp_path.open("w", encoding="utf-8") as dst,
+        ):
             for line in src:
                 try:
                     payload = json.loads(line)

@@ -16,7 +16,7 @@ import hashlib
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from brain_researcher.services.br_kg import query_service
 
@@ -39,14 +39,14 @@ def _safe_json(value: Any) -> str:
         return json.dumps(str(value))
 
 
-def _find_dataset_node(db, dataset_id: str) -> Optional[str]:
+def _find_dataset_node(db, dataset_id: str) -> str | None:
     matches = db.find_nodes("Dataset", {"dataset_id": dataset_id})
     if matches:
         return matches[0][0]
     return None
 
 
-def _find_task_node(db, dataset_id: str, task: str) -> Optional[str]:
+def _find_task_node(db, dataset_id: str, task: str) -> str | None:
     matches = db.find_nodes("TaskSpec", {"name": task, "dataset": dataset_id})
     if matches:
         return matches[0][0]
@@ -63,7 +63,7 @@ def _ingest_manifest(path: Path) -> dict[str, Any]:
     run_id = data.get("run_id") or f"glmrun:{dataset_id}:{task}:{path.parent.name}"
     db = query_service.get_default_db()
 
-    run_props: Dict[str, Any] = {
+    run_props: dict[str, Any] = {
         "id": run_id,
         "dataset_id": dataset_id,
         "task": task,
@@ -105,7 +105,9 @@ def _ingest_manifest(path: Path) -> dict[str, Any]:
             "robustness_md": yeo17.get("robustness_md"),
             "status": yeo17.get("status"),
         }
-        summary_node = db.create_node("ResultSummary", summary_props, node_id=summary_id)
+        summary_node = db.create_node(
+            "ResultSummary", summary_props, node_id=summary_id
+        )
         db.create_relationship(run_node, summary_node, "HAS_SUMMARY", {})
 
     # Variants + artifacts
@@ -143,7 +145,9 @@ def _ingest_manifest(path: Path) -> dict[str, Any]:
                 "path": path_val,
                 "kind": art.get("kind"),
             }
-            artifact_node = db.create_node("Artifact", artifact_props, node_id=artifact_id)
+            artifact_node = db.create_node(
+                "Artifact", artifact_props, node_id=artifact_id
+            )
             db.create_relationship(variant_node, artifact_node, "PRODUCES", {})
 
     return {"run_id": run_id, "dataset_id": dataset_id, "task": task}
@@ -162,7 +166,12 @@ def main() -> int:
         logger.error("Manifest not found: %s", manifest_path)
         return 2
     result = _ingest_manifest(manifest_path)
-    logger.info("Ingested GLMRun %s (%s/%s)", result["run_id"], result["dataset_id"], result["task"])
+    logger.info(
+        "Ingested GLMRun %s (%s/%s)",
+        result["run_id"],
+        result["dataset_id"],
+        result["task"],
+    )
     return 0
 
 

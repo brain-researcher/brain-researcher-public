@@ -4,14 +4,14 @@ Resource Quota Manager for Multi-tenant BR-KG
 Manages resource quotas, usage tracking, and enforcement for tenants.
 """
 
+import json
 import logging
 import time
-from datetime import datetime, timedelta, timezone
-from typing import Dict, Any, List, Optional, Tuple
-from enum import Enum
-from dataclasses import dataclass
 from collections import defaultdict, deque
-import json
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,7 @@ class QuotaStatus(Enum):
 @dataclass
 class QuotaLimit:
     """Represents a quota limit for a tenant"""
+
     quota_type: QuotaType
     limit: int  # -1 for unlimited
     current_usage: int
@@ -49,9 +50,8 @@ class QuotaLimit:
         return self.limit > 0 and self.current_usage >= self.limit
 
     def is_warning(self) -> bool:
-        return (
-            self.limit > 0 and
-            self.current_usage >= (self.limit * self.warning_threshold)
+        return self.limit > 0 and self.current_usage >= (
+            self.limit * self.warning_threshold
         )
 
     def get_status(self) -> QuotaStatus:
@@ -71,11 +71,12 @@ class QuotaLimit:
 @dataclass
 class UsageEvent:
     """Represents a usage event"""
+
     tenant_id: str
     quota_type: QuotaType
     amount: int
     timestamp: datetime
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class ResourceQuotaManager:
@@ -94,17 +95,19 @@ class ResourceQuotaManager:
         self.neo4j_db = neo4j_db
 
         # In-memory usage tracking for real-time limits
-        self.current_usage: Dict[str, Dict[QuotaType, QuotaLimit]] = {}
-        self.usage_events: Dict[str, deque] = defaultdict(lambda: deque(maxlen=10000))
+        self.current_usage: dict[str, dict[QuotaType, QuotaLimit]] = {}
+        self.usage_events: dict[str, deque] = defaultdict(lambda: deque(maxlen=10000))
 
         # Concurrent query tracking
-        self.active_queries: Dict[str, Set[str]] = defaultdict(set)
+        self.active_queries: dict[str, Set[str]] = defaultdict(set)
 
         # Rate limiting windows
-        self.rate_limit_windows: Dict[str, Dict[str, deque]] = defaultdict(lambda: defaultdict(lambda: deque()))
+        self.rate_limit_windows: dict[str, dict[str, deque]] = defaultdict(
+            lambda: defaultdict(lambda: deque())
+        )
 
         # Alert thresholds
-        self.alert_callbacks: List[callable] = []
+        self.alert_callbacks: list[callable] = []
 
         # Initialize schema
         self._initialize_quota_schema()
@@ -119,7 +122,6 @@ class ResourceQuotaManager:
             "CREATE CONSTRAINT quota_unique IF NOT EXISTS FOR (q:TenantQuota) REQUIRE (q.tenant_id, q.quota_type) IS UNIQUE",
             "CREATE INDEX quota_tenant_idx IF NOT EXISTS FOR (q:TenantQuota) ON (q.tenant_id)",
             "CREATE INDEX quota_type_idx IF NOT EXISTS FOR (q:TenantQuota) ON (q.quota_type)",
-
             # Usage events
             "CREATE INDEX usage_tenant_idx IF NOT EXISTS FOR (u:UsageEvent) ON (u.tenant_id)",
             "CREATE INDEX usage_timestamp_idx IF NOT EXISTS FOR (u:UsageEvent) ON (u.timestamp)",
@@ -133,17 +135,14 @@ class ResourceQuotaManager:
                 logger.warning("Quota schema creation warning: %s", str(e))
 
     def set_tenant_quotas(
-        self,
-        tenant_id: str,
-        quotas: Dict[QuotaType, int],
-        reset_existing: bool = False
+        self, tenant_id: str, quotas: dict[QuotaType, int], reset_existing: bool = False
     ):
         """Set quotas for a tenant"""
 
         if reset_existing:
             # Clear existing quotas
             query = "MATCH (q:TenantQuota {tenant_id: $tenant_id}) DELETE q"
-            self.neo4j_db._run(query, {'tenant_id': tenant_id})
+            self.neo4j_db._run(query, {"tenant_id": tenant_id})
 
         # Create quota limits
         tenant_quotas = {}
@@ -155,7 +154,7 @@ class ResourceQuotaManager:
                 limit=limit,
                 current_usage=0,
                 reset_period=self._get_reset_period(quota_type),
-                last_reset=now
+                last_reset=now,
             )
 
             # Store in Neo4j
@@ -169,11 +168,8 @@ class ResourceQuotaManager:
         logger.info("Set quotas for tenant %s: %s", tenant_id, quotas)
 
     def check_quota(
-        self,
-        tenant_id: str,
-        quota_type: QuotaType,
-        requested_amount: int = 1
-    ) -> Tuple[bool, QuotaLimit]:
+        self, tenant_id: str, quota_type: QuotaType, requested_amount: int = 1
+    ) -> tuple[bool, QuotaLimit]:
         """
         Check if quota allows the requested usage
 
@@ -200,7 +196,7 @@ class ResourceQuotaManager:
         tenant_id: str,
         quota_type: QuotaType,
         amount: int = 1,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """
         Consume quota and track usage
@@ -234,7 +230,7 @@ class ResourceQuotaManager:
             quota_type=quota_type,
             amount=amount,
             timestamp=datetime.now(timezone.utc),
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         self._record_usage_event(usage_event)
@@ -242,17 +238,14 @@ class ResourceQuotaManager:
         return True
 
     def start_concurrent_operation(
-        self,
-        tenant_id: str,
-        operation_id: str,
-        operation_type: str = "query"
+        self, tenant_id: str, operation_id: str, operation_type: str = "query"
     ) -> bool:
         """Start a concurrent operation (e.g., query)"""
 
         quota_type = QuotaType.CONCURRENT_QUERIES
 
         # Check concurrent limit
-        current_count = len(self.active_queries[tenant_id])
+        len(self.active_queries[tenant_id])
         allowed, quota_limit = self.check_quota(tenant_id, quota_type, 1)
 
         if not allowed:
@@ -268,11 +261,7 @@ class ResourceQuotaManager:
 
         return True
 
-    def end_concurrent_operation(
-        self,
-        tenant_id: str,
-        operation_id: str
-    ):
+    def end_concurrent_operation(self, tenant_id: str, operation_id: str):
         """End a concurrent operation"""
 
         # Remove from active operations
@@ -292,7 +281,7 @@ class ResourceQuotaManager:
         tenant_id: str,
         operation_type: str,
         window_seconds: int = 60,
-        max_operations: int = 100
+        max_operations: int = 100,
     ) -> bool:
         """Check rate limit for operations"""
 
@@ -313,14 +302,15 @@ class ResourceQuotaManager:
         return True
 
     def get_quota_limit(
-        self,
-        tenant_id: str,
-        quota_type: QuotaType
-    ) -> Optional[QuotaLimit]:
+        self, tenant_id: str, quota_type: QuotaType
+    ) -> QuotaLimit | None:
         """Get quota limit for tenant and type"""
 
         # Check cache first
-        if tenant_id in self.current_usage and quota_type in self.current_usage[tenant_id]:
+        if (
+            tenant_id in self.current_usage
+            and quota_type in self.current_usage[tenant_id]
+        ):
             return self.current_usage[tenant_id][quota_type]
 
         # Load from database
@@ -334,54 +324,52 @@ class ResourceQuotaManager:
 
         return quota_limit
 
-    def get_tenant_usage_summary(self, tenant_id: str) -> Dict[str, Any]:
+    def get_tenant_usage_summary(self, tenant_id: str) -> dict[str, Any]:
         """Get usage summary for tenant"""
 
         summary = {
-            'tenant_id': tenant_id,
-            'quotas': {},
-            'current_usage': {},
-            'usage_percentages': {},
-            'quota_status': {},
-            'active_queries': len(self.active_queries.get(tenant_id, set())),
-            'recent_events_count': len(self.usage_events.get(tenant_id, deque()))
+            "tenant_id": tenant_id,
+            "quotas": {},
+            "current_usage": {},
+            "usage_percentages": {},
+            "quota_status": {},
+            "active_queries": len(self.active_queries.get(tenant_id, set())),
+            "recent_events_count": len(self.usage_events.get(tenant_id, deque())),
         }
 
         # Load all quotas for tenant
         tenant_quotas = self._load_all_tenant_quotas(tenant_id)
 
         for quota_type, quota_limit in tenant_quotas.items():
-            summary['quotas'][quota_type.value] = quota_limit.limit
-            summary['current_usage'][quota_type.value] = quota_limit.current_usage
-            summary['usage_percentages'][quota_type.value] = quota_limit.get_usage_percentage()
-            summary['quota_status'][quota_type.value] = quota_limit.get_status().value
+            summary["quotas"][quota_type.value] = quota_limit.limit
+            summary["current_usage"][quota_type.value] = quota_limit.current_usage
+            summary["usage_percentages"][
+                quota_type.value
+            ] = quota_limit.get_usage_percentage()
+            summary["quota_status"][quota_type.value] = quota_limit.get_status().value
 
         return summary
 
-    def get_usage_analytics(
-        self,
-        tenant_id: str,
-        days: int = 7
-    ) -> Dict[str, Any]:
+    def get_usage_analytics(self, tenant_id: str, days: int = 7) -> dict[str, Any]:
         """Get usage analytics for tenant"""
 
         end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(days=days)
 
         analytics = {
-            'tenant_id': tenant_id,
-            'period_days': days,
-            'start_time': start_time.isoformat(),
-            'end_time': end_time.isoformat(),
-            'daily_usage': {},
-            'quota_violations': [],
-            'peak_usage_times': {},
-            'total_events': 0
+            "tenant_id": tenant_id,
+            "period_days": days,
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+            "daily_usage": {},
+            "quota_violations": [],
+            "peak_usage_times": {},
+            "total_events": 0,
         }
 
         # Get usage events from database
         usage_events = self._get_usage_events(tenant_id, start_time, end_time)
-        analytics['total_events'] = len(usage_events)
+        analytics["total_events"] = len(usage_events)
 
         # Analyze daily usage
         daily_usage = defaultdict(lambda: defaultdict(int))
@@ -391,15 +379,15 @@ class ResourceQuotaManager:
             quota_type = event.quota_type.value
             daily_usage[day][quota_type] += event.amount
 
-        analytics['daily_usage'] = dict(daily_usage)
+        analytics["daily_usage"] = dict(daily_usage)
 
         # Find quota violations
         violations = self._get_quota_violations(tenant_id, start_time, end_time)
-        analytics['quota_violations'] = violations
+        analytics["quota_violations"] = violations
 
         return analytics
 
-    def reset_quotas(self, tenant_id: str, quota_types: Optional[List[QuotaType]] = None):
+    def reset_quotas(self, tenant_id: str, quota_types: list[QuotaType] | None = None):
         """Reset quotas for tenant"""
 
         if not quota_types:
@@ -438,17 +426,17 @@ class ResourceQuotaManager:
         """
 
         params = {
-            'yesterday': (now - timedelta(days=1)).isoformat(),
-            'hour_ago': (now - timedelta(hours=1)).isoformat(),
-            'month_ago': (now - timedelta(days=30)).isoformat()
+            "yesterday": (now - timedelta(days=1)).isoformat(),
+            "hour_ago": (now - timedelta(hours=1)).isoformat(),
+            "month_ago": (now - timedelta(days=30)).isoformat(),
         }
 
         result = self.neo4j_db._run(query, params)
 
         resets_by_tenant = defaultdict(list)
         for record in result:
-            tenant_id = record['tenant_id']
-            quota_type = QuotaType(record['quota_type'])
+            tenant_id = record["tenant_id"]
+            quota_type = QuotaType(record["quota_type"])
             resets_by_tenant[tenant_id].append(quota_type)
 
         # Reset quotas
@@ -464,16 +452,16 @@ class ResourceQuotaManager:
         """Get reset period for quota type"""
 
         period_mapping = {
-            QuotaType.QUERIES_PER_DAY: 'daily',
-            QuotaType.QUERIES_PER_HOUR: 'hourly',
-            QuotaType.API_CALLS_PER_MINUTE: 'minutely',
-            QuotaType.CONCURRENT_QUERIES: 'none',
-            QuotaType.STORAGE_MB: 'none',
-            QuotaType.NODES: 'none',
-            QuotaType.RELATIONSHIPS: 'none'
+            QuotaType.QUERIES_PER_DAY: "daily",
+            QuotaType.QUERIES_PER_HOUR: "hourly",
+            QuotaType.API_CALLS_PER_MINUTE: "minutely",
+            QuotaType.CONCURRENT_QUERIES: "none",
+            QuotaType.STORAGE_MB: "none",
+            QuotaType.NODES: "none",
+            QuotaType.RELATIONSHIPS: "none",
         }
 
-        return period_mapping.get(quota_type, 'daily')
+        return period_mapping.get(quota_type, "daily")
 
     def _store_quota_limit(self, tenant_id: str, quota_limit: QuotaLimit):
         """Store quota limit in Neo4j"""
@@ -488,18 +476,20 @@ class ResourceQuotaManager:
         """
 
         params = {
-            'tenant_id': tenant_id,
-            'quota_type': quota_limit.quota_type.value,
-            'limit': quota_limit.limit,
-            'current_usage': quota_limit.current_usage,
-            'reset_period': quota_limit.reset_period,
-            'last_reset': quota_limit.last_reset.isoformat(),
-            'warning_threshold': quota_limit.warning_threshold
+            "tenant_id": tenant_id,
+            "quota_type": quota_limit.quota_type.value,
+            "limit": quota_limit.limit,
+            "current_usage": quota_limit.current_usage,
+            "reset_period": quota_limit.reset_period,
+            "last_reset": quota_limit.last_reset.isoformat(),
+            "warning_threshold": quota_limit.warning_threshold,
         }
 
         self.neo4j_db._run(query, params)
 
-    def _load_quota_limit(self, tenant_id: str, quota_type: QuotaType) -> Optional[QuotaLimit]:
+    def _load_quota_limit(
+        self, tenant_id: str, quota_type: QuotaType
+    ) -> QuotaLimit | None:
         """Load quota limit from Neo4j"""
 
         query = """
@@ -507,41 +497,40 @@ class ResourceQuotaManager:
         RETURN q
         """
 
-        result = self.neo4j_db._run(query, {
-            'tenant_id': tenant_id,
-            'quota_type': quota_type.value
-        }).single()
+        result = self.neo4j_db._run(
+            query, {"tenant_id": tenant_id, "quota_type": quota_type.value}
+        ).single()
 
         if result:
-            data = dict(result['q'])
+            data = dict(result["q"])
             return QuotaLimit(
-                quota_type=QuotaType(data['quota_type']),
-                limit=data['limit'],
-                current_usage=data['current_usage'],
-                reset_period=data['reset_period'],
-                last_reset=datetime.fromisoformat(data['last_reset']),
-                warning_threshold=data.get('warning_threshold', 0.8)
+                quota_type=QuotaType(data["quota_type"]),
+                limit=data["limit"],
+                current_usage=data["current_usage"],
+                reset_period=data["reset_period"],
+                last_reset=datetime.fromisoformat(data["last_reset"]),
+                warning_threshold=data.get("warning_threshold", 0.8),
             )
 
         return None
 
-    def _load_all_tenant_quotas(self, tenant_id: str) -> Dict[QuotaType, QuotaLimit]:
+    def _load_all_tenant_quotas(self, tenant_id: str) -> dict[QuotaType, QuotaLimit]:
         """Load all quotas for a tenant"""
 
         query = "MATCH (q:TenantQuota {tenant_id: $tenant_id}) RETURN q"
-        result = self.neo4j_db._run(query, {'tenant_id': tenant_id})
+        result = self.neo4j_db._run(query, {"tenant_id": tenant_id})
 
         quotas = {}
 
         for record in result:
-            data = dict(record['q'])
+            data = dict(record["q"])
             quota_limit = QuotaLimit(
-                quota_type=QuotaType(data['quota_type']),
-                limit=data['limit'],
-                current_usage=data['current_usage'],
-                reset_period=data['reset_period'],
-                last_reset=datetime.fromisoformat(data['last_reset']),
-                warning_threshold=data.get('warning_threshold', 0.8)
+                quota_type=QuotaType(data["quota_type"]),
+                limit=data["limit"],
+                current_usage=data["current_usage"],
+                reset_period=data["reset_period"],
+                last_reset=datetime.fromisoformat(data["last_reset"]),
+                warning_threshold=data.get("warning_threshold", 0.8),
             )
             quotas[quota_limit.quota_type] = quota_limit
 
@@ -555,11 +544,14 @@ class ResourceQuotaManager:
         SET q.current_usage = $current_usage
         """
 
-        self.neo4j_db._run(query, {
-            'tenant_id': tenant_id,
-            'quota_type': quota_limit.quota_type.value,
-            'current_usage': quota_limit.current_usage
-        })
+        self.neo4j_db._run(
+            query,
+            {
+                "tenant_id": tenant_id,
+                "quota_type": quota_limit.quota_type.value,
+                "current_usage": quota_limit.current_usage,
+            },
+        )
 
     def _record_usage_event(self, usage_event: UsageEvent):
         """Record usage event"""
@@ -579,22 +571,22 @@ class ResourceQuotaManager:
         """
 
         try:
-            self.neo4j_db._run(query, {
-                'tenant_id': usage_event.tenant_id,
-                'quota_type': usage_event.quota_type.value,
-                'amount': usage_event.amount,
-                'timestamp': usage_event.timestamp.isoformat(),
-                'metadata': json.dumps(usage_event.metadata)
-            })
+            self.neo4j_db._run(
+                query,
+                {
+                    "tenant_id": usage_event.tenant_id,
+                    "quota_type": usage_event.quota_type.value,
+                    "amount": usage_event.amount,
+                    "timestamp": usage_event.timestamp.isoformat(),
+                    "metadata": json.dumps(usage_event.metadata),
+                },
+            )
         except Exception as e:
             logger.error("Failed to record usage event: %s", str(e))
 
     def _get_usage_events(
-        self,
-        tenant_id: str,
-        start_time: datetime,
-        end_time: datetime
-    ) -> List[UsageEvent]:
+        self, tenant_id: str, start_time: datetime, end_time: datetime
+    ) -> list[UsageEvent]:
         """Get usage events from database"""
 
         query = """
@@ -604,32 +596,32 @@ class ResourceQuotaManager:
         ORDER BY u.timestamp DESC
         """
 
-        result = self.neo4j_db._run(query, {
-            'tenant_id': tenant_id,
-            'start_time': start_time.isoformat(),
-            'end_time': end_time.isoformat()
-        })
+        result = self.neo4j_db._run(
+            query,
+            {
+                "tenant_id": tenant_id,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+            },
+        )
 
         events = []
         for record in result:
-            data = dict(record['u'])
+            data = dict(record["u"])
             event = UsageEvent(
-                tenant_id=data['tenant_id'],
-                quota_type=QuotaType(data['quota_type']),
-                amount=data['amount'],
-                timestamp=datetime.fromisoformat(data['timestamp']),
-                metadata=json.loads(data.get('metadata', '{}'))
+                tenant_id=data["tenant_id"],
+                quota_type=QuotaType(data["quota_type"]),
+                amount=data["amount"],
+                timestamp=datetime.fromisoformat(data["timestamp"]),
+                metadata=json.loads(data.get("metadata", "{}")),
             )
             events.append(event)
 
         return events
 
     def _get_quota_violations(
-        self,
-        tenant_id: str,
-        start_time: datetime,
-        end_time: datetime
-    ) -> List[Dict[str, Any]]:
+        self, tenant_id: str, start_time: datetime, end_time: datetime
+    ) -> list[dict[str, Any]]:
         """Get quota violations in time period"""
 
         # This would query violation logs
@@ -637,20 +629,17 @@ class ResourceQuotaManager:
         return []
 
     def _trigger_quota_exceeded_alert(
-        self,
-        tenant_id: str,
-        quota_type: QuotaType,
-        quota_limit: QuotaLimit
+        self, tenant_id: str, quota_type: QuotaType, quota_limit: QuotaLimit
     ):
         """Trigger alert for quota exceeded"""
 
         alert_data = {
-            'alert_type': 'quota_exceeded',
-            'tenant_id': tenant_id,
-            'quota_type': quota_type.value,
-            'limit': quota_limit.limit,
-            'current_usage': quota_limit.current_usage,
-            'timestamp': datetime.now(timezone.utc).isoformat()
+            "alert_type": "quota_exceeded",
+            "tenant_id": tenant_id,
+            "quota_type": quota_type.value,
+            "limit": quota_limit.limit,
+            "current_usage": quota_limit.current_usage,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         for callback in self.alert_callbacks:
@@ -659,25 +648,27 @@ class ResourceQuotaManager:
             except Exception as e:
                 logger.error("Alert callback failed: %s", str(e))
 
-        logger.warning("Quota exceeded for tenant %s: %s (%d/%d)",
-                      tenant_id, quota_type.value, quota_limit.current_usage, quota_limit.limit)
+        logger.warning(
+            "Quota exceeded for tenant %s: %s (%d/%d)",
+            tenant_id,
+            quota_type.value,
+            quota_limit.current_usage,
+            quota_limit.limit,
+        )
 
     def _trigger_quota_warning_alert(
-        self,
-        tenant_id: str,
-        quota_type: QuotaType,
-        quota_limit: QuotaLimit
+        self, tenant_id: str, quota_type: QuotaType, quota_limit: QuotaLimit
     ):
         """Trigger warning alert for quota approaching limit"""
 
         alert_data = {
-            'alert_type': 'quota_warning',
-            'tenant_id': tenant_id,
-            'quota_type': quota_type.value,
-            'limit': quota_limit.limit,
-            'current_usage': quota_limit.current_usage,
-            'usage_percentage': quota_limit.get_usage_percentage(),
-            'timestamp': datetime.now(timezone.utc).isoformat()
+            "alert_type": "quota_warning",
+            "tenant_id": tenant_id,
+            "quota_type": quota_type.value,
+            "limit": quota_limit.limit,
+            "current_usage": quota_limit.current_usage,
+            "usage_percentage": quota_limit.get_usage_percentage(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         for callback in self.alert_callbacks:
@@ -686,5 +677,9 @@ class ResourceQuotaManager:
             except Exception as e:
                 logger.error("Alert callback failed: %s", str(e))
 
-        logger.info("Quota warning for tenant %s: %s (%.1f%% used)",
-                   tenant_id, quota_type.value, quota_limit.get_usage_percentage())
+        logger.info(
+            "Quota warning for tenant %s: %s (%.1f%% used)",
+            tenant_id,
+            quota_type.value,
+            quota_limit.get_usage_percentage(),
+        )

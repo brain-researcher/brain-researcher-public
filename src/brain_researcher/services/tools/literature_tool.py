@@ -9,17 +9,17 @@ Sources:
 
 from __future__ import annotations
 
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field
 from neo4j import GraphDatabase
+from pydantic import BaseModel, Field
 
-from brain_researcher.services.tools.tool_base import CachedToolWrapper, ToolResult
-from brain_researcher.services.tools.br_kg_tools import GLMPriorsTool
 from brain_researcher.core.literature.references import gather_references
+from brain_researcher.services.tools.br_kg_tools import GLMPriorsTool
+from brain_researcher.services.tools.tool_base import CachedToolWrapper, ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -27,19 +27,19 @@ logger = logging.getLogger(__name__)
 class GLMLiteratureArgs(BaseModel):
     dataset_id: str = Field(..., description="Dataset id (e.g., ds000114)")
     task: str = Field(..., description="Task label (e.g., fingerfootlips)")
-    contrast: Optional[str] = Field(
+    contrast: str | None = Field(
         default=None,
         description="Optional contrast label to include in literature queries.",
     )
-    decision_points: Optional[Dict[str, Any]] = Field(
+    decision_points: dict[str, Any] | None = Field(
         default=None,
         description="Decision dict (e.g., {'hrf':'canonical','confounds':'6mot','high_pass':128})",
     )
-    keywords: Optional[List[str]] = Field(
+    keywords: list[str] | None = Field(
         default=None,
         description="Optional extra keywords to include in file-search query.",
     )
-    parcellations: Optional[List[str]] = Field(
+    parcellations: list[str] | None = Field(
         default=None,
         description="Optional parcellation names to pull atlas citations (e.g., ['Yeo2011-7']).",
     )
@@ -56,10 +56,10 @@ class GLMLiteratureArgs(BaseModel):
     use_file_search: bool = Field(
         default=False, description="Include Google File Search evidence if configured"
     )
-    file_search_query: Optional[str] = Field(
+    file_search_query: str | None = Field(
         default=None, description="Override query for Google File Search evidence"
     )
-    file_search_store: Optional[str] = Field(
+    file_search_store: str | None = Field(
         default=None,
         description=(
             "Override file search store name(s). Defaults to "
@@ -70,7 +70,7 @@ class GLMLiteratureArgs(BaseModel):
     file_search_top_k: int = Field(
         default=5, description="Top-K chunks to return from file search"
     )
-    file_search_model: Optional[str] = Field(
+    file_search_model: str | None = Field(
         default=None,
         description="Override model for file search (defaults to env/DEFAULT_LLM_MODEL)",
     )
@@ -92,18 +92,18 @@ class GLMLiteratureTool(CachedToolWrapper):
         self,
         dataset_id: str,
         task: str,
-        contrast: Optional[str] = None,
-        decision_points: Optional[Dict[str, Any]] = None,
-        keywords: Optional[List[str]] = None,
-        parcellations: Optional[List[str]] = None,
+        contrast: str | None = None,
+        decision_points: dict[str, Any] | None = None,
+        keywords: list[str] | None = None,
+        parcellations: list[str] | None = None,
         use_br_kg: bool = True,
         include_static: bool = True,
         use_neo4j: bool = True,
         use_file_search: bool = False,
-        file_search_query: Optional[str] = None,
-        file_search_store: Optional[str] = None,
+        file_search_query: str | None = None,
+        file_search_store: str | None = None,
         file_search_top_k: int = 5,
-        file_search_model: Optional[str] = None,
+        file_search_model: str | None = None,
     ) -> ToolResult:
         repo_root = Path(__file__).resolve().parents[4]
         datasets_folder = repo_root / "dataset"
@@ -117,7 +117,7 @@ class GLMLiteratureTool(CachedToolWrapper):
         if not include_static:
             references = [r for r in references if r.get("source") != "static"]
 
-        evidence: Dict[str, Any] = {}
+        evidence: dict[str, Any] = {}
         if use_br_kg:
             try:
                 priors_res = GLMPriorsTool()._run(task=task, study_id=dataset_id)
@@ -130,8 +130,8 @@ class GLMLiteratureTool(CachedToolWrapper):
             except Exception:
                 evidence["br_kg_scanned"] = None
 
-        neo_refs: List[Dict[str, Any]] = []
-        neo_evidence: Dict[str, Any] = {}
+        neo_refs: list[dict[str, Any]] = []
+        neo_evidence: dict[str, Any] = {}
         if use_neo4j:
             try:
                 neo_refs, neo_evidence = self._query_neo4j(
@@ -144,7 +144,7 @@ class GLMLiteratureTool(CachedToolWrapper):
                 neo_evidence = {"neo4j_status": "error", "neo4j_error": str(exc)}
 
         # Structured view (dataset/methods) while keeping flat list for backward compatibility
-        structured: Dict[str, Any] = {"dataset": [], "methods": {}, "atlas": {}}
+        structured: dict[str, Any] = {"dataset": [], "methods": {}, "atlas": {}}
         for ref in references:
             supports = ref.get("supports") or []
             if any(s.get("decision") == "dataset" for s in supports):
@@ -166,9 +166,7 @@ class GLMLiteratureTool(CachedToolWrapper):
         # Avoid circular refs: copy prevalence dicts before nesting
         evidence.setdefault("prevalence", {})
         if neo_evidence.get("prevalence"):
-            evidence["prevalence"]["br_kg"] = dict(
-                neo_evidence.get("prevalence") or {}
-            )
+            evidence["prevalence"]["br_kg"] = dict(neo_evidence.get("prevalence") or {})
         if use_br_kg and evidence.get("br_kg_priors"):
             evidence["prevalence"]["priors"] = dict(evidence["br_kg_priors"])
 
@@ -216,9 +214,9 @@ class GLMLiteratureTool(CachedToolWrapper):
         self,
         dataset_id: str,
         task: str,
-        decision_points: Dict[str, Any],
-        parcellations: List[str],
-    ) -> tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        decision_points: dict[str, Any],
+        parcellations: list[str],
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Best-effort Cypher to pull publication references + prevalence for the dataset/task."""
         driver = self._neo_driver()
         if driver is None:
@@ -272,8 +270,8 @@ class GLMLiteratureTool(CachedToolWrapper):
                coalesce(a.name, p.name) AS atlas_name, p.name AS parcellation_name
         """
 
-        refs: List[Dict[str, Any]] = []
-        neo_evidence: Dict[str, Any] = {"neo4j_status": "connected"}
+        refs: list[dict[str, Any]] = []
+        neo_evidence: dict[str, Any] = {"neo4j_status": "connected"}
 
         def _format_record(rec):
             return {
@@ -373,7 +371,7 @@ class GLMLiteratureTool(CachedToolWrapper):
     # --- file search helpers --------------------------------------------
 
     @staticmethod
-    def _resolve_file_search_store(override_store: Optional[str]) -> Optional[str]:
+    def _resolve_file_search_store(override_store: str | None) -> str | None:
         if override_store:
             return override_store
         multi = os.environ.get("BR_FILE_SEARCH_STORE_NAMES")
@@ -389,7 +387,7 @@ class GLMLiteratureTool(CachedToolWrapper):
         )
 
     @staticmethod
-    def _resolve_file_search_model(override_model: Optional[str]) -> str:
+    def _resolve_file_search_model(override_model: str | None) -> str:
         return (
             override_model
             or os.environ.get("BR_FILE_SEARCH_MODEL")
@@ -400,11 +398,11 @@ class GLMLiteratureTool(CachedToolWrapper):
     @staticmethod
     def _build_file_search_query(
         task: str,
-        contrast: Optional[str],
-        decision_points: Dict[str, Any],
-        keywords: List[str],
+        contrast: str | None,
+        decision_points: dict[str, Any],
+        keywords: list[str],
     ) -> str:
-        terms: List[str] = []
+        terms: list[str] = []
         if task:
             terms.append(task)
         if contrast:
@@ -429,8 +427,8 @@ class GLMLiteratureTool(CachedToolWrapper):
         return " ".join(terms).strip()
 
     @staticmethod
-    def _extract_doc_header(text: str) -> Dict[str, str]:
-        header: Dict[str, str] = {}
+    def _extract_doc_header(text: str) -> dict[str, str]:
+        header: dict[str, str] = {}
         for raw in text.splitlines():
             line = raw.strip()
             if not line or ":" not in line:
@@ -445,14 +443,14 @@ class GLMLiteratureTool(CachedToolWrapper):
     def _file_search_evidence(
         self,
         task: str,
-        contrast: Optional[str],
-        decision_points: Dict[str, Any],
-        keywords: List[str],
-        override_query: Optional[str],
-        override_store: Optional[str],
+        contrast: str | None,
+        decision_points: dict[str, Any],
+        keywords: list[str],
+        override_query: str | None,
+        override_store: str | None,
         top_k: int,
-        override_model: Optional[str],
-    ) -> Dict[str, Any]:
+        override_model: str | None,
+    ) -> dict[str, Any]:
         from brain_researcher.core.literature.gfs_store import search_gfs_auto
 
         query = override_query or self._build_file_search_query(

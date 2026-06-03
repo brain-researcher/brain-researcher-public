@@ -5,15 +5,14 @@ Representational Similarity Analysis (RSA) for comparing neural patterns
 across conditions, subjects, and models.
 """
 
-import logging
 import json
-import numpy as np
+import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Tuple
+
+import numpy as np
+from pydantic import BaseModel, ConfigDict, Field
 from scipy import stats
 from scipy.spatial.distance import pdist, squareform
-
-from pydantic import BaseModel, Field, ConfigDict
 
 from brain_researcher.services.tools.tool_base import (
     NeuroToolWrapper,
@@ -25,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class RSAArgs(BaseModel):
     """Arguments for RSA analysis."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Input data
@@ -35,89 +35,61 @@ class RSAArgs(BaseModel):
     # RSA parameters
     analysis_type: str = Field(
         default="pattern",
-        description="Type of RSA: 'pattern' (activity patterns), 'connectivity' (FC patterns), or 'temporal' (time series)"
+        description="Type of RSA: 'pattern' (activity patterns), 'connectivity' (FC patterns), or 'temporal' (time series)",
     )
 
     # Distance metrics
     distance_metric: str = Field(
         default="correlation",
-        description="Distance metric: 'correlation', 'euclidean', 'cosine', 'mahalanobis'"
+        description="Distance metric: 'correlation', 'euclidean', 'cosine', 'mahalanobis'",
     )
 
     # Model RDMs
-    model_rdms_file: Optional[str] = Field(
-        default=None,
-        description="Path to model RDMs for comparison"
+    model_rdms_file: str | None = Field(
+        default=None, description="Path to model RDMs for comparison"
     )
 
     # ROI/Searchlight
-    roi_mask: Optional[str] = Field(
-        default=None,
-        description="ROI mask for restricting analysis"
+    roi_mask: str | None = Field(
+        default=None, description="ROI mask for restricting analysis"
     )
-    searchlight_radius: Optional[float] = Field(
-        default=None,
-        description="Searchlight radius in mm (if doing searchlight RSA)"
+    searchlight_radius: float | None = Field(
+        default=None, description="Searchlight radius in mm (if doing searchlight RSA)"
     )
 
     # Conditions
-    conditions_file: Optional[str] = Field(
-        default=None,
-        description="Path to conditions/labels file"
+    conditions_file: str | None = Field(
+        default=None, description="Path to conditions/labels file"
     )
-    n_conditions: Optional[int] = Field(
-        default=None,
-        description="Number of conditions (if not provided in file)"
+    n_conditions: int | None = Field(
+        default=None, description="Number of conditions (if not provided in file)"
     )
 
     # Cross-validation
-    cv_folds: Optional[int] = Field(
-        default=None,
-        description="Number of cross-validation folds for noise ceiling"
+    cv_folds: int | None = Field(
+        default=None, description="Number of cross-validation folds for noise ceiling"
     )
 
     # Statistical testing
     n_permutations: int = Field(
-        default=1000,
-        description="Number of permutations for significance testing"
+        default=1000, description="Number of permutations for significance testing"
     )
-    alpha: float = Field(
-        default=0.05,
-        description="Significance threshold"
-    )
+    alpha: float = Field(default=0.05, description="Significance threshold")
 
     # Visualization
-    plot_rdm: bool = Field(
-        default=True,
-        description="Generate RDM visualization"
-    )
-    plot_mds: bool = Field(
-        default=True,
-        description="Generate MDS plot"
-    )
+    plot_rdm: bool = Field(default=True, description="Generate RDM visualization")
+    plot_mds: bool = Field(default=True, description="Generate MDS plot")
     plot_dendogram: bool = Field(
-        default=True,
-        description="Generate hierarchical clustering dendogram"
+        default=True, description="Generate hierarchical clustering dendogram"
     )
 
     # Output options
-    output_dir: str = Field(
-        description="Output directory for results"
-    )
-    save_rdm: bool = Field(
-        default=True,
-        description="Save computed RDMs"
-    )
-    save_stats: bool = Field(
-        default=True,
-        description="Save statistical results"
-    )
+    output_dir: str = Field(description="Output directory for results")
+    save_rdm: bool = Field(default=True, description="Save computed RDMs")
+    save_stats: bool = Field(default=True, description="Save statistical results")
 
     # Advanced options
-    verbose: bool = Field(
-        default=True,
-        description="Verbose output"
-    )
+    verbose: bool = Field(default=True, description="Verbose output")
 
 
 class RSAToolboxTool(NeuroToolWrapper):
@@ -135,6 +107,7 @@ class RSAToolboxTool(NeuroToolWrapper):
 
         try:
             import rsatoolbox
+
             self.rsatoolbox_available = True
             logger.info("RSA Toolbox available")
         except ImportError:
@@ -142,6 +115,7 @@ class RSAToolboxTool(NeuroToolWrapper):
 
         try:
             import nilearn
+
             self.nilearn_available = True
             logger.info("Nilearn available for neuroimaging support")
         except ImportError:
@@ -164,9 +138,7 @@ class RSAToolboxTool(NeuroToolWrapper):
         return RSAArgs
 
     def _compute_rdm(
-        self,
-        data: np.ndarray,
-        distance_metric: str = "correlation"
+        self, data: np.ndarray, distance_metric: str = "correlation"
     ) -> np.ndarray:
         """Compute representational dissimilarity matrix."""
         if self.rsatoolbox_available:
@@ -177,13 +149,13 @@ class RSAToolboxTool(NeuroToolWrapper):
 
             # Compute RDM
             if distance_metric == "correlation":
-                rdm = rsatoolbox.rdm.calc_rdm(dataset, method='correlation')
+                rdm = rsatoolbox.rdm.calc_rdm(dataset, method="correlation")
             elif distance_metric == "euclidean":
-                rdm = rsatoolbox.rdm.calc_rdm(dataset, method='euclidean')
+                rdm = rsatoolbox.rdm.calc_rdm(dataset, method="euclidean")
             elif distance_metric == "cosine":
-                rdm = rsatoolbox.rdm.calc_rdm(dataset, method='cosine')
+                rdm = rsatoolbox.rdm.calc_rdm(dataset, method="cosine")
             else:
-                rdm = rsatoolbox.rdm.calc_rdm(dataset, method='correlation')
+                rdm = rsatoolbox.rdm.calc_rdm(dataset, method="correlation")
 
             return rdm.get_matrices()[0]
         else:
@@ -191,28 +163,26 @@ class RSAToolboxTool(NeuroToolWrapper):
             return self._compute_rdm_fallback(data, distance_metric)
 
     def _compute_rdm_fallback(
-        self,
-        data: np.ndarray,
-        distance_metric: str = "correlation"
+        self, data: np.ndarray, distance_metric: str = "correlation"
     ) -> np.ndarray:
         """Fallback RDM computation without RSA Toolbox."""
-        n_conditions = data.shape[0]
+        data.shape[0]
 
         if distance_metric == "correlation":
             # Pearson correlation distance
             rdm = 1 - np.corrcoef(data)
         elif distance_metric == "euclidean":
             # Euclidean distance
-            rdm = squareform(pdist(data, metric='euclidean'))
+            rdm = squareform(pdist(data, metric="euclidean"))
         elif distance_metric == "cosine":
             # Cosine distance
-            rdm = squareform(pdist(data, metric='cosine'))
+            rdm = squareform(pdist(data, metric="cosine"))
         elif distance_metric == "mahalanobis":
             # Mahalanobis distance (requires covariance)
             cov = np.cov(data.T)
             if np.linalg.det(cov) != 0:
                 cov_inv = np.linalg.inv(cov)
-                rdm = squareform(pdist(data, metric='mahalanobis', VI=cov_inv))
+                rdm = squareform(pdist(data, metric="mahalanobis", VI=cov_inv))
             else:
                 # Fall back to correlation if covariance is singular
                 rdm = 1 - np.corrcoef(data)
@@ -226,10 +196,7 @@ class RSAToolboxTool(NeuroToolWrapper):
         return rdm
 
     def _compare_rdms(
-        self,
-        rdm1: np.ndarray,
-        rdm2: np.ndarray,
-        method: str = "spearman"
+        self, rdm1: np.ndarray, rdm2: np.ndarray, method: str = "spearman"
     ) -> float:
         """Compare two RDMs."""
         # Extract upper triangular parts (excluding diagonal)
@@ -248,15 +215,9 @@ class RSAToolboxTool(NeuroToolWrapper):
 
         return corr
 
-    def _searchlight_rsa(
-        self,
-        data_img,
-        model_rdm: np.ndarray,
-        radius: float = 6.0
-    ):
+    def _searchlight_rsa(self, data_img, model_rdm: np.ndarray, radius: float = 6.0):
         """Perform searchlight RSA."""
         if self.nilearn_available:
-            from nilearn import image
             from nilearn.searchlight import SearchLight
             from sklearn.base import BaseEstimator
 
@@ -283,12 +244,7 @@ class RSAToolboxTool(NeuroToolWrapper):
 
             # Run searchlight
             estimator = RSAEstimator(model_rdm)
-            searchlight = SearchLight(
-                estimator,
-                radius=radius,
-                n_jobs=1,
-                verbose=False
-            )
+            searchlight = SearchLight(estimator, radius=radius, n_jobs=1, verbose=False)
 
             searchlight.fit(data_img)
             scores_img = searchlight.scores_img_
@@ -299,11 +255,8 @@ class RSAToolboxTool(NeuroToolWrapper):
             return None
 
     def _permutation_test(
-        self,
-        data_rdm: np.ndarray,
-        model_rdm: np.ndarray,
-        n_permutations: int = 1000
-    ) -> Dict[str, float]:
+        self, data_rdm: np.ndarray, model_rdm: np.ndarray, n_permutations: int = 1000
+    ) -> dict[str, float]:
         """Permutation test for RDM comparison."""
         # Observed correlation
         observed_corr = self._compare_rdms(data_rdm, model_rdm)
@@ -326,10 +279,10 @@ class RSAToolboxTool(NeuroToolWrapper):
         p_value = np.mean(np.abs(perm_corrs) >= np.abs(observed_corr))
 
         return {
-            'observed_correlation': float(observed_corr),
-            'p_value': float(p_value),
-            'null_mean': float(np.mean(perm_corrs)),
-            'null_std': float(np.std(perm_corrs))
+            "observed_correlation": float(observed_corr),
+            "p_value": float(p_value),
+            "null_mean": float(np.mean(perm_corrs)),
+            "null_std": float(np.std(perm_corrs)),
         }
 
     def _plot_rdm(self, rdm: np.ndarray, output_file: str, title: str = "RDM"):
@@ -338,14 +291,14 @@ class RSAToolboxTool(NeuroToolWrapper):
 
         fig, ax = plt.subplots(figsize=(8, 8))
 
-        im = ax.imshow(rdm, cmap='RdBu_r', aspect='auto')
+        im = ax.imshow(rdm, cmap="RdBu_r", aspect="auto")
         ax.set_title(title)
-        ax.set_xlabel('Condition')
-        ax.set_ylabel('Condition')
+        ax.set_xlabel("Condition")
+        ax.set_ylabel("Condition")
 
-        plt.colorbar(im, ax=ax, label='Dissimilarity')
+        plt.colorbar(im, ax=ax, label="Dissimilarity")
         plt.tight_layout()
-        plt.savefig(output_file, dpi=150, bbox_inches='tight')
+        plt.savefig(output_file, dpi=150, bbox_inches="tight")
         plt.close()
 
     def _plot_mds(self, rdm: np.ndarray, output_file: str):
@@ -354,7 +307,7 @@ class RSAToolboxTool(NeuroToolWrapper):
         from sklearn.manifold import MDS
 
         # Perform MDS
-        mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
+        mds = MDS(n_components=2, dissimilarity="precomputed", random_state=42)
         coords = mds.fit_transform(rdm)
 
         fig, ax = plt.subplots(figsize=(8, 8))
@@ -363,15 +316,15 @@ class RSAToolboxTool(NeuroToolWrapper):
 
         # Add labels
         for i, (x, y) in enumerate(coords):
-            ax.annotate(f'C{i}', (x, y), fontsize=8)
+            ax.annotate(f"C{i}", (x, y), fontsize=8)
 
-        ax.set_xlabel('MDS Dimension 1')
-        ax.set_ylabel('MDS Dimension 2')
-        ax.set_title('MDS Visualization of RDM')
+        ax.set_xlabel("MDS Dimension 1")
+        ax.set_ylabel("MDS Dimension 2")
+        ax.set_title("MDS Visualization of RDM")
         ax.grid(True, alpha=0.3)
 
         plt.tight_layout()
-        plt.savefig(output_file, dpi=150, bbox_inches='tight')
+        plt.savefig(output_file, dpi=150, bbox_inches="tight")
         plt.close()
 
     def _plot_dendrogram(self, rdm: np.ndarray, output_file: str):
@@ -383,17 +336,17 @@ class RSAToolboxTool(NeuroToolWrapper):
         upper_tri_idx = np.triu_indices(rdm.shape[0], k=1)
         rdm_vector = rdm[upper_tri_idx]
 
-        linkage_matrix = linkage(rdm_vector, method='average')
+        linkage_matrix = linkage(rdm_vector, method="average")
 
         fig, ax = plt.subplots(figsize=(10, 6))
 
         dendrogram(linkage_matrix, ax=ax)
-        ax.set_xlabel('Condition')
-        ax.set_ylabel('Distance')
-        ax.set_title('Hierarchical Clustering of Conditions')
+        ax.set_xlabel("Condition")
+        ax.set_ylabel("Distance")
+        ax.set_title("Hierarchical Clustering of Conditions")
 
         plt.tight_layout()
-        plt.savefig(output_file, dpi=150, bbox_inches='tight')
+        plt.savefig(output_file, dpi=150, bbox_inches="tight")
         plt.close()
 
     def _run(
@@ -401,12 +354,12 @@ class RSAToolboxTool(NeuroToolWrapper):
         data_file: str,
         analysis_type: str = "pattern",
         distance_metric: str = "correlation",
-        model_rdms_file: Optional[str] = None,
-        roi_mask: Optional[str] = None,
-        searchlight_radius: Optional[float] = None,
-        conditions_file: Optional[str] = None,
-        n_conditions: Optional[int] = None,
-        cv_folds: Optional[int] = None,
+        model_rdms_file: str | None = None,
+        roi_mask: str | None = None,
+        searchlight_radius: float | None = None,
+        conditions_file: str | None = None,
+        n_conditions: int | None = None,
+        cv_folds: int | None = None,
         n_permutations: int = 1000,
         alpha: float = 0.05,
         plot_rdm: bool = True,
@@ -416,7 +369,7 @@ class RSAToolboxTool(NeuroToolWrapper):
         save_rdm: bool = True,
         save_stats: bool = True,
         verbose: bool = True,
-        **kwargs
+        **kwargs,
     ) -> ToolResult:
         """Execute RSA analysis."""
         try:
@@ -424,11 +377,12 @@ class RSAToolboxTool(NeuroToolWrapper):
             if verbose:
                 logger.info(f"Loading data from {data_file}")
 
-            if data_file.endswith('.npy'):
+            if data_file.endswith(".npy"):
                 data = np.load(data_file)
-            elif data_file.endswith('.nii') or data_file.endswith('.nii.gz'):
+            elif data_file.endswith(".nii") or data_file.endswith(".nii.gz"):
                 if self.nilearn_available:
                     from nilearn import image
+
                     img = image.load_img(data_file)
                     data = img.get_fdata()
 
@@ -441,7 +395,7 @@ class RSAToolboxTool(NeuroToolWrapper):
                     return ToolResult(
                         status="error",
                         error="Nilearn required for nifti files",
-                        data={}
+                        data={},
                     )
             else:
                 # Try loading as text
@@ -455,7 +409,7 @@ class RSAToolboxTool(NeuroToolWrapper):
                     return ToolResult(
                         status="error",
                         error="Cannot determine number of conditions",
-                        data={}
+                        data={},
                     )
 
             # Create output directory
@@ -498,20 +452,20 @@ class RSAToolboxTool(NeuroToolWrapper):
                         data_rdm, model_rdm, n_permutations
                     )
 
-                    model_comparisons.append({
-                        'model_id': i,
-                        **perm_results
-                    })
+                    model_comparisons.append({"model_id": i, **perm_results})
 
-                results['model_comparisons'] = model_comparisons
+                results["model_comparisons"] = model_comparisons
 
             # Searchlight RSA if requested
             if searchlight_radius and self.nilearn_available:
                 if verbose:
-                    logger.info(f"Running searchlight RSA with radius {searchlight_radius}mm")
+                    logger.info(
+                        f"Running searchlight RSA with radius {searchlight_radius}mm"
+                    )
 
                 if model_rdms_file and len(model_rdms) > 0:
                     from nilearn import image
+
                     img = image.load_img(data_file)
 
                     searchlight_img = self._searchlight_rsa(
@@ -521,7 +475,7 @@ class RSAToolboxTool(NeuroToolWrapper):
                     if searchlight_img:
                         searchlight_file = output_path / "searchlight_results.nii.gz"
                         searchlight_img.to_filename(searchlight_file)
-                        results['searchlight_map'] = str(searchlight_file)
+                        results["searchlight_map"] = str(searchlight_file)
 
             # Generate plots
             plot_files = {}
@@ -529,66 +483,69 @@ class RSAToolboxTool(NeuroToolWrapper):
             if plot_rdm:
                 rdm_plot = output_path / "rdm_plot.png"
                 self._plot_rdm(data_rdm, str(rdm_plot), "Data RDM")
-                plot_files['rdm'] = str(rdm_plot)
+                plot_files["rdm"] = str(rdm_plot)
 
             if plot_mds:
                 mds_plot = output_path / "mds_plot.png"
                 self._plot_mds(data_rdm, str(mds_plot))
-                plot_files['mds'] = str(mds_plot)
+                plot_files["mds"] = str(mds_plot)
 
             if plot_dendogram:
                 dendro_plot = output_path / "dendrogram.png"
                 self._plot_dendrogram(data_rdm, str(dendro_plot))
-                plot_files['dendrogram'] = str(dendro_plot)
+                plot_files["dendrogram"] = str(dendro_plot)
 
             # Calculate summary statistics
             summary = {
-                'n_conditions': int(data_rdm.shape[0]),
-                'distance_metric': distance_metric,
-                'mean_dissimilarity': float(np.mean(data_rdm[np.triu_indices(data_rdm.shape[0], k=1)])),
-                'std_dissimilarity': float(np.std(data_rdm[np.triu_indices(data_rdm.shape[0], k=1)])),
-                'min_dissimilarity': float(np.min(data_rdm[np.triu_indices(data_rdm.shape[0], k=1)])),
-                'max_dissimilarity': float(np.max(data_rdm[np.triu_indices(data_rdm.shape[0], k=1)]))
+                "n_conditions": int(data_rdm.shape[0]),
+                "distance_metric": distance_metric,
+                "mean_dissimilarity": float(
+                    np.mean(data_rdm[np.triu_indices(data_rdm.shape[0], k=1)])
+                ),
+                "std_dissimilarity": float(
+                    np.std(data_rdm[np.triu_indices(data_rdm.shape[0], k=1)])
+                ),
+                "min_dissimilarity": float(
+                    np.min(data_rdm[np.triu_indices(data_rdm.shape[0], k=1)])
+                ),
+                "max_dissimilarity": float(
+                    np.max(data_rdm[np.triu_indices(data_rdm.shape[0], k=1)])
+                ),
             }
 
             # Save results
             if save_stats:
                 stats_file = output_path / "rsa_results.json"
-                with open(stats_file, 'w') as f:
-                    json.dump({
-                        'summary': summary,
-                        'results': results
-                    }, f, indent=2)
+                with open(stats_file, "w") as f:
+                    json.dump({"summary": summary, "results": results}, f, indent=2)
 
             return ToolResult(
                 status="success",
                 data={
                     "outputs": {
                         "rdm": str(output_path / "data_rdm.npy") if save_rdm else None,
-                        "stats": str(output_path / "rsa_results.json") if save_stats else None,
-                        "plots": plot_files
+                        "stats": (
+                            str(output_path / "rsa_results.json")
+                            if save_stats
+                            else None
+                        ),
+                        "plots": plot_files,
                     },
                     "summary": summary,
                     "results": results,
-                    "message": f"RSA completed: {summary['n_conditions']} conditions analyzed"
-                }
+                    "message": f"RSA completed: {summary['n_conditions']} conditions analyzed",
+                },
             )
 
         except Exception as e:
             logger.error(f"RSA analysis failed: {str(e)}")
-            return ToolResult(
-                status="error",
-                error=str(e),
-                data={}
-            )
+            return ToolResult(status="error", error=str(e), data={})
 
 
 class RSAToolboxTools:
     """Collection of RSA Toolbox tools."""
 
     @staticmethod
-    def get_all_tools() -> List[NeuroToolWrapper]:
+    def get_all_tools() -> list[NeuroToolWrapper]:
         """Get all RSA Toolbox tools."""
-        return [
-            RSAToolboxTool()
-        ]
+        return [RSAToolboxTool()]

@@ -2,28 +2,28 @@
 Unit tests for Natural Language Query agents
 """
 
+from unittest.mock import Mock
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 from brain_researcher.services.br_kg.nl_query import (
-    NaturalLanguageQueryOrchestrator,
-    QueryParserAgent,
-    SchemaMapperAgent,
-    QueryBuilderAgent,
-    ResultFormatterAgent,
-    ParsedQuery,
-    MappedQuery,
     ExecutableQuery,
-    FormattedResult
+    FormattedResult,
+    MappedQuery,
+    NaturalLanguageQueryOrchestrator,
+    ParsedQuery,
+    QueryBuilderAgent,
+    QueryParserAgent,
+    ResultFormatterAgent,
+    SchemaMapperAgent,
 )
 from brain_researcher.services.br_kg.nl_query.agents import (
-    QueryIntent,
     EntityType,
     ExtractedEntity,
     NodeType,
-    RelationType,
+    QueryIntent,
     QueryType,
-    VisualizationType
+    VisualizationType,
 )
 
 
@@ -43,7 +43,7 @@ class TestQueryParserAgent:
         assert result.intent == QueryIntent.SEARCH
         assert len(result.entities) == 1
         assert result.entities[0].type == EntityType.BRAIN_REGION
-        assert result.entities[0].normalized_form == 'hippocampus'
+        assert result.entities[0].normalized_form == "hippocampus"
 
     def test_parse_complex_query(self, parser):
         """Test parsing a complex query with multiple entities"""
@@ -65,13 +65,13 @@ class TestQueryParserAgent:
         assert len(result.constraints) >= 2
 
         # Check for numeric constraint
-        numeric_constraints = [c for c in result.constraints if c.type == 'numeric']
+        numeric_constraints = [c for c in result.constraints if c.type == "numeric"]
         assert len(numeric_constraints) > 0
-        assert numeric_constraints[0].operator in ['gt', 'gte']
+        assert numeric_constraints[0].operator in ["gt", "gte"]
         assert numeric_constraints[0].value == 100
 
         # Check for temporal constraint
-        temporal_constraints = [c for c in result.constraints if c.type == 'temporal']
+        temporal_constraints = [c for c in result.constraints if c.type == "temporal"]
         assert len(temporal_constraints) > 0
 
     def test_parse_aggregation_query(self, parser):
@@ -81,16 +81,16 @@ class TestQueryParserAgent:
 
         assert result.intent == QueryIntent.AGGREGATE
         assert any(e.type == EntityType.DISORDER for e in result.entities)
-        assert any('alzheimer' in e.normalized_form for e in result.entities)
+        assert any("alzheimer" in e.normalized_form for e in result.entities)
 
     def test_extract_modifiers(self, parser):
         """Test extraction of query modifiers"""
         query = "Show top 10 results sorted by p-value ascending"
         result = parser.parse(query)
 
-        assert result.modifiers.get('limit') == 10
-        assert result.modifiers.get('sort_by') == 'p-value'
-        assert result.modifiers.get('sort_order') == 'asc'
+        assert result.modifiers.get("limit") == 10
+        assert result.modifiers.get("sort_by") == "p-value"
+        assert result.modifiers.get("sort_order") == "asc"
 
     def test_detect_ambiguities(self, parser):
         """Test ambiguity detection"""
@@ -98,7 +98,7 @@ class TestQueryParserAgent:
         result = parser.parse(query)
 
         assert len(result.ambiguities) > 0
-        assert any('pronoun' in amb.lower() for amb in result.ambiguities)
+        assert any("pronoun" in amb.lower() for amb in result.ambiguities)
 
 
 class TestSchemaMapperAgent:
@@ -119,19 +119,19 @@ class TestSchemaMapperAgent:
                     type=EntityType.BRAIN_REGION,
                     normalized_form="hippocampus",
                     position=5,
-                    confidence=0.9
+                    confidence=0.9,
                 ),
                 ExtractedEntity(
                     text="working memory",
                     type=EntityType.COGNITIVE_TASK,
                     normalized_form="working_memory",
                     position=20,
-                    confidence=0.85
-                )
+                    confidence=0.85,
+                ),
             ],
             constraints=[],
             modifiers={},
-            confidence_score=0.87
+            confidence_score=0.87,
         )
 
     def test_map_to_schema(self, mapper, parsed_query):
@@ -144,22 +144,20 @@ class TestSchemaMapperAgent:
         # Check for activation pattern
         pattern = result.graph_patterns[0]
         assert len(pattern.nodes) >= 2
-        assert any(n['type'] == NodeType.BRAIN_REGION for n in pattern.nodes)
-        assert any(n['type'] == NodeType.TASK for n in pattern.nodes)
+        assert any(n["type"] == NodeType.BRAIN_REGION for n in pattern.nodes)
+        assert any(n["type"] == NodeType.TASK for n in pattern.nodes)
 
     def test_generate_patterns(self, mapper, parsed_query):
         """Test pattern generation from entities"""
         node_mappings = mapper._map_entities_to_nodes(parsed_query.entities)
         patterns = mapper._generate_patterns(
-            parsed_query.intent,
-            node_mappings,
-            parsed_query.entities
+            parsed_query.intent, node_mappings, parsed_query.entities
         )
 
         assert len(patterns) > 0
         assert patterns[0].pattern_string
-        assert 'Task' in patterns[0].pattern_string
-        assert 'BrainRegion' in patterns[0].pattern_string
+        assert "Task" in patterns[0].pattern_string
+        assert "BrainRegion" in patterns[0].pattern_string
 
     def test_map_constraints(self, mapper):
         """Test constraint mapping"""
@@ -168,17 +166,23 @@ class TestSchemaMapperAgent:
             intent=QueryIntent.SEARCH,
             entities=[],
             constraints=[
-                Mock(type='numeric', field='p_value', operator='lt', value=0.05, confidence=0.8)
+                Mock(
+                    type="numeric",
+                    field="p_value",
+                    operator="lt",
+                    value=0.05,
+                    confidence=0.8,
+                )
             ],
             modifiers={},
-            confidence_score=0.7
+            confidence_score=0.7,
         )
 
         result = mapper.map_to_schema(parsed_query)
 
         assert len(result.constraints) == 1
-        assert result.constraints[0]['operator'] == 'lt'
-        assert result.constraints[0]['value'] == 0.05
+        assert result.constraints[0]["operator"] == "lt"
+        assert result.constraints[0]["value"] == 0.05
 
 
 class TestQueryBuilderAgent:
@@ -191,9 +195,7 @@ class TestQueryBuilderAgent:
     @pytest.fixture
     def mapped_query(self):
         parsed_query = Mock(
-            intent=QueryIntent.SEARCH,
-            modifiers={'limit': 10},
-            confidence_score=0.8
+            intent=QueryIntent.SEARCH, modifiers={"limit": 10}, confidence_score=0.8
         )
 
         return MappedQuery(
@@ -202,18 +204,20 @@ class TestQueryBuilderAgent:
                 Mock(
                     pattern_string="(task:Task)-[:ACTIVATES]->(region:BrainRegion)",
                     nodes=[
-                        {'id': 'n1', 'type': NodeType.TASK, 'alias': 'task'},
-                        {'id': 'n2', 'type': NodeType.BRAIN_REGION, 'alias': 'region'}
+                        {"id": "n1", "type": NodeType.TASK, "alias": "task"},
+                        {"id": "n2", "type": NodeType.BRAIN_REGION, "alias": "region"},
                     ],
                     relationships=[],
-                    confidence=0.9
+                    confidence=0.9,
                 )
             ],
-            node_filters={'n2': [{'property': 'name', 'operator': 'eq', 'value': 'hippocampus'}]},
+            node_filters={
+                "n2": [{"property": "name", "operator": "eq", "value": "hippocampus"}]
+            },
             relationship_filters={},
             constraints=[],
-            projections=['task', 'region'],
-            confidence_score=0.85
+            projections=["task", "region"],
+            confidence_score=0.85,
         )
 
     def test_build_cypher_query(self, builder, mapped_query):
@@ -222,36 +226,34 @@ class TestQueryBuilderAgent:
 
         assert isinstance(result, ExecutableQuery)
         assert result.query_type == QueryType.CYPHER
-        assert 'MATCH' in result.query_string
-        assert 'RETURN' in result.query_string
+        assert "MATCH" in result.query_string
+        assert "RETURN" in result.query_string
         assert result.confidence_score > 0
 
     def test_build_query_with_filters(self, builder, mapped_query):
         """Test query building with filters"""
         query_string, parameters = builder._build_cypher_query(mapped_query)
 
-        assert 'WHERE' in query_string
-        assert 'hippocampus' in parameters.values()
+        assert "WHERE" in query_string
+        assert "hippocampus" in parameters.values()
 
     def test_query_optimization(self, builder, mapped_query):
         """Test query optimization"""
         initial_query = "MATCH (n:Node) WHERE n.prop = 'value' RETURN n"
         optimized_query, optimizations = builder._optimize_query(
-            initial_query,
-            QueryType.CYPHER,
-            mapped_query
+            initial_query, QueryType.CYPHER, mapped_query
         )
 
         assert len(optimizations) > 0
-        assert 'filter_reordering' in optimizations
+        assert "filter_reordering" in optimizations
 
     def test_fallback_query_generation(self, builder, mapped_query):
         """Test fallback query generation"""
         fallback = builder._generate_fallback_query(mapped_query)
 
         assert fallback is not None
-        assert 'MATCH' in fallback
-        assert 'LIMIT' in fallback
+        assert "MATCH" in fallback
+        assert "LIMIT" in fallback
 
 
 class TestResultFormatterAgent:
@@ -264,21 +266,21 @@ class TestResultFormatterAgent:
     @pytest.fixture
     def raw_results(self):
         return {
-            'results': [
+            "results": [
                 {
-                    'region': {
-                        'labels': ['BrainRegion'],
-                        'properties': {'name': 'hippocampus', 'volume': 3500},
-                        'id': 1
+                    "region": {
+                        "labels": ["BrainRegion"],
+                        "properties": {"name": "hippocampus", "volume": 3500},
+                        "id": 1,
                     },
-                    'task': {
-                        'labels': ['Task'],
-                        'properties': {'name': 'working_memory', 'domain': 'cognitive'},
-                        'id': 2
-                    }
+                    "task": {
+                        "labels": ["Task"],
+                        "properties": {"name": "working_memory", "domain": "cognitive"},
+                        "id": 2,
+                    },
                 }
             ],
-            'count': 1
+            "count": 1,
         }
 
     def test_format_results(self, formatter, raw_results):
@@ -295,46 +297,42 @@ class TestResultFormatterAgent:
         structured = formatter._structure_results(raw_results)
 
         assert len(structured) == 1
-        assert 'region' in structured[0]
-        assert structured[0]['region']['type'] == 'node'
-        assert structured[0]['region']['properties']['name'] == 'hippocampus'
+        assert "region" in structured[0]
+        assert structured[0]["region"]["type"] == "node"
+        assert structured[0]["region"]["properties"]["name"] == "hippocampus"
 
     def test_generate_summary(self, formatter):
         """Test summary generation"""
-        data = [
-            {'entity': {'type': 'node', 'properties': {'name': 'hippocampus'}}}
-        ]
+        data = [{"entity": {"type": "node", "properties": {"name": "hippocampus"}}}]
 
         summary = formatter._generate_summary(data, None)
 
-        assert 'Found' in summary
+        assert "Found" in summary
         assert isinstance(summary, str)
 
     def test_determine_visualization(self, formatter):
         """Test visualization determination"""
         # Test with coordinate data
-        data = [
-            {'coordinates': [10, 20, 30], 'activation': 3.5}
-        ]
+        data = [{"coordinates": [10, 20, 30], "activation": 3.5}]
 
         viz_hints = formatter._determine_visualization(data, None)
 
-        assert viz_hints['type'] == VisualizationType.BRAIN_MAP
-        assert 'coordinate_field' in viz_hints['parameters']
+        assert viz_hints["type"] == VisualizationType.BRAIN_MAP
+        assert "coordinate_field" in viz_hints["parameters"]
 
     def test_generate_explanation(self, formatter):
         """Test explanation generation"""
         parsed_query = Mock(
             original_query="Find hippocampus",
-            entities=[Mock(type=Mock(value='brain_region'), text='hippocampus')]
+            entities=[Mock(type=Mock(value="brain_region"), text="hippocampus")],
         )
 
-        data = [{'region': 'hippocampus'}]
+        data = [{"region": "hippocampus"}]
 
         explanation = formatter._generate_explanation(data, parsed_query)
 
-        assert 'Searched for' in explanation
-        assert 'hippocampus' in explanation
+        assert "Searched for" in explanation
+        assert "hippocampus" in explanation
 
 
 class TestNLQueryOrchestrator:
@@ -351,7 +349,7 @@ class TestNLQueryOrchestrator:
             parser_agent=parser,
             mapper_agent=mapper,
             builder_agent=builder,
-            formatter_agent=formatter
+            formatter_agent=formatter,
         )
 
     def test_process_query(self, orchestrator):
@@ -362,7 +360,7 @@ class TestNLQueryOrchestrator:
             entities=[],
             constraints=[],
             modifiers={},
-            confidence_score=0.8
+            confidence_score=0.8,
         )
 
         orchestrator.mapper_agent.map_to_schema.return_value = Mock(
@@ -370,30 +368,30 @@ class TestNLQueryOrchestrator:
             node_filters={},
             relationship_filters={},
             constraints=[],
-            projections=['*'],
-            confidence_score=0.7
+            projections=["*"],
+            confidence_score=0.7,
         )
 
         orchestrator.builder_agent.build_query.return_value = Mock(
             query_type=QueryType.CYPHER,
             query_string="MATCH (n) RETURN n",
             parameters={},
-            confidence_score=0.75
+            confidence_score=0.75,
         )
 
         orchestrator.formatter_agent.format_results.return_value = Mock(
             summary="Found results",
             data=[],
             visualization_hints={},
-            confidence_score=0.8
+            confidence_score=0.8,
         )
 
         # Process query
         result = orchestrator.process_query("Find hippocampus")
 
-        assert result['success'] is True
-        assert 'result' in result
-        assert 'confidence' in result
+        assert result["success"] is True
+        assert "result" in result
+        assert "confidence" in result
 
     def test_query_caching(self, orchestrator):
         """Test query result caching"""
@@ -405,7 +403,7 @@ class TestNLQueryOrchestrator:
             entities=[],
             constraints=[],
             modifiers={},
-            confidence_score=0.8
+            confidence_score=0.8,
         )
 
         orchestrator.mapper_agent.map_to_schema.return_value = Mock(
@@ -413,8 +411,8 @@ class TestNLQueryOrchestrator:
             node_filters={},
             relationship_filters={},
             constraints=[],
-            projections=['*'],
-            confidence_score=0.7
+            projections=["*"],
+            confidence_score=0.7,
         )
 
         orchestrator.builder_agent.build_query.return_value = Mock(
@@ -422,21 +420,21 @@ class TestNLQueryOrchestrator:
             query_string="MATCH (n) RETURN n",
             parameters={},
             fallback_query=None,
-            confidence_score=0.75
+            confidence_score=0.75,
         )
 
         orchestrator.formatter_agent.format_results.return_value = Mock(
             summary="Found results",
             data=[],
             visualization_hints={},
-            confidence_score=0.8
+            confidence_score=0.8,
         )
 
         # First call
-        result1 = orchestrator.process_query(query)
+        orchestrator.process_query(query)
 
         # Second call should use cache
-        result2 = orchestrator.process_query(query)
+        orchestrator.process_query(query)
 
         # Parser should only be called once if caching works
         assert orchestrator.parser_agent.parse.call_count == 1
@@ -447,6 +445,6 @@ class TestNLQueryOrchestrator:
 
         result = orchestrator.process_query("Invalid query")
 
-        assert result['success'] is False
-        assert 'error' in result
-        assert 'Parse error' in result['error']
+        assert result["success"] is False
+        assert "error" in result
+        assert "Parse error" in result["error"]

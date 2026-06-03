@@ -14,13 +14,20 @@ This module re-exports from the new location with deprecation warnings.
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 # Import from canonical location
 from brain_researcher.services.tools.pipelines.params import (
     FMRIPrepParameters as _FMRIPrepParameters,
+)
+from brain_researcher.services.tools.pipelines.params import (
     build_fmriprep_command as _build_fmriprep_command,
+)
+from brain_researcher.services.tools.pipelines.params import (
     build_fmriprep_env as _build_fmriprep_env,
+)
+from brain_researcher.services.tools.pipelines.params import (
     fmriprep_from_payload as _fmriprep_from_payload,
 )
 
@@ -50,7 +57,7 @@ def build_fmriprep_command(
     return _build_fmriprep_command(params, include_executable=include_executable)
 
 
-def build_fmriprep_env(params: _FMRIPrepParameters) -> Dict[str, str]:
+def build_fmriprep_env(params: _FMRIPrepParameters) -> dict[str, str]:
     """Build fMRIPrep environment variables.
 
     DEPRECATED: Use brain_researcher.services.tools.pipelines.build_fmriprep_env instead.

@@ -79,7 +79,9 @@ def test_sherlock_render_sbatch_script_gpu_multinode_contains_expected_directive
 
 
 def test_sherlock_patch_sbatch_script_updates_memory_and_cpu():
-    original = "#!/bin/bash\n#SBATCH --mem=32G\n#SBATCH --cpus-per-task=8\npython run.py\n"
+    original = (
+        "#!/bin/bash\n#SBATCH --mem=32G\n#SBATCH --cpus-per-task=8\npython run.py\n"
+    )
 
     result = st.sherlock_patch_sbatch_script(
         change_request="increase memory to 64G and set cpus-per-task to 16",

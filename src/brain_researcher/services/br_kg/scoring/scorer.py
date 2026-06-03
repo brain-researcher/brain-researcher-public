@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import yaml
 
 from brain_researcher.services.br_kg.utils.onvoc_tree import OnvocTree
-
 
 SUPPORTED_RULE_VERSIONS = {"0.2.0", "0.3.0"}
 
@@ -23,13 +22,13 @@ class Evidence:
     family: str
     channel: str
     weight: float
-    details: Dict[str, object]
+    details: dict[str, object]
 
 
 class MappingRules:
     """Container for mapping rules produced by build_onvoc_mapping_rules.py."""
 
-    def __init__(self, payload: Dict[str, object]) -> None:
+    def __init__(self, payload: dict[str, object]) -> None:
         version = str(payload.get("version", "0.0.0"))
         if version not in SUPPORTED_RULE_VERSIONS:
             raise ValueError(
@@ -38,28 +37,28 @@ class MappingRules:
             )
         self.version = version
         self.backbone = dict(payload.get("backbone", {}))
-        self.family_levels: List[str] = list(payload.get("family_levels", ["l2"]))
-        self.anchors: List[Dict[str, object]] = list(payload.get("anchors", []))
-        self.contrast_rules: List[Dict[str, object]] = list(
+        self.family_levels: list[str] = list(payload.get("family_levels", ["l2"]))
+        self.anchors: list[dict[str, object]] = list(payload.get("anchors", []))
+        self.contrast_rules: list[dict[str, object]] = list(
             payload.get("contrast_rules", [])
         )
-        self.phenotype_rules: List[Dict[str, object]] = list(
+        self.phenotype_rules: list[dict[str, object]] = list(
             payload.get("phenotype_rules", [])
         )
-        self.diagnosis_rules: List[Dict[str, object]] = list(
+        self.diagnosis_rules: list[dict[str, object]] = list(
             payload.get("diagnosis_rules", [])
         )
-        self.medication_rules: List[Dict[str, object]] = list(
+        self.medication_rules: list[dict[str, object]] = list(
             payload.get("medication_rules", [])
         )
-        self.instrument_rules: List[Dict[str, object]] = list(
+        self.instrument_rules: list[dict[str, object]] = list(
             payload.get("instrument_rules", [])
         )
-        self.hed_rules: List[Dict[str, object]] = list(payload.get("hed_rules", []))
-        self.modality_rules: List[Dict[str, object]] = list(
+        self.hed_rules: list[dict[str, object]] = list(payload.get("hed_rules", []))
+        self.modality_rules: list[dict[str, object]] = list(
             payload.get("modality_rules", [])
         )
-        self.constraints: Dict[str, object] = dict(payload.get("constraints", {}))
+        self.constraints: dict[str, object] = dict(payload.get("constraints", {}))
 
         # Load channel weights and caps from config (no hardcoded defaults)
         # Config file is the single source of truth - see configs/mapping_rules.yaml
@@ -90,17 +89,16 @@ class MappingRules:
                 f"Found channels: {sorted(lambda_section.keys())}"
             )
 
-        self.lambda_by_channel: Dict[str, float] = {
-            channel: float(lambda_section[channel])
-            for channel in required_channels
+        self.lambda_by_channel: dict[str, float] = {
+            channel: float(lambda_section[channel]) for channel in required_channels
         }
-        self.channel_caps: Dict[str, float] = {
+        self.channel_caps: dict[str, float] = {
             channel: float(cap_section.get(channel, 1.0))
             for channel in required_channels
         }
 
     @classmethod
-    def load(cls, path: Path) -> "MappingRules":
+    def load(cls, path: Path) -> MappingRules:
         payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         return cls(payload)
 
@@ -111,7 +109,7 @@ class Scorer:
     def __init__(self, rules: MappingRules, tree: OnvocTree) -> None:
         self.rules = rules
         self.tree = tree
-        self.task_to_families: Dict[str, List[str]] = {}
+        self.task_to_families: dict[str, list[str]] = {}
         for anchor in self.rules.anchors:
             family = anchor.get("onvoc_uri")
             if not family:
@@ -119,7 +117,7 @@ class Scorer:
             for task in anchor.get("seed_tasks", []) or []:
                 self.task_to_families.setdefault(str(task), []).append(str(family))
 
-    def evidence_from_task(self, task_id: str) -> List[Evidence]:
+    def evidence_from_task(self, task_id: str) -> list[Evidence]:
         return [
             Evidence(family, "task", 1.0, {"seed": "task"})
             for family in self.task_to_families.get(task_id, [])
@@ -127,11 +125,11 @@ class Scorer:
 
     def evidence_from_contrasts(
         self, task_id: str, contrast_names: Iterable[str]
-    ) -> List[Evidence]:
+    ) -> list[Evidence]:
         contrasts = list(contrast_names or [])
         if not contrasts:
             return []
-        evidences: List[Evidence] = []
+        evidences: list[Evidence] = []
         for rule in self.rules.contrast_rules:
             map_to = rule.get("map_to_family")
             if not map_to:
@@ -156,9 +154,9 @@ class Scorer:
                     break
         return evidences
 
-    def evidence_from_phenotypes(self, phenotypes: Dict[str, object]) -> List[Evidence]:
+    def evidence_from_phenotypes(self, phenotypes: dict[str, object]) -> list[Evidence]:
         values = phenotypes or {}
-        evidences: List[Evidence] = []
+        evidences: list[Evidence] = []
         for rule in self.rules.phenotype_rules:
             source = str(rule.get("source") or "")
             key = source.split(":")[-1] if source else None
@@ -169,11 +167,16 @@ class Scorer:
                 continue
             boost = float(rule.get("prior_boost", 0.3))
             bins = rule.get("bins")
-            if isinstance(bins, list) and isinstance(value, (int, float)):
+            if isinstance(bins, list) and isinstance(value, int | float):
                 family = self._value_to_family_bins(float(value), bins)
                 if family:
                     evidences.append(
-                        Evidence(family, "phenotype", boost, {"source": source, "value": value})
+                        Evidence(
+                            family,
+                            "phenotype",
+                            boost,
+                            {"source": source, "value": value},
+                        )
                     )
                     continue
             mapping = rule.get("mapping")
@@ -181,7 +184,12 @@ class Scorer:
                 family = mapping.get(str(value))
                 if family:
                     evidences.append(
-                        Evidence(family, "phenotype", boost, {"source": source, "value": value})
+                        Evidence(
+                            family,
+                            "phenotype",
+                            boost,
+                            {"source": source, "value": value},
+                        )
                     )
                     continue
             for entry in rule.get("patterns", []) or []:
@@ -191,14 +199,19 @@ class Scorer:
                     continue
                 if re.search(str(pattern), str(value)):
                     evidences.append(
-                        Evidence(family, "phenotype", boost, {"source": source, "value": value})
+                        Evidence(
+                            family,
+                            "phenotype",
+                            boost,
+                            {"source": source, "value": value},
+                        )
                     )
                     break
         return evidences
 
-    def evidence_from_diagnosis(self, diagnosis: Sequence[str]) -> List[Evidence]:
+    def evidence_from_diagnosis(self, diagnosis: Sequence[str]) -> list[Evidence]:
         values = [str(item).lower() for item in (diagnosis or [])]
-        evidences: List[Evidence] = []
+        evidences: list[Evidence] = []
         for rule in self.rules.diagnosis_rules:
             pattern = rule.get("pattern")
             family = rule.get("map_to_family")
@@ -216,9 +229,9 @@ class Scorer:
                 )
         return evidences
 
-    def evidence_from_medications(self, medications: Sequence[str]) -> List[Evidence]:
+    def evidence_from_medications(self, medications: Sequence[str]) -> list[Evidence]:
         values = [str(item).lower() for item in (medications or [])]
-        evidences: List[Evidence] = []
+        evidences: list[Evidence] = []
         for rule in self.rules.medication_rules:
             family = rule.get("map_to_family")
             if not family:
@@ -235,9 +248,9 @@ class Scorer:
                 )
         return evidences
 
-    def evidence_from_instruments(self, instruments: Sequence[str]) -> List[Evidence]:
+    def evidence_from_instruments(self, instruments: Sequence[str]) -> list[Evidence]:
         values = [str(item).lower() for item in (instruments or [])]
-        evidences: List[Evidence] = []
+        evidences: list[Evidence] = []
         for rule in self.rules.instrument_rules:
             family = rule.get("map_to_family")
             if not family:
@@ -254,8 +267,10 @@ class Scorer:
                 )
         return evidences
 
-    def evidence_from_modality(self, modalities: Sequence[Dict[str, object]]) -> List[Evidence]:
-        evidences: List[Evidence] = []
+    def evidence_from_modality(
+        self, modalities: Sequence[dict[str, object]]
+    ) -> list[Evidence]:
+        evidences: list[Evidence] = []
         entries = modalities or []
         for rule in self.rules.modality_rules:
             where = rule.get("where")
@@ -273,10 +288,9 @@ class Scorer:
                 )
         return evidences
 
-
-    def evidence_from_hed(self, hed_tags: Sequence[str]) -> List[Evidence]:
+    def evidence_from_hed(self, hed_tags: Sequence[str]) -> list[Evidence]:
         tag_set = {str(tag).lower() for tag in (hed_tags or [])}
-        evidences: List[Evidence] = []
+        evidences: list[Evidence] = []
         if not tag_set:
             return evidences
         for rule in self.rules.hed_rules:
@@ -294,18 +308,22 @@ class Scorer:
                     str(family),
                     "hed",
                     float(rule.get("prior_boost", 0.25)),
-                    {"tags": sorted(tag_set & tags_any) if tags_any else sorted(tag_set)},
+                    {
+                        "tags": (
+                            sorted(tag_set & tags_any) if tags_any else sorted(tag_set)
+                        )
+                    },
                 )
             )
         return evidences
 
-    def fuse(self, evidences: Sequence[Evidence]) -> Dict[str, float]:
-        totals: Dict[Tuple[str, str], float] = {}
+    def fuse(self, evidences: Sequence[Evidence]) -> dict[str, float]:
+        totals: dict[tuple[str, str], float] = {}
         for evidence in evidences:
             key = (evidence.family, evidence.channel)
             totals[key] = min(1.0, totals.get(key, 0.0) + float(evidence.weight))
 
-        fused: Dict[str, float] = {}
+        fused: dict[str, float] = {}
         for (family, channel), weight in totals.items():
             lam = self.lambda_for_channel(channel)
             cap = self.rules.channel_caps.get(channel, 1.0)
@@ -316,8 +334,8 @@ class Scorer:
     def lambda_for_channel(self, channel: str) -> float:
         return float(self.rules.lambda_by_channel.get(channel, 0.0))
 
-    def enforce_constraints(self, weights: Dict[str, float]) -> Dict[str, float]:
-        grouped: Dict[Optional[str], List[Tuple[str, float]]] = {}
+    def enforce_constraints(self, weights: dict[str, float]) -> dict[str, float]:
+        grouped: dict[str | None, list[tuple[str, float]]] = {}
         for family, score in weights.items():
             node = self.tree.nodes.get(family)
             parent = node.parent_id if node else None
@@ -334,7 +352,9 @@ class Scorer:
         return weights
 
     @staticmethod
-    def _value_to_family_bins(value: float, bins: Sequence[Dict[str, object]]) -> Optional[str]:
+    def _value_to_family_bins(
+        value: float, bins: Sequence[dict[str, object]]
+    ) -> str | None:
         for entry in bins:
             lt = entry.get("lt")
             gte = entry.get("gte")
@@ -352,7 +372,7 @@ class Scorer:
         return any(syn in value for syn in synonyms)
 
     @staticmethod
-    def _matches(where: Dict[str, object], payload: Dict[str, object]) -> bool:
+    def _matches(where: dict[str, object], payload: dict[str, object]) -> bool:
         for key, expected in where.items():
             if str(payload.get(key)) != str(expected):
                 return False
@@ -364,8 +384,8 @@ def collect_task_evidence(
     task_id: str,
     *,
     contrast_names: Sequence[str] | None = None,
-) -> Dict[str, float]:
-    evidences: List[Evidence] = []
+) -> dict[str, float]:
+    evidences: list[Evidence] = []
     evidences.extend(scorer.evidence_from_task(task_id))
     evidences.extend(scorer.evidence_from_contrasts(task_id, contrast_names or []))
     fused = scorer.fuse(evidences)
@@ -374,15 +394,15 @@ def collect_task_evidence(
 
 def collect_cohort_evidence(
     scorer: Scorer,
-    phenotypes: Dict[str, object],
+    phenotypes: dict[str, object],
     *,
     diagnosis: Sequence[str] | None = None,
     medications: Sequence[str] | None = None,
     instruments: Sequence[str] | None = None,
-    modalities: Sequence[Dict[str, object]] | None = None,
+    modalities: Sequence[dict[str, object]] | None = None,
     hed_tags: Sequence[str] | None = None,
-) -> Dict[str, float]:
-    evidences: List[Evidence] = []
+) -> dict[str, float]:
+    evidences: list[Evidence] = []
     evidences.extend(scorer.evidence_from_phenotypes(phenotypes))
     evidences.extend(scorer.evidence_from_diagnosis(diagnosis or []))
     evidences.extend(scorer.evidence_from_medications(medications or []))
@@ -393,13 +413,15 @@ def collect_cohort_evidence(
     return scorer.enforce_constraints(fused)
 
 
-def dump_scores(scores: Dict[str, float], path: Path) -> None:
+def dump_scores(scores: dict[str, float], path: Path) -> None:
     rows = [
         {
             "onvoc_uri": family,
             "score": score,
         }
-        for family, score in sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        for family, score in sorted(
+            scores.items(), key=lambda item: item[1], reverse=True
+        )
         if score > 0
     ]
     path.write_text(json.dumps(rows, indent=2, sort_keys=False), encoding="utf-8")

@@ -35,7 +35,7 @@ def _coerce_bool(val: Any) -> bool | None:
         return None
     if isinstance(val, bool):
         return val
-    if isinstance(val, (int, float)):
+    if isinstance(val, int | float):
         if math.isnan(val):
             return None
         return val != 0
@@ -87,7 +87,15 @@ def _row_to_trial(
 
     rt = pick(
         custom_map.get("rt_sec", [])
-        + ["rt", "rt_sec", "response_time", "rt_seconds", "key_resp.rt", "resp.rt", "RT"]
+        + [
+            "rt",
+            "rt_sec",
+            "response_time",
+            "rt_seconds",
+            "key_resp.rt",
+            "resp.rt",
+            "RT",
+        ]
     )
     if rt is None:
         rt_ms = pick(
@@ -110,7 +118,8 @@ def _row_to_trial(
         + ["trial_type", "condition", "condition_label", "trialType", "trial_type_text"]
     )
     condition_label = pick(
-        custom_map.get("condition_label", []) + ["condition_label", "conditionName", "block"]
+        custom_map.get("condition_label", [])
+        + ["condition_label", "conditionName", "block"]
     )
     session = pick(custom_map.get("session", []) + ["session", "sess"])
     run = pick(custom_map.get("run", []) + ["run", "run_id", "run_number"])
@@ -119,7 +128,8 @@ def _row_to_trial(
         + ["subject_id", "participant", "sub", "participant_id", "Participant"]
     )
     stimulus_id = pick(
-        custom_map.get("stimulus_id", []) + ["stimulus", "stim_id", "stimulus_id", "stimFile"]
+        custom_map.get("stimulus_id", [])
+        + ["stimulus", "stim_id", "stimulus_id", "stimFile"]
     )
 
     known_cols = {
@@ -241,7 +251,9 @@ def parse_taps_directory(
     if config_file:
         cfg_path: Path | None = Path(config_file).expanduser()
     else:
-        cfg_path = _first_existing([task_path / "config.yaml", task_path / "config.yml"])
+        cfg_path = _first_existing(
+            [task_path / "config.yaml", task_path / "config.yml"]
+        )
     if cfg_path and cfg_path.exists():
         config = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
 
@@ -249,13 +261,13 @@ def parse_taps_directory(
     if column_map_path:
         map_path = Path(column_map_path).expanduser()
         if map_path.exists():
-            with open(map_path, "r", encoding="utf-8") as f:
+            with open(map_path, encoding="utf-8") as f:
                 custom = yaml.safe_load(f) or {}
                 if isinstance(custom, dict):
                     custom_map = {
                         str(k): [str(vv) for vv in (v or [])]
                         for k, v in custom.items()
-                        if isinstance(v, (list, tuple))
+                        if isinstance(v, list | tuple)
                     }
     if column_map:
         for k, v in column_map.items():

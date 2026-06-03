@@ -575,7 +575,9 @@ def _discover_schaefer_assets(roots: list[Path]) -> list[dict[str, Any]]:
                 variant_key = f"{n_rois}_{n_networks}n_2mm"
             else:
                 n_rois, n_networks = templateflow_match
-                metadata_space, spaces, resolution, raw_res = _atlas_space_metadata(path)
+                metadata_space, spaces, resolution, raw_res = _atlas_space_metadata(
+                    path
+                )
                 variant_key = (
                     f"{n_rois}_{n_networks}n_{_slugify(metadata_space)}"
                     f"_{_slugify(raw_res or resolution)}"
@@ -919,9 +921,9 @@ def _discover_local_atlas_assets() -> list[dict[str, Any]]:
 
 
 @lru_cache(maxsize=1)
-def _load_neuromaps_annotation_metadata() -> dict[
-    tuple[str, str, str, str], dict[str, Any]
-]:
+def _load_neuromaps_annotation_metadata() -> (
+    dict[tuple[str, str, str, str], dict[str, Any]]
+):
     try:
         from neuromaps.datasets import annotations
     except Exception:
@@ -1521,9 +1523,11 @@ def _discover_openneuro_glmfitlins_assets(roots: list[Path]) -> list[dict[str, A
                         "dataset_id": dataset_id,
                         "task": task,
                         "node": node,
-                        "level": "subject"
-                        if _normalize_token(node) == "subjectlevel"
-                        else "",
+                        "level": (
+                            "subject"
+                            if _normalize_token(node) == "subjectlevel"
+                            else ""
+                        ),
                         "subject_id": subject_id,
                         "statistic": statistic,
                     },
@@ -1704,9 +1708,11 @@ def find_reference_asset(
         direct = get_reference_asset(needle)
         if direct is not None:
             asset_kind = str(direct.get("kind") or "").strip().lower()
-            if (not kind or asset_kind == str(kind or "").strip().lower()) and _asset_matches_space(
-                direct, space
-            ) and _asset_matches_resolution(direct, resolution):
+            if (
+                (not kind or asset_kind == str(kind or "").strip().lower())
+                and _asset_matches_space(direct, space)
+                and _asset_matches_resolution(direct, resolution)
+            ):
                 return direct
     needle_norm = _normalize_token(needle)
     target_kind = str(kind or "").strip().lower()

@@ -10,27 +10,28 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Any, Dict, Union
 
 from brain_researcher.sdk.models import JobHandle, ToolResult
 
 logger = logging.getLogger(__name__)
 
 _lock = threading.Lock()
-_SESSION_JOBS: Dict[str, Union[JobHandle, ToolResult]] = {}
+_SESSION_JOBS: dict[str, JobHandle | ToolResult] = {}
 
 
-def get(content_hash: str) -> Union[JobHandle, ToolResult, None]:
+def get(content_hash: str) -> JobHandle | ToolResult | None:
     """Return the cached result for *content_hash*, or ``None``."""
     with _lock:
         return _SESSION_JOBS.get(content_hash)
 
 
-def put(content_hash: str, value: Union[JobHandle, ToolResult]) -> None:
+def put(content_hash: str, value: JobHandle | ToolResult) -> None:
     """Store a result under *content_hash*."""
     with _lock:
         _SESSION_JOBS[content_hash] = value
-    logger.debug("job_registry: cached %s → %s", content_hash[:12], type(value).__name__)
+    logger.debug(
+        "job_registry: cached %s → %s", content_hash[:12], type(value).__name__
+    )
 
 
 def clear() -> int:
@@ -42,7 +43,7 @@ def clear() -> int:
     return count
 
 
-def entries() -> Dict[str, Union[JobHandle, ToolResult]]:
+def entries() -> dict[str, JobHandle | ToolResult]:
     """Return a shallow copy of the registry (mainly for debugging)."""
     with _lock:
         return dict(_SESSION_JOBS)

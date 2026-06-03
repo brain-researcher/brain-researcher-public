@@ -54,7 +54,7 @@ class EmbeddingMetricsCollector:
 
         # Performance buckets for histogram
         self.latency_buckets = [10, 50, 100, 250, 500, 1000, 2500, 5000]  # ms
-        self.latency_histogram = {bucket: 0 for bucket in self.latency_buckets}
+        self.latency_histogram = dict.fromkeys(self.latency_buckets, 0)
         self.latency_histogram[float("inf")] = 0  # For queries > 5000ms
 
     def record_query(
@@ -160,7 +160,9 @@ class EmbeddingMetricsCollector:
                     {"timestamp": q.timestamp, "query": q.query_text, "error": q.error}
                     for q in recent_queries
                     if q.error
-                ][-10:],  # Last 10 errors
+                ][
+                    -10:
+                ],  # Last 10 errors
             }
 
     def get_prometheus_metrics(self) -> str:

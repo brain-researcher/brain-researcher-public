@@ -3,7 +3,6 @@ Friendly dataset search/detail commands hitting Agent datasets API.
 """
 
 import os
-from typing import Optional, List
 
 import httpx
 import typer
@@ -29,7 +28,7 @@ def _agent(path: str) -> str:
 def search(
     query: str = typer.Argument("", help="Search term"),
     limit: int = typer.Option(5, "--limit"),
-    modality: List[str] = typer.Option([], "--modality"),
+    modality: list[str] = typer.Option([], "--modality"),
 ) -> None:
     payload = {"query": query, "limit": limit}
     if modality:
@@ -50,7 +49,11 @@ def search(
     table.add_column("name")
     table.add_column("modalities")
     for item in results:
-        table.add_row(item.get("id", ""), item.get("name", ""), ", ".join(item.get("modalities", [])))
+        table.add_row(
+            item.get("id", ""),
+            item.get("name", ""),
+            ", ".join(item.get("modalities", [])),
+        )
     console.print(table)
 
 

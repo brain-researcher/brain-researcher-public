@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from brain_researcher.services.agent.agent_factory import get_llm_agent
-
 
 _MULTI_STEP_INDICATORS = [
     r"\band\s+then\b",
@@ -32,7 +31,7 @@ def run_unified_agent(
     query: str,
     *,
     tool_mode: str = "auto",  # "auto" | "required" | "none"
-) -> Tuple[str, Dict[str, Any]]:
+) -> tuple[str, dict[str, Any]]:
     """Execute the NeuroAgentLLM (same path as /act_llm).
 
     Returns text and a metadata dict containing tool calls and basic execution info.
@@ -46,9 +45,10 @@ def run_unified_agent(
 
     tool_calls = []
     artifacts = []
-    from langchain_core.messages import AIMessage, ToolMessage
-    import time
     import json as _json
+    import time
+
+    from langchain_core.messages import AIMessage, ToolMessage
 
     for msg in final_state.get("messages", []):
         if isinstance(msg, AIMessage) and getattr(msg, "tool_calls", None):

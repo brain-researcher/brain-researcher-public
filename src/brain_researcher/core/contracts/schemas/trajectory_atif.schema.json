@@ -1,0 +1,468 @@
+{
+  "$defs": {
+    "ATIFAgent": {
+      "properties": {
+        "extra": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra"
+        },
+        "model_name": {
+          "title": "Model Name",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "model_name"
+      ],
+      "title": "ATIFAgent",
+      "type": "object"
+    },
+    "ATIFFinalMetrics": {
+      "properties": {
+        "extra": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra"
+        },
+        "total_cached_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Cached Tokens"
+        },
+        "total_completion_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Completion Tokens"
+        },
+        "total_cost_usd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Cost Usd"
+        },
+        "total_prompt_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Prompt Tokens"
+        },
+        "total_steps": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Steps"
+        }
+      },
+      "title": "ATIFFinalMetrics",
+      "type": "object"
+    },
+    "ATIFMetrics": {
+      "properties": {
+        "cached_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cached Tokens"
+        },
+        "completion_token_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completion Token Ids"
+        },
+        "completion_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completion Tokens"
+        },
+        "cost_usd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cost Usd"
+        },
+        "extra": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra"
+        },
+        "logprobs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Logprobs"
+        },
+        "prompt_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Tokens"
+        }
+      },
+      "title": "ATIFMetrics",
+      "type": "object"
+    },
+    "ATIFObservation": {
+      "properties": {
+        "extra": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra"
+        },
+        "results": {
+          "items": {
+            "$ref": "#/$defs/ATIFObservationResult"
+          },
+          "title": "Results",
+          "type": "array"
+        }
+      },
+      "title": "ATIFObservation",
+      "type": "object"
+    },
+    "ATIFObservationResult": {
+      "properties": {
+        "content": {
+          "title": "Content"
+        },
+        "extra": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra"
+        },
+        "source_call_id": {
+          "title": "Source Call Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_call_id",
+        "content"
+      ],
+      "title": "ATIFObservationResult",
+      "type": "object"
+    },
+    "ATIFStep": {
+      "properties": {
+        "extra": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "metrics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ATIFMetrics"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "model_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Name"
+        },
+        "observation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ATIFObservation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reasoning_content": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Content"
+        },
+        "source": {
+          "enum": [
+            "system",
+            "user",
+            "agent"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "step_id": {
+          "title": "Step Id",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        },
+        "tool_calls": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ATIFToolCall"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Calls"
+        }
+      },
+      "required": [
+        "step_id",
+        "timestamp",
+        "source",
+        "message"
+      ],
+      "title": "ATIFStep",
+      "type": "object"
+    },
+    "ATIFToolCall": {
+      "properties": {
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "extra": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra"
+        },
+        "function_name": {
+          "title": "Function Name",
+          "type": "string"
+        },
+        "tool_call_id": {
+          "title": "Tool Call Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_call_id",
+        "function_name"
+      ],
+      "title": "ATIFToolCall",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "agent": {
+      "$ref": "#/$defs/ATIFAgent"
+    },
+    "extra": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Extra"
+    },
+    "final_metrics": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ATIFFinalMetrics"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "const": "ATIF-v1.4",
+      "default": "ATIF-v1.4",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/ATIFStep"
+      },
+      "title": "Steps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "session_id",
+    "agent",
+    "steps"
+  ],
+  "title": "ATIFTrajectory",
+  "type": "object"
+}

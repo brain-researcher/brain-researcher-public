@@ -58,7 +58,9 @@ class ScannerProfile(BaseModel):
         gt=0,
         description="Planned task duration excluding dummy scans (seconds)",
     )
-    trigger_key: str = Field(default="5", description="Keypress that marks scanner trigger")
+    trigger_key: str = Field(
+        default="5", description="Keypress that marks scanner trigger"
+    )
     iti_jitter_sec: tuple[float, float] | None = Field(
         default=None, description="(low, high) uniform ITI jitter in seconds"
     )
@@ -75,9 +77,7 @@ class ScannerProfile(BaseModel):
 
     @field_validator("iti_jitter_sec")
     @classmethod
-    def _jitter_ok(
-        cls, v: tuple[float, float] | None
-    ) -> tuple[float, float] | None:
+    def _jitter_ok(cls, v: tuple[float, float] | None) -> tuple[float, float] | None:
         if v is None:
             return None
         try:
@@ -91,7 +91,7 @@ class ScannerProfile(BaseModel):
         return (low, high)
 
     @model_validator(mode="after")
-    def _validate_scan_budget(self) -> "ScannerProfile":
+    def _validate_scan_budget(self) -> ScannerProfile:
         if self.n_volumes is not None and self.n_volumes <= self.dummy_scans:
             raise ValueError("n_volumes must exceed dummy_scans")
         if self.planned_duration_sec is None:
@@ -102,7 +102,9 @@ class ScannerProfile(BaseModel):
                 "planned_duration_sec must exceed the time consumed by dummy_scans * tr_sec"
             )
         if self.n_volumes is not None:
-            usable_budget = float(self.n_volumes - self.dummy_scans) * float(self.tr_sec)
+            usable_budget = float(self.n_volumes - self.dummy_scans) * float(
+                self.tr_sec
+            )
             if float(self.planned_duration_sec) > usable_budget + 1e-6:
                 raise ValueError(
                     "planned_duration_sec exceeds the available scan budget implied by "
@@ -154,7 +156,7 @@ class BehaviorTaskSpecV1(BaseModel):
     notes: str | None = None
 
     @model_validator(mode="after")
-    def _validate_program(self) -> "BehaviorTaskSpecV1":
+    def _validate_program(self) -> BehaviorTaskSpecV1:
         prog = self.task_program
         # psyflow wrapper requires engine=psyflow and the canonical behavior
         # observation contract.
@@ -274,7 +276,7 @@ class PsyflowTaskBundleV1(BaseModel):
     psyflow_commit: str | None = None
 
     @model_validator(mode="after")
-    def _coerce_paths(self) -> "PsyflowTaskBundleV1":
+    def _coerce_paths(self) -> PsyflowTaskBundleV1:
         # planned_dir and bundle_dir default to strings already.
         return self
 

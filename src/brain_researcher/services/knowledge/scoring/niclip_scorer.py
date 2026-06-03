@@ -15,7 +15,6 @@ import asyncio
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -45,7 +44,7 @@ class ScoredConcept:
 class NiCLIPConfig:
     """Configuration for NiCLIP scoring."""
 
-    data_path: Optional[str] = None
+    data_path: str | None = None
     vocabulary_type: str = "cogatlas_task-names"
     top_k: int = 10
     use_semantic: bool = False  # If True, requires query embeddings
@@ -77,8 +76,8 @@ class NiCLIPEvidenceSource(EvidenceSource):
 
     def __init__(
         self,
-        config: Optional[NiCLIPConfig] = None,
-        data_path: Optional[str] = None,
+        config: NiCLIPConfig | None = None,
+        data_path: str | None = None,
         vocabulary_type: str = "cogatlas_task-names",
         top_k: int = 10,
     ):
@@ -104,9 +103,9 @@ class NiCLIPEvidenceSource(EvidenceSource):
 
         # Lazy-loaded service and caches
         self._service = None
-        self._available: Optional[bool] = None
+        self._available: bool | None = None
         self._engine = None
-        self._vocab_cache: Optional[Tuple[List[str], np.ndarray, np.ndarray]] = None
+        self._vocab_cache: tuple[list[str], np.ndarray, np.ndarray] | None = None
 
     @property
     def source_type(self) -> EvidenceSourceType:
@@ -148,7 +147,7 @@ class NiCLIPEvidenceSource(EvidenceSource):
                     self._service = None
         return self._service
 
-    def _get_vocabulary(self) -> Optional[Tuple[List[str], np.ndarray, np.ndarray]]:
+    def _get_vocabulary(self) -> tuple[list[str], np.ndarray, np.ndarray] | None:
         """Get cached vocabulary, embeddings, and priors.
 
         Returns:
@@ -177,7 +176,7 @@ class NiCLIPEvidenceSource(EvidenceSource):
             logger.warning("Failed to load vocabulary: %s", e)
             return None
 
-    def _score_keyword(self, text: str) -> List[ScoredConcept]:
+    def _score_keyword(self, text: str) -> list[ScoredConcept]:
         """Score text against vocabulary using keyword matching.
 
         This is a fast scoring method that doesn't require embeddings.
@@ -212,8 +211,8 @@ class NiCLIPEvidenceSource(EvidenceSource):
                 term_words = set(term_lower.split())
                 overlap = query_words.intersection(term_words)
                 if overlap:
-                    base_score = 0.4 * len(overlap) / max(
-                        len(query_words), len(term_words)
+                    base_score = (
+                        0.4 * len(overlap) / max(len(query_words), len(term_words))
                     )
                 else:
                     continue  # Skip if no overlap
@@ -236,7 +235,7 @@ class NiCLIPEvidenceSource(EvidenceSource):
         scored.sort(key=lambda x: x.score, reverse=True)
         return scored[: self._config.top_k]
 
-    def _score_semantic(self, query_embedding: np.ndarray) -> List[ScoredConcept]:
+    def _score_semantic(self, query_embedding: np.ndarray) -> list[ScoredConcept]:
         """Score using a pre-computed embedding vector.
 
         This provides full semantic similarity using FAISS.
@@ -264,7 +263,7 @@ class NiCLIPEvidenceSource(EvidenceSource):
             )
 
             scored = []
-            for dist, idx in zip(distances, indices):
+            for dist, idx in zip(distances, indices, strict=False):
                 if idx < 0 or idx >= len(vocab):
                     continue
 
@@ -273,9 +272,9 @@ class NiCLIPEvidenceSource(EvidenceSource):
                         term=vocab[idx],
                         score=float(dist),  # Cosine similarity
                         vocabulary_index=int(idx),
-                        prior_probability=float(priors[idx])
-                        if idx < len(priors)
-                        else 0.5,
+                        prior_probability=(
+                            float(priors[idx]) if idx < len(priors) else 0.5
+                        ),
                         vocabulary_type=self._config.vocabulary_type,
                     )
                 )
@@ -287,8 +286,8 @@ class NiCLIPEvidenceSource(EvidenceSource):
             return []
 
     def _concepts_to_results(
-        self, concepts: List[ScoredConcept]
-    ) -> List[EvidenceResult]:
+        self, concepts: list[ScoredConcept]
+    ) -> list[EvidenceResult]:
         """Convert scored concepts to evidence results."""
         return [
             EvidenceResult(
@@ -309,13 +308,13 @@ class NiCLIPEvidenceSource(EvidenceSource):
             for concept in concepts
         ]
 
-    def _get_cognitive_atlas_url(self, term: str) -> Optional[str]:
+    def _get_cognitive_atlas_url(self, term: str) -> str | None:
         """Generate Cognitive Atlas URL for a concept if applicable."""
         # Simple URL generation - could be enhanced with actual ID lookup
         slug = term.lower().replace(" ", "-").replace("_", "-")
         return f"https://www.cognitiveatlas.org/concept/id/{slug}"
 
-    def query_sync(self, query: EvidenceQuery) -> List[EvidenceResult]:
+    def query_sync(self, query: EvidenceQuery) -> list[EvidenceResult]:
         """Synchronous query implementation.
 
         Args:
@@ -329,7 +328,11 @@ class NiCLIPEvidenceSource(EvidenceSource):
             return []
 
         # Determine scoring method based on query
-        if self._config.use_semantic and hasattr(query, "embedding") and query.embedding is not None:
+        if (
+            self._config.use_semantic
+            and hasattr(query, "embedding")
+            and query.embedding is not None
+        ):
             concepts = self._score_semantic(query.embedding)
         else:
             concepts = self._score_keyword(query.text)
@@ -340,7 +343,7 @@ class NiCLIPEvidenceSource(EvidenceSource):
 
         return self._concepts_to_results(concepts)
 
-    async def query(self, query: EvidenceQuery) -> List[EvidenceResult]:
+    async def query(self, query: EvidenceQuery) -> list[EvidenceResult]:
         """Async query for NiCLIP matches.
 
         Args:
@@ -384,8 +387,8 @@ class NiCLIPScorer:
 
     def __init__(
         self,
-        config: Optional[NiCLIPConfig] = None,
-        data_path: Optional[str] = None,
+        config: NiCLIPConfig | None = None,
+        data_path: str | None = None,
         vocabulary_type: str = "cogatlas_task-names",
         top_k: int = 10,
     ):
@@ -409,7 +412,7 @@ class NiCLIPScorer:
         """Check if NiCLIP scoring is available."""
         return await self._source.health_check()
 
-    def score_text(self, text: str) -> List[ScoredConcept]:
+    def score_text(self, text: str) -> list[ScoredConcept]:
         """Score text against vocabulary.
 
         Args:
@@ -420,7 +423,7 @@ class NiCLIPScorer:
         """
         return self._source._score_keyword(text)
 
-    def score_embedding(self, embedding: np.ndarray) -> List[ScoredConcept]:
+    def score_embedding(self, embedding: np.ndarray) -> list[ScoredConcept]:
         """Score using a pre-computed embedding.
 
         Args:
@@ -448,12 +451,12 @@ class NiCLIPScorer:
 
         # Average of top-k scores, weighted toward top matches
         weights = [1.0 / (i + 1) for i in range(len(scored))]
-        weighted_sum = sum(s.score * w for s, w in zip(scored, weights))
+        weighted_sum = sum(s.score * w for s, w in zip(scored, weights, strict=False))
         total_weight = sum(weights)
 
         return weighted_sum / total_weight if total_weight > 0 else 0.0
 
-    def get_top_concepts(self, text: str, limit: int = 5) -> List[str]:
+    def get_top_concepts(self, text: str, limit: int = 5) -> list[str]:
         """Get top matching concept names for a query.
 
         Args:
@@ -514,7 +517,7 @@ def search_niclip(
     text: str,
     limit: int = 10,
     vocabulary_type: str = "cogatlas_task-names",
-) -> List[EvidenceResult]:
+) -> list[EvidenceResult]:
     """Search NiCLIP vocabulary for matching concepts.
 
     Convenience function for simple queries without creating instances.
@@ -533,7 +536,7 @@ def search_niclip(
 
 
 def create_niclip_source(
-    data_path: Optional[str] = None,
+    data_path: str | None = None,
     vocabulary_type: str = "cogatlas_task-names",
     top_k: int = 10,
 ) -> NiCLIPEvidenceSource:

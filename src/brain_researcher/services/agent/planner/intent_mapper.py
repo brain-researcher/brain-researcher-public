@@ -11,13 +11,12 @@ This module implements the core planner logic:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
+from ..preflight import run_preflight
 from ..tool_catalog_loader import get_tool_index, load_niwrap_containers
-from ..preflight import run_preflight, PreflightReport
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +38,9 @@ class CandidateResult(BaseModel):
     tool_id: str
     tool_name: str
     score: float
-    image: Optional[str] = None
+    image: str | None = None
     preflight_ok: bool = False
-    preflight_report: Optional[Dict[str, Any]] = None
+    preflight_report: dict[str, Any] | None = None
     reason: str = ""
 
 
@@ -58,13 +57,13 @@ class PlanResult(BaseModel):
     """
 
     intent: str
-    candidates: List[CandidateResult]
-    chosen: Optional[CandidateResult] = None
-    plan_id: Optional[str] = None
-    constraints: Dict[str, Any] = Field(default_factory=dict)
+    candidates: list[CandidateResult]
+    chosen: CandidateResult | None = None
+    plan_id: str | None = None
+    constraints: dict[str, Any] = Field(default_factory=dict)
 
 
-def _resolve_image_path(tool_id: str, tool_name: str) -> Optional[str]:
+def _resolve_image_path(tool_id: str, tool_name: str) -> str | None:
     """
     Resolve container image path for a tool.
 
@@ -104,7 +103,7 @@ def _resolve_image_path(tool_id: str, tool_name: str) -> Optional[str]:
 
 def choose_tool(
     intent: str,
-    constraints: Optional[Dict[str, Any]] = None,
+    constraints: dict[str, Any] | None = None,
     k: int = 8,
 ) -> PlanResult:
     """
@@ -143,7 +142,7 @@ def choose_tool(
     logger.info(f"Found {len(search_results)} candidates for intent: {intent}")
 
     # Step 2: Evaluate each candidate with preflight
-    candidates: List[CandidateResult] = []
+    candidates: list[CandidateResult] = []
 
     for tool_entry, score in search_results:
         # Resolve container image path
@@ -160,9 +159,7 @@ def choose_tool(
                 reason="Container image not configured",
             )
             candidates.append(candidate)
-            logger.debug(
-                f"Candidate {tool_entry.id}: no image configured"
-            )
+            logger.debug(f"Candidate {tool_entry.id}: no image configured")
             continue
 
         # Run preflight checks
@@ -211,15 +208,14 @@ def choose_tool(
             candidates.append(candidate)
 
     # Step 3: Select the best viable tool
-    chosen: Optional[CandidateResult] = None
+    chosen: CandidateResult | None = None
 
     # First, try to find a candidate that passed preflight
     for candidate in candidates:
         if candidate.preflight_ok:
             chosen = candidate
             logger.info(
-                f"Chosen tool: {candidate.tool_id} "
-                f"(score={candidate.score:.3f})"
+                f"Chosen tool: {candidate.tool_id} " f"(score={candidate.score:.3f})"
             )
             break
 

@@ -14,16 +14,15 @@ At this stage we explicitly avoid any heavy orchestration logic; the goal is to
 standardise argument handling, logging, and error reporting so higher level
 modules (FitLins, fMRIPrep, FSL, etc.) can build on a consistent contract.
 """
+
 from __future__ import annotations
 
-import json
 import os
 import shlex
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Literal, Optional
-
+from typing import Any, Literal
 
 Runtime = Literal["docker", "apptainer", "wrapper", "neurodesk_module"]
 """Runtime execution modes:
@@ -44,7 +43,7 @@ class BindMount:
     container_path: str
     read_only: bool = False
 
-    def to_runtime_args(self, runtime: Runtime) -> List[str]:
+    def to_runtime_args(self, runtime: Runtime) -> list[str]:
         if runtime == "docker":
             mode = "ro" if self.read_only else "rw"
             return ["-v", f"{self.host_path}:{self.container_path}:{mode}"]
@@ -59,12 +58,12 @@ class BindMount:
 class SlurmConfig:
     """Optional Slurm submission configuration."""
 
-    partition: Optional[str] = None
-    time: Optional[str] = None
-    gpus: Optional[int] = None
-    cpus_per_task: Optional[int] = None
-    mem_gb: Optional[int] = None
-    additional_args: List[str] = field(default_factory=list)
+    partition: str | None = None
+    time: str | None = None
+    gpus: int | None = None
+    cpus_per_task: int | None = None
+    mem_gb: int | None = None
+    additional_args: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -72,15 +71,15 @@ class ContainerRequest:
     """Description of a container execution."""
 
     image: str | None = None
-    command: List[str] = field(default_factory=list)
+    command: list[str] = field(default_factory=list)
     runtime: Runtime = "apptainer"
-    workdir: Optional[str] = None
-    env: Dict[str, str] = field(default_factory=dict)
-    mounts: List[BindMount] = field(default_factory=list)
+    workdir: str | None = None
+    env: dict[str, str] = field(default_factory=dict)
+    mounts: list[BindMount] = field(default_factory=list)
     network_disabled: bool = False
     gpu_enabled: bool = False
-    slurm: Optional[SlurmConfig] = None
-    extra_run_args: List[str] = field(default_factory=list)
+    slurm: SlurmConfig | None = None
+    extra_run_args: list[str] = field(default_factory=list)
 
     # Sandbox isolation fields (P3.8)
     sandbox_enabled: bool = True  # Master switch for sandbox isolation
@@ -101,14 +100,21 @@ class ContainerRequest:
 class ContainerExecutionError(RuntimeError):
     """Raised when container execution fails."""
 
-    def __init__(self, message: str, *, stdout: str = "", stderr: str = "", exit_code: int | None = None):
+    def __init__(
+        self,
+        message: str,
+        *,
+        stdout: str = "",
+        stderr: str = "",
+        exit_code: int | None = None,
+    ):
         super().__init__(message)
         self.stdout = stdout
         self.stderr = stderr
         self.exit_code = exit_code
 
 
-def _deduplicate_mounts(mounts: List[BindMount]) -> List[BindMount]:
+def _deduplicate_mounts(mounts: list[BindMount]) -> list[BindMount]:
     """Deduplicate bind mounts, keeping the last occurrence of each unique path pair.
 
     This ensures user-specified mounts override package defaults.
@@ -119,7 +125,7 @@ def _deduplicate_mounts(mounts: List[BindMount]) -> List[BindMount]:
     Returns:
         List of deduplicated BindMount objects
     """
-    seen: Dict[tuple[str, str], BindMount] = {}
+    seen: dict[tuple[str, str], BindMount] = {}
     for mount in mounts:
         # Key by (host_path, container_path) pair
         key = (mount.host_path, mount.container_path)
@@ -128,14 +134,14 @@ def _deduplicate_mounts(mounts: List[BindMount]) -> List[BindMount]:
     return list(seen.values())
 
 
-def _build_local_command(request: ContainerRequest) -> List[str]:
+def _build_local_command(request: ContainerRequest) -> list[str]:
     request.ensure_paths_exist()
 
     # Deduplicate mounts before processing
     deduplicated_mounts = _deduplicate_mounts(request.mounts)
 
     if request.runtime == "docker":
-        cmd: List[str] = ["docker", "run", "--rm"]
+        cmd: list[str] = ["docker", "run", "--rm"]
         if request.workdir:
             cmd += ["-w", request.workdir]
         if request.network_disabled:
@@ -214,7 +220,9 @@ def _build_local_command(request: ContainerRequest) -> List[str]:
     raise ValueError(f"Unsupported runtime: {request.runtime}")
 
 
-def _run_subprocess(cmd: List[str], *, env: Optional[Dict[str, str]] = None) -> subprocess.CompletedProcess:
+def _run_subprocess(
+    cmd: list[str], *, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess:
     proc = subprocess.run(cmd, check=False, capture_output=True, text=True, env=env)
     if proc.returncode != 0:
         raise ContainerExecutionError(
@@ -226,7 +234,7 @@ def _run_subprocess(cmd: List[str], *, env: Optional[Dict[str, str]] = None) -> 
     return proc
 
 
-def _build_slurm_command(request: ContainerRequest) -> List[str]:
+def _build_slurm_command(request: ContainerRequest) -> list[str]:
     assert request.slurm is not None
     sbatch = ["sbatch", "--parsable", "--export=ALL"]
     if request.slurm.partition:
@@ -248,7 +256,7 @@ def _build_slurm_command(request: ContainerRequest) -> List[str]:
     return sbatch
 
 
-def run_container(request: ContainerRequest) -> Dict[str, Any]:
+def run_container(request: ContainerRequest) -> dict[str, Any]:
     """Execute the request either locally or via Slurm.
 
     Returns a dictionary with stdout, stderr, exit_code, and, when Slurm is used,
@@ -291,11 +299,11 @@ def run_container(request: ContainerRequest) -> Dict[str, Any]:
 
 
 def make_neurodesk_module_request(
-    command: List[str],
+    command: list[str],
     *,
-    env: Optional[Dict[str, str]] = None,
-    workdir: Optional[str] = None,
-) -> "ContainerRequest":
+    env: dict[str, str] | None = None,
+    workdir: str | None = None,
+) -> ContainerRequest:
     """Factory for neurodesk_module ContainerRequest with correct sandbox-off defaults.
 
     The neurodesk_module runtime must NOT use sandbox isolation: the host conda
@@ -316,7 +324,7 @@ def make_neurodesk_module_request(
     )
 
 
-def describe_request(request: ContainerRequest) -> Dict[str, Any]:
+def describe_request(request: ContainerRequest) -> dict[str, Any]:
     """Serialize a container request for logging/debugging.
 
     Note: This shows deduplicated mounts to reflect what will actually be executed.

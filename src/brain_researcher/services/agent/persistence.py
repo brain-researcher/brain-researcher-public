@@ -4,11 +4,12 @@ State persistence layer for the Brain Researcher agent.
 Provides Redis-based checkpointing for production and memory-based for development.
 """
 
+import builtins
 import json
 import logging
 import os
 from datetime import datetime
-from typing import Any, Optional, List, Dict, Tuple
+from typing import Any
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import BaseCheckpointSaver, Checkpoint
@@ -32,7 +33,7 @@ class RedisCheckpointer(BaseCheckpointSaver):
         self,
         redis_url: str = None,
         ttl_seconds: int = 86400,  # 24 hours default
-        namespace: str = "brain_researcher"
+        namespace: str = "brain_researcher",
     ):
         """
         Initialize Redis checkpointer.
@@ -49,19 +50,22 @@ class RedisCheckpointer(BaseCheckpointSaver):
         # Initialize Redis client
         try:
             import redis
+
             self.redis_client = redis.from_url(self.redis_url, decode_responses=True)
             self.redis_client.ping()
             logger.info(f"Connected to Redis at {self.redis_url}")
         except ImportError:
             logger.warning("Redis package not installed, falling back to fakeredis")
             import fakeredis
+
             self.redis_client = fakeredis.FakeRedis(decode_responses=True)
         except Exception as e:
             logger.warning(f"Failed to connect to Redis: {e}, using fakeredis")
             import fakeredis
+
             self.redis_client = fakeredis.FakeRedis(decode_responses=True)
 
-    def _make_key(self, thread_id: str, checkpoint_id: Optional[str] = None) -> str:
+    def _make_key(self, thread_id: str, checkpoint_id: str | None = None) -> str:
         """Generate Redis key for checkpoint."""
         if checkpoint_id:
             return f"{self.namespace}:checkpoint:{thread_id}:{checkpoint_id}"
@@ -75,7 +79,7 @@ class RedisCheckpointer(BaseCheckpointSaver):
         self,
         config: RunnableConfig,
         checkpoint: Checkpoint,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None,
     ) -> RunnableConfig:
         """
         Save a checkpoint to Redis.
@@ -97,30 +101,25 @@ class RedisCheckpointer(BaseCheckpointSaver):
             "metadata": metadata or {},
             "timestamp": datetime.utcnow().isoformat(),
             "thread_id": thread_id,
-            "checkpoint_id": checkpoint_id
+            "checkpoint_id": checkpoint_id,
         }
 
         # Save to Redis
         key = self._make_key(thread_id, checkpoint_id)
         self.redis_client.setex(
-            key,
-            self.ttl_seconds,
-            json.dumps(checkpoint_data, default=str)
+            key, self.ttl_seconds, json.dumps(checkpoint_data, default=str)
         )
 
         # Update latest pointer
         latest_key = self._make_key(thread_id)
         self.redis_client.setex(
-            latest_key,
-            self.ttl_seconds,
-            json.dumps(checkpoint_data, default=str)
+            latest_key, self.ttl_seconds, json.dumps(checkpoint_data, default=str)
         )
 
         # Add to history (sorted set by timestamp)
         history_key = self._make_history_key(thread_id)
         self.redis_client.zadd(
-            history_key,
-            {checkpoint_id: datetime.utcnow().timestamp()}
+            history_key, {checkpoint_id: datetime.utcnow().timestamp()}
         )
 
         # Set TTL on history
@@ -131,16 +130,10 @@ class RedisCheckpointer(BaseCheckpointSaver):
         # Return updated config
         return {
             **config,
-            "configurable": {
-                **config["configurable"],
-                "checkpoint_id": checkpoint_id
-            }
+            "configurable": {**config["configurable"], "checkpoint_id": checkpoint_id},
         }
 
-    def get(
-        self,
-        config: RunnableConfig
-    ) -> Optional[Tuple[Checkpoint, Dict[str, Any]]]:
+    def get(self, config: RunnableConfig) -> tuple[Checkpoint, dict[str, Any]] | None:
         """
         Retrieve a checkpoint from Redis.
 
@@ -164,18 +157,15 @@ class RedisCheckpointer(BaseCheckpointSaver):
         # Deserialize
         checkpoint_data = json.loads(data)
 
-        return (
-            checkpoint_data["checkpoint"],
-            checkpoint_data.get("metadata", {})
-        )
+        return (checkpoint_data["checkpoint"], checkpoint_data.get("metadata", {}))
 
     def list(
         self,
         config: RunnableConfig,
         *,
-        before: Optional[RunnableConfig] = None,
-        limit: Optional[int] = None
-    ) -> List[Tuple[RunnableConfig, Checkpoint, Dict[str, Any]]]:
+        before: RunnableConfig | None = None,
+        limit: int | None = None,
+    ) -> list[tuple[RunnableConfig, Checkpoint, dict[str, Any]]]:
         """
         List checkpoints for a thread.
 
@@ -192,9 +182,7 @@ class RedisCheckpointer(BaseCheckpointSaver):
 
         # Get checkpoint IDs from history (sorted by timestamp)
         checkpoint_ids = self.redis_client.zrevrange(
-            history_key,
-            0,
-            limit - 1 if limit else -1
+            history_key, 0, limit - 1 if limit else -1
         )
 
         results = []
@@ -208,18 +196,20 @@ class RedisCheckpointer(BaseCheckpointSaver):
                     **config,
                     "configurable": {
                         **config["configurable"],
-                        "checkpoint_id": checkpoint_id
-                    }
+                        "checkpoint_id": checkpoint_id,
+                    },
                 }
-                results.append((
-                    checkpoint_config,
-                    checkpoint_data["checkpoint"],
-                    checkpoint_data.get("metadata", {})
-                ))
+                results.append(
+                    (
+                        checkpoint_config,
+                        checkpoint_data["checkpoint"],
+                        checkpoint_data.get("metadata", {}),
+                    )
+                )
 
         return results
 
-    def get_tuple(self, config: RunnableConfig) -> Optional[Any]:
+    def get_tuple(self, config: RunnableConfig) -> Any | None:
         """Get checkpoint tuple (for compatibility)."""
         result = self.get(config)
         if result:
@@ -228,16 +218,20 @@ class RedisCheckpointer(BaseCheckpointSaver):
                 "config": config,
                 "checkpoint": checkpoint,
                 "metadata": metadata,
-                "parent_config": None
+                "parent_config": None,
             }
         return None
 
-    def put_writes(self, config: RunnableConfig, writes: List[Any], task_id: str) -> None:
+    def put_writes(
+        self, config: RunnableConfig, writes: builtins.list[Any], task_id: str
+    ) -> None:
         """Store pending writes (for compatibility)."""
         # This is handled by the checkpoint itself in our implementation
         pass
 
-    async def aget(self, config: RunnableConfig) -> Optional[tuple[Checkpoint, dict[str, Any]]]:
+    async def aget(
+        self, config: RunnableConfig
+    ) -> tuple[Checkpoint, dict[str, Any]] | None:
         """Async version of get (delegates to sync for now)."""
         return self.get(config)
 
@@ -245,7 +239,7 @@ class RedisCheckpointer(BaseCheckpointSaver):
         self,
         config: RunnableConfig,
         checkpoint: Checkpoint,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None,
     ) -> RunnableConfig:
         """Async version of put (delegates to sync for now)."""
         return self.put(config, checkpoint, metadata)
@@ -273,15 +267,12 @@ class HybridCheckpointer(BaseCheckpointSaver):
         self,
         config: RunnableConfig,
         checkpoint: Checkpoint,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None,
     ) -> RunnableConfig:
         """Delegate to backend."""
         return self.backend.put(config, checkpoint, metadata)
 
-    def get(
-        self,
-        config: RunnableConfig
-    ) -> Optional[Tuple[Checkpoint, Dict[str, Any]]]:
+    def get(self, config: RunnableConfig) -> tuple[Checkpoint, dict[str, Any]] | None:
         """Delegate to backend."""
         return self.backend.get(config)
 
@@ -289,23 +280,27 @@ class HybridCheckpointer(BaseCheckpointSaver):
         self,
         config: RunnableConfig,
         *,
-        before: Optional[RunnableConfig] = None,
-        limit: Optional[int] = None
-    ) -> List[Tuple[RunnableConfig, Checkpoint, Dict[str, Any]]]:
+        before: RunnableConfig | None = None,
+        limit: int | None = None,
+    ) -> list[tuple[RunnableConfig, Checkpoint, dict[str, Any]]]:
         """Delegate to backend."""
         return self.backend.list(config, before=before, limit=limit)
 
-    def get_tuple(self, config: RunnableConfig) -> Optional[Any]:
+    def get_tuple(self, config: RunnableConfig) -> Any | None:
         """Delegate to backend."""
         return self.backend.get_tuple(config)
 
-    def put_writes(self, config: RunnableConfig, writes: List[Any], task_id: str) -> None:
+    def put_writes(
+        self, config: RunnableConfig, writes: builtins.list[Any], task_id: str
+    ) -> None:
         """Delegate to backend."""
         return self.backend.put_writes(config, writes, task_id)
 
-    async def aget(self, config: RunnableConfig) -> Optional[tuple[Checkpoint, dict[str, Any]]]:
+    async def aget(
+        self, config: RunnableConfig
+    ) -> tuple[Checkpoint, dict[str, Any]] | None:
         """Delegate to backend."""
-        if hasattr(self.backend, 'aget'):
+        if hasattr(self.backend, "aget"):
             return await self.backend.aget(config)
         return self.backend.get(config)
 
@@ -313,10 +308,10 @@ class HybridCheckpointer(BaseCheckpointSaver):
         self,
         config: RunnableConfig,
         checkpoint: Checkpoint,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None,
     ) -> RunnableConfig:
         """Delegate to backend."""
-        if hasattr(self.backend, 'aput'):
+        if hasattr(self.backend, "aput"):
             return await self.backend.aput(config, checkpoint, metadata)
         return self.backend.put(config, checkpoint, metadata)
 

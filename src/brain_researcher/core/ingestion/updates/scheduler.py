@@ -7,26 +7,24 @@ For production, consider using APScheduler or Celery.
 import logging
 import threading
 import time
+from collections.abc import Callable
 from datetime import datetime, timedelta
-from typing import Callable, Dict, Any, List, Optional
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class Priority(Enum):
     """Update priority levels."""
+
     HIGH = 1
     NORMAL = 2
     LOW = 3
 
 
 def run_every(
-    interval_seconds: int,
-    function: Callable,
-    *args,
-    daemon: bool = True,
-    **kwargs
+    interval_seconds: int, function: Callable, *args, daemon: bool = True, **kwargs
 ) -> threading.Thread:
     """Run a function periodically in a background thread.
 
@@ -40,6 +38,7 @@ def run_every(
     Returns:
         Thread object
     """
+
     def loop():
         while True:
             try:
@@ -66,10 +65,10 @@ class UpdateScheduler:
         self.max_workers = max_workers
 
         # Scheduled tasks
-        self.tasks: Dict[str, Dict[str, Any]] = {}
+        self.tasks: dict[str, dict[str, Any]] = {}
 
         # Running threads
-        self.threads: Dict[str, threading.Thread] = {}
+        self.threads: dict[str, threading.Thread] = {}
 
         # Lock for thread safety
         self.lock = threading.Lock()
@@ -90,8 +89,8 @@ class UpdateScheduler:
         interval: timedelta,
         priority: Priority = Priority.NORMAL,
         args: tuple = (),
-        kwargs: Optional[dict] = None,
-        start_immediately: bool = False
+        kwargs: dict | None = None,
+        start_immediately: bool = False,
     ):
         """Schedule a periodic update task.
 
@@ -111,7 +110,9 @@ class UpdateScheduler:
                 "priority": priority,
                 "args": args,
                 "kwargs": kwargs or {},
-                "next_run": datetime.now() if start_immediately else datetime.now() + interval,
+                "next_run": (
+                    datetime.now() if start_immediately else datetime.now() + interval
+                ),
                 "last_run": None,
                 "runs": 0,
                 "failures": 0,
@@ -228,7 +229,7 @@ class UpdateScheduler:
 
             # Note: Running threads will complete their current execution
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get scheduler status.
 
         Returns:
@@ -244,11 +245,16 @@ class UpdateScheduler:
                 status["tasks"][name] = {
                     "interval": str(task["interval"]),
                     "priority": task["priority"].name,
-                    "next_run": task["next_run"].isoformat() if task["next_run"] else None,
-                    "last_run": task["last_run"].isoformat() if task["last_run"] else None,
+                    "next_run": (
+                        task["next_run"].isoformat() if task["next_run"] else None
+                    ),
+                    "last_run": (
+                        task["last_run"].isoformat() if task["last_run"] else None
+                    ),
                     "runs": task["runs"],
                     "failures": task["failures"],
-                    "is_running": name in self.threads and self.threads[name].is_alive(),
+                    "is_running": name in self.threads
+                    and self.threads[name].is_alive(),
                 }
 
         return status
@@ -264,7 +270,7 @@ class UpdateScheduler:
 
         self._run_task(name)
 
-    def list_tasks(self) -> List[str]:
+    def list_tasks(self) -> list[str]:
         """List all scheduled tasks.
 
         Returns:
@@ -277,7 +283,7 @@ class UpdateScheduler:
 class DataSourceUpdater:
     """Coordinate updates for multiple data sources."""
 
-    def __init__(self, scheduler: Optional[UpdateScheduler] = None):
+    def __init__(self, scheduler: UpdateScheduler | None = None):
         """Initialize data source updater.
 
         Args:
@@ -286,14 +292,14 @@ class DataSourceUpdater:
         self.scheduler = scheduler or UpdateScheduler(max_workers=2)
 
         # Update functions for each source
-        self.update_functions: Dict[str, Callable] = {}
+        self.update_functions: dict[str, Callable] = {}
 
     def register_source(
         self,
         name: str,
         update_function: Callable,
         interval: timedelta,
-        priority: Priority = Priority.NORMAL
+        priority: Priority = Priority.NORMAL,
     ):
         """Register a data source for updates.
 
@@ -309,7 +315,7 @@ class DataSourceUpdater:
             name=f"update_{name}",
             function=update_function,
             interval=interval,
-            priority=priority
+            priority=priority,
         )
 
         logger.info(f"Registered data source '{name}' for updates")
@@ -327,7 +333,7 @@ class DataSourceUpdater:
         """Start the update scheduler."""
         return self.scheduler.start()
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get updater status.
 
         Returns:

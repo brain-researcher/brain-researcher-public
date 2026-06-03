@@ -4,11 +4,12 @@ Shared helpers for FSL MELODIC execution.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Dict, Mapping, Sequence, Tuple
+from typing import Any
 
 
-def _tuple(values: Sequence[str] | str | None) -> Tuple[str, ...]:
+def _tuple(values: Sequence[str] | str | None) -> tuple[str, ...]:
     if values is None:
         return ()
     if isinstance(values, str):
@@ -23,7 +24,7 @@ def _tuple(values: Sequence[str] | str | None) -> Tuple[str, ...]:
 class FSLMELODICParameters:
     """Normalised configuration for FSL MELODIC."""
 
-    input_files: Tuple[str, ...]
+    input_files: tuple[str, ...]
     output_dir: str
     tr: float
     approach: str = "concat"
@@ -34,7 +35,7 @@ class FSLMELODICParameters:
     var_norm: bool = True
     output_all: bool = True
     report: bool = True
-    extra_args: Tuple[str, ...] = field(default_factory=tuple)
+    extra_args: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         if not self.input_files:
@@ -104,7 +105,9 @@ def fsl_melodic_from_payload(payload: Mapping[str, Any]) -> FSLMELODICParameters
         bg_threshold=float(payload.get("bg_threshold", 10.0)),
         var_norm=bool(payload.get("var_norm", True)),
         output_all=bool(payload.get("output_all", True)),
-        report=bool(payload.get("report", True) or payload.get("generate_report", True)),
+        report=bool(
+            payload.get("report", True) or payload.get("generate_report", True)
+        ),
         extra_args=_tuple(extra_args),
     )
 

@@ -2,20 +2,21 @@
 
 from __future__ import annotations
 
-import secrets
-import os
 import logging
+import os
+import secrets
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import (
     BaseModel,
     Field,
-    field_validator,
     GetCoreSchemaHandler,
+    field_validator,
     model_validator,
 )
 from pydantic_core import core_schema
+
 from brain_researcher.core.contracts import Violation
 
 from .por_tokens import (
@@ -74,7 +75,7 @@ def normalize_modality(value: str) -> str:
 class ResourceType:
     """Resource type validation with optional YAML extensibility."""
 
-    _ALIASES: Dict[str, str] = {
+    _ALIASES: dict[str, str] = {
         "file_path": "file_paths",
         "file_paths": "file_paths",
         "coords": "coordinates",
@@ -188,9 +189,10 @@ class ResourceType:
         return set(cls._ALLOWED)
 
     @classmethod
-    def load_from_yaml(cls, path: Optional[Path] = None) -> None:
+    def load_from_yaml(cls, path: Path | None = None) -> None:
         if path is None:
             from brain_researcher.config.paths import get_config_root
+
             path = get_config_root() / "tool_resources.yaml"
         try:
             exists = path.exists()
@@ -243,7 +245,7 @@ class ArtifactSpec(BaseModel):
 
     name: str
     rtype: str
-    description: Optional[str] = None
+    description: str | None = None
 
     @field_validator("rtype")
     @classmethod
@@ -256,10 +258,10 @@ class StepSpec(BaseModel):
 
     id: str
     tool: str
-    consumes: Dict[str, str] = Field(default_factory=dict)
-    produces: Dict[str, str] = Field(default_factory=dict)
-    params: Dict[str, Any] = Field(default_factory=dict)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    consumes: dict[str, str] = Field(default_factory=dict)
+    produces: dict[str, str] = Field(default_factory=dict)
+    params: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     runtime_kind: RuntimeKind = Field(
         default="container",
         description="Execution backend: container (default), python, or api",
@@ -267,7 +269,7 @@ class StepSpec(BaseModel):
 
     @field_validator("consumes", "produces", mode="before")
     @classmethod
-    def _validate_resources(cls, v: Dict[str, str]) -> Dict[str, str]:
+    def _validate_resources(cls, v: dict[str, str]) -> dict[str, str]:
         validated = {}
         for key, val in (v or {}).items():
             validated[key] = ResourceType.validate(val)
@@ -277,17 +279,17 @@ class StepSpec(BaseModel):
 class ConstraintSpec(BaseModel):
     """Planner constraints enforced by the orchestrator."""
 
-    tool_allowlist: Optional[List[str]] = None
-    max_steps: Optional[int] = None
-    max_cost_units: Optional[float] = None
-    warnings: List[str] = Field(default_factory=list)
+    tool_allowlist: list[str] | None = None
+    max_steps: int | None = None
+    max_cost_units: float | None = None
+    warnings: list[str] = Field(default_factory=list)
 
 
 class PlanDAG(BaseModel):
     """Structured DAG representation shared between services."""
 
-    steps: List[StepSpec]
-    artifacts: List[ArtifactSpec] = Field(default_factory=list)
+    steps: list[StepSpec]
+    artifacts: list[ArtifactSpec] = Field(default_factory=list)
 
 
 class Plan(BaseModel):
@@ -299,13 +301,13 @@ class Plan(BaseModel):
         default="1.0", description="Plan schema version for backward compatibility"
     )
     domain: Domain
-    modality: List[Modality]
+    modality: list[Modality]
     resolvable: bool = True
     dag: PlanDAG
-    estimates: Dict[str, float] = Field(default_factory=dict)
-    warnings: List[str] = Field(default_factory=list)
-    constraints: Optional[ConstraintSpec] = None
-    allowlist_mode: Optional[Literal["curated", "diagnostic"]] = None
+    estimates: dict[str, float] = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    constraints: ConstraintSpec | None = None
+    allowlist_mode: Literal["curated", "diagnostic"] | None = None
     # Signed POR token (issued by orchestrator; verified by agent before execution).
     # Falls back to an unsigned random token when BR_POR_TOKEN_SECRET is not set
     # and enforcement is disabled (dev mode).
@@ -313,39 +315,35 @@ class Plan(BaseModel):
 
     # P0-1: Selection reasoning (optional, populated by catalog-driven planner)
     # These fields provide transparency into the tool selection process
-    intent: Optional[List[str]] = None  # Extracted intent operators from query
-    predicted_capabilities: Optional[List[str]] = None  # Online predicted capabilities
-    predicted_intents: Optional[List[str]] = None  # Online predicted intent signals
-    capability_prediction: Optional[Dict[str, Any]] = None  # Predictor debug payload
-    cross_stage_context: Optional[Dict[str, Any]] = (
-        None  # Structured R1/R2/R3 constraints
-    )
-    loop_signals: Optional[List[Dict[str, Any]]] = (
-        None  # Typed loop signals (JSON form)
-    )
-    candidates: Optional[List[Dict[str, Any]]] = None  # Ranked candidate metadata
-    chosen_tool: Optional[str] = None  # Chosen tool ID (matches first step in DAG)
-    selection_reason: Optional[str] = None  # Human-readable explanation of choice
-    selection_reasons: Optional[List[Dict[str, Any]]] = (
+    intent: list[str] | None = None  # Extracted intent operators from query
+    predicted_capabilities: list[str] | None = None  # Online predicted capabilities
+    predicted_intents: list[str] | None = None  # Online predicted intent signals
+    capability_prediction: dict[str, Any] | None = None  # Predictor debug payload
+    cross_stage_context: dict[str, Any] | None = None  # Structured R1/R2/R3 constraints
+    loop_signals: list[dict[str, Any]] | None = None  # Typed loop signals (JSON form)
+    candidates: list[dict[str, Any]] | None = None  # Ranked candidate metadata
+    chosen_tool: str | None = None  # Chosen tool ID (matches first step in DAG)
+    selection_reason: str | None = None  # Human-readable explanation of choice
+    selection_reasons: list[dict[str, Any]] | None = (
         None  # Detailed scored reasons (optional, debug)
     )
-    mask_reasons: Optional[List[Violation]] = (
+    mask_reasons: list[Violation] | None = (
         None  # Constraint/masking reasons (violations)
     )
-    timestamp: Optional[int] = None  # Unix timestamp of plan generation
-    mode: Optional[Literal["legacy", "catalog"]] = (
+    timestamp: int | None = None  # Unix timestamp of plan generation
+    mode: Literal["legacy", "catalog"] | None = (
         None  # Planner mode used to generate this plan
     )
     # Planner trace + confidence (optional, for UI/analytics)
-    planner_state: Optional[Dict[str, Any]] = None
-    planner_events: Optional[List[Dict[str, Any]]] = None
-    run_summary: Optional[Dict[str, Any]] = None
-    plan_conf: Optional[float] = None
-    confidence_score: Optional[float] = None
-    routing_diagnostics: Optional[Dict[str, Any]] = None
+    planner_state: dict[str, Any] | None = None
+    planner_events: list[dict[str, Any]] | None = None
+    run_summary: dict[str, Any] | None = None
+    plan_conf: float | None = None
+    confidence_score: float | None = None
+    routing_diagnostics: dict[str, Any] | None = None
 
     @model_validator(mode="after")
-    def _ensure_signed_por_token(self) -> "Plan":
+    def _ensure_signed_por_token(self) -> Plan:
         """Ensure por_token is signed when the secret is configured."""
         if is_signed_por_token(self.por_token):
             return self
@@ -372,14 +370,14 @@ class PlanRequest(BaseModel):
 
     pipeline: str
     domain: Domain
-    modality: List[Modality]
-    inputs: Dict[str, str] = Field(default_factory=dict)
-    constraints: Optional[ConstraintSpec] = None
-    mode: Optional[Literal["catalog"]] = Field(
+    modality: list[Modality]
+    inputs: dict[str, str] = Field(default_factory=dict)
+    constraints: ConstraintSpec | None = None
+    mode: Literal["catalog"] | None = Field(
         None,
         description="Planner mode for active runtime requests. Only 'catalog' is supported; omitted requests default to catalog.",
     )
-    allowlist_mode: Optional[Literal["curated", "diagnostic"]] = Field(
+    allowlist_mode: Literal["curated", "diagnostic"] | None = Field(
         None,
         description=(
             "Allowlist surface for planner selection. 'curated' keeps the default "
@@ -387,7 +385,7 @@ class PlanRequest(BaseModel):
             "benchmark routing analysis."
         ),
     )
-    query_understanding: Optional[Dict[str, Any]] = Field(
+    query_understanding: dict[str, Any] | None = Field(
         default=None,
         description="Optional query understanding payload (datasets/KG/derivatives) forwarded to planner.",
     )
@@ -399,7 +397,7 @@ class RunPlanRequest(BaseModel):
     plan_id: str
     version: int
     por_token: str
-    plan: Optional[Plan] = Field(
+    plan: Plan | None = Field(
         default=None,
         description=(
             "Optional committed plan payload. This lets orchestration surfaces "
@@ -415,9 +413,9 @@ class PlanChange(BaseModel):
     plan_id: str
     from_version: int
     to_version: int
-    added_steps: List[StepSpec] = Field(default_factory=list)
-    removed_step_ids: List[str] = Field(default_factory=list)
-    reason: Optional[str] = None
+    added_steps: list[StepSpec] = Field(default_factory=list)
+    removed_step_ids: list[str] = Field(default_factory=list)
+    reason: str | None = None
 
 
 class PORToken(BaseModel):

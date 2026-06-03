@@ -307,7 +307,7 @@ def integrate_pubmed_relationships(
 
     # Create relationships
     loader = PubMedRelationshipLoader(db)
-    stats = loader.create_study_concept_relationships(limit=limit)
+    loader.create_study_concept_relationships(limit=limit)
 
     # Also create author relationships
     loader.create_author_relationships()
@@ -323,9 +323,7 @@ def integrate_pubmed_relationships(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Create PubMed relationships in BR-KG"
-    )
+    parser = argparse.ArgumentParser(description="Create PubMed relationships in BR-KG")
     parser.add_argument("db_path", help="Path to BR-KG database")
     parser.add_argument("--limit", type=int, help="Limit number of studies to process")
 

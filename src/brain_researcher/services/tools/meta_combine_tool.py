@@ -6,7 +6,6 @@ file paths for planning phase validation.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -16,12 +15,14 @@ from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResu
 class MetaCombineArgs(BaseModel):
     """Arguments for meta-analysis map combination."""
 
-    stat_map: str = Field(description="Aligned statistical map to include in combination")
+    stat_map: str = Field(
+        description="Aligned statistical map to include in combination"
+    )
     method: str = Field(
         default="fixed_effects",
         description="Combination method: 'fixed_effects', 'random_effects', 'stouffer', 'fisher'",
     )
-    output_dir: Optional[str] = Field(
+    output_dir: str | None = Field(
         default=None, description="Directory to store combined outputs"
     )
 

@@ -8,31 +8,29 @@ providing gradual rollout, rollback capabilities, and migration validation.
 import asyncio
 import json
 import logging
-import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Union, Callable
 from datetime import datetime, timedelta
 from enum import Enum
-import yaml
+from typing import Any
 
-import aiohttp
 import kubernetes.client
 from kubernetes.client.rest import ApiException
-from kubernetes import config
-import httpx
 
 from brain_researcher.core.utils.tool import tool
 from brain_researcher.services.communication.istio_bridge import (
-    IstioBridge, ServiceMeshConfig, TrafficPolicy, SecurityPolicy
+    IstioBridge,
+    SecurityPolicy,
+    ServiceMeshConfig,
+    TrafficPolicy,
 )
-
 
 logger = logging.getLogger(__name__)
 
 
 class MigrationPhase(Enum):
     """Migration phases for service mesh transition"""
+
     NOT_STARTED = "not_started"
     PREPARATION = "preparation"
     PILOT_SERVICES = "pilot_services"
@@ -48,6 +46,7 @@ class MigrationPhase(Enum):
 @dataclass
 class ServiceMigrationStatus:
     """Status of individual service migration"""
+
     service_name: str
     current_phase: MigrationPhase = MigrationPhase.NOT_STARTED
     sidecar_injected: bool = False
@@ -56,7 +55,7 @@ class ServiceMigrationStatus:
     health_check_passed: bool = False
     rollback_available: bool = False
     last_updated: datetime = field(default_factory=datetime.now)
-    migration_logs: List[str] = field(default_factory=list)
+    migration_logs: list[str] = field(default_factory=list)
 
     def add_log(self, message: str):
         """Add a migration log entry"""
@@ -67,44 +66,55 @@ class ServiceMigrationStatus:
 @dataclass
 class MigrationConfig:
     """Configuration for service mesh migration"""
+
     # Service priority order for migration
-    service_migration_order: List[str] = field(default_factory=lambda: [
-        "redis-service",         # Start with stateless cache
-        "postgres-service",      # Database services
-        "neo4j-service",
-        "br_kg-service",       # Core API services
-        "orchestrator-service",
-        "agent-service",         # Complex processing services
-        "web-ui-service"         # User-facing services last
-    ])
+    service_migration_order: list[str] = field(
+        default_factory=lambda: [
+            "redis-service",  # Start with stateless cache
+            "postgres-service",  # Database services
+            "neo4j-service",
+            "br_kg-service",  # Core API services
+            "orchestrator-service",
+            "agent-service",  # Complex processing services
+            "web-ui-service",  # User-facing services last
+        ]
+    )
 
     # Traffic split increments during gradual rollout
-    traffic_split_increments: List[int] = field(default_factory=lambda: [10, 25, 50, 75, 90, 100])
+    traffic_split_increments: list[int] = field(
+        default_factory=lambda: [10, 25, 50, 75, 90, 100]
+    )
 
     # Wait times between migration steps (seconds)
-    phase_wait_times: Dict[str, int] = field(default_factory=lambda: {
-        "sidecar_injection": 30,
-        "policy_application": 15,
-        "traffic_increment": 60,
-        "health_validation": 45,
-        "rollback_decision": 30
-    })
+    phase_wait_times: dict[str, int] = field(
+        default_factory=lambda: {
+            "sidecar_injection": 30,
+            "policy_application": 15,
+            "traffic_increment": 60,
+            "health_validation": 45,
+            "rollback_decision": 30,
+        }
+    )
 
     # Health check thresholds
-    health_thresholds: Dict[str, float] = field(default_factory=lambda: {
-        "success_rate_min": 0.95,
-        "error_rate_max": 0.05,
-        "latency_p95_max": 5000,  # milliseconds
-        "health_score_min": 80
-    })
+    health_thresholds: dict[str, float] = field(
+        default_factory=lambda: {
+            "success_rate_min": 0.95,
+            "error_rate_max": 0.05,
+            "latency_p95_max": 5000,  # milliseconds
+            "health_score_min": 80,
+        }
+    )
 
     # Rollback triggers
-    rollback_triggers: Dict[str, Any] = field(default_factory=lambda: {
-        "consecutive_health_failures": 3,
-        "error_rate_spike": 0.1,
-        "latency_degradation": 2.0,  # multiplier
-        "manual_trigger": False
-    })
+    rollback_triggers: dict[str, Any] = field(
+        default_factory=lambda: {
+            "consecutive_health_failures": 3,
+            "error_rate_spike": 0.1,
+            "latency_degradation": 2.0,  # multiplier
+            "manual_trigger": False,
+        }
+    )
 
     # Namespace and mesh configuration
     namespace: str = "brain-researcher"
@@ -118,7 +128,7 @@ class MigrationValidator:
     def __init__(self, bridge: IstioBridge):
         self.bridge = bridge
 
-    async def validate_prerequisites(self) -> Dict[str, Any]:
+    async def validate_prerequisites(self) -> dict[str, Any]:
         """Validate that prerequisites for migration are met"""
         results = {
             "istio_installed": False,
@@ -126,7 +136,7 @@ class MigrationValidator:
             "services_ready": False,
             "backup_created": False,
             "monitoring_available": False,
-            "errors": []
+            "errors": [],
         }
 
         try:
@@ -138,7 +148,7 @@ class MigrationValidator:
                         group="apps",
                         version="v1",
                         namespace="istio-system",
-                        plural="deployments"
+                        plural="deployments",
                     )
                     results["istio_installed"] = len(istiod.get("items", [])) > 0
                 except ApiException:
@@ -147,10 +157,12 @@ class MigrationValidator:
                 # Check namespace
                 v1 = kubernetes.client.CoreV1Api(self.bridge.k8s_client)
                 try:
-                    namespace = v1.read_namespace(self.bridge.config.namespace)
+                    v1.read_namespace(self.bridge.config.namespace)
                     results["namespace_exists"] = True
                 except ApiException:
-                    results["errors"].append(f"Namespace {self.bridge.config.namespace} not found")
+                    results["errors"].append(
+                        f"Namespace {self.bridge.config.namespace} not found"
+                    )
 
                 # Check services
                 try:
@@ -170,20 +182,18 @@ class MigrationValidator:
             results["errors"].append(f"Validation error: {str(e)}")
 
         results["ready"] = (
-            results["istio_installed"] and
-            results["namespace_exists"] and
-            results["services_ready"] and
-            results["monitoring_available"] and
-            not results["errors"]
+            results["istio_installed"]
+            and results["namespace_exists"]
+            and results["services_ready"]
+            and results["monitoring_available"]
+            and not results["errors"]
         )
 
         return results
 
     async def validate_service_health(
-        self,
-        service_name: str,
-        thresholds: Dict[str, float]
-    ) -> Dict[str, Any]:
+        self, service_name: str, thresholds: dict[str, float]
+    ) -> dict[str, Any]:
         """Validate service health against thresholds"""
         health_data = await self.bridge.get_service_health(service_name)
 
@@ -197,7 +207,7 @@ class MigrationValidator:
             "success_rate": True,
             "error_rate": True,
             "latency": True,
-            "overall_score": True
+            "overall_score": True,
         }
 
         issues = []
@@ -236,27 +246,29 @@ class MigrationValidator:
             "checks": checks,
             "issues": issues,
             "metrics": metrics,
-            "health_score": health_score
+            "health_score": health_score,
         }
 
 
 class MigrationManager:
     """Manages the complete service mesh migration process"""
 
-    def __init__(self, config: Optional[MigrationConfig] = None):
+    def __init__(self, config: MigrationConfig | None = None):
         self.config = config or MigrationConfig()
         self.bridge = IstioBridge(self.config.mesh_config)
         self.validator = MigrationValidator(self.bridge)
 
         # Migration state
         self.current_phase = MigrationPhase.NOT_STARTED
-        self.service_statuses: Dict[str, ServiceMigrationStatus] = {}
-        self.migration_start_time: Optional[datetime] = None
-        self.rollback_plan: List[Dict] = []
+        self.service_statuses: dict[str, ServiceMigrationStatus] = {}
+        self.migration_start_time: datetime | None = None
+        self.rollback_plan: list[dict] = []
 
         # Initialize service statuses
         for service in self.config.service_migration_order:
-            self.service_statuses[service] = ServiceMigrationStatus(service_name=service)
+            self.service_statuses[service] = ServiceMigrationStatus(
+                service_name=service
+            )
 
     async def initialize(self):
         """Initialize the migration manager"""
@@ -267,7 +279,7 @@ class MigrationManager:
         await self.bridge.cleanup()
 
     @tool
-    async def start_migration(self) -> Dict[str, Any]:
+    async def start_migration(self) -> dict[str, Any]:
         """Start the service mesh migration process"""
         logger.info("Starting Brain Researcher service mesh migration")
 
@@ -277,7 +289,7 @@ class MigrationManager:
             return {
                 "success": False,
                 "error": "Prerequisites not met",
-                "validation": validation
+                "validation": validation,
             }
 
         self.current_phase = MigrationPhase.PREPARATION
@@ -290,7 +302,7 @@ class MigrationManager:
                 return {
                     "success": False,
                     "error": "Failed to create backup configurations",
-                    "details": backup_result
+                    "details": backup_result,
                 }
 
             # Start with pilot services
@@ -303,13 +315,13 @@ class MigrationManager:
                     "success": True,
                     "phase": self.current_phase.value,
                     "pilot_services": pilot_result,
-                    "next_steps": "Monitor pilot services, then proceed with gradual rollout"
+                    "next_steps": "Monitor pilot services, then proceed with gradual rollout",
                 }
             else:
                 return {
                     "success": False,
                     "error": "Pilot service migration failed",
-                    "details": pilot_result
+                    "details": pilot_result,
                 }
 
         except Exception as e:
@@ -318,10 +330,10 @@ class MigrationManager:
             return {
                 "success": False,
                 "error": str(e),
-                "phase": self.current_phase.value
+                "phase": self.current_phase.value,
             }
 
-    async def _create_backup_configurations(self) -> Dict[str, Any]:
+    async def _create_backup_configurations(self) -> dict[str, Any]:
         """Create backup of current service configurations"""
         logger.info("Creating backup configurations")
 
@@ -340,7 +352,7 @@ class MigrationManager:
                 {
                     "name": svc.metadata.name,
                     "spec": svc.spec.to_dict(),
-                    "annotations": svc.metadata.annotations or {}
+                    "annotations": svc.metadata.annotations or {},
                 }
                 for svc in services.items
             ]
@@ -351,7 +363,7 @@ class MigrationManager:
                 {
                     "name": dep.metadata.name,
                     "spec": dep.spec.to_dict(),
-                    "annotations": dep.metadata.annotations or {}
+                    "annotations": dep.metadata.annotations or {},
                 }
                 for dep in deployments.items
             ]
@@ -365,18 +377,17 @@ class MigrationManager:
                     "namespace": self.config.namespace,
                     "labels": {
                         "app": "brain-researcher",
-                        "component": "migration-backup"
-                    }
+                        "component": "migration-backup",
+                    },
                 },
                 "data": {
                     "backup.json": json.dumps(backup_configs, indent=2),
-                    "timestamp": datetime.now().isoformat()
-                }
+                    "timestamp": datetime.now().isoformat(),
+                },
             }
 
             v1.create_namespaced_config_map(
-                namespace=self.config.namespace,
-                body=backup_cm
+                namespace=self.config.namespace, body=backup_cm
             )
 
             # Store rollback plan
@@ -386,16 +397,18 @@ class MigrationManager:
                 "success": True,
                 "services_backed_up": len(backup_configs["services"]),
                 "deployments_backed_up": len(backup_configs["deployments"]),
-                "backup_name": "brain-researcher-migration-backup"
+                "backup_name": "brain-researcher-migration-backup",
             }
 
         except Exception as e:
             logger.error(f"Backup creation failed: {e}")
             return {"success": False, "error": str(e)}
 
-    async def _migrate_pilot_services(self) -> Dict[str, Any]:
+    async def _migrate_pilot_services(self) -> dict[str, Any]:
         """Migrate pilot services (least critical first)"""
-        pilot_services = self.config.service_migration_order[:2]  # Start with first 2 services
+        pilot_services = self.config.service_migration_order[
+            :2
+        ]  # Start with first 2 services
         results = []
 
         for service_name in pilot_services:
@@ -409,7 +422,7 @@ class MigrationManager:
                 return {
                     "success": False,
                     "failed_service": service_name,
-                    "results": results
+                    "results": results,
                 }
 
         # Validate pilot services health
@@ -420,8 +433,7 @@ class MigrationManager:
 
         for service_name in pilot_services:
             health = await self.validator.validate_service_health(
-                service_name,
-                self.config.health_thresholds
+                service_name, self.config.health_thresholds
             )
             health_results.append({"service": service_name, "health": health})
 
@@ -437,17 +449,17 @@ class MigrationManager:
                 "success": False,
                 "error": "Pilot services health check failed",
                 "health_results": health_results,
-                "action": "rolled_back"
+                "action": "rolled_back",
             }
 
         return {
             "success": True,
             "pilot_services": pilot_services,
             "results": results,
-            "health_results": health_results
+            "health_results": health_results,
         }
 
-    async def _migrate_single_service(self, service_name: str) -> Dict[str, Any]:
+    async def _migrate_single_service(self, service_name: str) -> dict[str, Any]:
         """Migrate a single service to the mesh"""
         status = self.service_statuses[service_name]
 
@@ -479,7 +491,7 @@ class MigrationManager:
                 "success": True,
                 "service": service_name,
                 "steps_completed": ["sidecar_injection", "policy_application"],
-                "next_step": "traffic_splitting"
+                "next_step": "traffic_splitting",
             }
 
         except Exception as e:
@@ -488,7 +500,7 @@ class MigrationManager:
             status.add_log(f"Migration failed: {str(e)}")
             return {"success": False, "error": str(e)}
 
-    async def _enable_sidecar_injection(self, service_name: str) -> Dict[str, Any]:
+    async def _enable_sidecar_injection(self, service_name: str) -> dict[str, Any]:
         """Enable Istio sidecar injection for a service"""
         if not self.bridge.k8s_client:
             return {"success": False, "error": "Kubernetes client not available"}
@@ -498,21 +510,20 @@ class MigrationManager:
 
             # Get the deployment
             deployment = apps_v1.read_namespaced_deployment(
-                name=service_name,
-                namespace=self.config.namespace
+                name=service_name, namespace=self.config.namespace
             )
 
             # Add sidecar injection annotation
             if not deployment.spec.template.metadata.annotations:
                 deployment.spec.template.metadata.annotations = {}
 
-            deployment.spec.template.metadata.annotations["sidecar.istio.io/inject"] = "true"
+            deployment.spec.template.metadata.annotations["sidecar.istio.io/inject"] = (
+                "true"
+            )
 
             # Update deployment
             apps_v1.replace_namespaced_deployment(
-                name=service_name,
-                namespace=self.config.namespace,
-                body=deployment
+                name=service_name, namespace=self.config.namespace, body=deployment
             )
 
             # Wait for rollout
@@ -520,8 +531,7 @@ class MigrationManager:
 
             # Verify sidecar injection
             updated_deployment = apps_v1.read_namespaced_deployment(
-                name=service_name,
-                namespace=self.config.namespace
+                name=service_name, namespace=self.config.namespace
             )
 
             ready_replicas = updated_deployment.status.ready_replicas or 0
@@ -530,38 +540,45 @@ class MigrationManager:
             if ready_replicas != desired_replicas:
                 return {
                     "success": False,
-                    "error": f"Deployment rollout incomplete: {ready_replicas}/{desired_replicas} ready"
+                    "error": f"Deployment rollout incomplete: {ready_replicas}/{desired_replicas} ready",
                 }
 
             return {
                 "success": True,
                 "sidecar_injected": True,
-                "ready_replicas": ready_replicas
+                "ready_replicas": ready_replicas,
             }
 
         except Exception as e:
             logger.error(f"Sidecar injection failed for {service_name}: {e}")
             return {"success": False, "error": str(e)}
 
-    async def _apply_service_policies(self, service_name: str) -> Dict[str, Any]:
+    async def _apply_service_policies(self, service_name: str) -> dict[str, Any]:
         """Apply Istio traffic and security policies for a service"""
         try:
             # Determine appropriate policies based on service type
-            if "database" in service_name or "redis" in service_name or "neo4j" in service_name:
+            if (
+                "database" in service_name
+                or "redis" in service_name
+                or "neo4j" in service_name
+            ):
                 # Database services
                 traffic_policy = TrafficPolicy(
                     service_name=service_name,
                     load_balancer="LEAST_CONN",
                     connection_pool={
                         "tcp": {"maxConnections": 50, "connectTimeout": "10s"},
-                        "http": {"http1MaxPendingRequests": 20, "maxRequestsPerConnection": 100}
+                        "http": {
+                            "http1MaxPendingRequests": 20,
+                            "maxRequestsPerConnection": 100,
+                        },
                     },
                     circuit_breaker={
                         "consecutiveGatewayErrors": 2,
                         "interval": "30s",
                         "baseEjectionTime": "60s",
-                        "maxEjectionPercent": 10
-                    }
+                        "maxEjectionPercent": 10,
+                    },
                 )
 
             elif "agent" in service_name:
@@ -571,9 +588,12 @@ class MigrationManager:
                     load_balancer="ROUND_ROBIN",
                     connection_pool={
                         "tcp": {"maxConnections": 100, "connectTimeout": "60s"},
-                        "http": {"http1MaxPendingRequests": 50, "maxRequestsPerConnection": 5}
+                        "http": {
+                            "http1MaxPendingRequests": 50,
+                            "maxRequestsPerConnection": 5,
+                        },
                     },
-                    timeout="300s"
+                    timeout="300s",
                 )
 
             else:
@@ -583,12 +603,17 @@ class MigrationManager:
                     load_balancer="ROUND_ROBIN",
                     connection_pool={
                         "tcp": {"maxConnections": 100, "connectTimeout": "30s"},
-                        "http": {"http1MaxPendingRequests": 50, "maxRequestsPerConnection": 10}
-                    }
+                        "http": {
+                            "http1MaxPendingRequests": 50,
+                            "maxRequestsPerConnection": 10,
+                        },
+                    },
                 )
 
             # Apply traffic policy
-            traffic_result = await self.bridge.apply_traffic_policy(service_name, traffic_policy)
+            traffic_result = await self.bridge.apply_traffic_policy(
+                service_name, traffic_policy
+            )
             if not traffic_result["success"]:
                 return traffic_result
 
@@ -596,24 +621,34 @@ class MigrationManager:
             security_policy = SecurityPolicy(
                 service_name=service_name,
                 mtls_mode="STRICT",
-                authorization_rules=[{
-                    "from": [{
-                        "source": {
-                            "principals": [f"cluster.local/ns/{self.config.namespace}/sa/*"]
-                        }
-                    }],
-                    "to": [{"operation": {"methods": ["GET", "POST", "PUT", "DELETE"]}}]
-                }]
+                authorization_rules=[
+                    {
+                        "from": [
+                            {
+                                "source": {
+                                    "principals": [
+                                        f"cluster.local/ns/{self.config.namespace}/sa/*"
+                                    ]
+                                }
+                            }
+                        ],
+                        "to": [
+                            {"operation": {"methods": ["GET", "POST", "PUT", "DELETE"]}}
+                        ],
+                    }
+                ],
             )
 
-            security_result = await self.bridge.apply_security_policy(service_name, security_policy)
+            security_result = await self.bridge.apply_security_policy(
+                service_name, security_policy
+            )
             if not security_result["success"]:
                 return security_result
 
             return {
                 "success": True,
                 "traffic_policy": traffic_result,
-                "security_policy": security_result
+                "security_policy": security_result,
             }
 
         except Exception as e:
@@ -621,7 +656,7 @@ class MigrationManager:
             return {"success": False, "error": str(e)}
 
     @tool
-    async def continue_migration(self) -> Dict[str, Any]:
+    async def continue_migration(self) -> dict[str, Any]:
         """Continue migration to the next phase"""
         if self.current_phase == MigrationPhase.GRADUAL_ROLLOUT:
             return await self._gradual_rollout()
@@ -632,16 +667,18 @@ class MigrationManager:
         else:
             return {
                 "success": False,
-                "error": f"Cannot continue from phase {self.current_phase.value}"
+                "error": f"Cannot continue from phase {self.current_phase.value}",
             }
 
-    async def _gradual_rollout(self) -> Dict[str, Any]:
+    async def _gradual_rollout(self) -> dict[str, Any]:
         """Gradually roll out remaining services"""
-        remaining_services = self.config.service_migration_order[2:]  # Skip pilot services
+        remaining_services = self.config.service_migration_order[
+            2:
+        ]  # Skip pilot services
         batch_size = 2  # Migrate 2 services at a time
 
         for i in range(0, len(remaining_services), batch_size):
-            batch = remaining_services[i:i+batch_size]
+            batch = remaining_services[i : i + batch_size]
             logger.info(f"Migrating service batch: {batch}")
 
             # Migrate batch
@@ -655,7 +692,7 @@ class MigrationManager:
                         "success": False,
                         "failed_service": service_name,
                         "batch": batch,
-                        "results": batch_results
+                        "results": batch_results,
                     }
 
             # Validate batch health
@@ -664,8 +701,7 @@ class MigrationManager:
             health_ok = True
             for service_name in batch:
                 health = await self.validator.validate_service_health(
-                    service_name,
-                    self.config.health_thresholds
+                    service_name, self.config.health_thresholds
                 )
                 if not health["healthy"]:
                     health_ok = False
@@ -676,17 +712,17 @@ class MigrationManager:
                     "success": False,
                     "error": "Batch health validation failed",
                     "batch": batch,
-                    "action": "rollback_recommended"
+                    "action": "rollback_recommended",
                 }
 
         self.current_phase = MigrationPhase.TRAFFIC_SPLITTING
         return {
             "success": True,
             "services_migrated": len(remaining_services),
-            "next_phase": self.current_phase.value
+            "next_phase": self.current_phase.value,
         }
 
-    async def _continue_traffic_splitting(self) -> Dict[str, Any]:
+    async def _continue_traffic_splitting(self) -> dict[str, Any]:
         """Continue incrementing traffic through the mesh"""
         results = []
 
@@ -709,7 +745,9 @@ class MigrationManager:
                 continue  # Already at 100%
 
             # Apply traffic split
-            logger.info(f"Updating traffic split for {service_name}: {current_split}% -> {next_split}%")
+            logger.info(
+                f"Updating traffic split for {service_name}: {current_split}% -> {next_split}%"
+            )
 
             if current_split == 0:
                 # Enable canary deployment
@@ -731,17 +769,18 @@ class MigrationManager:
                 await asyncio.sleep(self.config.phase_wait_times["traffic_increment"])
 
                 health = await self.validator.validate_service_health(
-                    service_name,
-                    self.config.health_thresholds
+                    service_name, self.config.health_thresholds
                 )
 
                 if not health["healthy"]:
                     # Rollback this service
-                    rollback_result = await self._rollback_traffic_split(service_name, current_split)
+                    rollback_result = await self._rollback_traffic_split(
+                        service_name, current_split
+                    )
                     return {
                         "success": False,
                         "error": f"Health degradation detected for {service_name}",
-                        "rollback": rollback_result
+                        "rollback": rollback_result,
                     }
 
         # Check if all services are at 100%
@@ -758,23 +797,29 @@ class MigrationManager:
             "success": True,
             "traffic_updates": results,
             "phase": self.current_phase.value,
-            "all_services_at_100": all_complete
+            "all_services_at_100": all_complete,
         }
 
-    async def _rollback_traffic_split(self, service_name: str, previous_split: int) -> Dict[str, Any]:
+    async def _rollback_traffic_split(
+        self, service_name: str, previous_split: int
+    ) -> dict[str, Any]:
         """Rollback traffic split for a service"""
         try:
-            result = await self.bridge.update_canary_traffic(service_name, previous_split)
+            result = await self.bridge.update_canary_traffic(
+                service_name, previous_split
+            )
             if result["success"]:
                 self.service_statuses[service_name].traffic_split = previous_split
-                self.service_statuses[service_name].add_log(f"Traffic rolled back to {previous_split}%")
+                self.service_statuses[service_name].add_log(
+                    f"Traffic rolled back to {previous_split}%"
+                )
 
             return result
         except Exception as e:
             logger.error(f"Traffic rollback failed for {service_name}: {e}")
             return {"success": False, "error": str(e)}
 
-    async def _complete_migration(self) -> Dict[str, Any]:
+    async def _complete_migration(self) -> dict[str, Any]:
         """Complete the migration and cleanup"""
         logger.info("Completing service mesh migration")
 
@@ -802,14 +847,14 @@ class MigrationManager:
                 "phase": self.current_phase.value,
                 "cleanup_results": cleanup_results,
                 "migration_report": report,
-                "completion_time": datetime.now().isoformat()
+                "completion_time": datetime.now().isoformat(),
             }
 
         except Exception as e:
             logger.error(f"Migration completion failed: {e}")
             return {"success": False, "error": str(e)}
 
-    async def _cleanup_canary_config(self, service_name: str) -> Dict[str, Any]:
+    async def _cleanup_canary_config(self, service_name: str) -> dict[str, Any]:
         """Remove canary VirtualService configuration"""
         if not self.bridge.k8s_client:
             return {"success": False, "error": "Kubernetes client not available"}
@@ -823,13 +868,13 @@ class MigrationManager:
                 version="v1beta1",
                 namespace=self.config.namespace,
                 plural="virtualservices",
-                name=f"{service_name}-canary"
+                name=f"{service_name}-canary",
             )
 
             return {
                 "success": True,
                 "service": service_name,
-                "action": "canary_config_removed"
+                "action": "canary_config_removed",
             }
 
         except ApiException as e:
@@ -839,13 +884,17 @@ class MigrationManager:
                 return {"success": False, "error": str(e)}
 
     @tool
-    async def rollback_migration(self, service_name: Optional[str] = None) -> Dict[str, Any]:
+    async def rollback_migration(
+        self, service_name: str | None = None
+    ) -> dict[str, Any]:
         """Rollback migration for a specific service or all services"""
         logger.warning(f"Rolling back migration for {service_name or 'all services'}")
 
         self.current_phase = MigrationPhase.ROLLBACK
 
-        services_to_rollback = [service_name] if service_name else self.config.service_migration_order
+        services_to_rollback = (
+            [service_name] if service_name else self.config.service_migration_order
+        )
         results = []
 
         for svc_name in services_to_rollback:
@@ -855,10 +904,10 @@ class MigrationManager:
         return {
             "success": True,
             "phase": self.current_phase.value,
-            "rollback_results": results
+            "rollback_results": results,
         }
 
-    async def _rollback_service(self, service_name: str) -> Dict[str, Any]:
+    async def _rollback_service(self, service_name: str) -> dict[str, Any]:
         """Rollback a single service from the mesh"""
         status = self.service_statuses[service_name]
 
@@ -867,20 +916,28 @@ class MigrationManager:
 
             # Remove traffic split
             if status.traffic_split > 0:
-                traffic_result = await self.bridge.update_canary_traffic(service_name, 0)
-                rollback_steps.append({"step": "traffic_split_removed", "result": traffic_result})
+                traffic_result = await self.bridge.update_canary_traffic(
+                    service_name, 0
+                )
+                rollback_steps.append(
+                    {"step": "traffic_split_removed", "result": traffic_result}
+                )
                 status.traffic_split = 0
 
             # Remove Istio policies
             if status.policies_applied:
                 policy_result = await self._remove_service_policies(service_name)
-                rollback_steps.append({"step": "policies_removed", "result": policy_result})
+                rollback_steps.append(
+                    {"step": "policies_removed", "result": policy_result}
+                )
                 status.policies_applied = False
 
             # Disable sidecar injection
             if status.sidecar_injected:
                 sidecar_result = await self._disable_sidecar_injection(service_name)
-                rollback_steps.append({"step": "sidecar_removed", "result": sidecar_result})
+                rollback_steps.append(
+                    {"step": "sidecar_removed", "result": sidecar_result}
+                )
                 status.sidecar_injected = False
 
             status.current_phase = MigrationPhase.NOT_STARTED
@@ -889,7 +946,7 @@ class MigrationManager:
             return {
                 "success": True,
                 "service": service_name,
-                "rollback_steps": rollback_steps
+                "rollback_steps": rollback_steps,
             }
 
         except Exception as e:
@@ -897,7 +954,7 @@ class MigrationManager:
             status.add_log(f"Rollback failed: {str(e)}")
             return {"success": False, "error": str(e)}
 
-    async def _disable_sidecar_injection(self, service_name: str) -> Dict[str, Any]:
+    async def _disable_sidecar_injection(self, service_name: str) -> dict[str, Any]:
         """Disable Istio sidecar injection for a service"""
         if not self.bridge.k8s_client:
             return {"success": False, "error": "Kubernetes client not available"}
@@ -907,19 +964,18 @@ class MigrationManager:
 
             # Get deployment
             deployment = apps_v1.read_namespaced_deployment(
-                name=service_name,
-                namespace=self.config.namespace
+                name=service_name, namespace=self.config.namespace
             )
 
             # Remove sidecar injection annotation
             if deployment.spec.template.metadata.annotations:
-                deployment.spec.template.metadata.annotations.pop("sidecar.istio.io/inject", None)
+                deployment.spec.template.metadata.annotations.pop(
+                    "sidecar.istio.io/inject", None
+                )
 
                 # Update deployment
                 apps_v1.replace_namespaced_deployment(
-                    name=service_name,
-                    namespace=self.config.namespace,
-                    body=deployment
+                    name=service_name, namespace=self.config.namespace, body=deployment
                 )
 
             return {"success": True, "sidecar_injection_disabled": True}
@@ -927,7 +983,7 @@ class MigrationManager:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    async def _remove_service_policies(self, service_name: str) -> Dict[str, Any]:
+    async def _remove_service_policies(self, service_name: str) -> dict[str, Any]:
         """Remove Istio policies for a service"""
         if not self.bridge.k8s_client:
             return {"success": False, "error": "Kubernetes client not available"}
@@ -943,7 +999,7 @@ class MigrationManager:
                     version="v1beta1",
                     namespace=self.config.namespace,
                     plural="destinationrules",
-                    name=f"{service_name}-traffic-policy"
+                    name=f"{service_name}-traffic-policy",
                 )
                 results.append("destination_rule_removed")
             except ApiException as e:
@@ -957,7 +1013,7 @@ class MigrationManager:
                     version="v1beta1",
                     namespace=self.config.namespace,
                     plural="peerauthentications",
-                    name=f"{service_name}-peer-auth"
+                    name=f"{service_name}-peer-auth",
                 )
                 results.append("peer_auth_removed")
             except ApiException as e:
@@ -971,7 +1027,7 @@ class MigrationManager:
                     version="v1beta1",
                     namespace=self.config.namespace,
                     plural="authorizationpolicies",
-                    name=f"{service_name}-auth-policy"
+                    name=f"{service_name}-auth-policy",
                 )
                 results.append("auth_policy_removed")
             except ApiException as e:
@@ -984,11 +1040,15 @@ class MigrationManager:
             return {"success": False, "error": str(e)}
 
     @tool
-    async def get_migration_status(self) -> Dict[str, Any]:
+    async def get_migration_status(self) -> dict[str, Any]:
         """Get current migration status"""
         return {
             "current_phase": self.current_phase.value,
-            "migration_start_time": self.migration_start_time.isoformat() if self.migration_start_time else None,
+            "migration_start_time": (
+                self.migration_start_time.isoformat()
+                if self.migration_start_time
+                else None
+            ),
             "services": {
                 name: {
                     "phase": status.current_phase.value,
@@ -997,23 +1057,29 @@ class MigrationManager:
                     "traffic_split": status.traffic_split,
                     "health_check_passed": status.health_check_passed,
                     "last_updated": status.last_updated.isoformat(),
-                    "recent_logs": status.migration_logs[-5:]  # Last 5 log entries
+                    "recent_logs": status.migration_logs[-5:],  # Last 5 log entries
                 }
                 for name, status in self.service_statuses.items()
-            }
+            },
         }
 
-    async def _generate_migration_report(self) -> Dict[str, Any]:
+    async def _generate_migration_report(self) -> dict[str, Any]:
         """Generate comprehensive migration report"""
-        duration = datetime.now() - self.migration_start_time if self.migration_start_time else timedelta(0)
+        duration = (
+            datetime.now() - self.migration_start_time
+            if self.migration_start_time
+            else timedelta(0)
+        )
 
         completed_services = [
-            name for name, status in self.service_statuses.items()
+            name
+            for name, status in self.service_statuses.items()
             if status.current_phase == MigrationPhase.COMPLETED
         ]
 
         failed_services = [
-            name for name, status in self.service_statuses.items()
+            name
+            for name, status in self.service_statuses.items()
             if status.current_phase == MigrationPhase.FAILED
         ]
 
@@ -1022,8 +1088,7 @@ class MigrationManager:
         if self.bridge.metrics:
             for service_name in completed_services:
                 health = await self.validator.validate_service_health(
-                    service_name,
-                    self.config.health_thresholds
+                    service_name, self.config.health_thresholds
                 )
                 final_health[service_name] = health
 
@@ -1041,14 +1106,14 @@ class MigrationManager:
                 "namespace": self.config.namespace,
                 "mtls_enabled": self.config.mesh_config.enable_mtls,
                 "tracing_enabled": self.config.mesh_config.enable_tracing,
-                "metrics_enabled": self.config.mesh_config.enable_metrics
-            }
+                "metrics_enabled": self.config.mesh_config.enable_metrics,
+            },
         }
 
 
 # Context manager for migration manager lifecycle
 @asynccontextmanager
-async def migration_manager(config: Optional[MigrationConfig] = None):
+async def migration_manager(config: MigrationConfig | None = None):
     """Context manager for migration manager with proper resource cleanup"""
     manager = MigrationManager(config)
     await manager.initialize()
@@ -1059,7 +1124,7 @@ async def migration_manager(config: Optional[MigrationConfig] = None):
 
 
 # Convenience function for full migration
-async def execute_brain_researcher_migration(dry_run: bool = False) -> Dict[str, Any]:
+async def execute_brain_researcher_migration(dry_run: bool = False) -> dict[str, Any]:
     """Execute complete Brain Researcher service mesh migration"""
     config = MigrationConfig()
 
@@ -1073,8 +1138,8 @@ async def execute_brain_researcher_migration(dry_run: bool = False) -> Dict[str,
                 "migration_plan": {
                     "service_order": config.service_migration_order,
                     "traffic_increments": config.traffic_split_increments,
-                    "estimated_duration": "2-4 hours"
-                }
+                    "estimated_duration": "2-4 hours",
+                },
             }
         else:
             # Execute migration

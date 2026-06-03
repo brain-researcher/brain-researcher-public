@@ -4,64 +4,71 @@ Provides REST API endpoints and WebSocket support for real-time monitoring.
 """
 
 import asyncio
-import json
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.responses import PlainTextResponse
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
 import logging
+from typing import Any
 
-from brain_researcher.services.agent.monitoring.health_monitor import (
-    HealthMonitor, HealthStatus, ServiceType
-)
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse, PlainTextResponse
+from pydantic import BaseModel
+
 from brain_researcher.services.agent.monitoring.alerting import (
-    AlertManager, Alert, AlertSeverity
+    Alert,
+    AlertManager,
 )
-from brain_researcher.services.agent.monitoring.metrics_collector import MetricsCollector
+from brain_researcher.services.agent.monitoring.health_monitor import (
+    HealthMonitor,
+)
+from brain_researcher.services.agent.monitoring.metrics_collector import (
+    MetricsCollector,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class HealthResponse(BaseModel):
     """Health check response."""
+
     status: str
     uptime: float
-    services: Dict[str, Any]
-    metrics: Dict[str, Any]
+    services: dict[str, Any]
+    metrics: dict[str, Any]
     timestamp: str
 
 
 class AlertRequest(BaseModel):
     """Alert acknowledgment request."""
+
     fingerprint: str
     action: str  # acknowledge, resolve
 
 
 class MetricsQuery(BaseModel):
     """Metrics query parameters."""
-    metric_names: List[str]
-    start_time: Optional[str] = None
-    end_time: Optional[str] = None
+
+    metric_names: list[str]
+    start_time: str | None = None
+    end_time: str | None = None
     resolution: str = "1m"  # 1m, 5m, 15m, 1h
 
 
 class CliMetricRequest(BaseModel):
     """Payload for CLI metric ingestion."""
+
     command: str
     duration_ms: float
     status: str
-    job_kind: Optional[str] = None
+    job_kind: str | None = None
 
 
 class MonitoringDashboard:
     """Main monitoring dashboard service."""
 
-    def __init__(self,
-                 health_monitor: Optional[HealthMonitor] = None,
-                 alert_manager: Optional[AlertManager] = None,
-                 metrics_collector: Optional[MetricsCollector] = None):
+    def __init__(
+        self,
+        health_monitor: HealthMonitor | None = None,
+        alert_manager: AlertManager | None = None,
+        metrics_collector: MetricsCollector | None = None,
+    ):
         """Initialize dashboard.
 
         Args:
@@ -74,7 +81,7 @@ class MonitoringDashboard:
         self.metrics_collector = metrics_collector or MetricsCollector()
 
         # WebSocket connections for real-time updates
-        self.websocket_clients: List[WebSocket] = []
+        self.websocket_clients: list[WebSocket] = []
 
         # Create FastAPI app
         self.app = self._create_app()
@@ -84,7 +91,7 @@ class MonitoringDashboard:
         app = FastAPI(
             title="Brain Researcher Monitoring",
             description="Production monitoring dashboard",
-            version="1.0.0"
+            version="1.0.0",
         )
 
         # Health endpoints
@@ -97,7 +104,7 @@ class MonitoringDashboard:
                 uptime=status["uptime_seconds"],
                 services=status["services"],
                 metrics=status["metrics"],
-                timestamp=status["timestamp"]
+                timestamp=status["timestamp"],
             )
 
         @app.get("/health/live")
@@ -122,7 +129,7 @@ class MonitoringDashboard:
                 metric_names=query.metric_names,
                 start_time=query.start_time,
                 end_time=query.end_time,
-                resolution=query.resolution
+                resolution=query.resolution,
             )
 
         @app.get("/metrics/current")
@@ -162,7 +169,7 @@ class MonitoringDashboard:
                         "severity": state.alert.severity.value,
                         "count": state.count,
                         "first_seen": state.first_seen.isoformat(),
-                        "acknowledged": state.acknowledged
+                        "acknowledged": state.acknowledged,
                     }
                     for state in alerts
                 ]
@@ -260,8 +267,8 @@ class MonitoringDashboard:
                 "id": alert.alert_id,
                 "title": alert.title,
                 "severity": alert.severity.value,
-                "timestamp": alert.timestamp.isoformat()
-            }
+                "timestamp": alert.timestamp.isoformat(),
+            },
         }
 
         # Send to all connected clients

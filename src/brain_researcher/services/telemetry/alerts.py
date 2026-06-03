@@ -11,24 +11,25 @@ import logging
 import math
 import smtplib
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from enum import Enum
-from typing import Dict, List, Optional, Any, Callable, Union
-import requests
+from typing import Any
+
 import redis
+import requests
 
-from .models import TelemetryEvent, ServiceType, EventType
 from .collector import TelemetryCollector
-
+from .models import ServiceType
 
 logger = logging.getLogger(__name__)
 
 
 class AlertSeverity(str, Enum):
     """Alert severity levels."""
+
     CRITICAL = "critical"
     WARNING = "warning"
     INFO = "info"
@@ -36,6 +37,7 @@ class AlertSeverity(str, Enum):
 
 class AlertStatus(str, Enum):
     """Alert status states."""
+
     ACTIVE = "active"
     RESOLVED = "resolved"
     SUPPRESSED = "suppressed"
@@ -43,6 +45,7 @@ class AlertStatus(str, Enum):
 
 class NotificationChannel(str, Enum):
     """Notification delivery channels."""
+
     EMAIL = "email"
     SLACK = "slack"
     WEBHOOK = "webhook"
@@ -52,6 +55,7 @@ class NotificationChannel(str, Enum):
 @dataclass
 class AlertThreshold:
     """Alert threshold configuration."""
+
     metric_name: str
     operator: str  # >, <, >=, <=, ==
     value: float
@@ -83,13 +87,14 @@ class AlertThreshold:
 @dataclass
 class AlertRule:
     """Complete alert rule definition."""
+
     name: str
     threshold: AlertThreshold
     service: ServiceType
     enabled: bool = True
     cooldown_seconds: int = 3600  # 1 hour
-    notification_channels: List[NotificationChannel] = None
-    tags: Dict[str, str] = None
+    notification_channels: list[NotificationChannel] = None
+    tags: dict[str, str] = None
 
     def __post_init__(self):
         if self.notification_channels is None:
@@ -101,6 +106,7 @@ class AlertRule:
 @dataclass
 class Alert:
     """Active alert instance."""
+
     id: str
     rule_name: str
     service: ServiceType
@@ -110,10 +116,10 @@ class Alert:
     threshold_value: float
     message: str
     triggered_at: datetime
-    resolved_at: Optional[datetime] = None
-    last_notification: Optional[datetime] = None
+    resolved_at: datetime | None = None
+    last_notification: datetime | None = None
     notification_count: int = 0
-    tags: Dict[str, str] = None
+    tags: dict[str, str] = None
 
     def __post_init__(self):
         if self.tags is None:
@@ -123,16 +129,15 @@ class Alert:
 class NotificationManager:
     """Handles alert notifications across different channels."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         self.config = config
         self.smtp_config = config.get("smtp", {})
         self.slack_config = config.get("slack", {})
         self.webhook_config = config.get("webhook", {})
 
-    async def send_notification(self,
-                              alert: Alert,
-                              channel: NotificationChannel,
-                              is_resolution: bool = False) -> bool:
+    async def send_notification(
+        self, alert: Alert, channel: NotificationChannel, is_resolution: bool = False
+    ) -> bool:
         """Send notification for an alert."""
         try:
             if channel == NotificationChannel.EMAIL:
@@ -145,7 +150,9 @@ class NotificationManager:
                 logger.warning(f"Unsupported notification channel: {channel}")
                 return False
         except Exception as e:
-            logger.error(f"Failed to send {channel} notification for alert {alert.id}: {e}")
+            logger.error(
+                f"Failed to send {channel} notification for alert {alert.id}: {e}"
+            )
             return False
 
     async def _send_email(self, alert: Alert, is_resolution: bool) -> bool:
@@ -155,24 +162,26 @@ class NotificationManager:
 
         try:
             msg = MIMEMultipart()
-            msg['From'] = self.smtp_config['from_address']
-            msg['To'] = ", ".join(self.smtp_config['to_addresses'])
+            msg["From"] = self.smtp_config["from_address"]
+            msg["To"] = ", ".join(self.smtp_config["to_addresses"])
 
             status = "RESOLVED" if is_resolution else "TRIGGERED"
-            msg['Subject'] = f"[Brain Researcher] Alert {status}: {alert.rule_name}"
+            msg["Subject"] = f"[Brain Researcher] Alert {status}: {alert.rule_name}"
 
             # Create email body
             body = self._create_email_body(alert, is_resolution)
-            msg.attach(MIMEText(body, 'html'))
+            msg.attach(MIMEText(body, "html"))
 
             # Send email
-            server = smtplib.SMTP(self.smtp_config['host'], self.smtp_config['port'])
-            if self.smtp_config.get('use_tls', True):
+            server = smtplib.SMTP(self.smtp_config["host"], self.smtp_config["port"])
+            if self.smtp_config.get("use_tls", True):
                 server.starttls()
-            if self.smtp_config.get('username'):
-                server.login(self.smtp_config['username'], self.smtp_config['password'])
+            if self.smtp_config.get("username"):
+                server.login(self.smtp_config["username"], self.smtp_config["password"])
 
-            server.sendmail(msg['From'], self.smtp_config['to_addresses'], msg.as_string())
+            server.sendmail(
+                msg["From"], self.smtp_config["to_addresses"], msg.as_string()
+            )
             server.quit()
 
             logger.info(f"Email notification sent for alert {alert.id}")
@@ -189,7 +198,13 @@ class NotificationManager:
 
         try:
             status = "resolved" if is_resolution else "triggered"
-            color = "good" if is_resolution else ("danger" if alert.severity == AlertSeverity.CRITICAL else "warning")
+            color = (
+                "good"
+                if is_resolution
+                else (
+                    "danger" if alert.severity == AlertSeverity.CRITICAL else "warning"
+                )
+            )
             severity_label = (
                 alert.severity.value.title()
                 if hasattr(alert.severity, "value")
@@ -197,26 +212,44 @@ class NotificationManager:
             )
 
             payload = {
-                "channel": self.slack_config['channel'],
+                "channel": self.slack_config["channel"],
                 "username": "Brain Researcher Alerts",
-                "attachments": [{
-                    "color": color,
-                    "title": f"{severity_label} Alert {status.title()}: {alert.rule_name}",
-                    "text": alert.message,
-                    "fields": [
-                        {"title": "Service", "value": alert.service, "short": True},
-                        {"title": "Severity", "value": alert.severity, "short": True},
-                        {"title": "Current Value", "value": str(alert.current_value), "short": True},
-                        {"title": "Threshold", "value": str(alert.threshold_value), "short": True},
-                        {"title": "Time", "value": alert.triggered_at.strftime("%Y-%m-%d %H:%M:%S UTC"), "short": True}
-                    ]
-                }]
+                "attachments": [
+                    {
+                        "color": color,
+                        "title": f"{severity_label} Alert {status.title()}: {alert.rule_name}",
+                        "text": alert.message,
+                        "fields": [
+                            {"title": "Service", "value": alert.service, "short": True},
+                            {
+                                "title": "Severity",
+                                "value": alert.severity,
+                                "short": True,
+                            },
+                            {
+                                "title": "Current Value",
+                                "value": str(alert.current_value),
+                                "short": True,
+                            },
+                            {
+                                "title": "Threshold",
+                                "value": str(alert.threshold_value),
+                                "short": True,
+                            },
+                            {
+                                "title": "Time",
+                                "value": alert.triggered_at.strftime(
+                                    "%Y-%m-%d %H:%M:%S UTC"
+                                ),
+                                "short": True,
+                            },
+                        ],
+                    }
+                ],
             }
 
             response = requests.post(
-                self.slack_config['webhook_url'],
-                json=payload,
-                timeout=10
+                self.slack_config["webhook_url"], json=payload, timeout=10
             )
             response.raise_for_status()
 
@@ -236,14 +269,14 @@ class NotificationManager:
             payload = {
                 "alert": asdict(alert),
                 "is_resolution": is_resolution,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
 
             response = requests.post(
-                self.webhook_config['url'],
+                self.webhook_config["url"],
                 json=payload,
-                headers=self.webhook_config.get('headers', {}),
-                timeout=10
+                headers=self.webhook_config.get("headers", {}),
+                timeout=10,
             )
             response.raise_for_status()
 
@@ -251,13 +284,19 @@ class NotificationManager:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to send webhook notification for alert {alert.id}: {e}")
+            logger.error(
+                f"Failed to send webhook notification for alert {alert.id}: {e}"
+            )
             return False
 
     def _create_email_body(self, alert: Alert, is_resolution: bool) -> str:
         """Create HTML email body."""
         status = "RESOLVED" if is_resolution else "TRIGGERED"
-        status_color = "#28a745" if is_resolution else ("#dc3545" if alert.severity == AlertSeverity.CRITICAL else "#ffc107")
+        status_color = (
+            "#28a745"
+            if is_resolution
+            else ("#dc3545" if alert.severity == AlertSeverity.CRITICAL else "#ffc107")
+        )
 
         return f"""
         <html>
@@ -287,21 +326,27 @@ class NotificationManager:
 class MetricsCollector:
     """Collects and aggregates metrics for alert evaluation."""
 
-    def __init__(self, redis_client: redis.Redis, telemetry_collector: TelemetryCollector):
+    def __init__(
+        self, redis_client: redis.Redis, telemetry_collector: TelemetryCollector
+    ):
         self.redis_client = redis_client
         self.telemetry_collector = telemetry_collector
 
-    async def get_service_metrics(self, service: ServiceType, time_window_minutes: int = 5) -> Dict[str, float]:
+    async def get_service_metrics(
+        self, service: ServiceType, time_window_minutes: int = 5
+    ) -> dict[str, float]:
         """Get current metrics for a service."""
         try:
             # Get metrics from telemetry collector
             stats = self.telemetry_collector.get_stats()
 
             # Load request metrics once to avoid repeated Redis fetches
-            request_metrics = await self._get_request_metrics(service, time_window_minutes)
+            request_metrics = await self._get_request_metrics(
+                service, time_window_minutes
+            )
 
             # Get edge/front-door request metrics if available.
-            edge_metrics = await self._get_edge_metrics(service, time_window_minutes)
+            await self._get_edge_metrics(service, time_window_minutes)
 
             # Calculate response time metrics
             response_time = await self._calculate_avg_response_time(
@@ -322,32 +367,33 @@ class MetricsCollector:
                 "error_rate": error_rate,
                 "memory_usage_percent": memory_usage,
                 "cpu_usage_percent": cpu_usage,
-                "events_per_minute": stats.get("events_collected", 0) / time_window_minutes,
+                "events_per_minute": stats.get("events_collected", 0)
+                / time_window_minutes,
                 "processing_time_ms": stats.get("avg_processing_time_ms", 0),
-                "buffer_utilization": stats.get("buffer_size", 0) / 10000 * 100  # Assuming max 10k buffer
+                "buffer_utilization": stats.get("buffer_size", 0)
+                / 10000
+                * 100,  # Assuming max 10k buffer
             }
 
         except Exception as e:
             logger.error(f"Failed to collect metrics for {service}: {e}")
             return {}
 
-    async def _get_edge_metrics(self, service: ServiceType, time_window_minutes: int) -> Dict[str, float]:
+    async def _get_edge_metrics(
+        self, service: ServiceType, time_window_minutes: int
+    ) -> dict[str, float]:
         """Get metrics from any edge/front-door compatibility layer."""
         try:
             # This would integrate with edge/front-door metrics when present.
             # For now, return mock data structure
-            return {
-                "request_count": 0,
-                "avg_response_time": 0,
-                "error_count": 0
-            }
+            return {"request_count": 0, "avg_response_time": 0, "error_count": 0}
         except Exception as e:
             logger.error(f"Failed to get edge metrics: {e}")
             return {}
 
     async def _get_request_metrics(
         self, service: ServiceType, time_window_minutes: int
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Fetch request metrics for a service from Redis."""
         try:
             cutoff_time = int(time.time()) - (time_window_minutes * 60)
@@ -358,7 +404,7 @@ class MetricsCollector:
             if not metrics_keys:
                 return []
 
-            metrics_list: List[Dict[str, Any]] = []
+            metrics_list: list[dict[str, Any]] = []
             for key in metrics_keys:
                 if isinstance(key, bytes):
                     key = key.decode()
@@ -382,13 +428,15 @@ class MetricsCollector:
         service: ServiceType,
         time_window_minutes: int,
         *,
-        request_metrics: Optional[List[Dict[str, Any]]] = None,
+        request_metrics: list[dict[str, Any]] | None = None,
     ) -> float:
         """Calculate average response time."""
         try:
             metrics_list = request_metrics
             if metrics_list is None:
-                metrics_list = await self._get_request_metrics(service, time_window_minutes)
+                metrics_list = await self._get_request_metrics(
+                    service, time_window_minutes
+                )
             if not metrics_list:
                 return 0.0
 
@@ -409,13 +457,15 @@ class MetricsCollector:
         service: ServiceType,
         time_window_minutes: int,
         *,
-        request_metrics: Optional[List[Dict[str, Any]]] = None,
+        request_metrics: list[dict[str, Any]] | None = None,
     ) -> float:
         """Calculate error rate percentage."""
         try:
             metrics_list = request_metrics
             if metrics_list is None:
-                metrics_list = await self._get_request_metrics(service, time_window_minutes)
+                metrics_list = await self._get_request_metrics(
+                    service, time_window_minutes
+                )
             if not metrics_list:
                 return 0.0
 
@@ -430,7 +480,9 @@ class MetricsCollector:
                 if status_code >= 400 or metrics.get("error"):
                     error_requests += 1
 
-            return (error_requests / total_requests * 100) if total_requests > 0 else 0.0
+            return (
+                (error_requests / total_requests * 100) if total_requests > 0 else 0.0
+            )
 
         except Exception as e:
             logger.error(f"Failed to calculate error rate for {service}: {e}")
@@ -458,35 +510,33 @@ class MetricsCollector:
             logger.error(f"Failed to get CPU usage for {service}: {e}")
             return 0.0
 
-    async def _get_service_load_metrics(self, service: ServiceType) -> Dict[str, float]:
+    async def _get_service_load_metrics(self, service: ServiceType) -> dict[str, float]:
         """Get service load metrics (mock implementation)."""
         # This would integrate with actual system monitoring
         # For demonstration, return reasonable default values
-        return {
-            "memory_percent": 45.0,
-            "cpu_percent": 35.0,
-            "disk_usage_percent": 20.0
-        }
+        return {"memory_percent": 45.0, "cpu_percent": 35.0, "disk_usage_percent": 20.0}
 
 
 class AlertManager:
     """Main alert management system."""
 
-    def __init__(self,
-                 redis_client: redis.Redis,
-                 telemetry_collector: TelemetryCollector,
-                 notification_config: Dict[str, Any] = None):
+    def __init__(
+        self,
+        redis_client: redis.Redis,
+        telemetry_collector: TelemetryCollector,
+        notification_config: dict[str, Any] = None,
+    ):
         self.redis_client = redis_client
         self.telemetry_collector = telemetry_collector
         self.metrics_collector = MetricsCollector(redis_client, telemetry_collector)
         self.notification_manager = NotificationManager(notification_config or {})
 
         # Alert storage
-        self.alert_rules: Dict[str, AlertRule] = {}
-        self.active_alerts: Dict[str, Alert] = {}
+        self.alert_rules: dict[str, AlertRule] = {}
+        self.active_alerts: dict[str, Alert] = {}
 
         # Background task management
-        self._monitoring_task: Optional[asyncio.Task] = None
+        self._monitoring_task: asyncio.Task | None = None
         self._running = False
 
         # Load default alert rules
@@ -505,10 +555,13 @@ class AlertManager:
                     value=2000.0,  # 2 seconds
                     duration_seconds=300,  # 5 minutes
                     severity=AlertSeverity.WARNING,
-                    description="Service response time is too high"
+                    description="Service response time is too high",
                 ),
                 service=ServiceType.ORCHESTRATOR,
-                notification_channels=[NotificationChannel.EMAIL, NotificationChannel.SLACK]
+                notification_channels=[
+                    NotificationChannel.EMAIL,
+                    NotificationChannel.SLACK,
+                ],
             ),
             AlertRule(
                 name="critical_response_time",
@@ -518,10 +571,13 @@ class AlertManager:
                     value=5000.0,  # 5 seconds
                     duration_seconds=300,
                     severity=AlertSeverity.CRITICAL,
-                    description="Service response time is critically high"
+                    description="Service response time is critically high",
                 ),
                 service=ServiceType.ORCHESTRATOR,
-                notification_channels=[NotificationChannel.EMAIL, NotificationChannel.SLACK]
+                notification_channels=[
+                    NotificationChannel.EMAIL,
+                    NotificationChannel.SLACK,
+                ],
             ),
             AlertRule(
                 name="high_error_rate",
@@ -531,10 +587,13 @@ class AlertManager:
                     value=5.0,  # 5%
                     duration_seconds=300,
                     severity=AlertSeverity.WARNING,
-                    description="Service error rate is too high"
+                    description="Service error rate is too high",
                 ),
                 service=ServiceType.ORCHESTRATOR,
-                notification_channels=[NotificationChannel.EMAIL, NotificationChannel.SLACK]
+                notification_channels=[
+                    NotificationChannel.EMAIL,
+                    NotificationChannel.SLACK,
+                ],
             ),
             AlertRule(
                 name="critical_error_rate",
@@ -544,10 +603,13 @@ class AlertManager:
                     value=15.0,  # 15%
                     duration_seconds=180,  # 3 minutes for critical
                     severity=AlertSeverity.CRITICAL,
-                    description="Service error rate is critically high"
+                    description="Service error rate is critically high",
                 ),
                 service=ServiceType.ORCHESTRATOR,
-                notification_channels=[NotificationChannel.EMAIL, NotificationChannel.SLACK]
+                notification_channels=[
+                    NotificationChannel.EMAIL,
+                    NotificationChannel.SLACK,
+                ],
             ),
             AlertRule(
                 name="high_memory_usage",
@@ -557,10 +619,10 @@ class AlertManager:
                     value=80.0,  # 80%
                     duration_seconds=600,  # 10 minutes
                     severity=AlertSeverity.WARNING,
-                    description="Service memory usage is high"
+                    description="Service memory usage is high",
                 ),
                 service=ServiceType.ORCHESTRATOR,
-                notification_channels=[NotificationChannel.EMAIL]
+                notification_channels=[NotificationChannel.EMAIL],
             ),
             AlertRule(
                 name="high_cpu_usage",
@@ -570,15 +632,20 @@ class AlertManager:
                     value=75.0,  # 75%
                     duration_seconds=600,
                     severity=AlertSeverity.WARNING,
-                    description="Service CPU usage is high"
+                    description="Service CPU usage is high",
                 ),
                 service=ServiceType.ORCHESTRATOR,
-                notification_channels=[NotificationChannel.EMAIL]
-            )
+                notification_channels=[NotificationChannel.EMAIL],
+            ),
         ]
 
         # Add rules for all services
-        services = [ServiceType.AGENT, ServiceType.BR_KG, ServiceType.WEB_UI, ServiceType.API_GATEWAY]
+        services = [
+            ServiceType.AGENT,
+            ServiceType.BR_KG,
+            ServiceType.WEB_UI,
+            ServiceType.API_GATEWAY,
+        ]
 
         for rule in default_rules:
             for service in [ServiceType.ORCHESTRATOR] + services:
@@ -589,7 +656,7 @@ class AlertManager:
                     enabled=rule.enabled,
                     cooldown_seconds=rule.cooldown_seconds,
                     notification_channels=rule.notification_channels,
-                    tags={"service": service}
+                    tags={"service": service},
                 )
                 self.alert_rules[rule_copy.name] = rule_copy
 
@@ -632,14 +699,17 @@ class AlertManager:
 
     async def _evaluate_all_rules(self):
         """Evaluate all alert rules."""
-        services = set(rule.service for rule in self.alert_rules.values())
+        services = {rule.service for rule in self.alert_rules.values()}
 
         for service in services:
             try:
                 metrics = await self.metrics_collector.get_service_metrics(service)
 
-                service_rules = [rule for rule in self.alert_rules.values()
-                               if rule.service == service and rule.enabled]
+                service_rules = [
+                    rule
+                    for rule in self.alert_rules.values()
+                    if rule.service == service and rule.enabled
+                ]
 
                 for rule in service_rules:
                     await self._evaluate_rule(rule, metrics)
@@ -647,13 +717,15 @@ class AlertManager:
             except Exception as e:
                 logger.error(f"Error evaluating rules for {service}: {e}")
 
-    async def _evaluate_rule(self, rule: AlertRule, metrics: Dict[str, float]):
+    async def _evaluate_rule(self, rule: AlertRule, metrics: dict[str, float]):
         """Evaluate a single alert rule."""
         try:
             metric_value = metrics.get(rule.threshold.metric_name, 0.0)
 
             # Check if threshold is breached
-            threshold_breached = rule.threshold.evaluate(metric_value, duration_met=True)
+            threshold_breached = rule.threshold.evaluate(
+                metric_value, duration_met=True
+            )
 
             existing_alert = self.active_alerts.get(rule.name)
 
@@ -670,7 +742,7 @@ class AlertManager:
                         threshold_value=rule.threshold.value,
                         message=f"{rule.threshold.description}. Current: {metric_value}, Threshold: {rule.threshold.value}",
                         triggered_at=datetime.utcnow(),
-                        tags=rule.tags.copy()
+                        tags=rule.tags.copy(),
                     )
 
                     self.active_alerts[rule.name] = alert
@@ -694,7 +766,9 @@ class AlertManager:
                     await self._resolve_alert(existing_alert, rule)
 
                     # Remove from active alerts after cooldown
-                    asyncio.create_task(self._cleanup_resolved_alert(rule.name, rule.cooldown_seconds))
+                    asyncio.create_task(
+                        self._cleanup_resolved_alert(rule.name, rule.cooldown_seconds)
+                    )
 
         except Exception as e:
             logger.error(f"Error evaluating rule {rule.name}: {e}")
@@ -717,7 +791,9 @@ class AlertManager:
 
             # Send notifications
             for channel in rule.notification_channels:
-                success = await self.notification_manager.send_notification(alert, channel)
+                success = await self.notification_manager.send_notification(
+                    alert, channel
+                )
                 if success:
                     alert.last_notification = datetime.utcnow()
                     alert.notification_count += 1
@@ -735,7 +811,9 @@ class AlertManager:
 
             # Send resolution notifications
             for channel in rule.notification_channels:
-                await self.notification_manager.send_notification(alert, channel, is_resolution=True)
+                await self.notification_manager.send_notification(
+                    alert, channel, is_resolution=True
+                )
 
             # Update stored alert
             await self._store_alert(alert)
@@ -762,31 +840,43 @@ class AlertManager:
                 alert_data["last_notification"] = alert.last_notification.isoformat()
 
             # Store alert data
-            self.redis_client.hmset(alert_key, {
-                k: json.dumps(v) if isinstance(v, (dict, list)) else str(v)
-                for k, v in alert_data.items()
-            })
+            self.redis_client.hmset(
+                alert_key,
+                {
+                    k: json.dumps(v) if isinstance(v, dict | list) else str(v)
+                    for k, v in alert_data.items()
+                },
+            )
 
             # Set expiration (30 days)
             self.redis_client.expire(alert_key, 30 * 24 * 3600)
 
             # Add to alerts timeline
-            self.redis_client.zadd("alerts:timeline", {alert.id: int(alert.triggered_at.timestamp())})
+            self.redis_client.zadd(
+                "alerts:timeline", {alert.id: int(alert.triggered_at.timestamp())}
+            )
 
         except Exception as e:
             logger.error(f"Error storing alert {alert.id}: {e}")
 
-    def get_active_alerts(self) -> List[Alert]:
+    def get_active_alerts(self) -> list[Alert]:
         """Get all currently active alerts."""
-        return [alert for alert in self.active_alerts.values()
-                if alert.status == AlertStatus.ACTIVE]
+        return [
+            alert
+            for alert in self.active_alerts.values()
+            if alert.status == AlertStatus.ACTIVE
+        ]
 
-    def get_alert_history(self, hours_back: int = 24) -> List[Alert]:
+    def get_alert_history(self, hours_back: int = 24) -> list[Alert]:
         """Get alert history."""
         try:
-            cutoff_time = int((datetime.utcnow() - timedelta(hours=hours_back)).timestamp())
+            cutoff_time = int(
+                (datetime.utcnow() - timedelta(hours=hours_back)).timestamp()
+            )
 
-            alert_ids = self.redis_client.zrangebyscore("alerts:timeline", cutoff_time, "+inf")
+            alert_ids = self.redis_client.zrangebyscore(
+                "alerts:timeline", cutoff_time, "+inf"
+            )
             alerts = []
 
             for alert_id in alert_ids:
@@ -806,28 +896,40 @@ class AlertManager:
             logger.error(f"Error getting alert history: {e}")
             return []
 
-    def _parse_stored_alert(self, alert_data: Dict) -> Optional[Alert]:
+    def _parse_stored_alert(self, alert_data: dict) -> Alert | None:
         """Parse stored alert data."""
         try:
             # Convert byte strings to regular strings
-            data = {k.decode() if isinstance(k, bytes) else k:
-                   v.decode() if isinstance(v, bytes) else v
-                   for k, v in alert_data.items()}
+            data = {
+                k.decode() if isinstance(k, bytes) else k: (
+                    v.decode() if isinstance(v, bytes) else v
+                )
+                for k, v in alert_data.items()
+            }
 
             return Alert(
-                id=data['id'],
-                rule_name=data['rule_name'],
-                service=ServiceType(data['service']),
-                severity=AlertSeverity(data['severity']),
-                status=AlertStatus(data['status']),
-                current_value=float(data['current_value']),
-                threshold_value=float(data['threshold_value']),
-                message=data['message'],
-                triggered_at=datetime.fromisoformat(data['triggered_at']),
-                resolved_at=datetime.fromisoformat(data['resolved_at']) if data.get('resolved_at') and data['resolved_at'] != 'None' else None,
-                last_notification=datetime.fromisoformat(data['last_notification']) if data.get('last_notification') and data['last_notification'] != 'None' else None,
-                notification_count=int(data.get('notification_count', 0)),
-                tags=json.loads(data.get('tags', '{}'))
+                id=data["id"],
+                rule_name=data["rule_name"],
+                service=ServiceType(data["service"]),
+                severity=AlertSeverity(data["severity"]),
+                status=AlertStatus(data["status"]),
+                current_value=float(data["current_value"]),
+                threshold_value=float(data["threshold_value"]),
+                message=data["message"],
+                triggered_at=datetime.fromisoformat(data["triggered_at"]),
+                resolved_at=(
+                    datetime.fromisoformat(data["resolved_at"])
+                    if data.get("resolved_at") and data["resolved_at"] != "None"
+                    else None
+                ),
+                last_notification=(
+                    datetime.fromisoformat(data["last_notification"])
+                    if data.get("last_notification")
+                    and data["last_notification"] != "None"
+                    else None
+                ),
+                notification_count=int(data.get("notification_count", 0)),
+                tags=json.loads(data.get("tags", "{}")),
             )
         except Exception as e:
             logger.error(f"Error parsing stored alert: {e}")
@@ -861,7 +963,7 @@ class AlertManager:
             self.alert_rules[rule_name].enabled = False
             logger.info(f"Disabled alert rule: {rule_name}")
 
-    def get_alert_stats(self) -> Dict[str, Any]:
+    def get_alert_stats(self) -> dict[str, Any]:
         """Get alert system statistics."""
         return {
             "total_rules": len(self.alert_rules),
@@ -869,8 +971,13 @@ class AlertManager:
             "active_alerts": len(self.get_active_alerts()),
             "alerts_last_24h": len(self.get_alert_history(24)),
             "rules_by_severity": {
-                severity: len([r for r in self.alert_rules.values()
-                             if r.threshold.severity == severity])
+                severity: len(
+                    [
+                        r
+                        for r in self.alert_rules.values()
+                        if r.threshold.severity == severity
+                    ]
+                )
                 for severity in AlertSeverity
-            }
+            },
         }

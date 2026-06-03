@@ -6,11 +6,11 @@ import hashlib
 import json
 import os
 import re
+from collections.abc import Iterable
 from datetime import date, datetime, time, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
-
 
 DEFAULT_RECENCY_DAYS = 180
 DEFAULT_TOP_K = 10
@@ -35,7 +35,7 @@ _RECENT_KEYWORDS = (
 )
 
 
-def _resolve_literature_provider(provider: Optional[str]) -> str:
+def _resolve_literature_provider(provider: str | None) -> str:
     if provider:
         return provider
     return os.environ.get("BR_LITERATURE_PROVIDER", DEFAULT_LITERATURE_PROVIDER)
@@ -159,7 +159,7 @@ def _sanitize_error_message(message: Any) -> str:
     return sanitized.strip()
 
 
-def _coerce_status_code(value: Any) -> Optional[int]:
+def _coerce_status_code(value: Any) -> int | None:
     if isinstance(value, bool):
         return None
     if isinstance(value, int):
@@ -169,7 +169,7 @@ def _coerce_status_code(value: Any) -> Optional[int]:
     return None
 
 
-def _extract_exception_status_code(exc: Exception) -> Optional[int]:
+def _extract_exception_status_code(exc: Exception) -> int | None:
     for attr in _EXCEPTION_STATUS_ATTRS:
         code = _coerce_status_code(getattr(exc, attr, None))
         if code is not None:
@@ -185,11 +185,11 @@ def _extract_exception_status_code(exc: Exception) -> Optional[int]:
     return None
 
 
-def _exception_payload(exc: Exception, *, context: str) -> Dict[str, Any]:
+def _exception_payload(exc: Exception, *, context: str) -> dict[str, Any]:
     error_type = exc.__class__.__name__
     message = _sanitize_error_message(str(exc))
     formatted = f"{error_type}: {message}" if message else error_type
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "error": f"{context} failed: {formatted}",
         "message": message or f"{context} failed",
         "error_type": error_type,
@@ -200,7 +200,7 @@ def _exception_payload(exc: Exception, *, context: str) -> Dict[str, Any]:
     return payload
 
 
-def _is_agent_configuration_error(message: str, status_code: Optional[int]) -> bool:
+def _is_agent_configuration_error(message: str, status_code: int | None) -> bool:
     lowered = (message or "").strip().lower()
     if not lowered and status_code is None:
         return False
@@ -214,18 +214,18 @@ def _is_agent_configuration_error(message: str, status_code: Optional[int]) -> b
     return False
 
 
-def _agent_retry_candidates(agent: str) -> List[str]:
+def _agent_retry_candidates(agent: str) -> list[str]:
     primary = (agent or "").strip()
     env_fallback = (os.environ.get("BR_DEEP_RESEARCH_FALLBACK_AGENT") or "").strip()
     fallback_default = (DEFAULT_FALLBACK_AGENT or "").strip()
-    candidates: List[str] = []
+    candidates: list[str] = []
     for candidate in (primary, env_fallback, fallback_default, "deep-research"):
         if candidate and candidate not in candidates:
             candidates.append(candidate)
     return candidates
 
 
-def apply_recency_policy(query: str, recency_days: Optional[int]) -> Optional[int]:
+def apply_recency_policy(query: str, recency_days: int | None) -> int | None:
     if not query:
         return recency_days
     lowered = query.lower()
@@ -240,12 +240,12 @@ def build_idempotency_key(
     *,
     query: str,
     intent: str,
-    recency_days: Optional[int],
+    recency_days: int | None,
     top_k: int,
-    exclude_domains: Optional[Iterable[str]],
+    exclude_domains: Iterable[str] | None,
     language: str,
     provider: str = "google_deep_research",
-    model: Optional[str] = None,
+    model: str | None = None,
 ) -> str:
     payload = {
         "query": _normalize_query(query),
@@ -271,15 +271,15 @@ def _pending_path(idempotency_key: str) -> Path:
 
 def _json_safe(value: Any) -> Any:
     """Convert nested payloads to JSON-serializable primitives."""
-    if value is None or isinstance(value, (str, int, float, bool)):
+    if value is None or isinstance(value, str | int | float | bool):
         return value
-    if isinstance(value, (datetime, date, time)):
+    if isinstance(value, datetime | date | time):
         return value.isoformat()
     if isinstance(value, Path):
         return str(value)
     if isinstance(value, dict):
         return {str(key): _json_safe(inner) for key, inner in value.items()}
-    if isinstance(value, (list, tuple, set)):
+    if isinstance(value, list | tuple | set):
         return [_json_safe(inner) for inner in value]
     if hasattr(value, "model_dump"):
         try:
@@ -294,7 +294,7 @@ def _json_safe(value: Any) -> Any:
     return str(value)
 
 
-def load_cached_result(idempotency_key: str) -> Optional[Dict[str, Any]]:
+def load_cached_result(idempotency_key: str) -> dict[str, Any] | None:
     path = _artifact_path(idempotency_key)
     if not path.exists():
         return None
@@ -304,19 +304,19 @@ def load_cached_result(idempotency_key: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def save_result(idempotency_key: str, payload: Dict[str, Any]) -> None:
+def save_result(idempotency_key: str, payload: dict[str, Any]) -> None:
     path = _artifact_path(idempotency_key)
     _ensure_dir(path.parent)
     path.write_text(json.dumps(_json_safe(payload), ensure_ascii=True, indent=2))
 
 
-def save_pending(idempotency_key: str, payload: Dict[str, Any]) -> None:
+def save_pending(idempotency_key: str, payload: dict[str, Any]) -> None:
     path = _pending_path(idempotency_key)
     _ensure_dir(path.parent)
     path.write_text(json.dumps(_json_safe(payload), ensure_ascii=True, indent=2))
 
 
-def load_pending(idempotency_key: str) -> Optional[Dict[str, Any]]:
+def load_pending(idempotency_key: str) -> dict[str, Any] | None:
     path = _pending_path(idempotency_key)
     if not path.exists():
         return None
@@ -350,7 +350,7 @@ def _is_opaque_token_like(value: str) -> bool:
 
 
 def _collect_preferred_text_candidates(
-    payload: Any, candidates: List[str], *, accept_raw_strings: bool = False
+    payload: Any, candidates: list[str], *, accept_raw_strings: bool = False
 ) -> None:
     if payload is None:
         return
@@ -370,21 +370,21 @@ def _collect_preferred_text_candidates(
             value = payload.get(key)
             if isinstance(value, str):
                 candidates.append(value)
-            elif isinstance(value, (dict, list)):
+            elif isinstance(value, dict | list):
                 _collect_preferred_text_candidates(
                     value, candidates, accept_raw_strings=True
                 )
         for key, value in payload.items():
             if key in {"text", "output_text", "summary", "content", "output"}:
                 continue
-            if isinstance(value, (dict, list)):
+            if isinstance(value, dict | list):
                 _collect_preferred_text_candidates(
                     value, candidates, accept_raw_strings=False
                 )
 
 
 def _find_text(payload: Any) -> str:
-    candidates: List[str] = []
+    candidates: list[str] = []
     _collect_preferred_text_candidates(payload, candidates, accept_raw_strings=False)
 
     fallback = ""
@@ -402,11 +402,11 @@ def _find_text(payload: Any) -> str:
     return ""
 
 
-def _parse_search_trails(payload: Any) -> List[Dict[str, str]]:
+def _parse_search_trails(payload: Any) -> list[dict[str, str]]:
     if not isinstance(payload, list):
         return []
 
-    parsed: List[Dict[str, str]] = []
+    parsed: list[dict[str, str]] = []
     for item in payload:
         if not isinstance(item, dict):
             continue
@@ -431,8 +431,8 @@ def _parse_search_trails(payload: Any) -> List[Dict[str, str]]:
     return parsed
 
 
-def _dedupe_trails(trails: List[Dict[str, str]]) -> List[Dict[str, str]]:
-    unique: List[Dict[str, str]] = []
+def _dedupe_trails(trails: list[dict[str, str]]) -> list[dict[str, str]]:
+    unique: list[dict[str, str]] = []
     seen = set()
     for entry in trails:
         key = "|".join(
@@ -454,17 +454,21 @@ def _dedupe_trails(trails: List[Dict[str, str]]) -> List[Dict[str, str]]:
 
 
 def _append_trail(
-    trails: List[Dict[str, str]],
+    trails: list[dict[str, str]],
     *,
     stage: str,
     tool: str,
     status: str,
     detail: str,
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     next_trails = list(trails)
     next_trails.append(
         {
-            "stage": stage if stage in {"start", "poll", "sync_fallback", "sync_deepxiv"} else "poll",
+            "stage": (
+                stage
+                if stage in {"start", "poll", "sync_fallback", "sync_deepxiv"}
+                else "poll"
+            ),
             "tool": tool or "deep_research",
             "status": status or "unknown",
             "detail": detail,
@@ -477,8 +481,8 @@ def _append_trail(
 
 
 def _with_cache_hit_trail(
-    result: Dict[str, Any], *, stage: str, tool: str
-) -> Dict[str, Any]:
+    result: dict[str, Any], *, stage: str, tool: str
+) -> dict[str, Any]:
     copied = dict(result or {})
     existing = _parse_search_trails(copied.get("search_trails"))
     copied["search_trails"] = _append_trail(
@@ -491,11 +495,11 @@ def _with_cache_hit_trail(
     return copied
 
 
-def _extract_urls(text: str) -> List[str]:
+def _extract_urls(text: str) -> list[str]:
     return list(dict.fromkeys(_URL_RE.findall(text or "")))
 
 
-def _canonicalize_url(url: Optional[str]) -> Optional[str]:
+def _canonicalize_url(url: str | None) -> str | None:
     if not isinstance(url, str):
         return None
     candidate = url.strip()
@@ -532,7 +536,7 @@ def _canonicalize_url(url: Optional[str]) -> Optional[str]:
     return urlunsplit((scheme, netloc, path, query, ""))
 
 
-def _source_host(url: Optional[str]) -> Optional[str]:
+def _source_host(url: str | None) -> str | None:
     canonical = _canonicalize_url(url)
     if not canonical:
         return None
@@ -545,7 +549,7 @@ def _source_host(url: Optional[str]) -> Optional[str]:
     return re.sub(r"^www\.", "", host, flags=re.IGNORECASE)
 
 
-def _display_url(url: Optional[str], max_len: int = 96) -> Optional[str]:
+def _display_url(url: str | None, max_len: int = 96) -> str | None:
     canonical = _canonicalize_url(url)
     if not canonical:
         return None
@@ -563,7 +567,7 @@ def _display_url(url: Optional[str], max_len: int = 96) -> Optional[str]:
     return f"{text[: max_len - 3]}..."
 
 
-def _infer_source_type(url: Optional[str], title: Optional[str]) -> str:
+def _infer_source_type(url: str | None, title: str | None) -> str:
     value = f"{url or ''} {title or ''}".lower()
     if any(k in value for k in ("openneuro", "dandi", "figshare", "zenodo", "dataset")):
         return "dataset"
@@ -575,7 +579,7 @@ def _infer_source_type(url: Optional[str], title: Optional[str]) -> str:
     return "other"
 
 
-def _has_stable_identifier(url: Optional[str], title: Optional[str]) -> bool:
+def _has_stable_identifier(url: str | None, title: str | None) -> bool:
     combined = f"{url or ''} {title or ''}".lower()
     return bool(
         _DOI_PATTERN.search(combined)
@@ -585,7 +589,7 @@ def _has_stable_identifier(url: Optional[str], title: Optional[str]) -> bool:
     )
 
 
-def _has_primary_host(url: Optional[str]) -> bool:
+def _has_primary_host(url: str | None) -> bool:
     host = _source_host(url)
     if not host:
         return False
@@ -593,8 +597,8 @@ def _has_primary_host(url: Optional[str]) -> bool:
 
 
 def _compute_quality_summary(
-    documents: List[Dict[str, Any]], text: str
-) -> Dict[str, Any]:
+    documents: list[dict[str, Any]], text: str
+) -> dict[str, Any]:
     citable_count = 0
     primary_count = 0
 
@@ -618,7 +622,7 @@ def _compute_quality_summary(
     }
 
 
-def _pick_first_str(record: Dict[str, Any], keys: Iterable[str]) -> Optional[str]:
+def _pick_first_str(record: dict[str, Any], keys: Iterable[str]) -> str | None:
     for key in keys:
         value = record.get(key)
         if isinstance(value, str):
@@ -628,7 +632,7 @@ def _pick_first_str(record: Dict[str, Any], keys: Iterable[str]) -> Optional[str
     return None
 
 
-def _extract_url_documents(raw_payload: Any) -> List[Dict[str, Any]]:
+def _extract_url_documents(raw_payload: Any) -> list[dict[str, Any]]:
     url_keys = (
         "url",
         "uri",
@@ -644,16 +648,16 @@ def _extract_url_documents(raw_payload: Any) -> List[Dict[str, Any]]:
     publisher_keys = ("publisher", "site_name", "siteName", "domain")
     published_at_keys = ("published_at", "publishedAt", "date", "published")
 
-    documents: List[Dict[str, Any]] = []
+    documents: list[dict[str, Any]] = []
     seen_urls: set[str] = set()
 
     def _add_document(
-        url: Optional[str],
+        url: str | None,
         *,
-        title: Optional[str],
-        snippet: Optional[str],
-        publisher: Optional[str],
-        published_at: Optional[str],
+        title: str | None,
+        snippet: str | None,
+        publisher: str | None,
+        published_at: str | None,
     ) -> None:
         canonical = _canonicalize_url(url)
         if not canonical:
@@ -667,9 +671,9 @@ def _extract_url_documents(raw_payload: Any) -> List[Dict[str, Any]]:
                 "doc_id": f"doc_{len(documents) + 1}",
                 "title": title,
                 "url": canonical,
-                "raw_url": url.strip()
-                if isinstance(url, str) and url.strip()
-                else canonical,
+                "raw_url": (
+                    url.strip() if isinstance(url, str) and url.strip() else canonical
+                ),
                 "source_host": _source_host(canonical),
                 "display_url": _display_url(canonical),
                 "source_type": _infer_source_type(canonical, title),
@@ -679,7 +683,7 @@ def _extract_url_documents(raw_payload: Any) -> List[Dict[str, Any]]:
             }
         )
 
-    def _visit(node: Any, parent: Optional[Dict[str, Any]] = None) -> None:
+    def _visit(node: Any, parent: dict[str, Any] | None = None) -> None:
         if isinstance(node, list):
             for item in node:
                 _visit(item, parent)
@@ -717,13 +721,13 @@ def _extract_url_documents(raw_payload: Any) -> List[Dict[str, Any]]:
 
 
 def _parse_deep_research_output(
-    raw_payload: Dict[str, Any],
+    raw_payload: dict[str, Any],
     *,
     provider: str,
-    model: Optional[str],
-    recency_days: Optional[int],
+    model: str | None,
+    recency_days: int | None,
     idempotency_key: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     text = _find_text(raw_payload)
     search_trails = _parse_search_trails(
         raw_payload.get("search_trails") if isinstance(raw_payload, dict) else None
@@ -803,7 +807,7 @@ def _terminal_status_message(status: str, raw_payload: Any) -> str:
     return fallback
 
 
-def _resolve_file_search_stores(stores: Optional[Iterable[str]]) -> List[str]:
+def _resolve_file_search_stores(stores: Iterable[str] | None) -> list[str]:
     if stores:
         store_list = list(stores)
     else:
@@ -832,9 +836,9 @@ def _provider_start_google(
     *,
     prompt: str,
     agent: str,
-    file_search_store_names: Optional[List[str]],
-    previous_interaction_id: Optional[str],
-) -> Dict[str, Any]:
+    file_search_store_names: list[str] | None,
+    previous_interaction_id: str | None,
+) -> dict[str, Any]:
     api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return {
@@ -855,7 +859,7 @@ def _provider_start_google(
             "message": "Upgrade google-genai >= 1.55.0 for Interactions API.",
         }
 
-    tools: List[Dict[str, Any]] = [{"type": "google_search"}]
+    tools: list[dict[str, Any]] = [{"type": "google_search"}]
     stores = _resolve_file_search_stores(file_search_store_names)
     if stores:
         tools.append({"type": "file_search", "file_search_store_names": stores})
@@ -873,8 +877,8 @@ def _provider_start_google(
     if not agent_candidates:
         agent_candidates = ["deep-research"]
 
-    attempted_agents: List[str] = []
-    last_error: Optional[Dict[str, Any]] = None
+    attempted_agents: list[str] = []
+    last_error: dict[str, Any] | None = None
 
     for idx, candidate in enumerate(agent_candidates):
         attempted_agents.append(candidate)
@@ -921,7 +925,7 @@ def _provider_start_google(
     return {"ok": False, "error": "interactions.create failed: unknown error"}
 
 
-def _provider_get_google(interaction_id: str) -> Dict[str, Any]:
+def _provider_get_google(interaction_id: str) -> dict[str, Any]:
     api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return {
@@ -976,10 +980,10 @@ def _provider_get_google(interaction_id: str) -> Dict[str, Any]:
 
 
 def _provider_sync_deepxiv(
-    request: Dict[str, Any],
+    request: dict[str, Any],
     *,
     idempotency_key: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Synchronous DeepXiv provider: search + brief for each hit."""
     query = _normalize_query(request.get("query", ""))
     if not query:
@@ -1001,7 +1005,7 @@ def _provider_sync_deepxiv(
     reader = Reader(token=token) if token else Reader()
 
     # Build search kwargs
-    search_kwargs: Dict[str, Any] = {
+    search_kwargs: dict[str, Any] = {
         "size": min(top_k, 30),
         "search_mode": request.get("search_mode") or "hybrid",
     }
@@ -1017,9 +1021,9 @@ def _provider_sync_deepxiv(
     if recency_days is not None and int(recency_days) > 0:
         from datetime import timedelta
 
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=int(recency_days))).strftime(
-            "%Y-%m-%d"
-        )
+        cutoff = (
+            datetime.now(timezone.utc) - timedelta(days=int(recency_days))
+        ).strftime("%Y-%m-%d")
         search_kwargs.setdefault("date_from", cutoff)
 
     try:
@@ -1039,7 +1043,7 @@ def _provider_sync_deepxiv(
         papers = search_result
 
     # Build normalized documents
-    documents: List[Dict[str, Any]] = []
+    documents: list[dict[str, Any]] = []
     tldrs: list = []
     for idx, paper in enumerate(papers[:top_k]):
         arxiv_id = (
@@ -1113,7 +1117,7 @@ def _provider_sync_deepxiv(
     }
 
 
-def deep_research_start(request: Dict[str, Any]) -> Dict[str, Any]:
+def deep_research_start(request: dict[str, Any]) -> dict[str, Any]:
     query = _normalize_query(request.get("query", ""))
     intent = request.get("intent") or "deep_research"
     recency_days = apply_recency_policy(
@@ -1218,9 +1222,9 @@ def deep_research_start(request: Dict[str, Any]) -> Dict[str, Any]:
 
 def deep_research_get(
     *,
-    interaction_id: Optional[str] = None,
-    idempotency_key: Optional[str] = None,
-) -> Dict[str, Any]:
+    interaction_id: str | None = None,
+    idempotency_key: str | None = None,
+) -> dict[str, Any]:
     pending = load_pending(idempotency_key) or {} if idempotency_key else {}
     pending_trails = _parse_search_trails(pending.get("search_trails"))
 
@@ -1342,7 +1346,7 @@ def deep_research_get(
     }
 
 
-def deep_research_sync(request: Dict[str, Any]) -> Dict[str, Any]:
+def deep_research_sync(request: dict[str, Any]) -> dict[str, Any]:
     """Sync fast-path (primarily for cache hits or debugging)."""
     query = _normalize_query(request.get("query", ""))
     intent = request.get("intent") or "deep_research"
@@ -1369,13 +1373,13 @@ def deep_research_sync(request: Dict[str, Any]) -> Dict[str, Any]:
     cached = load_cached_result(idempotency_key)
     if cached:
         cache_stage = "sync_deepxiv" if provider == "deepxiv" else "sync_fallback"
-        cache_tool = "deepxiv_search" if provider == "deepxiv" else "google_deep_research_sync"
+        cache_tool = (
+            "deepxiv_search" if provider == "deepxiv" else "google_deep_research_sync"
+        )
         return {
             "status": "cached",
             "idempotency_key": idempotency_key,
-            "result": _with_cache_hit_trail(
-                cached, stage=cache_stage, tool=cache_tool
-            ),
+            "result": _with_cache_hit_trail(cached, stage=cache_stage, tool=cache_tool),
         }
 
     if provider == "deepxiv":

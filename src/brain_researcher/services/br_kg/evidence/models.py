@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -50,17 +50,21 @@ class EvidenceItem(BaseModel):
 
     # Core content
     title: str = Field(..., description="Human-readable title")
-    description: Optional[str] = Field(None, description="Summary/abstract (max ~300 chars)")
+    description: str | None = Field(
+        None, description="Summary/abstract (max ~300 chars)"
+    )
 
     # Links
-    url: Optional[HttpUrl] = Field(None, description="External URL")
-    doi: Optional[str] = Field(None, description="DOI if applicable")
+    url: HttpUrl | None = Field(None, description="External URL")
+    doi: str | None = Field(None, description="DOI if applicable")
 
     # Relevance
     score: float = Field(default=1.0, ge=0.0, le=1.0, description="Relevance score 0-1")
 
     # Source-specific metadata
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Source-specific data")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Source-specific data"
+    )
 
     # Provenance
     fetched_at: datetime = Field(default_factory=datetime.utcnow)
@@ -88,7 +92,9 @@ class EvidenceBundle(BaseModel):
     errors: dict[str, str] = Field(
         default_factory=dict, description="Source -> error message for failed queries"
     )
-    query_time_ms: float = Field(default=0.0, description="Total query time in milliseconds")
+    query_time_ms: float = Field(
+        default=0.0, description="Total query time in milliseconds"
+    )
 
     @property
     def by_source(self) -> dict[EvidenceSource, list[EvidenceItem]]:
@@ -134,7 +140,9 @@ class EvidenceBundle(BaseModel):
             "query": self.query,
             "total_items": self.total_count,
             "sources_queried": [s.value for s in self.sources_queried],
-            "items_by_source": {s.value: len(items) for s, items in self.by_source.items()},
+            "items_by_source": {
+                s.value: len(items) for s, items in self.by_source.items()
+            },
             "errors": self.errors,
             "query_time_ms": self.query_time_ms,
         }

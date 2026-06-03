@@ -186,7 +186,9 @@ def _load_anchor_context(
     if anchor_type == "run":
         context = _load_run_context(anchor_id, run_root=run_root)
     else:
-        context = _load_candidate_context(anchor_id, autoresearch_root=autoresearch_root)
+        context = _load_candidate_context(
+            anchor_id, autoresearch_root=autoresearch_root
+        )
     agent_log_info = _collect_agent_log_evidence(
         explicit_paths=agent_log_paths,
         auto_paths=context.get("auto_agent_log_paths") or [],
@@ -202,7 +204,9 @@ def _load_anchor_context(
     return context
 
 
-def _validate_anchor(*, run_id: str | None, candidate_id: str | None) -> tuple[str, str]:
+def _validate_anchor(
+    *, run_id: str | None, candidate_id: str | None
+) -> tuple[str, str]:
     normalized_run = str(run_id or "").strip()
     normalized_candidate = str(candidate_id or "").strip()
     if bool(normalized_run) == bool(normalized_candidate):
@@ -233,7 +237,9 @@ def _load_run_context(run_id: str, *, run_root: Path | str | None) -> dict[str, 
         bundle_warnings=bundle_warnings,
     )
     warnings = list(bundle_warnings)
-    referenced_evidence = _collect_run_evidence(run_dir, record, bundle_payload, scorecard)
+    referenced_evidence = _collect_run_evidence(
+        run_dir, record, bundle_payload, scorecard
+    )
     return {
         "anchor_type": "run",
         "anchor_id": run_id,
@@ -271,7 +277,9 @@ def _load_candidate_context(
         validation_dir=validation_dir,
         benchmark_root=benchmark_root,
         candidate_payload=candidate_payload,
-        validation_payload=validation_payload if isinstance(validation_payload, dict) else {},
+        validation_payload=(
+            validation_payload if isinstance(validation_payload, dict) else {}
+        ),
     )
     auto_agent_log_paths = _discover_candidate_agent_logs(benchmark_root)
     return {
@@ -282,7 +290,9 @@ def _load_candidate_context(
         "validation_dir": str(validation_dir),
         "benchmark_root": str(benchmark_root),
         "candidate_payload": candidate_payload,
-        "validation_payload": validation_payload if isinstance(validation_payload, dict) else {},
+        "validation_payload": (
+            validation_payload if isinstance(validation_payload, dict) else {}
+        ),
         "warnings": warnings,
         "referenced_evidence": referenced_evidence,
         "auto_agent_log_paths": auto_agent_log_paths,
@@ -290,7 +300,11 @@ def _load_candidate_context(
 
 
 def _find_run_dir(run_id: str, *, run_root: Path | str | None) -> Path:
-    primary_root = Path(run_root).expanduser().resolve() if run_root is not None else get_mcp_run_root()
+    primary_root = (
+        Path(run_root).expanduser().resolve()
+        if run_root is not None
+        else get_mcp_run_root()
+    )
     for candidate in iter_mcp_run_dir_candidates(run_id, primary_root):
         if candidate.exists():
             return candidate
@@ -325,7 +339,11 @@ def _compute_run_metrics(record: dict[str, Any], run_dir: Path) -> dict[str, Any
             maybe_payload = _load_json(run_dir / result_path)
             if isinstance(maybe_payload, dict):
                 result_payload = maybe_payload
-        data = result_payload.get("data") if isinstance(result_payload.get("data"), dict) else {}
+        data = (
+            result_payload.get("data")
+            if isinstance(result_payload.get("data"), dict)
+            else {}
+        )
         metadata = (
             result_payload.get("metadata")
             if isinstance(result_payload.get("metadata"), dict)
@@ -346,7 +364,9 @@ def _compute_run_metrics(record: dict[str, Any], run_dir: Path) -> dict[str, Any
             metadata.get("total_tokens"),
             _safe_sum(metadata.get("input_tokens"), metadata.get("output_tokens")),
         )
-        cost_usd = _first_numeric(metadata.get("cost_usd"), metadata.get("estimated_usd"))
+        cost_usd = _first_numeric(
+            metadata.get("cost_usd"), metadata.get("estimated_usd")
+        )
         if execution_time is not None:
             totals["execution_time_s_sum"] += execution_time
         if tokens is not None:
@@ -360,7 +380,9 @@ def _compute_run_metrics(record: dict[str, Any], run_dir: Path) -> dict[str, Any
                 "status": step_status,
                 "started_at": step.get("started_at"),
                 "finished_at": step.get("finished_at"),
-                "duration_s": _duration_s(step.get("started_at"), step.get("finished_at")),
+                "duration_s": _duration_s(
+                    step.get("started_at"), step.get("finished_at")
+                ),
                 "execution_time_s": execution_time,
                 "tokens": tokens,
                 "cost_usd": cost_usd,
@@ -504,8 +526,12 @@ def _collect_candidate_evidence(
                     json.dumps(
                         {
                             "gate_verdict": validation_payload.get("gate_verdict"),
-                            "status_explanation": validation_payload.get("status_explanation"),
-                            "recommended_action": validation_payload.get("recommended_action"),
+                            "status_explanation": validation_payload.get(
+                                "status_explanation"
+                            ),
+                            "recommended_action": validation_payload.get(
+                                "recommended_action"
+                            ),
                             "warnings": validation_payload.get("warnings"),
                         },
                         ensure_ascii=False,
@@ -514,7 +540,9 @@ def _collect_candidate_evidence(
             }
         )
         for label in ("motif_slice", "canary_slice"):
-            results_paths = validation_payload.get("baseline_summary", {}).get("results_paths", {})
+            results_paths = validation_payload.get("baseline_summary", {}).get(
+                "results_paths", {}
+            )
             path_text = str(results_paths.get(label) or "").strip()
             if path_text:
                 path = Path(path_text)
@@ -524,7 +552,9 @@ def _collect_candidate_evidence(
                             "source_type": f"baseline_{label}",
                             "path": str(path),
                             "kind": "results",
-                            "snippet": _trim_text(path.read_text(encoding="utf-8", errors="replace")),
+                            "snippet": _trim_text(
+                                path.read_text(encoding="utf-8", errors="replace")
+                            ),
                         }
                     )
     for path in sorted(benchmark_root.rglob("native_results.json"))[:2]:
@@ -533,7 +563,9 @@ def _collect_candidate_evidence(
                 "source_type": "native_results",
                 "path": str(path),
                 "kind": "native_results",
-                "snippet": _trim_text(path.read_text(encoding="utf-8", errors="replace")),
+                "snippet": _trim_text(
+                    path.read_text(encoding="utf-8", errors="replace")
+                ),
             }
         )
     return _dedupe_evidence(evidence)
@@ -591,7 +623,11 @@ def _collect_agent_log_evidence(
 def _summarize_agent_log(path: Path) -> dict[str, Any] | None:
     suffix = path.suffix.lower()
     text = path.read_text(encoding="utf-8", errors="replace")
-    if suffix in {".jsonl", ".ndjson"} or path.name.endswith(".jsonl") or path.name.endswith(".ndjson"):
+    if (
+        suffix in {".jsonl", ".ndjson"}
+        or path.name.endswith(".jsonl")
+        or path.name.endswith(".ndjson")
+    ):
         events = []
         for raw_line in text.splitlines():
             if not raw_line.strip():
@@ -670,26 +706,41 @@ def _build_trajectory_summary(anchor: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _build_trajectory_insights(anchor: dict[str, Any], summary: dict[str, Any]) -> list[str]:
+def _build_trajectory_insights(
+    anchor: dict[str, Any], summary: dict[str, Any]
+) -> list[str]:
     insights: list[str] = []
     if anchor["anchor_type"] == "run":
         scorecard = anchor["scorecard"]
         if summary.get("final_status") == "failed":
-            insights.append("The run failed, but the persisted bundle is complete enough for post-hoc diagnosis.")
-        if float(scorecard.get("artifacts", {}).get("completeness_ratio", 0.0) or 0.0) >= 1.0:
-            insights.append("Artifact completeness is 100%, so downstream analysis can rely on the persisted run bundle.")
+            insights.append(
+                "The run failed, but the persisted bundle is complete enough for post-hoc diagnosis."
+            )
+        if (
+            float(scorecard.get("artifacts", {}).get("completeness_ratio", 0.0) or 0.0)
+            >= 1.0
+        ):
+            insights.append(
+                "Artifact completeness is 100%, so downstream analysis can rely on the persisted run bundle."
+            )
         if anchor["agent_logs"].get("paths"):
-            insights.append("Coding-agent logs were attached and incorporated into the trajectory evidence.")
+            insights.append(
+                "Coding-agent logs were attached and incorporated into the trajectory evidence."
+            )
     else:
         validation_payload = anchor["validation_payload"]
         verdict = str(validation_payload.get("gate_verdict") or "")
         if verdict:
-            insights.append(f"Autoresearch currently classifies this candidate as `{verdict}`.")
+            insights.append(
+                f"Autoresearch currently classifies this candidate as `{verdict}`."
+            )
         explanation = str(validation_payload.get("status_explanation") or "").strip()
         if explanation:
             insights.append(explanation)
         if anchor["agent_logs"].get("paths"):
-            insights.append("Candidate-linked agent logs were discovered and included in the evidence set.")
+            insights.append(
+                "Candidate-linked agent logs were discovered and included in the evidence set."
+            )
     return insights[:6]
 
 
@@ -732,14 +783,17 @@ def _build_bug_digest(anchor: dict[str, Any], bug_query: str | None) -> dict[str
             str(candidate_payload.get("motif_id") or ""),
         ],
     )
-    likely_root_cause = symptom or str(candidate_payload.get("motif_id") or "unknown_bug")
+    likely_root_cause = symptom or str(
+        candidate_payload.get("motif_id") or "unknown_bug"
+    )
     return {
         "title": f"Bug digest for candidate {anchor['candidate_id']}",
         "bug_query": bug_query,
         "symptom": likely_root_cause,
         "evidence": [item["snippet"] for item in anchor["referenced_evidence"][:4]],
         "likely_root_cause": likely_root_cause,
-        "fix_status": validation_payload.get("gate_verdict") or candidate_payload.get("status"),
+        "fix_status": validation_payload.get("gate_verdict")
+        or candidate_payload.get("status"),
         "affected_surfaces": _collect_affected_surfaces(anchor),
         "recommended_next_action": (
             validation_payload.get("recommended_action")
@@ -795,7 +849,9 @@ def _render_bug_digest_markdown(anchor: dict[str, Any], digest: dict[str, Any]) 
     lines.extend(["", "## Affected Surfaces"])
     for item in digest.get("affected_surfaces") or []:
         lines.append(f"- {item}")
-    lines.extend(["", "## Recommended Next Action", f"- {digest.get('recommended_next_action')}"])
+    lines.extend(
+        ["", "## Recommended Next Action", f"- {digest.get('recommended_next_action')}"]
+    )
     return "\n".join(lines).strip() + "\n"
 
 
@@ -813,13 +869,19 @@ def _persist_summary_artifacts(
     base_dir.mkdir(parents=True, exist_ok=True)
     json_path = base_dir / f"{stem}.json"
     md_path = base_dir / f"{stem}.md"
-    json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    json_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     md_path.write_text(markdown, encoding="utf-8")
     if anchor["anchor_type"] == "candidate":
         manifest_path = base_dir / "summary_manifest.json"
         manifest = _load_json(manifest_path)
         if not isinstance(manifest, dict):
-            manifest = {"anchor_type": "candidate", "anchor_id": anchor["anchor_id"], "files": {}}
+            manifest = {
+                "anchor_type": "candidate",
+                "anchor_id": anchor["anchor_id"],
+                "files": {},
+            }
         files = manifest.get("files") if isinstance(manifest.get("files"), dict) else {}
         files[stem] = {
             "json": str(json_path),
@@ -827,7 +889,9 @@ def _persist_summary_artifacts(
             "updated_at": datetime.utcnow().isoformat() + "Z",
         }
         manifest["files"] = files
-        manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         return [str(json_path), str(md_path), str(manifest_path)]
     return [str(json_path), str(md_path)]
 
@@ -841,7 +905,9 @@ def _try_llm_enrich(
     if not _llm_requested():
         return None
     try:
-        prompt = _build_llm_prompt(kind=kind, anchor=anchor, structured_payload=structured_payload)
+        prompt = _build_llm_prompt(
+            kind=kind, anchor=anchor, structured_payload=structured_payload
+        )
         result = route_chat_with_mcp_api_fee(
             prompt,
             call_prefix=f"summary:{kind}",
@@ -858,10 +924,17 @@ def _try_llm_enrich(
 
 
 def _llm_requested() -> bool:
-    return str(os.getenv(_SUMMARY_LLM_ENV, "")).strip().lower() in {"1", "true", "yes", "on"}
+    return str(os.getenv(_SUMMARY_LLM_ENV, "")).strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
-def _build_llm_prompt(kind: str, anchor: dict[str, Any], structured_payload: dict[str, Any]) -> str:
+def _build_llm_prompt(
+    kind: str, anchor: dict[str, Any], structured_payload: dict[str, Any]
+) -> str:
     return (
         "You are summarizing a Brain Researcher coding/run artifact.\n"
         f"Anchor type: {anchor['anchor_type']}\n"
@@ -923,7 +996,9 @@ def _run_unresolved_items(anchor: dict[str, Any]) -> list[str]:
     if not unresolved and scorecard.get("errors"):
         unresolved.append(str(scorecard["errors"][0]))
     if not unresolved:
-        unresolved.append("No unresolved runtime issues were surfaced in the persisted scorecard.")
+        unresolved.append(
+            "No unresolved runtime issues were surfaced in the persisted scorecard."
+        )
     return unresolved[:5]
 
 
@@ -951,14 +1026,20 @@ def _candidate_results(anchor: dict[str, Any]) -> list[str]:
     if validation_payload.get("fixed_failures"):
         results.append(
             "Fixed failures: "
-            + ", ".join(str(item) for item in validation_payload.get("fixed_failures") or [])
+            + ", ".join(
+                str(item) for item in validation_payload.get("fixed_failures") or []
+            )
         )
     return results[:5]
 
 
 def _candidate_unresolved_items(anchor: dict[str, Any]) -> list[str]:
     validation_payload = anchor["validation_payload"]
-    unresolved = [str(item) for item in validation_payload.get("warnings") or [] if str(item).strip()]
+    unresolved = [
+        str(item)
+        for item in validation_payload.get("warnings") or []
+        if str(item).strip()
+    ]
     if not unresolved and validation_payload.get("recommended_action"):
         unresolved.append(str(validation_payload.get("recommended_action")))
     if not unresolved:
@@ -975,8 +1056,12 @@ def _collect_affected_surfaces(anchor: dict[str, Any]) -> list[str]:
                 if tool_id and tool_id not in tools:
                     tools.append(tool_id)
         return tools or ["unknown_tool_surface"]
-    allowed = [str(item) for item in anchor["candidate_payload"].get("allowed_paths") or []]
-    return allowed or [str(anchor["candidate_payload"].get("target_surface") or "candidate_surface")]
+    allowed = [
+        str(item) for item in anchor["candidate_payload"].get("allowed_paths") or []
+    ]
+    return allowed or [
+        str(anchor["candidate_payload"].get("target_surface") or "candidate_surface")
+    ]
 
 
 def _run_bug_next_action(anchor: dict[str, Any]) -> str:
@@ -999,7 +1084,9 @@ def _extract_trace_events(path: Path) -> list[dict[str, Any]]:
             continue
         if not isinstance(payload, dict):
             continue
-        raw_payload = payload.get("payload") if isinstance(payload.get("payload"), dict) else {}
+        raw_payload = (
+            payload.get("payload") if isinstance(payload.get("payload"), dict) else {}
+        )
         detail = raw_payload.get("raw_event_type") or payload.get("event_type")
         events.append(
             {
@@ -1038,7 +1125,9 @@ def _flatten_event(payload: dict[str, Any]) -> str:
 
 def _match_bug_query(bug_query: str | None, candidates: list[str]) -> str:
     clean = str(bug_query or "").strip().lower()
-    normalized_candidates = [str(item or "").strip() for item in candidates if str(item or "").strip()]
+    normalized_candidates = [
+        str(item or "").strip() for item in candidates if str(item or "").strip()
+    ]
     if clean:
         for item in normalized_candidates:
             if clean in item.lower():

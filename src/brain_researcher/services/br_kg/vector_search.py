@@ -6,20 +6,19 @@ This module provides semantic search capabilities using embeddings
 and FAISS for efficient similarity search.
 """
 
-import os
-import json
-import pickle
 import logging
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, Tuple, Union
-from dataclasses import dataclass, field
-from enum import Enum
-from pathlib import Path
+import os
+import pickle
 import threading
 import time
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from enum import Enum
+from pathlib import Path
+from typing import Any
 
-import numpy as np
 import faiss
+import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import normalize
 
@@ -29,8 +28,9 @@ from brain_researcher.services.br_kg.text_v1 import create_text_v1_representatio
 try:
     from brain_researcher.services.br_kg.niclip import (
         EmbeddingConfig,
-        NICLIPEmbeddingService
+        NICLIPEmbeddingService,
     )
+
     NICLIP_AVAILABLE = True
 except ImportError:
     NICLIP_AVAILABLE = False
@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 class VectorSearchMode(Enum):
     """Vector search modes."""
+
     COSINE = "cosine"
     EUCLIDEAN = "euclidean"
     DOT_PRODUCT = "dot_product"
@@ -49,6 +50,7 @@ class VectorSearchMode(Enum):
 @dataclass
 class VectorSearchConfig:
     """Configuration for vector search."""
+
     model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     index_type: str = "IndexFlatIP"  # Inner product for cosine similarity
     dimension: int = 384  # Model output dimension
@@ -77,10 +79,11 @@ class VectorSearchConfig:
 @dataclass
 class VectorSearchResult:
     """Vector search result item."""
+
     node_id: str
     node_type: str
     score: float
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     text: str
     distance: float
     rank: int = 0
@@ -97,9 +100,9 @@ class VectorIndexManager:
             skip_load: If True, skip loading existing indices (e.g., for NICLIP with different dimensions)
         """
         self.config = config
-        self.indices: Dict[str, faiss.Index] = {}
-        self.metadata: Dict[str, List[Dict[str, Any]]] = {}
-        self.embeddings_cache: Dict[str, np.ndarray] = {}
+        self.indices: dict[str, faiss.Index] = {}
+        self.metadata: dict[str, list[dict[str, Any]]] = {}
+        self.embeddings_cache: dict[str, np.ndarray] = {}
         self.lock = threading.Lock()
 
         # Create cache directory
@@ -135,20 +138,23 @@ class VectorIndexManager:
 
         return index
 
-    def add_embeddings(self, node_type: str, embeddings: np.ndarray,
-                       metadata: List[Dict[str, Any]]):
+    def add_embeddings(
+        self, node_type: str, embeddings: np.ndarray, metadata: list[dict[str, Any]]
+    ):
         """Add embeddings to index for a node type."""
         with self.lock:
             if node_type not in self.indices:
-                self.indices[node_type] = self.create_index(node_type, embeddings.shape[1])
+                self.indices[node_type] = self.create_index(
+                    node_type, embeddings.shape[1]
+                )
                 self.metadata[node_type] = []
 
             # Normalize if configured (for cosine similarity)
             if self.config.normalize_embeddings:
-                embeddings = normalize(embeddings, norm='l2', axis=1)
+                embeddings = normalize(embeddings, norm="l2", axis=1)
 
             # Train index if needed (for IVF indexes)
-            if hasattr(self.indices[node_type], 'is_trained'):
+            if hasattr(self.indices[node_type], "is_trained"):
                 if not self.indices[node_type].is_trained:
                     self.indices[node_type].train(embeddings)
 
@@ -156,8 +162,9 @@ class VectorIndexManager:
             self.indices[node_type].add(embeddings)
             self.metadata[node_type].extend(metadata)
 
-    def search(self, node_type: str, query_embedding: np.ndarray,
-              k: int = 10) -> Tuple[np.ndarray, np.ndarray]:
+    def search(
+        self, node_type: str, query_embedding: np.ndarray, k: int = 10
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Search for similar vectors in index."""
         if node_type not in self.indices:
             return np.array([]), np.array([])
@@ -165,7 +172,9 @@ class VectorIndexManager:
         with self.lock:
             # Normalize query if configured
             if self.config.normalize_embeddings:
-                query_embedding = normalize(query_embedding.reshape(1, -1), norm='l2', axis=1)
+                query_embedding = normalize(
+                    query_embedding.reshape(1, -1), norm="l2", axis=1
+                )
             else:
                 query_embedding = query_embedding.reshape(1, -1)
 
@@ -187,7 +196,7 @@ class VectorIndexManager:
             faiss.write_index(self.indices[node_type], str(index_path))
 
             # Save metadata
-            with open(metadata_path, 'wb') as f:
+            with open(metadata_path, "wb") as f:
                 pickle.dump(self.metadata[node_type], f)
 
     def load_index(self, node_type: str) -> bool:
@@ -203,7 +212,7 @@ class VectorIndexManager:
             self.indices[node_type] = faiss.read_index(str(index_path))
 
             # Load metadata
-            with open(metadata_path, 'rb') as f:
+            with open(metadata_path, "rb") as f:
                 self.metadata[node_type] = pickle.load(f)
 
         return True
@@ -223,8 +232,12 @@ class VectorIndexManager:
 class NICLIPAdapter:
     """Adapter to make NICLIPEmbeddingService compatible with sentence-transformer API."""
 
-    def __init__(self, niclip_data_path: str, model_name: str = "BrainGPT-7B-v0.2",
-                 section: str = "abstract"):
+    def __init__(
+        self,
+        niclip_data_path: str,
+        model_name: str = "BrainGPT-7B-v0.2",
+        section: str = "abstract",
+    ):
         """
         Initialize NICLIP adapter.
 
@@ -240,7 +253,7 @@ class NICLIPAdapter:
             model_name=model_name,
             section=section,
             embedding_dim=4096,  # BrainGPT embeddings are 4096-dim
-            normalize=True
+            normalize=True,
         )
 
         # Create a custom service that points directly to our data
@@ -249,8 +262,12 @@ class NICLIPAdapter:
         self.service.data_root = Path(niclip_data_path)
 
         # Load vocabulary and create index
-        self.vocab, self.embeddings = self.service.load_vocabulary_embeddings("cogatlas_task-names")
-        self.vocab_index = self.service.create_faiss_index(self.embeddings, index_type="flat")
+        self.vocab, self.embeddings = self.service.load_vocabulary_embeddings(
+            "cogatlas_task-names"
+        )
+        self.vocab_index = self.service.create_faiss_index(
+            self.embeddings, index_type="flat"
+        )
 
         # Create vocab lookup
         self.vocab_to_idx = {task.lower(): idx for idx, task in enumerate(self.vocab)}
@@ -258,11 +275,18 @@ class NICLIPAdapter:
         # Set dimension
         self.embedding_dim = self.embeddings.shape[1]
 
-        logger.info(f"Initialized NICLIP adapter with {len(self.vocab)} vocabulary items, "
-                   f"embedding dim: {self.embedding_dim}")
+        logger.info(
+            f"Initialized NICLIP adapter with {len(self.vocab)} vocabulary items, "
+            f"embedding dim: {self.embedding_dim}"
+        )
 
-    def encode(self, texts: Union[str, List[str]], batch_size: int = 32,
-               show_progress_bar: bool = False, convert_to_numpy: bool = True) -> np.ndarray:
+    def encode(
+        self,
+        texts: str | list[str],
+        batch_size: int = 32,
+        show_progress_bar: bool = False,
+        convert_to_numpy: bool = True,
+    ) -> np.ndarray:
         """
         Encode texts using NICLIP embeddings.
 
@@ -324,13 +348,15 @@ class NICLIPAdapter:
 class VectorSearchEngine:
     """Enhanced search engine with vector similarity search."""
 
-    def __init__(self, db, config: Optional[VectorSearchConfig] = None):
+    def __init__(self, db, config: VectorSearchConfig | None = None):
         """Initialize vector search engine."""
         self.db = db
         self.config = config or VectorSearchConfig()
         self.index_version = os.environ.get("BR_KG_VECTOR_INDEX_VERSION", "kg_text_v1")
-        self.template_version = os.environ.get("BR_KG_VECTOR_TEMPLATE_VERSION", "node_text_v1")
-        self.index_updated_at: Dict[str, str] = {}
+        self.template_version = os.environ.get(
+            "BR_KG_VECTOR_TEMPLATE_VERSION", "node_text_v1"
+        )
+        self.index_updated_at: dict[str, str] = {}
 
         # Initialize embedding model
         if self.config.use_niclip and NICLIP_AVAILABLE:
@@ -338,26 +364,30 @@ class VectorSearchEngine:
             self.model = NICLIPAdapter(
                 niclip_data_path=self.config.niclip_data_path,
                 model_name=self.config.niclip_model,
-                section=self.config.niclip_section
+                section=self.config.niclip_section,
             )
             # Update dimension for NICLIP
             self.config.dimension = self.model.embedding_dim
         else:
             if self.config.use_niclip and not NICLIP_AVAILABLE:
-                logger.warning("NICLIP requested but not available, falling back to sentence-transformers")
+                logger.warning(
+                    "NICLIP requested but not available, falling back to sentence-transformers"
+                )
             logger.info(f"Loading embedding model: {self.config.model_name}")
             self.model = SentenceTransformer(
                 self.config.model_name,
-                device='cuda' if self.config.enable_gpu else 'cpu'
+                device="cuda" if self.config.enable_gpu else "cpu",
             )
             self.model.max_seq_length = self.config.max_sequence_length
 
         # Initialize index manager (skip loading existing indices for NICLIP due to dimension mismatch)
-        self.index_manager = VectorIndexManager(self.config, skip_load=self.config.use_niclip)
+        self.index_manager = VectorIndexManager(
+            self.config, skip_load=self.config.use_niclip
+        )
 
         # Cache for embeddings
-        self.embedding_cache: Dict[str, np.ndarray] = {}
-        self.cache_timestamps: Dict[str, float] = {}
+        self.embedding_cache: dict[str, np.ndarray] = {}
+        self.cache_timestamps: dict[str, float] = {}
 
         # For NICLIP, always rebuild indices (different dimensions)
         # For sentence-transformers, load cached indices if available (but validate dimensions)
@@ -393,13 +423,22 @@ class VectorSearchEngine:
             "ToolFamily",
             "Dataset",
         ]
-        if os.environ.get("BR_KG_VECTOR_INCLUDE_REGION", "0").lower() in {"1", "true", "yes", "on"}:
+        if os.environ.get("BR_KG_VECTOR_INCLUDE_REGION", "0").lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }:
             node_types.append("Region")
-        if os.environ.get("BR_KG_VECTOR_INCLUDE_PUBLICATION", "0").lower() in {"1", "true", "yes", "on"}:
+        if os.environ.get("BR_KG_VECTOR_INCLUDE_PUBLICATION", "0").lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }:
             node_types.append("Publication")
 
         for node_type in node_types:
-            embeddings_list = []
             metadata_list = []
             texts = []
 
@@ -412,12 +451,14 @@ class VectorSearchEngine:
                 texts.append(text)
 
                 # Store metadata
-                metadata_list.append({
-                    "node_id": node_id,
-                    "node_type": node_type,
-                    "properties": properties,
-                    "text": text
-                })
+                metadata_list.append(
+                    {
+                        "node_id": node_id,
+                        "node_type": node_type,
+                        "properties": properties,
+                        "text": text,
+                    }
+                )
 
             if texts:
                 # Generate embeddings in batches
@@ -428,34 +469,37 @@ class VectorSearchEngine:
 
                 # Save index
                 self.index_manager.save_index(node_type)
-                self.index_updated_at[node_type] = datetime.now(timezone.utc).isoformat()
+                self.index_updated_at[node_type] = datetime.now(
+                    timezone.utc
+                ).isoformat()
 
                 logger.info(f"Indexed {len(texts)} {node_type} nodes")
 
-    def _create_text_representation(self, node_type: str,
-                                   properties: Dict[str, Any]) -> str:
+    def _create_text_representation(
+        self, node_type: str, properties: dict[str, Any]
+    ) -> str:
         """Create text representation of node for embedding."""
         return create_text_v1_representation(node_type, properties)
 
-    def _index_updated_at_for(self, node_type: str) -> Optional[str]:
+    def _index_updated_at_for(self, node_type: str) -> str | None:
         if node_type in self.index_updated_at:
             return self.index_updated_at[node_type]
         index_path = Path(self.config.cache_dir) / f"{node_type}_index.faiss"
         if index_path.exists():
-            return datetime.fromtimestamp(index_path.stat().st_mtime, tz=timezone.utc).isoformat()
+            return datetime.fromtimestamp(
+                index_path.stat().st_mtime, tz=timezone.utc
+            ).isoformat()
         return None
 
-    def _generate_embeddings_batch(self, texts: List[str]) -> np.ndarray:
+    def _generate_embeddings_batch(self, texts: list[str]) -> np.ndarray:
         """Generate embeddings for a batch of texts."""
         embeddings = []
 
         # Process in batches
         for i in range(0, len(texts), self.config.batch_size):
-            batch = texts[i:i + self.config.batch_size]
+            batch = texts[i : i + self.config.batch_size]
             batch_embeddings = self.model.encode(
-                batch,
-                convert_to_numpy=True,
-                show_progress_bar=False
+                batch, convert_to_numpy=True, show_progress_bar=False
             )
             embeddings.append(batch_embeddings)
 
@@ -467,14 +511,15 @@ class VectorSearchEngine:
         if use_cache and self.config.enable_cache:
             if text in self.embedding_cache:
                 # Check if cache is still valid
-                if time.time() - self.cache_timestamps.get(text, 0) < self.config.cache_ttl:
+                if (
+                    time.time() - self.cache_timestamps.get(text, 0)
+                    < self.config.cache_ttl
+                ):
                     return self.embedding_cache[text]
 
         # Generate embedding
         embedding = self.model.encode(
-            text,
-            convert_to_numpy=True,
-            show_progress_bar=False
+            text, convert_to_numpy=True, show_progress_bar=False
         )
 
         # Update cache
@@ -482,8 +527,9 @@ class VectorSearchEngine:
             # Manage cache size
             if len(self.embedding_cache) >= self.config.max_cache_size:
                 # Remove oldest entries
-                oldest_keys = sorted(self.cache_timestamps.keys(),
-                                   key=lambda k: self.cache_timestamps[k])[:100]
+                oldest_keys = sorted(
+                    self.cache_timestamps.keys(), key=lambda k: self.cache_timestamps[k]
+                )[:100]
                 for key in oldest_keys:
                     del self.embedding_cache[key]
                     del self.cache_timestamps[key]
@@ -496,10 +542,10 @@ class VectorSearchEngine:
     def vector_search(
         self,
         query: str,
-        node_types: Optional[List[str]] = None,
+        node_types: list[str] | None = None,
         k: int = 10,
-        threshold: float = 0.0
-    ) -> List[VectorSearchResult]:
+        threshold: float = 0.0,
+    ) -> list[VectorSearchResult]:
         """
         Perform vector similarity search.
 
@@ -531,12 +577,14 @@ class VectorSearchEngine:
             )
 
             # Convert to results
-            for i, (dist, idx) in enumerate(zip(distances, indices)):
+            for i, (dist, idx) in enumerate(zip(distances, indices, strict=False)):
                 if idx == -1:  # FAISS returns -1 for no match
                     continue
 
                 # Check threshold
-                similarity = float(dist)  # For cosine similarity with normalized vectors
+                similarity = float(
+                    dist
+                )  # For cosine similarity with normalized vectors
                 if similarity < threshold:
                     continue
 
@@ -550,7 +598,7 @@ class VectorSearchEngine:
                     metadata=metadata["properties"],
                     text=metadata["text"],
                     distance=float(dist),
-                    rank=i
+                    rank=i,
                 )
                 all_results.append(result)
 
@@ -566,12 +614,12 @@ class VectorSearchEngine:
     def hybrid_search(
         self,
         query: str,
-        node_types: Optional[List[str]] = None,
+        node_types: list[str] | None = None,
         k: int = 10,
         vector_weight: float = 0.7,
         text_weight: float = 0.3,
-        threshold: float = 0.0
-    ) -> List[Dict[str, Any]]:
+        threshold: float = 0.0,
+    ) -> list[dict[str, Any]]:
         """
         Perform hybrid search combining vector and text search.
 
@@ -594,9 +642,7 @@ class VectorSearchEngine:
 
         # Perform text search
         text_engine = SearchEngine(self.db)
-        text_results = text_engine.search(
-            query, node_types, SearchMode.FUZZY, k * 2
-        )
+        text_results = text_engine.search(query, node_types, SearchMode.FUZZY, k * 2)
 
         # Combine results
         combined_scores = {}
@@ -613,7 +659,7 @@ class VectorSearchEngine:
                 "vector_score": result.score,
                 "text_score": 0.0,
                 "combined_score": 0.0,
-                "text": result.text
+                "text": result.text,
             }
 
         # Add text search results
@@ -633,7 +679,7 @@ class VectorSearchEngine:
                     "vector_score": 0.0,
                     "text_score": text_score,
                     "combined_score": 0.0,
-                    "text": ""
+                    "text": "",
                 }
 
         # Update combined scores
@@ -642,26 +688,19 @@ class VectorSearchEngine:
 
         # Sort by combined score
         sorted_results = sorted(
-            result_data.values(),
-            key=lambda x: x["combined_score"],
-            reverse=True
+            result_data.values(), key=lambda x: x["combined_score"], reverse=True
         )
 
         # Filter by threshold and limit
         filtered_results = [
-            r for r in sorted_results
-            if r["combined_score"] >= threshold
+            r for r in sorted_results if r["combined_score"] >= threshold
         ][:k]
 
         return filtered_results
 
     def find_similar_nodes(
-        self,
-        node_id: str,
-        node_type: str,
-        k: int = 10,
-        include_self: bool = False
-    ) -> List[VectorSearchResult]:
+        self, node_id: str, node_type: str, k: int = 10, include_self: bool = False
+    ) -> list[VectorSearchResult]:
         """
         Find nodes similar to a given node.
 
@@ -692,7 +731,7 @@ class VectorSearchEngine:
                 search_type, embedding, k + 1
             )
 
-            for dist, idx in zip(distances, indices):
+            for dist, idx in zip(distances, indices, strict=False):
                 if idx == -1:
                     continue
 
@@ -708,7 +747,7 @@ class VectorSearchEngine:
                     score=float(dist),
                     metadata=metadata["properties"],
                     text=metadata["text"],
-                    distance=float(dist)
+                    distance=float(dist),
                 )
                 results.append(result)
 
@@ -727,7 +766,7 @@ class VectorSearchEngine:
         text = self._create_text_representation(node_type, properties)
 
         # Generate embedding
-        embedding = self.generate_embedding(text, use_cache=False)
+        self.generate_embedding(text, use_cache=False)
 
         # Update in index (would need to implement index update logic)
         # For now, we'll rebuild the index for that type
@@ -739,7 +778,6 @@ class VectorSearchEngine:
 
     def _rebuild_index_for_type(self, node_type: str):
         """Rebuild index for a specific node type."""
-        embeddings_list = []
         metadata_list = []
         texts = []
 
@@ -749,12 +787,14 @@ class VectorSearchEngine:
         for node_id, properties in nodes:
             text = self._create_text_representation(node_type, properties)
             texts.append(text)
-            metadata_list.append({
-                "node_id": node_id,
-                "node_type": node_type,
-                "properties": properties,
-                "text": text
-            })
+            metadata_list.append(
+                {
+                    "node_id": node_id,
+                    "node_type": node_type,
+                    "properties": properties,
+                    "text": text,
+                }
+            )
 
         if texts:
             # Generate embeddings
@@ -773,21 +813,21 @@ class VectorSearchEngine:
 
             logger.info(f"Rebuilt index for {node_type} with {len(texts)} nodes")
 
-    def get_embedding_stats(self) -> Dict[str, Any]:
+    def get_embedding_stats(self) -> dict[str, Any]:
         """Get statistics about the vector indices."""
         stats = {
             "model": self.config.model_name,
             "dimension": self.config.dimension,
             "index_version": self.index_version,
             "template_version": self.template_version,
-            "indices": {}
+            "indices": {},
         }
 
         for node_type, index in self.index_manager.indices.items():
             stats["indices"][node_type] = {
                 "num_vectors": index.ntotal,
                 "index_type": type(index).__name__,
-                "is_trained": getattr(index, 'is_trained', True),
+                "is_trained": getattr(index, "is_trained", True),
                 "updated_at": self._index_updated_at_for(node_type),
             }
 
@@ -795,7 +835,7 @@ class VectorSearchEngine:
             "enabled": self.config.enable_cache,
             "size": len(self.embedding_cache),
             "max_size": self.config.max_cache_size,
-            "ttl": self.config.cache_ttl
+            "ttl": self.config.cache_ttl,
         }
 
         return stats

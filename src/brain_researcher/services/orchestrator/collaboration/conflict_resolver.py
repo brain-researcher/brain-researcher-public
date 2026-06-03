@@ -5,23 +5,21 @@ Provides sophisticated conflict resolution strategies and merge algorithms
 for handling concurrent document modifications.
 """
 
-import asyncio
-import json
 import logging
-from dataclasses import dataclass, asdict
+import uuid
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any, Union, Tuple, Set
-import uuid
-import difflib
+from typing import Any
 
-from .operational_transform import Operation, OperationType, DocumentState
+from .operational_transform import DocumentState, Operation, OperationType
 
 logger = logging.getLogger(__name__)
 
 
 class ConflictResolutionStrategy(str, Enum):
     """Strategies for resolving conflicts between concurrent operations."""
+
     LAST_WRITE_WINS = "last_write_wins"
     FIRST_WRITE_WINS = "first_write_wins"
     MERGE_CHANGES = "merge_changes"
@@ -33,6 +31,7 @@ class ConflictResolutionStrategy(str, Enum):
 
 class ConflictType(str, Enum):
     """Types of conflicts that can occur."""
+
     OVERLAPPING_EDITS = "overlapping_edits"
     CONCURRENT_DELETES = "concurrent_deletes"
     INSERT_DELETE_CONFLICT = "insert_delete_conflict"
@@ -44,34 +43,36 @@ class ConflictType(str, Enum):
 @dataclass
 class ConflictInfo:
     """Information about a detected conflict."""
+
     conflict_id: str
     conflict_type: ConflictType
-    operations: List[Operation]
-    affected_range: Tuple[int, int]
-    participants: Set[str]
+    operations: list[Operation]
+    affected_range: tuple[int, int]
+    participants: set[str]
     timestamp: datetime
     severity: str = "medium"  # low, medium, high, critical
     auto_resolvable: bool = True
-    resolution_strategy: Optional[ConflictResolutionStrategy] = None
-    metadata: Optional[Dict[str, Any]] = None
+    resolution_strategy: ConflictResolutionStrategy | None = None
+    metadata: dict[str, Any] | None = None
 
     def __post_init__(self):
         if not self.conflict_id:
             self.conflict_id = f"conflict_{uuid.uuid4().hex[:12]}"
-        if not hasattr(self, 'participants') or not self.participants:
+        if not hasattr(self, "participants") or not self.participants:
             self.participants = set()
 
 
 @dataclass
 class ConflictResolution:
     """Result of conflict resolution."""
+
     conflict_id: str
     strategy_used: ConflictResolutionStrategy
-    resolved_operations: List[Operation]
-    rejected_operations: List[Operation]
-    merge_result: Optional[Dict[str, Any]] = None
+    resolved_operations: list[Operation]
+    rejected_operations: list[Operation]
+    merge_result: dict[str, Any] | None = None
     requires_user_intervention: bool = False
-    resolution_metadata: Optional[Dict[str, Any]] = None
+    resolution_metadata: dict[str, Any] | None = None
     confidence_score: float = 1.0  # 0.0 to 1.0
 
 
@@ -84,36 +85,34 @@ class ConflictResolver:
     """
 
     def __init__(self):
-        self.active_conflicts: Dict[str, ConflictInfo] = {}
-        self.resolution_history: List[ConflictResolution] = []
-        self.user_priorities: Dict[str, int] = {}  # user_id -> priority level
-        self.operation_priorities: Dict[OperationType, int] = {
+        self.active_conflicts: dict[str, ConflictInfo] = {}
+        self.resolution_history: list[ConflictResolution] = []
+        self.user_priorities: dict[str, int] = {}  # user_id -> priority level
+        self.operation_priorities: dict[OperationType, int] = {
             OperationType.DELETE: 100,
             OperationType.REPLACE: 90,
             OperationType.INSERT: 80,
             OperationType.FORMAT: 70,
             OperationType.ANNOTATE: 60,
-            OperationType.RETAIN: 50
+            OperationType.RETAIN: 50,
         }
 
         # Conflict resolution handlers
-        self.conflict_handlers: Dict[ConflictResolutionStrategy, callable] = {
+        self.conflict_handlers: dict[ConflictResolutionStrategy, callable] = {
             ConflictResolutionStrategy.LAST_WRITE_WINS: self._resolve_last_write_wins,
             ConflictResolutionStrategy.FIRST_WRITE_WINS: self._resolve_first_write_wins,
             ConflictResolutionStrategy.MERGE_CHANGES: self._resolve_merge_changes,
             ConflictResolutionStrategy.USER_PRIORITY: self._resolve_user_priority,
             ConflictResolutionStrategy.CONTENT_BASED: self._resolve_content_based,
             ConflictResolutionStrategy.OPERATION_PRIORITY: self._resolve_operation_priority,
-            ConflictResolutionStrategy.MANUAL_RESOLUTION: self._resolve_manual
+            ConflictResolutionStrategy.MANUAL_RESOLUTION: self._resolve_manual,
         }
 
         logger.info("Conflict resolver initialized")
 
     async def detect_conflicts(
-        self,
-        operations: List[Operation],
-        document_state: DocumentState
-    ) -> List[ConflictInfo]:
+        self, operations: list[Operation], document_state: DocumentState
+    ) -> list[ConflictInfo]:
         """
         Detect conflicts between a set of operations.
 
@@ -127,12 +126,16 @@ class ConflictResolver:
         conflicts = []
 
         # Sort operations by position for easier conflict detection
-        sorted_ops = sorted(operations, key=lambda op: (op.position, op.timestamp or datetime.min))
+        sorted_ops = sorted(
+            operations, key=lambda op: (op.position, op.timestamp or datetime.min)
+        )
 
         # Check each pair of operations for conflicts
         for i, op1 in enumerate(sorted_ops):
-            for op2 in sorted_ops[i + 1:]:
-                conflict = await self._check_operation_conflict(op1, op2, document_state)
+            for op2 in sorted_ops[i + 1 :]:
+                conflict = await self._check_operation_conflict(
+                    op1, op2, document_state
+                )
                 if conflict:
                     conflicts.append(conflict)
 
@@ -148,8 +151,8 @@ class ConflictResolver:
     async def resolve_conflict(
         self,
         conflict: ConflictInfo,
-        strategy: Optional[ConflictResolutionStrategy] = None,
-        user_input: Optional[Dict[str, Any]] = None
+        strategy: ConflictResolutionStrategy | None = None,
+        user_input: dict[str, Any] | None = None,
     ) -> ConflictResolution:
         """
         Resolve a specific conflict using the specified strategy.
@@ -163,7 +166,11 @@ class ConflictResolver:
             ConflictResolution with the result
         """
         try:
-            resolution_strategy = strategy or conflict.resolution_strategy or ConflictResolutionStrategy.LAST_WRITE_WINS
+            resolution_strategy = (
+                strategy
+                or conflict.resolution_strategy
+                or ConflictResolutionStrategy.LAST_WRITE_WINS
+            )
 
             # Get the appropriate handler
             handler = self.conflict_handlers.get(resolution_strategy)
@@ -181,7 +188,9 @@ class ConflictResolver:
             if conflict.conflict_id in self.active_conflicts:
                 del self.active_conflicts[conflict.conflict_id]
 
-            logger.info(f"Resolved conflict {conflict.conflict_id} using {resolution_strategy}")
+            logger.info(
+                f"Resolved conflict {conflict.conflict_id} using {resolution_strategy}"
+            )
             return resolution
 
         except Exception as e:
@@ -195,15 +204,12 @@ class ConflictResolver:
                 rejected_operations=conflict.operations,
                 requires_user_intervention=True,
                 confidence_score=0.0,
-                resolution_metadata={"error": str(e)}
+                resolution_metadata={"error": str(e)},
             )
 
     async def _check_operation_conflict(
-        self,
-        op1: Operation,
-        op2: Operation,
-        document_state: DocumentState
-    ) -> Optional[ConflictInfo]:
+        self, op1: Operation, op2: Operation, document_state: DocumentState
+    ) -> ConflictInfo | None:
         """Check if two operations conflict with each other."""
 
         # Skip if same operation
@@ -211,8 +217,10 @@ class ConflictResolver:
             return None
 
         # Skip if from same author and sequential
-        if (op1.author_id == op2.author_id and
-            abs(op1.client_version - op2.client_version) <= 1):
+        if (
+            op1.author_id == op2.author_id
+            and abs(op1.client_version - op2.client_version) <= 1
+        ):
             return None
 
         # Check for position-based conflicts
@@ -230,21 +238,24 @@ class ConflictResolver:
             # Determine conflict type
             if op1.type == OperationType.DELETE and op2.type == OperationType.DELETE:
                 conflict_type = ConflictType.CONCURRENT_DELETES
-            elif (op1.type == OperationType.INSERT and op2.type == OperationType.DELETE) or \
-                 (op1.type == OperationType.DELETE and op2.type == OperationType.INSERT):
+            elif (
+                op1.type == OperationType.INSERT and op2.type == OperationType.DELETE
+            ) or (
+                op1.type == OperationType.DELETE and op2.type == OperationType.INSERT
+            ):
                 conflict_type = ConflictType.INSERT_DELETE_CONFLICT
             elif op1.type == OperationType.FORMAT and op2.type == OperationType.FORMAT:
                 if op1.attributes != op2.attributes:
                     conflict_type = ConflictType.FORMAT_CONFLICTS
-            elif op1.type == OperationType.ANNOTATE and op2.type == OperationType.ANNOTATE:
+            elif (
+                op1.type == OperationType.ANNOTATE
+                and op2.type == OperationType.ANNOTATE
+            ):
                 conflict_type = ConflictType.ANNOTATION_CONFLICTS
             else:
                 conflict_type = ConflictType.OVERLAPPING_EDITS
 
-            affected_range = (
-                min(op1_start, op2_start),
-                max(op1_end, op2_end)
-            )
+            affected_range = (min(op1_start, op2_start), max(op1_end, op2_end))
 
         if conflict_type:
             severity = self._assess_conflict_severity(op1, op2, conflict_type)
@@ -258,7 +269,7 @@ class ConflictResolver:
                 participants={op1.author_id, op2.author_id},
                 timestamp=datetime.utcnow(),
                 severity=severity,
-                auto_resolvable=auto_resolvable
+                auto_resolvable=auto_resolvable,
             )
 
         return None
@@ -268,10 +279,7 @@ class ConflictResolver:
         return start1 < end2 and start2 < end1
 
     def _assess_conflict_severity(
-        self,
-        op1: Operation,
-        op2: Operation,
-        conflict_type: ConflictType
+        self, op1: Operation, op2: Operation, conflict_type: ConflictType
     ) -> str:
         """Assess the severity of a conflict."""
 
@@ -284,22 +292,25 @@ class ConflictResolver:
             return "high"
 
         # Medium severity conflicts
-        if conflict_type in [ConflictType.INSERT_DELETE_CONFLICT, ConflictType.OVERLAPPING_EDITS]:
+        if conflict_type in [
+            ConflictType.INSERT_DELETE_CONFLICT,
+            ConflictType.OVERLAPPING_EDITS,
+        ]:
             return "medium"
 
         # Low severity conflicts
         return "low"
 
     def _is_auto_resolvable(
-        self,
-        op1: Operation,
-        op2: Operation,
-        conflict_type: ConflictType
+        self, op1: Operation, op2: Operation, conflict_type: ConflictType
     ) -> bool:
         """Determine if a conflict can be automatically resolved."""
 
         # Format and annotation conflicts are usually auto-resolvable
-        if conflict_type in [ConflictType.FORMAT_CONFLICTS, ConflictType.ANNOTATION_CONFLICTS]:
+        if conflict_type in [
+            ConflictType.FORMAT_CONFLICTS,
+            ConflictType.ANNOTATION_CONFLICTS,
+        ]:
             return True
 
         # Simple overlapping edits with clear precedence
@@ -316,7 +327,9 @@ class ConflictResolver:
 
         return True
 
-    def _group_related_conflicts(self, conflicts: List[ConflictInfo]) -> List[ConflictInfo]:
+    def _group_related_conflicts(
+        self, conflicts: list[ConflictInfo]
+    ) -> list[ConflictInfo]:
         """Group related conflicts together."""
         if not conflicts:
             return []
@@ -330,9 +343,7 @@ class ConflictResolver:
     # Resolution Strategy Implementations
 
     async def _resolve_last_write_wins(
-        self,
-        conflict: ConflictInfo,
-        user_input: Optional[Dict[str, Any]] = None
+        self, conflict: ConflictInfo, user_input: dict[str, Any] | None = None
     ) -> ConflictResolution:
         """Resolve conflict using last-write-wins strategy."""
 
@@ -340,7 +351,7 @@ class ConflictResolver:
         sorted_ops = sorted(
             conflict.operations,
             key=lambda op: op.timestamp or datetime.min,
-            reverse=True
+            reverse=True,
         )
 
         winning_op = sorted_ops[0]
@@ -354,22 +365,21 @@ class ConflictResolver:
             merge_result=None,
             confidence_score=0.8,
             resolution_metadata={
-                "winning_timestamp": winning_op.timestamp.isoformat() if winning_op.timestamp else None,
-                "winning_author": winning_op.author_id
-            }
+                "winning_timestamp": (
+                    winning_op.timestamp.isoformat() if winning_op.timestamp else None
+                ),
+                "winning_author": winning_op.author_id,
+            },
         )
 
     async def _resolve_first_write_wins(
-        self,
-        conflict: ConflictInfo,
-        user_input: Optional[Dict[str, Any]] = None
+        self, conflict: ConflictInfo, user_input: dict[str, Any] | None = None
     ) -> ConflictResolution:
         """Resolve conflict using first-write-wins strategy."""
 
         # Sort operations by timestamp (earliest first)
         sorted_ops = sorted(
-            conflict.operations,
-            key=lambda op: op.timestamp or datetime.max
+            conflict.operations, key=lambda op: op.timestamp or datetime.max
         )
 
         winning_op = sorted_ops[0]
@@ -383,15 +393,15 @@ class ConflictResolver:
             merge_result=None,
             confidence_score=0.8,
             resolution_metadata={
-                "winning_timestamp": winning_op.timestamp.isoformat() if winning_op.timestamp else None,
-                "winning_author": winning_op.author_id
-            }
+                "winning_timestamp": (
+                    winning_op.timestamp.isoformat() if winning_op.timestamp else None
+                ),
+                "winning_author": winning_op.author_id,
+            },
         )
 
     async def _resolve_user_priority(
-        self,
-        conflict: ConflictInfo,
-        user_input: Optional[Dict[str, Any]] = None
+        self, conflict: ConflictInfo, user_input: dict[str, Any] | None = None
     ) -> ConflictResolution:
         """Resolve conflict based on user priority levels."""
 
@@ -399,7 +409,7 @@ class ConflictResolver:
         sorted_ops = sorted(
             conflict.operations,
             key=lambda op: self.user_priorities.get(op.author_id, 0),
-            reverse=True
+            reverse=True,
         )
 
         winning_op = sorted_ops[0]
@@ -413,14 +423,12 @@ class ConflictResolver:
             confidence_score=0.9,
             resolution_metadata={
                 "winning_priority": self.user_priorities.get(winning_op.author_id, 0),
-                "winning_author": winning_op.author_id
-            }
+                "winning_author": winning_op.author_id,
+            },
         )
 
     async def _resolve_operation_priority(
-        self,
-        conflict: ConflictInfo,
-        user_input: Optional[Dict[str, Any]] = None
+        self, conflict: ConflictInfo, user_input: dict[str, Any] | None = None
     ) -> ConflictResolution:
         """Resolve conflict based on operation type priority."""
 
@@ -428,7 +436,7 @@ class ConflictResolver:
         sorted_ops = sorted(
             conflict.operations,
             key=lambda op: self.operation_priorities.get(op.type, 0),
-            reverse=True
+            reverse=True,
         )
 
         winning_op = sorted_ops[0]
@@ -442,14 +450,12 @@ class ConflictResolver:
             confidence_score=0.7,
             resolution_metadata={
                 "winning_operation_type": winning_op.type.value,
-                "winning_priority": self.operation_priorities.get(winning_op.type, 0)
-            }
+                "winning_priority": self.operation_priorities.get(winning_op.type, 0),
+            },
         )
 
     async def _resolve_merge_changes(
-        self,
-        conflict: ConflictInfo,
-        user_input: Optional[Dict[str, Any]] = None
+        self, conflict: ConflictInfo, user_input: dict[str, Any] | None = None
     ) -> ConflictResolution:
         """Resolve conflict by attempting to merge changes."""
 
@@ -463,7 +469,7 @@ class ConflictResolver:
                     resolved_operations=merged_operations,
                     rejected_operations=[],
                     confidence_score=0.9,
-                    resolution_metadata={"merge_successful": True}
+                    resolution_metadata={"merge_successful": True},
                 )
             else:
                 # Fall back to last-write-wins if merge fails
@@ -478,13 +484,11 @@ class ConflictResolver:
                 rejected_operations=conflict.operations,
                 requires_user_intervention=True,
                 confidence_score=0.0,
-                resolution_metadata={"error": str(e)}
+                resolution_metadata={"error": str(e)},
             )
 
     async def _resolve_content_based(
-        self,
-        conflict: ConflictInfo,
-        user_input: Optional[Dict[str, Any]] = None
+        self, conflict: ConflictInfo, user_input: dict[str, Any] | None = None
     ) -> ConflictResolution:
         """Resolve conflict based on content analysis."""
 
@@ -509,14 +513,12 @@ class ConflictResolver:
             confidence_score=content_scores[0][0],
             resolution_metadata={
                 "content_score": content_scores[0][0],
-                "winning_author": winning_op.author_id
-            }
+                "winning_author": winning_op.author_id,
+            },
         )
 
     async def _resolve_manual(
-        self,
-        conflict: ConflictInfo,
-        user_input: Optional[Dict[str, Any]] = None
+        self, conflict: ConflictInfo, user_input: dict[str, Any] | None = None
     ) -> ConflictResolution:
         """Handle manual conflict resolution."""
 
@@ -528,7 +530,7 @@ class ConflictResolver:
                 rejected_operations=conflict.operations,
                 requires_user_intervention=True,
                 confidence_score=0.0,
-                resolution_metadata={"status": "awaiting_user_input"}
+                resolution_metadata={"status": "awaiting_user_input"},
             )
 
         # Process user resolution choice
@@ -536,9 +538,13 @@ class ConflictResolver:
         custom_resolution = user_input.get("custom_resolution")
 
         if chosen_operation_id:
-            chosen_op = next((op for op in conflict.operations if op.id == chosen_operation_id), None)
+            chosen_op = next(
+                (op for op in conflict.operations if op.id == chosen_operation_id), None
+            )
             if chosen_op:
-                rejected_ops = [op for op in conflict.operations if op.id != chosen_operation_id]
+                rejected_ops = [
+                    op for op in conflict.operations if op.id != chosen_operation_id
+                ]
                 return ConflictResolution(
                     conflict_id=conflict.conflict_id,
                     strategy_used=ConflictResolutionStrategy.MANUAL_RESOLUTION,
@@ -547,8 +553,8 @@ class ConflictResolver:
                     confidence_score=1.0,
                     resolution_metadata={
                         "user_choice": chosen_operation_id,
-                        "resolution_type": "user_selected"
-                    }
+                        "resolution_type": "user_selected",
+                    },
                 )
 
         if custom_resolution:
@@ -559,7 +565,7 @@ class ConflictResolver:
                 position=custom_resolution.get("position", 0),
                 content=custom_resolution.get("content"),
                 length=custom_resolution.get("length"),
-                author_id=user_input.get("resolver_id", "system")
+                author_id=user_input.get("resolver_id", "system"),
             )
 
             return ConflictResolution(
@@ -570,8 +576,8 @@ class ConflictResolver:
                 confidence_score=1.0,
                 resolution_metadata={
                     "resolution_type": "user_custom",
-                    "resolver_id": user_input.get("resolver_id", "system")
-                }
+                    "resolver_id": user_input.get("resolver_id", "system"),
+                },
             )
 
         # No valid user input provided
@@ -582,12 +588,14 @@ class ConflictResolver:
             rejected_operations=conflict.operations,
             requires_user_intervention=True,
             confidence_score=0.0,
-            resolution_metadata={"error": "invalid_user_input"}
+            resolution_metadata={"error": "invalid_user_input"},
         )
 
     # Helper Methods
 
-    async def _attempt_merge(self, operations: List[Operation]) -> Optional[List[Operation]]:
+    async def _attempt_merge(
+        self, operations: list[Operation]
+    ) -> list[Operation] | None:
         """Attempt to automatically merge conflicting operations."""
 
         if len(operations) != 2:
@@ -609,7 +617,9 @@ class ConflictResolver:
         # Add more merge strategies as needed
         return None
 
-    async def _merge_inserts(self, op1: Operation, op2: Operation) -> Optional[List[Operation]]:
+    async def _merge_inserts(
+        self, op1: Operation, op2: Operation
+    ) -> list[Operation] | None:
         """Merge two insert operations."""
 
         # If inserts are at the same position, combine them
@@ -623,7 +633,9 @@ class ConflictResolver:
                 position=op1.position,
                 content=combined_content.strip(),
                 author_id=f"{op1.author_id},{op2.author_id}",
-                timestamp=max(op1.timestamp or datetime.min, op2.timestamp or datetime.min)
+                timestamp=max(
+                    op1.timestamp or datetime.min, op2.timestamp or datetime.min
+                ),
             )
 
             return [merged_op]
@@ -637,17 +649,28 @@ class ConflictResolver:
 
         return None
 
-    async def _merge_formats(self, op1: Operation, op2: Operation) -> Optional[List[Operation]]:
+    async def _merge_formats(
+        self, op1: Operation, op2: Operation
+    ) -> list[Operation] | None:
         """Merge two format operations."""
 
         # Merge attributes if ranges overlap
-        if (op1.attributes and op2.attributes and
-            self._ranges_overlap(op1.position, op1.position + (op1.length or 0),
-                               op2.position, op2.position + (op2.length or 0))):
+        if (
+            op1.attributes
+            and op2.attributes
+            and self._ranges_overlap(
+                op1.position,
+                op1.position + (op1.length or 0),
+                op2.position,
+                op2.position + (op2.length or 0),
+            )
+        ):
 
             merged_attributes = {**op1.attributes, **op2.attributes}
             merged_start = min(op1.position, op2.position)
-            merged_end = max(op1.position + (op1.length or 0), op2.position + (op2.length or 0))
+            merged_end = max(
+                op1.position + (op1.length or 0), op2.position + (op2.length or 0)
+            )
 
             merged_op = Operation(
                 id=f"merged_format_{op1.id}_{op2.id}",
@@ -656,14 +679,18 @@ class ConflictResolver:
                 length=merged_end - merged_start,
                 attributes=merged_attributes,
                 author_id=f"{op1.author_id},{op2.author_id}",
-                timestamp=max(op1.timestamp or datetime.min, op2.timestamp or datetime.min)
+                timestamp=max(
+                    op1.timestamp or datetime.min, op2.timestamp or datetime.min
+                ),
             )
 
             return [merged_op]
 
         return None
 
-    async def _merge_annotations(self, op1: Operation, op2: Operation) -> Optional[List[Operation]]:
+    async def _merge_annotations(
+        self, op1: Operation, op2: Operation
+    ) -> list[Operation] | None:
         """Merge two annotation operations."""
 
         # Combine annotations if they're at similar positions
@@ -671,8 +698,16 @@ class ConflictResolver:
 
             merged_content = {
                 "annotations": [
-                    op1.content if isinstance(op1.content, dict) else {"text": str(op1.content or "")},
-                    op2.content if isinstance(op2.content, dict) else {"text": str(op2.content or "")}
+                    (
+                        op1.content
+                        if isinstance(op1.content, dict)
+                        else {"text": str(op1.content or "")}
+                    ),
+                    (
+                        op2.content
+                        if isinstance(op2.content, dict)
+                        else {"text": str(op2.content or "")}
+                    ),
                 ]
             }
 
@@ -682,7 +717,9 @@ class ConflictResolver:
                 position=min(op1.position, op2.position),
                 content=merged_content,
                 author_id=f"{op1.author_id},{op2.author_id}",
-                timestamp=max(op1.timestamp or datetime.min, op2.timestamp or datetime.min)
+                timestamp=max(
+                    op1.timestamp or datetime.min, op2.timestamp or datetime.min
+                ),
             )
 
             return [merged_op]
@@ -725,11 +762,11 @@ class ConflictResolver:
         """Set priority level for an operation type."""
         self.operation_priorities[operation_type] = priority
 
-    def get_active_conflicts(self) -> List[ConflictInfo]:
+    def get_active_conflicts(self) -> list[ConflictInfo]:
         """Get all currently active conflicts."""
         return list(self.active_conflicts.values())
 
-    def get_resolution_history(self) -> List[ConflictResolution]:
+    def get_resolution_history(self) -> list[ConflictResolution]:
         """Get history of conflict resolutions."""
         return self.resolution_history.copy()
 
@@ -737,7 +774,7 @@ class ConflictResolver:
         """Clear the resolution history."""
         self.resolution_history.clear()
 
-    def get_conflict_stats(self) -> Dict[str, Any]:
+    def get_conflict_stats(self) -> dict[str, Any]:
         """Get statistics about conflicts and resolutions."""
         total_conflicts = len(self.resolution_history) + len(self.active_conflicts)
         resolved_conflicts = len(self.resolution_history)
@@ -756,8 +793,15 @@ class ConflictResolver:
             "total_conflicts": total_conflicts,
             "active_conflicts": len(self.active_conflicts),
             "resolved_conflicts": resolved_conflicts,
-            "resolution_rate": resolved_conflicts / total_conflicts if total_conflicts > 0 else 0,
+            "resolution_rate": (
+                resolved_conflicts / total_conflicts if total_conflicts > 0 else 0
+            ),
             "strategy_usage": strategy_usage,
             "active_conflict_types": conflict_types,
-            "average_confidence": sum(r.confidence_score for r in self.resolution_history) / len(self.resolution_history) if self.resolution_history else 0
+            "average_confidence": (
+                sum(r.confidence_score for r in self.resolution_history)
+                / len(self.resolution_history)
+                if self.resolution_history
+                else 0
+            ),
         }

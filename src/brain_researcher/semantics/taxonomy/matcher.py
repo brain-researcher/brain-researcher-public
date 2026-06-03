@@ -8,9 +8,10 @@ import math
 import re
 import unicodedata
 from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any
 
 try:  # pragma: no cover - rapidfuzz optional
     from rapidfuzz import fuzz, process  # type: ignore
@@ -78,15 +79,15 @@ def normalize_text(text: str) -> str:
 class MatchCandidate:
     canonical_id: str
     label: str
-    entity_type: Optional[str]
+    entity_type: str | None
     confidence: float
     method: str
     match_text: str
-    parameters: Dict[str, Any] = field(default_factory=dict)
-    rule: Optional[Dict[str, Any]] = None
-    entity: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
+    rule: dict[str, Any] | None = None
+    entity: dict[str, Any] = field(default_factory=dict)
 
-    def to_legacy_dict(self) -> Dict[str, Any]:
+    def to_legacy_dict(self) -> dict[str, Any]:
         legacy = {
             "match_string": self.match_text,
             "canonical_id": self.canonical_id,
@@ -109,19 +110,19 @@ class BaseMatcher:
         self,
         *,
         entities_path: Path = ENTITIES_PATH,
-        rules_path: Optional[Path] = SURFACE_RULES_PATH,
-        entity_types: Optional[Sequence[str]] = None,
+        rules_path: Path | None = SURFACE_RULES_PATH,
+        entity_types: Sequence[str] | None = None,
     ) -> None:
         self.entities_path = Path(entities_path)
         self.rules_path = Path(rules_path) if rules_path else None
 
-        self.entities: Dict[str, Dict[str, Any]] = {}
-        self._label_index: Dict[str, List[str]] = defaultdict(list)
-        self._alias_index: Dict[str, List[str]] = defaultdict(list)
-        self._source_alias_index: Dict[str, List[str]] = defaultdict(list)
-        self._fuzzy_lookup: Dict[str, str] = {}
-        self._fuzzy_strings: List[str] = []
-        self.compiled_rules: List[Dict[str, Any]] = []
+        self.entities: dict[str, dict[str, Any]] = {}
+        self._label_index: dict[str, list[str]] = defaultdict(list)
+        self._alias_index: dict[str, list[str]] = defaultdict(list)
+        self._source_alias_index: dict[str, list[str]] = defaultdict(list)
+        self._fuzzy_lookup: dict[str, str] = {}
+        self._fuzzy_strings: list[str] = []
+        self.compiled_rules: list[dict[str, Any]] = []
 
         self._load_entities(entity_types)
         self._build_indexes()
@@ -130,10 +131,10 @@ class BaseMatcher:
     # ------------------------------------------------------------------
     # Loading
     # ------------------------------------------------------------------
-    def _load_entities(self, entity_types: Optional[Sequence[str]]) -> None:
+    def _load_entities(self, entity_types: Sequence[str] | None) -> None:
         with self.entities_path.open("r", encoding="utf-8") as handle:
             payload = json.load(handle)
-        raw_entities: Dict[str, Dict[str, Any]] = payload.get("entities", {})
+        raw_entities: dict[str, dict[str, Any]] = payload.get("entities", {})
 
         if entity_types:
             allowed = {et.casefold() for et in entity_types}
@@ -201,20 +202,20 @@ class BaseMatcher:
         *,
         max_results: int = 5,
         min_confidence: float = 0.5,
-        context: Optional[Dict[str, Any]] = None,
-    ) -> List[MatchCandidate]:
+        context: dict[str, Any] | None = None,
+    ) -> list[MatchCandidate]:
         normalized = normalize_text(text)
         if not normalized:
             return []
 
-        context_norm: Dict[str, str] = {}
+        context_norm: dict[str, str] = {}
         if context:
             for key, value in context.items():
                 if value is None:
                     continue
                 context_norm[key] = normalize_text(str(value))
 
-        candidates: Dict[str, MatchCandidate] = {}
+        candidates: dict[str, MatchCandidate] = {}
 
         self._collect_exact_matches(candidates, text, normalized)
         self._collect_source_alias_matches(candidates, text, normalized)
@@ -234,7 +235,7 @@ class BaseMatcher:
         )
         return [c for c in ranked if c.confidence >= min_confidence][:max_results]
 
-    def match(self, text: str) -> Optional[Dict[str, Any]]:
+    def match(self, text: str) -> dict[str, Any] | None:
         candidates = self.match_candidates(text, max_results=1)
         if not candidates:
             return None
@@ -242,9 +243,9 @@ class BaseMatcher:
 
     def _apply_context_boost(
         self,
-        candidates: Dict[str, MatchCandidate],
+        candidates: dict[str, MatchCandidate],
         normalized_text: str,
-        context: Dict[str, str],
+        context: dict[str, str],
     ) -> None:
         if not candidates:
             return
@@ -258,7 +259,9 @@ class BaseMatcher:
 
         for candidate in candidates.values():
             entity = candidate.entity or {}
-            source_aliases: Dict[str, Sequence[str]] = entity.get("source_aliases") or {}
+            source_aliases: dict[str, Sequence[str]] = (
+                entity.get("source_aliases") or {}
+            )
             boost = 0.0
 
             for alias_source, aliases in source_aliases.items():
@@ -290,7 +293,7 @@ class BaseMatcher:
     # ------------------------------------------------------------------
     def _collect_exact_matches(
         self,
-        candidates: Dict[str, MatchCandidate],
+        candidates: dict[str, MatchCandidate],
         text: str,
         normalized: str,
     ) -> None:
@@ -313,7 +316,7 @@ class BaseMatcher:
 
     def _collect_source_alias_matches(
         self,
-        candidates: Dict[str, MatchCandidate],
+        candidates: dict[str, MatchCandidate],
         text: str,
         normalized: str,
     ) -> None:
@@ -328,7 +331,7 @@ class BaseMatcher:
 
     def _collect_surface_rule_matches(
         self,
-        candidates: Dict[str, MatchCandidate],
+        candidates: dict[str, MatchCandidate],
         text: str,
     ) -> None:
         if not self.compiled_rules:
@@ -343,7 +346,7 @@ class BaseMatcher:
             canonical_id = rule.get("canonical")
             if not canonical_id or canonical_id not in self.entities:
                 continue
-            parameters: Dict[str, Any] = {}
+            parameters: dict[str, Any] = {}
             for param_name, group_name in (rule.get("extract") or {}).items():
                 value = None
                 try:
@@ -368,7 +371,7 @@ class BaseMatcher:
 
     def _collect_fuzzy_matches(
         self,
-        candidates: Dict[str, MatchCandidate],
+        candidates: dict[str, MatchCandidate],
         text: str,
         normalized: str,
     ) -> None:
@@ -389,7 +392,11 @@ class BaseMatcher:
             entity_id = self._fuzzy_lookup.get(match_string)
             if not entity_id:
                 continue
-            method = "fuzzy_label" if normalize_text(match_string) in self._label_index else "fuzzy_alias"
+            method = (
+                "fuzzy_label"
+                if normalize_text(match_string) in self._label_index
+                else "fuzzy_alias"
+            )
             confidence = 0.85 * (score / 100)
             self._register_candidate(
                 candidates,
@@ -404,14 +411,14 @@ class BaseMatcher:
     # ------------------------------------------------------------------
     def _register_candidate(
         self,
-        candidates: Dict[str, MatchCandidate],
+        candidates: dict[str, MatchCandidate],
         entity_id: str,
         *,
         confidence: float,
         method: str,
         match_text: str,
-        parameters: Optional[Dict[str, Any]] = None,
-        rule: Optional[Dict[str, Any]] = None,
+        parameters: dict[str, Any] | None = None,
+        rule: dict[str, Any] | None = None,
     ) -> None:
         entity = self.entities.get(entity_id)
         if not entity:
@@ -456,7 +463,7 @@ class ConceptMatcher(BaseMatcher):
         self,
         *,
         entities_path: Path = ENTITIES_PATH,
-        rules_path: Optional[Path] = None,
+        rules_path: Path | None = None,
     ) -> None:
         super().__init__(
             entities_path=entities_path,
@@ -468,9 +475,9 @@ class ConceptMatcher(BaseMatcher):
 def build_flat_map(
     entities_path: Path = ENTITIES_PATH,
     rules_path: Path = SURFACE_RULES_PATH,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     matcher = TaskMatcher(entities_path=entities_path, rules_path=rules_path)
-    flat_map: Dict[str, str] = {}
+    flat_map: dict[str, str] = {}
     for rule in matcher.compiled_rules:
         canonical_id = rule.get("canonical")
         entity = matcher.entities.get(canonical_id)

@@ -111,11 +111,7 @@ async def deepseek_chat(prompt: str):
     }
 
     async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.post(
-            DEEPSEEK_API_URL,
-            headers=headers,
-            json=payload
-        )
+        response = await client.post(DEEPSEEK_API_URL, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()
 

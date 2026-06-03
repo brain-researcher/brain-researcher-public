@@ -57,7 +57,9 @@ class GuardrailsV1:
     def __init__(self, snapshot: GuardrailsSnapshotV1):
         self.snapshot = snapshot
 
-    def check_tool_call(self, tool_id: str, *, step_id: str | None = None) -> GuardrailsDecisionV1:
+    def check_tool_call(
+        self, tool_id: str, *, step_id: str | None = None
+    ) -> GuardrailsDecisionV1:
         violations: list[Violation] = []
 
         allowlist = self.snapshot.tool_allowlist
@@ -80,7 +82,9 @@ class GuardrailsV1:
                 )
             )
 
-        if (self.snapshot.no_network or self.snapshot.frozen) and _is_networky_tool(tool_id):
+        if (self.snapshot.no_network or self.snapshot.frozen) and _is_networky_tool(
+            tool_id
+        ):
             violations.append(
                 Violation(
                     code="NETWORK_DISABLED",

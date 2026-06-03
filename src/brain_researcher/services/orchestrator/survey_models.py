@@ -5,28 +5,43 @@ SQLAlchemy models for survey management, response collection, and analytics.
 Designed specifically for neuroimaging research workflows.
 """
 
+import uuid
+from datetime import datetime
+from enum import Enum
+from typing import Any
+
 from sqlalchemy import (
-    Column, String, Text, DateTime, Boolean, Integer, Float,
-    ForeignKey, JSON, Index, UniqueConstraint, CheckConstraint
+    JSON,
+    Boolean,
+    CheckConstraint,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import declarative_base, relationship
-from datetime import datetime
-import uuid
-from typing import Dict, Any, List, Optional
-from enum import Enum
 
 Base = declarative_base()
 
+
 class SurveyStatus(Enum):
     """Survey status enumeration"""
+
     DRAFT = "draft"
     ACTIVE = "active"
     PAUSED = "paused"
     COMPLETED = "completed"
     ARCHIVED = "archived"
 
+
 class QuestionType(Enum):
     """Question type enumeration for neuroimaging surveys"""
+
     MULTIPLE_CHOICE = "multiple_choice"
     SINGLE_CHOICE = "single_choice"
     TEXT = "text"
@@ -39,16 +54,22 @@ class QuestionType(Enum):
     MEDICATION_HISTORY = "medication_history"
     SCANNER_PARAMETERS = "scanner_parameters"
 
+
 class Survey(Base):
     """Main survey table"""
+
     __tablename__ = "surveys"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     title = Column(String(200), nullable=False, index=True)
     description = Column(Text)
-    category = Column(String(50), nullable=False, index=True)  # e.g., 'cognitive_assessment', 'demographics'
+    category = Column(
+        String(50), nullable=False, index=True
+    )  # e.g., 'cognitive_assessment', 'demographics'
     creator_id = Column(String, nullable=False, index=True)
-    target_audience = Column(String(100))  # e.g., 'researchers', 'participants', 'clinicians'
+    target_audience = Column(
+        String(100)
+    )  # e.g., 'researchers', 'participants', 'clinicians'
 
     # Survey configuration
     settings = Column(JSON, default=dict)  # Theme, logic, validation settings
@@ -66,25 +87,31 @@ class Survey(Base):
     max_responses = Column(Integer)
 
     # Relationships
-    questions = relationship("SurveyQuestion", back_populates="survey", cascade="all, delete-orphan")
+    questions = relationship(
+        "SurveyQuestion", back_populates="survey", cascade="all, delete-orphan"
+    )
     responses = relationship("SurveyResponse", back_populates="survey")
     distributions = relationship("SurveyDistribution", back_populates="survey")
     triggers = relationship("SurveyTrigger", back_populates="survey")
     insights = relationship("SurveyInsight", back_populates="survey")
 
     __table_args__ = (
-        Index('ix_surveys_creator_status', 'creator_id', 'status'),
-        Index('ix_surveys_category_status', 'category', 'status'),
+        Index("ix_surveys_creator_status", "creator_id", "status"),
+        Index("ix_surveys_category_status", "category", "status"),
         # SQLite does not enforce VARCHAR length; add an explicit check for unit tests.
         CheckConstraint("length(title) <= 200", name="ck_surveys_title_length"),
     )
 
+
 class SurveyQuestion(Base):
     """Survey questions with neuroimaging-specific support"""
+
     __tablename__ = "survey_questions"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    survey_id = Column(String, ForeignKey("surveys.id", ondelete="CASCADE"), nullable=False)
+    survey_id = Column(
+        String, ForeignKey("surveys.id", ondelete="CASCADE"), nullable=False
+    )
 
     # Question content
     question_text = Column(Text, nullable=False)
@@ -109,12 +136,14 @@ class SurveyQuestion(Base):
     survey = relationship("Survey", back_populates="questions")
 
     __table_args__ = (
-        Index('ix_questions_survey_order', 'survey_id', 'order_index'),
-        UniqueConstraint('survey_id', 'order_index', name='uq_survey_question_order'),
+        Index("ix_questions_survey_order", "survey_id", "order_index"),
+        UniqueConstraint("survey_id", "order_index", name="uq_survey_question_order"),
     )
+
 
 class SurveyResponse(Base):
     """Individual survey responses"""
+
     __tablename__ = "survey_responses"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -131,7 +160,9 @@ class SurveyResponse(Base):
     user_agent = Column(Text)
 
     # Status and timing
-    completion_status = Column(String(20), default="in_progress")  # in_progress, completed, abandoned
+    completion_status = Column(
+        String(20), default="in_progress"
+    )  # in_progress, completed, abandoned
     started_at = Column(DateTime, default=datetime.utcnow)
     submitted_at = Column(DateTime)
     completion_time_seconds = Column(Integer)  # Total completion time
@@ -145,25 +176,31 @@ class SurveyResponse(Base):
     survey = relationship("Survey", back_populates="responses")
 
     __table_args__ = (
-        Index('ix_responses_survey_participant', 'survey_id', 'participant_id'),
-        Index('ix_responses_submitted_at', 'submitted_at'),
-        Index('ix_responses_completion_status', 'completion_status'),
+        Index("ix_responses_survey_participant", "survey_id", "participant_id"),
+        Index("ix_responses_submitted_at", "submitted_at"),
+        Index("ix_responses_completion_status", "completion_status"),
     )
+
 
 class SurveyDistribution(Base):
     """Survey distribution and scheduling"""
+
     __tablename__ = "survey_distributions"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     survey_id = Column(String, ForeignKey("surveys.id"), nullable=False)
 
     # Distribution configuration
-    distribution_type = Column(String(20), nullable=False)  # manual, scheduled, triggered
+    distribution_type = Column(
+        String(20), nullable=False
+    )  # manual, scheduled, triggered
     schedule_config = Column(JSON, default=dict)  # Cron expressions, dates
     target_criteria = Column(JSON, default=dict)  # Audience targeting
 
     # Distribution status
-    status = Column(String(20), default="pending")  # pending, active, completed, cancelled
+    status = Column(
+        String(20), default="pending"
+    )  # pending, active, completed, cancelled
     created_at = Column(DateTime, default=datetime.utcnow)
     activated_at = Column(DateTime)
     completed_at = Column(DateTime)
@@ -176,15 +213,19 @@ class SurveyDistribution(Base):
     # Relationships
     survey = relationship("Survey", back_populates="distributions")
 
+
 class SurveyTrigger(Base):
     """Automated survey triggers based on system events"""
+
     __tablename__ = "survey_triggers"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     survey_id = Column(String, ForeignKey("surveys.id"), nullable=False)
 
     # Trigger configuration
-    trigger_type = Column(String(30), nullable=False)  # analysis_complete, data_upload, etc.
+    trigger_type = Column(
+        String(30), nullable=False
+    )  # analysis_complete, data_upload, etc.
     trigger_conditions = Column(JSON, default=dict)  # Conditions to match
     trigger_data = Column(JSON, default=dict)  # Additional trigger metadata
 
@@ -197,8 +238,10 @@ class SurveyTrigger(Base):
     # Relationships
     survey = relationship("Survey", back_populates="triggers")
 
+
 class SurveyInsight(Base):
     """AI-generated insights from survey responses"""
+
     __tablename__ = "survey_insights"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -222,12 +265,12 @@ class SurveyInsight(Base):
     # Relationships
     survey = relationship("Survey", back_populates="insights")
 
-    __table_args__ = (
-        Index('ix_insights_survey_type', 'survey_id', 'insight_type'),
-    )
+    __table_args__ = (Index("ix_insights_survey_type", "survey_id", "insight_type"),)
+
 
 class SurveyTemplate(Base):
     """Pre-built survey templates for common neuroimaging studies"""
+
     __tablename__ = "survey_templates"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -254,15 +297,19 @@ class SurveyTemplate(Base):
     tags = Column(JSON, default=list)
     is_public = Column(Boolean, default=True)
 
+
 class SurveyResponseAnalytics(Base):
     """Pre-computed analytics for survey responses"""
+
     __tablename__ = "survey_response_analytics"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     survey_id = Column(String, ForeignKey("surveys.id"), nullable=False, index=True)
 
     # Analytics data
-    analytics_type = Column(String(30), nullable=False)  # demographics, completion_rates, etc.
+    analytics_type = Column(
+        String(30), nullable=False
+    )  # demographics, completion_rates, etc.
     time_period = Column(String(20))  # daily, weekly, monthly
     analytics_data = Column(JSON, nullable=False)  # The actual analytics
 
@@ -273,13 +320,26 @@ class SurveyResponseAnalytics(Base):
     record_count = Column(Integer)  # Number of responses analyzed
 
     __table_args__ = (
-        Index('ix_analytics_survey_type_period', 'survey_id', 'analytics_type', 'time_period'),
-        UniqueConstraint('survey_id', 'analytics_type', 'time_period', 'data_from', 'data_to',
-                        name='uq_survey_analytics_period'),
+        Index(
+            "ix_analytics_survey_type_period",
+            "survey_id",
+            "analytics_type",
+            "time_period",
+        ),
+        UniqueConstraint(
+            "survey_id",
+            "analytics_type",
+            "time_period",
+            "data_from",
+            "data_to",
+            name="uq_survey_analytics_period",
+        ),
     )
+
 
 class SurveyNotification(Base):
     """Survey notifications and reminders"""
+
     __tablename__ = "survey_notifications"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -287,7 +347,9 @@ class SurveyNotification(Base):
     participant_id = Column(String, nullable=False)
 
     # Notification content
-    notification_type = Column(String(20), nullable=False)  # invitation, reminder, follow_up
+    notification_type = Column(
+        String(20), nullable=False
+    )  # invitation, reminder, follow_up
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=False)
 
@@ -309,11 +371,13 @@ class SurveyNotification(Base):
     max_retries = Column(Integer, default=3)
 
     __table_args__ = (
-        Index('ix_notifications_survey_participant', 'survey_id', 'participant_id'),
-        Index('ix_notifications_status_scheduled', 'status', 'scheduled_for'),
+        Index("ix_notifications_survey_participant", "survey_id", "participant_id"),
+        Index("ix_notifications_status_scheduled", "status", "scheduled_for"),
     )
 
+
 # Utility functions for database management
+
 
 def create_survey_tables(engine=None):
     """Create all survey-related database tables"""
@@ -323,12 +387,14 @@ def create_survey_tables(engine=None):
         # Import engine from main database module
         try:
             from .database import engine as db_engine
+
             Base.metadata.create_all(bind=db_engine)
         except ImportError:
             # Fallback - tables will be created when engine is available
             pass
 
-def get_neuroimaging_question_templates() -> Dict[str, Dict[str, Any]]:
+
+def get_neuroimaging_question_templates() -> dict[str, dict[str, Any]]:
     """Get pre-defined question templates for neuroimaging studies"""
     return {
         "scanner_parameters": {
@@ -338,13 +404,17 @@ def get_neuroimaging_question_templates() -> Dict[str, Dict[str, Any]]:
                 "field_strength": ["1.5T", "3T", "7T", "Other"],
                 "pulse_sequence": ["T1-MPRAGE", "T2-FLAIR", "EPI", "DTI", "Other"],
                 "voxel_size": {"type": "text", "validation": "numeric"},
-                "repetition_time": {"type": "text", "validation": "numeric", "unit": "ms"},
-                "echo_time": {"type": "text", "validation": "numeric", "unit": "ms"}
+                "repetition_time": {
+                    "type": "text",
+                    "validation": "numeric",
+                    "unit": "ms",
+                },
+                "echo_time": {"type": "text", "validation": "numeric", "unit": "ms"},
             },
             "neuroimaging_context": {
                 "category": "acquisition_parameters",
-                "required_for": ["fMRI", "structural_MRI"]
-            }
+                "required_for": ["fMRI", "structural_MRI"],
+            },
         },
         "brain_regions": {
             "type": "brain_region",
@@ -352,49 +422,70 @@ def get_neuroimaging_question_templates() -> Dict[str, Dict[str, Any]]:
             "options": {
                 "selection_type": "multiple",
                 "regions": [
-                    "Prefrontal Cortex", "Motor Cortex", "Visual Cortex", "Auditory Cortex",
-                    "Hippocampus", "Amygdala", "Thalamus", "Cerebellum", "Brainstem",
-                    "Default Mode Network", "Salience Network", "Executive Control Network"
+                    "Prefrontal Cortex",
+                    "Motor Cortex",
+                    "Visual Cortex",
+                    "Auditory Cortex",
+                    "Hippocampus",
+                    "Amygdala",
+                    "Thalamus",
+                    "Cerebellum",
+                    "Brainstem",
+                    "Default Mode Network",
+                    "Salience Network",
+                    "Executive Control Network",
                 ],
-                "custom_allowed": True
+                "custom_allowed": True,
             },
             "neuroimaging_context": {
                 "category": "analysis_regions",
-                "atlas_support": True
-            }
+                "atlas_support": True,
+            },
         },
         "cognitive_assessment": {
             "type": "cognitive_battery",
             "text": "Which cognitive assessments were administered?",
             "options": {
                 "assessments": [
-                    "Stroop Task", "N-Back Task", "Go/No-Go Task", "Wisconsin Card Sort",
-                    "Tower of London", "Digit Span", "Trail Making Test", "MMSE", "MoCA"
+                    "Stroop Task",
+                    "N-Back Task",
+                    "Go/No-Go Task",
+                    "Wisconsin Card Sort",
+                    "Tower of London",
+                    "Digit Span",
+                    "Trail Making Test",
+                    "MMSE",
+                    "MoCA",
                 ],
                 "custom_allowed": True,
-                "timing_info": True
+                "timing_info": True,
             },
             "neuroimaging_context": {
                 "category": "behavioral_measures",
-                "synchronized_with_imaging": True
-            }
+                "synchronized_with_imaging": True,
+            },
         },
         "medication_history": {
             "type": "medication_history",
             "text": "Please provide medication history relevant to neuroimaging",
             "options": {
                 "categories": [
-                    "Antidepressants", "Antipsychotics", "Stimulants", "Sedatives",
-                    "Neurological medications", "None", "Prefer not to answer"
+                    "Antidepressants",
+                    "Antipsychotics",
+                    "Stimulants",
+                    "Sedatives",
+                    "Neurological medications",
+                    "None",
+                    "Prefer not to answer",
                 ],
                 "dosage_info": True,
                 "duration_info": True,
-                "washout_period": True
+                "washout_period": True,
             },
             "validation_rules": {
                 "required_if": "participant_study",
-                "privacy_level": "high"
-            }
+                "privacy_level": "high",
+            },
         },
         "study_demographics": {
             "type": "matrix",
@@ -402,46 +493,76 @@ def get_neuroimaging_question_templates() -> Dict[str, Dict[str, Any]]:
             "options": {
                 "fields": {
                     "age": {"type": "number", "min": 18, "max": 100},
-                    "gender": {"type": "select", "options": ["Male", "Female", "Other", "Prefer not to say"]},
+                    "gender": {
+                        "type": "select",
+                        "options": ["Male", "Female", "Other", "Prefer not to say"],
+                    },
                     "education_years": {"type": "number", "min": 0, "max": 25},
-                    "handedness": {"type": "select", "options": ["Right", "Left", "Ambidextrous"]},
-                    "vision_correction": {"type": "select", "options": ["None", "Glasses", "Contacts", "Both"]}
+                    "handedness": {
+                        "type": "select",
+                        "options": ["Right", "Left", "Ambidextrous"],
+                    },
+                    "vision_correction": {
+                        "type": "select",
+                        "options": ["None", "Glasses", "Contacts", "Both"],
+                    },
                 }
             },
             "neuroimaging_context": {
                 "category": "participant_characteristics",
-                "statistical_covariates": True
-            }
-        }
+                "statistical_covariates": True,
+            },
+        },
     }
 
-def get_survey_templates_by_category() -> Dict[str, List[Dict[str, Any]]]:
+
+def get_survey_templates_by_category() -> dict[str, list[dict[str, Any]]]:
     """Get organized survey templates by research category"""
     return {
         "cognitive_neuroscience": [
             {
                 "name": "fMRI Task-Based Study Survey",
                 "description": "Comprehensive survey for task-based fMRI studies",
-                "questions": ["scanner_parameters", "brain_regions", "cognitive_assessment", "study_demographics"]
+                "questions": [
+                    "scanner_parameters",
+                    "brain_regions",
+                    "cognitive_assessment",
+                    "study_demographics",
+                ],
             },
             {
                 "name": "Resting-State fMRI Study Survey",
                 "description": "Survey for resting-state connectivity studies",
-                "questions": ["scanner_parameters", "brain_regions", "medication_history", "study_demographics"]
-            }
+                "questions": [
+                    "scanner_parameters",
+                    "brain_regions",
+                    "medication_history",
+                    "study_demographics",
+                ],
+            },
         ],
         "clinical_research": [
             {
                 "name": "Clinical Neuroimaging Survey",
                 "description": "Survey for clinical neuroimaging research",
-                "questions": ["scanner_parameters", "brain_regions", "medication_history", "cognitive_assessment", "study_demographics"]
+                "questions": [
+                    "scanner_parameters",
+                    "brain_regions",
+                    "medication_history",
+                    "cognitive_assessment",
+                    "study_demographics",
+                ],
             }
         ],
         "user_experience": [
             {
                 "name": "Analysis Platform Feedback",
                 "description": "Collect feedback on neuroimaging analysis tools",
-                "questions": ["platform_usability", "feature_requests", "technical_issues"]
+                "questions": [
+                    "platform_usability",
+                    "feature_requests",
+                    "technical_issues",
+                ],
             }
-        ]
+        ],
     }

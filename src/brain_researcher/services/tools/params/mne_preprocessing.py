@@ -5,12 +5,12 @@ Shared helpers for MNE preprocessing workflows.
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
-import os
 
 from brain_researcher.core.utils import configure_mne_environment
 
@@ -19,25 +19,25 @@ from brain_researcher.core.utils import configure_mne_environment
 class MNEPreprocessingParameters:
     raw_file: str
     output_dir: str
-    l_freq: Optional[float] = 0.1
-    h_freq: Optional[float] = 40.0
+    l_freq: float | None = 0.1
+    h_freq: float | None = 40.0
     filter_method: str = "fir"
     filter_length: str = "auto"
-    sfreq: Optional[float] = None
+    sfreq: float | None = None
     detect_bad_channels: bool = True
-    bad_channels: Tuple[str, ...] = field(default_factory=tuple)
+    bad_channels: tuple[str, ...] = field(default_factory=tuple)
     interpolate_bads: bool = True
     reference: str = "average"
-    reference_channels: Tuple[str, ...] = field(default_factory=tuple)
+    reference_channels: tuple[str, ...] = field(default_factory=tuple)
     create_epochs: bool = False
     epoch_tmin: float = -0.2
     epoch_tmax: float = 0.8
-    event_id: Optional[Dict[str, int]] = None
-    baseline: Optional[Tuple[Optional[float], Optional[float]]] = (None, 0)
-    reject: Optional[Dict[str, float]] = None
-    flat: Optional[Dict[str, float]] = None
-    notch_freq: Optional[Union[float, Tuple[float, ...]]] = None
-    set_montage: Optional[str] = None
+    event_id: dict[str, int] | None = None
+    baseline: tuple[float | None, float | None] | None = (None, 0)
+    reject: dict[str, float] | None = None
+    flat: dict[str, float] | None = None
+    notch_freq: float | tuple[float, ...] | None = None
+    set_montage: str | None = None
     save_format: str = "fif"
     overwrite: bool = False
 
@@ -67,7 +67,7 @@ def _load_raw_data(raw_file: str):
     return mne.io.read_raw(raw_file, preload=True)
 
 
-def _detect_bad_channels(raw) -> List[str]:
+def _detect_bad_channels(raw) -> list[str]:
     data = raw.get_data()
     channel_vars = np.var(data, axis=1)
     flat_threshold = np.percentile(channel_vars, 1)
@@ -78,7 +78,7 @@ def _detect_bad_channels(raw) -> List[str]:
     return list({raw.ch_names[idx] for idx in bad_indices})
 
 
-def _apply_reference(raw, reference: str, reference_channels: Optional[List[str]] = None):
+def _apply_reference(raw, reference: str, reference_channels: list[str] | None = None):
     import mne
 
     if reference.lower() == "average":
@@ -99,11 +99,13 @@ def _apply_reference(raw, reference: str, reference_channels: Optional[List[str]
     return raw
 
 
-def mne_preprocessing_from_payload(payload: Dict[str, Any]) -> MNEPreprocessingParameters:
+def mne_preprocessing_from_payload(
+    payload: dict[str, Any],
+) -> MNEPreprocessingParameters:
     def _tuple(val):
         if val is None:
-            return tuple()
-        if isinstance(val, (list, tuple, set)):
+            return ()
+        if isinstance(val, list | tuple | set):
             return tuple(val)
         return (val,)
 
@@ -134,7 +136,7 @@ def mne_preprocessing_from_payload(payload: Dict[str, Any]) -> MNEPreprocessingP
     )
 
 
-def run_mne_preprocessing(params: MNEPreprocessingParameters) -> Dict[str, Any]:
+def run_mne_preprocessing(params: MNEPreprocessingParameters) -> dict[str, Any]:
     configure_mne_environment()
     cache_dir = Path(params.output_dir) / ".numba-cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -150,7 +152,7 @@ def run_mne_preprocessing(params: MNEPreprocessingParameters) -> Dict[str, Any]:
     output_path = Path(params.output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    processing_log: List[str] = []
+    processing_log: list[str] = []
 
     if params.set_montage:
         montage = mne.channels.make_standard_montage(params.set_montage)
@@ -174,7 +176,7 @@ def run_mne_preprocessing(params: MNEPreprocessingParameters) -> Dict[str, Any]:
         )
         processing_log.append(f"Band-pass filter: {params.l_freq}-{params.h_freq} Hz")
 
-    detected_bads: List[str] = []
+    detected_bads: list[str] = []
     if params.detect_bad_channels:
         detected_bads = _detect_bad_channels(raw)
         processing_log.append(f"Detected {len(detected_bads)} bad channels")

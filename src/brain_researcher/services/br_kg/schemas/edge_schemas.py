@@ -5,29 +5,29 @@ These schemas define the structure and validation rules for all relationship typ
 in the knowledge graph, including provenance and strength scoring.
 """
 
-from datetime import datetime
-from typing import Optional, Dict, Any, Literal, Tuple, Union
-from pydantic import BaseModel, Field, validator, root_validator
 import hashlib
+from datetime import datetime
+from typing import Any, Literal, Union
 
+from pydantic import BaseModel, Field, root_validator, validator
 
-NodeTypeSpec = Union[str, Tuple[str, ...]]
-EdgeSignature = Tuple[str, str]
+NodeTypeSpec = Union[str, tuple[str, ...]]
+EdgeSignature = tuple[str, str]
 
-STATMAP_LABELS: Tuple[str, ...] = ("StatsMap", "StatMap", "StatisticalMap")
-IN_REGION_SIGNATURES: Tuple[EdgeSignature, ...] = (
+STATMAP_LABELS: tuple[str, ...] = ("StatsMap", "StatMap", "StatisticalMap")
+IN_REGION_SIGNATURES: tuple[EdgeSignature, ...] = (
     ("StatsMap", "BrainRegion"),
     ("StatMap", "BrainRegion"),
     ("StatisticalMap", "BrainRegion"),
     ("Coordinate", "Region"),
 )
-PART_OF_SIGNATURES: Tuple[EdgeSignature, ...] = (("BrainRegion", "BrainRegion"),)
-STUDIES_SIGNATURES: Tuple[EdgeSignature, ...] = (
+PART_OF_SIGNATURES: tuple[EdgeSignature, ...] = (("BrainRegion", "BrainRegion"),)
+STUDIES_SIGNATURES: tuple[EdgeSignature, ...] = (
     ("Publication", "Concept"),
     ("Study", "Concept"),
     ("Study", "DiseaseTrait"),
 )
-ASSOCIATED_WITH_SIGNATURES: Tuple[EdgeSignature, ...] = (
+ASSOCIATED_WITH_SIGNATURES: tuple[EdgeSignature, ...] = (
     ("Concept", "Region"),
     ("Concept", "BrainRegion"),
     ("DiseaseTrait", "Region"),
@@ -123,7 +123,7 @@ class EdgeProvenance(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0)
     timestamp: datetime = Field(default_factory=datetime.now)
     loader_version: str
-    params_hash: Optional[str] = None
+    params_hash: str | None = None
 
     class Config:
         json_encoders = {datetime: lambda v: v.isoformat()}
@@ -136,9 +136,9 @@ class EvidenceComponents(BaseModel):
     coordinate_count: int = Field(default=0, ge=0)
     z_overlap: float = Field(default=0.0, ge=0.0, le=1.0)
     niclip_cosine: float = Field(default=0.0, ge=-1.0, le=1.0)
-    spatial_distance_mm: Optional[float] = Field(None, ge=0.0)
+    spatial_distance_mm: float | None = Field(None, ge=0.0)
     user_feedback: float = Field(default=0.0, ge=-1.0, le=1.0)
-    activation_likelihood: Optional[float] = Field(None, ge=0.0, le=1.0)
+    activation_likelihood: float | None = Field(None, ge=0.0, le=1.0)
 
 
 class BaseEdge(BaseModel):
@@ -148,10 +148,10 @@ class BaseEdge(BaseModel):
     target_id: str = Field(..., description="Target node ID")
     strength: float = Field(default=1.0, ge=0.0, le=1.0)
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
-    evidence: Optional[EvidenceComponents] = None
+    evidence: EvidenceComponents | None = None
     prov: EdgeProvenance
     valid_from: datetime = Field(default_factory=datetime.now)
-    valid_to: Optional[datetime] = None
+    valid_to: datetime | None = None
 
     def compute_edge_id(self) -> str:
         """Compute deterministic edge ID."""
@@ -167,7 +167,7 @@ class MeasuresEdge(BaseEdge):
 
     source_type: Literal["Task"] = "Task"
     target_type: Literal["Concept"] = "Concept"
-    measurement_type: Optional[str] = None
+    measurement_type: str | None = None
 
     @validator("source_id")
     def validate_source_is_task(cls, v):
@@ -187,9 +187,9 @@ class ActivatesEdge(BaseEdge):
 
     source_type: Literal["Task", "Concept"]
     target_type: Literal["Region", "BrainRegion"] = "Region"
-    activation_threshold: Optional[float] = None
-    cluster_size: Optional[int] = None
-    peak_coordinates: Optional[Dict[str, float]] = None
+    activation_threshold: float | None = None
+    cluster_size: int | None = None
+    peak_coordinates: dict[str, float] | None = None
 
     @validator("target_id")
     def validate_target_is_region(cls, v):
@@ -203,8 +203,8 @@ class HasCoordinateEdge(BaseEdge):
 
     source_type: Literal["Publication"] = "Publication"
     target_type: Literal["Coordinate"] = "Coordinate"
-    table_number: Optional[str] = None
-    contrast_name: Optional[str] = None
+    table_number: str | None = None
+    contrast_name: str | None = None
 
     @validator("source_id")
     def validate_source_is_publication(cls, v):
@@ -234,14 +234,16 @@ class InRegionEdge(BaseEdge):
     assignment_method: Literal[
         "voxel_overlap", "atlas_lookup", "nearest_neighbor", "probabilistic"
     ]
-    probability: Optional[float] = Field(None, ge=0.0, le=1.0)
-    distance_mm: Optional[float] = Field(None, ge=0.0)
+    probability: float | None = Field(None, ge=0.0, le=1.0)
+    distance_mm: float | None = Field(None, ge=0.0)
 
     @root_validator(pre=True)
     def infer_signature_from_ids(cls, values):
         source_id = str(values.get("source_id") or "")
         if values.get("source_type") is None:
-            values["source_type"] = "Coordinate" if source_id.startswith("coord:") else "StatsMap"
+            values["source_type"] = (
+                "Coordinate" if source_id.startswith("coord:") else "StatsMap"
+            )
         if values.get("target_type") is None:
             values["target_type"] = (
                 "Region" if values["source_type"] == "Coordinate" else "BrainRegion"
@@ -261,7 +263,9 @@ class InRegionEdge(BaseEdge):
         source_id = str(values.get("source_id") or "")
         if values["source_type"] == "Coordinate":
             if not source_id.startswith("coord:"):
-                raise ValueError("Coordinate IN_REGION source must be a Coordinate node")
+                raise ValueError(
+                    "Coordinate IN_REGION source must be a Coordinate node"
+                )
             return values
 
         if not _looks_like_statistical_map_id(source_id):
@@ -273,7 +277,9 @@ class InRegionEdge(BaseEdge):
     @validator("target_id")
     def validate_target_is_region_like(cls, v):
         if ":" not in v or v.startswith(("coord:", "map:", "nv:")):
-            raise ValueError("Target must be a BrainRegion/Region node with atlas prefix")
+            raise ValueError(
+                "Target must be a BrainRegion/Region node with atlas prefix"
+            )
         return v
 
 
@@ -506,7 +512,7 @@ class GeneratedEdge(BaseEdge):
         "BrainRegion",
         "Publication",
     ]
-    output_type: Optional[str] = None
+    output_type: str | None = None
 
     @validator("source_id")
     def validate_source_is_run(cls, v):
@@ -533,7 +539,9 @@ class PublicationStudyAlignmentEdge(BaseEdge):
 
     @validator("source_id")
     def validate_source_is_publication(cls, v):
-        if not (v.startswith("pmid:") or v.startswith("doi:") or v.startswith("paper:")):
+        if not (
+            v.startswith("pmid:") or v.startswith("doi:") or v.startswith("paper:")
+        ):
             raise ValueError("Source must be a Publication node")
         return v
 
@@ -549,9 +557,9 @@ class StudyDiseaseTraitEdge(BaseEdge):
 
     source_type: Literal["Publication", "Study"] = "Study"
     target_type: Literal["Concept", "DiseaseTrait"] = "DiseaseTrait"
-    study_category: Optional[str] = None
-    pmid: Optional[str] = None
-    doi: Optional[str] = None
+    study_category: str | None = None
+    pmid: str | None = None
+    doi: str | None = None
 
     @root_validator(pre=True)
     def infer_signature_from_ids(cls, values):
@@ -594,9 +602,9 @@ class StudyPopulationEdge(BaseEdge):
 
     source_type: Literal["Study"] = "Study"
     target_type: Literal["Population"] = "Population"
-    cohort_name: Optional[str] = None
-    ancestry_code: Optional[str] = None
-    sample_size: Optional[int] = Field(None, ge=0)
+    cohort_name: str | None = None
+    ancestry_code: str | None = None
+    sample_size: int | None = Field(None, ge=0)
 
     @validator("source_id")
     def validate_source_is_study(cls, v):
@@ -616,9 +624,9 @@ class StudyLeadLocusEdge(BaseEdge):
 
     source_type: Literal["Study"] = "Study"
     target_type: Literal["RiskLocus"] = "RiskLocus"
-    locus_rank: Optional[int] = Field(None, ge=1)
-    p_value: Optional[float] = Field(None, ge=0.0, le=1.0)
-    variant_id: Optional[str] = None
+    locus_rank: int | None = Field(None, ge=1)
+    p_value: float | None = Field(None, ge=0.0, le=1.0)
+    variant_id: str | None = None
 
     @validator("source_id")
     def validate_source_is_study(cls, v):
@@ -638,8 +646,8 @@ class RiskLocusGeneEdge(BaseEdge):
 
     source_type: Literal["RiskLocus"] = "RiskLocus"
     target_type: Literal["Gene"] = "Gene"
-    mapping_method: Optional[str] = None
-    confidence_source: Optional[str] = None
+    mapping_method: str | None = None
+    confidence_source: str | None = None
 
     @validator("source_id")
     def validate_source_is_risk_locus(cls, v):
@@ -659,13 +667,13 @@ class AssociatedWithEdge(BaseEdge):
 
     source_type: Literal["Concept", "DiseaseTrait", "RiskLocus"] = "RiskLocus"
     target_type: Literal["Region", "BrainRegion", "DiseaseTrait"] = "DiseaseTrait"
-    association_type: Optional[str] = None
-    p_value: Optional[float] = Field(None, ge=0.0, le=1.0)
-    beta: Optional[float] = None
-    odds_ratio: Optional[float] = Field(None, gt=0.0)
-    rank: Optional[int] = Field(None, ge=1)
-    study_id: Optional[str] = None
-    ancestry: Optional[str] = None
+    association_type: str | None = None
+    p_value: float | None = Field(None, ge=0.0, le=1.0)
+    beta: float | None = None
+    odds_ratio: float | None = Field(None, gt=0.0)
+    rank: int | None = Field(None, ge=1)
+    study_id: str | None = None
+    ancestry: str | None = None
 
     @root_validator(pre=True)
     def infer_signature_from_ids(cls, values):
@@ -691,7 +699,9 @@ class AssociatedWithEdge(BaseEdge):
             or _looks_like_disease_trait_id(v)
             or _looks_like_concept_id(v)
         ):
-            raise ValueError("Source must be a RiskLocus, DiseaseTrait, or Concept node")
+            raise ValueError(
+                "Source must be a RiskLocus, DiseaseTrait, or Concept node"
+            )
         return v
 
     @validator("target_id")
@@ -716,8 +726,8 @@ class DerivedFromEdge(BaseEdge):
 
     source_type: Literal["StatisticalMap"] = "StatisticalMap"
     target_type: Literal["Publication", "Contrast", "Task"]
-    processing_pipeline: Optional[str] = None
-    software_version: Optional[str] = None
+    processing_pipeline: str | None = None
+    software_version: str | None = None
 
     @validator("source_id")
     def validate_source_is_map(cls, v):
@@ -731,8 +741,8 @@ class ImplementsTaskEdge(BaseEdge):
 
     source_type: Literal["Dataset", "Contrast"]
     target_type: Literal["Task"] = "Task"
-    task_version: Optional[str] = None
-    modifications: Optional[str] = None
+    task_version: str | None = None
+    modifications: str | None = None
 
     @validator("target_id")
     def validate_target_is_task(cls, v):
@@ -854,9 +864,9 @@ class HasPhenotypeEdge(BaseEdge):
 
     source_type: Literal["Subject", "SubjectGroup"]
     target_type: Literal["Phenotype"] = "Phenotype"
-    value: Optional[Any] = None
-    percentile: Optional[float] = Field(None, ge=0.0, le=100.0)
-    z_score: Optional[float] = None
+    value: Any | None = None
+    percentile: float | None = Field(None, ge=0.0, le=100.0)
+    z_score: float | None = None
 
     @validator("target_id")
     def validate_target_is_phenotype(cls, v):
@@ -946,7 +956,7 @@ class ExposedFailureModeEdge(BaseEdge):
 
     source_type: Literal["TaskSurface"] = "TaskSurface"
     target_type: Literal["OpenRisk"] = "OpenRisk"
-    session_id: Optional[str] = None
+    session_id: str | None = None
 
     @validator("source_id")
     def validate_source_is_task_surface(cls, v):
@@ -1041,7 +1051,7 @@ EDGE_TYPES = {
 }
 
 # Define allowed edge type combinations
-ALLOWED_EDGES: Dict[str, Tuple[NodeTypeSpec, NodeTypeSpec]] = {
+ALLOWED_EDGES: dict[str, tuple[NodeTypeSpec, NodeTypeSpec]] = {
     "MEASURES": ("Task", "Concept"),
     "ACTIVATES": (("Task", "Concept"), ("Region", "BrainRegion")),
     "HAS_COORDINATE": ("Publication", "Coordinate"),
@@ -1062,7 +1072,10 @@ ALLOWED_EDGES: Dict[str, Tuple[NodeTypeSpec, NodeTypeSpec]] = {
     "HAS_POPULATION": ("Study", "Population"),
     "HAS_LEAD_LOCUS": ("Study", "RiskLocus"),
     "IMPLICATES_GENE": ("RiskLocus", "Gene"),
-    "ASSOCIATED_WITH": (("Concept", "DiseaseTrait", "RiskLocus"), ("Region", "BrainRegion", "DiseaseTrait")),
+    "ASSOCIATED_WITH": (
+        ("Concept", "DiseaseTrait", "RiskLocus"),
+        ("Region", "BrainRegion", "DiseaseTrait"),
+    ),
     "DERIVED_FROM": ("StatisticalMap", ("Publication", "Contrast", "Task")),
     "IMPLEMENTS_TASK": (("Dataset", "Contrast"), "Task"),
     "MAPS_TO": ("Any", "Any"),  # Same type required
@@ -1081,7 +1094,7 @@ ALLOWED_EDGES: Dict[str, Tuple[NodeTypeSpec, NodeTypeSpec]] = {
 }
 
 # Additional non-canonical but allowed edge signatures.
-OPTIONAL_EDGE_SIGNATURES: Dict[str, Tuple[EdgeSignature, ...]] = {
+OPTIONAL_EDGE_SIGNATURES: dict[str, tuple[EdgeSignature, ...]] = {
     "IN_REGION": (("Coordinate", "Region"),),
     "PART_OF": (),
     "STUDIES": (("Study", "Concept"), ("Publication", "Concept")),
@@ -1093,7 +1106,7 @@ OPTIONAL_EDGE_SIGNATURES: Dict[str, Tuple[EdgeSignature, ...]] = {
     ),
 }
 
-EDGE_SIGNATURES: Dict[str, Tuple[EdgeSignature, ...]] = {
+EDGE_SIGNATURES: dict[str, tuple[EdgeSignature, ...]] = {
     "IN_REGION": IN_REGION_SIGNATURES,
     "PART_OF": PART_OF_SIGNATURES,
     "STUDIES": STUDIES_SIGNATURES,
@@ -1101,7 +1114,7 @@ EDGE_SIGNATURES: Dict[str, Tuple[EdgeSignature, ...]] = {
 }
 
 
-def validate_edge(edge_type: str, data: Dict[str, Any]) -> BaseEdge:
+def validate_edge(edge_type: str, data: dict[str, Any]) -> BaseEdge:
     """Validate edge data against schema.
 
     Args:
@@ -1123,7 +1136,7 @@ def validate_edge(edge_type: str, data: Dict[str, Any]) -> BaseEdge:
 
 
 def compute_edge_strength(
-    evidence: EvidenceComponents, weights: Optional[Dict[str, float]] = None
+    evidence: EvidenceComponents, weights: dict[str, float] | None = None
 ) -> float:
     """Compute edge strength from evidence components.
 

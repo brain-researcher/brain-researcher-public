@@ -22,7 +22,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -38,10 +38,18 @@ class NipypeRunnerArgs(BaseModel):
             "a module path 'pkg.module:build_workflow'"
         )
     )
-    inputs: Dict[str, Any] = Field(default_factory=dict, description="Keyword args passed to build_workflow")
-    plugin: str = Field(default="Linear", description="Nipype plugin (e.g., Linear, MultiProc)")
-    plugin_args: Dict[str, Any] = Field(default_factory=dict, description="Optional plugin arguments")
-    base_dir: Optional[str] = Field(default=None, description="Working directory for Nipype workflow")
+    inputs: dict[str, Any] = Field(
+        default_factory=dict, description="Keyword args passed to build_workflow"
+    )
+    plugin: str = Field(
+        default="Linear", description="Nipype plugin (e.g., Linear, MultiProc)"
+    )
+    plugin_args: dict[str, Any] = Field(
+        default_factory=dict, description="Optional plugin arguments"
+    )
+    base_dir: str | None = Field(
+        default=None, description="Working directory for Nipype workflow"
+    )
 
 
 def _import_builder(spec: str):
@@ -62,7 +70,7 @@ def _import_builder(spec: str):
         raise ImportError(f"Cannot load module from {spec}")
     module = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(module)  # type: ignore[arg-type]
-    return getattr(module, "build_workflow")
+    return module.build_workflow
 
 
 class NipypeWorkflowRunnerTool(NeuroToolWrapper):
@@ -77,7 +85,6 @@ class NipypeWorkflowRunnerTool(NeuroToolWrapper):
 
     def _run(self, **kwargs) -> ToolResult:
         try:
-            import nipype  # type: ignore
             from nipype.pipeline import engine as pe  # noqa: F401  # ensure available
         except Exception as exc:
             return ToolResult(
@@ -95,7 +102,9 @@ class NipypeWorkflowRunnerTool(NeuroToolWrapper):
         try:
             wf = build_workflow(**(args.inputs or {}))
         except Exception as exc:
-            return ToolResult(status="error", error=f"build_workflow failed: {exc}", data={})
+            return ToolResult(
+                status="error", error=f"build_workflow failed: {exc}", data={}
+            )
 
         base_dir = Path(args.base_dir) if args.base_dir else Path.cwd() / "nipype_runs"
         base_dir.mkdir(parents=True, exist_ok=True)
@@ -107,7 +116,11 @@ class NipypeWorkflowRunnerTool(NeuroToolWrapper):
         try:
             res = wf.run(plugin=args.plugin, plugin_args=dict(args.plugin_args))
         except Exception as exc:
-            return ToolResult(status="error", error=f"Nipype execution failed: {exc}", data={"base_dir": str(base_dir)})
+            return ToolResult(
+                status="error",
+                error=f"Nipype execution failed: {exc}",
+                data={"base_dir": str(base_dir)},
+            )
 
         report = {
             "plugin": args.plugin,

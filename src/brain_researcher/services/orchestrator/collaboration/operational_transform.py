@@ -5,20 +5,19 @@ Implements operational transformation algorithms to handle concurrent edits
 and maintain document consistency across multiple users.
 """
 
-import asyncio
-import json
 import logging
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any, Union, Tuple
-import uuid
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class OperationType(str, Enum):
     """Types of operations that can be performed on documents."""
+
     INSERT = "insert"
     DELETE = "delete"
     RETAIN = "retain"
@@ -36,14 +35,15 @@ class Operation:
     Operations are the atomic units of change that can be applied to documents.
     They can be transformed against each other to resolve conflicts.
     """
+
     id: str
     type: OperationType
     position: int
-    content: Optional[Any] = None
-    length: Optional[int] = None
-    attributes: Optional[Dict[str, Any]] = None
+    content: Any | None = None
+    length: int | None = None
+    attributes: dict[str, Any] | None = None
     author_id: str = ""
-    timestamp: Optional[datetime] = None
+    timestamp: datetime | None = None
     client_version: int = 0
     server_version: int = 0
 
@@ -53,7 +53,7 @@ class Operation:
         if not self.timestamp:
             self.timestamp = datetime.utcnow()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert operation to dictionary."""
         return {
             "id": self.id,
@@ -65,11 +65,11 @@ class Operation:
             "author_id": self.author_id,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
             "client_version": self.client_version,
-            "server_version": self.server_version
+            "server_version": self.server_version,
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Operation':
+    def from_dict(cls, data: dict[str, Any]) -> "Operation":
         """Create operation from dictionary."""
         return cls(
             id=data.get("id", ""),
@@ -79,20 +79,24 @@ class Operation:
             length=data.get("length"),
             attributes=data.get("attributes"),
             author_id=data.get("author_id", ""),
-            timestamp=datetime.fromisoformat(data["timestamp"]) if data.get("timestamp") else None,
+            timestamp=(
+                datetime.fromisoformat(data["timestamp"])
+                if data.get("timestamp")
+                else None
+            ),
             client_version=data.get("client_version", 0),
-            server_version=data.get("server_version", 0)
+            server_version=data.get("server_version", 0),
         )
 
     def is_noop(self) -> bool:
         """Check if this is a no-operation."""
         return (
-            (self.type == OperationType.RETAIN and (self.length or 0) == 0) or
-            (self.type == OperationType.INSERT and not self.content) or
-            (self.type == OperationType.DELETE and (self.length or 0) == 0)
+            (self.type == OperationType.RETAIN and (self.length or 0) == 0)
+            or (self.type == OperationType.INSERT and not self.content)
+            or (self.type == OperationType.DELETE and (self.length or 0) == 0)
         )
 
-    def copy(self) -> 'Operation':
+    def copy(self) -> "Operation":
         """Create a copy of this operation."""
         return Operation(
             id=self.id,
@@ -104,19 +108,20 @@ class Operation:
             author_id=self.author_id,
             timestamp=self.timestamp,
             client_version=self.client_version,
-            server_version=self.server_version
+            server_version=self.server_version,
         )
 
 
 @dataclass
 class DocumentState:
     """Represents the state of a document at a specific version."""
+
     document_id: str
     version: int
     content: Any
     checksum: str
     timestamp: datetime
-    operations: List[Operation] = None
+    operations: list[Operation] = None
 
     def __post_init__(self):
         if self.operations is None:
@@ -132,15 +137,15 @@ class OperationalTransform:
     """
 
     def __init__(self):
-        self.operation_cache: Dict[str, Operation] = {}
+        self.operation_cache: dict[str, Operation] = {}
 
         logger.info("Operational Transform engine initialized")
 
     async def transform(
         self,
         operation: Operation,
-        concurrent_operations: List[Operation],
-        document_state: DocumentState
+        concurrent_operations: list[Operation],
+        document_state: DocumentState,
     ) -> Operation:
         """
         Transform an operation against concurrent operations.
@@ -158,12 +163,12 @@ class OperationalTransform:
             if transformed_op.attributes is None:
                 transformed_op.attributes = {}
             transformed_op.attributes["_concurrent_base"] = True
-            applied_ops: List[Operation] = []
+            applied_ops: list[Operation] = []
 
             # Sort concurrent operations by timestamp and server version
             sorted_ops = sorted(
                 concurrent_operations,
-                key=lambda op: (op.timestamp or datetime.min, op.server_version)
+                key=lambda op: (op.timestamp or datetime.min, op.server_version),
             )
 
             # Apply transformations sequentially
@@ -174,7 +179,9 @@ class OperationalTransform:
                 op_to_apply = concurrent_op.copy()
                 # Adjust concurrent op against previously applied ops to preserve order.
                 for prior in applied_ops:
-                    op_to_apply = await self._transform_pair(op_to_apply, prior, document_state)
+                    op_to_apply = await self._transform_pair(
+                        op_to_apply, prior, document_state
+                    )
 
                 transformed_op = await self._transform_pair(
                     transformed_op, op_to_apply, document_state
@@ -188,15 +195,17 @@ class OperationalTransform:
             raise
 
     async def _transform_pair(
-        self,
-        op1: Operation,
-        op2: Operation,
-        document_state: DocumentState
+        self, op1: Operation, op2: Operation, document_state: DocumentState
     ) -> Operation:
         """Transform two operations against each other."""
 
         # Handle same-author operations (usually no conflict)
-        if op1.author_id and op2.author_id and op1.author_id == op2.author_id and op1.id != op2.id:
+        if (
+            op1.author_id
+            and op2.author_id
+            and op1.author_id == op2.author_id
+            and op1.id != op2.id
+        ):
             return self._resolve_same_author_conflict(op1, op2)
 
         # Transform based on operation types
@@ -241,7 +250,7 @@ class OperationalTransform:
 
             if delete_end <= insert_op.position:
                 # Delete is before insert, adjust position
-                transformed.position -= (other_op.length or 0)
+                transformed.position -= other_op.length or 0
             elif delete_start < insert_op.position:
                 # Delete overlaps with insert position
                 transformed.position = delete_start
@@ -262,7 +271,9 @@ class OperationalTransform:
 
         return transformed
 
-    def _should_shift_for_equal_inserts(self, other_op: Operation, insert_op: Operation) -> bool:
+    def _should_shift_for_equal_inserts(
+        self, other_op: Operation, insert_op: Operation
+    ) -> bool:
         """Tie-breaker for inserts at the same position.
 
         Return True if insert_op should shift after other_op.
@@ -272,7 +283,11 @@ class OperationalTransform:
         if other_op.timestamp and insert_op.timestamp:
             if other_op.timestamp != insert_op.timestamp:
                 return other_op.timestamp < insert_op.timestamp
-        if other_op.author_id and insert_op.author_id and other_op.author_id != insert_op.author_id:
+        if (
+            other_op.author_id
+            and insert_op.author_id
+            and other_op.author_id != insert_op.author_id
+        ):
             return other_op.author_id < insert_op.author_id
         return other_op.id < insert_op.id
 
@@ -300,7 +315,7 @@ class OperationalTransform:
 
             if other_end <= delete_start:
                 # Other delete is before this delete
-                transformed.position -= (other_op.length or 0)
+                transformed.position -= other_op.length or 0
             elif other_start < delete_start:
                 # Deletes overlap
                 if other_end >= delete_end:
@@ -315,7 +330,9 @@ class OperationalTransform:
                 # Other delete starts within this delete
                 if other_end <= delete_end:
                     # Other delete is entirely within this delete
-                    transformed.length = (transformed.length or 0) - (other_op.length or 0)
+                    transformed.length = (transformed.length or 0) - (
+                        other_op.length or 0
+                    )
                 else:
                     # Partial overlap
                     overlap = delete_end - other_start
@@ -329,7 +346,9 @@ class OperationalTransform:
         # They maintain formatting or selection state
         return retain_op.copy()
 
-    def _transform_replace(self, replace_op: Operation, other_op: Operation) -> Operation:
+    def _transform_replace(
+        self, replace_op: Operation, other_op: Operation
+    ) -> Operation:
         """Transform a replace operation against another operation."""
         transformed = replace_op.copy()
 
@@ -350,7 +369,7 @@ class OperationalTransform:
 
             if other_end <= replace_start:
                 # Delete is before replace
-                transformed.position -= (other_op.length or 0)
+                transformed.position -= other_op.length or 0
             elif other_start < replace_start:
                 if other_end >= replace_end:
                     # Replace is entirely within delete - becomes insert
@@ -365,7 +384,9 @@ class OperationalTransform:
                 # Delete overlaps with replace
                 if other_end <= replace_end:
                     # Delete is entirely within replace
-                    transformed.length = (transformed.length or 0) - (other_op.length or 0)
+                    transformed.length = (transformed.length or 0) - (
+                        other_op.length or 0
+                    )
                 else:
                     # Partial overlap
                     overlap = replace_end - other_start
@@ -373,7 +394,9 @@ class OperationalTransform:
 
         return transformed
 
-    def _transform_annotate(self, annotate_op: Operation, other_op: Operation) -> Operation:
+    def _transform_annotate(
+        self, annotate_op: Operation, other_op: Operation
+    ) -> Operation:
         """Transform an annotation operation against another operation."""
         transformed = annotate_op.copy()
 
@@ -390,7 +413,7 @@ class OperationalTransform:
             delete_end = other_op.position + (other_op.length or 0)
 
             if delete_end <= annotate_op.position:
-                transformed.position -= (other_op.length or 0)
+                transformed.position -= other_op.length or 0
             elif delete_start < annotate_op.position:
                 # Annotation position is within deleted range
                 transformed.position = delete_start
@@ -419,7 +442,7 @@ class OperationalTransform:
             delete_end = other_op.position + (other_op.length or 0)
 
             if delete_end <= format_start:
-                transformed.position -= (other_op.length or 0)
+                transformed.position -= other_op.length or 0
             elif delete_start < format_start:
                 if delete_end >= format_end:
                     # Format range is entirely deleted
@@ -433,7 +456,9 @@ class OperationalTransform:
                 # Delete overlaps with format range
                 if delete_end <= format_end:
                     # Delete is entirely within format range
-                    transformed.length = (transformed.length or 0) - (other_op.length or 0)
+                    transformed.length = (transformed.length or 0) - (
+                        other_op.length or 0
+                    )
                 else:
                     # Partial overlap at end
                     overlap = format_end - delete_start
@@ -441,7 +466,9 @@ class OperationalTransform:
 
         return transformed
 
-    def _resolve_same_author_conflict(self, op1: Operation, op2: Operation) -> Operation:
+    def _resolve_same_author_conflict(
+        self, op1: Operation, op2: Operation
+    ) -> Operation:
         """Resolve conflicts between operations from the same author."""
         # For same-author operations, typically use timestamp or version ordering
         if op2.timestamp and op1.timestamp:
@@ -451,7 +478,9 @@ class OperationalTransform:
 
         return op1
 
-    def _adjust_for_newer_operation(self, old_op: Operation, new_op: Operation) -> Operation:
+    def _adjust_for_newer_operation(
+        self, old_op: Operation, new_op: Operation
+    ) -> Operation:
         """Adjust an older operation based on a newer one from the same author."""
         # This is a simplified implementation
         # In practice, you might want more sophisticated logic
@@ -476,7 +505,7 @@ class OperationalTransform:
         # Transform against concurrent operations
         return True
 
-    async def compose_operations(self, ops: List[Operation]) -> List[Operation]:
+    async def compose_operations(self, ops: list[Operation]) -> list[Operation]:
         """
         Compose multiple operations into a more efficient sequence.
 
@@ -503,14 +532,14 @@ class OperationalTransform:
         composed.append(current_op)
         return composed
 
-    def _try_merge_operations(self, op1: Operation, op2: Operation) -> Optional[Operation]:
+    def _try_merge_operations(self, op1: Operation, op2: Operation) -> Operation | None:
         """Try to merge two operations into one."""
         # Same author operations from same client session can potentially merge
         if op1.author_id != op2.author_id or op1.client_version != op2.client_version:
             return None
 
         # Merge adjacent inserts
-        if (op1.type == OperationType.INSERT and op2.type == OperationType.INSERT):
+        if op1.type == OperationType.INSERT and op2.type == OperationType.INSERT:
             if op1.position + len(str(op1.content or "")) == op2.position:
                 merged = op1.copy()
                 merged.content = str(op1.content or "") + str(op2.content or "")
@@ -518,7 +547,7 @@ class OperationalTransform:
                 return merged
 
         # Merge adjacent deletes
-        if (op1.type == OperationType.DELETE and op2.type == OperationType.DELETE):
+        if op1.type == OperationType.DELETE and op2.type == OperationType.DELETE:
             if op1.position + (op1.length or 0) == op2.position:
                 merged = op1.copy()
                 merged.length = (op1.length or 0) + (op2.length or 0)
@@ -526,9 +555,11 @@ class OperationalTransform:
                 return merged
 
         # Merge compatible format operations
-        if (op1.type == OperationType.FORMAT and op2.type == OperationType.FORMAT):
-            if (op1.attributes == op2.attributes and
-                op1.position + (op1.length or 0) == op2.position):
+        if op1.type == OperationType.FORMAT and op2.type == OperationType.FORMAT:
+            if (
+                op1.attributes == op2.attributes
+                and op1.position + (op1.length or 0) == op2.position
+            ):
                 merged = op1.copy()
                 merged.length = (op1.length or 0) + (op2.length or 0)
                 merged.id = f"merged_{op1.id}_{op2.id}"
@@ -536,7 +567,9 @@ class OperationalTransform:
 
         return None
 
-    def validate_operation(self, operation: Operation, document_state: DocumentState) -> bool:
+    def validate_operation(
+        self, operation: Operation, document_state: DocumentState
+    ) -> bool:
         """Validate that an operation can be applied to the document state."""
         try:
             # Basic position validation
@@ -570,12 +603,12 @@ class OperationalTransform:
         """Get priority for operation ordering (higher = more important)."""
         # Priority based on operation type and author role
         priority_map = {
-            OperationType.DELETE: 100,    # Highest priority
+            OperationType.DELETE: 100,  # Highest priority
             OperationType.REPLACE: 90,
             OperationType.INSERT: 80,
             OperationType.FORMAT: 70,
             OperationType.ANNOTATE: 60,
-            OperationType.RETAIN: 50      # Lowest priority
+            OperationType.RETAIN: 50,  # Lowest priority
         }
 
         base_priority = priority_map.get(operation.type, 50)

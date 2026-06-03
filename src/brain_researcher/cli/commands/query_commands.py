@@ -79,7 +79,9 @@ def search(
             result = {
                 "id": item.node_id,
                 "type": item.node_type,
-                "name": item.properties.get("name", item.properties.get("title", "N/A")),
+                "name": item.properties.get(
+                    "name", item.properties.get("title", "N/A")
+                ),
                 "match_field": match_field,
                 "score": item.score,
             }

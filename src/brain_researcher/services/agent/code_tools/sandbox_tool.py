@@ -8,9 +8,9 @@ import logging
 import subprocess
 import sys
 import traceback
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from multiprocessing import Process, Queue
-from typing import Any, Dict
+from typing import Any
 
 from brain_researcher.services.agent.code_tool_registry import CodeTool
 
@@ -23,10 +23,14 @@ MAX_OUTPUT_SIZE = 50000
 def _truncate(text: str, limit: int) -> str:
     if text is None:
         return ""
-    return text if len(text) <= limit else text[:limit] + f"\n... (truncated at {limit} chars)"
+    return (
+        text
+        if len(text) <= limit
+        else text[:limit] + f"\n... (truncated at {limit} chars)"
+    )
 
 
-def _run_code_in_subprocess(code: str, capture_output: bool) -> Dict[str, Any]:
+def _run_code_in_subprocess(code: str, capture_output: bool) -> dict[str, Any]:
     """Execute code in a child process and return a serializable result dict."""
 
     def _worker(code_str: str, capture: bool, queue: Queue) -> None:
@@ -42,7 +46,9 @@ def _run_code_in_subprocess(code: str, capture_output: bool) -> Dict[str, Any]:
                         exec(compile(code_str, "<sandbox>", "exec"), namespace)
                         result_value = None
                     except SyntaxError:
-                        result_value = eval(compile(code_str, "<sandbox>", "eval"), namespace)
+                        result_value = eval(
+                            compile(code_str, "<sandbox>", "eval"), namespace
+                        )
                 stdout = stdout_capture.getvalue()
                 stderr = stderr_capture.getvalue()
             else:
@@ -58,12 +64,14 @@ def _run_code_in_subprocess(code: str, capture_output: bool) -> Dict[str, Any]:
                 except Exception:
                     result_str = f"<unprintable: {type(result_value).__name__}>"
 
-            queue.put({
-                "status": "success",
-                "stdout": stdout,
-                "stderr": stderr,
-                "result": result_str,
-            })
+            queue.put(
+                {
+                    "status": "success",
+                    "stdout": stdout,
+                    "stderr": stderr,
+                    "result": result_str,
+                }
+            )
         except Exception as exc:  # pragma: no cover - captured for parent
             tb = traceback.format_exc()
             queue.put({"status": "error", "error": str(exc), "traceback": tb})
@@ -166,7 +174,7 @@ def _run_code_via_subprocess(
     code: str,
     timeout: int,
     capture_output: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     script = _build_runner_script(code, capture_output)
     proc = subprocess.Popen(
         [sys.executable, "-c", script],
@@ -218,7 +226,7 @@ class SandboxRunTool(CodeTool):
     name = "code.sandbox.run"
     description = "Execute Python code in an isolated sandbox for validation, calculation, or quick experiments."
 
-    def get_parameters_schema(self) -> Dict[str, Any]:
+    def get_parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -246,7 +254,7 @@ class SandboxRunTool(CodeTool):
         timeout: int = 30,
         capture_output: bool = True,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # Prefer a dedicated subprocess instead of multiprocessing.
         #
         # Forking a Python process after libraries that use native thread pools (e.g.,
@@ -260,42 +268,45 @@ class SandboxRunTool(CodeTool):
         return result
 
     @staticmethod
-    def _add_safe_imports(namespace: Dict[str, Any]) -> None:
+    def _add_safe_imports(namespace: dict[str, Any]) -> None:
         """Add commonly used safe imports to namespace."""
         try:
-            import math
-            import json
-            import re
-            import datetime
-            import collections
-            import itertools
-            import functools
-            import operator
-            import statistics
-            import random
-            import hashlib
             import base64
+            import collections
+            import datetime
+            import functools
+            import hashlib
+            import itertools
+            import json
+            import math
+            import operator
+            import random
+            import re
+            import statistics
 
-            namespace.update({
-                "math": math,
-                "json": json,
-                "re": re,
-                "datetime": datetime,
-                "collections": collections,
-                "itertools": itertools,
-                "functools": functools,
-                "operator": operator,
-                "statistics": statistics,
-                "random": random,
-                "hashlib": hashlib,
-                "base64": base64,
-            })
+            namespace.update(
+                {
+                    "math": math,
+                    "json": json,
+                    "re": re,
+                    "datetime": datetime,
+                    "collections": collections,
+                    "itertools": itertools,
+                    "functools": functools,
+                    "operator": operator,
+                    "statistics": statistics,
+                    "random": random,
+                    "hashlib": hashlib,
+                    "base64": base64,
+                }
+            )
         except ImportError:
             pass
 
         # Try to add numpy/pandas if available (common for data work)
         try:
             import numpy as np
+
             namespace["np"] = np
             namespace["numpy"] = np
         except ImportError:
@@ -303,6 +314,7 @@ class SandboxRunTool(CodeTool):
 
         try:
             import pandas as pd
+
             namespace["pd"] = pd
             namespace["pandas"] = pd
         except ImportError:

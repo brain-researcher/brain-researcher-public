@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from brain_researcher.services.shared.brkg_evidence_models import EvidenceItem
@@ -46,21 +46,21 @@ class KnowledgeItem:
 
     # Content
     title: str
-    description: Optional[str] = None
+    description: str | None = None
 
     # Relevance
     score: float = 0.0  # 0-1 relevance score
     confidence: float = 1.0  # 0-1 confidence in the score
 
     # Metadata
-    url: Optional[str] = None
-    doi: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    url: str | None = None
+    doi: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     # Timing
     retrieved_at: datetime = field(default_factory=datetime.utcnow)
 
-    def to_evidence_item(self) -> "EvidenceItem":
+    def to_evidence_item(self) -> EvidenceItem:
         """Convert to the shared orchestrator-shaped EvidenceItem format."""
         from brain_researcher.services.shared.brkg_evidence_models import (
             EvidenceItem,
@@ -72,20 +72,60 @@ class KnowledgeItem:
         # Map source_id to EvidenceSource
         source_map = {
             "br_kg": EvidenceSource.BR_KG,
-            "pubmed": EvidenceSource.PUBMED if hasattr(EvidenceSource, "PUBMED") else EvidenceSource.EXTERNAL_API,
-            "neurostore": EvidenceSource.NEUROSTORE if hasattr(EvidenceSource, "NEUROSTORE") else EvidenceSource.EXTERNAL_API,
-            "niclip": EvidenceSource.NICLIP if hasattr(EvidenceSource, "NICLIP") else EvidenceSource.COMPUTED,
-            "tool_registry": EvidenceSource.TOOL_REGISTRY if hasattr(EvidenceSource, "TOOL_REGISTRY") else EvidenceSource.AGENT,
-            "dataset_catalog": EvidenceSource.DATASET_CATALOG if hasattr(EvidenceSource, "DATASET_CATALOG") else EvidenceSource.BR_KG,
+            "pubmed": (
+                EvidenceSource.PUBMED
+                if hasattr(EvidenceSource, "PUBMED")
+                else EvidenceSource.EXTERNAL_API
+            ),
+            "neurostore": (
+                EvidenceSource.NEUROSTORE
+                if hasattr(EvidenceSource, "NEUROSTORE")
+                else EvidenceSource.EXTERNAL_API
+            ),
+            "niclip": (
+                EvidenceSource.NICLIP
+                if hasattr(EvidenceSource, "NICLIP")
+                else EvidenceSource.COMPUTED
+            ),
+            "tool_registry": (
+                EvidenceSource.TOOL_REGISTRY
+                if hasattr(EvidenceSource, "TOOL_REGISTRY")
+                else EvidenceSource.AGENT
+            ),
+            "dataset_catalog": (
+                EvidenceSource.DATASET_CATALOG
+                if hasattr(EvidenceSource, "DATASET_CATALOG")
+                else EvidenceSource.BR_KG
+            ),
         }
 
         # Map to EvidenceType based on source
         type_map = {
-            "br_kg": EvidenceType.KG_NODE if hasattr(EvidenceType, "KG_NODE") else EvidenceType.DATASET,
-            "pubmed": EvidenceType.LITERATURE if hasattr(EvidenceType, "LITERATURE") else EvidenceType.CITATION,
-            "neurostore": EvidenceType.LITERATURE if hasattr(EvidenceType, "LITERATURE") else EvidenceType.CITATION,
-            "niclip": EvidenceType.EMBEDDING_MATCH if hasattr(EvidenceType, "EMBEDDING_MATCH") else EvidenceType.RESULT,
-            "tool_registry": EvidenceType.TOOL_MATCH if hasattr(EvidenceType, "TOOL_MATCH") else EvidenceType.METHOD,
+            "br_kg": (
+                EvidenceType.KG_NODE
+                if hasattr(EvidenceType, "KG_NODE")
+                else EvidenceType.DATASET
+            ),
+            "pubmed": (
+                EvidenceType.LITERATURE
+                if hasattr(EvidenceType, "LITERATURE")
+                else EvidenceType.CITATION
+            ),
+            "neurostore": (
+                EvidenceType.LITERATURE
+                if hasattr(EvidenceType, "LITERATURE")
+                else EvidenceType.CITATION
+            ),
+            "niclip": (
+                EvidenceType.EMBEDDING_MATCH
+                if hasattr(EvidenceType, "EMBEDDING_MATCH")
+                else EvidenceType.RESULT
+            ),
+            "tool_registry": (
+                EvidenceType.TOOL_MATCH
+                if hasattr(EvidenceType, "TOOL_MATCH")
+                else EvidenceType.METHOD
+            ),
             "dataset_catalog": EvidenceType.DATASET,
         }
 
@@ -116,23 +156,23 @@ class AggregatedEvidence:
     """
 
     query: str
-    items: List[KnowledgeItem] = field(default_factory=list)
+    items: list[KnowledgeItem] = field(default_factory=list)
     confidence: EvidenceConfidence = EvidenceConfidence.APPROXIMATE
 
     # Source tracking
-    sources_queried: List[str] = field(default_factory=list)
-    sources_succeeded: List[str] = field(default_factory=list)
-    sources_failed: List[str] = field(default_factory=list)
+    sources_queried: list[str] = field(default_factory=list)
+    sources_succeeded: list[str] = field(default_factory=list)
+    sources_failed: list[str] = field(default_factory=list)
 
     # Timing
     aggregated_at: datetime = field(default_factory=datetime.utcnow)
-    duration_ms: Optional[float] = None
+    duration_ms: float | None = None
 
     # Errors
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
     # Metadata
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def total_items(self) -> int:
@@ -146,14 +186,14 @@ class AggregatedEvidence:
             return 0.0
         return len(self.sources_succeeded) / len(self.sources_queried)
 
-    def items_by_source(self) -> Dict[str, List[KnowledgeItem]]:
+    def items_by_source(self) -> dict[str, list[KnowledgeItem]]:
         """Group items by their source."""
-        result: Dict[str, List[KnowledgeItem]] = {}
+        result: dict[str, list[KnowledgeItem]] = {}
         for item in self.items:
             result.setdefault(item.source_id, []).append(item)
         return result
 
-    def to_evidence_items(self) -> List["EvidenceItem"]:
+    def to_evidence_items(self) -> list[EvidenceItem]:
         """Convert all items to EvidenceItem format."""
         return [item.to_evidence_item() for item in self.items]
 
@@ -169,25 +209,25 @@ class KnowledgePlan:
     intent: PlanIntent
 
     # Recommendations
-    recommended_datasets: List[str] = field(default_factory=list)
-    recommended_tools: List[str] = field(default_factory=list)
+    recommended_datasets: list[str] = field(default_factory=list)
+    recommended_tools: list[str] = field(default_factory=list)
 
     # Reasoning
     justification: str = ""
-    evidence_ids: List[str] = field(default_factory=list)  # IDs of supporting evidence
+    evidence_ids: list[str] = field(default_factory=list)  # IDs of supporting evidence
 
     # Confidence
     confidence: float = 0.0  # 0-1
 
     # Caching
-    cache_key: Optional[str] = None
-    cached_at: Optional[datetime] = None
+    cache_key: str | None = None
+    cached_at: datetime | None = None
 
     # Timing
     created_at: datetime = field(default_factory=datetime.utcnow)
-    planning_duration_ms: Optional[float] = None
+    planning_duration_ms: float | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
             "intent": self.intent.value,

@@ -7,10 +7,10 @@ utilities for billing/usage reporting.
 
 import json
 import os
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any
 
 from brain_researcher.config.paths import get_data_root
 from brain_researcher.services.agent.router import LLMRouteMetadata
@@ -23,18 +23,18 @@ class UsageRecord:
     timestamp: str  # ISO 8601 timestamp
     provider: str
     model: str
-    bill_to: Optional[str] = None
-    usage: Dict[str, Any] = None  # prompt_tokens, completion_tokens, total_tokens
-    estimated_cost: Optional[float] = None
-    latency_ms: Optional[int] = None
-    fallback_reason: Optional[str] = None
+    bill_to: str | None = None
+    usage: dict[str, Any] = None  # prompt_tokens, completion_tokens, total_tokens
+    estimated_cost: float | None = None
+    latency_ms: int | None = None
+    fallback_reason: str | None = None
     route: str = "primary"
     transport: str = "sdk"
-    credential: Optional[str] = None
-    workspace_id: Optional[str] = None
-    user_id: Optional[str] = None
+    credential: str | None = None
+    workspace_id: str | None = None
+    user_id: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dict, filtering None values."""
         return {k: v for k, v in asdict(self).items() if v is not None}
 
@@ -46,7 +46,7 @@ class UsageTracker:
     Storage format: BR_TELEMETRY_DIR/llm_usage.ndjson
     """
 
-    def __init__(self, telemetry_dir: Optional[str] = None):
+    def __init__(self, telemetry_dir: str | None = None):
         """
         Initialize usage tracker.
 
@@ -67,8 +67,8 @@ class UsageTracker:
     def record_usage(
         self,
         metadata: LLMRouteMetadata,
-        workspace_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        workspace_id: str | None = None,
+        user_id: str | None = None,
     ) -> None:
         """
         Record an LLM invocation to NDJSON.
@@ -100,12 +100,12 @@ class UsageTracker:
 
     def get_usage_summary(
         self,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-        provider: Optional[str] = None,
-        bill_to: Optional[str] = None,
-        workspace_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        start_date: str | None = None,
+        end_date: str | None = None,
+        provider: str | None = None,
+        bill_to: str | None = None,
+        workspace_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Aggregate usage records within a date range.
 
@@ -138,11 +138,13 @@ class UsageTracker:
             start_dt = datetime.fromisoformat(start_date.replace("Z", ""))
         if end_date:
             # End of day
-            end_dt = datetime.fromisoformat(end_date.replace("Z", "")) + timedelta(days=1)
+            end_dt = datetime.fromisoformat(end_date.replace("Z", "")) + timedelta(
+                days=1
+            )
 
         # Scan NDJSON and filter
         matching_records = []
-        with open(self.usage_file, "r", encoding="utf-8") as f:
+        with open(self.usage_file, encoding="utf-8") as f:
             for line in f:
                 if not line.strip():
                     continue
@@ -150,7 +152,9 @@ class UsageTracker:
                     record = json.loads(line)
 
                     # Date filter
-                    record_dt = datetime.fromisoformat(record["timestamp"].replace("Z", ""))
+                    record_dt = datetime.fromisoformat(
+                        record["timestamp"].replace("Z", "")
+                    )
                     if start_dt and record_dt < start_dt:
                         continue
                     if end_dt and record_dt >= end_dt:
@@ -175,7 +179,7 @@ class UsageTracker:
 
         return self._aggregate_records(matching_records)
 
-    def _empty_summary(self) -> Dict[str, Any]:
+    def _empty_summary(self) -> dict[str, Any]:
         """Return empty summary structure."""
         return {
             "total_calls": 0,
@@ -187,15 +191,15 @@ class UsageTracker:
             "records": [],
         }
 
-    def _aggregate_records(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _aggregate_records(self, records: list[dict[str, Any]]) -> dict[str, Any]:
         """Aggregate a list of usage records."""
         total_calls = len(records)
         total_tokens = 0
         total_cost = 0.0
 
-        by_provider: Dict[str, Dict[str, Any]] = {}
-        by_model: Dict[str, Dict[str, Any]] = {}
-        by_bill_to: Dict[str, Dict[str, Any]] = {}
+        by_provider: dict[str, dict[str, Any]] = {}
+        by_model: dict[str, dict[str, Any]] = {}
+        by_bill_to: dict[str, dict[str, Any]] = {}
 
         for record in records:
             usage = record.get("usage", {})
@@ -239,7 +243,7 @@ class UsageTracker:
             "records": records,
         }
 
-    def get_recent_usage(self, hours: int = 24) -> Dict[str, Any]:
+    def get_recent_usage(self, hours: int = 24) -> dict[str, Any]:
         """
         Get usage for the last N hours.
 

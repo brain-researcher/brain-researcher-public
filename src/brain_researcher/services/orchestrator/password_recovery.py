@@ -16,14 +16,13 @@ import argparse
 import json
 import os
 from datetime import datetime, timezone
-from typing import Dict, Tuple
 
 import redis
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SEED_PASSWORDS: Dict[str, Tuple[str, str]] = {
+SEED_PASSWORDS: dict[str, tuple[str, str]] = {
     "demo@brain-researcher.ai": ("demo", "demo123"),
     "admin@brain-researcher.ai": ("admin", "admin123"),
     "researcher@university.edu": ("researcher", "research123"),
@@ -35,8 +34,7 @@ def _now_iso() -> str:
 
 
 def _iter_user_keys(client: redis.Redis):
-    for key in client.scan_iter(match="user:user_*"):
-        yield key
+    yield from client.scan_iter(match="user:user_*")
 
 
 def repair_missing_password_hashes(
@@ -124,7 +122,9 @@ def repair_missing_password_hashes(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Repair missing password hashes in Orchestrator user store")
+    parser = argparse.ArgumentParser(
+        description="Repair missing password hashes in Orchestrator user store"
+    )
     parser.add_argument(
         "--redis-url",
         default=os.getenv("REDIS_URL", "redis://localhost:6379/0"),

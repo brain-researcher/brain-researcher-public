@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Sequence, Optional
+from collections.abc import Sequence
 
 from brain_researcher.services.br_kg.evidence.connectors.pubmed import PubMedConnector
-from .base import BaseEvidenceSource, SourceCapabilities
+
 from ..models import KnowledgeItem
+from .base import BaseEvidenceSource, SourceCapabilities
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class PubMedEvidenceSource(BaseEvidenceSource):
     source_id = "pubmed"
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(self, api_key: str | None = None) -> None:
         self._connector = PubMedConnector(api_key=api_key)
         self._capabilities = SourceCapabilities(
             supports_text_search=True,
@@ -43,7 +44,7 @@ class PubMedEvidenceSource(BaseEvidenceSource):
         query: str,
         *,
         limit: int = 20,
-        filters: Optional[dict] = None,
+        filters: dict | None = None,
     ) -> Sequence[KnowledgeItem]:
         pubs = await self._connector.search(query, limit=limit, filters=filters or {})
         items: list[KnowledgeItem] = []

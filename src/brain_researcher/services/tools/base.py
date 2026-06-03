@@ -3,6 +3,7 @@
 This module provides the NeuroTool base class that all unified tools inherit from.
 It supports both container-based and subprocess execution modes.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -111,7 +112,7 @@ class NeuroTool(ABC):
         """Alias for get_description() to match NeuroToolWrapper interface."""
         return self.get_description()
 
-    def as_langchain_tool(self) -> "StructuredTool":
+    def as_langchain_tool(self) -> StructuredTool:
         """Convert to LangChain StructuredTool for agent use.
 
         Returns:
@@ -127,7 +128,11 @@ class NeuroTool(ABC):
             result = self.run(**kwargs)
             if result.status == "error":
                 return {"status": "error", "error": result.error, "data": result.data}
-            return {"status": "success", "data": result.data, "metadata": result.metadata}
+            return {
+                "status": "success",
+                "data": result.data,
+                "metadata": result.metadata,
+            }
 
         return StructuredTool(
             name=self.get_name(),

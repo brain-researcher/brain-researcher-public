@@ -4,8 +4,9 @@ These rules complement JSON Schema validation with domain-specific checks.
 """
 
 import re
-from typing import Dict, Any, List, Callable, Optional
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 
 def validate_doi(doi: str) -> bool:
@@ -21,7 +22,7 @@ def validate_doi(doi: str) -> bool:
         return False
 
     # Basic DOI pattern: 10.xxxx/yyyy
-    pattern = r'^10\.\d{4,}(?:\.\d+)*\/[-._;()\/:a-zA-Z0-9]+$'
+    pattern = r"^10\.\d{4,}(?:\.\d+)*\/[-._;()\/:a-zA-Z0-9]+$"
     return bool(re.match(pattern, doi))
 
 
@@ -50,11 +51,7 @@ def coord_in_mni(x: float, y: float, z: float) -> bool:
     Returns:
         True if within reasonable MNI bounds
     """
-    return (
-        -100 <= x <= 100 and
-        -140 <= y <= 110 and
-        -80 <= z <= 120
-    )
+    return -100 <= x <= 100 and -140 <= y <= 110 and -80 <= z <= 120
 
 
 def coord_in_tal(x: float, y: float, z: float) -> bool:
@@ -66,11 +63,7 @@ def coord_in_tal(x: float, y: float, z: float) -> bool:
     Returns:
         True if within reasonable Talairach bounds
     """
-    return (
-        -80 <= x <= 80 and
-        -120 <= y <= 90 and
-        -60 <= z <= 90
-    )
+    return -80 <= x <= 80 and -120 <= y <= 90 and -60 <= z <= 90
 
 
 def validate_bids_path(path: str) -> bool:
@@ -86,22 +79,20 @@ def validate_bids_path(path: str) -> bool:
     name = path_obj.name
 
     # Basic BIDS patterns
-    patterns = [
-        r'^sub-[a-zA-Z0-9]+',  # Subject
-        r'^ses-[a-zA-Z0-9]+',   # Session
-        r'_task-[a-zA-Z0-9]+',  # Task
-        r'_run-[0-9]+',         # Run
-    ]
 
     # Must start with sub-
-    if not name.startswith('sub-'):
+    if not name.startswith("sub-"):
         return False
 
     # Check for valid suffixes
     valid_suffixes = [
-        '_T1w.nii.gz', '_T2w.nii.gz', '_bold.nii.gz',
-        '_dwi.nii.gz', '_fmap.nii.gz', '_events.tsv',
-        '.json'
+        "_T1w.nii.gz",
+        "_T2w.nii.gz",
+        "_bold.nii.gz",
+        "_dwi.nii.gz",
+        "_fmap.nii.gz",
+        "_events.tsv",
+        ".json",
     ]
 
     has_valid_suffix = any(name.endswith(suffix) for suffix in valid_suffixes)
@@ -109,7 +100,7 @@ def validate_bids_path(path: str) -> bool:
     return has_valid_suffix
 
 
-def validate_bids_required_files(dataset_path: str) -> List[str]:
+def validate_bids_required_files(dataset_path: str) -> list[str]:
     """Check for required BIDS files.
 
     Args:
@@ -143,8 +134,21 @@ def validate_bids_naming_convention(filename: str) -> bool:
     """
     # BIDS entity order
     entity_order = [
-        "sub", "ses", "task", "acq", "ce", "rec", "dir",
-        "run", "mod", "echo", "flip", "inv", "mt", "part", "recording"
+        "sub",
+        "ses",
+        "task",
+        "acq",
+        "ce",
+        "rec",
+        "dir",
+        "run",
+        "mod",
+        "echo",
+        "flip",
+        "inv",
+        "mt",
+        "part",
+        "recording",
     ]
 
     # Extract entities from filename
@@ -152,9 +156,15 @@ def validate_bids_naming_convention(filename: str) -> bool:
 
     if not entities:
         # No entities found - might be a top-level file
-        return filename in ["README", "README.md", "CHANGES", "LICENSE",
-                           "dataset_description.json", "participants.tsv",
-                           "participants.json"]
+        return filename in [
+            "README",
+            "README.md",
+            "CHANGES",
+            "LICENSE",
+            "dataset_description.json",
+            "participants.tsv",
+            "participants.json",
+        ]
 
     # Check entity order
     prev_idx = -1
@@ -168,7 +178,7 @@ def validate_bids_naming_convention(filename: str) -> bool:
     return True
 
 
-def validate_bids_metadata_consistency(metadata: Dict[str, Any]) -> List[str]:
+def validate_bids_metadata_consistency(metadata: dict[str, Any]) -> list[str]:
     """Validate BIDS metadata consistency.
 
     Args:
@@ -211,7 +221,7 @@ def validate_bids_participant_id(participant_id: str) -> bool:
     return bool(re.match(r"^sub-[a-zA-Z0-9]+$", participant_id))
 
 
-def validate_bids_task_events(events: List[Dict[str, Any]]) -> List[str]:
+def validate_bids_task_events(events: list[dict[str, Any]]) -> list[str]:
     """Validate BIDS task events.
 
     Args:
@@ -226,19 +236,21 @@ def validate_bids_task_events(events: List[Dict[str, Any]]) -> List[str]:
         # Check required fields
         if "onset" not in event:
             errors.append(f"Event {i}: missing 'onset' field")
-        elif not isinstance(event["onset"], (int, float)) or event["onset"] < 0:
+        elif not isinstance(event["onset"], int | float) or event["onset"] < 0:
             errors.append(f"Event {i}: 'onset' must be non-negative number")
 
         if "duration" not in event:
             errors.append(f"Event {i}: missing 'duration' field")
-        elif not isinstance(event["duration"], (int, float)) or event["duration"] < 0:
+        elif not isinstance(event["duration"], int | float) or event["duration"] < 0:
             errors.append(f"Event {i}: 'duration' must be non-negative number")
 
         # Check optional fields
         if "response_time" in event:
             if event["response_time"] is not None:
-                if not isinstance(event["response_time"], (int, float)):
-                    errors.append(f"Event {i}: 'response_time' must be a number or null")
+                if not isinstance(event["response_time"], int | float):
+                    errors.append(
+                        f"Event {i}: 'response_time' must be a number or null"
+                    )
 
     return errors
 
@@ -302,7 +314,7 @@ def validate_wikidata_region_id(region_id: str) -> bool:
     return bool(re.match(r"^Q[0-9]+$", region_id))
 
 
-def validate_wikidata_parent_id(parent_id: Optional[str]) -> bool:
+def validate_wikidata_parent_id(parent_id: str | None) -> bool:
     """Validate Wikidata parent ID format (Q[0-9]*).
 
     Args:
@@ -387,7 +399,7 @@ def validate_openneuro_dataset_id(dataset_id: str) -> bool:
 
 
 # Named validation rule functions for better debugging and error messages
-def validate_coordinates_in_space(obj: Dict[str, Any]) -> bool:
+def validate_coordinates_in_space(obj: dict[str, Any]) -> bool:
     """Validate that all coordinates are within MNI or Talairach space bounds.
 
     Args:
@@ -403,13 +415,15 @@ def validate_coordinates_in_space(obj: Dict[str, Any]) -> bool:
     for coord in coordinates:
         if not all(k in coord for k in ["x", "y", "z"]):
             continue
-        if not (coord_in_mni(coord["x"], coord["y"], coord["z"]) or
-                coord_in_tal(coord["x"], coord["y"], coord["z"])):
+        if not (
+            coord_in_mni(coord["x"], coord["y"], coord["z"])
+            or coord_in_tal(coord["x"], coord["y"], coord["z"])
+        ):
             return False
     return True
 
 
-def validate_publication_doi(obj: Dict[str, Any]) -> bool:
+def validate_publication_doi(obj: dict[str, Any]) -> bool:
     """Validate publication DOI if present.
 
     Args:
@@ -423,7 +437,7 @@ def validate_publication_doi(obj: Dict[str, Any]) -> bool:
     return validate_doi(obj["doi"])
 
 
-def validate_publication_pmid(obj: Dict[str, Any]) -> bool:
+def validate_publication_pmid(obj: dict[str, Any]) -> bool:
     """Validate publication PMID if present.
 
     Args:
@@ -437,7 +451,7 @@ def validate_publication_pmid(obj: Dict[str, Any]) -> bool:
     return validate_pmid(obj["pmid"])
 
 
-def validate_publication_year(obj: Dict[str, Any]) -> bool:
+def validate_publication_year(obj: dict[str, Any]) -> bool:
     """Validate publication year is within reasonable range.
 
     Args:
@@ -450,7 +464,7 @@ def validate_publication_year(obj: Dict[str, Any]) -> bool:
     return 1900 <= year <= 2100
 
 
-def validate_bids_path_field(obj: Dict[str, Any]) -> bool:
+def validate_bids_path_field(obj: dict[str, Any]) -> bool:
     """Validate BIDS path if present.
 
     Args:
@@ -464,7 +478,7 @@ def validate_bids_path_field(obj: Dict[str, Any]) -> bool:
     return validate_bids_path(obj["path"])
 
 
-def validate_bids_tr_field(obj: Dict[str, Any]) -> bool:
+def validate_bids_tr_field(obj: dict[str, Any]) -> bool:
     """Validate BIDS TR if present.
 
     Args:
@@ -478,7 +492,7 @@ def validate_bids_tr_field(obj: Dict[str, Any]) -> bool:
     return validate_tr(obj["tr"])
 
 
-def validate_bids_required_files_field(obj: Dict[str, Any]) -> bool:
+def validate_bids_required_files_field(obj: dict[str, Any]) -> bool:
     """Validate BIDS required files if dataset_path is present.
 
     Args:
@@ -493,7 +507,7 @@ def validate_bids_required_files_field(obj: Dict[str, Any]) -> bool:
     return len(missing) == 0
 
 
-def validate_bids_naming_field(obj: Dict[str, Any]) -> bool:
+def validate_bids_naming_field(obj: dict[str, Any]) -> bool:
     """Validate BIDS naming convention if filename is present.
 
     Args:
@@ -507,7 +521,7 @@ def validate_bids_naming_field(obj: Dict[str, Any]) -> bool:
     return validate_bids_naming_convention(obj["filename"])
 
 
-def validate_bids_participant_id_field(obj: Dict[str, Any]) -> bool:
+def validate_bids_participant_id_field(obj: dict[str, Any]) -> bool:
     """Validate BIDS participant ID if present.
 
     Args:
@@ -521,7 +535,7 @@ def validate_bids_participant_id_field(obj: Dict[str, Any]) -> bool:
     return validate_bids_participant_id(obj["participant_id"])
 
 
-def validate_bids_metadata_consistency_field(obj: Dict[str, Any]) -> bool:
+def validate_bids_metadata_consistency_field(obj: dict[str, Any]) -> bool:
     """Validate BIDS metadata consistency if metadata is present.
 
     Args:
@@ -536,7 +550,7 @@ def validate_bids_metadata_consistency_field(obj: Dict[str, Any]) -> bool:
     return len(issues) == 0
 
 
-def validate_bids_task_events_field(obj: Dict[str, Any]) -> bool:
+def validate_bids_task_events_field(obj: dict[str, Any]) -> bool:
     """Validate BIDS task events if events are present.
 
     Args:
@@ -551,7 +565,7 @@ def validate_bids_task_events_field(obj: Dict[str, Any]) -> bool:
     return len(errors) == 0
 
 
-def validate_statistics_threshold_field(obj: Dict[str, Any]) -> bool:
+def validate_statistics_threshold_field(obj: dict[str, Any]) -> bool:
     """Validate statistical threshold if present.
 
     Args:
@@ -566,7 +580,7 @@ def validate_statistics_threshold_field(obj: Dict[str, Any]) -> bool:
     return validate_threshold(obj["threshold"], threshold_type)
 
 
-def validate_statistics_smoothing_field(obj: Dict[str, Any]) -> bool:
+def validate_statistics_smoothing_field(obj: dict[str, Any]) -> bool:
     """Validate smoothing kernel if present.
 
     Args:
@@ -580,7 +594,7 @@ def validate_statistics_smoothing_field(obj: Dict[str, Any]) -> bool:
     return validate_smoothing_kernel(obj["smoothing"])
 
 
-def validate_wikidata_region_id_field(obj: Dict[str, Any]) -> bool:
+def validate_wikidata_region_id_field(obj: dict[str, Any]) -> bool:
     """Validate Wikidata region ID if present.
 
     Args:
@@ -594,7 +608,7 @@ def validate_wikidata_region_id_field(obj: Dict[str, Any]) -> bool:
     return validate_wikidata_region_id(obj["region_id"])
 
 
-def validate_wikidata_parent_id_field(obj: Dict[str, Any]) -> bool:
+def validate_wikidata_parent_id_field(obj: dict[str, Any]) -> bool:
     """Validate Wikidata parent ID if present.
 
     Args:
@@ -608,7 +622,7 @@ def validate_wikidata_parent_id_field(obj: Dict[str, Any]) -> bool:
     return validate_wikidata_parent_id(obj["parent_id"])
 
 
-def validate_cognitive_atlas_concept_id_field(obj: Dict[str, Any]) -> bool:
+def validate_cognitive_atlas_concept_id_field(obj: dict[str, Any]) -> bool:
     """Validate Cognitive Atlas concept ID if present.
 
     Args:
@@ -622,7 +636,7 @@ def validate_cognitive_atlas_concept_id_field(obj: Dict[str, Any]) -> bool:
     return validate_cognitive_atlas_concept_id(obj["concept_id"])
 
 
-def validate_cognitive_atlas_task_id_field(obj: Dict[str, Any]) -> bool:
+def validate_cognitive_atlas_task_id_field(obj: dict[str, Any]) -> bool:
     """Validate Cognitive Atlas task ID if present.
 
     Args:
@@ -636,7 +650,7 @@ def validate_cognitive_atlas_task_id_field(obj: Dict[str, Any]) -> bool:
     return validate_cognitive_atlas_task_id(obj["task_id"])
 
 
-def validate_neurovault_collection_id_field(obj: Dict[str, Any]) -> bool:
+def validate_neurovault_collection_id_field(obj: dict[str, Any]) -> bool:
     """Validate NeuroVault collection ID if present.
 
     Args:
@@ -650,7 +664,7 @@ def validate_neurovault_collection_id_field(obj: Dict[str, Any]) -> bool:
     return validate_neurovault_collection_id(obj["collection_id"])
 
 
-def validate_neurovault_map_id_field(obj: Dict[str, Any]) -> bool:
+def validate_neurovault_map_id_field(obj: dict[str, Any]) -> bool:
     """Validate NeuroVault map ID if present.
 
     Args:
@@ -664,7 +678,7 @@ def validate_neurovault_map_id_field(obj: Dict[str, Any]) -> bool:
     return validate_neurovault_map_id(obj["map_id"])
 
 
-def validate_openneuro_dataset_id_field(obj: Dict[str, Any]) -> bool:
+def validate_openneuro_dataset_id_field(obj: dict[str, Any]) -> bool:
     """Validate OpenNeuro dataset ID if present.
 
     Args:
@@ -680,17 +694,15 @@ def validate_openneuro_dataset_id_field(obj: Dict[str, Any]) -> bool:
 
 # Rule collections for different data types
 # Using named functions for better debugging and error messages
-VALIDATION_RULES: Dict[str, List[Callable]] = {
+VALIDATION_RULES: dict[str, list[Callable]] = {
     "coordinates": [
         validate_coordinates_in_space,
     ],
-
     "publication": [
         validate_publication_doi,
         validate_publication_pmid,
         validate_publication_year,
     ],
-
     "bids": [
         validate_bids_path_field,
         validate_bids_tr_field,
@@ -700,34 +712,29 @@ VALIDATION_RULES: Dict[str, List[Callable]] = {
         validate_bids_metadata_consistency_field,
         validate_bids_task_events_field,
     ],
-
     "statistics": [
         validate_statistics_threshold_field,
         validate_statistics_smoothing_field,
     ],
-
     "wikidata": [
         validate_wikidata_region_id_field,
         validate_wikidata_parent_id_field,
     ],
-
     "cognitive_atlas": [
         validate_cognitive_atlas_concept_id_field,
         validate_cognitive_atlas_task_id_field,
     ],
-
     "neurovault": [
         validate_neurovault_collection_id_field,
         validate_neurovault_map_id_field,
     ],
-
     "openneuro": [
         validate_openneuro_dataset_id_field,
     ],
 }
 
 
-def get_rules_for_schema(schema_key: str) -> List[Callable]:
+def get_rules_for_schema(schema_key: str) -> list[Callable]:
     """Get validation rules for a schema type.
 
     Args:
@@ -770,7 +777,7 @@ def get_rules_for_schema(schema_key: str) -> List[Callable]:
 class RuleValidator:
     """Apply custom validation rules with detailed error messages."""
 
-    def __init__(self, rules: Optional[List[Callable]] = None):
+    def __init__(self, rules: list[Callable] | None = None):
         """Initialize with custom rules.
 
         Args:
@@ -788,17 +795,17 @@ class RuleValidator:
             Descriptive name for the rule
         """
         # Use function name if available
-        if hasattr(rule, '__name__'):
+        if hasattr(rule, "__name__"):
             name = rule.__name__
             # Convert snake_case to readable format
-            name = name.replace('_', ' ').replace('field', '').strip()
+            name = name.replace("_", " ").replace("field", "").strip()
             # Capitalize first letter
             if name:
                 name = name[0].upper() + name[1:] if len(name) > 1 else name.upper()
             return name
         return "Unknown rule"
 
-    def validate(self, obj: Dict[str, Any]) -> List[str]:
+    def validate(self, obj: dict[str, Any]) -> list[str]:
         """Validate object against rules.
 
         Args:
@@ -809,15 +816,19 @@ class RuleValidator:
         """
         errors = []
 
-        for i, rule in enumerate(self.rules):
+        for _i, rule in enumerate(self.rules):
             rule_name = self._get_rule_name(rule)
             try:
                 if not rule(obj):
                     errors.append(f"Validation failed: {rule_name}")
             except KeyError as e:
-                errors.append(f"Validation error ({rule_name}): Missing required field '{e}'")
+                errors.append(
+                    f"Validation error ({rule_name}): Missing required field '{e}'"
+                )
             except TypeError as e:
-                errors.append(f"Validation error ({rule_name}): Type mismatch - {str(e)}")
+                errors.append(
+                    f"Validation error ({rule_name}): Type mismatch - {str(e)}"
+                )
             except Exception as e:
                 errors.append(f"Validation error ({rule_name}): {str(e)}")
 

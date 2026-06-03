@@ -7,14 +7,12 @@ and previous analysis results to reduce manual parameter specification.
 
 import json
 import logging
-import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import nibabel as nib
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +21,18 @@ logger = logging.getLogger(__name__)
 class BIDSEntity:
     """Represents a BIDS entity extracted from filename or metadata."""
 
-    subject: Optional[str] = None
-    session: Optional[str] = None
-    task: Optional[str] = None
-    run: Optional[int] = None
-    acquisition: Optional[str] = None
-    space: Optional[str] = None
-    resolution: Optional[str] = None
-    description: Optional[str] = None
-    suffix: Optional[str] = None  # bold, T1w, etc.
-    extension: Optional[str] = None  # .nii.gz, .json, etc.
+    subject: str | None = None
+    session: str | None = None
+    task: str | None = None
+    run: int | None = None
+    acquisition: str | None = None
+    space: str | None = None
+    resolution: str | None = None
+    description: str | None = None
+    suffix: str | None = None  # bold, T1w, etc.
+    extension: str | None = None  # .nii.gz, .json, etc.
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary, excluding None values."""
         return {k: v for k, v in self.__dict__.items() if v is not None}
 
@@ -43,17 +41,17 @@ class BIDSEntity:
 class ImageMetadata:
     """Metadata extracted from neuroimaging files."""
 
-    shape: Tuple[int, ...] = field(default_factory=tuple)
-    voxel_size: Tuple[float, ...] = field(default_factory=tuple)
-    tr: Optional[float] = None
-    te: Optional[float] = None
-    flip_angle: Optional[float] = None
-    slice_timing: Optional[List[float]] = None
-    phase_encoding_direction: Optional[str] = None
-    total_readout_time: Optional[float] = None
-    n_volumes: Optional[int] = None
+    shape: tuple[int, ...] = field(default_factory=tuple)
+    voxel_size: tuple[float, ...] = field(default_factory=tuple)
+    tr: float | None = None
+    te: float | None = None
+    flip_angle: float | None = None
+    slice_timing: list[float] | None = None
+    phase_encoding_direction: str | None = None
+    total_readout_time: float | None = None
+    n_volumes: int | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for parameter mapping."""
         data = {}
         if self.shape:
@@ -75,10 +73,10 @@ class ImageMetadata:
 class InferredParameters:
     """Container for inferred parameters with confidence scores."""
 
-    parameters: Dict[str, Any] = field(default_factory=dict)
-    confidence: Dict[str, float] = field(default_factory=dict)
-    sources: Dict[str, str] = field(default_factory=dict)
-    warnings: List[str] = field(default_factory=list)
+    parameters: dict[str, Any] = field(default_factory=dict)
+    confidence: dict[str, float] = field(default_factory=dict)
+    sources: dict[str, str] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)
 
     def add_parameter(
         self,
@@ -123,7 +121,15 @@ class BIDSParser:
         "anat": ["T1w", "T2w", "FLAIR", "T1rho", "T1map", "T2map"],
         "func": ["bold", "sbref", "events", "physio", "stim"],
         "dwi": ["dwi", "bvec", "bval"],
-        "fmap": ["phasediff", "phase1", "phase2", "magnitude", "magnitude1", "magnitude2", "epi"],
+        "fmap": [
+            "phasediff",
+            "phase1",
+            "phase2",
+            "magnitude",
+            "magnitude1",
+            "magnitude2",
+            "epi",
+        ],
         "perf": ["asl", "m0scan"],
     }
 
@@ -155,23 +161,23 @@ class BIDSParser:
         parts = stem.split("_")
         if parts:
             potential_suffix = parts[-1]
-            for category, suffixes in self.SUFFIXES.items():
+            for _category, suffixes in self.SUFFIXES.items():
                 if potential_suffix in suffixes:
                     entity.suffix = potential_suffix
                     break
 
         return entity
 
-    def read_json_sidecar(self, json_path: Union[str, Path]) -> Dict[str, Any]:
+    def read_json_sidecar(self, json_path: str | Path) -> dict[str, Any]:
         """Read BIDS JSON sidecar file."""
         try:
-            with open(json_path, "r") as f:
+            with open(json_path) as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             logger.warning(f"Failed to read JSON sidecar {json_path}: {e}")
             return {}
 
-    def extract_image_metadata(self, nifti_path: Union[str, Path]) -> ImageMetadata:
+    def extract_image_metadata(self, nifti_path: str | Path) -> ImageMetadata:
         """Extract metadata from NIfTI file."""
         metadata = ImageMetadata()
 
@@ -204,9 +210,9 @@ class BIDSParser:
 
     def find_associated_files(
         self,
-        base_path: Union[str, Path],
+        base_path: str | Path,
         entity: BIDSEntity,
-    ) -> Dict[str, Path]:
+    ) -> dict[str, Path]:
         """Find associated BIDS files (sidecars, events, etc.)."""
         base_path = Path(base_path)
         parent_dir = base_path.parent
@@ -227,7 +233,9 @@ class BIDSParser:
 
         # Look for physio data
         if entity.suffix in ["bold", "perf"]:
-            physio_pattern = base_path.stem.replace(f"_{entity.suffix}", "_physio.tsv.gz")
+            physio_pattern = base_path.stem.replace(
+                f"_{entity.suffix}", "_physio.tsv.gz"
+            )
             physio_path = parent_dir / physio_pattern
             if physio_path.exists():
                 associated["physio"] = physio_path
@@ -242,7 +250,7 @@ class ContextAnalyzer:
         """Initialize context analyzer."""
         self.context_patterns = self._load_context_patterns()
 
-    def _load_context_patterns(self) -> Dict[str, Dict[str, Any]]:
+    def _load_context_patterns(self) -> dict[str, dict[str, Any]]:
         """Load patterns for context-based inference."""
         return {
             # Task-based patterns
@@ -279,10 +287,15 @@ class ContextAnalyzer:
                     "motion_correction": "aggressive",
                 },
             },
-
             # Analysis type patterns
             "group_analysis": {
-                "keywords": ["group-level", "group analysis", "across all subjects", "population", "cohort"],
+                "keywords": [
+                    "group-level",
+                    "group analysis",
+                    "across all subjects",
+                    "population",
+                    "cohort",
+                ],
                 "inferred_params": {
                     "analysis_level": "group",
                     "normalization_space": "MNI152",
@@ -296,7 +309,6 @@ class ContextAnalyzer:
                     "normalization_space": "native",
                 },
             },
-
             # Quality patterns
             "high_resolution": {
                 "keywords": ["high-res", "highres", "7T", "submillimeter"],
@@ -327,7 +339,7 @@ class ContextAnalyzer:
 
     def analyze_previous_results(
         self,
-        previous_results: List[Dict[str, Any]],
+        previous_results: list[dict[str, Any]],
     ) -> InferredParameters:
         """Analyze previous results to infer parameters."""
         inferred = InferredParameters()
@@ -336,7 +348,7 @@ class ContextAnalyzer:
             return inferred
 
         # Extract common parameters from previous runs
-        param_counts: Dict[str, Dict[Any, int]] = {}
+        param_counts: dict[str, dict[Any, int]] = {}
 
         for result in previous_results:
             if "parameters" in result:
@@ -345,7 +357,7 @@ class ContextAnalyzer:
                         param_counts[param_name] = {}
 
                     # Convert unhashable types to strings
-                    if isinstance(param_value, (list, dict)):
+                    if isinstance(param_value, list | dict):
                         param_value = json.dumps(param_value, sort_keys=True)
 
                     param_counts[param_name][param_value] = (
@@ -362,7 +374,9 @@ class ContextAnalyzer:
                 if frequency > 0.5:
                     # Convert back from string if needed
                     try:
-                        if isinstance(most_common_value, str) and most_common_value.startswith(("[", "{")):
+                        if isinstance(
+                            most_common_value, str
+                        ) and most_common_value.startswith(("[", "{")):
                             most_common_value = json.loads(most_common_value)
                     except:
                         pass
@@ -385,9 +399,9 @@ class ParameterInferenceEngine:
         self.bids_parser = BIDSParser()
         self.context_analyzer = ContextAnalyzer()
         self.parameter_mappings = self._load_parameter_mappings()
-        self.cache: Dict[str, InferredParameters] = {}
+        self.cache: dict[str, InferredParameters] = {}
 
-    def _load_parameter_mappings(self) -> Dict[str, Dict[str, str]]:
+    def _load_parameter_mappings(self) -> dict[str, dict[str, str]]:
         """Load mappings from BIDS/context to tool parameters."""
         return {
             # BIDS to FSL mappings
@@ -425,8 +439,8 @@ class ParameterInferenceEngine:
 
     def infer_from_bids(
         self,
-        file_path: Union[str, Path],
-        tool_name: Optional[str] = None,
+        file_path: str | Path,
+        tool_name: str | None = None,
     ) -> InferredParameters:
         """Infer parameters from BIDS file and metadata."""
         file_path = Path(file_path)
@@ -536,9 +550,9 @@ class ParameterInferenceEngine:
     def infer_from_context(
         self,
         query: str,
-        file_paths: Optional[List[str]] = None,
-        previous_results: Optional[List[Dict[str, Any]]] = None,
-        tool_name: Optional[str] = None,
+        file_paths: list[str] | None = None,
+        previous_results: list[dict[str, Any]] | None = None,
+        tool_name: str | None = None,
     ) -> InferredParameters:
         """Infer parameters from query context and history."""
         # Check cache
@@ -554,7 +568,9 @@ class ParameterInferenceEngine:
 
         # Analyze previous results
         if previous_results:
-            history_params = self.context_analyzer.analyze_previous_results(previous_results)
+            history_params = self.context_analyzer.analyze_previous_results(
+                previous_results
+            )
             inferred.merge(history_params)
 
         # Infer from BIDS files if provided
@@ -576,7 +592,7 @@ class ParameterInferenceEngine:
         self,
         inferred: InferredParameters,
         query: str,
-        tool_name: Optional[str] = None,
+        tool_name: str | None = None,
     ):
         """Add intelligent default parameters based on context."""
         query_lower = query.lower()
@@ -654,10 +670,10 @@ class ParameterInferenceEngine:
 
     def validate_and_complete(
         self,
-        parameters: Dict[str, Any],
-        required_params: List[str],
-        tool_name: Optional[str] = None,
-    ) -> Tuple[Dict[str, Any], List[str]]:
+        parameters: dict[str, Any],
+        required_params: list[str],
+        tool_name: str | None = None,
+    ) -> tuple[dict[str, Any], list[str]]:
         """Validate parameters and complete missing required ones."""
         completed = parameters.copy()
         missing = []

@@ -1,6 +1,5 @@
 """Tests for KG evidence source adapter."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
 from brain_researcher.services.knowledge.evidence.base import (
@@ -116,7 +115,7 @@ class TestKGEvidenceSource:
         mock_search_nodes.return_value = [mock_node]
 
         query = EvidenceQuery(text="visual cortex", node_types=["BrainRegion"])
-        results = self.source.query_sync(query)
+        self.source.query_sync(query)
 
         mock_search_nodes.assert_called_once()
         call_kwargs = mock_search_nodes.call_args[1]
@@ -198,7 +197,7 @@ class TestConvenienceFunctions:
 
         mock_search_nodes.return_value = [mock_node]
 
-        results = get_concepts("test query", limit=5)
+        get_concepts("test query", limit=5)
 
         mock_search_nodes.assert_called_once()
         call_kwargs = mock_search_nodes.call_args[1]
@@ -219,7 +218,7 @@ class TestConvenienceFunctions:
 
         mock_search_nodes.return_value = [mock_node]
 
-        results = get_brain_regions("motor cortex", limit=10)
+        get_brain_regions("motor cortex", limit=10)
 
         mock_search_nodes.assert_called_once()
         call_kwargs = mock_search_nodes.call_args[1]

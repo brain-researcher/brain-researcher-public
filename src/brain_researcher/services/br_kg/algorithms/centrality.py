@@ -1,10 +1,9 @@
 """Centrality measures for graph analysis."""
 
-import numpy as np
-import networkx as nx
-from typing import Dict, Optional
-from functools import lru_cache
 import time
+
+import networkx as nx
+import numpy as np
 
 
 class CentralityCalculator:
@@ -20,21 +19,19 @@ class CentralityCalculator:
         self._cache = {}
         self._cache_times = {}
 
-    def _get_cached(self, key: str) -> Optional[Dict[str, float]]:
+    def _get_cached(self, key: str) -> dict[str, float] | None:
         """Get cached result if still valid."""
         if key in self._cache:
             if time.time() - self._cache_times[key] < self.cache_ttl:
                 return self._cache[key]
         return None
 
-    def _set_cache(self, key: str, value: Dict[str, float]):
+    def _set_cache(self, key: str, value: dict[str, float]):
         """Cache a result."""
         self._cache[key] = value
         self._cache_times[key] = time.time()
 
-    def betweenness(self,
-                   graph: nx.Graph,
-                   normalized: bool = True) -> Dict[str, float]:
+    def betweenness(self, graph: nx.Graph, normalized: bool = True) -> dict[str, float]:
         """Calculate betweenness centrality.
 
         Args:
@@ -50,15 +47,15 @@ class CentralityCalculator:
             return cached
 
         n = len(graph)
-        betweenness = {node: 0.0 for node in graph.nodes()}
+        betweenness = dict.fromkeys(graph.nodes(), 0.0)
 
         for s in graph.nodes():
             # Single source shortest paths
             S = []  # Stack of nodes in order of distance from s
             P = {w: [] for w in graph.nodes()}  # Predecessors
-            sigma = {w: 0 for w in graph.nodes()}  # Number of shortest paths
+            sigma = dict.fromkeys(graph.nodes(), 0)  # Number of shortest paths
             sigma[s] = 1
-            d = {w: -1 for w in graph.nodes()}  # Distance from s
+            d = dict.fromkeys(graph.nodes(), -1)  # Distance from s
             d[s] = 0
             Q = [s]  # Queue for BFS
 
@@ -78,7 +75,7 @@ class CentralityCalculator:
                         P[w].append(v)
 
             # Accumulation
-            delta = {w: 0 for w in graph.nodes()}
+            delta = dict.fromkeys(graph.nodes(), 0)
 
             while S:
                 w = S.pop()
@@ -97,11 +94,13 @@ class CentralityCalculator:
         self._set_cache(cache_key, betweenness)
         return betweenness
 
-    def pagerank(self,
-                graph: nx.Graph,
-                alpha: float = 0.85,
-                max_iter: int = 100,
-                tol: float = 1e-6) -> Dict[str, float]:
+    def pagerank(
+        self,
+        graph: nx.Graph,
+        alpha: float = 0.85,
+        max_iter: int = 100,
+        tol: float = 1e-6,
+    ) -> dict[str, float]:
         """Calculate PageRank centrality.
 
         Args:
@@ -123,10 +122,10 @@ class CentralityCalculator:
             return {}
 
         # Initialize PageRank values
-        pagerank = {node: 1.0 / n for node in graph.nodes()}
+        pagerank = dict.fromkeys(graph.nodes(), 1.0 / n)
 
         # Power iteration
-        for iteration in range(max_iter):
+        for _iteration in range(max_iter):
             prev_pagerank = pagerank.copy()
 
             for node in graph.nodes():
@@ -137,18 +136,18 @@ class CentralityCalculator:
                 pagerank[node] = (1 - alpha) / n + alpha * rank_sum
 
             # Check convergence
-            err = sum(abs(pagerank[node] - prev_pagerank[node])
-                     for node in graph.nodes())
+            err = sum(
+                abs(pagerank[node] - prev_pagerank[node]) for node in graph.nodes()
+            )
             if err < n * tol:
                 break
 
         self._set_cache(cache_key, pagerank)
         return pagerank
 
-    def eigenvector(self,
-                   graph: nx.Graph,
-                   max_iter: int = 100,
-                   tol: float = 1e-6) -> Dict[str, float]:
+    def eigenvector(
+        self, graph: nx.Graph, max_iter: int = 100, tol: float = 1e-6
+    ) -> dict[str, float]:
         """Calculate eigenvector centrality.
 
         Args:
@@ -169,10 +168,10 @@ class CentralityCalculator:
             return {}
 
         # Initialize eigenvector
-        x = {node: 1.0 for node in graph.nodes()}
+        x = dict.fromkeys(graph.nodes(), 1.0)
 
         # Power iteration
-        for iteration in range(max_iter):
+        for _iteration in range(max_iter):
             prev_x = x.copy()
 
             # Calculate Ax
@@ -182,7 +181,7 @@ class CentralityCalculator:
             # Normalize
             norm = np.sqrt(sum(v * v for v in x.values()))
             if norm == 0:
-                return {node: 0.0 for node in graph.nodes()}
+                return dict.fromkeys(graph.nodes(), 0.0)
 
             for node in x:
                 x[node] /= norm
@@ -195,7 +194,7 @@ class CentralityCalculator:
         self._set_cache(cache_key, x)
         return x
 
-    def degree_centrality(self, graph: nx.Graph) -> Dict[str, float]:
+    def degree_centrality(self, graph: nx.Graph) -> dict[str, float]:
         """Calculate degree centrality.
 
         Args:
@@ -206,12 +205,12 @@ class CentralityCalculator:
         """
         n = len(graph)
         if n <= 1:
-            return {node: 0.0 for node in graph.nodes()}
+            return dict.fromkeys(graph.nodes(), 0.0)
 
         scale = 1.0 / (n - 1)
         return {node: graph.degree(node) * scale for node in graph.nodes()}
 
-    def closeness_centrality(self, graph: nx.Graph) -> Dict[str, float]:
+    def closeness_centrality(self, graph: nx.Graph) -> dict[str, float]:
         """Calculate closeness centrality.
 
         Args:

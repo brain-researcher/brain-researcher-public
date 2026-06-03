@@ -7,11 +7,12 @@ including the SQLite sweeper for recovering stale jobs.
 
 import asyncio
 import logging
-import time
 import os
-from typing import Any, Dict, Mapping, Optional
+import time
+from collections.abc import Mapping
+from typing import Any
 
-from .job_store import JobStore, JobState
+from .job_store import JobState, JobStore
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 async def sqlite_sweeper_loop(
     job_store: JobStore,
     interval_secs: int = 30,
-    stop_event: Optional[asyncio.Event] = None
+    stop_event: asyncio.Event | None = None,
 ) -> None:
     """
     Background task to periodically recover stale jobs with expired leases.
@@ -68,8 +69,8 @@ async def sqlite_sweeper_loop(
                 stats = await job_store.recover_stale_jobs(now_ts=now_ts)
 
                 # Log results if any jobs were recovered
-                recovered = stats.get('recovered', stats.get('jobs_requeued', 0))
-                gpus_freed = stats.get('gpus_freed', 0)
+                recovered = stats.get("recovered", stats.get("jobs_requeued", 0))
+                gpus_freed = stats.get("gpus_freed", 0)
 
                 if recovered > 0:
                     logger.warning(
@@ -99,10 +100,12 @@ async def sqlite_sweeper_loop(
                 if consecutive_failures >= max_failures_before_warning:
                     logger.error(
                         f"SQLite sweeper failed {consecutive_failures} times in a row: {e}",
-                        exc_info=True
+                        exc_info=True,
                     )
                 else:
-                    logger.warning(f"SQLite sweeper error (attempt {consecutive_failures}): {e}")
+                    logger.warning(
+                        f"SQLite sweeper error (attempt {consecutive_failures}): {e}"
+                    )
 
             # Sleep until next sweep (with periodic wake-ups to check stop_event)
             # Use shorter sleep intervals to allow responsive shutdown
@@ -141,14 +144,12 @@ def should_enable_sweeper(backend: str) -> bool:
         >>> should_enable_sweeper('dual')
         True
     """
-    return backend.lower() in ('sqlite', 'dual')
+    return backend.lower() in ("sqlite", "dual")
 
 
 async def start_sqlite_sweeper(
-    job_store: JobStore,
-    backend: str,
-    stop_event: Optional[asyncio.Event] = None
-) -> Optional[asyncio.Task]:
+    job_store: JobStore, backend: str, stop_event: asyncio.Event | None = None
+) -> asyncio.Task | None:
     """
     Start the SQLite sweeper task if backend requires it.
 
@@ -176,23 +177,23 @@ async def start_sqlite_sweeper(
         return None
 
     # Get sweep interval from environment
-    interval_secs = int(os.getenv('BR_QUEUE_SWEEP_INTERVAL_SECS', '30'))
+    interval_secs = int(os.getenv("BR_QUEUE_SWEEP_INTERVAL_SECS", "30"))
 
-    logger.info(f"Starting SQLite sweeper for backend={backend}, interval={interval_secs}s")
+    logger.info(
+        f"Starting SQLite sweeper for backend={backend}, interval={interval_secs}s"
+    )
 
     # Create and return task
     task = asyncio.create_task(
         sqlite_sweeper_loop(
-            job_store=job_store,
-            interval_secs=interval_secs,
-            stop_event=stop_event
+            job_store=job_store, interval_secs=interval_secs, stop_event=stop_event
         )
     )
 
     return task
 
 
-def _render_state_counts(queue_stats: Any) -> Dict[str, int]:
+def _render_state_counts(queue_stats: Any) -> dict[str, int]:
     """
     Normalize per-state counts from heterogeneous JobStore stats payloads.
 
@@ -200,11 +201,11 @@ def _render_state_counts(queue_stats: Any) -> Dict[str, int]:
     inline along with GPU metadata. This helper extracts only the job state entries
     and ensures all JobState values exist so gauges can be zeroed when empty.
     """
-    counts: Dict[str, int] = {}
+    counts: dict[str, int] = {}
     source: Mapping[Any, Any] | None = None
 
     if isinstance(queue_stats, Mapping):
-        by_state = queue_stats.get('by_state')
+        by_state = queue_stats.get("by_state")
         if isinstance(by_state, Mapping):
             source = by_state
         else:
@@ -212,17 +213,17 @@ def _render_state_counts(queue_stats: Any) -> Dict[str, int]:
 
     if source:
         ignored = {
-            'gpu_total',
-            'gpu_in_use',
-            'gpu_available',
-            'oldest_pending_age_sec',
-            'active_workers',
-            'total_jobs',
+            "gpu_total",
+            "gpu_in_use",
+            "gpu_available",
+            "oldest_pending_age_sec",
+            "active_workers",
+            "total_jobs",
         }
         for key, value in source.items():
             if isinstance(key, str) and key in ignored:
                 continue
-            if not isinstance(value, (int, float)):
+            if not isinstance(value, int | float):
                 continue
             state_name = key.value if isinstance(key, JobState) else str(key)
             counts[state_name] = int(value)

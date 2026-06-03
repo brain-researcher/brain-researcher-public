@@ -468,7 +468,7 @@ The KG denominator in §2.12 is reconstructed from: `autoresearch_representation
 
 ### Figure and report generation scripts
 
-Main and supplementary figures are produced by `figures/make_v3_evidence_figures.py` (Figs 2, 3, 4 base, 5), `figures/make_methodology_paper_figures.py` (Fig 4 triplet extension and Supplementary Figure S2 connectome plate), `figures/make_connectome_interpretability_figures.py` (the original S6/S7/S8 sources, now combined into S2), `figures/make_publication_plate_figures.py`, `figures/make_publication_supplement_figures.py`, and `scripts/generate_fig84_true_trajectory.py` (Supplementary Figure S3). The report renderer is `scripts/render_bounded_autoresearch_full_report_with_figures.py`.
+Main and supplementary figures were generated from the private analysis workspace. The public docs tree retains the markdown report, while figure-generation scripts and raw result artifacts are intentionally not committed here.
 
 ### Figure data and image artifacts
 
@@ -480,7 +480,7 @@ The merged max-over-pipelines summary is `autoresearch_confirmatory_permutation_
 
 ### Report outputs
 
-The editable Markdown report is `BOUNDED_AUTORESEARCH_CASE_REPORT.md`. The canonical LaTeX source is `BOUNDED_AUTORESEARCH_CASE_REPORT.tex`. The canonical PDF is `BOUNDED_AUTORESEARCH_CASE_REPORT.pdf`.
+The editable public report is `BOUNDED_AUTORESEARCH_CASE_REPORT.md`. LaTeX/PDF build artifacts are intentionally not committed in this public docs tree.
 
 ## Supplementary figures
 

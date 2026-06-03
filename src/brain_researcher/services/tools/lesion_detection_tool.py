@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,14 +22,18 @@ class LesionDetectionArgs(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    flair_image: Optional[str] = Field(default=None, description="Primary lesion-sensitive modality")
-    t1_image: Optional[str] = Field(default=None, description="T1-weighted image")
-    dwi_image: Optional[str] = Field(default=None, description="Diffusion-weighted image")
-    output_dir: Optional[str] = Field(default=None, description="Output directory")
+    flair_image: str | None = Field(
+        default=None, description="Primary lesion-sensitive modality"
+    )
+    t1_image: str | None = Field(default=None, description="T1-weighted image")
+    dwi_image: str | None = Field(default=None, description="Diffusion-weighted image")
+    output_dir: str | None = Field(default=None, description="Output directory")
     lesion_type: str = Field(default="wmh", description="Type of lesion to detect")
     min_lesion_size: int = Field(default=3, description="Minimum lesion size (voxels)")
-    threshold_method: str = Field(default="adaptive", description="Thresholding strategy")
-    random_state: Optional[int] = Field(default=42, description="Random seed")
+    threshold_method: str = Field(
+        default="adaptive", description="Thresholding strategy"
+    )
+    random_state: int | None = Field(default=42, description="Random seed")
     save_masks: bool = Field(default=True, description="Persist lesion masks")
     save_report: bool = Field(default=True, description="Persist lesion summary report")
 

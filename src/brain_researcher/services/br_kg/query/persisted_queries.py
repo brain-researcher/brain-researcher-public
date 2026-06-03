@@ -5,9 +5,9 @@ This module provides 20+ pre-defined, optimized queries for common patterns.
 
 import json
 import logging
-from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class PersistedQuery:
     name: str
     description: str
     query: str
-    parameters: List[str]
+    parameters: list[str]
     version: int = 1
     category: str = "general"
     performance_target_ms: int = 100
@@ -34,7 +34,7 @@ class QueryLibrary:
         self.queries = self._load_queries()
         self.query_map = {q.id: q for q in self.queries}
 
-    def _load_queries(self) -> List[PersistedQuery]:
+    def _load_queries(self) -> list[PersistedQuery]:
         """Load all persisted queries."""
         return [
             # Navigation Queries
@@ -53,9 +53,8 @@ class QueryLibrary:
                 """,
                 parameters=["task_name"],
                 category="navigation",
-                performance_target_ms=50
+                performance_target_ms=50,
             ),
-
             PersistedQuery(
                 id="Q2_PUB_TO_COORDS",
                 name="Publication to Coordinates",
@@ -81,9 +80,8 @@ class QueryLibrary:
                 """,
                 parameters=["pmid"],
                 category="navigation",
-                performance_target_ms=30
+                performance_target_ms=30,
             ),
-
             PersistedQuery(
                 id="Q3_CONCEPT_TO_STUDIES",
                 name="Concept to Studies",
@@ -101,9 +99,8 @@ class QueryLibrary:
                 """,
                 parameters=["concept_name"],
                 category="navigation",
-                performance_target_ms=80
+                performance_target_ms=80,
             ),
-
             # Analysis Queries
             PersistedQuery(
                 id="Q4_REGION_COACTIVATION",
@@ -125,9 +122,8 @@ class QueryLibrary:
                 """,
                 parameters=["region_name"],
                 category="analysis",
-                performance_target_ms=100
+                performance_target_ms=100,
             ),
-
             PersistedQuery(
                 id="Q5_TASK_SIMILARITY",
                 name="Similar Tasks by Concepts",
@@ -146,9 +142,8 @@ class QueryLibrary:
                 """,
                 parameters=["task_name"],
                 category="analysis",
-                performance_target_ms=120
+                performance_target_ms=120,
             ),
-
             PersistedQuery(
                 id="Q6_CONCEPT_HIERARCHY",
                 name="Concept Hierarchy",
@@ -163,9 +158,8 @@ class QueryLibrary:
                 """,
                 parameters=["concept_name"],
                 category="ontology",
-                performance_target_ms=50
+                performance_target_ms=50,
             ),
-
             # Meta-analysis Queries
             PersistedQuery(
                 id="Q7_META_ANALYSIS_COORDS",
@@ -183,9 +177,8 @@ class QueryLibrary:
                 """,
                 parameters=["concept_name", "threshold"],
                 category="meta_analysis",
-                performance_target_ms=150
+                performance_target_ms=150,
             ),
-
             PersistedQuery(
                 id="Q8_PUBLICATION_NETWORK",
                 name="Publication Citation Network",
@@ -203,9 +196,8 @@ class QueryLibrary:
                 """,
                 parameters=["start_year", "end_year"],
                 category="network",
-                performance_target_ms=200
+                performance_target_ms=200,
             ),
-
             # Statistical Queries
             PersistedQuery(
                 id="Q9_DATASET_STATISTICS",
@@ -225,9 +217,8 @@ class QueryLibrary:
                 """,
                 parameters=["dataset_id"],
                 category="statistics",
-                performance_target_ms=100
+                performance_target_ms=100,
             ),
-
             PersistedQuery(
                 id="Q10_CONCEPT_FREQUENCY",
                 name="Concept Frequency Distribution",
@@ -244,9 +235,8 @@ class QueryLibrary:
                 """,
                 parameters=["min_frequency"],
                 category="statistics",
-                performance_target_ms=80
+                performance_target_ms=80,
             ),
-
             # Spatial Queries
             PersistedQuery(
                 id="Q11_NEARBY_REGIONS",
@@ -276,9 +266,8 @@ class QueryLibrary:
                 """,
                 parameters=["x", "y", "z", "max_distance"],
                 category="spatial",
-                performance_target_ms=150
+                performance_target_ms=150,
             ),
-
             PersistedQuery(
                 id="Q12_HEMISPHERE_COMPARISON",
                 name="Hemisphere Lateralization",
@@ -298,9 +287,8 @@ class QueryLibrary:
                 """,
                 parameters=["concept_name"],
                 category="spatial",
-                performance_target_ms=100
+                performance_target_ms=100,
             ),
-
             # Temporal Queries
             PersistedQuery(
                 id="Q13_TEMPORAL_TRENDS",
@@ -316,9 +304,8 @@ class QueryLibrary:
                 """,
                 parameters=["concept_name", "start_year", "end_year"],
                 category="temporal",
-                performance_target_ms=120
+                performance_target_ms=120,
             ),
-
             PersistedQuery(
                 id="Q14_RECENT_PUBLICATIONS",
                 name="Recent Publications",
@@ -337,9 +324,8 @@ class QueryLibrary:
                 """,
                 parameters=["keyword", "min_year"],
                 category="temporal",
-                performance_target_ms=80
+                performance_target_ms=80,
             ),
-
             # Path Queries
             PersistedQuery(
                 id="Q15_CONCEPT_PATH",
@@ -355,9 +341,8 @@ class QueryLibrary:
                 """,
                 parameters=["concept1", "concept2"],
                 category="path",
-                performance_target_ms=200
+                performance_target_ms=200,
             ),
-
             PersistedQuery(
                 id="Q16_ACTIVATION_CASCADE",
                 name="Activation Cascade",
@@ -372,9 +357,8 @@ class QueryLibrary:
                 """,
                 parameters=["task_name"],
                 category="path",
-                performance_target_ms=100
+                performance_target_ms=100,
             ),
-
             # Validation Queries
             PersistedQuery(
                 id="Q17_DATA_QUALITY_CHECK",
@@ -389,9 +373,8 @@ class QueryLibrary:
                 """,
                 parameters=["node_type"],
                 category="validation",
-                performance_target_ms=150
+                performance_target_ms=150,
             ),
-
             PersistedQuery(
                 id="Q18_ORPHANED_NODES",
                 name="Find Orphaned Nodes",
@@ -405,9 +388,8 @@ class QueryLibrary:
                 """,
                 parameters=["node_type"],
                 category="validation",
-                performance_target_ms=200
+                performance_target_ms=200,
             ),
-
             # Recommendation Queries
             PersistedQuery(
                 id="Q19_RELATED_CONCEPTS",
@@ -426,9 +408,8 @@ class QueryLibrary:
                 """,
                 parameters=["concept_name"],
                 category="recommendation",
-                performance_target_ms=100
+                performance_target_ms=100,
             ),
-
             PersistedQuery(
                 id="Q20_SUGGESTED_DATASETS",
                 name="Suggest Relevant Datasets",
@@ -450,11 +431,11 @@ class QueryLibrary:
                 """,
                 parameters=["concept_list", "min_relevance"],
                 category="recommendation",
-                performance_target_ms=150
-            )
+                performance_target_ms=150,
+            ),
         ]
 
-    def get_query(self, query_id: str) -> Optional[PersistedQuery]:
+    def get_query(self, query_id: str) -> PersistedQuery | None:
         """Get a persisted query by ID.
 
         Args:
@@ -466,11 +447,8 @@ class QueryLibrary:
         return self.query_map.get(query_id)
 
     def execute_query(
-        self,
-        query_id: str,
-        parameters: Dict[str, Any],
-        db_session
-    ) -> List[Dict[str, Any]]:
+        self, query_id: str, parameters: dict[str, Any], db_session
+    ) -> list[dict[str, Any]]:
         """Execute a persisted query.
 
         Args:
@@ -507,7 +485,7 @@ class QueryLibrary:
 
         return records
 
-    def list_queries(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list_queries(self, category: str | None = None) -> list[dict[str, Any]]:
         """List available queries.
 
         Args:
@@ -528,18 +506,18 @@ class QueryLibrary:
                 "category": q.category,
                 "parameters": q.parameters,
                 "performance_target_ms": q.performance_target_ms,
-                "version": q.version
+                "version": q.version,
             }
             for q in queries
         ]
 
-    def get_categories(self) -> List[str]:
+    def get_categories(self) -> list[str]:
         """Get all query categories.
 
         Returns:
             List of categories
         """
-        return list(set(q.category for q in self.queries))
+        return list({q.category for q in self.queries})
 
     def export_queries(self, format: str = "json") -> str:
         """Export queries in specified format.
@@ -574,7 +552,9 @@ class QueryLibrary:
                         output.append(f"### {q.id}: {q.name}")
                         output.append(f"\n{q.description}\n")
                         output.append(f"**Parameters:** `{', '.join(q.parameters)}`\n")
-                        output.append(f"**Performance Target:** {q.performance_target_ms}ms\n")
+                        output.append(
+                            f"**Performance Target:** {q.performance_target_ms}ms\n"
+                        )
                         output.append("```cypher")
                         output.append(q.query.strip())
                         output.append("```\n")
@@ -584,7 +564,7 @@ class QueryLibrary:
         else:
             raise ValueError(f"Unsupported format: {format}")
 
-    def validate_all_queries(self, db_session) -> Dict[str, Any]:
+    def validate_all_queries(self, db_session) -> dict[str, Any]:
         """Validate all queries syntax.
 
         Args:
@@ -593,11 +573,7 @@ class QueryLibrary:
         Returns:
             Validation results
         """
-        results = {
-            "valid": [],
-            "invalid": [],
-            "total": len(self.queries)
-        }
+        results = {"valid": [], "invalid": [], "total": len(self.queries)}
 
         for query in self.queries:
             try:
@@ -622,9 +598,6 @@ class QueryLibrary:
                 results["valid"].append(query.id)
 
             except Exception as e:
-                results["invalid"].append({
-                    "id": query.id,
-                    "error": str(e)
-                })
+                results["invalid"].append({"id": query.id, "error": str(e)})
 
         return results

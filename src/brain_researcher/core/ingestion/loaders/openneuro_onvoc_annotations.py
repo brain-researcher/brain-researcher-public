@@ -9,7 +9,6 @@ from typing import Any
 
 from brain_researcher.core.ingestion.loaders.onvoc_unified import OnvocUnifiedLoader
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -450,7 +449,7 @@ class OpenNeuroOnvocAnnotationApplier:
 
     def _graph_concepts(self) -> dict[str, str]:
         try:
-            run_query = getattr(self.db, "_run")
+            run_query = self.db._run
         except Exception:
             run_query = None
 
@@ -510,7 +509,7 @@ class OpenNeuroOnvocAnnotationApplier:
 
     def _project_legacy_publications(self) -> int:
         try:
-            run_query = getattr(self.db, "_run")
+            run_query = self.db._run
         except Exception:
             run_query = None
         if not callable(run_query):

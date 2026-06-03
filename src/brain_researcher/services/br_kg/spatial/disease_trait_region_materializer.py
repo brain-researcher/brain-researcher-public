@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from typing import Any
@@ -105,7 +104,9 @@ class DiseaseTraitRegionEvidence:
         self.supporting_coordinate_ids.append(coordinate_id)
         self.evidence_paths.append(f"coordinate:{coordinate_id}")
 
-    def to_properties(self, *, max_evidence_ids: int = DEFAULT_EVIDENCE_CAP) -> dict[str, Any]:
+    def to_properties(
+        self, *, max_evidence_ids: int = DEFAULT_EVIDENCE_CAP
+    ) -> dict[str, Any]:
         publication_ids = _ordered_unique(self.supporting_publication_ids)
         study_ids = _ordered_unique(self.supporting_study_ids)
         coordinate_ids = _ordered_unique(self.supporting_coordinate_ids)
@@ -131,9 +132,7 @@ class DiseaseTraitRegionEvidence:
             "method": "graph_evidence_aggregation",
             "derivation": _ordered_unique(
                 [
-                    "aligned_publication_mentions_region"
-                    if publication_ids
-                    else "",
+                    "aligned_publication_mentions_region" if publication_ids else "",
                     "study_coordinate_region" if coordinate_ids else "",
                 ]
             ),
@@ -314,9 +313,13 @@ def collect_disease_trait_region_evidence(
             end_node=disease_trait_id,
             rel_type="STUDIES",
         )
-        study_ids = [source_id for source_id in source_ids if _has_label(db, source_id, "Study")]
+        study_ids = [
+            source_id for source_id in source_ids if _has_label(db, source_id, "Study")
+        ]
         publication_ids = [
-            source_id for source_id in source_ids if _has_label(db, source_id, "Publication")
+            source_id
+            for source_id in source_ids
+            if _has_label(db, source_id, "Publication")
         ]
 
         for publication_id in publication_ids:
@@ -357,13 +360,19 @@ def collect_disease_trait_region_evidence(
         if disease_trait_map:
             for region_id, evidence_row in disease_trait_map.items():
                 evidence_row.supporting_publication_ids = list(
-                    _ordered_unique(evidence_row.supporting_publication_ids)[:max_evidence_ids]
+                    _ordered_unique(evidence_row.supporting_publication_ids)[
+                        :max_evidence_ids
+                    ]
                 )
                 evidence_row.supporting_study_ids = list(
-                    _ordered_unique(evidence_row.supporting_study_ids)[:max_evidence_ids]
+                    _ordered_unique(evidence_row.supporting_study_ids)[
+                        :max_evidence_ids
+                    ]
                 )
                 evidence_row.supporting_coordinate_ids = list(
-                    _ordered_unique(evidence_row.supporting_coordinate_ids)[:max_evidence_ids]
+                    _ordered_unique(evidence_row.supporting_coordinate_ids)[
+                        :max_evidence_ids
+                    ]
                 )
                 evidence_row.evidence_paths = list(
                     _ordered_unique(evidence_row.evidence_paths)[:max_evidence_ids]

@@ -1,19 +1,23 @@
 """Feedback endpoints for A/B testing and RL data collection."""
 
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Union
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
-from pydantic import BaseModel, Field
-import numpy as np
-import redis
+from datetime import datetime
+from typing import Any
 
+import redis
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+from pydantic import BaseModel, Field
+
+from ...agent.bandits.tool_selector import TaskContext, TaskType
+from ...agent.rl.training_pipeline import (
+    RLTrainingPipeline,
+    TrainingConfig,
+    TrainingMode,
+)
 from ...feedback.ab_testing import ABTestingFramework
 from ...feedback.experiment_manager import ExperimentManager
 from ...feedback.metrics_collector import MetricsCollector
 from ...feedback.reward_tracker import RewardTracker
-from ...agent.rl.training_pipeline import RLTrainingPipeline, TrainingConfig, TrainingMode
-from ...agent.bandits.tool_selector import BanditToolSelector, TaskContext, TaskType
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +36,15 @@ router = APIRouter(prefix="/api/v1/feedback", tags=["feedback"])
 class ExperimentCreateRequest(BaseModel):
     name: str = Field(..., description="Experiment name")
     description: str = Field(..., description="Experiment description")
-    variants: List[str] = Field(..., description="List of variant names")
-    allocation: Dict[str, float] = Field(..., description="Allocation ratios for variants")
-    metrics: List[str] = Field(..., description="Metrics to track")
-    sample_size: Optional[int] = Field(None, description="Target sample size")
-    significance_level: float = Field(0.05, description="Statistical significance level")
+    variants: list[str] = Field(..., description="List of variant names")
+    allocation: dict[str, float] = Field(
+        ..., description="Allocation ratios for variants"
+    )
+    metrics: list[str] = Field(..., description="Metrics to track")
+    sample_size: int | None = Field(None, description="Target sample size")
+    significance_level: float = Field(
+        0.05, description="Statistical significance level"
+    )
 
 
 class ExperimentAssignmentRequest(BaseModel):
@@ -47,28 +55,32 @@ class ExperimentAssignmentRequest(BaseModel):
 class MetricsTrackingRequest(BaseModel):
     user_id: str = Field(..., description="User ID")
     event_type: str = Field(..., description="Event type")
-    experiment_id: Optional[str] = Field(None, description="Experiment ID")
-    variant: Optional[str] = Field(None, description="Experiment variant")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
-    value: Optional[float] = Field(None, description="Event value")
-    session_id: Optional[str] = Field(None, description="Session ID")
+    experiment_id: str | None = Field(None, description="Experiment ID")
+    variant: str | None = Field(None, description="Experiment variant")
+    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
+    value: float | None = Field(None, description="Event value")
+    session_id: str | None = Field(None, description="Session ID")
 
 
 class RewardTrackingRequest(BaseModel):
     user_id: str = Field(..., description="User ID")
     session_id: str = Field(..., description="Session ID")
-    state: Dict[str, Any] = Field(..., description="Current state")
+    state: dict[str, Any] = Field(..., description="Current state")
     action: str = Field(..., description="Action taken")
-    reward: Optional[float] = Field(None, description="Reward value")
-    next_state: Optional[Dict[str, Any]] = Field(None, description="Next state")
+    reward: float | None = Field(None, description="Reward value")
+    next_state: dict[str, Any] | None = Field(None, description="Next state")
     reward_type: str = Field("custom", description="Type of reward")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
     terminal: bool = Field(False, description="Whether this is a terminal state")
-    execution_result: Optional[Dict[str, Any]] = Field(None, description="Execution result")
-    execution_time: Optional[float] = Field(None, description="Execution time in seconds")
-    execution_cost: Optional[float] = Field(None, description="Execution cost")
-    quality_metrics: Optional[Dict[str, float]] = Field(None, description="Quality metrics")
-    user_feedback: Optional[Dict[str, Any]] = Field(None, description="User feedback")
+    execution_result: dict[str, Any] | None = Field(
+        None, description="Execution result"
+    )
+    execution_time: float | None = Field(None, description="Execution time in seconds")
+    execution_cost: float | None = Field(None, description="Execution cost")
+    quality_metrics: dict[str, float] | None = Field(
+        None, description="Quality metrics"
+    )
+    user_feedback: dict[str, Any] | None = Field(None, description="User feedback")
 
 
 class RLTrainingRequest(BaseModel):
@@ -87,17 +99,17 @@ class ToolSelectionRequest(BaseModel):
     time_constraints: float = Field(3600, description="Time constraints in seconds")
     quality_requirements: float = Field(0.7, description="Quality requirements (0-1)")
     user_expertise: float = Field(0.5, description="User expertise level (0-1)")
-    previous_tools_used: List[str] = Field([], description="Previously used tools")
-    session_history: List[Dict[str, Any]] = Field([], description="Session history")
-    user_preferences: Dict[str, Any] = Field({}, description="User preferences")
-    available_tools: Optional[List[str]] = Field(None, description="Available tools")
+    previous_tools_used: list[str] = Field([], description="Previously used tools")
+    session_history: list[dict[str, Any]] = Field([], description="Session history")
+    user_preferences: dict[str, Any] = Field({}, description="User preferences")
+    available_tools: list[str] | None = Field(None, description="Available tools")
     exploit: bool = Field(False, description="Whether to exploit or explore")
 
 
 class ToolPerformanceRequest(BaseModel):
     task_type: str = Field(..., description="Type of task")
     tool_name: str = Field(..., description="Tool that was used")
-    performance_metrics: Dict[str, Any] = Field(..., description="Performance metrics")
+    performance_metrics: dict[str, Any] = Field(..., description="Performance metrics")
     execution_time: float = Field(..., description="Actual execution time")
     success: bool = Field(..., description="Whether execution was successful")
     data_size: float = Field(..., description="Data size in MB")
@@ -111,7 +123,8 @@ class ToolPerformanceRequest(BaseModel):
 
 # A/B Testing Endpoints
 
-@router.post("/experiments", response_model=Dict[str, Any])
+
+@router.post("/experiments", response_model=dict[str, Any])
 async def create_experiment(request: ExperimentCreateRequest):
     """Create a new A/B test experiment."""
     try:
@@ -122,14 +135,14 @@ async def create_experiment(request: ExperimentCreateRequest):
             allocation=request.allocation,
             metrics=request.metrics,
             sample_size=request.sample_size,
-            significance_level=request.significance_level
+            significance_level=request.significance_level,
         )
 
         return {
             "experiment_id": experiment.id,
             "name": experiment.name,
             "status": experiment.status.value,
-            "created_at": experiment.created_at.isoformat()
+            "created_at": experiment.created_at.isoformat(),
         }
 
     except Exception as e:
@@ -161,7 +174,7 @@ async def stop_experiment(experiment_id: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/experiments/assign", response_model=Dict[str, Any])
+@router.post("/experiments/assign", response_model=dict[str, Any])
 async def assign_user_to_experiment(request: ExperimentAssignmentRequest):
     """Assign user to experiment variant."""
     try:
@@ -171,7 +184,7 @@ async def assign_user_to_experiment(request: ExperimentAssignmentRequest):
             "user_id": request.user_id,
             "experiment_id": request.experiment_id,
             "variant": variant,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -190,7 +203,7 @@ async def get_experiment_results(experiment_id: str):
             "experiment_id": experiment_id,
             "results": results,
             "status": status,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -199,12 +212,13 @@ async def get_experiment_results(experiment_id: str):
 
 
 @router.get("/experiments")
-async def list_experiments(status: Optional[str] = None):
+async def list_experiments(status: str | None = None):
     """List all experiments, optionally filtered by status."""
     try:
         experiment_status = None
         if status:
             from ...feedback.ab_testing import ExperimentStatus
+
             experiment_status = ExperimentStatus(status)
 
         experiments = ab_framework.list_experiments(experiment_status)
@@ -212,7 +226,7 @@ async def list_experiments(status: Optional[str] = None):
         return {
             "experiments": experiments,
             "count": len(experiments),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -221,6 +235,7 @@ async def list_experiments(status: Optional[str] = None):
 
 
 # Metrics Collection Endpoints
+
 
 @router.post("/metrics/track")
 async def track_metrics(request: MetricsTrackingRequest):
@@ -233,14 +248,14 @@ async def track_metrics(request: MetricsTrackingRequest):
             variant=request.variant,
             metadata=request.metadata,
             value=request.value,
-            session_id=request.session_id
+            session_id=request.session_id,
         )
 
         return {
             "status": "tracked",
             "user_id": request.user_id,
             "event_type": request.event_type,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -249,24 +264,24 @@ async def track_metrics(request: MetricsTrackingRequest):
 
 
 @router.get("/metrics/experiments/{experiment_id}")
-async def get_experiment_metrics(experiment_id: str,
-                                start_time: Optional[str] = None,
-                                end_time: Optional[str] = None):
+async def get_experiment_metrics(
+    experiment_id: str, start_time: str | None = None, end_time: str | None = None
+):
     """Get metrics for an experiment."""
     try:
         start_dt = datetime.fromisoformat(start_time) if start_time else None
         end_dt = datetime.fromisoformat(end_time) if end_time else None
 
         metrics = metrics_collector.get_experiment_metrics(
-            experiment_id=experiment_id,
-            start_time=start_dt,
-            end_time=end_dt
+            experiment_id=experiment_id, start_time=start_dt, end_time=end_dt
         )
 
         return {
             "experiment_id": experiment_id,
-            "metrics": {variant: asdict(metric_data) for variant, metric_data in metrics.items()},
-            "timestamp": datetime.utcnow().isoformat()
+            "metrics": {
+                variant: asdict(metric_data) for variant, metric_data in metrics.items()
+            },
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -279,15 +294,14 @@ async def get_realtime_metrics(experiment_id: str, time_window_minutes: int = 60
     """Get real-time metrics for an experiment."""
     try:
         metrics = metrics_collector.get_real_time_metrics(
-            experiment_id=experiment_id,
-            time_window_minutes=time_window_minutes
+            experiment_id=experiment_id, time_window_minutes=time_window_minutes
         )
 
         return {
             "experiment_id": experiment_id,
             "time_window_minutes": time_window_minutes,
             "metrics": metrics,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -304,7 +318,7 @@ async def get_metrics_dashboard(experiment_id: str):
         return {
             "experiment_id": experiment_id,
             "dashboard_data": dashboard_data,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -313,6 +327,7 @@ async def get_metrics_dashboard(experiment_id: str):
 
 
 # Reward Tracking Endpoints
+
 
 @router.post("/rewards/track")
 async def track_reward(request: RewardTrackingRequest):
@@ -332,7 +347,7 @@ async def track_reward(request: RewardTrackingRequest):
             execution_time=request.execution_time,
             execution_cost=request.execution_cost,
             quality_metrics=request.quality_metrics,
-            user_feedback=request.user_feedback
+            user_feedback=request.user_feedback,
         )
 
         return {
@@ -340,7 +355,7 @@ async def track_reward(request: RewardTrackingRequest):
             "calculated_reward": reward_value,
             "user_id": request.user_id,
             "session_id": request.session_id,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -349,25 +364,19 @@ async def track_reward(request: RewardTrackingRequest):
 
 
 @router.get("/rewards/statistics")
-async def get_reward_statistics(user_id: Optional[str] = None,
-                               action: Optional[str] = None,
-                               hours_back: int = 24):
+async def get_reward_statistics(
+    user_id: str | None = None, action: str | None = None, hours_back: int = 24
+):
     """Get reward statistics."""
     try:
         stats = reward_tracker.get_reward_statistics(
-            user_id=user_id,
-            action=action,
-            hours_back=hours_back
+            user_id=user_id, action=action, hours_back=hours_back
         )
 
         return {
             "statistics": stats,
-            "filters": {
-                "user_id": user_id,
-                "action": action,
-                "hours_back": hours_back
-            },
-            "timestamp": datetime.utcnow().isoformat()
+            "filters": {"user_id": user_id, "action": action, "hours_back": hours_back},
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -384,7 +393,7 @@ async def get_action_performance(hours_back: int = 24):
         return {
             "action_performance": performance,
             "hours_back": hours_back,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -393,17 +402,21 @@ async def get_action_performance(hours_back: int = 24):
 
 
 @router.get("/rewards/training-data")
-async def get_training_data(batch_size: Optional[int] = None,
-                           min_reward: Optional[float] = None,
-                           max_age_hours: int = 24,
-                           balance_actions: bool = True):
+async def get_training_data(
+    batch_size: int | None = None,
+    min_reward: float | None = None,
+    max_age_hours: int = 24,
+    balance_actions: bool = True,
+):
     """Get formatted training data for RL."""
     try:
-        states, actions, rewards, next_states, dones, weights = reward_tracker.get_training_data(
-            batch_size=batch_size,
-            min_reward=min_reward,
-            max_age_hours=max_age_hours,
-            balance_actions=balance_actions
+        states, actions, rewards, next_states, dones, weights = (
+            reward_tracker.get_training_data(
+                batch_size=batch_size,
+                min_reward=min_reward,
+                max_age_hours=max_age_hours,
+                balance_actions=balance_actions,
+            )
         )
 
         return {
@@ -413,16 +426,16 @@ async def get_training_data(batch_size: Optional[int] = None,
                 "rewards": rewards.tolist() if rewards.size > 0 else [],
                 "next_states": next_states.tolist() if next_states.size > 0 else [],
                 "dones": dones.tolist() if dones.size > 0 else [],
-                "importance_weights": weights.tolist() if weights.size > 0 else []
+                "importance_weights": weights.tolist() if weights.size > 0 else [],
             },
             "batch_size": len(states) if states.size > 0 else 0,
             "parameters": {
                 "batch_size": batch_size,
                 "min_reward": min_reward,
                 "max_age_hours": max_age_hours,
-                "balance_actions": balance_actions
+                "balance_actions": balance_actions,
             },
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -431,6 +444,7 @@ async def get_training_data(batch_size: Optional[int] = None,
 
 
 # RL Training Endpoints
+
 
 @router.post("/rl/train")
 async def train_rl_model(request: RLTrainingRequest, background_tasks: BackgroundTasks):
@@ -443,27 +457,22 @@ async def train_rl_model(request: RLTrainingRequest, background_tasks: Backgroun
             action_dim=10,  # Would be determined from actual data
             epochs=request.epochs,
             batch_size=request.batch_size,
-            learning_rate=request.learning_rate
+            learning_rate=request.learning_rate,
         )
 
         # Initialize training pipeline
         training_pipeline = RLTrainingPipeline(
-            config=config,
-            reward_tracker=reward_tracker
+            config=config, reward_tracker=reward_tracker
         )
 
         # Run training in background
-        background_tasks.add_task(
-            run_rl_training,
-            training_pipeline,
-            request.epochs
-        )
+        background_tasks.add_task(run_rl_training, training_pipeline, request.epochs)
 
         return {
             "status": "training_started",
             "mode": request.mode,
             "epochs": request.epochs,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -478,18 +487,19 @@ async def get_training_status():
     return {
         "status": "not_implemented",
         "message": "Training status tracking not yet implemented",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 # Tool Selection Endpoints
+
 
 @router.post("/tools/select")
 async def select_tool(request: ToolSelectionRequest):
     """Select optimal tool using bandit algorithms."""
     try:
         # Create task context
-        task_context = TaskContext(
+        TaskContext(
             task_type=TaskType(request.task_type.upper()),
             data_size=request.data_size,
             data_complexity=request.data_complexity,
@@ -500,7 +510,7 @@ async def select_tool(request: ToolSelectionRequest):
             user_expertise=request.user_expertise,
             previous_tools_used=request.previous_tools_used,
             session_history=request.session_history,
-            user_preferences=request.user_preferences
+            user_preferences=request.user_preferences,
         )
 
         # This would need actual BanditToolSelector instance
@@ -512,13 +522,13 @@ async def select_tool(request: ToolSelectionRequest):
             "task_context": {
                 "task_type": request.task_type,
                 "data_size": request.data_size,
-                "data_complexity": request.data_complexity
+                "data_complexity": request.data_complexity,
             },
             "selection_metadata": {
                 "exploit": request.exploit,
-                "available_tools": request.available_tools
+                "available_tools": request.available_tools,
             },
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -531,7 +541,7 @@ async def update_tool_performance(request: ToolPerformanceRequest):
     """Update tool performance for bandit learning."""
     try:
         # Create task context
-        task_context = TaskContext(
+        TaskContext(
             task_type=TaskType(request.task_type.upper()),
             data_size=request.data_size,
             data_complexity=request.data_complexity,
@@ -542,7 +552,7 @@ async def update_tool_performance(request: ToolPerformanceRequest):
             user_expertise=request.user_expertise,
             previous_tools_used=[],
             session_history=[],
-            user_preferences={}
+            user_preferences={},
         )
 
         # This would update actual BanditToolSelector instance
@@ -554,7 +564,7 @@ async def update_tool_performance(request: ToolPerformanceRequest):
             "success": request.success,
             "execution_time": request.execution_time,
             "performance_metrics": request.performance_metrics,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -563,6 +573,7 @@ async def update_tool_performance(request: ToolPerformanceRequest):
 
 
 # System Health Endpoints
+
 
 @router.get("/health")
 async def get_system_health():
@@ -587,21 +598,15 @@ async def get_system_health():
         return {
             "overall_status": "healthy" if redis_healthy else "degraded",
             "components": {
-                "redis": {
-                    "healthy": redis_healthy,
-                    "memory_usage": redis_memory
-                },
+                "redis": {"healthy": redis_healthy, "memory_usage": redis_memory},
                 "experiment_manager": exp_manager_health,
-                "reward_tracker": {
-                    "healthy": True,
-                    "statistics": reward_stats
-                },
+                "reward_tracker": {"healthy": True, "statistics": reward_stats},
                 "ab_testing": {
                     "healthy": True,
-                    "total_experiments": len(ab_framework.experiments)
-                }
+                    "total_experiments": len(ab_framework.experiments),
+                },
             },
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -616,15 +621,20 @@ async def get_system_statistics():
         # A/B testing stats
         ab_stats = {
             "total_experiments": len(ab_framework.experiments),
-            "running_experiments": len([
-                exp for exp in ab_framework.experiments.values()
-                if exp.status.value == "running"
-            ]),
+            "running_experiments": len(
+                [
+                    exp
+                    for exp in ab_framework.experiments.values()
+                    if exp.status.value == "running"
+                ]
+            ),
             "total_assignments": sum(
-                sum(ab_framework._count_variant_assignments(exp.id, variant)
-                    for variant in exp.variants)
+                sum(
+                    ab_framework._count_variant_assignments(exp.id, variant)
+                    for variant in exp.variants
+                )
                 for exp in ab_framework.experiments.values()
-            )
+            ),
         }
 
         # Reward tracking stats
@@ -633,17 +643,20 @@ async def get_system_statistics():
         # Metrics collection stats
         metrics_stats = {
             "events_tracked": "not_implemented",  # Would need to track this
-            "active_experiments": len([
-                exp for exp in ab_framework.experiments.values()
-                if exp.status.value == "running"
-            ])
+            "active_experiments": len(
+                [
+                    exp
+                    for exp in ab_framework.experiments.values()
+                    if exp.status.value == "running"
+                ]
+            ),
         }
 
         return {
             "ab_testing": ab_stats,
             "reward_tracking": reward_stats,
             "metrics_collection": metrics_stats,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     except Exception as e:
@@ -652,6 +665,7 @@ async def get_system_statistics():
 
 
 # Helper functions
+
 
 async def run_rl_training(training_pipeline: RLTrainingPipeline, epochs: int):
     """Run RL training in background."""

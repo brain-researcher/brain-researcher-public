@@ -232,12 +232,8 @@ except ImportError:
 
 # Import analyses bundle endpoints router (P0/M1)
 try:
-    from .analyses_endpoints import (
-        api_router as analyses_api_router,
-    )
-    from .analyses_endpoints import (
-        router as analyses_router,
-    )
+    from .analyses_endpoints import api_router as analyses_api_router
+    from .analyses_endpoints import router as analyses_router
 except ImportError:
     analyses_router = None
     analyses_api_router = None
@@ -304,9 +300,7 @@ try:
     from .endpoints.credits import (
         grant_initial_account_credits_for_account,
     )
-    from .endpoints.credits import (
-        router as credits_router,
-    )
+    from .endpoints.credits import router as credits_router
 except ImportError:
     grant_initial_account_credits_for_account = None
     credits_router = None
@@ -338,12 +332,8 @@ except ImportError:
 
 # Import session wrapper runtime/endpoints
 try:
-    from .endpoints.session import (
-        integration_router as session_integration_router,
-    )
-    from .endpoints.session import (
-        router as session_router,
-    )
+    from .endpoints.session import integration_router as session_integration_router
+    from .endpoints.session import router as session_router
     from .monitor_runtime import MonitorRuntime
     from .session_runtime import SessionRuntime
 except ImportError:
@@ -412,7 +402,7 @@ from brain_researcher.services.orchestrator.job_store_factory import (  # noqa: 
     peek_initialized_job_store,
     set_initialized_job_store,
 )
-from brain_researcher.services.orchestrator.models import (  # noqa: E402
+from brain_researcher.services.orchestrator.models import (  # noqa: E402; File upload models; UI Component Support Models
     ArtifactType,
     Dataset,
     DatasetMetadata,
@@ -430,7 +420,6 @@ from brain_researcher.services.orchestrator.models import (  # noqa: E402
     ErrorCode,
     ErrorContext,
     ErrorResponse,
-    # File upload models
     FileUploadRequest,
     FileUploadResponse,
     FilterPreset,
@@ -477,7 +466,6 @@ from brain_researcher.services.orchestrator.models import (  # noqa: E402
     UIConfiguration,
     UIFeatureFlags,
     User,
-    # UI Component Support Models
     UserProfile,
     UserRole,
 )

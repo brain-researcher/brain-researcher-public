@@ -7,14 +7,11 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
-def write_cgroups_json(
-    dir_path: str, cpu: int, mem_mb: int, name: str
-) -> str:
+def write_cgroups_json(dir_path: str, cpu: int, mem_mb: int, name: str) -> str:
     """Generate cgroups v2 JSON file for Apptainer.
 
     Args:
@@ -42,12 +39,8 @@ def write_cgroups_json(
 
     # Convert resources to cgroups v2 format
     data = {
-        "memory": {
-            "memory.max": str(mem_mb * 1024 * 1024)  # Convert MB to bytes
-        },
-        "cpu": {
-            "cpu.max": f"{cpu * 100000} 100000"  # quota period (microseconds)
-        },
+        "memory": {"memory.max": str(mem_mb * 1024 * 1024)},  # Convert MB to bytes
+        "cpu": {"cpu.max": f"{cpu * 100000} 100000"},  # quota period (microseconds)
     }
 
     p.write_text(json.dumps(data, indent=2))
@@ -56,12 +49,12 @@ def write_cgroups_json(
 
 
 def apply_cgroups_limits(
-    command: List[str],
+    command: list[str],
     cpu: int,
     mem_mb: int,
     execution_id: str,
     run_dir: str,
-) -> List[str]:
+) -> list[str]:
     """Apply cgroups limits to Apptainer command.
 
     Args:
@@ -86,7 +79,9 @@ def apply_cgroups_limits(
 
     # Only apply to apptainer commands
     if not command or not command[0].endswith("apptainer"):
-        logger.debug(f"Not an apptainer command, skipping cgroups: {command[0] if command else 'empty'}")
+        logger.debug(
+            f"Not an apptainer command, skipping cgroups: {command[0] if command else 'empty'}"
+        )
         return command
 
     # Generate cgroups JSON file
@@ -107,7 +102,9 @@ def apply_cgroups_limits(
                 break
 
         if insert_index is None:
-            logger.warning("apptainer command missing 'exec' or 'run'; skipping cgroups")
+            logger.warning(
+                "apptainer command missing 'exec' or 'run'; skipping cgroups"
+            )
             return command
 
         # Insert --apply-cgroups flag and path
@@ -127,7 +124,7 @@ def apply_cgroups_limits(
         return command
 
 
-def read_cgroup_stats(cgroups_file: str) -> Dict[str, any]:
+def read_cgroup_stats(cgroups_file: str) -> dict[str, any]:
     """Read actual resource usage from cgroups stats files.
 
     Args:

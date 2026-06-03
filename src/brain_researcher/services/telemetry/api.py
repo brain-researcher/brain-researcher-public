@@ -7,23 +7,36 @@ import inspect
 import logging
 import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Union
-from fastapi import FastAPI, HTTPException, Depends, Query, BackgroundTasks, Request
-from pydantic import BaseModel, Field, field_validator
-import json
+from typing import Any
 
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request
+from pydantic import BaseModel, Field, field_validator
+
+from .aggregator import AggregationConfig, AggregationWindow, UsageMetricsAggregator
 from .collector import TelemetryCollector
-from .aggregator import UsageMetricsAggregator, AggregationWindow, AggregationConfig
-from .privacy import PrivacyController
 from .models import (
-    TelemetryEvent, UsageMetric, FeatureUsage, UserJourney, TelemetryReport,
-    EventType, ServiceType, PrivacyLevel, MetricType, TelemetryConfiguration, _is_test_env
+    EventType,
+    FeatureUsage,
+    MetricType,
+    PrivacyLevel,
+    ServiceType,
+    TelemetryConfiguration,
+    TelemetryEvent,
+    UsageMetric,
+    UserJourney,
+    _is_test_env,
 )
+from .privacy import PrivacyController
 from .storage import TelemetryEventStore
 
 try:
-    from brain_researcher.services.shared.auth_middleware import get_current_user, UserInfo
-except Exception:  # pragma: no cover - fallback when shared auth middleware is unavailable
+    from brain_researcher.services.shared.auth_middleware import (
+        UserInfo,
+        get_current_user,
+    )
+except (
+    Exception
+):  # pragma: no cover - fallback when shared auth middleware is unavailable
     get_current_user = None
     UserInfo = None  # type: ignore
 
@@ -64,24 +77,26 @@ _patch_httpx_async_client()
 # Request/Response Models
 class EventCollectionRequest(BaseModel):
     """Request to collect a telemetry event."""
+
     event_type: EventType
     service: ServiceType
-    feature_name: Optional[str] = None
-    action: Optional[str] = None
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
-    context: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    parameters: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    duration_ms: Optional[int] = Field(None, ge=0)
+    feature_name: str | None = None
+    action: str | None = None
+    user_id: str | None = None
+    session_id: str | None = None
+    context: dict[str, Any] | None = Field(default_factory=dict)
+    parameters: dict[str, Any] | None = Field(default_factory=dict)
+    metadata: dict[str, Any] | None = Field(default_factory=dict)
+    duration_ms: int | None = Field(None, ge=0)
     success: bool = True
-    error_message: Optional[str] = None
+    error_message: str | None = None
     privacy_level: PrivacyLevel = PrivacyLevel.AGGREGATE_ONLY
 
 
 class EventCollectionResponse(BaseModel):
     """Response from event collection."""
-    event_id: Optional[str]
+
+    event_id: str | None
     collected: bool
     message: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -89,25 +104,27 @@ class EventCollectionResponse(BaseModel):
 
 class MetricsQueryRequest(BaseModel):
     """Request for metrics aggregation."""
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    granularity: str = Field(default="hour", pattern="^(hour|day|week|month)$")
-    services: Optional[List[ServiceType]] = None
-    features: Optional[List[str]] = None
-    metric_types: Optional[List[MetricType]] = None
 
-    @field_validator('start_time', 'end_time')
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    granularity: str = Field(default="hour", pattern="^(hour|day|week|month)$")
+    services: list[ServiceType] | None = None
+    features: list[str] | None = None
+    metric_types: list[MetricType] | None = None
+
+    @field_validator("start_time", "end_time")
     @classmethod
     def validate_time_range(cls, v, info):
         """Validate time range."""
         if v and v > datetime.utcnow():
-            raise ValueError('Time cannot be in the future')
+            raise ValueError("Time cannot be in the future")
         return v
 
 
 class MetricsResponse(BaseModel):
     """Response containing usage metrics."""
-    metrics: List[UsageMetric]
+
+    metrics: list[UsageMetric]
     query: MetricsQueryRequest
     generated_at: datetime = Field(default_factory=datetime.utcnow)
     total_metrics: int
@@ -116,16 +133,18 @@ class MetricsResponse(BaseModel):
 
 class FeatureAnalysisRequest(BaseModel):
     """Request for feature usage analysis."""
-    feature_name: Optional[str] = None
-    service: Optional[ServiceType] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+
+    feature_name: str | None = None
+    service: ServiceType | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
     min_usage_count: int = Field(default=5, ge=1)
 
 
 class FeatureAnalysisResponse(BaseModel):
     """Response containing feature usage analysis."""
-    features: List[FeatureUsage]
+
+    features: list[FeatureUsage]
     query: FeatureAnalysisRequest
     generated_at: datetime = Field(default_factory=datetime.utcnow)
     total_features: int
@@ -133,16 +152,18 @@ class FeatureAnalysisResponse(BaseModel):
 
 class JourneyAnalysisRequest(BaseModel):
     """Request for user journey analysis."""
-    user_hash: Optional[str] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+
+    user_hash: str | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
     min_steps: int = Field(default=2, ge=2, le=100)
     max_journeys: int = Field(default=100, ge=1, le=1000)
 
 
 class JourneyAnalysisResponse(BaseModel):
     """Response containing user journey analysis."""
-    journeys: List[UserJourney]
+
+    journeys: list[UserJourney]
     query: JourneyAnalysisRequest
     generated_at: datetime = Field(default_factory=datetime.utcnow)
     total_journeys: int
@@ -152,45 +173,50 @@ class JourneyAnalysisResponse(BaseModel):
 
 class RealtimeMetricsResponse(BaseModel):
     """Response for real-time metrics."""
+
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     window_minutes: int
     total_events: int
     events_per_minute: float
-    services: Dict[str, Dict[str, Union[int, float]]]
-    features: Dict[str, int]
-    errors: Dict[str, Any]
+    services: dict[str, dict[str, int | float]]
+    features: dict[str, int]
+    errors: dict[str, Any]
     health_score: float
 
 
 class PrivacyComplianceResponse(BaseModel):
     """Response for privacy compliance check."""
+
     is_compliant: bool
-    violations: List[str]
-    privacy_summary: Dict[str, Any]
+    violations: list[str]
+    privacy_summary: dict[str, Any]
     audit_log_entries: int
-    recommendations: List[str]
+    recommendations: list[str]
 
 
 class SystemHealthResponse(BaseModel):
     """Response for telemetry system health."""
+
     status: str
-    collector_stats: Dict[str, Any]
-    aggregator_stats: Dict[str, Any]
-    privacy_stats: Dict[str, Any]
+    collector_stats: dict[str, Any]
+    aggregator_stats: dict[str, Any]
+    privacy_stats: dict[str, Any]
     last_updated: datetime = Field(default_factory=datetime.utcnow)
 
 
 class TelemetryService:
     """Main telemetry service coordinating all components."""
 
-    def __init__(self, config: Optional[TelemetryConfiguration] = None):
+    def __init__(self, config: TelemetryConfiguration | None = None):
         self.config = config or TelemetryConfiguration()
 
         # Initialize components
         self.collector = TelemetryCollector(self.config)
         self.aggregator = UsageMetricsAggregator(AggregationConfig())
         self.privacy_controller = PrivacyController(self.config)
-        self.event_store = TelemetryEventStore(retention_days=self.config.retention_policy_days)
+        self.event_store = TelemetryEventStore(
+            retention_days=self.config.retention_policy_days
+        )
 
         # Load any persisted events to warm caches
         try:
@@ -199,7 +225,9 @@ class TelemetryService:
             )
             if historical_events:
                 self.aggregator.seed_events(historical_events)
-                logger.info("Loaded %s persisted telemetry events", len(historical_events))
+                logger.info(
+                    "Loaded %s persisted telemetry events", len(historical_events)
+                )
         except Exception as exc:  # pragma: no cover - best effort warm start
             logger.warning("Failed to load persisted telemetry events: %s", exc)
 
@@ -211,7 +239,7 @@ class TelemetryService:
 
         # Service state
         self._running = False
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
         logger.info("TelemetryService initialized")
 
@@ -234,19 +262,19 @@ class TelemetryService:
         self._loop = None
         logger.info("TelemetryService stopped")
 
-    async def _handle_event_batch(self, events: List[TelemetryEvent]) -> None:
+    async def _handle_event_batch(self, events: list[TelemetryEvent]) -> None:
         """Persist collected events before handing them to the aggregator."""
         await self.event_store.append_events(events)
         await self.aggregator.add_events(events)
 
-    def _handle_event_batch_sync(self, events: List[TelemetryEvent]) -> None:
+    def _handle_event_batch_sync(self, events: list[TelemetryEvent]) -> None:
         """Synchronous handler for test harnesses."""
         self.event_store.append_events_sync(events)
         self.aggregator.add_events_sync(events)
 
 
 # Global service instance
-telemetry_service: Optional[TelemetryService] = None
+telemetry_service: TelemetryService | None = None
 
 
 def get_telemetry_service() -> TelemetryService:
@@ -266,7 +294,9 @@ def _allow_service_token(request: Request) -> bool:
 
 if get_current_user:
 
-    async def verify_auth(request: Request, current_user: Any = Depends(get_current_user)) -> Any:
+    async def verify_auth(
+        request: Request, current_user: Any = Depends(get_current_user)
+    ) -> Any:
         """Use shared auth middleware, with service-token bypass for internal calls."""
         if _allow_service_token(request):
             return {"service": "internal"}
@@ -279,7 +309,9 @@ else:
         if _allow_service_token(request):
             return {"service": "internal"}
         if ALLOW_ANON_TELEMETRY:
-            logger.warning("Telemetry auth middleware unavailable - allowing anonymous access")
+            logger.warning(
+                "Telemetry auth middleware unavailable - allowing anonymous access"
+            )
             return None
         raise HTTPException(
             status_code=503,
@@ -290,13 +322,13 @@ else:
         )
 
 
-def _build_dependency_kwargs(func: Any, http_request: Request) -> Dict[str, Any]:
+def _build_dependency_kwargs(func: Any, http_request: Request) -> dict[str, Any]:
     """Provide only supported kwargs when resolving dependencies manually."""
     try:
         params = inspect.signature(func).parameters
     except (TypeError, ValueError):  # pragma: no cover - defensive
         return {}
-    kwargs: Dict[str, Any] = {}
+    kwargs: dict[str, Any] = {}
     if "request" in params:
         kwargs["request"] = http_request
     return kwargs
@@ -329,7 +361,7 @@ app = FastAPI(
     description="TELEMETRY-003 Usage Metrics Tracking System",
     version="1.0.0",
     docs_url="/telemetry/docs",
-    redoc_url="/telemetry/redoc"
+    redoc_url="/telemetry/redoc",
 )
 
 
@@ -348,6 +380,7 @@ async def shutdown_event():
 
 
 # Event Collection Endpoints
+
 
 @app.post("/telemetry/events/collect", response_model=EventCollectionResponse)
 async def collect_event(
@@ -372,45 +405,49 @@ async def collect_event(
             duration_ms=request.duration_ms,
             success=request.success,
             error_message=request.error_message,
-            privacy_level=request.privacy_level
+            privacy_level=request.privacy_level,
         )
 
         if event_id:
             return EventCollectionResponse(
                 event_id=event_id,
                 collected=True,
-                message="Event collected successfully"
+                message="Event collected successfully",
             )
         else:
             return EventCollectionResponse(
                 event_id=None,
                 collected=False,
-                message="Event not collected (sampling, rate limiting, or disabled)"
+                message="Event not collected (sampling, rate limiting, or disabled)",
             )
 
     except Exception as e:
         logger.error(f"Error collecting event: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to collect event: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to collect event: {str(e)}"
+        )
 
 
-@app.post("/telemetry/events/batch", response_model=Dict[str, Any])
+@app.post("/telemetry/events/batch", response_model=dict[str, Any])
 async def collect_events_batch(
-    events: List[EventCollectionRequest],
+    events: list[EventCollectionRequest],
     background_tasks: BackgroundTasks,
     http_request: Request,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Collect multiple telemetry events in batch."""
     service = await _resolve_dependency(http_request, get_telemetry_service)
     await _resolve_dependency(http_request, verify_auth)
     if len(events) > 100:
-        raise HTTPException(status_code=400, detail="Batch size cannot exceed 100 events")
+        raise HTTPException(
+            status_code=400, detail="Batch size cannot exceed 100 events"
+        )
 
     results = {
         "total_events": len(events),
         "collected_count": 0,
         "failed_count": 0,
         "event_ids": [],
-        "errors": []
+        "errors": [],
     }
 
     for i, event_request in enumerate(events):
@@ -428,7 +465,7 @@ async def collect_events_batch(
                 duration_ms=event_request.duration_ms,
                 success=event_request.success,
                 error_message=event_request.error_message,
-                privacy_level=event_request.privacy_level
+                privacy_level=event_request.privacy_level,
             )
 
             if event_id:
@@ -443,6 +480,7 @@ async def collect_events_batch(
 
 
 # Metrics and Analytics Endpoints
+
 
 @app.post("/telemetry/metrics", response_model=MetricsResponse)
 async def get_usage_metrics(
@@ -463,14 +501,12 @@ async def get_usage_metrics(
         window = AggregationWindow(
             start=request.start_time,
             end=request.end_time,
-            granularity=request.granularity
+            granularity=request.granularity,
         )
 
         # Get metrics
         metrics = await service.aggregator.calculate_usage_metrics(
-            window=window,
-            services=request.services,
-            features=request.features
+            window=window, services=request.services, features=request.features
         )
 
         # Filter by metric types if specified
@@ -478,9 +514,7 @@ async def get_usage_metrics(
             metrics = [m for m in metrics if m.metric_type in request.metric_types]
 
         return MetricsResponse(
-            metrics=metrics,
-            query=request,
-            total_metrics=len(metrics)
+            metrics=metrics, query=request, total_metrics=len(metrics)
         )
 
     except Exception as e:
@@ -505,33 +539,29 @@ async def analyze_feature_usage(
 
         # Create aggregation window
         window = AggregationWindow(
-            start=request.start_time,
-            end=request.end_time,
-            granularity="day"
+            start=request.start_time, end=request.end_time, granularity="day"
         )
 
         # Analyze features
         features = await service.aggregator.analyze_feature_usage(
-            feature_name=request.feature_name,
-            service=request.service,
-            window=window
+            feature_name=request.feature_name, service=request.service, window=window
         )
 
         # Filter by minimum usage count
         features = [f for f in features if f.total_uses >= request.min_usage_count]
 
         # Calculate average journey length
-        avg_length = sum(f.total_uses for f in features) / len(features) if features else 0
+        (sum(f.total_uses for f in features) / len(features) if features else 0)
 
         return FeatureAnalysisResponse(
-            features=features,
-            query=request,
-            total_features=len(features)
+            features=features, query=request, total_features=len(features)
         )
 
     except Exception as e:
         logger.error(f"Error analyzing features: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to analyze features: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to analyze features: {str(e)}"
+        )
 
 
 @app.post("/telemetry/journeys/analyze", response_model=JourneyAnalysisResponse)
@@ -551,37 +581,37 @@ async def analyze_user_journeys(
 
         # Create aggregation window
         window = AggregationWindow(
-            start=request.start_time,
-            end=request.end_time,
-            granularity="hour"
+            start=request.start_time, end=request.end_time, granularity="hour"
         )
 
         # Extract journeys
         journeys = await service.aggregator.extract_user_journeys(
-            user_hash=request.user_hash,
-            window=window,
-            min_steps=request.min_steps
+            user_hash=request.user_hash, window=window, min_steps=request.min_steps
         )
 
         # Limit results
         if len(journeys) > request.max_journeys:
-            journeys = journeys[:request.max_journeys]
+            journeys = journeys[: request.max_journeys]
 
         # Calculate statistics
         common_paths = sum(1 for j in journeys if j.common_path)
-        avg_length = sum(j.total_steps for j in journeys) / len(journeys) if journeys else 0
+        avg_length = (
+            sum(j.total_steps for j in journeys) / len(journeys) if journeys else 0
+        )
 
         return JourneyAnalysisResponse(
             journeys=journeys,
             query=request,
             total_journeys=len(journeys),
             common_paths=common_paths,
-            avg_journey_length=avg_length
+            avg_journey_length=avg_length,
         )
 
     except Exception as e:
         logger.error(f"Error analyzing journeys: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to analyze journeys: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to analyze journeys: {str(e)}"
+        )
 
 
 @app.get("/telemetry/realtime", response_model=RealtimeMetricsResponse)
@@ -611,15 +641,18 @@ async def get_realtime_metrics(
             services=metrics["services"],
             features=metrics["features"],
             errors=metrics["errors"],
-            health_score=health_score
+            health_score=health_score,
         )
 
     except Exception as e:
         logger.error(f"Error getting real-time metrics: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to get real-time metrics: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get real-time metrics: {str(e)}"
+        )
 
 
 # Privacy and Compliance Endpoints
+
 
 @app.get("/telemetry/privacy/compliance", response_model=PrivacyComplianceResponse)
 async def check_privacy_compliance(
@@ -637,12 +670,18 @@ async def check_privacy_compliance(
         start_time = end_time - timedelta(days=days)
 
         # Filter events (simplified - would access actual event store)
-        events = [e for e in service.aggregator._events if start_time <= e.timestamp <= end_time]
+        events = [
+            e
+            for e in service.aggregator._events
+            if start_time <= e.timestamp <= end_time
+        ]
 
         # Check compliance for each event
         all_violations = []
         for event in events[:100]:  # Limit to first 100 for performance
-            is_compliant, violations = service.privacy_controller.validate_data_compliance(event)
+            is_compliant, violations = (
+                service.privacy_controller.validate_data_compliance(event)
+            )
             if not is_compliant:
                 all_violations.extend(violations)
 
@@ -661,19 +700,23 @@ async def check_privacy_compliance(
             violations=list(set(all_violations)),
             privacy_summary=privacy_summary,
             audit_log_entries=len(service.privacy_controller._audit_logs),
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
     except Exception as e:
         logger.error(f"Error checking privacy compliance: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to check compliance: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to check compliance: {str(e)}"
+        )
 
 
-@app.get("/telemetry/privacy/audit", response_model=List[Dict[str, Any]])
+@app.get("/telemetry/privacy/audit", response_model=list[dict[str, Any]])
 async def get_privacy_audit_log(
-    days: int = Query(default=7, ge=1, le=90, description="Days of audit logs to retrieve"),
+    days: int = Query(
+        default=7, ge=1, le=90, description="Days of audit logs to retrieve"
+    ),
     http_request: Request = None,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get privacy audit logs for compliance reporting."""
     if http_request is None:  # pragma: no cover - FastAPI will supply
         raise HTTPException(status_code=500, detail="Request context unavailable")
@@ -686,10 +729,13 @@ async def get_privacy_audit_log(
 
     except Exception as e:
         logger.error(f"Error getting audit logs: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to get audit logs: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get audit logs: {str(e)}"
+        )
 
 
 # System Management Endpoints
+
 
 @app.get("/telemetry/health", response_model=SystemHealthResponse)
 async def get_system_health(
@@ -705,7 +751,7 @@ async def get_system_health(
         privacy_stats = {
             "audit_logs": len(service.privacy_controller._audit_logs),
             "gdpr_mode": service.privacy_controller._gdpr_enabled,
-            "retention_policies": len(service.privacy_controller._retention_policies)
+            "retention_policies": len(service.privacy_controller._retention_policies),
         }
 
         # Determine overall status
@@ -719,18 +765,20 @@ async def get_system_health(
             status=status,
             collector_stats=collector_stats,
             aggregator_stats=aggregator_stats,
-            privacy_stats=privacy_stats
+            privacy_stats=privacy_stats,
         )
 
     except Exception as e:
         logger.error(f"Error getting system health: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to get system health: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get system health: {str(e)}"
+        )
 
 
 @app.post("/telemetry/admin/flush")
 async def flush_events(
     http_request: Request,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Force flush of pending events (admin operation)."""
     service = await _resolve_dependency(http_request, get_telemetry_service)
     await _resolve_dependency(http_request, verify_auth)
@@ -742,7 +790,7 @@ async def flush_events(
         return {
             "message": "Events flushed successfully",
             "events_processed": stats.get("events_processed", 0),
-            "buffer_size": stats.get("buffer_size", 0)
+            "buffer_size": stats.get("buffer_size", 0),
         }
 
     except Exception as e:
@@ -752,9 +800,11 @@ async def flush_events(
 
 @app.post("/telemetry/admin/purge")
 async def purge_expired_data(
-    days: int = Query(default=90, ge=1, le=365, description="Purge data older than days"),
+    days: int = Query(
+        default=90, ge=1, le=365, description="Purge data older than days"
+    ),
     http_request: Request = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Purge expired telemetry data (admin operation)."""
     if http_request is None:  # pragma: no cover - FastAPI will supply
         raise HTTPException(status_code=500, detail="Request context unavailable")
@@ -765,7 +815,9 @@ async def purge_expired_data(
         events = service.aggregator._events.copy()
 
         # Apply retention purge
-        remaining_events, purged_count = service.privacy_controller.purge_expired_data(events)
+        remaining_events, purged_count = service.privacy_controller.purge_expired_data(
+            events
+        )
 
         # Update aggregator events (in production, this would be database operation)
         service.aggregator._events = remaining_events
@@ -773,7 +825,7 @@ async def purge_expired_data(
         return {
             "message": f"Purged {purged_count} expired events",
             "purged_count": purged_count,
-            "remaining_events": len(remaining_events)
+            "remaining_events": len(remaining_events),
         }
 
     except Exception as e:
@@ -783,4 +835,5 @@ async def purge_expired_data(
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8003)

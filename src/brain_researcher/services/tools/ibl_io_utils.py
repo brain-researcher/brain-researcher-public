@@ -37,7 +37,9 @@ def _load_table(path: str | None) -> pd.DataFrame | None:
     raise ValueError(f"Unsupported table format: {table_path}")
 
 
-def _write_table_output(df: pd.DataFrame, output_dir: Path, stem: str) -> dict[str, Any]:
+def _write_table_output(
+    df: pd.DataFrame, output_dir: Path, stem: str
+) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     parquet_path = output_dir / f"{stem}.parquet"
     try:
@@ -57,7 +59,9 @@ def _write_table_output(df: pd.DataFrame, output_dir: Path, stem: str) -> dict[s
     }
 
 
-def _write_json_output(payload: dict[str, Any], output_dir: Path, stem: str) -> dict[str, Any]:
+def _write_json_output(
+    payload: dict[str, Any], output_dir: Path, stem: str
+) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / f"{stem}.json"
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")

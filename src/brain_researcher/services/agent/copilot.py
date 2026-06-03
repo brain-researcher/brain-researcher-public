@@ -15,7 +15,7 @@ import logging
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from brain_researcher.config.paths import resolve_from_config
 from brain_researcher.services.agent.parameter_inference import (
@@ -32,17 +32,17 @@ class ToolSuggestion:
     name: str
     score: float
     reason: str
-    required_params: List[str]
-    autocomplete: Dict[str, Any]
-    examples: List[str]
+    required_params: list[str]
+    autocomplete: dict[str, Any]
+    examples: list[str]
 
 
 class CopilotMemory:
     """Simple local memory to learn from user selections."""
 
-    def __init__(self, storage_path: Optional[Path] = None):
+    def __init__(self, storage_path: Path | None = None):
         self.storage_path = storage_path or Path(".copilot_memory.json")
-        self.data: Dict[str, Any] = {"tools": {}, "params": {}}
+        self.data: dict[str, Any] = {"tools": {}, "params": {}}
         self._load()
 
     def _load(self):
@@ -78,12 +78,12 @@ class CopilotMemory:
 class ExampleDB:
     """Loads and searches example queries for similar tasks."""
 
-    def __init__(self, examples_path: Optional[Path] = None):
+    def __init__(self, examples_path: Path | None = None):
         # Copilot examples are repo-owned static config and live under configs/agent.
         self.examples_path = examples_path or resolve_from_config(
             "agent", "copilot_examples.json"
         )
-        self.examples: List[Dict[str, Any]] = []
+        self.examples: list[dict[str, Any]] = []
         self._load()
 
     def _load(self):
@@ -95,9 +95,9 @@ class ExampleDB:
         except Exception as e:
             logger.warning(f"Failed to load examples: {e}")
 
-    def find_similar(self, query: str, k: int = 3) -> List[Dict[str, Any]]:
+    def find_similar(self, query: str, k: int = 3) -> list[dict[str, Any]]:
         q = query.lower()
-        scored: List[Tuple[float, Dict[str, Any]]] = []
+        scored: list[tuple[float, dict[str, Any]]] = []
         for ex in self.examples:
             score = 0.0
             text = (" ".join(ex.get("queries", [])) + " " + ex.get("task", "")).lower()
@@ -116,10 +116,10 @@ class CopilotAssistant:
 
     def __init__(
         self,
-        tool_registry: Optional[ToolRegistry] = None,
-        parameter_inference: Optional[ParameterInferenceEngine] = None,
-        memory: Optional[CopilotMemory] = None,
-        examples: Optional[ExampleDB] = None,
+        tool_registry: ToolRegistry | None = None,
+        parameter_inference: ParameterInferenceEngine | None = None,
+        memory: CopilotMemory | None = None,
+        examples: ExampleDB | None = None,
     ):
         self.registry = tool_registry or ToolRegistry.from_env(auto_discover=True)
         self.inferrer = parameter_inference or ParameterInferenceEngine()
@@ -127,15 +127,15 @@ class CopilotAssistant:
         self.examples = examples or ExampleDB()
 
     def suggest_tools(
-        self, query: str, dataset_metadata: Optional[Dict[str, Any]] = None, k: int = 5
-    ) -> List[ToolSuggestion]:
+        self, query: str, dataset_metadata: dict[str, Any] | None = None, k: int = 5
+    ) -> list[ToolSuggestion]:
         tools = self.registry.get_tools_for_task(query, k=k * 2)
         similar = self.examples.find_similar(query, k=3)
         example_tool_boosts = set()
         for s in similar:
             example_tool_boosts.update(s.get("tools", []))
 
-        suggestions: List[ToolSuggestion] = []
+        suggestions: list[ToolSuggestion] = []
         total = max(1, len(tools))
         for idx, tool in enumerate(tools[: k * 2]):
             base_score = (total - idx) / total
@@ -164,7 +164,7 @@ class CopilotAssistant:
         suggestions.sort(key=lambda s: s.score, reverse=True)
         return suggestions[:k]
 
-    def _required_params(self, tool: BRKGToolWrapper) -> List[str]:
+    def _required_params(self, tool: BRKGToolWrapper) -> list[str]:
         try:
             schema = tool.get_args_schema()
             # pydantic v2
@@ -191,7 +191,7 @@ class CopilotAssistant:
         self,
         query: str,
         tool: BRKGToolWrapper,
-        similar: List[Dict[str, Any]],
+        similar: list[dict[str, Any]],
         mem_score: float,
         ex_boost: float,
     ) -> str:
@@ -206,9 +206,9 @@ class CopilotAssistant:
         return ", ".join(parts)
 
     def _collect_examples_for_tool(
-        self, tool: BRKGToolWrapper, similar: List[Dict[str, Any]]
-    ) -> List[str]:
-        out: List[str] = []
+        self, tool: BRKGToolWrapper, similar: list[dict[str, Any]]
+    ) -> list[str]:
+        out: list[str] = []
         name = tool.get_tool_name()
         for s in similar:
             if name in s.get("tools", []):
@@ -218,9 +218,9 @@ class CopilotAssistant:
     def autocomplete_parameters(
         self,
         tool_name: str,
-        partial_params: Dict[str, Any],
-        dataset_metadata: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        partial_params: dict[str, Any],
+        dataset_metadata: dict[str, Any],
+    ) -> dict[str, Any]:
         """Auto-complete parameters based on dataset metadata and mappings."""
         completed = dict(partial_params)
         # Map generic metadata keys to tool-specific names
@@ -259,7 +259,9 @@ class CopilotAssistant:
 
         return completed
 
-    def learn_selection(self, tool_name: str, accepted_params: Optional[Dict[str, Any]] = None):
+    def learn_selection(
+        self, tool_name: str, accepted_params: dict[str, Any] | None = None
+    ):
         """Record user selection and accepted parameters to improve ranking."""
         self.memory.record_tool_selection(tool_name)
         if accepted_params:

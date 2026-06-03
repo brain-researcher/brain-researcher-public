@@ -4,6 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+
 from brain_researcher.services.mcp import runstore
 
 
@@ -141,9 +142,10 @@ def test_refuted_landscape_counts_and_summary_are_deterministic(tmp_path, monkey
         "inconclusive": 1,
     }
     assert resp_b["counts"] == resp_a["counts"]
-    assert resp_b["refuted_landscape"]["paragraph"] == resp_a["refuted_landscape"][
-        "paragraph"
-    ]
+    assert (
+        resp_b["refuted_landscape"]["paragraph"]
+        == resp_a["refuted_landscape"]["paragraph"]
+    )
     assert resp_b["refuted_landscape"]["rows"] == resp_a["refuted_landscape"]["rows"]
 
 
@@ -164,7 +166,9 @@ def test_refuted_landscape_rows_and_paragraph_come_from_structured_inputs(
     assert "2" in paragraph
     assert len(rows) == 4
 
-    first_refuted = next(row for row in rows if row["direction"] == "mutual_proximity_drop_in")
+    first_refuted = next(
+        row for row in rows if row["direction"] == "mutual_proximity_drop_in"
+    )
     assert first_refuted["status"] == "refuted"
     assert "ordering inversion" in first_refuted["reason"]
     assert first_refuted["comparison"] == "vs baseline kNN across matched rows"
@@ -194,7 +198,9 @@ def test_refuted_landscape_session_enrichment_does_not_change_counts_or_statuses
                 "done_items": ["captured refuted alternatives"],
                 "open_items": ["add oversmoothing companion diagnostic"],
                 "notes": [
-                    {"content": "Use session metadata only for enrichment, not evidence."}
+                    {
+                        "content": "Use session metadata only for enrichment, not evidence."
+                    }
                 ],
                 "run_ids": ["attached_run", "aux_run"],
             },

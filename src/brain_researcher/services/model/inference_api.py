@@ -1,39 +1,31 @@
 """Model inference API for fMRI foundation model serving."""
 
-import asyncio
-import json
-import uuid
-import time
 import logging
-from typing import Any, Dict, List, Optional, Union, AsyncGenerator
-from dataclasses import dataclass, field
+import threading
+import time
+import uuid
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-import numpy as np
-from concurrent.futures import ThreadPoolExecutor
-from collections import deque
-import threading
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File
-from fastapi.responses import StreamingResponse, JSONResponse
-from pydantic import BaseModel, Field, validator
+import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field, validator
 
 # NICLIP / fMRI text-alignment backend
 from brain_researcher.services.br_kg.models.fmri_text_alignment import (
     FmriTextAlignmentModel,
 )
 
-
 logger = logging.getLogger(__name__)
 
 # NICLIP / fMRI text alignment backend
-from brain_researcher.services.br_kg.models.fmri_text_alignment import (
-    FmriTextAlignmentModel,
-)
 
 
 class ModelType(str, Enum):
@@ -68,10 +60,14 @@ class InferenceRequest(BaseModel):
     """Inference request model."""
 
     model_type: ModelType = Field(ModelType.FMRI_FOUNDATION, description="Model type")
-    model_version: Optional[str] = Field("latest", description="Model version")
-    input_data: Union[str, List[float], Dict[str, Any]] = Field(..., description="Input data (path, array, or dict)")
+    model_version: str | None = Field("latest", description="Model version")
+    input_data: str | list[float] | dict[str, Any] = Field(
+        ..., description="Input data (path, array, or dict)"
+    )
     input_format: InputFormat = Field(InputFormat.JSON, description="Input format")
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="Inference parameters")
+    parameters: dict[str, Any] = Field(
+        default_factory=dict, description="Inference parameters"
+    )
     return_attention: bool = Field(False, description="Return attention weights")
     return_embeddings: bool = Field(False, description="Return intermediate embeddings")
     batch_size: int = Field(1, description="Batch size for processing", ge=1, le=128)
@@ -92,22 +88,38 @@ class InferenceResponse(BaseModel):
     request_id: str = Field(..., description="Request identifier")
     model_type: ModelType = Field(..., description="Model type used")
     model_version: str = Field(..., description="Model version used")
-    predictions: Union[List[Any], Dict[str, Any]] = Field(..., description="Model predictions")
-    confidence: Optional[float] = Field(None, description="Prediction confidence", ge=0, le=1)
-    processing_time_ms: float = Field(..., description="Processing time in milliseconds")
-    attention_weights: Optional[Dict[str, Any]] = Field(None, description="Attention weights")
-    embeddings: Optional[Dict[str, Any]] = Field(None, description="Intermediate embeddings")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    predictions: list[Any] | dict[str, Any] = Field(
+        ..., description="Model predictions"
+    )
+    confidence: float | None = Field(
+        None, description="Prediction confidence", ge=0, le=1
+    )
+    processing_time_ms: float = Field(
+        ..., description="Processing time in milliseconds"
+    )
+    attention_weights: dict[str, Any] | None = Field(
+        None, description="Attention weights"
+    )
+    embeddings: dict[str, Any] | None = Field(
+        None, description="Intermediate embeddings"
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata"
+    )
 
 
 class BatchInferenceRequest(BaseModel):
     """Batch inference request model."""
 
     model_type: ModelType = Field(ModelType.FMRI_FOUNDATION, description="Model type")
-    model_version: Optional[str] = Field("latest", description="Model version")
-    samples: List[Union[str, List[float], Dict[str, Any]]] = Field(..., description="Batch samples")
+    model_version: str | None = Field("latest", description="Model version")
+    samples: list[str | list[float] | dict[str, Any]] = Field(
+        ..., description="Batch samples"
+    )
     input_format: InputFormat = Field(InputFormat.JSON, description="Input format")
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="Inference parameters")
+    parameters: dict[str, Any] = Field(
+        default_factory=dict, description="Inference parameters"
+    )
     batch_size: int = Field(32, description="Batch size", ge=1, le=256)
     async_processing: bool = Field(False, description="Process asynchronously")
 
@@ -127,7 +139,7 @@ class BatchInferenceResponse(BaseModel):
     batch_id: str = Field(..., description="Batch identifier")
     model_type: ModelType = Field(..., description="Model type used")
     model_version: str = Field(..., description="Model version used")
-    results: List[Dict[str, Any]] = Field(..., description="Batch results")
+    results: list[dict[str, Any]] = Field(..., description="Batch results")
     total_samples: int = Field(..., description="Total samples processed")
     successful: int = Field(..., description="Successful predictions")
     failed: int = Field(..., description="Failed predictions")
@@ -142,11 +154,11 @@ class ModelInfo:
     model_type: ModelType
     version: str
     path: Path
-    config: Dict[str, Any]
+    config: dict[str, Any]
     loaded: bool = False
-    model: Optional[nn.Module] = None
+    model: nn.Module | None = None
     device: str = "cpu"
-    last_used: Optional[datetime] = None
+    last_used: datetime | None = None
     request_count: int = 0
     total_inference_time: float = 0.0
 
@@ -161,7 +173,11 @@ class ModelInfo:
 class ModelPool:
     """Model pool for managing multiple models."""
 
-    def __init__(self, max_models: int = 5, device: str = "cuda" if torch.cuda.is_available() else "cpu"):
+    def __init__(
+        self,
+        max_models: int = 5,
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    ):
         """Initialize model pool.
 
         Args:
@@ -170,7 +186,7 @@ class ModelPool:
         """
         self.max_models = max_models
         self.device = device
-        self.models: Dict[str, ModelInfo] = {}
+        self.models: dict[str, ModelInfo] = {}
         self.load_queue = deque(maxlen=max_models)
         self.lock = threading.Lock()
 
@@ -235,7 +251,7 @@ class ModelPool:
             config={"architecture": "transformer", "params": 100000000},
             loaded=True,
             model=model,
-            device=self.device
+            device=self.device,
         )
 
     def _unload_model(self, model_key: str):
@@ -256,6 +272,7 @@ class ModelPool:
 
     def _create_dummy_foundation_model(self) -> nn.Module:
         """Create dummy foundation model for testing."""
+
         class DummyFoundationModel(nn.Module):
             def __init__(self, input_dim=1024, hidden_dim=512, output_dim=256):
                 super().__init__()
@@ -265,7 +282,7 @@ class ModelPool:
                     nn.LayerNorm(hidden_dim),
                     nn.Linear(hidden_dim, hidden_dim),
                     nn.ReLU(),
-                    nn.LayerNorm(hidden_dim)
+                    nn.LayerNorm(hidden_dim),
                 )
                 self.decoder = nn.Linear(hidden_dim, output_dim)
                 self.attention = nn.MultiheadAttention(hidden_dim, num_heads=8)
@@ -275,7 +292,9 @@ class ModelPool:
                 embeddings = self.encoder(x)
 
                 # Self-attention
-                attn_out, attn_weights = self.attention(embeddings, embeddings, embeddings)
+                attn_out, attn_weights = self.attention(
+                    embeddings, embeddings, embeddings
+                )
 
                 # Decode
                 output = self.decoder(attn_out)
@@ -299,10 +318,10 @@ class ModelPool:
             nn.ReLU(),
             nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Linear(256, 128)
+            nn.Linear(256, 128),
         )
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get model pool statistics.
 
         Returns:
@@ -319,10 +338,10 @@ class ModelPool:
                         "version": info.version,
                         "loaded": info.loaded,
                         "requests": info.request_count,
-                        "avg_time_ms": info.avg_inference_time * 1000
+                        "avg_time_ms": info.avg_inference_time * 1000,
                     }
                     for key, info in self.models.items()
-                }
+                },
             }
 
 
@@ -338,7 +357,7 @@ class BatchProcessor:
         """
         self.model_pool = model_pool
         self.max_batch_size = max_batch_size
-        self.pending_requests: Dict[str, List[Dict]] = {}
+        self.pending_requests: dict[str, list[dict]] = {}
         self.executor = ThreadPoolExecutor(max_workers=4)
         self.lock = threading.Lock()
 
@@ -347,7 +366,7 @@ class BatchProcessor:
         request_id: str,
         model_type: ModelType,
         input_data: Any,
-        parameters: Dict[str, Any]
+        parameters: dict[str, Any],
     ):
         """Add request to batch.
 
@@ -362,12 +381,14 @@ class BatchProcessor:
             if key not in self.pending_requests:
                 self.pending_requests[key] = []
 
-            self.pending_requests[key].append({
-                "request_id": request_id,
-                "input_data": input_data,
-                "parameters": parameters,
-                "timestamp": time.time()
-            })
+            self.pending_requests[key].append(
+                {
+                    "request_id": request_id,
+                    "input_data": input_data,
+                    "parameters": parameters,
+                    "timestamp": time.time(),
+                }
+            )
 
             # Process if batch is full
             if len(self.pending_requests[key]) >= self.max_batch_size:
@@ -389,7 +410,7 @@ class BatchProcessor:
         # Submit to executor
         self.executor.submit(self._run_batch_inference, model_key, batch)
 
-    def _run_batch_inference(self, model_key: str, batch: List[Dict]):
+    def _run_batch_inference(self, model_key: str, batch: list[dict]):
         """Run batch inference.
 
         Args:
@@ -400,19 +421,18 @@ class BatchProcessor:
         model = self.model_pool.get_model(model_type)
 
         # Prepare batch input
-        batch_input = torch.stack([
-            self._prepare_input(req["input_data"])
-            for req in batch
-        ])
+        batch_input = torch.stack(
+            [self._prepare_input(req["input_data"]) for req in batch]
+        )
 
         # Run inference
         with torch.no_grad():
-            outputs = model(batch_input)
+            model(batch_input)
 
         # Process outputs
-        for i, req in enumerate(batch):
+        for _i, req in enumerate(batch):
             # Store result
-            result_key = f"result:{req['request_id']}"
+            f"result:{req['request_id']}"
             # Would store in Redis or return via callback
 
     def _prepare_input(self, input_data: Any) -> torch.Tensor:
@@ -436,7 +456,7 @@ class BatchProcessor:
 class InferenceService:
     """Main inference service."""
 
-    def __init__(self, model_pool: Optional[ModelPool] = None):
+    def __init__(self, model_pool: ModelPool | None = None):
         """Initialize inference service.
 
         Args:
@@ -444,7 +464,7 @@ class InferenceService:
         """
         self.model_pool = model_pool or ModelPool()
         self.batch_processor = BatchProcessor(self.model_pool)
-        self.fmri_model: Optional[FmriTextAlignmentModel] = None
+        self.fmri_model: FmriTextAlignmentModel | None = None
 
     def _get_fmri_model(self) -> FmriTextAlignmentModel:
         """Lazily initialize the NiCLIP fMRI alignment model."""
@@ -485,17 +505,19 @@ class InferenceService:
         with torch.no_grad():
             input_tensor = input_tensor.to(self.model_pool.device)
 
-            if hasattr(model, 'forward'):
+            if hasattr(model, "forward"):
                 outputs = model(
                     input_tensor,
                     return_attention=request.return_attention,
-                    return_embeddings=request.return_embeddings
+                    return_embeddings=request.return_embeddings,
                 )
             else:
                 outputs = {"predictions": model(input_tensor)}
 
         predictions = self._process_output(outputs.get("predictions"))
-        confidence = float(torch.sigmoid(outputs.get("predictions", torch.tensor(0.0))).mean())
+        confidence = float(
+            torch.sigmoid(outputs.get("predictions", torch.tensor(0.0))).mean()
+        )
         processing_time = (time.time() - start_time) * 1000
 
         return InferenceResponse(
@@ -505,15 +527,19 @@ class InferenceService:
             predictions=predictions,
             confidence=confidence,
             processing_time_ms=processing_time,
-            attention_weights=outputs.get("attention") if request.return_attention else None,
+            attention_weights=(
+                outputs.get("attention") if request.return_attention else None
+            ),
             embeddings=outputs.get("embeddings") if request.return_embeddings else None,
             metadata={
                 "device": self.model_pool.device,
-                "batch_size": request.batch_size
-            }
+                "batch_size": request.batch_size,
+            },
         )
 
-    async def batch_infer(self, request: BatchInferenceRequest) -> BatchInferenceResponse:
+    async def batch_infer(
+        self, request: BatchInferenceRequest
+    ) -> BatchInferenceResponse:
         """Run batch inference.
 
         Args:
@@ -543,11 +569,17 @@ class InferenceService:
                     )
                     resp = await self.infer(single_req)
                     results.append(
-                        {"sample_id": idx, "predictions": resp.predictions, "status": "success"}
+                        {
+                            "sample_id": idx,
+                            "predictions": resp.predictions,
+                            "status": "success",
+                        }
                     )
                     successful += 1
                 except Exception as e:
-                    results.append({"sample_id": idx, "error": str(e), "status": "failed"})
+                    results.append(
+                        {"sample_id": idx, "error": str(e), "status": "failed"}
+                    )
                     failed += 1
 
             total_time = (time.time() - start_time) * 1000
@@ -560,7 +592,9 @@ class InferenceService:
                 successful=successful,
                 failed=failed,
                 total_time_ms=total_time,
-                avg_time_per_sample_ms=total_time / len(request.samples) if request.samples else 0,
+                avg_time_per_sample_ms=(
+                    total_time / len(request.samples) if request.samples else 0
+                ),
             )
 
         # Placeholder path for other model types
@@ -572,14 +606,16 @@ class InferenceService:
 
         # Process in batches
         for i in range(0, len(request.samples), request.batch_size):
-            batch = request.samples[i:i + request.batch_size]
+            batch = request.samples[i : i + request.batch_size]
 
             try:
                 # Prepare batch input
-                batch_tensor = torch.stack([
-                    self._prepare_input(sample, request.input_format)
-                    for sample in batch
-                ])
+                batch_tensor = torch.stack(
+                    [
+                        self._prepare_input(sample, request.input_format)
+                        for sample in batch
+                    ]
+                )
 
                 # Run inference
                 with torch.no_grad():
@@ -588,21 +624,21 @@ class InferenceService:
 
                 # Process outputs
                 for j, output in enumerate(outputs):
-                    results.append({
-                        "sample_id": i + j,
-                        "predictions": self._process_output(output),
-                        "status": "success"
-                    })
+                    results.append(
+                        {
+                            "sample_id": i + j,
+                            "predictions": self._process_output(output),
+                            "status": "success",
+                        }
+                    )
                     successful += 1
 
             except Exception as e:
                 # Handle batch failure
                 for j in range(len(batch)):
-                    results.append({
-                        "sample_id": i + j,
-                        "error": str(e),
-                        "status": "failed"
-                    })
+                    results.append(
+                        {"sample_id": i + j, "error": str(e), "status": "failed"}
+                    )
                     failed += 1
 
         total_time = (time.time() - start_time) * 1000
@@ -616,7 +652,9 @@ class InferenceService:
             successful=successful,
             failed=failed,
             total_time_ms=total_time,
-            avg_time_per_sample_ms=total_time / len(request.samples) if request.samples else 0
+            avg_time_per_sample_ms=(
+                total_time / len(request.samples) if request.samples else 0
+            ),
         )
 
     def _prepare_input(self, data: Any, format: InputFormat) -> torch.Tensor:
@@ -646,7 +684,7 @@ class InferenceService:
             # Placeholder for other formats
             return torch.randn(1024)
 
-    def _process_output(self, output: torch.Tensor) -> Union[List[float], Dict[str, Any]]:
+    def _process_output(self, output: torch.Tensor) -> list[float] | dict[str, Any]:
         """Process model output.
 
         Args:
@@ -660,13 +698,10 @@ class InferenceService:
         elif output.dim() == 2:
             return {
                 "logits": output.cpu().numpy().tolist(),
-                "shape": list(output.shape)
+                "shape": list(output.shape),
             }
         else:
-            return {
-                "data": output.cpu().numpy().tolist(),
-                "shape": list(output.shape)
-            }
+            return {"data": output.cpu().numpy().tolist(), "shape": list(output.shape)}
 
     async def _infer_fmri_foundation(
         self, request_id: str, request: InferenceRequest, start_time: float
@@ -682,21 +717,28 @@ class InferenceService:
         # Prepare input
         input_data = request.input_data
 
-        predictions: Dict[str, Any] = {}
-        embeddings: Optional[Dict[str, Any]] = None
+        predictions: dict[str, Any] = {}
+        embeddings: dict[str, Any] | None = None
         attention = None  # Not provided by current backend
 
         try:
             if request.input_format == InputFormat.NIFTI or (
-                isinstance(input_data, str) and input_data.lower().endswith((".nii", ".nii.gz"))
+                isinstance(input_data, str)
+                and input_data.lower().endswith((".nii", ".nii.gz"))
             ):
                 # Path to NIfTI file
-                pred_df = fmri_model.predict_from_nifti(str(input_data), top_k=top_k, use_bayes=use_bayes)
+                pred_df = fmri_model.predict_from_nifti(
+                    str(input_data), top_k=top_k, use_bayes=use_bayes
+                )
                 predictions = pred_df.to_dict(orient="records")
 
                 if request.return_embeddings:
                     emb = fmri_model.encode_fmri(str(input_data))
-                    embeddings = {"fmri_embedding": emb.tolist() if hasattr(emb, "tolist") else emb}
+                    embeddings = {
+                        "fmri_embedding": (
+                            emb.tolist() if hasattr(emb, "tolist") else emb
+                        )
+                    }
             else:
                 # Array-like input
                 if isinstance(input_data, list):
@@ -712,13 +754,19 @@ class InferenceService:
                 else:
                     emb = fmri_model.encode_fmri(arr)
                 if request.return_embeddings:
-                    embeddings = {"fmri_embedding": emb.tolist() if hasattr(emb, "tolist") else emb}
+                    embeddings = {
+                        "fmri_embedding": (
+                            emb.tolist() if hasattr(emb, "tolist") else emb
+                        )
+                    }
 
                 if text_query:
                     sim = fmri_model.compute_similarity(arr, text_query)
                     predictions = {"similarity": sim, "text": text_query}
                 else:
-                    decoded = fmri_model.decode_to_text(emb, top_k=top_k, return_scores=True)
+                    decoded = fmri_model.decode_to_text(
+                        emb, top_k=top_k, return_scores=True
+                    )
                     if isinstance(decoded, str):
                         predictions = {"text": decoded}
                     else:
@@ -743,7 +791,7 @@ class InferenceService:
                 elif "similarity" in top:
                     confidence = float(top["similarity"])
                     confidence_source = "similarity"
-            elif isinstance(top, (float, int)):
+            elif isinstance(top, float | int):
                 confidence = float(top)
                 confidence_source = "scalar"
         elif isinstance(predictions, dict):
@@ -774,7 +822,9 @@ class InferenceService:
             },
         )
 
-    def get_model_info(self, model_type: ModelType, version: str = "latest") -> Dict[str, Any]:
+    def get_model_info(
+        self, model_type: ModelType, version: str = "latest"
+    ) -> dict[str, Any]:
         """Get model information.
 
         Args:
@@ -796,19 +846,20 @@ class InferenceService:
                 "config": info.config,
                 "requests": info.request_count,
                 "avg_inference_time_ms": info.avg_inference_time * 1000,
-                "last_used": info.last_used.isoformat() if info.last_used else None
+                "last_used": info.last_used.isoformat() if info.last_used else None,
             }
         else:
             return {
                 "type": model_type.value,
                 "version": version,
                 "loaded": False,
-                "available": True
+                "available": True,
             }
 
 
 # Create router
 router = APIRouter(prefix="/api/v1/inference", tags=["inference"])
+
 
 # Dependency to get service
 def get_inference_service() -> InferenceService:
@@ -819,7 +870,7 @@ def get_inference_service() -> InferenceService:
 @router.post("/predict", response_model=InferenceResponse)
 async def predict(
     request: InferenceRequest,
-    service: InferenceService = Depends(get_inference_service)
+    service: InferenceService = Depends(get_inference_service),
 ) -> InferenceResponse:
     """Run single inference.
 
@@ -836,14 +887,14 @@ async def predict(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Inference failed: {str(e)}"
+            detail=f"Inference failed: {str(e)}",
         )
 
 
 @router.post("/batch", response_model=BatchInferenceResponse)
 async def batch_predict(
     request: BatchInferenceRequest,
-    service: InferenceService = Depends(get_inference_service)
+    service: InferenceService = Depends(get_inference_service),
 ) -> BatchInferenceResponse:
     """Run batch inference.
 
@@ -860,7 +911,7 @@ async def batch_predict(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Batch inference failed: {str(e)}"
+            detail=f"Batch inference failed: {str(e)}",
         )
 
 
@@ -868,8 +919,8 @@ async def batch_predict(
 async def get_model_info(
     model_type: ModelType,
     version: str = "latest",
-    service: InferenceService = Depends(get_inference_service)
-) -> Dict[str, Any]:
+    service: InferenceService = Depends(get_inference_service),
+) -> dict[str, Any]:
     """Get model information.
 
     Args:
@@ -885,8 +936,8 @@ async def get_model_info(
 
 @router.get("/stats")
 async def get_inference_stats(
-    service: InferenceService = Depends(get_inference_service)
-) -> Dict[str, Any]:
+    service: InferenceService = Depends(get_inference_service),
+) -> dict[str, Any]:
     """Get inference statistics.
 
     Args:

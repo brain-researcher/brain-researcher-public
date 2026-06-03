@@ -33,22 +33,16 @@ import json
 import logging
 import os
 import sys
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import (
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-)
 
 import requests
 
 OSF_FILE_API = "https://api.osf.io/v2/files/{file_id}/"
-OSF_STORAGE_API = "https://files.osf.io/v1/resources/{resource}/providers/osfstorage/{file_id}"
+OSF_STORAGE_API = (
+    "https://files.osf.io/v1/resources/{resource}/providers/osfstorage/{file_id}"
+)
 
 logger = logging.getLogger(__name__)
 
@@ -98,25 +92,33 @@ def _configure_logging(verbosity: int) -> None:
     elif verbosity == 1:
         log_level = logging.INFO
 
-    logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=log_level, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
 
 
-def _parse_filters(raw_filters: Sequence[str]) -> Dict[str, str]:
-    filters: Dict[str, str] = {}
+def _parse_filters(raw_filters: Sequence[str]) -> dict[str, str]:
+    filters: dict[str, str] = {}
     for item in raw_filters:
         if "=" not in item:
-            raise argparse.ArgumentTypeError(f"Invalid filter '{item}'. Expected format key=value.")
+            raise argparse.ArgumentTypeError(
+                f"Invalid filter '{item}'. Expected format key=value."
+            )
         key, value = item.split("=", 1)
         key = key.strip()
         value = value.strip()
         if not key:
-            raise argparse.ArgumentTypeError(f"Invalid filter '{item}'. Key cannot be empty.")
+            raise argparse.ArgumentTypeError(
+                f"Invalid filter '{item}'. Key cannot be empty."
+            )
         filters[key] = value
     return filters
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Download Neuromaps resources from OSF using local metadata.")
+    parser = argparse.ArgumentParser(
+        description="Download Neuromaps resources from OSF using local metadata."
+    )
     parser.add_argument(
         "--metadata",
         type=Path,
@@ -195,7 +197,9 @@ def _resolve_section(metadata: Mapping[str, object], section_path: str) -> objec
     return node
 
 
-def _iter_entries(section_path: str, node: object) -> Iterator[Tuple[str, Mapping[str, object]]]:
+def _iter_entries(
+    section_path: str, node: object
+) -> Iterator[tuple[str, Mapping[str, object]]]:
     """
     Yield metadata entries that include an OSF url hint.
 
@@ -215,7 +219,7 @@ def _iter_entries(section_path: str, node: object) -> Iterator[Tuple[str, Mappin
                 yield from _iter_entries(new_path, value)
 
 
-def _normalize_url(url_field: object) -> Tuple[str, str, str]:
+def _normalize_url(url_field: object) -> tuple[str, str, str]:
     """
     Convert the 'url' metadata field into a concrete OSF download URL.
 
@@ -235,7 +239,11 @@ def _normalize_url(url_field: object) -> Tuple[str, str, str]:
     if isinstance(url_field, Sequence) and len(url_field) >= 2:
         project_id = str(url_field[0])
         file_id = str(url_field[1])
-        return OSF_STORAGE_API.format(resource=project_id, file_id=file_id), project_id, file_id
+        return (
+            OSF_STORAGE_API.format(resource=project_id, file_id=file_id),
+            project_id,
+            file_id,
+        )
 
     raise ValueError(f"Unsupported OSF URL representation: {url_field!r}")
 
@@ -245,28 +253,39 @@ def _normalize_url(url_field: object) -> Tuple[str, str, str]:
 # --------------------------------------------------------------------------- #
 
 
-def _infer_filename(entry: Mapping[str, object], response: requests.Response, file_id: str, token: Optional[str]) -> str:
+def _infer_filename(
+    entry: Mapping[str, object],
+    response: requests.Response,
+    file_id: str,
+    token: str | None,
+) -> str:
     if "fname" in entry and isinstance(entry["fname"], str) and entry["fname"]:
         return entry["fname"]
 
     content_disposition = response.headers.get("Content-Disposition", "")
     if "filename=" in content_disposition:
         # RFC 6266 compliant header: attachment; filename="..."
-        filename = content_disposition.split("filename=", 1)[1].strip().strip('"').strip("'")
+        filename = (
+            content_disposition.split("filename=", 1)[1].strip().strip('"').strip("'")
+        )
         if filename:
             return filename
 
     # Fallback to OSF metadata query for deterministic naming
     try:
         headers = {"Authorization": f"Bearer {token}"} if token else {}
-        meta_resp = requests.get(OSF_FILE_API.format(file_id=file_id), headers=headers, timeout=30)
+        meta_resp = requests.get(
+            OSF_FILE_API.format(file_id=file_id), headers=headers, timeout=30
+        )
         if meta_resp.ok:
             meta = meta_resp.json()
             name = meta.get("data", {}).get("attributes", {}).get("name")
             if isinstance(name, str) and name:
                 return name
     except Exception:  # pragma: no cover - network issues handled gracefully
-        logger.debug("Failed to resolve filename for %s via OSF API.", file_id, exc_info=True)
+        logger.debug(
+            "Failed to resolve filename for %s via OSF API.", file_id, exc_info=True
+        )
 
     source = entry.get("source") or entry.get("atlas") or "resource"
     return f"{source}_{file_id}"
@@ -280,12 +299,14 @@ def _compute_md5(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _entry_matches_filters(entry: Mapping[str, object], filters: Mapping[str, str]) -> bool:
+def _entry_matches_filters(
+    entry: Mapping[str, object], filters: Mapping[str, str]
+) -> bool:
     for key, expected in filters.items():
         value = entry.get(key)
         if value is None:
             return False
-        if isinstance(value, (list, tuple, set)):
+        if isinstance(value, list | tuple | set):
             if expected not in {str(item) for item in value}:
                 return False
         else:
@@ -298,11 +319,11 @@ def _download_entry(
     target: DownloadTarget,
     dest_dir: Path,
     *,
-    token: Optional[str],
+    token: str | None,
     timeout: int,
     chunk_size: int,
     force: bool,
-) -> Optional[Path]:
+) -> Path | None:
     expected_checksum = (
         target.entry.get("checksum")
         or target.entry.get("md5")
@@ -315,7 +336,9 @@ def _download_entry(
 
     # Derive final filename lazily once we have response headers
     try:
-        response = requests.get(target.url, stream=True, headers=headers, timeout=timeout)
+        response = requests.get(
+            target.url, stream=True, headers=headers, timeout=timeout
+        )
         response.raise_for_status()
     except Exception as exc:  # pragma: no cover - network issues delegated to user
         logger.error("Request failed for %s: %s", target.url, exc)
@@ -333,7 +356,9 @@ def _download_entry(
                 response.close()
                 return final_path
         else:
-            logger.info("Skipping %s (already exists, no checksum to verify)", final_path)
+            logger.info(
+                "Skipping %s (already exists, no checksum to verify)", final_path
+            )
             response.close()
             return final_path
 
@@ -372,7 +397,7 @@ def _download_entry(
 # --------------------------------------------------------------------------- #
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     _configure_logging(args.verbose)
@@ -395,11 +420,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     filters = _parse_filters(args.filter or [])
     token = args.token or os.getenv("NEUROMAPS_OSF_TOKEN")
     if filters:
-        logger.info("Applying filters: %s", ", ".join(f"{k}={v}" for k, v in filters.items()))
+        logger.info(
+            "Applying filters: %s", ", ".join(f"{k}={v}" for k, v in filters.items())
+        )
     if args.dry_run:
         logger.info("Running in dry-run mode; no files will be downloaded.")
 
-    matched: List[DownloadTarget] = []
+    matched: list[DownloadTarget] = []
     for section_path in sections:
         if not section_path:
             continue
@@ -437,7 +464,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if args.dry_run:
         for target in matched:
-            name_hint = target.entry.get("fname") or target.entry.get("source") or target.file_id
+            name_hint = (
+                target.entry.get("fname")
+                or target.entry.get("source")
+                or target.file_id
+            )
             logger.info("[%s] %s -> %s", target.section, name_hint, target.url)
         return 0
 
@@ -446,7 +477,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         dest_root = args.output_dir / target.section.replace(".", "/")
         rel_path = target.entry.get("rel_path")
         if isinstance(rel_path, str) and rel_path.strip("/"):
-            dest_root = args.output_dir / target.section.split(".", 1)[0] / rel_path.strip("/")
+            dest_root = (
+                args.output_dir / target.section.split(".", 1)[0] / rel_path.strip("/")
+            )
 
         result = _download_entry(
             target,

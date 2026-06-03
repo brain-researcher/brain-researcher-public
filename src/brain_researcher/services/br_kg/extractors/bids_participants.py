@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import csv
 import re
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import yaml
 
 from brain_researcher.config.paths import resolve_from_config
-
 
 LEXICA_DIR = resolve_from_config("lexica")
 
@@ -17,7 +15,7 @@ LEXICA_DIR = resolve_from_config("lexica")
 #           (edit files under configs/lexica/ then rerun build_onvoc_mapping_rules.py).
 
 
-def load_participant_profile(path: Path) -> Dict[str, object]:
+def load_participant_profile(path: Path) -> dict[str, object]:
     """Return a normalised phenotype profile from a BIDS participants.tsv file."""
 
     if not path.exists():
@@ -30,7 +28,7 @@ def load_participant_profile(path: Path) -> Dict[str, object]:
         except StopIteration as exc:  # empty file
             raise ValueError("participants.tsv is empty") from exc
 
-    profile: Dict[str, object] = {}
+    profile: dict[str, object] = {}
     profile["age"] = _to_float(first_row.get("age"))
     profile["sex"] = _normalise_sex(first_row.get("sex"))
 
@@ -46,7 +44,7 @@ def load_participant_profile(path: Path) -> Dict[str, object]:
     return profile
 
 
-def _to_float(value: object) -> Optional[float]:
+def _to_float(value: object) -> float | None:
     try:
         if value is None:
             return None
@@ -67,10 +65,10 @@ def _normalise_sex(value: object) -> str:
     return "X"
 
 
-def _match_lexicon(filename: str, text: str) -> List[str]:
+def _match_lexicon(filename: str, text: str) -> list[str]:
     records = _load_lexicon(filename)
     lower = str(text or "").lower()
-    matches: List[str] = []
+    matches: list[str] = []
     for label, entry in records.items():
         synonyms = entry.get("synonyms", [])
         for synonym in synonyms:
@@ -80,8 +78,8 @@ def _match_lexicon(filename: str, text: str) -> List[str]:
     return sorted(set(matches))
 
 
-@lru_cache(maxsize=None)
-def _load_lexicon(filename: str) -> Dict[str, Dict[str, object]]:
+@cache
+def _load_lexicon(filename: str) -> dict[str, dict[str, object]]:
     path = LEXICA_DIR / filename
     if not path.exists():
         return {}

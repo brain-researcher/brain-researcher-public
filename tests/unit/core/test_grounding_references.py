@@ -37,8 +37,7 @@ def test_gfs_hit_emits_typed_document_and_citation_anchors() -> None:
 
 def test_reference_kind_rejects_mixed_doi_pmid_string() -> None:
     assert (
-        reference_kind("DOI:10.1016/j.tics.2005.12.004; PMID:16406760")
-        == "malformed"
+        reference_kind("DOI:10.1016/j.tics.2005.12.004; PMID:16406760") == "malformed"
     )
 
 
@@ -164,7 +163,10 @@ def test_gate_downgrades_resolved_anchor_when_claim_does_not_match_support() -> 
     assert result["evidence_basis"][0]["basis_type"] == "retrieved_document"
     assert result["evidence_basis"][1]["basis_type"] == "uncertain"
     assert result["evidence_basis"][1]["reference"] is None
-    assert result["evidence_basis"][1]["gate_note"] == "claim was not supported by anchor text"
+    assert (
+        result["evidence_basis"][1]["gate_note"]
+        == "claim was not supported by anchor text"
+    )
     assert result["alignment"]["checked"] == 2
     assert result["alignment"]["yes"] == 1
     assert result["alignment"]["no_unrelated"] == 1
@@ -268,13 +270,17 @@ _JUDGE_ANCHORS = [
 
 def test_gate_lexical_keeps_high_overlap_claim() -> None:
     # baseline: lexical judge_parity keeps the high-overlap claim
-    res = gate_evidence_basis(_JUDGE_EB, anchors=_JUDGE_ANCHORS, alignment_mode="judge_parity")
+    res = gate_evidence_basis(
+        _JUDGE_EB, anchors=_JUDGE_ANCHORS, alignment_mode="judge_parity"
+    )
     assert res["evidence_basis"][0]["basis_type"] == "retrieved_document"
 
 
 def test_gate_judge_mode_downgrades_when_judge_rejects() -> None:
     res = gate_evidence_basis(
-        _JUDGE_EB, anchors=_JUDGE_ANCHORS, alignment_mode="judge",
+        _JUDGE_EB,
+        anchors=_JUDGE_ANCHORS,
+        alignment_mode="judge",
         alignment_judge=lambda claim, support: "no_unrelated",
     )
     assert res["alignment"]["mode"] == "judge"
@@ -286,7 +292,9 @@ def test_gate_judge_mode_downgrades_when_judge_rejects() -> None:
 
 def test_gate_judge_mode_keeps_when_judge_accepts() -> None:
     res = gate_evidence_basis(
-        _JUDGE_EB, anchors=_JUDGE_ANCHORS, alignment_mode="judge",
+        _JUDGE_EB,
+        anchors=_JUDGE_ANCHORS,
+        alignment_mode="judge",
         alignment_judge=lambda claim, support: "yes",
     )
     assert res["evidence_basis"][0]["basis_type"] == "retrieved_document"
@@ -304,8 +312,13 @@ def test_gate_judge_mode_never_crashes_when_judge_raises() -> None:
         raise RuntimeError("judge down")
 
     res = gate_evidence_basis(
-        _JUDGE_EB, anchors=_JUDGE_ANCHORS, alignment_mode="judge", alignment_judge=boom,
+        _JUDGE_EB,
+        anchors=_JUDGE_ANCHORS,
+        alignment_mode="judge",
+        alignment_judge=boom,
     )
     # gate must still return; failed judge falls back to lexical for the label and records the error
     assert "evidence_basis" in res
-    assert any("alignment_judge_failed" in str(e.get("error", "")) for e in res["errors"])
+    assert any(
+        "alignment_judge_failed" in str(e.get("error", "")) for e in res["errors"]
+    )

@@ -5,14 +5,14 @@ Integrates with BR-KG and Agent services to provide intelligent search suggestio
 
 import asyncio
 import hashlib
-from collections import defaultdict, Counter
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Set
 import logging
+from collections import defaultdict
+from datetime import datetime, timedelta
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Depends
-from pydantic import BaseModel, Field
 import httpx
+from fastapi import APIRouter, Query
+from pydantic import BaseModel, Field
 
 from .env import AGENT_URL, BR_KG_URL
 
@@ -25,62 +25,85 @@ router = APIRouter(prefix="/api/search", tags=["search"])
 # Models
 # ============================================================================
 
+
 class SearchSuggestion(BaseModel):
     """Search suggestion with metadata"""
+
     text: str = Field(..., description="Suggestion text")
-    type: str = Field(..., description="Type: term, dataset, brain_region, task, concept")
+    type: str = Field(
+        ..., description="Type: term, dataset, brain_region, task, concept"
+    )
     frequency: int = Field(default=0, description="Usage frequency")
-    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Additional metadata")
+    metadata: dict[str, Any] | None = Field(
+        default=None, description="Additional metadata"
+    )
     source: str = Field(..., description="Source: agent, br_kg, user_history")
-    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Confidence score")
+    confidence: float = Field(
+        default=1.0, ge=0.0, le=1.0, description="Confidence score"
+    )
+
 
 class SearchSuggestionsResponse(BaseModel):
     """Response for search suggestions"""
-    suggestions: List[SearchSuggestion]
+
+    suggestions: list[SearchSuggestion]
     total: int
     query_time_ms: int
 
+
 class TrendingSearch(BaseModel):
     """Trending search query"""
+
     query: str
     count: int
     growth_rate: float  # Percentage growth
     category: str  # e.g., "fmri", "connectivity", "preprocessing"
     last_searched: datetime
 
+
 class TrendingSearchResponse(BaseModel):
     """Response for trending searches"""
-    trending: List[TrendingSearch]
+
+    trending: list[TrendingSearch]
     timeframe: str  # e.g., "24h", "7d", "30d"
     updated_at: datetime
 
+
 class SearchHistoryItem(BaseModel):
     """Search history item"""
+
     query: str
     timestamp: datetime
-    results_count: Optional[int] = None
-    clicked_result: Optional[str] = None
-    session_id: Optional[str] = None
+    results_count: int | None = None
+    clicked_result: str | None = None
+    session_id: str | None = None
+
 
 class SearchHistoryResponse(BaseModel):
     """Response for search history"""
-    history: List[SearchHistoryItem]
+
+    history: list[SearchHistoryItem]
     total: int
     has_more: bool
+
 
 # ============================================================================
 # In-Memory Storage (Replace with Redis/Database in production)
 # ============================================================================
 
 # Search suggestions cache
-search_cache: Dict[str, List[SearchSuggestion]] = {}
-cache_timestamps: Dict[str, datetime] = {}
+search_cache: dict[str, list[SearchSuggestion]] = {}
+cache_timestamps: dict[str, datetime] = {}
 CACHE_TTL = timedelta(minutes=15)
 
 # Search history and trending data
-search_history: Dict[str, List[SearchHistoryItem]] = defaultdict(list)  # user_id -> history
-trending_queries: Dict[str, TrendingSearch] = {}
-query_counts: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))  # timeframe -> query -> count
+search_history: dict[str, list[SearchHistoryItem]] = defaultdict(
+    list
+)  # user_id -> history
+trending_queries: dict[str, TrendingSearch] = {}
+query_counts: dict[str, dict[str, int]] = defaultdict(
+    lambda: defaultdict(int)
+)  # timeframe -> query -> count
 
 # Predefined suggestions based on common neuroscience terms
 PREDEFINED_SUGGESTIONS = {
@@ -89,7 +112,11 @@ PREDEFINED_SUGGESTIONS = {
         {"text": "hippocampus", "type": "brain_region", "source": "atlas"},
         {"text": "amygdala", "type": "brain_region", "source": "atlas"},
         {"text": "insula", "type": "brain_region", "source": "atlas"},
-        {"text": "anterior cingulate cortex", "type": "brain_region", "source": "atlas"},
+        {
+            "text": "anterior cingulate cortex",
+            "type": "brain_region",
+            "source": "atlas",
+        },
         {"text": "default mode network", "type": "network", "source": "atlas"},
         {"text": "salience network", "type": "network", "source": "atlas"},
         {"text": "executive control network", "type": "network", "source": "atlas"},
@@ -110,97 +137,112 @@ PREDEFINED_SUGGESTIONS = {
         {"text": "seed-based connectivity", "type": "analysis", "source": "method"},
         {"text": "group comparison", "type": "analysis", "source": "method"},
         {"text": "longitudinal analysis", "type": "analysis", "source": "method"},
-    ]
+    ],
 }
 
 # ============================================================================
 # Service Clients
 # ============================================================================
 
+
 class SearchServiceClient:
     """Client for retrieving search suggestions from various services"""
 
     @staticmethod
-    async def get_br_kg_suggestions(query: str, limit: int = 10) -> List[SearchSuggestion]:
+    async def get_br_kg_suggestions(
+        query: str, limit: int = 10
+    ) -> list[SearchSuggestion]:
         """Get suggestions from BR-KG service"""
         try:
             async with httpx.AsyncClient(timeout=2.0) as client:
                 response = await client.get(
                     f"{BR_KG_URL}/api/search/suggest",
-                    params={"q": query, "limit": limit}
+                    params={"q": query, "limit": limit},
                 )
                 if response.status_code == 200:
                     data = response.json()
                     suggestions = []
                     for item in data.get("suggestions", []):
-                        suggestions.append(SearchSuggestion(
-                            text=item["text"],
-                            type=item.get("type", "term"),
-                            frequency=item.get("frequency", 0),
-                            source="br_kg",
-                            confidence=item.get("confidence", 0.8),
-                            metadata=item.get("metadata")
-                        ))
+                        suggestions.append(
+                            SearchSuggestion(
+                                text=item["text"],
+                                type=item.get("type", "term"),
+                                frequency=item.get("frequency", 0),
+                                source="br_kg",
+                                confidence=item.get("confidence", 0.8),
+                                metadata=item.get("metadata"),
+                            )
+                        )
                     return suggestions
         except Exception as e:
             logger.warning(f"Failed to get BR-KG suggestions: {e}")
         return []
 
     @staticmethod
-    async def get_agent_suggestions(query: str, limit: int = 10) -> List[SearchSuggestion]:
+    async def get_agent_suggestions(
+        query: str, limit: int = 10
+    ) -> list[SearchSuggestion]:
         """Get suggestions from Agent service"""
         try:
             async with httpx.AsyncClient(timeout=2.0) as client:
                 response = await client.post(
-                    f"{AGENT_URL}/search/suggest",
-                    json={"query": query, "limit": limit}
+                    f"{AGENT_URL}/search/suggest", json={"query": query, "limit": limit}
                 )
                 if response.status_code == 200:
                     data = response.json()
                     suggestions = []
                     for item in data.get("suggestions", []):
-                        suggestions.append(SearchSuggestion(
-                            text=item["text"],
-                            type=item.get("type", "concept"),
-                            source="agent",
-                            confidence=item.get("confidence", 0.7),
-                            metadata=item.get("metadata")
-                        ))
+                        suggestions.append(
+                            SearchSuggestion(
+                                text=item["text"],
+                                type=item.get("type", "concept"),
+                                source="agent",
+                                confidence=item.get("confidence", 0.7),
+                                metadata=item.get("metadata"),
+                            )
+                        )
                     return suggestions
         except Exception as e:
             logger.warning(f"Failed to get Agent suggestions: {e}")
         return []
 
+
 # ============================================================================
 # Search Logic
 # ============================================================================
 
-def get_predefined_suggestions(query: str, limit: int = 5) -> List[SearchSuggestion]:
+
+def get_predefined_suggestions(query: str, limit: int = 5) -> list[SearchSuggestion]:
     """Get predefined suggestions based on query"""
     query_lower = query.lower()
     suggestions = []
 
     # Search through all predefined categories
-    for category, items in PREDEFINED_SUGGESTIONS.items():
+    for _category, items in PREDEFINED_SUGGESTIONS.items():
         for item in items:
             if query_lower in item["text"].lower():
-                suggestions.append(SearchSuggestion(
-                    text=item["text"],
-                    type=item["type"],
-                    source=item["source"],
-                    confidence=0.9,
-                    frequency=100  # Mock frequency
-                ))
+                suggestions.append(
+                    SearchSuggestion(
+                        text=item["text"],
+                        type=item["type"],
+                        source=item["source"],
+                        confidence=0.9,
+                        frequency=100,  # Mock frequency
+                    )
+                )
 
     # Sort by relevance (starts with query gets higher score)
-    suggestions.sort(key=lambda x: (
-        0 if x.text.lower().startswith(query_lower) else 1,
-        -x.confidence
-    ))
+    suggestions.sort(
+        key=lambda x: (
+            0 if x.text.lower().startswith(query_lower) else 1,
+            -x.confidence,
+        )
+    )
 
     return suggestions[:limit]
 
-def get_cached_suggestions(query: str) -> Optional[List[SearchSuggestion]]:
+
+def get_cached_suggestions(query: str) -> list[SearchSuggestion] | None:
     """Get cached suggestions if still valid"""
     cache_key = hashlib.md5(query.encode()).hexdigest()
 
@@ -210,13 +252,17 @@ def get_cached_suggestions(query: str) -> Optional[List[SearchSuggestion]]:
 
     return None
 
-def cache_suggestions(query: str, suggestions: List[SearchSuggestion]):
+
+def cache_suggestions(query: str, suggestions: list[SearchSuggestion]):
     """Cache suggestions with timestamp"""
     cache_key = hashlib.md5(query.encode()).hexdigest()
     search_cache[cache_key] = suggestions
     cache_timestamps[cache_key] = datetime.utcnow()
 
-async def get_user_history_suggestions(user_id: str, query: str, limit: int = 3) -> List[SearchSuggestion]:
+
+async def get_user_history_suggestions(
+    user_id: str, query: str, limit: int = 3
+) -> list[SearchSuggestion]:
     """Get suggestions from user's search history"""
     if user_id not in search_history:
         return []
@@ -227,14 +273,16 @@ async def get_user_history_suggestions(user_id: str, query: str, limit: int = 3)
     # Find matching queries from history
     for item in search_history[user_id]:
         if query_lower in item.query.lower() and item.query.lower() != query_lower:
-            suggestions.append(SearchSuggestion(
-                text=item.query,
-                type="history",
-                source="user_history",
-                confidence=0.6,
-                frequency=1,
-                metadata={"last_searched": item.timestamp.isoformat()}
-            ))
+            suggestions.append(
+                SearchSuggestion(
+                    text=item.query,
+                    type="history",
+                    source="user_history",
+                    confidence=0.6,
+                    frequency=1,
+                    metadata={"last_searched": item.timestamp.isoformat()},
+                )
+            )
 
     # Remove duplicates and limit
     seen = set()
@@ -246,6 +294,7 @@ async def get_user_history_suggestions(user_id: str, query: str, limit: int = 3)
 
     return unique_suggestions[:limit]
 
+
 def update_trending_queries(query: str):
     """Update trending query statistics"""
     now = datetime.utcnow()
@@ -255,7 +304,7 @@ def update_trending_queries(query: str):
         "1h": timedelta(hours=1),
         "24h": timedelta(hours=24),
         "7d": timedelta(days=7),
-        "30d": timedelta(days=30)
+        "30d": timedelta(days=30),
     }
 
     for timeframe in timeframes.keys():
@@ -265,7 +314,9 @@ def update_trending_queries(query: str):
     if query in trending_queries:
         old_count = trending_queries[query].count
         trending_queries[query].count += 1
-        trending_queries[query].growth_rate = ((trending_queries[query].count - old_count) / old_count) * 100
+        trending_queries[query].growth_rate = (
+            (trending_queries[query].count - old_count) / old_count
+        ) * 100
         trending_queries[query].last_searched = now
     else:
         trending_queries[query] = TrendingSearch(
@@ -273,18 +324,22 @@ def update_trending_queries(query: str):
             count=1,
             growth_rate=0.0,
             category="general",  # Could be improved with classification
-            last_searched=now
+            last_searched=now,
         )
+
 
 # ============================================================================
 # API Endpoints
 # ============================================================================
 
+
 @router.get("/autocomplete", response_model=SearchSuggestionsResponse)
 async def get_search_suggestions(
     q: str = Query(..., min_length=1, description="Search query"),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of suggestions"),
-    user_id: Optional[str] = Query(None, description="User ID for personalized suggestions")
+    user_id: str | None = Query(
+        None, description="User ID for personalized suggestions"
+    ),
 ) -> SearchSuggestionsResponse:
     """Get search suggestions for autocomplete"""
     start_time = datetime.utcnow()
@@ -294,9 +349,7 @@ async def get_search_suggestions(
     if cached:
         query_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
         return SearchSuggestionsResponse(
-            suggestions=cached[:limit],
-            total=len(cached),
-            query_time_ms=query_time
+            suggestions=cached[:limit], total=len(cached), query_time_ms=query_time
         )
 
     # Collect suggestions from multiple sources
@@ -310,10 +363,12 @@ async def get_search_suggestions(
 
         # Add service-based suggestions
         if len(q) >= 2:  # Only call services for longer queries
-            tasks.extend([
-                SearchServiceClient.get_br_kg_suggestions(q, limit // 3),
-                SearchServiceClient.get_agent_suggestions(q, limit // 3)
-            ])
+            tasks.extend(
+                [
+                    SearchServiceClient.get_br_kg_suggestions(q, limit // 3),
+                    SearchServiceClient.get_agent_suggestions(q, limit // 3),
+                ]
+            )
 
         # Add user history suggestions
         if user_id:
@@ -343,11 +398,13 @@ async def get_search_suggestions(
             unique_suggestions.append(suggestion)
 
     # Sort by confidence and relevance
-    unique_suggestions.sort(key=lambda x: (
-        0 if x.text.lower().startswith(q.lower()) else 1,
-        -x.confidence,
-        -x.frequency
-    ))
+    unique_suggestions.sort(
+        key=lambda x: (
+            0 if x.text.lower().startswith(q.lower()) else 1,
+            -x.confidence,
+            -x.frequency,
+        )
+    )
 
     # Limit results
     final_suggestions = unique_suggestions[:limit]
@@ -360,13 +417,18 @@ async def get_search_suggestions(
     return SearchSuggestionsResponse(
         suggestions=final_suggestions,
         total=len(final_suggestions),
-        query_time_ms=query_time
+        query_time_ms=query_time,
     )
+
 
 @router.get("/trending", response_model=TrendingSearchResponse)
 async def get_trending_searches(
-    timeframe: str = Query("24h", pattern="^(1h|24h|7d|30d)$", description="Time period"),
-    limit: int = Query(10, ge=1, le=50, description="Maximum number of trending searches")
+    timeframe: str = Query(
+        "24h", pattern="^(1h|24h|7d|30d)$", description="Time period"
+    ),
+    limit: int = Query(
+        10, ge=1, le=50, description="Maximum number of trending searches"
+    ),
 ) -> TrendingSearchResponse:
     """Get trending search queries"""
 
@@ -381,47 +443,47 @@ async def get_trending_searches(
                 count=45,
                 growth_rate=25.0,
                 category="fmri",
-                last_searched=datetime.utcnow() - timedelta(minutes=30)
+                last_searched=datetime.utcnow() - timedelta(minutes=30),
             ),
             TrendingSearch(
                 query="default mode network connectivity",
                 count=38,
                 growth_rate=18.5,
                 category="connectivity",
-                last_searched=datetime.utcnow() - timedelta(hours=2)
+                last_searched=datetime.utcnow() - timedelta(hours=2),
             ),
             TrendingSearch(
                 query="motor cortex activation",
                 count=32,
                 growth_rate=12.3,
                 category="activation",
-                last_searched=datetime.utcnow() - timedelta(hours=1)
+                last_searched=datetime.utcnow() - timedelta(hours=1),
             ),
             TrendingSearch(
                 query="resting state preprocessing",
                 count=28,
                 growth_rate=8.7,
                 category="preprocessing",
-                last_searched=datetime.utcnow() - timedelta(minutes=45)
+                last_searched=datetime.utcnow() - timedelta(minutes=45),
             ),
             TrendingSearch(
                 query="group analysis GLM",
                 count=24,
                 growth_rate=15.2,
                 category="statistics",
-                last_searched=datetime.utcnow() - timedelta(hours=3)
-            )
+                last_searched=datetime.utcnow() - timedelta(hours=3),
+            ),
         ]
 
         return TrendingSearchResponse(
             trending=mock_trending[:limit],
             timeframe=timeframe,
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
     # Convert to TrendingSearch objects and sort by count
     trending_list = []
-    for query, count in queries.items():
+    for query, _count in queries.items():
         if query in trending_queries:
             trending_list.append(trending_queries[query])
 
@@ -430,14 +492,15 @@ async def get_trending_searches(
     return TrendingSearchResponse(
         trending=trending_list[:limit],
         timeframe=timeframe,
-        updated_at=datetime.utcnow()
+        updated_at=datetime.utcnow(),
     )
+
 
 @router.get("/history", response_model=SearchHistoryResponse)
 async def get_search_history(
     user_id: str = Query(..., description="User ID"),
     limit: int = Query(20, ge=1, le=100, description="Maximum number of history items"),
-    offset: int = Query(0, ge=0, description="Offset for pagination")
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
 ) -> SearchHistoryResponse:
     """Get user's search history"""
 
@@ -447,22 +510,21 @@ async def get_search_history(
     sorted_history = sorted(user_history, key=lambda x: x.timestamp, reverse=True)
 
     # Apply pagination
-    paginated_history = sorted_history[offset:offset + limit]
+    paginated_history = sorted_history[offset : offset + limit]
     has_more = len(sorted_history) > offset + limit
 
     return SearchHistoryResponse(
-        history=paginated_history,
-        total=len(user_history),
-        has_more=has_more
+        history=paginated_history, total=len(user_history), has_more=has_more
     )
+
 
 @router.post("/track")
 async def track_search(
     query: str = Query(..., description="Search query"),
-    user_id: Optional[str] = Query(None, description="User ID"),
-    results_count: Optional[int] = Query(None, description="Number of results returned"),
-    session_id: Optional[str] = Query(None, description="Session ID")
-) -> Dict[str, str]:
+    user_id: str | None = Query(None, description="User ID"),
+    results_count: int | None = Query(None, description="Number of results returned"),
+    session_id: str | None = Query(None, description="Session ID"),
+) -> dict[str, str]:
     """Track a search query for analytics and trending"""
 
     # Update trending data
@@ -474,7 +536,7 @@ async def track_search(
             query=query,
             timestamp=datetime.utcnow(),
             results_count=results_count,
-            session_id=session_id
+            session_id=session_id,
         )
         search_history[user_id].append(history_item)
 
@@ -484,13 +546,14 @@ async def track_search(
 
     return {"status": "tracked", "query": query}
 
+
 @router.post("/click")
 async def track_search_click(
     query: str = Query(..., description="Original search query"),
     clicked_result: str = Query(..., description="Clicked result identifier"),
-    user_id: Optional[str] = Query(None, description="User ID"),
-    position: Optional[int] = Query(None, description="Position in search results")
-) -> Dict[str, str]:
+    user_id: str | None = Query(None, description="User ID"),
+    position: int | None = Query(None, description="Position in search results"),
+) -> dict[str, str]:
     """Track when user clicks on a search result"""
 
     # Update user history with click information
@@ -501,12 +564,15 @@ async def track_search_click(
                 item.clicked_result = clicked_result
                 break
 
-    logger.info(f"Search click tracked: query='{query}', result='{clicked_result}', position={position}")
+    logger.info(
+        f"Search click tracked: query='{query}', result='{clicked_result}', position={position}"
+    )
 
     return {"status": "tracked", "query": query, "clicked_result": clicked_result}
 
+
 @router.delete("/history/{user_id}")
-async def clear_search_history(user_id: str) -> Dict[str, str]:
+async def clear_search_history(user_id: str) -> dict[str, str]:
     """Clear user's search history"""
 
     if user_id in search_history:
@@ -514,11 +580,12 @@ async def clear_search_history(user_id: str) -> Dict[str, str]:
 
     return {"status": "cleared", "user_id": user_id}
 
+
 @router.get("/popular")
 async def get_popular_searches(
-    category: Optional[str] = Query(None, description="Filter by category"),
-    limit: int = Query(10, ge=1, le=50, description="Maximum number of results")
-) -> Dict[str, List[str]]:
+    category: str | None = Query(None, description="Filter by category"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of results"),
+) -> dict[str, list[str]]:
     """Get popular search queries"""
 
     # Mock popular searches by category
@@ -528,29 +595,29 @@ async def get_popular_searches(
             "motor task activation",
             "emotional faces paradigm",
             "resting state connectivity",
-            "GLM statistical analysis"
+            "GLM statistical analysis",
         ],
         "preprocessing": [
             "motion correction",
             "spatial normalization",
             "temporal filtering",
             "slice timing correction",
-            "skull stripping"
+            "skull stripping",
         ],
         "connectivity": [
             "seed-based connectivity",
             "independent component analysis",
             "graph theory analysis",
             "dynamic functional connectivity",
-            "network modularity"
+            "network modularity",
         ],
         "statistics": [
             "multiple comparisons correction",
             "cluster-based thresholding",
             "group comparison",
             "longitudinal analysis",
-            "mixed effects models"
-        ]
+            "mixed effects models",
+        ],
     }
 
     if category and category in popular_by_category:

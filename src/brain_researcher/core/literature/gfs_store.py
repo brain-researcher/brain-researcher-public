@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from brain_researcher.core.grounding_references import anchors_from_gfs_hits
 
@@ -108,7 +108,7 @@ class AutoGFSDecision:
     should_trigger: bool
     reason: str
     query_intent: str
-    stores: List[str]
+    stores: list[str]
     call_budget: int
     weak_evidence: bool
 
@@ -120,7 +120,7 @@ def _is_supported_file_search_model(model: str) -> bool:
     )
 
 
-def _resolve_store(override: Optional[str] = None) -> Optional[str]:
+def _resolve_store(override: str | None = None) -> str | None:
     if override:
         return override
     return (
@@ -131,7 +131,7 @@ def _resolve_store(override: Optional[str] = None) -> Optional[str]:
     )
 
 
-def _resolve_stores(override: Optional[str] = None) -> List[str]:
+def _resolve_stores(override: str | None = None) -> list[str]:
     """Resolve file search store names from env or override.
 
     Priority:
@@ -167,7 +167,7 @@ def _resolve_stores(override: Optional[str] = None) -> List[str]:
     return ["fileSearchStores/brain-researcher-codebase-5i70bkfmcumj"]
 
 
-def _resolve_model(override: Optional[str] = None) -> str:
+def _resolve_model(override: str | None = None) -> str:
     return (
         override
         or os.environ.get("BR_FILE_SEARCH_MODEL")
@@ -276,9 +276,9 @@ def classify_store_kind(store_name: str) -> str:
 def route_gfs_stores(
     query: str,
     *,
-    override: Optional[str] = None,
-    stores: Optional[Sequence[str]] = None,
-) -> List[str]:
+    override: str | None = None,
+    stores: Sequence[str] | None = None,
+) -> list[str]:
     resolved = list(stores) if stores is not None else _resolve_stores(override)
     if not resolved:
         return []
@@ -302,10 +302,10 @@ def should_trigger_auto_gfs(
     *,
     gfs_enabled: bool = True,
     include_explain: bool = False,
-    result_count: Optional[int] = None,
-    top_score: Optional[float] = None,
+    result_count: int | None = None,
+    top_score: float | None = None,
     weak_evidence: bool = False,
-    store_override: Optional[str] = None,
+    store_override: str | None = None,
 ) -> AutoGFSDecision:
     stores = route_gfs_stores(query, override=store_override)
     if not gfs_enabled:
@@ -378,8 +378,8 @@ def should_trigger_auto_gfs(
     )
 
 
-def _extract_header_fields(text: str) -> Dict[str, str]:
-    header: Dict[str, str] = {}
+def _extract_header_fields(text: str) -> dict[str, str]:
+    header: dict[str, str] = {}
     for raw in text.splitlines():
         line = raw.strip()
         if not line or ":" not in line:
@@ -403,7 +403,7 @@ def _extract_header_fields(text: str) -> Dict[str, str]:
     return header
 
 
-def _extract_identifiers(text: str) -> Dict[str, Optional[str]]:
+def _extract_identifiers(text: str) -> dict[str, str | None]:
     pmcid = None
     pmid = None
     doi = None
@@ -420,7 +420,7 @@ def _extract_identifiers(text: str) -> Dict[str, Optional[str]]:
     return {"pmcid": pmcid, "pmid": pmid, "doi": doi}
 
 
-def _normalize_pmcid(value: Optional[str]) -> Optional[str]:
+def _normalize_pmcid(value: str | None) -> str | None:
     text = (value or "").strip()
     if not text:
         return None
@@ -430,12 +430,12 @@ def _normalize_pmcid(value: Optional[str]) -> Optional[str]:
     return f"PMC{digits}" if digits else None
 
 
-def _normalize_pmid(value: Optional[str]) -> Optional[str]:
+def _normalize_pmid(value: str | None) -> str | None:
     text = re.sub(r"\D+", "", (value or "").strip())
     return text or None
 
 
-def _normalize_doi(value: Optional[str]) -> Optional[str]:
+def _normalize_doi(value: str | None) -> str | None:
     text = (value or "").strip()
     if not text:
         return None
@@ -450,15 +450,15 @@ def _normalize_doi(value: Optional[str]) -> Optional[str]:
     return lowered or None
 
 
-def _looks_like_bundle_title(value: Optional[str]) -> bool:
+def _looks_like_bundle_title(value: str | None) -> bool:
     title = (value or "").strip()
     if not title:
         return False
     return bool(_BUNDLE_TITLE_RE.search(title))
 
 
-def _preferred_title(*candidates: Optional[str]) -> Optional[str]:
-    cleaned: List[str] = []
+def _preferred_title(*candidates: str | None) -> str | None:
+    cleaned: list[str] = []
     for candidate in candidates:
         title = (candidate or "").strip()
         if not title:
@@ -471,7 +471,7 @@ def _preferred_title(*candidates: Optional[str]) -> Optional[str]:
     return None
 
 
-def _fallback_display_title(text: str) -> Optional[str]:
+def _fallback_display_title(text: str) -> str | None:
     collapsed = re.sub(r"\s+", " ", (text or "")).strip()
     if not collapsed:
         return None
@@ -485,7 +485,7 @@ def _fallback_display_title(text: str) -> Optional[str]:
     return f"Paper excerpt: {sentence}"
 
 
-def _title_from_text(text: str) -> Optional[str]:
+def _title_from_text(text: str) -> str | None:
     header = _extract_header_fields(text)
     explicit_title = (header.get("title") or "").strip()
     if explicit_title:
@@ -512,7 +512,7 @@ def _title_from_text(text: str) -> Optional[str]:
     return None
 
 
-def _normalized_hit_identity(hit: Dict[str, Any]) -> str:
+def _normalized_hit_identity(hit: dict[str, Any]) -> str:
     doi = _normalize_doi(hit.get("doi"))
     if doi:
         return f"doi:{doi}"
@@ -534,7 +534,7 @@ def _normalized_hit_identity(hit: Dict[str, Any]) -> str:
     return "unknown"
 
 
-def _metadata_signature(hit: Dict[str, Any]) -> Optional[str]:
+def _metadata_signature(hit: dict[str, Any]) -> str | None:
     doi = _normalize_doi(hit.get("doi"))
     if doi:
         return f"doi:{doi}"
@@ -555,22 +555,24 @@ def _metadata_signature(hit: Dict[str, Any]) -> Optional[str]:
 
 def _normalize_gfs_hit(
     *,
-    raw_title: Optional[str],
+    raw_title: str | None,
     text: str,
     score: Any,
-    doc_id: Optional[str] = None,
-) -> Dict[str, Any]:
+    doc_id: str | None = None,
+) -> dict[str, Any]:
     header = _extract_header_fields(text)
     ids = _extract_identifiers(text)
     pmcid = _normalize_pmcid(header.get("pmcid") or ids.get("pmcid"))
     pmid = _normalize_pmid(header.get("pmid") or ids.get("pmid"))
     doi = _normalize_doi(header.get("doi") or ids.get("doi"))
-    real_title = _preferred_title(_title_from_text(text), header.get("title"), raw_title)
+    real_title = _preferred_title(
+        _title_from_text(text), header.get("title"), raw_title
+    )
     synthetic_title = None
     if not real_title:
         synthetic_title = _fallback_display_title(text)
     title = real_title or synthetic_title
-    hit: Dict[str, Any] = {
+    hit: dict[str, Any] = {
         "title": title,
         "score": score,
         "pmcid": pmcid,
@@ -586,7 +588,7 @@ def _normalize_gfs_hit(
     return hit
 
 
-def _retrieved_context_doc_id(ctx: Any, store_name: str) -> Optional[str]:
+def _retrieved_context_doc_id(ctx: Any, store_name: str) -> str | None:
     """Extract a traceable document anchor from a Google File Search context."""
     if ctx is None:
         return None
@@ -607,16 +609,12 @@ def _retrieved_context_doc_id(ctx: Any, store_name: str) -> Optional[str]:
         file_search_store = (
             getattr(ctx, "file_search_store", None) or store_name or ""
         ).strip()
-        return (
-            f"{file_search_store}/files/{title}"
-            if file_search_store
-            else title
-        )
+        return f"{file_search_store}/files/{title}" if file_search_store else title
 
     return None
 
 
-def _merge_hits(existing: Dict[str, Any], incoming: Dict[str, Any]) -> Dict[str, Any]:
+def _merge_hits(existing: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
     existing_score = float(existing.get("score") or 0.0)
     incoming_score = float(incoming.get("score") or 0.0)
     best_source = existing if existing_score >= incoming_score else incoming
@@ -632,13 +630,15 @@ def _merge_hits(existing: Dict[str, Any], incoming: Dict[str, Any]) -> Dict[str,
     if not best.get("text") and other.get("text"):
         best["text"] = other["text"]
     best["score"] = (
-        existing.get("score") if existing_score >= incoming_score else incoming.get("score")
+        existing.get("score")
+        if existing_score >= incoming_score
+        else incoming.get("score")
     )
     return best
 
 
-def _propagate_bundle_metadata(hits: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    by_bundle: Dict[str, List[Dict[str, Any]]] = {}
+def _propagate_bundle_metadata(hits: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_bundle: dict[str, list[dict[str, Any]]] = {}
     for hit in hits:
         source_title = (hit.get("_source_title") or "").strip()
         if not _looks_like_bundle_title(source_title):
@@ -647,7 +647,7 @@ def _propagate_bundle_metadata(hits: List[Dict[str, Any]]) -> List[Dict[str, Any
 
     for bundle_title, bundle_hits in by_bundle.items():
         del bundle_title
-        donors: Dict[str, Dict[str, Any]] = {}
+        donors: dict[str, dict[str, Any]] = {}
         for hit in bundle_hits:
             sig = _metadata_signature(hit)
             if not sig:
@@ -667,9 +667,9 @@ def _propagate_bundle_metadata(hits: List[Dict[str, Any]]) -> List[Dict[str, Any
     return hits
 
 
-def _finalize_hits(hits: List[Dict[str, Any]], *, top_k: int) -> List[Dict[str, Any]]:
+def _finalize_hits(hits: list[dict[str, Any]], *, top_k: int) -> list[dict[str, Any]]:
     normalized_hits = _propagate_bundle_metadata(list(hits))
-    dedup_hits: Dict[str, Dict[str, Any]] = {}
+    dedup_hits: dict[str, dict[str, Any]] = {}
     for hit in normalized_hits:
         doc_id = _normalized_hit_identity(hit)
         prev = dedup_hits.get(doc_id)
@@ -689,12 +689,12 @@ def _finalize_hits(hits: List[Dict[str, Any]], *, top_k: int) -> List[Dict[str, 
     return sorted_hits
 
 
-def _result_top_score(result: Dict[str, Any]) -> float:
+def _result_top_score(result: dict[str, Any]) -> float:
     hits = result.get("hits") or []
     return max((float(hit.get("score") or 0.0) for hit in hits), default=0.0)
 
 
-def _is_weak_gfs_result(result: Dict[str, Any]) -> bool:
+def _is_weak_gfs_result(result: dict[str, Any]) -> bool:
     if not isinstance(result, dict):
         return True
     if result.get("status") != "ok":
@@ -709,12 +709,12 @@ def search_gfs(
     query: str,
     *,
     top_k: int = 5,
-    store: Optional[str] = None,
-    model: Optional[str] = None,
-    api_key: Optional[str] = None,
+    store: str | None = None,
+    model: str | None = None,
+    api_key: str | None = None,
     timeout_ms: int | None = None,
     max_stores: int | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run a File Search query and return structured hits.
 
     Supports multiple stores via `BR_FILE_SEARCH_STORE_NAMES` (comma-separated).
@@ -756,10 +756,10 @@ def search_gfs(
     client = genai.Client(api_key=api_key)
 
     # Query all stores and aggregate results
-    all_hits: List[Dict[str, Any]] = []
-    summaries: List[str] = []
-    queried_stores: List[str] = []
-    store_errors: List[Dict[str, str]] = []
+    all_hits: list[dict[str, Any]] = []
+    summaries: list[str] = []
+    queried_stores: list[str] = []
+    store_errors: list[dict[str, str]] = []
     call_count = 0
     started_at = time.monotonic()
 
@@ -844,20 +844,21 @@ def search_gfs(
         "store_errors": store_errors,
     }
 
+
 def search_gfs_auto(
     query: str,
     *,
     top_k: int = 5,
-    store: Optional[str] = None,
-    model: Optional[str] = None,
-    api_key: Optional[str] = None,
+    store: str | None = None,
+    model: str | None = None,
+    api_key: str | None = None,
     gfs_enabled: bool = True,
     include_explain: bool = False,
-    result_count: Optional[int] = None,
-    top_score: Optional[float] = None,
+    result_count: int | None = None,
+    top_score: float | None = None,
     weak_evidence: bool = False,
     max_calls: int = 2,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     decision = should_trigger_auto_gfs(
         query,
         gfs_enabled=gfs_enabled,
@@ -885,9 +886,9 @@ def search_gfs_auto(
 
     ordered_stores = decision.stores
     call_budget = min(max_calls, decision.call_budget or 1, len(ordered_stores))
-    queried_stores: List[str] = []
-    merged_hits: List[Dict[str, Any]] = []
-    summaries: List[str] = []
+    queried_stores: list[str] = []
+    merged_hits: list[dict[str, Any]] = []
+    summaries: list[str] = []
     last_status = "error"
     last_error = None
     model_name = _resolve_model(model)

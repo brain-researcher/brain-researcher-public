@@ -9,42 +9,47 @@ This module provides configuration management for the retry system, including:
 
 import os
 import re
-import yaml
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any
+
+import yaml
 from pydantic import BaseModel, Field, field_validator
 
 
 class RetryPattern(BaseModel):
     """A single pattern for matching errors to categories."""
-    type: str  # exit_code or stderr_regex
-    value: Optional[int] = None  # For exit_code patterns
-    pattern: Optional[str] = None  # For stderr_regex patterns
 
-    @field_validator('type')
+    type: str  # exit_code or stderr_regex
+    value: int | None = None  # For exit_code patterns
+    pattern: str | None = None  # For stderr_regex patterns
+
+    @field_validator("type")
     @classmethod
     def validate_type(cls, v):
-        if v not in ('exit_code', 'stderr_regex'):
-            raise ValueError(f"Pattern type must be 'exit_code' or 'stderr_regex', got: {v}")
+        if v not in ("exit_code", "stderr_regex"):
+            raise ValueError(
+                f"Pattern type must be 'exit_code' or 'stderr_regex', got: {v}"
+            )
         return v
 
     def matches(self, exit_code: int, stderr: str) -> bool:
         """Check if this pattern matches the given error."""
-        if self.type == 'exit_code':
+        if self.type == "exit_code":
             return exit_code == self.value
-        elif self.type == 'stderr_regex':
+        elif self.type == "stderr_regex":
             return bool(re.search(self.pattern, stderr, re.IGNORECASE))
         return False
 
 
 class RetryCategory(BaseModel):
     """Configuration for a specific error category."""
+
     retryable: bool
-    max_attempts: Optional[int] = None  # Overrides default if set
-    base_delay: Optional[int] = None  # Overrides default if set
-    max_delay: Optional[int] = None  # Overrides default if set
+    max_attempts: int | None = None  # Overrides default if set
+    base_delay: int | None = None  # Overrides default if set
+    max_delay: int | None = None  # Overrides default if set
     description: str = ""
-    patterns: List[RetryPattern] = Field(default_factory=list)
+    patterns: list[RetryPattern] = Field(default_factory=list)
 
     def matches(self, exit_code: int, stderr: str) -> bool:
         """Check if any pattern in this category matches."""
@@ -53,6 +58,7 @@ class RetryCategory(BaseModel):
 
 class RetryDefaults(BaseModel):
     """Default retry settings."""
+
     base_delay_seconds: int = 10
     max_delay_seconds: int = 300
     jitter_percent: int = 20
@@ -61,10 +67,11 @@ class RetryDefaults(BaseModel):
 
 class RetryTaxonomy(BaseModel):
     """Complete retry taxonomy from YAML."""
+
     version: str
     defaults: RetryDefaults
-    categories: Dict[str, RetryCategory]
-    priority: List[str] = Field(default_factory=list)
+    categories: dict[str, RetryCategory]
+    priority: list[str] = Field(default_factory=list)
 
     def classify_error(self, exit_code: int, stderr: str) -> str:
         """Classify an error based on exit code and stderr.
@@ -90,15 +97,16 @@ class RetryTaxonomy(BaseModel):
 
 class RetrySettings(BaseModel):
     """Global retry settings combining env vars and taxonomy."""
+
     enabled: bool = Field(default=True)
     base_delay: int = Field(default=10)  # Seconds
     max_delay: int = Field(default=300)  # Seconds
     jitter_percent: int = Field(default=20)  # Percent
     max_attempts: int = Field(default=3)  # Global default
-    taxonomy: Optional[RetryTaxonomy] = None
+    taxonomy: RetryTaxonomy | None = None
 
     @classmethod
-    def from_env_and_yaml(cls, yaml_path: Optional[Path] = None) -> "RetrySettings":
+    def from_env_and_yaml(cls, yaml_path: Path | None = None) -> "RetrySettings":
         """Load settings from environment variables and YAML file.
 
         Args:
@@ -123,7 +131,7 @@ class RetrySettings(BaseModel):
         taxonomy = None
         if yaml_path.exists():
             try:
-                with open(yaml_path, 'r') as f:
+                with open(yaml_path) as f:
                     yaml_data = yaml.safe_load(f)
                     taxonomy = RetryTaxonomy(**yaml_data)
 
@@ -140,6 +148,7 @@ class RetrySettings(BaseModel):
             except Exception as e:
                 # Log error but don't fail - use defaults
                 import logging
+
                 logging.warning(f"Failed to load retry taxonomy from {yaml_path}: {e}")
 
         return cls(
@@ -151,7 +160,7 @@ class RetrySettings(BaseModel):
             taxonomy=taxonomy,
         )
 
-    def get_category_settings(self, category: str) -> Dict[str, Any]:
+    def get_category_settings(self, category: str) -> dict[str, Any]:
         """Get retry settings for a specific category.
 
         Args:
@@ -192,7 +201,7 @@ class RetrySettings(BaseModel):
 
 
 # Global cache for settings (populated by get_retry_settings)
-_retry_settings_cache: Optional[RetrySettings] = None
+_retry_settings_cache: RetrySettings | None = None
 
 
 def get_retry_settings(reload: bool = False) -> RetrySettings:

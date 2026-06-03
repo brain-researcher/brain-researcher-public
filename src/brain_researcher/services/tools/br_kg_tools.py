@@ -4,23 +4,22 @@ BR-KG tool wrappers for the BR-KG LangGraph system.
 Wraps existing BR-KG knowledge graph functionality as LangChain tools.
 """
 
+import importlib
+import json
 import logging
 import os
-import json
-import importlib
 import re
 from pathlib import Path
-import requests
-from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel, Field
+from typing import Any
 
-from brain_researcher.services.tools.tool_base import NeuroToolWrapper, ToolResult
-from brain_researcher.services.br_kg.query_service import QueryService
+import requests
+from pydantic import BaseModel, Field
 
 from brain_researcher.core.multiverse.confounds import (
     CONF_FAMILY_AXES,
     extract_confounds_family_flags,
 )
+from brain_researcher.services.br_kg.query_service import QueryService
 from brain_researcher.services.tools.tool_base import (
     CachedToolWrapper,
     NeuroToolWrapper,
@@ -41,8 +40,7 @@ def _mode_enabled(mode: str | None) -> bool:
 
 def _runtime_source_id(prefix: str, value: str) -> str:
     compact = "".join(
-        ch if ch.isalnum() else "-"
-        for ch in str(value or "").strip().lower()
+        ch if ch.isalnum() else "-" for ch in str(value or "").strip().lower()
     ).strip("-")
     return f"{prefix}:{compact or 'runtime'}"
 
@@ -244,17 +242,31 @@ class ContrastToActivationMapArgs(BaseModel):
         default=None,
         description="Optional explicit task label to seed task prediction.",
     )
-    top_k_tasks: int = Field(default=20, description="Max task candidates from NiCLIP text search.")
-    top_k_constructs: int = Field(default=10, description="Max constructs retained after aggregation.")
-    top_k_map_terms: int = Field(default=3, description="Top constructs to try for map generation.")
-    map_threshold: float = Field(default=3.0, description="Study-count threshold for map rasterization.")
+    top_k_tasks: int = Field(
+        default=20, description="Max task candidates from NiCLIP text search."
+    )
+    top_k_constructs: int = Field(
+        default=10, description="Max constructs retained after aggregation."
+    )
+    top_k_map_terms: int = Field(
+        default=3, description="Top constructs to try for map generation."
+    )
+    map_threshold: float = Field(
+        default=3.0, description="Study-count threshold for map rasterization."
+    )
     save_dir: str | None = Field(
         default=None,
         description="Optional directory to save predicted NIfTI map.",
     )
-    coord_top_n: int = Field(default=5, description="Top coordinates exported for coordinate_to_concept.")
-    coord_radius_mm: float = Field(default=10.0, description="Radius passed to coordinate_to_concept.")
-    coord_top_k: int = Field(default=5, description="Top concepts per coordinate for downstream mapping.")
+    coord_top_n: int = Field(
+        default=5, description="Top coordinates exported for coordinate_to_concept."
+    )
+    coord_radius_mm: float = Field(
+        default=10.0, description="Radius passed to coordinate_to_concept."
+    )
+    coord_top_k: int = Field(
+        default=5, description="Top concepts per coordinate for downstream mapping."
+    )
 
 
 # Tool implementations
@@ -264,7 +276,7 @@ class FindRelatedConceptsTool(CachedToolWrapper):
     def __init__(
         self,
         api_url: str | None = None,
-        query_service: Optional[QueryService] = None,
+        query_service: QueryService | None = None,
         backend: str | None = None,
         runtime_mapper: Any | None = None,
         runtime_rerank_mode: str | None = None,
@@ -275,14 +287,20 @@ class FindRelatedConceptsTool(CachedToolWrapper):
         )
         self._query_service = query_service
         self.backend = (
-            backend or os.environ.get("BR_KG_FIND_RELATED_BACKEND", "auto")
-        ).strip().lower()
+            (backend or os.environ.get("BR_KG_FIND_RELATED_BACKEND", "auto"))
+            .strip()
+            .lower()
+        )
         self._last_backend_used: str | None = None
         self._last_backend_error: str | None = None
         self.runtime_rerank_mode = (
-            runtime_rerank_mode
-            or os.environ.get("BR_KG_FIND_RELATED_RUNTIME_RERANK", "auto")
-        ).strip().lower()
+            (
+                runtime_rerank_mode
+                or os.environ.get("BR_KG_FIND_RELATED_RUNTIME_RERANK", "auto")
+            )
+            .strip()
+            .lower()
+        )
         self._runtime_mapper = runtime_mapper
 
     def get_tool_name(self) -> str:
@@ -298,11 +316,11 @@ class FindRelatedConceptsTool(CachedToolWrapper):
         return FindConceptsArgs
 
     def _normalize_query_builder_subgraph(
-        self, payload: Dict[str, Any]
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        self, payload: dict[str, Any]
+    ) -> dict[str, list[dict[str, Any]]]:
         """Normalize /api/graph/query response into Cytoscape-like shape."""
-        nodes: List[Dict[str, Any]] = []
-        edges: List[Dict[str, Any]] = []
+        nodes: list[dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
 
         for raw_node in payload.get("nodes", []):
             if not isinstance(raw_node, dict):
@@ -333,8 +351,12 @@ class FindRelatedConceptsTool(CachedToolWrapper):
             if not isinstance(raw_edge, dict):
                 continue
             props = raw_edge.get("properties") or raw_edge.get("props") or {}
-            source = raw_edge.get("source") or raw_edge.get("start") or props.get("source")
-            target = raw_edge.get("target") or raw_edge.get("end") or props.get("target")
+            source = (
+                raw_edge.get("source") or raw_edge.get("start") or props.get("source")
+            )
+            target = (
+                raw_edge.get("target") or raw_edge.get("end") or props.get("target")
+            )
             if source is None or target is None:
                 continue
 
@@ -357,7 +379,7 @@ class FindRelatedConceptsTool(CachedToolWrapper):
         return {"nodes": nodes, "edges": edges}
 
     @staticmethod
-    def _labels_for_node_type(node_type: Any) -> List[str]:
+    def _labels_for_node_type(node_type: Any) -> list[str]:
         node_label = str(node_type or "Node").strip() or "Node"
         labels = [node_label]
         if "concept" in node_label.lower() and "Concept" not in labels:
@@ -366,7 +388,7 @@ class FindRelatedConceptsTool(CachedToolWrapper):
 
     def _fetch_related_subgraph_local(
         self, concept: str, depth: int, limit: int
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ) -> dict[str, list[dict[str, Any]]]:
         """Read-only fallback using the in-process QueryService."""
         service = self._query_service or QueryService()
         max_hits = max(limit * 3, 10)
@@ -382,15 +404,19 @@ class FindRelatedConceptsTool(CachedToolWrapper):
 
         query_norm = concept.strip().lower()
         seed = next(
-            (hit for hit in concept_hits if str(hit.label or "").strip().lower() == query_norm),
+            (
+                hit
+                for hit in concept_hits
+                if str(hit.label or "").strip().lower() == query_norm
+            ),
             concept_hits[0],
         )
         seed_id = str(seed.kg_id or "").strip()
         if not seed_id:
             return {"nodes": [], "edges": []}
 
-        nodes_by_id: Dict[str, Dict[str, Any]] = {}
-        edges: List[Dict[str, Any]] = []
+        nodes_by_id: dict[str, dict[str, Any]] = {}
+        edges: list[dict[str, Any]] = []
         seen_edges: set[tuple[str, str, str]] = set()
 
         seed_labels = self._labels_for_node_type(seed.node_type)
@@ -407,7 +433,7 @@ class FindRelatedConceptsTool(CachedToolWrapper):
         frontier = [seed_id]
         visited = {seed_id}
         for _ in range(max(1, depth)):
-            next_frontier: List[str] = []
+            next_frontier: list[str] = []
             for current_id in frontier:
                 neighbors = service.neighbors(current_id, limit=max(limit * 4, 20))
                 for neighbor in neighbors:
@@ -461,7 +487,7 @@ class FindRelatedConceptsTool(CachedToolWrapper):
 
     def _fetch_related_subgraph_http(
         self, concept: str, depth: int, limit: int
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ) -> dict[str, list[dict[str, Any]]]:
         """
         Fetch concept neighborhood with compatibility fallbacks.
 
@@ -476,7 +502,7 @@ class FindRelatedConceptsTool(CachedToolWrapper):
         ]
 
         concept_not_found = False
-        last_error: Optional[requests.RequestException] = None
+        last_error: requests.RequestException | None = None
 
         for url in candidate_urls:
             try:
@@ -550,7 +576,9 @@ class FindRelatedConceptsTool(CachedToolWrapper):
                             continue
                         node_type = str(entry.get("node_type") or "").lower()
                         candidate_id = entry.get("node_id")
-                        if not candidate_id and isinstance(entry.get("properties"), dict):
+                        if not candidate_id and isinstance(
+                            entry.get("properties"), dict
+                        ):
                             candidate_id = entry.get("properties", {}).get("id")
                         if candidate_id and (node_type == "concept" or node_id is None):
                             node_id = str(candidate_id)
@@ -586,7 +614,7 @@ class FindRelatedConceptsTool(CachedToolWrapper):
 
     def _fetch_related_subgraph(
         self, concept: str, depth: int, limit: int
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ) -> dict[str, list[dict[str, Any]]]:
         """Fetch neighborhood using selected backend mode (http/local/auto)."""
         backend_mode = (self.backend or "auto").strip().lower()
         self._last_backend_used = None
@@ -620,9 +648,7 @@ class FindRelatedConceptsTool(CachedToolWrapper):
             self._last_backend_error = str(exc)
             if self._should_skip_local_fallback(exc):
                 self._last_backend_used = "degraded_empty"
-                self._last_backend_error = (
-                    f"http_error={exc}; local_fallback_skipped=network_unreachable_or_policy"
-                )
+                self._last_backend_error = f"http_error={exc}; local_fallback_skipped=network_unreachable_or_policy"
                 logger.warning(
                     "find_related_concepts HTTP fetch failed with unreachable/policy error; "
                     "returning empty result without local fallback: %s",
@@ -676,8 +702,8 @@ class FindRelatedConceptsTool(CachedToolWrapper):
         return self._runtime_mapper
 
     def _maybe_rerank_with_runtime(
-        self, *, concept: str, related_concepts: List[Dict[str, Any]]
-    ) -> tuple[List[Dict[str, Any]], Dict[str, Any] | None]:
+        self, *, concept: str, related_concepts: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
         mapper = self._resolve_runtime_mapper()
         if mapper is None:
             return related_concepts, None
@@ -688,7 +714,9 @@ class FindRelatedConceptsTool(CachedToolWrapper):
             )
             return reranked, runtime_meta
         except Exception as exc:  # pragma: no cover - fail-open by design
-            logger.warning("Gabriel runtime rerank failed; using graph strengths: %s", exc)
+            logger.warning(
+                "Gabriel runtime rerank failed; using graph strengths: %s", exc
+            )
             return (
                 related_concepts,
                 {
@@ -701,7 +729,9 @@ class FindRelatedConceptsTool(CachedToolWrapper):
     def _run(self, concept: str, depth: int = 2, limit: int = 10) -> ToolResult:
         """Find related concepts in the knowledge graph."""
         try:
-            data = self._fetch_related_subgraph(concept=concept, depth=depth, limit=limit)
+            data = self._fetch_related_subgraph(
+                concept=concept, depth=depth, limit=limit
+            )
 
             # Extract related concepts
             related_concepts = []
@@ -899,7 +929,7 @@ class CoordinateToConceptTool(NeuroToolWrapper):
         allow_mock: bool,
         dependency_error: str,
         mapper: Any | None = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         configured_env = {
             key: value
             for key in (
@@ -927,7 +957,7 @@ class CoordinateToConceptTool(NeuroToolWrapper):
             or mapper_model_path
         )
 
-        path_hints: Dict[str, Any] = {
+        path_hints: dict[str, Any] = {
             "expected_env_vars": [
                 "NICLIP_DATA_PATH",
                 "NICLIP_EMBEDDINGS_PATH",
@@ -989,14 +1019,14 @@ class CoordinateToConceptTool(NeuroToolWrapper):
                 )
 
             # Check if user passed a single coordinate as [x, y, z] instead of [[x, y, z]]
-            if coordinates and isinstance(coordinates[0], (int, float)):
+            if coordinates and isinstance(coordinates[0], int | float):
                 # Auto-correct common mistake
                 coordinates = [coordinates]
                 logger.info("Auto-corrected single coordinate format")
 
             normalized_coords: list[list[float]] = []
             for coord in coordinates:
-                if not isinstance(coord, (list, tuple)) or len(coord) != 3:
+                if not isinstance(coord, list | tuple) or len(coord) != 3:
                     return ToolResult(
                         status="error",
                         error="Each coordinate must be a list of three numbers [x, y, z]",
@@ -1028,7 +1058,7 @@ class CoordinateToConceptTool(NeuroToolWrapper):
             allow_mock = _mode_enabled(os.environ.get("BR_NICLIP_ALLOW_MOCK", "false"))
             try:
                 from brain_researcher.services.br_kg.etl.mappers.niclip_spatial_mapper_improved import (
-                    get_improved_mapper
+                    get_improved_mapper,
                 )
 
                 mapper = get_improved_mapper()
@@ -1048,7 +1078,9 @@ class CoordinateToConceptTool(NeuroToolWrapper):
                                     "concept": concept_info.get("concept", ""),
                                     "score": float(concept_info.get("score", 0.0)),
                                     "process": concept_info.get("process", "unmapped"),
-                                    "source_tasks": concept_info.get("source_tasks", []),
+                                    "source_tasks": concept_info.get(
+                                        "source_tasks", []
+                                    ),
                                 }
                             )
 
@@ -1079,7 +1111,9 @@ class CoordinateToConceptTool(NeuroToolWrapper):
                             metadata={
                                 "tool": "coordinate_to_concept",
                                 "error_category": "processing",
-                                "backend": mapping_payload.get("backend", "unavailable"),
+                                "backend": mapping_payload.get(
+                                    "backend", "unavailable"
+                                ),
                                 "errors": mapping_payload.get("errors", []),
                             },
                         )
@@ -1100,7 +1134,9 @@ class CoordinateToConceptTool(NeuroToolWrapper):
                             "niclip_enabled": True,
                             "backend": mapping_payload.get("backend", "unavailable"),
                             "niclip_data_path": mapping_payload.get("niclip_data_path"),
-                            "niclip_model_path": mapping_payload.get("niclip_model_path"),
+                            "niclip_model_path": mapping_payload.get(
+                                "niclip_model_path"
+                            ),
                         },
                     )
                 reason = "NiCLIP mapper is not loaded"
@@ -1201,7 +1237,8 @@ class ContrastToActivationMapTool(NeuroToolWrapper):
                 return ToolResult(
                     status="error",
                     error=predicted_map.get(
-                        "error", "No activation map generated from predicted constructs."
+                        "error",
+                        "No activation map generated from predicted constructs.",
                     ),
                     data=payload,
                     metadata={
@@ -1292,7 +1329,9 @@ class LiteratureSearchTool(NeuroToolWrapper):
 
                     paper = {
                         "id": paper_id,
-                        "title": node_data.get("title", node_data.get("name", "Unknown")),
+                        "title": node_data.get(
+                            "title", node_data.get("name", "Unknown")
+                        ),
                         "year": node_data.get("year", None),
                         "authors": node_data.get("authors", []),
                         "abstract": node_data.get("abstract", ""),
@@ -1302,7 +1341,10 @@ class LiteratureSearchTool(NeuroToolWrapper):
 
                     # Apply year filter if specified
                     if year_range and paper["year"]:
-                        if paper["year"] < year_range[0] or paper["year"] > year_range[1]:
+                        if (
+                            paper["year"] < year_range[0]
+                            or paper["year"] > year_range[1]
+                        ):
                             continue
 
                     all_papers.append(paper)
@@ -1399,15 +1441,12 @@ class GraphQueryTool(NeuroToolWrapper):
             return ToolResult(
                 status="success",
                 data=response.json(),
-                metadata={"tool": "graph_query", "query_type": query_type}
+                metadata={"tool": "graph_query", "query_type": query_type},
             )
 
         except Exception as e:
             logger.error(f"Graph query failed: {str(e)}")
-            return ToolResult(
-                status="error",
-                error=f"Graph query failed: {str(e)}"
-            )
+            return ToolResult(status="error", error=f"Graph query failed: {str(e)}")
 
 
 class EvidencePackTool(NeuroToolWrapper):
@@ -1636,14 +1675,18 @@ class BehaviorToFMRIRetrievalTool(NeuroToolWrapper):
 # 5. Add Finding Tool (Episodic Memory)
 # =============================================================================
 
+
 class AddFindingArgs(BaseModel):
     """Arguments for adding a finding to BR-KG."""
+
     description: str = Field(description="Natural language description of the finding")
-    dataset_id: Optional[str] = Field(None, description="Related dataset ID")
-    concepts: Optional[List[str]] = Field(None, description="Related concepts")
+    dataset_id: str | None = Field(None, description="Related dataset ID")
+    concepts: list[str] | None = Field(None, description="Related concepts")
     confidence: float = Field(default=0.5, description="Confidence score (0.0-1.0)")
     source_tool: str = Field(description="Tool that generated this finding")
-    evidence: Optional[Dict[str, Any]] = Field(None, description="Supporting evidence data")
+    evidence: dict[str, Any] | None = Field(
+        None, description="Supporting evidence data"
+    )
 
 
 class AddFindingTool(NeuroToolWrapper):
@@ -1672,7 +1715,15 @@ class AddFindingTool(NeuroToolWrapper):
     def get_args_schema(self):
         return AddFindingArgs
 
-    def _run(self, description: str, source_tool: str, dataset_id: str = None, concepts: List[str] = None, confidence: float = 0.5, evidence: Dict = None) -> ToolResult:
+    def _run(
+        self,
+        description: str,
+        source_tool: str,
+        dataset_id: str = None,
+        concepts: list[str] = None,
+        confidence: float = 0.5,
+        evidence: dict = None,
+    ) -> ToolResult:
         try:
             # We construct a Cypher query to create the node
             # Create Finding node
@@ -1729,10 +1780,19 @@ class AddFindingTool(NeuroToolWrapper):
             try:
                 result = self.query_service.execute_cypher(cypher, params)
                 finding_id = result[0]["id"] if result else "unknown"
-                return ToolResult(status="success", data={"finding_id": finding_id, "message": "Finding memorized"})
-            except Exception as e:
+                return ToolResult(
+                    status="success",
+                    data={"finding_id": finding_id, "message": "Finding memorized"},
+                )
+            except Exception:
                 # Fallback for when Neo4j isn't actually running in this dev/test env
-                return ToolResult(status="success", data={"finding_id": "mock_id_999", "message": "Finding memorized (Mock)"})
+                return ToolResult(
+                    status="success",
+                    data={
+                        "finding_id": "mock_id_999",
+                        "message": "Finding memorized (Mock)",
+                    },
+                )
 
         except Exception as e:
             return ToolResult(status="error", error=str(e))
@@ -1747,7 +1807,9 @@ class ConfidenceScorerTool(NeuroToolWrapper):
 
     class Args(BaseModel):
         evidence_count: int = Field(0, description="Number of supporting papers/chunks")
-        statistical_validation: bool = Field(True, description="Did it pass statistical validation?")
+        statistical_validation: bool = Field(
+            True, description="Did it pass statistical validation?"
+        )
         contradictions: int = Field(0, description="Number of contradicting sources")
 
     def get_tool_name(self) -> str:
@@ -1759,12 +1821,17 @@ class ConfidenceScorerTool(NeuroToolWrapper):
     def get_tool_description(self) -> str:
         return "Calculates a 0.0-1.0 confidence score based on evidence and validation."
 
-    def _run(self, evidence_count: int = 0, statistical_validation: bool = True, contradictions: int = 0) -> ToolResult:
+    def _run(
+        self,
+        evidence_count: int = 0,
+        statistical_validation: bool = True,
+        contradictions: int = 0,
+    ) -> ToolResult:
         # Simple heuristic scoring
         base_score = 0.5
 
         # Evidence boost (diminishing returns)
-        evidence_boost = (1.0 - (0.5 ** evidence_count)) * 0.4
+        evidence_boost = (1.0 - (0.5**evidence_count)) * 0.4
 
         # Validation gate
         validation_mult = 1.0 if statistical_validation else 0.4
@@ -1797,12 +1864,15 @@ class TaskToConceptTool(NeuroToolWrapper):
     def _run(self, **kwargs):
         return self._delegate._run(**kwargs)
 
+
 class ConceptLiteratureSearchTool(LiteratureSearchTool):
     pass
+
 
 # =============================================================================
 # 6. BR-KG Tools Collection
 # =============================================================================
+
 
 class BRKGTools:
     """Collection of BR-KG tools."""
@@ -1815,14 +1885,14 @@ class BRKGTools:
         self.add_finding = AddFindingTool()
         self.score_confidence = ConfidenceScorerTool()
 
-    def get_tools(self) -> List[NeuroToolWrapper]:
+    def get_tools(self) -> list[NeuroToolWrapper]:
         return [
             self.find_related,
             self.task_mapping,
             self.concept_search,
             self.graph_query,
             self.add_finding,
-            self.score_confidence
+            self.score_confidence,
         ]
         """Execute graph query."""
         try:
@@ -1874,7 +1944,8 @@ class BRKGTools:
             elif query_type == "neighbors":
                 # Get immediate neighbors
                 response = requests.get(
-                    f"{self.api_url}/subgraph", params={"label": "Concept", "name": start_node, "depth": 1}
+                    f"{self.api_url}/subgraph",
+                    params={"label": "Concept", "name": start_node, "depth": 1},
                 )
                 response.raise_for_status()
 
@@ -1889,12 +1960,24 @@ class BRKGTools:
                         node_id = node_data.get("id", node.get("id"))
                         node_name = node_data.get("name", node_data.get("label", ""))
 
-                        if node_id == edge_data.get("target") and node_name != start_node:
+                        if (
+                            node_id == edge_data.get("target")
+                            and node_name != start_node
+                        ):
                             neighbors.append(
                                 {
                                     "name": node_name,
-                                    "type": node_data.get("label", node_data.get("labels", ["Unknown"])[0] if isinstance(node_data.get("labels"), list) else "Unknown"),
-                                    "relationship": edge_data.get("type", edge_data.get("label", "connected_to")),
+                                    "type": node_data.get(
+                                        "label",
+                                        (
+                                            node_data.get("labels", ["Unknown"])[0]
+                                            if isinstance(node_data.get("labels"), list)
+                                            else "Unknown"
+                                        ),
+                                    ),
+                                    "relationship": edge_data.get(
+                                        "type", edge_data.get("label", "connected_to")
+                                    ),
                                 }
                             )
 
@@ -1949,12 +2032,15 @@ class BRKGTools:
 class TaskMappingTool(CachedToolWrapper):
     """Tool for mapping cognitive tasks to concepts."""
 
-    def __init__(self, runtime_mapper: Any | None = None, runtime_mode: str | None = None):
+    def __init__(
+        self, runtime_mapper: Any | None = None, runtime_mode: str | None = None
+    ):
         super().__init__(cache_ttl=3600)  # Cache for 1 hour
         self.runtime_mode = (
-            runtime_mode
-            or os.environ.get("BR_KG_TASK_MAPPING_RUNTIME", "auto")
-        ).strip().lower()
+            (runtime_mode or os.environ.get("BR_KG_TASK_MAPPING_RUNTIME", "auto"))
+            .strip()
+            .lower()
+        )
         self._runtime_mapper = runtime_mapper
 
     def get_tool_name(self) -> str:
@@ -1998,10 +2084,14 @@ class TaskMappingTool(CachedToolWrapper):
                 return importlib.import_module(module_name)
             except ImportError as exc:
                 import_errors.append(f"{module_name}: {exc}")
-        joined_errors = "; ".join(import_errors) if import_errors else "unknown import error"
-        raise ImportError(f"Could not import vocab_loader from known paths: {joined_errors}")
+        joined_errors = (
+            "; ".join(import_errors) if import_errors else "unknown import error"
+        )
+        raise ImportError(
+            f"Could not import vocab_loader from known paths: {joined_errors}"
+        )
 
-    def _normalize_task_query(self, task_name: str) -> Dict[str, Any]:
+    def _normalize_task_query(self, task_name: str) -> dict[str, Any]:
         """Normalize contrast-like labels into canonical task queries."""
         original = str(task_name or "").strip()
         canonical = self._canonicalize_task_text(original)
@@ -2033,11 +2123,15 @@ class TaskMappingTool(CachedToolWrapper):
                 self._append_unique_query(
                     query_candidates, seen_queries, f"{level}-back task"
                 )
-                self._append_unique_query(query_candidates, seen_queries, f"{level}-back")
+                self._append_unique_query(
+                    query_candidates, seen_queries, f"{level}-back"
+                )
             canonical_task_query = "n-back task"
             normalization_reason = "n_back_contrast_normalization"
 
-        has_incongruent_congruent = "incongruent" in canonical and "congruent" in canonical
+        has_incongruent_congruent = (
+            "incongruent" in canonical and "congruent" in canonical
+        )
         if "stroop" in canonical or has_incongruent_congruent:
             self._append_unique_query(query_candidates, seen_queries, "stroop task")
             self._append_unique_query(query_candidates, seen_queries, "stroop")
@@ -2073,14 +2167,20 @@ class TaskMappingTool(CachedToolWrapper):
             first_part = " ".join(first_part.split())
             if first_part:
                 self._append_unique_query(query_candidates, seen_queries, first_part)
-                self._append_unique_query(query_candidates, seen_queries, f"{first_part} task")
+                self._append_unique_query(
+                    query_candidates, seen_queries, f"{first_part} task"
+                )
 
         self._append_unique_query(query_candidates, seen_queries, original)
         if not contrast_like:
             if canonical.endswith(" task"):
-                self._append_unique_query(query_candidates, seen_queries, canonical[:-5])
+                self._append_unique_query(
+                    query_candidates, seen_queries, canonical[:-5]
+                )
             else:
-                self._append_unique_query(query_candidates, seen_queries, f"{canonical} task")
+                self._append_unique_query(
+                    query_candidates, seen_queries, f"{canonical} task"
+                )
 
         normalized_task_query = canonical_task_query or (
             query_candidates[0] if query_candidates else original
@@ -2173,8 +2273,8 @@ class TaskMappingTool(CachedToolWrapper):
         self,
         *,
         task_name: str,
-        data: Dict[str, Any],
-    ) -> tuple[Dict[str, Any], Dict[str, Any] | None]:
+        data: dict[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, Any] | None]:
         if not _mode_enabled(self.runtime_mode):
             return data, None
 
@@ -2198,7 +2298,11 @@ class TaskMappingTool(CachedToolWrapper):
                     source_id=_runtime_source_id("task", matched_task),
                 )
 
-            concepts = [str(item).strip() for item in (data.get("concepts") or []) if str(item).strip()]
+            concepts = [
+                str(item).strip()
+                for item in (data.get("concepts") or [])
+                if str(item).strip()
+            ]
             standardized: list[str] = []
             for concept in concepts:
                 concept_map = mapper.map_text(
@@ -2221,14 +2325,16 @@ class TaskMappingTool(CachedToolWrapper):
             }
             normalized_existing = {item.lower() for item in concepts}
             allow_runtime_replace = self.runtime_mode in {"on", "force", "true", "1"}
-            if allow_runtime_replace and standardized and (
-                not concepts or normalized_existing.issubset(generic_concepts)
+            if (
+                allow_runtime_replace
+                and standardized
+                and (not concepts or normalized_existing.issubset(generic_concepts))
             ):
                 data["concepts"] = standardized
             if standardized:
                 data["standardized_concepts"] = standardized
 
-            runtime_meta: Dict[str, Any] = {
+            runtime_meta: dict[str, Any] = {
                 "enabled": True,
                 "available": True,
                 "mode": self.runtime_mode,
@@ -2240,7 +2346,9 @@ class TaskMappingTool(CachedToolWrapper):
                 runtime_meta["standardized_concept_count"] = len(standardized)
             return data, runtime_meta
         except Exception as exc:  # pragma: no cover - fail-open by design
-            logger.warning("Gabriel runtime task mapping failed; using base mapping: %s", exc)
+            logger.warning(
+                "Gabriel runtime task mapping failed; using base mapping: %s", exc
+            )
             return data, {
                 "enabled": True,
                 "available": False,
@@ -2251,8 +2359,8 @@ class TaskMappingTool(CachedToolWrapper):
         self,
         *,
         task_name: str,
-        data: Dict[str, Any],
-        metadata: Dict[str, Any],
+        data: dict[str, Any],
+        metadata: dict[str, Any],
     ) -> ToolResult:
         final_data = dict(data or {})
         final_metadata = dict(metadata or {})
@@ -2280,8 +2388,12 @@ class TaskMappingTool(CachedToolWrapper):
             normalization_metadata = {
                 "applied": bool(normalized_payload.get("normalization_applied")),
                 "reason": normalized_payload.get("normalization_reason"),
-                "normalized_task_query": normalized_payload.get("normalized_task_query"),
-                "contrast_like_input": bool(normalized_payload.get("contrast_like_input")),
+                "normalized_task_query": normalized_payload.get(
+                    "normalized_task_query"
+                ),
+                "contrast_like_input": bool(
+                    normalized_payload.get("contrast_like_input")
+                ),
                 "query_candidates": list(task_queries),
             }
 
@@ -2329,7 +2441,9 @@ class TaskMappingTool(CachedToolWrapper):
                                 "normalized_task_query": primary_query,
                                 "concepts": concepts,
                                 "primary_process": process_name,
-                                "similar_tasks": [t["task"] for t in best_similar_tasks],
+                                "similar_tasks": [
+                                    t["task"] for t in best_similar_tasks
+                                ],
                                 "normalization": normalization_metadata,
                                 "source": "niclip",
                             },
@@ -2367,7 +2481,9 @@ class TaskMappingTool(CachedToolWrapper):
                     )
 
             except (ImportError, AttributeError) as e:
-                logger.info(f"Could not import NiCLIP functions, falling back to old method: {e}")
+                logger.info(
+                    f"Could not import NiCLIP functions, falling back to old method: {e}"
+                )
 
             # Fallback to old Cognitive Atlas data
             try:
@@ -2379,7 +2495,7 @@ class TaskMappingTool(CachedToolWrapper):
                 # Load the task-concept mappings
                 edges = load_task_concept_edges()
                 concept_id2name = id2name()
-                vocab = load_vocab()
+                load_vocab()
 
                 # Create a mapping from task name to concepts
                 task_to_concepts_map = {}
@@ -2654,7 +2770,7 @@ class TaskMappingTool(CachedToolWrapper):
                     associated_concepts = task_concept_map[lookup_key]
                     break
 
-            synonyms: List[str] = []
+            synonyms: list[str] = []
             if include_synonyms and candidate_hits:
                 seen_synonyms: set[str] = set()
                 for hit in candidate_hits:
@@ -2696,15 +2812,21 @@ class TaskMappingTool(CachedToolWrapper):
             # Fallback to simple mapping
             logger.warning("TaskMatcher not available, using simple mapping")
             normalized_payload = self._normalize_task_query(task_name)
-            primary_query = (
-                str((normalized_payload.get("query_candidates") or [task_name])[0]).strip()
-            )
+            primary_query = str(
+                (normalized_payload.get("query_candidates") or [task_name])[0]
+            ).strip()
             normalization_metadata = {
                 "applied": bool(normalized_payload.get("normalization_applied")),
                 "reason": normalized_payload.get("normalization_reason"),
-                "normalized_task_query": normalized_payload.get("normalized_task_query"),
-                "contrast_like_input": bool(normalized_payload.get("contrast_like_input")),
-                "query_candidates": list(normalized_payload.get("query_candidates") or [task_name]),
+                "normalized_task_query": normalized_payload.get(
+                    "normalized_task_query"
+                ),
+                "contrast_like_input": bool(
+                    normalized_payload.get("contrast_like_input")
+                ),
+                "query_candidates": list(
+                    normalized_payload.get("query_candidates") or [task_name]
+                ),
             }
 
             # Simple task to concept mapping
@@ -2791,7 +2913,9 @@ class BRKGTools:
     }
 
     def __init__(self, api_url: str = None):
-        self.api_url = api_url or os.environ.get("BR_KG_API_URL", "http://localhost:5000")
+        self.api_url = api_url or os.environ.get(
+            "BR_KG_API_URL", "http://localhost:5000"
+        )
         self.find_concepts = FindRelatedConceptsTool(api_url)
         self.coord_to_concept = CoordinateToConceptTool()
         self.contrast_to_map = ContrastToActivationMapTool()
@@ -2837,7 +2961,9 @@ class BRKGTools:
             notice: Optional message to include in responses
         """
         self._degraded_mode = True
-        self._degradation_notice = notice or "Graph service unavailable; using semantic search only."
+        self._degradation_notice = (
+            notice or "Graph service unavailable; using semantic search only."
+        )
 
     def disable_degraded_mode(self) -> None:
         """Disable degraded mode."""
@@ -2871,7 +2997,9 @@ class BRKGTools:
 
         if not include_unavailable and self._degraded_mode:
             # Return only offline-capable tools
-            return [t for t in all_tools if t.get_tool_name() in self.OFFLINE_CAPABLE_TOOLS]
+            return [
+                t for t in all_tools if t.get_tool_name() in self.OFFLINE_CAPABLE_TOOLS
+            ]
 
         return all_tools
 
@@ -2952,7 +3080,9 @@ class GLMPriorsTool(CachedToolWrapper):
     def get_args_schema(self):
         return GLMPriorsArgs
 
-    def _run(self, task: str, study_id: str | None = None, max_results: int = 200) -> ToolResult:
+    def _run(
+        self, task: str, study_id: str | None = None, max_results: int = 200
+    ) -> ToolResult:
         source_pref = os.environ.get("BR_GLM_PRIORS_SOURCE", "hybrid").lower()
         if source_pref in {"kg", "br_kg", "hybrid"}:
             kg_payload = self._fetch_priors_from_kg(task=task, study_id=study_id)
@@ -3006,7 +3136,9 @@ class GLMPriorsTool(CachedToolWrapper):
             outputs["sources"] = kg_payload.get("sources")
         return ToolResult(status=status, data={"outputs": outputs}, error=error)
 
-    def _fetch_priors_from_kg(self, *, task: str, study_id: str | None) -> dict[str, Any] | None:
+    def _fetch_priors_from_kg(
+        self, *, task: str, study_id: str | None
+    ) -> dict[str, Any] | None:
         try:
             from brain_researcher.services.br_kg import query_service
         except Exception:
@@ -3032,7 +3164,9 @@ class GLMPriorsTool(CachedToolWrapper):
         hrf_counts: dict[str, int] = {}
         conf_counts: dict[str, int] = {}
         hp_counts: dict[str, int] = {}
-        family_counts: dict[str, dict[str, int]] = {axis: {} for axis in CONF_FAMILY_AXES}
+        family_counts: dict[str, dict[str, int]] = {
+            axis: {} for axis in CONF_FAMILY_AXES
+        }
         scanned = 0
 
         for root in roots:
@@ -3050,7 +3184,10 @@ class GLMPriorsTool(CachedToolWrapper):
                 tasks_in_model = {
                     str(t).lower() for t in model.get("Input", {}).get("task", [])
                 }
-                if task_lower not in tasks_in_model and task_lower not in path.name.lower():
+                if (
+                    task_lower not in tasks_in_model
+                    and task_lower not in path.name.lower()
+                ):
                     continue
                 run_node = None
                 for node in model.get("Nodes", []):
@@ -3094,7 +3231,11 @@ class GLMPriorsTool(CachedToolWrapper):
                     bucket[key] = bucket.get(key, 0) + 1
 
                 # High-pass
-                hp = run_node.get("Model", {}).get("Options", {}).get("HighPassFilterCutoff")
+                hp = (
+                    run_node.get("Model", {})
+                    .get("Options", {})
+                    .get("HighPassFilterCutoff")
+                )
                 if hp is not None:
                     hp_counts[str(hp)] = hp_counts.get(str(hp), 0) + 1
 

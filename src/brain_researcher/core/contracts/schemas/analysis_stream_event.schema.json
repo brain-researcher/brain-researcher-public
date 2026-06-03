@@ -1,0 +1,1296 @@
+{
+  "$defs": {
+    "AnalysisCompletedEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "analysis.completed",
+          "default": "analysis.completed",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/AnalysisCompletedPayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "AnalysisCompletedEventV1",
+      "type": "object"
+    },
+    "AnalysisCompletedPayloadV1": {
+      "properties": {
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        },
+        "status": {
+          "$ref": "#/$defs/JobStatusV1"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "AnalysisCompletedPayloadV1",
+      "type": "object"
+    },
+    "ArtifactKindV1": {
+      "enum": [
+        "file",
+        "json",
+        "blob",
+        "bundle",
+        "log",
+        "trace"
+      ],
+      "title": "ArtifactKindV1",
+      "type": "string"
+    },
+    "ArtifactV1": {
+      "properties": {
+        "artifact_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional stable artifact identifier",
+          "title": "Artifact Id"
+        },
+        "bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Size in bytes when known",
+          "title": "Bytes"
+        },
+        "created_at": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Unix timestamp (seconds) when recorded",
+          "title": "Created At"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owning job/analysis identifier",
+          "title": "Job Id"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKindV1",
+          "description": "High-level artifact kind"
+        },
+        "media_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "IANA media type (e.g. application/json, text/plain)",
+          "title": "Media Type"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "policy": {
+          "$ref": "#/$defs/PolicyRefV1"
+        },
+        "schema_version": {
+          "const": "artifact-v1",
+          "default": "artifact-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Checksum in the form sha256:<hex> when available",
+          "title": "Sha256"
+        },
+        "tags": {
+          "description": "Semantic tags/roles",
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "uri": {
+          "description": "Relative path within the run directory, or an abstract URI",
+          "title": "Uri",
+          "type": "string"
+        },
+        "versions": {
+          "$ref": "#/$defs/VersionRefV1"
+        }
+      },
+      "required": [
+        "kind",
+        "uri"
+      ],
+      "title": "ArtifactV1",
+      "type": "object"
+    },
+    "ArtifactWrittenEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "artifact.written",
+          "default": "artifact.written",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/ArtifactWrittenPayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "ArtifactWrittenEventV1",
+      "type": "object"
+    },
+    "ArtifactWrittenPayloadV1": {
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/ArtifactV1"
+        }
+      },
+      "required": [
+        "artifact"
+      ],
+      "title": "ArtifactWrittenPayloadV1",
+      "type": "object"
+    },
+    "ErrorEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "error",
+          "default": "error",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/ErrorPayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "ErrorEventV1",
+      "type": "object"
+    },
+    "ErrorPayloadV1": {
+      "properties": {
+        "details": {
+          "additionalProperties": true,
+          "title": "Details",
+          "type": "object"
+        },
+        "error_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Class"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message"
+      ],
+      "title": "ErrorPayloadV1",
+      "type": "object"
+    },
+    "IdsV1": {
+      "description": "Stable identifiers for correlating objects/events across services.",
+      "properties": {
+        "analysis_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Analysis identifier if applicable",
+          "title": "Analysis Id"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Job identifier",
+          "title": "Job Id"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inbound API/UI request identifier",
+          "title": "Request Id"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Run identifier",
+          "title": "Run Id"
+        },
+        "schema_version": {
+          "const": "ids-v1",
+          "default": "ids-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Conversation/session/thread id",
+          "title": "Session Id"
+        },
+        "trace_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Distributed trace id",
+          "title": "Trace Id"
+        },
+        "user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "End-user id",
+          "title": "User Id"
+        },
+        "workspace_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Workspace/project id",
+          "title": "Workspace Id"
+        }
+      },
+      "title": "IdsV1",
+      "type": "object"
+    },
+    "JobStartedEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "job.started",
+          "default": "job.started",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/JobStartedPayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp"
+      ],
+      "title": "JobStartedEventV1",
+      "type": "object"
+    },
+    "JobStartedPayloadV1": {
+      "properties": {
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        },
+        "status": {
+          "$ref": "#/$defs/JobStatusV1",
+          "default": "running"
+        }
+      },
+      "title": "JobStartedPayloadV1",
+      "type": "object"
+    },
+    "JobStatusV1": {
+      "enum": [
+        "pending",
+        "queued",
+        "claimed",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "cancelling",
+        "timeout",
+        "skipped",
+        "paused",
+        "retrying"
+      ],
+      "title": "JobStatusV1",
+      "type": "string"
+    },
+    "LogLineEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "log.line",
+          "default": "log.line",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/LogLinePayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "LogLineEventV1",
+      "type": "object"
+    },
+    "LogLinePayloadV1": {
+      "properties": {
+        "line": {
+          "title": "Line",
+          "type": "string"
+        },
+        "stream": {
+          "$ref": "#/$defs/LogStreamV1"
+        }
+      },
+      "required": [
+        "stream",
+        "line"
+      ],
+      "title": "LogLinePayloadV1",
+      "type": "object"
+    },
+    "LogStreamV1": {
+      "enum": [
+        "stdout",
+        "stderr"
+      ],
+      "title": "LogStreamV1",
+      "type": "string"
+    },
+    "MetricEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "metric",
+          "default": "metric",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/MetricPayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "MetricEventV1",
+      "type": "object"
+    },
+    "MetricPayloadV1": {
+      "properties": {
+        "details": {
+          "additionalProperties": true,
+          "title": "Details",
+          "type": "object"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "tags": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "object"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "MetricPayloadV1",
+      "type": "object"
+    },
+    "ObservationAppendedEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "observation.appended",
+          "default": "observation.appended",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/ObservationAppendedPayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "ObservationAppendedEventV1",
+      "type": "object"
+    },
+    "ObservationAppendedPayloadV1": {
+      "properties": {
+        "observation": {
+          "$ref": "#/$defs/ArtifactV1"
+        }
+      },
+      "required": [
+        "observation"
+      ],
+      "title": "ObservationAppendedPayloadV1",
+      "type": "object"
+    },
+    "PolicyRefV1": {
+      "description": "Reference to the policy that governed a run/event.",
+      "properties": {
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable notes",
+          "title": "Notes"
+        },
+        "policy_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Checksum in the form sha256:<hex> when available",
+          "title": "Policy Hash"
+        },
+        "policy_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Policy identifier",
+          "title": "Policy Id"
+        },
+        "policy_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Where the policy came from (file/env/url)",
+          "title": "Policy Source"
+        },
+        "schema_version": {
+          "const": "policy-ref-v1",
+          "default": "policy-ref-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "thresholds": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional thresholds used by the policy",
+          "title": "Thresholds"
+        }
+      },
+      "title": "PolicyRefV1",
+      "type": "object"
+    },
+    "StageEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "stage",
+          "default": "stage",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/StagePayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "StageEventV1",
+      "type": "object"
+    },
+    "StagePayloadV1": {
+      "properties": {
+        "attempt": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt"
+        },
+        "details": {
+          "additionalProperties": true,
+          "title": "Details",
+          "type": "object"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "stage_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stage Id"
+        },
+        "status": {
+          "$ref": "#/$defs/StageStatusV1"
+        },
+        "tool_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Id"
+        }
+      },
+      "required": [
+        "stage",
+        "status"
+      ],
+      "title": "StagePayloadV1",
+      "type": "object"
+    },
+    "StageStatusV1": {
+      "enum": [
+        "scheduled",
+        "started",
+        "retrying",
+        "completed",
+        "warned",
+        "blocked",
+        "failed",
+        "skipped"
+      ],
+      "title": "StageStatusV1",
+      "type": "string"
+    },
+    "ToolCallFinishedEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "tool.call.finished",
+          "default": "tool.call.finished",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/ToolCallFinishedPayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "ToolCallFinishedEventV1",
+      "type": "object"
+    },
+    "ToolCallFinishedPayloadV1": {
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ArtifactV1"
+          },
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "error_message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Message"
+        },
+        "status": {
+          "$ref": "#/$defs/ToolCallStatusV1"
+        },
+        "tool_call_id": {
+          "title": "Tool Call Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_call_id",
+        "status"
+      ],
+      "title": "ToolCallFinishedPayloadV1",
+      "type": "object"
+    },
+    "ToolCallStartedEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "tool.call.started",
+          "default": "tool.call.started",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/ToolCallStartedPayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "ToolCallStartedEventV1",
+      "type": "object"
+    },
+    "ToolCallStartedPayloadV1": {
+      "properties": {
+        "params": {
+          "additionalProperties": true,
+          "title": "Params",
+          "type": "object"
+        },
+        "tool_call_id": {
+          "title": "Tool Call Id",
+          "type": "string"
+        },
+        "tool_id": {
+          "title": "Tool Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_call_id",
+        "tool_id"
+      ],
+      "title": "ToolCallStartedPayloadV1",
+      "type": "object"
+    },
+    "ToolCallStatusV1": {
+      "enum": [
+        "running",
+        "succeeded",
+        "failed",
+        "timeout",
+        "cancelled",
+        "partial"
+      ],
+      "title": "ToolCallStatusV1",
+      "type": "string"
+    },
+    "UnknownEventPayloadV1": {
+      "properties": {
+        "raw_event_type": {
+          "title": "Raw Event Type",
+          "type": "string"
+        },
+        "raw_payload": {
+          "additionalProperties": true,
+          "title": "Raw Payload",
+          "type": "object"
+        }
+      },
+      "required": [
+        "raw_event_type"
+      ],
+      "title": "UnknownEventPayloadV1",
+      "type": "object"
+    },
+    "UnknownEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "unknown",
+          "default": "unknown",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/UnknownEventPayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "UnknownEventV1",
+      "type": "object"
+    },
+    "VersionRefV1": {
+      "description": "Best-effort versions for reproducibility/auditing.",
+      "properties": {
+        "brain_researcher_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Installed brain_researcher package version",
+          "title": "Brain Researcher Version"
+        },
+        "contracts_version": {
+          "default": "contracts-v1",
+          "description": "Version identifier for this contract set",
+          "title": "Contracts Version",
+          "type": "string"
+        },
+        "git_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Git commit SHA if known",
+          "title": "Git Commit"
+        },
+        "image_digests": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Container/image digests",
+          "title": "Image Digests",
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "version-ref-v1",
+          "default": "version-ref-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool_versions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Tool/library versions",
+          "title": "Tool Versions",
+          "type": "object"
+        }
+      },
+      "title": "VersionRefV1",
+      "type": "object"
+    },
+    "WarningEventV1": {
+      "properties": {
+        "event_type": {
+          "const": "warning",
+          "default": "warning",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "ids": {
+          "$ref": "#/$defs/IdsV1"
+        },
+        "payload": {
+          "$ref": "#/$defs/WarningPayloadV1"
+        },
+        "schema_version": {
+          "const": "analysis-stream-event-v1",
+          "default": "analysis-stream-event-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "timestamp",
+        "payload"
+      ],
+      "title": "WarningEventV1",
+      "type": "object"
+    },
+    "WarningPayloadV1": {
+      "properties": {
+        "code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
+        },
+        "details": {
+          "additionalProperties": true,
+          "title": "Details",
+          "type": "object"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message"
+      ],
+      "title": "WarningPayloadV1",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "analysis.completed": "#/$defs/AnalysisCompletedEventV1",
+      "artifact.written": "#/$defs/ArtifactWrittenEventV1",
+      "error": "#/$defs/ErrorEventV1",
+      "job.started": "#/$defs/JobStartedEventV1",
+      "log.line": "#/$defs/LogLineEventV1",
+      "metric": "#/$defs/MetricEventV1",
+      "observation.appended": "#/$defs/ObservationAppendedEventV1",
+      "stage": "#/$defs/StageEventV1",
+      "tool.call.finished": "#/$defs/ToolCallFinishedEventV1",
+      "tool.call.started": "#/$defs/ToolCallStartedEventV1",
+      "unknown": "#/$defs/UnknownEventV1",
+      "warning": "#/$defs/WarningEventV1"
+    },
+    "propertyName": "event_type"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/JobStartedEventV1"
+    },
+    {
+      "$ref": "#/$defs/ToolCallStartedEventV1"
+    },
+    {
+      "$ref": "#/$defs/ToolCallFinishedEventV1"
+    },
+    {
+      "$ref": "#/$defs/ArtifactWrittenEventV1"
+    },
+    {
+      "$ref": "#/$defs/LogLineEventV1"
+    },
+    {
+      "$ref": "#/$defs/ObservationAppendedEventV1"
+    },
+    {
+      "$ref": "#/$defs/StageEventV1"
+    },
+    {
+      "$ref": "#/$defs/WarningEventV1"
+    },
+    {
+      "$ref": "#/$defs/MetricEventV1"
+    },
+    {
+      "$ref": "#/$defs/AnalysisCompletedEventV1"
+    },
+    {
+      "$ref": "#/$defs/ErrorEventV1"
+    },
+    {
+      "$ref": "#/$defs/UnknownEventV1"
+    }
+  ]
+}

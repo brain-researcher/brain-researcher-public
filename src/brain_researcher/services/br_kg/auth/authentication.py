@@ -5,18 +5,18 @@ and audit logging for the BR-KG system.
 """
 
 import hashlib
-import secrets
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Tuple
+import secrets
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from enum import Enum
+from typing import Any
 
-import jwt
 import bcrypt
+import jwt
 import redis
-from fastapi import HTTPException, Security, Depends, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr, Field
 
 logger = logging.getLogger(__name__)
@@ -108,7 +108,7 @@ class User:
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     is_active: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -119,10 +119,10 @@ class APIKey:
     key_hash: str
     user_id: str
     name: str
-    scopes: List[str]
+    scopes: list[str]
     created_at: datetime = field(default_factory=datetime.utcnow)
-    expires_at: Optional[datetime] = None
-    last_used: Optional[datetime] = None
+    expires_at: datetime | None = None
+    last_used: datetime | None = None
     is_active: bool = True
 
 
@@ -134,13 +134,13 @@ class AuditLog:
     user_id: str
     action: str
     resource: str
-    resource_id: Optional[str]
+    resource_id: str | None
     ip_address: str
     user_agent: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
     success: bool = True
-    error_message: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    error_message: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class TokenData(BaseModel):
@@ -149,10 +149,10 @@ class TokenData(BaseModel):
     sub: str  # Subject (user_id)
     email: EmailStr
     role: Role
-    permissions: List[str]
+    permissions: list[str]
     exp: datetime
     iat: datetime = Field(default_factory=datetime.utcnow)
-    jti: Optional[str] = Field(default_factory=lambda: secrets.token_urlsafe(16))
+    jti: str | None = Field(default_factory=lambda: secrets.token_urlsafe(16))
 
 
 class AuthenticationManager:
@@ -164,7 +164,7 @@ class AuthenticationManager:
         algorithm: str = "HS256",
         access_token_expire_minutes: int = 30,
         refresh_token_expire_days: int = 7,
-        redis_client: Optional[redis.Redis] = None
+        redis_client: redis.Redis | None = None,
     ):
         """Initialize authentication manager.
 
@@ -181,22 +181,19 @@ class AuthenticationManager:
         self.refresh_token_expire = timedelta(days=refresh_token_expire_days)
 
         self.redis = redis_client or self._create_redis_client()
-        self.users: Dict[str, User] = {}
-        self.api_keys: Dict[str, APIKey] = {}
-        self.audit_logs: List[AuditLog] = []
+        self.users: dict[str, User] = {}
+        self.api_keys: dict[str, APIKey] = {}
+        self.audit_logs: list[AuditLog] = []
 
     def _create_redis_client(self) -> redis.Redis:
         """Create Redis client with fallback."""
         try:
-            client = redis.Redis(
-                host='localhost',
-                port=6379,
-                decode_responses=True
-            )
+            client = redis.Redis(host="localhost", port=6379, decode_responses=True)
             client.ping()
             return client
         except:
             import fakeredis
+
             return fakeredis.FakeRedis(decode_responses=True)
 
     def hash_password(self, password: str) -> str:
@@ -209,7 +206,7 @@ class AuthenticationManager:
             Hashed password
         """
         salt = bcrypt.gensalt()
-        return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+        return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """Verify password against hash.
@@ -222,8 +219,7 @@ class AuthenticationManager:
             True if password matches
         """
         return bcrypt.checkpw(
-            plain_password.encode('utf-8'),
-            hashed_password.encode('utf-8')
+            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
         )
 
     def create_access_token(self, user: User) -> str:
@@ -242,20 +238,18 @@ class AuthenticationManager:
             email=user.email,
             role=user.role,
             permissions=ROLE_PERMISSIONS[user.role],
-            exp=expire
+            exp=expire,
         )
 
         encoded_jwt = jwt.encode(
-            token_data.dict(),
-            self.secret_key,
-            algorithm=self.algorithm
+            token_data.dict(), self.secret_key, algorithm=self.algorithm
         )
 
         # Store token in Redis for tracking
         self.redis.setex(
             f"token:access:{token_data.jti}",
             int(self.access_token_expire.total_seconds()),
-            user.user_id
+            user.user_id,
         )
 
         return encoded_jwt
@@ -276,25 +270,21 @@ class AuthenticationManager:
             "type": "refresh",
             "exp": expire,
             "iat": datetime.utcnow(),
-            "jti": secrets.token_urlsafe(16)
+            "jti": secrets.token_urlsafe(16),
         }
 
-        encoded_jwt = jwt.encode(
-            token_data,
-            self.secret_key,
-            algorithm=self.algorithm
-        )
+        encoded_jwt = jwt.encode(token_data, self.secret_key, algorithm=self.algorithm)
 
         # Store refresh token
         self.redis.setex(
             f"token:refresh:{token_data['jti']}",
             int(self.refresh_token_expire.total_seconds()),
-            user.user_id
+            user.user_id,
         )
 
         return encoded_jwt
 
-    def verify_token(self, token: str) -> Optional[TokenData]:
+    def verify_token(self, token: str) -> TokenData | None:
         """Verify JWT token.
 
         Args:
@@ -304,14 +294,10 @@ class AuthenticationManager:
             Token data if valid
         """
         try:
-            payload = jwt.decode(
-                token,
-                self.secret_key,
-                algorithms=[self.algorithm]
-            )
+            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
 
             # Check if token is blacklisted
-            jti = payload.get('jti')
+            jti = payload.get("jti")
             if jti and self.redis.exists(f"token:blacklist:{jti}"):
                 return None
 
@@ -335,27 +321,23 @@ class AuthenticationManager:
                 token,
                 self.secret_key,
                 algorithms=[self.algorithm],
-                options={"verify_exp": False}
+                options={"verify_exp": False},
             )
 
-            jti = payload.get('jti')
+            jti = payload.get("jti")
             if jti:
                 # Add to blacklist
-                exp = payload.get('exp')
+                exp = payload.get("exp")
                 ttl = exp - datetime.utcnow().timestamp() if exp else 86400
 
-                self.redis.setex(
-                    f"token:blacklist:{jti}",
-                    int(ttl),
-                    "revoked"
-                )
+                self.redis.setex(f"token:blacklist:{jti}", int(ttl), "revoked")
 
                 logger.info(f"Token revoked: {jti}")
 
         except jwt.JWTError as e:
             logger.error(f"Failed to revoke token: {e}")
 
-    def create_api_key(self, user: User, name: str, scopes: List[str]) -> str:
+    def create_api_key(self, user: User, name: str, scopes: list[str]) -> str:
         """Create API key for user.
 
         Args:
@@ -376,7 +358,7 @@ class AuthenticationManager:
             key_hash=key_hash,
             user_id=user.user_id,
             name=name,
-            scopes=scopes
+            scopes=scopes,
         )
 
         # Store API key
@@ -384,18 +366,20 @@ class AuthenticationManager:
         self.redis.hset(
             "api_keys",
             key_hash,
-            json.dumps({
-                "user_id": user.user_id,
-                "scopes": scopes,
-                "created_at": api_key_obj.created_at.isoformat()
-            })
+            json.dumps(
+                {
+                    "user_id": user.user_id,
+                    "scopes": scopes,
+                    "created_at": api_key_obj.created_at.isoformat(),
+                }
+            ),
         )
 
         logger.info(f"Created API key for user {user.user_id}: {name}")
 
         return api_key
 
-    def verify_api_key(self, api_key: str) -> Optional[Tuple[User, List[str]]]:
+    def verify_api_key(self, api_key: str) -> tuple[User, list[str]] | None:
         """Verify API key.
 
         Args:
@@ -421,9 +405,7 @@ class AuthenticationManager:
             if user and user.is_active:
                 # Update last used
                 self.redis.hset(
-                    "api_keys:last_used",
-                    key_hash,
-                    datetime.utcnow().isoformat()
+                    "api_keys:last_used", key_hash, datetime.utcnow().isoformat()
                 )
 
                 return user, key_info["scopes"]
@@ -438,11 +420,7 @@ class AuthenticationManager:
         return None
 
     def create_user(
-        self,
-        email: str,
-        username: str,
-        password: str,
-        role: Role = Role.VIEWER
+        self, email: str, username: str, password: str, role: Role = Role.VIEWER
     ) -> User:
         """Create new user.
 
@@ -458,12 +436,7 @@ class AuthenticationManager:
         user_id = secrets.token_urlsafe(16)
         hashed_password = self.hash_password(password)
 
-        user = User(
-            user_id=user_id,
-            email=email,
-            username=username,
-            role=role
-        )
+        user = User(user_id=user_id, email=email, username=username, role=role)
 
         # Store user
         self.users[user_id] = user
@@ -472,20 +445,22 @@ class AuthenticationManager:
         self.redis.hset(
             "users",
             user_id,
-            json.dumps({
-                "email": email,
-                "username": username,
-                "password": hashed_password,
-                "role": role.value,
-                "created_at": user.created_at.isoformat()
-            })
+            json.dumps(
+                {
+                    "email": email,
+                    "username": username,
+                    "password": hashed_password,
+                    "role": role.value,
+                    "created_at": user.created_at.isoformat(),
+                }
+            ),
         )
 
         logger.info(f"Created user: {username} ({email})")
 
         return user
 
-    def get_user(self, user_id: str) -> Optional[User]:
+    def get_user(self, user_id: str) -> User | None:
         """Get user by ID.
 
         Args:
@@ -507,7 +482,7 @@ class AuthenticationManager:
                 email=user_info["email"],
                 username=user_info["username"],
                 role=Role(user_info["role"]),
-                created_at=datetime.fromisoformat(user_info["created_at"])
+                created_at=datetime.fromisoformat(user_info["created_at"]),
             )
 
             self.users[user_id] = user
@@ -515,7 +490,7 @@ class AuthenticationManager:
 
         return None
 
-    def authenticate_user(self, username: str, password: str) -> Optional[User]:
+    def authenticate_user(self, username: str, password: str) -> User | None:
         """Authenticate user with username/password.
 
         Args:
@@ -547,7 +522,7 @@ class AuthenticationManager:
             email=user_data["email"],
             username=user_data["username"],
             role=Role(user_data["role"]),
-            created_at=datetime.fromisoformat(user_data["created_at"])
+            created_at=datetime.fromisoformat(user_data["created_at"]),
         )
 
         self.users[user.user_id] = user
@@ -571,12 +546,12 @@ class AuthenticationManager:
         user_id: str,
         action: str,
         resource: str,
-        resource_id: Optional[str] = None,
+        resource_id: str | None = None,
         ip_address: str = "unknown",
         user_agent: str = "unknown",
         success: bool = True,
-        error_message: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        error_message: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """Log audit event.
 
@@ -601,7 +576,7 @@ class AuthenticationManager:
             user_agent=user_agent,
             success=success,
             error_message=error_message,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         self.audit_logs.append(audit_log)
@@ -609,26 +584,30 @@ class AuthenticationManager:
         # Store in Redis
         self.redis.lpush(
             "audit_logs",
-            json.dumps({
-                "log_id": audit_log.log_id,
-                "user_id": audit_log.user_id,
-                "action": audit_log.action,
-                "resource": audit_log.resource,
-                "resource_id": audit_log.resource_id,
-                "ip_address": audit_log.ip_address,
-                "user_agent": audit_log.user_agent,
-                "timestamp": audit_log.timestamp.isoformat(),
-                "success": audit_log.success,
-                "error_message": audit_log.error_message,
-                "metadata": audit_log.metadata
-            })
+            json.dumps(
+                {
+                    "log_id": audit_log.log_id,
+                    "user_id": audit_log.user_id,
+                    "action": audit_log.action,
+                    "resource": audit_log.resource,
+                    "resource_id": audit_log.resource_id,
+                    "ip_address": audit_log.ip_address,
+                    "user_agent": audit_log.user_agent,
+                    "timestamp": audit_log.timestamp.isoformat(),
+                    "success": audit_log.success,
+                    "error_message": audit_log.error_message,
+                    "metadata": audit_log.metadata,
+                }
+            ),
         )
 
         # Trim to keep only last 10000 entries
         self.redis.ltrim("audit_logs", 0, 9999)
 
         if not success:
-            logger.warning(f"Audit: {action} on {resource} failed for user {user_id}: {error_message}")
+            logger.warning(
+                f"Audit: {action} on {resource} failed for user {user_id}: {error_message}"
+            )
         else:
             logger.info(f"Audit: {action} on {resource} by user {user_id}")
 
@@ -640,7 +619,7 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Security(security),
-    auth_manager: AuthenticationManager = Depends()
+    auth_manager: AuthenticationManager = Depends(),
 ) -> User:
     """Get current user from JWT token.
 
@@ -661,7 +640,7 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     user = auth_manager.get_user(token_data.sub)
@@ -669,16 +648,16 @@ async def get_current_user(
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or inactive"
+            detail="User not found or inactive",
         )
 
     return user
 
 
 async def get_api_user(
-    api_key: Optional[str] = Security(api_key_header),
-    auth_manager: AuthenticationManager = Depends()
-) -> Optional[User]:
+    api_key: str | None = Security(api_key_header),
+    auth_manager: AuthenticationManager = Depends(),
+) -> User | None:
     """Get user from API key.
 
     Args:
@@ -709,14 +688,15 @@ def require_permission(permission: Permission):
     Returns:
         Dependency function
     """
+
     async def permission_checker(
         current_user: User = Depends(get_current_user),
-        auth_manager: AuthenticationManager = Depends()
+        auth_manager: AuthenticationManager = Depends(),
     ):
         if not auth_manager.check_permission(current_user, permission):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permission denied: {permission.value}"
+                detail=f"Permission denied: {permission.value}",
             )
         return current_user
 

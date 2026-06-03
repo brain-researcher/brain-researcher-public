@@ -9,12 +9,11 @@ import json
 import logging
 import re
 import time
-from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 import redis
-from neo4j import GraphDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +37,15 @@ class QueryPlan:
     original_query: str
     optimized_query: str
     estimated_cost: float
-    actual_cost: Optional[float] = None
-    optimizations_applied: List[str] = None
-    cache_key: Optional[str] = None
+    actual_cost: float | None = None
+    optimizations_applied: list[str] = None
+    cache_key: str | None = None
 
 
 class CypherOptimizer:
     """Optimize Cypher queries for Neo4j."""
 
-    def __init__(self, db_driver, redis_client: Optional[redis.Redis] = None):
+    def __init__(self, db_driver, redis_client: redis.Redis | None = None):
         """Initialize optimizer.
 
         Args:
@@ -61,49 +60,50 @@ class CypherOptimizer:
     def _create_redis_client(self) -> redis.Redis:
         """Create Redis client with fallback."""
         try:
-            client = redis.Redis(host='localhost', port=6379, decode_responses=True)
+            client = redis.Redis(host="localhost", port=6379, decode_responses=True)
             client.ping()
             return client
         except:
             import fakeredis
+
             return fakeredis.FakeRedis(decode_responses=True)
 
-    def _load_optimization_rules(self) -> List[Dict[str, Any]]:
+    def _load_optimization_rules(self) -> list[dict[str, Any]]:
         """Load query optimization rules."""
         return [
             {
                 "name": "index_hint",
                 "pattern": r"MATCH\s+\(([\w]+):([\w]+)\)\s+WHERE\s+([\w\.]+)\s*=",
-                "description": "Add index hints for equality filters"
+                "description": "Add index hints for equality filters",
             },
             {
                 "name": "limit_early",
                 "pattern": r"MATCH.*RETURN.*LIMIT\s+(\d+)",
-                "description": "Apply LIMIT earlier in the query"
+                "description": "Apply LIMIT earlier in the query",
             },
             {
                 "name": "avoid_cartesian",
                 "pattern": r"MATCH\s+\([^)]+\),\s*\([^)]+\)",
-                "description": "Avoid cartesian products"
+                "description": "Avoid cartesian products",
             },
             {
                 "name": "use_with",
                 "pattern": r"MATCH.*MATCH",
-                "description": "Use WITH clause between MATCH patterns"
+                "description": "Use WITH clause between MATCH patterns",
             },
             {
                 "name": "profile_aggregation",
                 "pattern": r"(count|sum|avg|min|max)\s*\(",
-                "description": "Optimize aggregation functions"
+                "description": "Optimize aggregation functions",
             },
             {
                 "name": "parameter_extraction",
                 "pattern": r"WHERE.*=\s*['\"]([^'\"]+)['\"]",
-                "description": "Extract literals as parameters"
-            }
+                "description": "Extract literals as parameters",
+            },
         ]
 
-    def optimize(self, query: str, parameters: Dict[str, Any] = None) -> QueryPlan:
+    def optimize(self, query: str, parameters: dict[str, Any] = None) -> QueryPlan:
         """Optimize a Cypher query.
 
         Args:
@@ -121,7 +121,7 @@ class CypherOptimizer:
             return cached_plan
 
         # Analyze query
-        query_type = self._identify_query_type(query)
+        self._identify_query_type(query)
 
         # Get execution plan
         original_plan = self._get_execution_plan(query, parameters)
@@ -139,7 +139,7 @@ class CypherOptimizer:
                     optimizations_applied.append(rule["name"])
 
         # Get optimized plan
-        optimized_plan = self._get_execution_plan(optimized_query, parameters)
+        self._get_execution_plan(optimized_query, parameters)
 
         # Create query plan
         plan = QueryPlan(
@@ -147,13 +147,15 @@ class CypherOptimizer:
             optimized_query=optimized_query,
             estimated_cost=original_plan.get("cost", 0),
             optimizations_applied=optimizations_applied,
-            cache_key=cache_key
+            cache_key=cache_key,
         )
 
         # Cache the plan
         self._cache_plan(cache_key, plan)
 
-        logger.info(f"Optimized query with {len(optimizations_applied)} rules: {optimizations_applied}")
+        logger.info(
+            f"Optimized query with {len(optimizations_applied)} rules: {optimizations_applied}"
+        )
 
         return plan
 
@@ -177,7 +179,9 @@ class CypherOptimizer:
         else:
             return QueryType.RETURN
 
-    def _get_execution_plan(self, query: str, parameters: Dict[str, Any] = None) -> Dict[str, Any]:
+    def _get_execution_plan(
+        self, query: str, parameters: dict[str, Any] = None
+    ) -> dict[str, Any]:
         """Get query execution plan from Neo4j."""
         with self.db.session() as session:
             explain_query = f"EXPLAIN {query}"
@@ -190,17 +194,19 @@ class CypherOptimizer:
                 plan = {
                     "cost": summary.profile.get("db_hits", 0) if summary.profile else 0,
                     "rows": summary.profile.get("rows", 0) if summary.profile else 0,
-                    "operators": []
+                    "operators": [],
                 }
 
                 # Parse plan operators
                 if summary.plan:
                     for operator in summary.plan.operators:
-                        plan["operators"].append({
-                            "name": operator.get("operatorType", "Unknown"),
-                            "rows": operator.get("rows", 0),
-                            "db_hits": operator.get("dbHits", 0)
-                        })
+                        plan["operators"].append(
+                            {
+                                "name": operator.get("operatorType", "Unknown"),
+                                "rows": operator.get("rows", 0),
+                                "db_hits": operator.get("dbHits", 0),
+                            }
+                        )
 
                 return plan
 
@@ -209,11 +215,8 @@ class CypherOptimizer:
                 return {"cost": 0, "rows": 0, "operators": []}
 
     def _apply_optimization(
-        self,
-        query: str,
-        rule: Dict[str, Any],
-        parameters: Dict[str, Any] = None
-    ) -> Tuple[str, bool]:
+        self, query: str, rule: dict[str, Any], parameters: dict[str, Any] = None
+    ) -> tuple[str, bool]:
         """Apply an optimization rule.
 
         Args:
@@ -294,12 +297,12 @@ class CypherOptimizer:
 
         return query, False
 
-    def _generate_cache_key(self, query: str, parameters: Dict[str, Any] = None) -> str:
+    def _generate_cache_key(self, query: str, parameters: dict[str, Any] = None) -> str:
         """Generate cache key for query."""
         content = f"{query}:{json.dumps(parameters or {}, sort_keys=True)}"
         return f"cypher:plan:{hashlib.sha256(content.encode()).hexdigest()}"
 
-    def _get_cached_plan(self, cache_key: str) -> Optional[QueryPlan]:
+    def _get_cached_plan(self, cache_key: str) -> QueryPlan | None:
         """Get cached query plan."""
         try:
             cached = self.redis.get(cache_key)
@@ -318,14 +321,10 @@ class CypherOptimizer:
                 "original_query": plan.original_query,
                 "optimized_query": plan.optimized_query,
                 "estimated_cost": plan.estimated_cost,
-                "optimizations_applied": plan.optimizations_applied
+                "optimizations_applied": plan.optimizations_applied,
             }
 
-            self.redis.setex(
-                cache_key,
-                3600,  # 1 hour TTL
-                json.dumps(plan_data)
-            )
+            self.redis.setex(cache_key, 3600, json.dumps(plan_data))  # 1 hour TTL
         except Exception as e:
             logger.debug(f"Cache storage error: {e}")
 
@@ -342,7 +341,7 @@ class CypherOptimizer:
         dataloader_patterns = [
             (r"MATCH \((\w+):(\w+)\) WHERE \1\.id IN", "batch_by_id"),
             (r"MATCH \((\w+)\)-\[:(\w+)\]->\((\w+)\)", "batch_relationships"),
-            (r"OPTIONAL MATCH", "batch_optional")
+            (r"OPTIONAL MATCH", "batch_optional"),
         ]
 
         hints = []
@@ -356,7 +355,9 @@ class CypherOptimizer:
 
         return query
 
-    def profile_query(self, query: str, parameters: Dict[str, Any] = None) -> Dict[str, Any]:
+    def profile_query(
+        self, query: str, parameters: dict[str, Any] = None
+    ) -> dict[str, Any]:
         """Profile query execution.
 
         Args:
@@ -381,7 +382,7 @@ class CypherOptimizer:
                 "records_returned": len(records),
                 "db_hits": 0,
                 "rows_produced": 0,
-                "operators": []
+                "operators": [],
             }
 
             if summary.profile:
@@ -390,16 +391,18 @@ class CypherOptimizer:
 
             if summary.plan:
                 for op in summary.plan.operators:
-                    profile["operators"].append({
-                        "type": op.get("operatorType"),
-                        "rows": op.get("rows", 0),
-                        "db_hits": op.get("dbHits", 0),
-                        "estimated_rows": op.get("estimatedRows", 0)
-                    })
+                    profile["operators"].append(
+                        {
+                            "type": op.get("operatorType"),
+                            "rows": op.get("rows", 0),
+                            "db_hits": op.get("dbHits", 0),
+                            "estimated_rows": op.get("estimatedRows", 0),
+                        }
+                    )
 
             return profile
 
-    def suggest_indexes(self, slow_queries: List[str]) -> List[Dict[str, str]]:
+    def suggest_indexes(self, slow_queries: list[str]) -> list[dict[str, str]]:
         """Suggest indexes based on slow queries.
 
         Args:
@@ -427,12 +430,14 @@ class CypherOptimizer:
 
                     if index_key not in seen:
                         seen.add(index_key)
-                        suggestions.append({
-                            "label": label,
-                            "property": property_name,
-                            "command": f"CREATE INDEX ON :{label}({property_name})",
-                            "reason": "Frequently used in WHERE clause"
-                        })
+                        suggestions.append(
+                            {
+                                "label": label,
+                                "property": property_name,
+                                "command": f"CREATE INDEX ON :{label}({property_name})",
+                                "reason": "Frequently used in WHERE clause",
+                            }
+                        )
 
             # Look for ORDER BY without indexes
             order_pattern = r"ORDER BY\s+(\w+)\.(\w+)"
@@ -448,12 +453,14 @@ class CypherOptimizer:
 
                     if index_key not in seen:
                         seen.add(index_key)
-                        suggestions.append({
-                            "label": label,
-                            "property": property_name,
-                            "command": f"CREATE INDEX ON :{label}({property_name})",
-                            "reason": "Used in ORDER BY clause"
-                        })
+                        suggestions.append(
+                            {
+                                "label": label,
+                                "property": property_name,
+                                "command": f"CREATE INDEX ON :{label}({property_name})",
+                                "reason": "Used in ORDER BY clause",
+                            }
+                        )
 
         return suggestions
 
@@ -461,7 +468,7 @@ class CypherOptimizer:
 class QueryCacheManager:
     """Manage query result caching."""
 
-    def __init__(self, redis_client: Optional[redis.Redis] = None, ttl: int = 3600):
+    def __init__(self, redis_client: redis.Redis | None = None, ttl: int = 3600):
         """Initialize cache manager.
 
         Args:
@@ -470,23 +477,20 @@ class QueryCacheManager:
         """
         self.redis = redis_client or self._create_redis_client()
         self.ttl = ttl
-        self.stats = {
-            "hits": 0,
-            "misses": 0,
-            "evictions": 0
-        }
+        self.stats = {"hits": 0, "misses": 0, "evictions": 0}
 
     def _create_redis_client(self) -> redis.Redis:
         """Create Redis client with fallback."""
         try:
-            client = redis.Redis(host='localhost', port=6379, decode_responses=False)
+            client = redis.Redis(host="localhost", port=6379, decode_responses=False)
             client.ping()
             return client
         except:
             import fakeredis
+
             return fakeredis.FakeRedis(decode_responses=False)
 
-    def get(self, query: str, parameters: Dict[str, Any] = None) -> Optional[List[Dict]]:
+    def get(self, query: str, parameters: dict[str, Any] = None) -> list[dict] | None:
         """Get cached query results.
 
         Args:
@@ -511,7 +515,7 @@ class QueryCacheManager:
 
         return None
 
-    def set(self, query: str, parameters: Dict[str, Any], results: List[Dict]):
+    def set(self, query: str, parameters: dict[str, Any], results: list[dict]):
         """Cache query results.
 
         Args:
@@ -522,11 +526,7 @@ class QueryCacheManager:
         cache_key = self._generate_key(query, parameters)
 
         try:
-            self.redis.setex(
-                cache_key,
-                self.ttl,
-                json.dumps(results)
-            )
+            self.redis.setex(cache_key, self.ttl, json.dumps(results))
         except Exception as e:
             logger.debug(f"Cache set error: {e}")
 
@@ -546,12 +546,12 @@ class QueryCacheManager:
         except Exception as e:
             logger.debug(f"Cache invalidation error: {e}")
 
-    def _generate_key(self, query: str, parameters: Dict[str, Any] = None) -> str:
+    def _generate_key(self, query: str, parameters: dict[str, Any] = None) -> str:
         """Generate cache key."""
         content = f"{query}:{json.dumps(parameters or {}, sort_keys=True)}"
         return f"cypher:result:{hashlib.sha256(content.encode()).hexdigest()}"
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         total = self.stats["hits"] + self.stats["misses"]
         hit_rate = self.stats["hits"] / total if total > 0 else 0
@@ -561,5 +561,5 @@ class QueryCacheManager:
             "misses": self.stats["misses"],
             "evictions": self.stats["evictions"],
             "hit_rate": hit_rate,
-            "total_requests": total
+            "total_requests": total,
         }

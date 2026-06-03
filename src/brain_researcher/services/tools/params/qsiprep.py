@@ -14,13 +14,20 @@ This module re-exports from the new location with deprecation warnings.
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 # Import from canonical location
 from brain_researcher.services.tools.pipelines.params import (
     QSIPrepParameters as _QSIPrepParameters,
+)
+from brain_researcher.services.tools.pipelines.params import (
     build_qsiprep_command as _build_qsiprep_command,
+)
+from brain_researcher.services.tools.pipelines.params import (
     build_qsiprep_env as _build_qsiprep_env,
+)
+from brain_researcher.services.tools.pipelines.params import (
     qsiprep_from_payload as _qsiprep_from_payload,
 )
 
@@ -50,7 +57,7 @@ def build_qsiprep_command(
     return _build_qsiprep_command(params, include_executable=include_executable)
 
 
-def build_qsiprep_env(params: _QSIPrepParameters) -> Dict[str, str]:
+def build_qsiprep_env(params: _QSIPrepParameters) -> dict[str, str]:
     """Build QSIPrep environment variables.
 
     DEPRECATED: Use brain_researcher.services.tools.pipelines.build_qsiprep_env instead.

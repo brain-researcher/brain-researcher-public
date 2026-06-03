@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any
 
 from brain_researcher.config.paths import (
     get_default_atlas_output_root as default_atlas_output_root,
@@ -41,12 +42,12 @@ class AtlasSpec:
     slug: str | None = None
     variant: str | None = None
     parser: str = "generic"
-    params: Dict[str, Any] = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict)
     space: str = "MNI152"
-    space_variant: Optional[str] = None
-    space_resolution_mm: Optional[float] = None
-    scale: Optional[str | int] = None
-    modality: Optional[str] = None
+    space_variant: str | None = None
+    space_resolution_mm: float | None = None
+    scale: str | int | None = None
+    modality: str | None = None
 
     def resolved_slug(self) -> str:
         return self.slug or _slugify(f"{self.fetcher}-{self.variant or self.name}")
@@ -55,7 +56,7 @@ class AtlasSpec:
 class NilearnAtlasUnifiedLoader:
     """Loader that fetches common atlases via Nilearn and prepares BrainRegion nodes."""
 
-    DEFAULT_ATLASES: List[AtlasSpec] = [
+    DEFAULT_ATLASES: list[AtlasSpec] = [
         AtlasSpec(
             name="Automated Anatomical Labeling (AAL)",
             fetcher="fetch_atlas_aal",
@@ -142,7 +143,7 @@ class NilearnAtlasUnifiedLoader:
 
     def __init__(
         self,
-        atlas_specs: Optional[Iterable[AtlasSpec]] = None,
+        atlas_specs: Iterable[AtlasSpec] | None = None,
         data_dir: str | Path = default_atlas_output_root() / "nilearn",
     ) -> None:
         self.data_dir = Path(data_dir).expanduser().resolve()
@@ -156,19 +157,19 @@ class NilearnAtlasUnifiedLoader:
                 for spec in atlas_specs
             ]
 
-        self.region_nodes: List[Dict[str, Any]] = []
-        self.parcellation_payloads: List[
-            Tuple[AtlasSpec, List[Dict[str, Any]], List[str]]
+        self.region_nodes: list[dict[str, Any]] = []
+        self.parcellation_payloads: list[
+            tuple[AtlasSpec, list[dict[str, Any]], list[str]]
         ] = []
-        self.failed_atlases: List[Dict[str, Any]] = []
-        self.atlas_stats: Dict[str, Dict[str, Any]] = {}
+        self.failed_atlases: list[dict[str, Any]] = []
+        self.atlas_stats: dict[str, dict[str, Any]] = {}
 
     def _parse_generic_label(
         self,
         label: str,
         index: int,
         spec: AtlasSpec,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         name = label
         hemisphere = None
 
@@ -207,7 +208,7 @@ class NilearnAtlasUnifiedLoader:
         label: str,
         index: int,
         spec: AtlasSpec,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         parts = label.split("_")
         hemisphere = None
         network = None
@@ -220,9 +221,7 @@ class NilearnAtlasUnifiedLoader:
             hemisphere = (
                 "left"
                 if hemisphere_code.upper() == "LH"
-                else "right"
-                if hemisphere_code.upper() == "RH"
-                else None
+                else "right" if hemisphere_code.upper() == "RH" else None
             )
             network = parts[2]
             try:
@@ -252,7 +251,7 @@ class NilearnAtlasUnifiedLoader:
         label: str,
         index: int,
         spec: AtlasSpec,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         node = self._parse_generic_label(label, index, spec)
         # BASC labels typically formatted as e.g. "ROI_1"
         try:
@@ -269,7 +268,7 @@ class NilearnAtlasUnifiedLoader:
         label: str,
         index: int,
         spec: AtlasSpec,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         parsers = {
             "generic": self._parse_generic_label,
             "schaefer": self._parse_schaefer_label,
@@ -283,8 +282,8 @@ class NilearnAtlasUnifiedLoader:
         self,
         labels: Iterable[Any],
         spec: AtlasSpec,
-    ) -> List[Dict[str, Any]]:
-        regions: List[Dict[str, Any]] = []
+    ) -> list[dict[str, Any]]:
+        regions: list[dict[str, Any]] = []
 
         pandas_series = None
         pandas_dataframe = None
@@ -331,7 +330,7 @@ class NilearnAtlasUnifiedLoader:
                 "Install it with `pip install nilearn`."
             ) from exc
 
-    def load_regions(self) -> List[Dict[str, Any]]:
+    def load_regions(self) -> list[dict[str, Any]]:
         """Fetch configured atlases and convert them to BrainRegion metadata."""
         if self.region_nodes:
             return self.region_nodes
@@ -339,7 +338,7 @@ class NilearnAtlasUnifiedLoader:
         self._ensure_nilearn()
         from nilearn import datasets
 
-        all_regions: List[Dict[str, Any]] = []
+        all_regions: list[dict[str, Any]] = []
         self.atlas_stats = {}
         self.failed_atlases = []
 
@@ -374,13 +373,13 @@ class NilearnAtlasUnifiedLoader:
                 continue
 
             map_path = getattr(bunch, "maps", None)
-            map_locations: List[str] = []
+            map_locations: list[str] = []
             if map_path is not None:
-                if isinstance(map_path, (str, Path)):
+                if isinstance(map_path, str | Path):
                     map_locations.append(str(Path(map_path).resolve()))
-                elif isinstance(map_path, (list, tuple)):
+                elif isinstance(map_path, list | tuple):
                     for item in map_path:
-                        if isinstance(item, (str, Path)):
+                        if isinstance(item, str | Path):
                             map_locations.append(str(Path(item).resolve()))
                 else:  # nibabel objects or arrays are skipped
                     pass
@@ -424,8 +423,8 @@ class NilearnAtlasUnifiedLoader:
             components.append(f"{int(spec.space_resolution_mm)}mm")
         return "space:" + ":".join(components)
 
-    def _template_space_properties(self, spec: AtlasSpec) -> Dict[str, Any]:
-        props: Dict[str, Any] = {
+    def _template_space_properties(self, spec: AtlasSpec) -> dict[str, Any]:
+        props: dict[str, Any] = {
             "id": self._template_space_id(spec),
             "name": spec.space,
             "source": "nilearn",
@@ -444,7 +443,7 @@ class NilearnAtlasUnifiedLoader:
         return f"resource:nilearn:{spec.resolved_slug()}:{name}"
 
     @staticmethod
-    def _data_resource_properties(spec: AtlasSpec, file_path: str) -> Dict[str, Any]:
+    def _data_resource_properties(spec: AtlasSpec, file_path: str) -> dict[str, Any]:
         path = Path(file_path).resolve()
         suffixes = path.suffixes
         if (
@@ -463,7 +462,7 @@ class NilearnAtlasUnifiedLoader:
             "atlas_slug": spec.resolved_slug(),
         }
 
-    def ingest(self, db) -> Dict[str, Any]:
+    def ingest(self, db) -> dict[str, Any]:
         """Insert fetched regions into BR-KG."""
         if not self.region_nodes:
             self.load_regions()
@@ -479,7 +478,7 @@ class NilearnAtlasUnifiedLoader:
 
         for spec, regions, map_locations in self.parcellation_payloads:
             parcellation_id = self._parcellation_id(spec)
-            parcellation_props: Dict[str, Any] = {
+            parcellation_props: dict[str, Any] = {
                 "id": parcellation_id,
                 "name": spec.name,
                 "slug": spec.resolved_slug(),

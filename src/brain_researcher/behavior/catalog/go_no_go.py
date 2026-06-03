@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from brain_researcher.behavior.task_spec import BehaviorTaskSpecV1, ScannerProfile
 from brain_researcher.behavior.catalog.base import (
     BASE_BIDS_COLUMNS,
     _merge,
     build_config_sections,
     build_spec_from_flat,
 )
+from brain_researcher.behavior.task_spec import BehaviorTaskSpecV1, ScannerProfile
 
 
 def _defaults() -> dict[str, Any]:

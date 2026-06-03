@@ -55,6 +55,7 @@ def _fake_bundle(
         tool_candidate_diagnostics=tool_candidate_diagnostics or {},
     )
 
+
 def test_studio_plan_returns_ops_grounded_in_tool_candidates(monkeypatch):
     """Endpoint returns ops whose metadata.tool_id matches a candidate from retrieval."""
     fake_candidates = [
@@ -110,7 +111,10 @@ def test_studio_plan_builds_generic_markdown_without_candidates(monkeypatch):
 
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data["assistant_message"] == "Drafted deterministic notebook cells from your request."
+    assert (
+        data["assistant_message"]
+        == "Drafted deterministic notebook cells from your request."
+    )
     assert len(data["ops"]) == 1
     assert data["ops"][0]["cell_type"] == "markdown"
     assert "## Note" in data["ops"][0]["source"]
@@ -128,14 +132,16 @@ def test_studio_plan_requires_prompt():
 
 
 def test_studio_plan_builds_glm_scaffold_from_candidate(monkeypatch):
-    fake_bundle = _fake_bundle(tool_candidates=[
-        {
-            "tool_id": "glm_first_level",
-            "source": "catalog",
-            "score": 0.93,
-            "description": "First-level GLM",
-        }
-    ])
+    fake_bundle = _fake_bundle(
+        tool_candidates=[
+            {
+                "tool_id": "glm_first_level",
+                "source": "catalog",
+                "score": 0.93,
+                "description": "First-level GLM",
+            }
+        ]
+    )
 
     with patch(
         "brain_researcher.services.agent.web_service.generate_tool_candidates",
@@ -144,7 +150,10 @@ def test_studio_plan_builds_glm_scaffold_from_candidate(monkeypatch):
         client = _make_flask_test_client()
         resp = client.post(
             "/agent/studio/plan",
-            json={"prompt": "build a first-level GLM for an OpenNeuro task run", "notebook_context": {}},
+            json={
+                "prompt": "build a first-level GLM for an OpenNeuro task run",
+                "notebook_context": {},
+            },
             content_type="application/json",
         )
 
@@ -161,20 +170,22 @@ def test_studio_plan_filters_disallowed_candidates_and_canonicalizes_tool_ids(
     monkeypatch.delenv("BR_AGENT_ALLOW_ALL_RUNTIME_TOOLS", raising=False)
     monkeypatch.delenv("BR_AGENT_ALLOW_REMOTE_EXECUTION_TOOLS", raising=False)
 
-    fake_bundle = _fake_bundle(tool_candidates=[
-        {
-            "tool_id": "cat12",
-            "source": "br_kg",
-            "score": 0.91,
-            "description": "CAT12 VBM",
-        },
-        {
-            "tool_id": "tool_execute",
-            "source": "runtime",
-            "score": 0.99,
-            "description": "Disallowed runtime executor",
-        },
-    ])
+    fake_bundle = _fake_bundle(
+        tool_candidates=[
+            {
+                "tool_id": "cat12",
+                "source": "br_kg",
+                "score": 0.91,
+                "description": "CAT12 VBM",
+            },
+            {
+                "tool_id": "tool_execute",
+                "source": "runtime",
+                "score": 0.99,
+                "description": "Disallowed runtime executor",
+            },
+        ]
+    )
 
     with patch(
         "brain_researcher.services.agent.web_service.generate_tool_candidates",
@@ -194,14 +205,16 @@ def test_studio_plan_filters_disallowed_candidates_and_canonicalizes_tool_ids(
 
 
 def test_studio_plan_builds_bids_app_scaffold_from_candidate(monkeypatch):
-    fake_bundle = _fake_bundle(tool_candidates=[
-        {
-            "tool_id": "run_bids_app",
-            "source": "catalog",
-            "score": 0.88,
-            "description": "Run a BIDS App",
-        }
-    ])
+    fake_bundle = _fake_bundle(
+        tool_candidates=[
+            {
+                "tool_id": "run_bids_app",
+                "source": "catalog",
+                "score": 0.88,
+                "description": "Run a BIDS App",
+            }
+        ]
+    )
 
     with patch(
         "brain_researcher.services.agent.web_service.generate_tool_candidates",
@@ -222,7 +235,7 @@ def test_studio_plan_builds_bids_app_scaffold_from_candidate(monkeypatch):
     data = resp.get_json()
     assert "fmriprep BIDS App scaffold" in data["ops"][0]["source"]
     assert all(op["metadata"]["tool_id"] == "run_bids_app" for op in data["ops"])
-    assert any("app_name = \"fmriprep\"" in op["source"] for op in data["ops"])
+    assert any('app_name = "fmriprep"' in op["source"] for op in data["ops"])
 
 
 def test_studio_plan_grounds_glm_paths_from_query_understanding(tmp_path):
@@ -239,9 +252,12 @@ def test_studio_plan_grounds_glm_paths_from_query_understanding(tmp_path):
         / "sub-01_task-motor_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz"
     )
     confounds_path = (
-        deriv_func / "sub-01_task-motor_space-MNI152NLin2009cAsym_desc-confounds_timeseries.tsv"
+        deriv_func
+        / "sub-01_task-motor_space-MNI152NLin2009cAsym_desc-confounds_timeseries.tsv"
     )
-    events_path.write_text("onset\tduration\ttrial_type\n0\t1\tleft\n", encoding="utf-8")
+    events_path.write_text(
+        "onset\tduration\ttrial_type\n0\t1\tleft\n", encoding="utf-8"
+    )
     bold_path.write_text("", encoding="utf-8")
     confounds_path.write_text("framewise_displacement\n0.0\n", encoding="utf-8")
 

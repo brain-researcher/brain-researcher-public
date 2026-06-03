@@ -44,7 +44,10 @@ def test_dataset_index_loader_creates_dataset_and_links_tasks(tmp_path):
     assert dataset_node["data_types"] == ["fMRI"]
     assert isinstance(dataset_node.get("matched_task_canonicals"), list)
     assert "Unknown Task" in dataset_node["unmatched_tasks"]
-    assert dataset_node["storage"]["metadata_root"] == index_payload["metadata"]["location"]
+    assert (
+        dataset_node["storage"]["metadata_root"]
+        == index_payload["metadata"]["location"]
+    )
 
     relationships = db.find_relationships(start_node=dataset_id, rel_type="HAS_TASK")
     assert len(relationships) == 1

@@ -105,7 +105,9 @@ def _resolve_direct_statistical_test(
 ) -> bool | None:
     if claim.direct_statistical_test is not None:
         return claim.direct_statistical_test
-    return _first_non_null_bool(item.direct_statistical_test for item in linked_evidence)
+    return _first_non_null_bool(
+        item.direct_statistical_test for item in linked_evidence
+    )
 
 
 def allowed_claim_verdicts(

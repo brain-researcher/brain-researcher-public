@@ -12,33 +12,25 @@ Integrates seamlessly with the existing LangGraph CoreStateMachine.
 """
 
 import asyncio
-import json
 import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any
 from uuid import uuid4
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-
-from brain_researcher.services.agent.graph import CoreStateMachine, AgentState
-from brain_researcher.services.tools.enhanced_registry import EnhancedToolRegistry
-from brain_researcher.services.agent.logging.run_recorder import RunRecorder
-from brain_researcher.services.agent.workflow_composer import (
-    WorkflowComposer,
-    WorkflowExecutor,
-    create_workflow_system,
+from brain_researcher.services.agent.advanced_error_recovery import (
+    create_error_recovery_system,
 )
 from brain_researcher.services.agent.enhanced_evidence import (
     EnhancedEvidenceCollector,
-    ProvenanceTracker,
-    EvidenceVisualizationAPI,
 )
-from brain_researcher.services.agent.advanced_error_recovery import (
-    AdvancedErrorRecoverySystem,
-    create_error_recovery_system,
+from brain_researcher.services.agent.graph import CoreStateMachine
+from brain_researcher.services.agent.logging.run_recorder import RunRecorder
+from brain_researcher.services.agent.workflow_composer import (
+    create_workflow_system,
 )
+from brain_researcher.services.tools.enhanced_registry import EnhancedToolRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -51,13 +43,13 @@ class ExecutionSession:
     thread_id: str
     start_time: float
     user_query: str
-    workflow_pipeline: Optional[Any] = None
-    evidence_collector: Optional[EnhancedEvidenceCollector] = None
-    execution_metrics: Dict[str, Any] = field(default_factory=dict)
-    recovery_attempts: List[Dict[str, Any]] = field(default_factory=list)
+    workflow_pipeline: Any | None = None
+    evidence_collector: EnhancedEvidenceCollector | None = None
+    execution_metrics: dict[str, Any] = field(default_factory=dict)
+    recovery_attempts: list[dict[str, Any]] = field(default_factory=list)
     status: str = "active"
-    end_time: Optional[float] = None
-    final_result: Optional[Dict[str, Any]] = None
+    end_time: float | None = None
+    final_result: dict[str, Any] | None = None
 
 
 class EnhancedAgentOrchestrator:
@@ -68,12 +60,12 @@ class EnhancedAgentOrchestrator:
 
     def __init__(
         self,
-        base_state_machine: Optional[CoreStateMachine] = None,
+        base_state_machine: CoreStateMachine | None = None,
         enable_workflow_composition: bool = True,
         enable_advanced_evidence: bool = True,
         enable_error_recovery: bool = True,
-        evidence_storage_path: Optional[Path] = None,
-        redis_url: Optional[str] = None,
+        evidence_storage_path: Path | None = None,
+        redis_url: str | None = None,
     ):
         """Initialize enhanced agent orchestrator."""
 
@@ -107,8 +99,8 @@ class EnhancedAgentOrchestrator:
             logger.info("Advanced error recovery system enabled")
 
         # Session management
-        self.active_sessions: Dict[str, ExecutionSession] = {}
-        self.session_history: List[ExecutionSession] = []
+        self.active_sessions: dict[str, ExecutionSession] = {}
+        self.session_history: list[ExecutionSession] = []
 
         # Initialize run recorder for logging
         self.run_recorder = RunRecorder()
@@ -128,11 +120,11 @@ class EnhancedAgentOrchestrator:
     async def process_query(
         self,
         query: str,
-        thread_id: Optional[str] = None,
-        user_preferences: Dict[str, Any] = None,
-        execution_options: Dict[str, Any] = None,
-        resume_checkpoint_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        thread_id: str | None = None,
+        user_preferences: dict[str, Any] = None,
+        execution_options: dict[str, Any] = None,
+        resume_checkpoint_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Process a query with all enhanced capabilities.
 
@@ -206,7 +198,7 @@ class EnhancedAgentOrchestrator:
             self._archive_session(session)
 
     def _create_execution_session(
-        self, query: str, thread_id: Optional[str]
+        self, query: str, thread_id: str | None
     ) -> ExecutionSession:
         """Create a new execution session."""
         session_id = f"session_{uuid4().hex[:8]}"
@@ -240,15 +232,15 @@ class EnhancedAgentOrchestrator:
         self,
         session: ExecutionSession,
         query: str,
-        user_preferences: Dict[str, Any] = None,
-        execution_options: Dict[str, Any] = None,
-    ) -> Dict[str, Any]:
+        user_preferences: dict[str, Any] = None,
+        execution_options: dict[str, Any] = None,
+    ) -> dict[str, Any]:
         """Enhanced planning phase with workflow composition."""
         user_preferences = user_preferences or {}
         execution_options = execution_options or {}
 
         # Start logging for planning phase
-        run_id = self.run_recorder.start("planning", session.session_id)
+        self.run_recorder.start("planning", session.session_id)
 
         # Collect evidence about the query
         session.evidence_collector.collect(
@@ -313,9 +305,11 @@ class EnhancedAgentOrchestrator:
         base_result = self.base_state_machine.run(
             query=query,
             thread_id=session.thread_id,
-            resume_checkpoint_id=execution_options.get("resume_checkpoint_id")
-            if execution_options
-            else None,
+            resume_checkpoint_id=(
+                execution_options.get("resume_checkpoint_id")
+                if execution_options
+                else None
+            ),
             **(execution_options or {}),
         )
 
@@ -340,15 +334,15 @@ class EnhancedAgentOrchestrator:
         }
 
     async def _enhanced_execution_phase(
-        self, session: ExecutionSession, planning_result: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, session: ExecutionSession, planning_result: dict[str, Any]
+    ) -> dict[str, Any]:
         """Enhanced execution phase with monitoring and evidence collection."""
 
         # Start logging for execution phase
-        run_id = self.run_recorder.start("execution", session.session_id)
+        self.run_recorder.start("execution", session.session_id)
 
         # Start evidence chain for execution
-        evidence_chain = session.evidence_collector.start_chain(
+        session.evidence_collector.start_chain(
             description=f"Query execution: {session.user_query[:100]}"
         )
 
@@ -465,12 +459,12 @@ class EnhancedAgentOrchestrator:
         return execution_results
 
     async def _enhanced_review_phase(
-        self, session: ExecutionSession, execution_result: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, session: ExecutionSession, execution_result: dict[str, Any]
+    ) -> dict[str, Any]:
         """Enhanced review phase with evidence aggregation."""
 
         # Start logging for review phase
-        run_id = self.run_recorder.start("review", session.session_id)
+        self.run_recorder.start("review", session.session_id)
 
         # Aggregate evidence from execution
         evidence_aggregations = {}
@@ -538,9 +532,11 @@ class EnhancedAgentOrchestrator:
             checks.append(
                 {
                     "item": "execution_metrics",
-                    "result": "OK"
-                    if session.execution_metrics["tools_failed"] == 0
-                    else "FAILED",
+                    "result": (
+                        "OK"
+                        if session.execution_metrics["tools_failed"] == 0
+                        else "FAILED"
+                    ),
                     "note": f"Executed: {session.execution_metrics['tools_executed']}, Failed: {session.execution_metrics['tools_failed']}",
                 }
             )
@@ -562,8 +558,8 @@ class EnhancedAgentOrchestrator:
         }
 
     async def _generate_comprehensive_response(
-        self, session: ExecutionSession, review_result: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, session: ExecutionSession, review_result: dict[str, Any]
+    ) -> dict[str, Any]:
         """Generate comprehensive response with all collected information."""
 
         # Extract key results
@@ -611,7 +607,9 @@ Processing time: {time.time() - session.start_time:.2f} seconds
         # Export evidence if requested or for important sessions
         if quality_score["quality_score"] > 0.7 or len(successful_tools) > 2:
             try:
-                export_path = session.evidence_collector.visualization_api.export_comprehensive_report()
+                export_path = (
+                    session.evidence_collector.visualization_api.export_comprehensive_report()
+                )
                 result["evidence_export_path"] = str(export_path)
             except Exception as e:
                 logger.warning(f"Failed to export evidence report: {e}")
@@ -621,7 +619,7 @@ Processing time: {time.time() - session.start_time:.2f} seconds
 
     async def _attempt_error_recovery(
         self, session: ExecutionSession, error: Exception
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Attempt error recovery using the advanced recovery system."""
 
         if not self.error_recovery_system:
@@ -710,7 +708,7 @@ Processing time: {time.time() - session.start_time:.2f} seconds
         if len(self.session_history) > 1000:
             self.session_history = self.session_history[-1000:]
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Get comprehensive system status."""
         return {
             "active_sessions": len(self.active_sessions),
@@ -729,7 +727,7 @@ Processing time: {time.time() - session.start_time:.2f} seconds
             ),
         }
 
-    def get_session_details(self, session_id: str) -> Optional[Dict[str, Any]]:
+    def get_session_details(self, session_id: str) -> dict[str, Any] | None:
         """Get details for a specific session."""
         # Check active sessions first
         if session_id in self.active_sessions:
@@ -765,7 +763,7 @@ Processing time: {time.time() - session.start_time:.2f} seconds
 
 # Factory function for easy integration
 def create_enhanced_agent_orchestrator(
-    base_state_machine: Optional[CoreStateMachine] = None, **kwargs
+    base_state_machine: CoreStateMachine | None = None, **kwargs
 ) -> EnhancedAgentOrchestrator:
     """Create an enhanced agent orchestrator instance."""
     return EnhancedAgentOrchestrator(base_state_machine=base_state_machine, **kwargs)
@@ -784,17 +782,14 @@ class EnhancedCoreStateMachine(CoreStateMachine):
             base_state_machine=self, **kwargs
         )
 
-    async def arun_enhanced(
-        self, query: str, thread_id: Optional[str] = None, **kwargs
-    ):
+    async def arun_enhanced(self, query: str, thread_id: str | None = None, **kwargs):
         """Enhanced async run with all advanced features."""
         return await self.orchestrator.process_query(
             query=query, thread_id=thread_id, **kwargs
         )
 
-    def run_enhanced(self, query: str, thread_id: Optional[str] = None, **kwargs):
+    def run_enhanced(self, query: str, thread_id: str | None = None, **kwargs):
         """Enhanced synchronous run with all advanced features."""
-        import asyncio
 
         loop = asyncio.new_event_loop()
         try:
@@ -804,7 +799,7 @@ class EnhancedCoreStateMachine(CoreStateMachine):
         finally:
             loop.close()
 
-    def get_enhanced_status(self) -> Dict[str, Any]:
+    def get_enhanced_status(self) -> dict[str, Any]:
         """Get enhanced system status."""
         base_status = {
             "cache_stats": self.get_cache_stats(),

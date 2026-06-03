@@ -8,10 +8,9 @@ to different backends (AFNI, FSL, ANTs, etc.).
 
 from __future__ import annotations
 
-import math
-from typing import Optional, Dict, Any, List
+from typing import Any
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class SmoothParams(BaseModel):
@@ -29,14 +28,14 @@ class SmoothParams(BaseModel):
         output: Output file path
     """
 
-    fwhm_mm: Optional[float] = Field(None, gt=0, description="FWHM in mm")
-    sigma_mm: Optional[float] = Field(None, gt=0, description="Sigma in mm")
-    mask: Optional[str] = Field(None, description="Mask file path")
+    fwhm_mm: float | None = Field(None, gt=0, description="FWHM in mm")
+    sigma_mm: float | None = Field(None, gt=0, description="Sigma in mm")
+    mask: str | None = Field(None, description="Mask file path")
     input: str = Field(..., description="Input file path")
     output: str = Field(..., description="Output file path")
 
     @model_validator(mode="after")
-    def validate_smoothing_params(self) -> "SmoothParams":
+    def validate_smoothing_params(self) -> SmoothParams:
         """Ensure exactly one of FWHM or sigma is provided."""
         has_fwhm = self.fwhm_mm is not None
         has_sigma = self.sigma_mm is not None
@@ -92,21 +91,21 @@ class CompiledOp(BaseModel):
     """
 
     tool: str = Field(..., description="Tool identifier")
-    params: Dict[str, Any] = Field(..., description="Backend-specific parameters")
-    container_image: Optional[str] = Field(None, description="Container image path")
+    params: dict[str, Any] = Field(..., description="Backend-specific parameters")
+    container_image: str | None = Field(None, description="Container image path")
     backend: str = Field(..., description="Backend name")
     why: str = Field(default="", description="Selection explanation")
-    canonical_params: Optional[Dict[str, Any]] = Field(
+    canonical_params: dict[str, Any] | None = Field(
         None, description="Original canonical parameters"
     )
-    executable: Optional[str] = Field(
+    executable: str | None = Field(
         None, description="Backend executable used to perform the operation"
     )
     multi_step: bool = Field(
         default=False,
         description="Whether the backend execution requires multiple sequential steps",
     )
-    steps: Optional[List[Dict[str, Any]]] = Field(
+    steps: list[dict[str, Any]] | None = Field(
         default=None,
         description="Execution steps (if multi_step is true)",
     )

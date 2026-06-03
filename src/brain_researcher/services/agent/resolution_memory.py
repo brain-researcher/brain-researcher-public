@@ -23,7 +23,7 @@ import threading
 import time
 from collections.abc import Iterable, MutableMapping
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ SESSION_STEP_STATUS_CTX_KEY = "_resolution_step_statuses"
 _SESSION_MEMORY: dict[str, dict[str, Any]] = {}
 _SESSION_MEMORY_LOCK = threading.Lock()
 
-_PLATFORM_STORE: "PlatformKnowledgeStore | None" = None
+_PLATFORM_STORE: PlatformKnowledgeStore | None = None
 _PLATFORM_STORE_LOCK = threading.Lock()
 
 _WHITESPACE_RE = re.compile(r"\s+")
@@ -68,13 +68,13 @@ def _normalize_text(value: str) -> str:
     return _WHITESPACE_RE.sub(" ", str(value or "").strip().lower())
 
 
-def _safe_ctx(ctx: Optional[MutableMapping[str, Any]]) -> MutableMapping[str, Any]:
+def _safe_ctx(ctx: MutableMapping[str, Any] | None) -> MutableMapping[str, Any]:
     if ctx is None:
         raise ValueError("resolution memory requires a mutable context dict")
     return ctx
 
 
-def _thread_id(ctx: Optional[MutableMapping[str, Any]]) -> Optional[str]:
+def _thread_id(ctx: MutableMapping[str, Any] | None) -> str | None:
     if not isinstance(ctx, MutableMapping):
         return None
     for key in ("thread_id", "session_id"):
@@ -130,7 +130,9 @@ def _persist_ctx_session_state(ctx: MutableMapping[str, Any]) -> None:
         _SESSION_MEMORY[thread_id] = state
 
 
-def build_step_signature(step_kind: str, query: str, extra: Optional[Dict[str, Any]] = None) -> str:
+def build_step_signature(
+    step_kind: str, query: str, extra: dict[str, Any] | None = None
+) -> str:
     payload = {
         "kind": _normalize_text(step_kind),
         "query": _normalize_text(query),
@@ -141,7 +143,9 @@ def build_step_signature(step_kind: str, query: str, extra: Optional[Dict[str, A
     return f"{payload['kind']}:{digest}"
 
 
-def resolve_runtime_surface(ctx: Optional[MutableMapping[str, Any]], default: str = "agent") -> str:
+def resolve_runtime_surface(
+    ctx: MutableMapping[str, Any] | None, default: str = "agent"
+) -> str:
     if isinstance(ctx, MutableMapping):
         value = ctx.get("runtime_surface") or ctx.get("execution_surface")
         if value:
@@ -153,9 +157,9 @@ def resolve_runtime_surface(ctx: Optional[MutableMapping[str, Any]], default: st
 
 
 def get_session_entry(
-    ctx: Optional[MutableMapping[str, Any]],
+    ctx: MutableMapping[str, Any] | None,
     step_signature: str,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     if not isinstance(ctx, MutableMapping):
         return None
     _ensure_ctx_state(ctx)
@@ -164,9 +168,9 @@ def get_session_entry(
 
 
 def set_session_entry(
-    ctx: Optional[MutableMapping[str, Any]],
+    ctx: MutableMapping[str, Any] | None,
     step_signature: str,
-    value: Dict[str, Any],
+    value: dict[str, Any],
 ) -> None:
     if not isinstance(ctx, MutableMapping):
         return
@@ -182,13 +186,13 @@ def set_session_entry(
 
 
 def record_event(
-    ctx: Optional[MutableMapping[str, Any]],
+    ctx: MutableMapping[str, Any] | None,
     event_type: str,
     *,
-    layer: Optional[str] = None,
-    cache_family: Optional[str] = None,
-    cache_key: Optional[str] = None,
-    payload: Optional[Dict[str, Any]] = None,
+    layer: str | None = None,
+    cache_family: str | None = None,
+    cache_key: str | None = None,
+    payload: dict[str, Any] | None = None,
 ) -> None:
     if not isinstance(ctx, MutableMapping):
         return
@@ -223,12 +227,12 @@ def record_event(
 
 
 def set_step_status(
-    ctx: Optional[MutableMapping[str, Any]],
+    ctx: MutableMapping[str, Any] | None,
     step_name: str,
     *,
     status: str,
     source: str,
-    detail: Optional[Dict[str, Any]] = None,
+    detail: dict[str, Any] | None = None,
 ) -> None:
     if not isinstance(ctx, MutableMapping):
         return
@@ -247,8 +251,8 @@ def set_step_status(
 
 
 def add_pending_decision(
-    ctx: Optional[MutableMapping[str, Any]],
-    decision: Dict[str, Any],
+    ctx: MutableMapping[str, Any] | None,
+    decision: dict[str, Any],
 ) -> None:
     if not isinstance(ctx, MutableMapping):
         return
@@ -257,13 +261,19 @@ def add_pending_decision(
     if not isinstance(pending, list):
         return
     key = json.dumps(decision, sort_keys=True, default=str)
-    existing = {json.dumps(item, sort_keys=True, default=str) for item in pending if isinstance(item, dict)}
+    existing = {
+        json.dumps(item, sort_keys=True, default=str)
+        for item in pending
+        if isinstance(item, dict)
+    }
     if key not in existing:
         pending.append(_json_clone(decision))
         _persist_ctx_session_state(ctx)
 
 
-def clear_pending_decisions(ctx: Optional[MutableMapping[str, Any]], capability_intent: Optional[str] = None) -> None:
+def clear_pending_decisions(
+    ctx: MutableMapping[str, Any] | None, capability_intent: str | None = None
+) -> None:
     if not isinstance(ctx, MutableMapping):
         return
     _ensure_ctx_state(ctx)
@@ -283,7 +293,9 @@ def clear_pending_decisions(ctx: Optional[MutableMapping[str, Any]], capability_
     _persist_ctx_session_state(ctx)
 
 
-def get_pending_decisions(ctx: Optional[MutableMapping[str, Any]]) -> list[dict[str, Any]]:
+def get_pending_decisions(
+    ctx: MutableMapping[str, Any] | None,
+) -> list[dict[str, Any]]:
     if not isinstance(ctx, MutableMapping):
         return []
     _ensure_ctx_state(ctx)
@@ -294,8 +306,8 @@ def get_pending_decisions(ctx: Optional[MutableMapping[str, Any]]) -> list[dict[
 
 
 def pop_pending_decision(
-    ctx: Optional[MutableMapping[str, Any]],
-) -> Optional[dict[str, Any]]:
+    ctx: MutableMapping[str, Any] | None,
+) -> dict[str, Any] | None:
     if not isinstance(ctx, MutableMapping):
         return None
     _ensure_ctx_state(ctx)
@@ -308,7 +320,7 @@ def pop_pending_decision(
 
 
 def set_override(
-    ctx: Optional[MutableMapping[str, Any]],
+    ctx: MutableMapping[str, Any] | None,
     capability_intent: str,
     choice: str,
 ) -> None:
@@ -331,7 +343,9 @@ def set_override(
     _persist_ctx_session_state(ctx)
 
 
-def get_override(ctx: Optional[MutableMapping[str, Any]], capability_intent: str) -> Optional[str]:
+def get_override(
+    ctx: MutableMapping[str, Any] | None, capability_intent: str
+) -> str | None:
     if not isinstance(ctx, MutableMapping):
         return None
     _ensure_ctx_state(ctx)
@@ -342,21 +356,17 @@ def get_override(ctx: Optional[MutableMapping[str, Any]], capability_intent: str
     return str(value) if value else None
 
 
-def get_overrides(ctx: Optional[MutableMapping[str, Any]]) -> Dict[str, str]:
+def get_overrides(ctx: MutableMapping[str, Any] | None) -> dict[str, str]:
     if not isinstance(ctx, MutableMapping):
         return {}
     _ensure_ctx_state(ctx)
     overrides = ctx.get(SESSION_OVERRIDES_CTX_KEY)
     if not isinstance(overrides, dict):
         return {}
-    return {
-        str(key): str(value)
-        for key, value in overrides.items()
-        if key and value
-    }
+    return {str(key): str(value) for key, value in overrides.items() if key and value}
 
 
-def export_resolution_state(ctx: Optional[MutableMapping[str, Any]]) -> Dict[str, Any]:
+def export_resolution_state(ctx: MutableMapping[str, Any] | None) -> dict[str, Any]:
     if not isinstance(ctx, MutableMapping):
         return {
             "step_statuses": {},
@@ -382,8 +392,8 @@ def export_resolution_state(ctx: Optional[MutableMapping[str, Any]]) -> Dict[str
 
 
 def get_generic_clarification_state(
-    ctx: Optional[MutableMapping[str, Any]],
-) -> Dict[str, Any]:
+    ctx: MutableMapping[str, Any] | None,
+) -> dict[str, Any]:
     if not isinstance(ctx, MutableMapping):
         return {"answered_keys": [], "answers": []}
     _ensure_ctx_state(ctx)
@@ -396,8 +406,8 @@ def get_generic_clarification_state(
 
 
 def record_generic_clarification_answer(
-    ctx: Optional[MutableMapping[str, Any]],
-    decision: Dict[str, Any],
+    ctx: MutableMapping[str, Any] | None,
+    decision: dict[str, Any],
     answer: str,
 ) -> None:
     if not isinstance(ctx, MutableMapping):
@@ -437,30 +447,45 @@ def record_generic_clarification_answer(
 def normalize_capability_intent(
     query: str,
     *,
-    ctx: Optional[MutableMapping[str, Any]] = None,
-) -> Optional[str]:
+    ctx: MutableMapping[str, Any] | None = None,
+) -> str | None:
     text = _normalize_text(query)
     if not text:
         return None
 
     if any(token in text for token in ("timeseries", "time series")):
-        if any(token in text for token in ("extract", "atlas", "roi", "masker", "label", "labels")):
+        if any(
+            token in text
+            for token in ("extract", "atlas", "roi", "masker", "label", "labels")
+        ):
             return "extract_timeseries"
-    if any(token in text for token in ("confound", "confounds", "nuisance", "denoise", "regress", "regression")):
+    if any(
+        token in text
+        for token in (
+            "confound",
+            "confounds",
+            "nuisance",
+            "denoise",
+            "regress",
+            "regression",
+        )
+    ):
         return "clean_confounds"
-    if "connectivity" in text and any(token in text for token in ("workflow", "pipeline")):
+    if "connectivity" in text and any(
+        token in text for token in ("workflow", "pipeline")
+    ):
         return "connectivity_pipeline"
 
     if isinstance(ctx, MutableMapping):
         predicted = ctx.get("predicted_capabilities")
-        if isinstance(predicted, Iterable) and not isinstance(predicted, (str, bytes)):
+        if isinstance(predicted, Iterable) and not isinstance(predicted, str | bytes):
             for item in predicted:
                 if item:
                     return _normalize_text(str(item))
     return None
 
 
-def infer_derivative_family(query: str) -> Optional[str]:
+def infer_derivative_family(query: str) -> str | None:
     text = _normalize_text(query)
     if not text:
         return None
@@ -470,7 +495,7 @@ def infer_derivative_family(query: str) -> Optional[str]:
     return None
 
 
-def build_pending_decision(capability_intent: str) -> Optional[Dict[str, Any]]:
+def build_pending_decision(capability_intent: str) -> dict[str, Any] | None:
     if capability_intent == "extract_timeseries":
         return {
             "capability_intent": capability_intent,
@@ -494,7 +519,7 @@ def build_pending_decision(capability_intent: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def serialize_query_understanding(qur: Any) -> Dict[str, Any]:
+def serialize_query_understanding(qur: Any) -> dict[str, Any]:
     from brain_researcher.services.agent.query_models import QueryUnderstandingModel
 
     if isinstance(qur, dict):
@@ -503,7 +528,7 @@ def serialize_query_understanding(qur: Any) -> Dict[str, Any]:
     return model.model_dump(mode="json")
 
 
-def deserialize_query_understanding(payload: Dict[str, Any]) -> Any:
+def deserialize_query_understanding(payload: dict[str, Any]) -> Any:
     from brain_researcher.services.agent.query_models import QueryUnderstandingModel
 
     model = QueryUnderstandingModel.model_validate(payload)
@@ -522,7 +547,9 @@ class PlatformKnowledgeStore:
             self.redis = redis.from_url(redis_url, decode_responses=True)
             self.redis.ping()
         except Exception as exc:
-            logger.debug("Resolution memory Redis unavailable (%s); using fakeredis", exc)
+            logger.debug(
+                "Resolution memory Redis unavailable (%s); using fakeredis", exc
+            )
             import fakeredis
 
             self.redis = fakeredis.FakeRedis(decode_responses=True)
@@ -535,10 +562,10 @@ class PlatformKnowledgeStore:
     def negative_ttl_seconds(self) -> int:
         return int(os.getenv("BR_RESOLUTION_NEGATIVE_TTL_S", str(24 * 3600)))
 
-    def _set(self, key: str, value: Dict[str, Any], ttl_seconds: int) -> None:
+    def _set(self, key: str, value: dict[str, Any], ttl_seconds: int) -> None:
         self.redis.setex(key, max(1, ttl_seconds), json.dumps(value, default=str))
 
-    def _get(self, key: str) -> Optional[Dict[str, Any]]:
+    def _get(self, key: str) -> dict[str, Any] | None:
         raw = self.redis.get(key)
         if not raw:
             return None
@@ -553,7 +580,9 @@ class PlatformKnowledgeStore:
     def capability_key(self, capability_intent: str, runtime_surface: str) -> str:
         return f"{self.namespace}:capability:{_normalize_text(runtime_surface)}:{_normalize_text(capability_intent)}"
 
-    def get_dataset_resolution(self, dataset_ref: str, derivative_family: str) -> Optional[Dict[str, Any]]:
+    def get_dataset_resolution(
+        self, dataset_ref: str, derivative_family: str
+    ) -> dict[str, Any] | None:
         return self._get(self.dataset_key(dataset_ref, derivative_family))
 
     def set_dataset_resolution(
@@ -562,7 +591,7 @@ class PlatformKnowledgeStore:
         derivative_family: str,
         *,
         resolved_id_or_path: str,
-        source_run_id: Optional[str] = None,
+        source_run_id: str | None = None,
     ) -> None:
         value = {
             "status": "resolved",
@@ -576,7 +605,9 @@ class PlatformKnowledgeStore:
             self.positive_ttl_seconds,
         )
 
-    def get_capability(self, capability_intent: str, runtime_surface: str) -> Optional[Dict[str, Any]]:
+    def get_capability(
+        self, capability_intent: str, runtime_surface: str
+    ) -> dict[str, Any] | None:
         return self._get(self.capability_key(capability_intent, runtime_surface))
 
     def set_capability(
@@ -585,8 +616,8 @@ class PlatformKnowledgeStore:
         runtime_surface: str,
         *,
         status: str,
-        resolved_id_or_path: Optional[str] = None,
-        source_run_id: Optional[str] = None,
+        resolved_id_or_path: str | None = None,
+        source_run_id: str | None = None,
     ) -> None:
         value = {
             "status": str(status),
@@ -594,12 +625,18 @@ class PlatformKnowledgeStore:
             "source_run_id": source_run_id,
             "ts": time.time(),
         }
-        ttl = self.negative_ttl_seconds if status == "negative" else self.positive_ttl_seconds
+        ttl = (
+            self.negative_ttl_seconds
+            if status == "negative"
+            else self.positive_ttl_seconds
+        )
         self._set(self.capability_key(capability_intent, runtime_surface), value, ttl)
 
-    def invalidate_capability_entries(self, runtime_surface: Optional[str] = None) -> int:
+    def invalidate_capability_entries(self, runtime_surface: str | None = None) -> int:
         if runtime_surface:
-            pattern = f"{self.namespace}:capability:{_normalize_text(runtime_surface)}:*"
+            pattern = (
+                f"{self.namespace}:capability:{_normalize_text(runtime_surface)}:*"
+            )
         else:
             pattern = f"{self.namespace}:capability:*"
         deleted = 0
@@ -618,11 +655,11 @@ def get_platform_knowledge_store() -> PlatformKnowledgeStore:
     return _PLATFORM_STORE
 
 
-def invalidate_capability_knowledge(runtime_surface: Optional[str] = None) -> int:
+def invalidate_capability_knowledge(runtime_surface: str | None = None) -> int:
     return get_platform_knowledge_store().invalidate_capability_entries(runtime_surface)
 
 
-def harvest_dataset_knowledge(qur: Any, *, source_run_id: Optional[str] = None) -> None:
+def harvest_dataset_knowledge(qur: Any, *, source_run_id: str | None = None) -> None:
     store = get_platform_knowledge_store()
     resolved = list(getattr(qur, "resolved_datasets", []) or [])
     derivative_hits = list(getattr(qur, "existing_derivatives", []) or [])
@@ -660,7 +697,7 @@ def apply_dataset_knowledge(
     qur: Any,
     *,
     query: str,
-    ctx: Optional[MutableMapping[str, Any]] = None,
+    ctx: MutableMapping[str, Any] | None = None,
 ) -> bool:
     family = infer_derivative_family(query)
     if not family:
@@ -680,13 +717,18 @@ def apply_dataset_knowledge(
         if isinstance(derivatives, dict) and derivatives.get(family):
             continue
         if any(
-            getattr(hit, "dataset_id", None) == dataset_ref and getattr(hit, "kind", None) == family
+            getattr(hit, "dataset_id", None) == dataset_ref
+            and getattr(hit, "kind", None) == family
             for hit in derivative_hits
         ):
             continue
 
         entry = store.get_dataset_resolution(dataset_ref, family)
-        if not entry or entry.get("status") != "resolved" or not entry.get("resolved_id_or_path"):
+        if (
+            not entry
+            or entry.get("status") != "resolved"
+            or not entry.get("resolved_id_or_path")
+        ):
             continue
 
         resolved_path = str(entry["resolved_id_or_path"])

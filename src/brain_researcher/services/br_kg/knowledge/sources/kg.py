@@ -7,10 +7,10 @@ as KnowledgeItem objects.
 from __future__ import annotations
 
 import logging
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
-from .base import BaseEvidenceSource, SourceCapabilities
 from ..models import KnowledgeItem
+from .base import BaseEvidenceSource, SourceCapabilities
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class KGEvidenceSource(BaseEvidenceSource):
     """Evidence source adapter for BR-KG (Knowledge Graph)."""
 
     def __init__(self):
-        self._available: Optional[bool] = None
+        self._available: bool | None = None
 
     @property
     def source_id(self) -> str:
@@ -48,7 +48,7 @@ class KGEvidenceSource(BaseEvidenceSource):
             from brain_researcher.services.br_kg import query_service
 
             # Try a quick search
-            results = query_service.search_nodes("test", limit=1)
+            query_service.search_nodes("test", limit=1)
             self._available = True
         except Exception as e:
             logger.debug("KG service unavailable: %s", e)
@@ -61,7 +61,7 @@ class KGEvidenceSource(BaseEvidenceSource):
         query: str,
         *,
         limit: int = 20,
-        filters: Optional[dict] = None,
+        filters: dict | None = None,
     ) -> Sequence[KnowledgeItem]:
         """Search KG for nodes matching the query.
 
@@ -113,7 +113,7 @@ class KGEvidenceSource(BaseEvidenceSource):
             logger.warning("KG search failed: %s", e)
             return []
 
-    async def get_by_id(self, item_id: str) -> Optional[KnowledgeItem]:
+    async def get_by_id(self, item_id: str) -> KnowledgeItem | None:
         """Get a KG node by its ID."""
         try:
             from brain_researcher.services.br_kg import query_service

@@ -436,7 +436,10 @@ def ingest_candidate_only(
         f"{stats.get('nodes_created', 0)} nodes, "
         f"{stats.get('relationships_created', 0)} relationships"
     )
-    if int(stats.get("files_failed", 0) or 0) > 0 or result.get("status") != "completed":
+    if (
+        int(stats.get("files_failed", 0) or 0) > 0
+        or result.get("status") != "completed"
+    ):
         console.print(
             "[red]Candidate-only ingest completed with failures:[/red] "
             f"{stats.get('files_failed', 0)} file(s) failed"

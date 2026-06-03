@@ -8,55 +8,82 @@ error filtering, PII scrubbing, and context enrichment.
 import logging
 import os
 import re
-import traceback
-from datetime import datetime
-from typing import Dict, List, Optional, Any, Union
 from contextvars import ContextVar
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 
 try:
     import sentry_sdk
+    from sentry_sdk import (
+        capture_exception,
+        capture_message,
+        configure_scope,
+        set_context,
+        set_user,
+    )
     from sentry_sdk.integrations.asyncio import AsyncioIntegration
+    from sentry_sdk.integrations.httpx import HttpxIntegration
     from sentry_sdk.integrations.logging import LoggingIntegration
     from sentry_sdk.integrations.redis import RedisIntegration
     from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
-    from sentry_sdk.integrations.httpx import HttpxIntegration
-    from sentry_sdk import configure_scope, capture_exception, capture_message, set_user, set_context
+
     SENTRY_AVAILABLE = True
 except ImportError:
     SENTRY_AVAILABLE = False
+
     # Mock Sentry SDK for development
     class MockSentrySDK:
-        def init(self, *args, **kwargs): pass
-        def configure_scope(self, *args, **kwargs): return MockScope()
-        def capture_exception(self, *args, **kwargs): pass
-        def capture_message(self, *args, **kwargs): pass
-        def set_user(self, *args, **kwargs): pass
-        def set_context(self, *args, **kwargs): pass
+        def init(self, *args, **kwargs):
+            pass
+
+        def configure_scope(self, *args, **kwargs):
+            return MockScope()
+
+        def capture_exception(self, *args, **kwargs):
+            pass
+
+        def capture_message(self, *args, **kwargs):
+            pass
+
+        def set_user(self, *args, **kwargs):
+            pass
+
+        def set_context(self, *args, **kwargs):
+            pass
 
     class MockScope:
-        def set_tag(self, *args, **kwargs): pass
-        def set_context(self, *args, **kwargs): pass
-        def set_user(self, *args, **kwargs): pass
+        def set_tag(self, *args, **kwargs):
+            pass
+
+        def set_context(self, *args, **kwargs):
+            pass
+
+        def set_user(self, *args, **kwargs):
+            pass
 
     sentry_sdk = MockSentrySDK()
 
-from .models import ServiceType, TelemetryConfiguration
-
+from .models import ServiceType
 
 logger = logging.getLogger(__name__)
 
 # Context variables for request tracking
-current_user_context: ContextVar[Optional[Dict]] = ContextVar('current_user_context', default=None)
-current_service_context: ContextVar[Optional[ServiceType]] = ContextVar('current_service_context', default=None)
+current_user_context: ContextVar[dict | None] = ContextVar(
+    "current_user_context", default=None
+)
+current_service_context: ContextVar[ServiceType | None] = ContextVar(
+    "current_service_context", default=None
+)
 
 
 @dataclass
 class SentryConfig:
     """Sentry configuration settings."""
-    dsn: Optional[str] = None
+
+    dsn: str | None = None
     environment: str = "development"
-    release: Optional[str] = None
+    release: str | None = None
     sample_rate: float = 1.0
     traces_sample_rate: float = 0.1
     profiles_sample_rate: float = 0.1
@@ -69,21 +96,17 @@ class SentryConfig:
     # Custom filtering settings
     enable_pii_filtering: bool = True
     filter_sensitive_data: bool = True
-    ignore_logger_names: List[str] = None
-    ignore_exceptions: List[str] = None
+    ignore_logger_names: list[str] = None
+    ignore_exceptions: list[str] = None
 
     def __post_init__(self):
         if self.ignore_logger_names is None:
-            self.ignore_logger_names = [
-                'urllib3.connectionpool',
-                'httpx',
-                'asyncio'
-            ]
+            self.ignore_logger_names = ["urllib3.connectionpool", "httpx", "asyncio"]
         if self.ignore_exceptions is None:
             self.ignore_exceptions = [
-                'KeyboardInterrupt',
-                'SystemExit',
-                'CancelledError'
+                "KeyboardInterrupt",
+                "SystemExit",
+                "CancelledError",
             ]
 
 
@@ -93,29 +116,53 @@ class PIIFilter:
     def __init__(self):
         # Patterns for detecting PII
         self.pii_patterns = {
-            'email': re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
-            'ssn': re.compile(r'\b\d{3}-?\d{2}-?\d{4}\b'),
-            'credit_card': re.compile(r'\b(?:\d{4}[-\s]?){3}\d{4}\b'),
-            'phone': re.compile(
-                r'(?<!\d)(?:\+?1[-.\s]?)?(?:\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}|[0-9]{3}[-.\s]?[0-9]{4})(?!\d)'
+            "email": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
+            "ssn": re.compile(r"\b\d{3}-?\d{2}-?\d{4}\b"),
+            "credit_card": re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b"),
+            "phone": re.compile(
+                r"(?<!\d)(?:\+?1[-.\s]?)?(?:\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}|[0-9]{3}[-.\s]?[0-9]{4})(?!\d)"
             ),
-            'ip_address': re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'),
-            'jwt_token': re.compile(r'\beyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*\b'),
-            'api_key': re.compile(
-                r'\b(?:sk_(?:test|live)_[A-Za-z0-9]{16,}|[A-Za-z0-9_]{32,})\b'
+            "ip_address": re.compile(r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"),
+            "jwt_token": re.compile(
+                r"\beyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*\b"
+            ),
+            "api_key": re.compile(
+                r"\b(?:sk_(?:test|live)_[A-Za-z0-9]{16,}|[A-Za-z0-9_]{32,})\b"
             ),
         }
 
         # Sensitive field names
         self.sensitive_fields = {
-            'password', 'passwd', 'pwd', 'pass', 'secret', 'token', 'key', 'api_key',
-            'access_token', 'refresh_token', 'auth_token', 'session_id', 'csrf_token',
-            'email', 'phone', 'ssn', 'social_security', 'credit_card', 'card_number',
-            'real_name', 'full_name', 'address', 'home_address', 'billing_address',
-            'user_id', 'account_id', 'customer_id'
+            "password",
+            "passwd",
+            "pwd",
+            "pass",
+            "secret",
+            "token",
+            "key",
+            "api_key",
+            "access_token",
+            "refresh_token",
+            "auth_token",
+            "session_id",
+            "csrf_token",
+            "email",
+            "phone",
+            "ssn",
+            "social_security",
+            "credit_card",
+            "card_number",
+            "real_name",
+            "full_name",
+            "address",
+            "home_address",
+            "billing_address",
+            "user_id",
+            "account_id",
+            "customer_id",
         }
 
-    def filter_dict(self, data: Dict[str, Any], max_depth: int = 10) -> Dict[str, Any]:
+    def filter_dict(self, data: dict[str, Any], max_depth: int = 10) -> dict[str, Any]:
         """Recursively filter PII from dictionary."""
         if max_depth <= 0 or not isinstance(data, dict):
             return data
@@ -138,7 +185,7 @@ class PIIFilter:
 
         return filtered
 
-    def filter_list(self, data: List[Any], max_depth: int = 10) -> List[Any]:
+    def filter_list(self, data: list[Any], max_depth: int = 10) -> list[Any]:
         """Filter PII from list items."""
         if max_depth <= 0:
             return data
@@ -165,20 +212,20 @@ class PIIFilter:
 
         for pattern_name, pattern in self.pii_patterns.items():
             if pattern.search(filtered_text):
-                if pattern_name == 'email':
-                    filtered_text = pattern.sub('[EMAIL_FILTERED]', filtered_text)
-                elif pattern_name == 'phone':
-                    filtered_text = pattern.sub('[PHONE_FILTERED]', filtered_text)
-                elif pattern_name == 'ssn':
-                    filtered_text = pattern.sub('[SSN_FILTERED]', filtered_text)
-                elif pattern_name == 'credit_card':
-                    filtered_text = pattern.sub('[CARD_FILTERED]', filtered_text)
-                elif pattern_name == 'ip_address':
-                    filtered_text = pattern.sub('[IP_FILTERED]', filtered_text)
-                elif pattern_name == 'api_key':
-                    filtered_text = pattern.sub('[API_KEY_FILTERED]', filtered_text)
-                elif pattern_name == 'jwt_token':
-                    filtered_text = pattern.sub('[JWT_FILTERED]', filtered_text)
+                if pattern_name == "email":
+                    filtered_text = pattern.sub("[EMAIL_FILTERED]", filtered_text)
+                elif pattern_name == "phone":
+                    filtered_text = pattern.sub("[PHONE_FILTERED]", filtered_text)
+                elif pattern_name == "ssn":
+                    filtered_text = pattern.sub("[SSN_FILTERED]", filtered_text)
+                elif pattern_name == "credit_card":
+                    filtered_text = pattern.sub("[CARD_FILTERED]", filtered_text)
+                elif pattern_name == "ip_address":
+                    filtered_text = pattern.sub("[IP_FILTERED]", filtered_text)
+                elif pattern_name == "api_key":
+                    filtered_text = pattern.sub("[API_KEY_FILTERED]", filtered_text)
+                elif pattern_name == "jwt_token":
+                    filtered_text = pattern.sub("[JWT_FILTERED]", filtered_text)
 
         return filtered_text
 
@@ -187,43 +234,49 @@ class ContextEnricher:
     """Enriches Sentry events with additional context."""
 
     @staticmethod
-    def enrich_event(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def enrich_event(
+        event: dict[str, Any], hint: dict[str, Any]
+    ) -> dict[str, Any] | None:
         """Enrich Sentry event with additional context."""
         try:
             # Add service context
             service_context = current_service_context.get()
             if service_context:
-                event.setdefault('tags', {})['service'] = service_context
-                event.setdefault('contexts', {})['service'] = {
-                    'name': service_context,
-                    'type': 'service'
+                event.setdefault("tags", {})["service"] = service_context
+                event.setdefault("contexts", {})["service"] = {
+                    "name": service_context,
+                    "type": "service",
                 }
 
             # Add user context (anonymized)
             user_context = current_user_context.get()
             if user_context:
-                event.setdefault('user', {}).update({
-                    'id': user_context.get('user_hash'),  # Already hashed
-                    'session_id': user_context.get('session_hash')  # Already hashed
-                })
+                event.setdefault("user", {}).update(
+                    {
+                        "id": user_context.get("user_hash"),  # Already hashed
+                        "session_id": user_context.get(
+                            "session_hash"
+                        ),  # Already hashed
+                    }
+                )
 
             # Add Brain Researcher specific context
-            event.setdefault('contexts', {})['brain_researcher'] = {
-                'component': 'telemetry',
-                'version': '1.0.0',
-                'deployment': os.environ.get('DEPLOYMENT_ENV', 'development')
+            event.setdefault("contexts", {})["brain_researcher"] = {
+                "component": "telemetry",
+                "version": "1.0.0",
+                "deployment": os.environ.get("DEPLOYMENT_ENV", "development"),
             }
 
             # Add request context if available
-            if 'request' in hint:
-                request = hint['request']
-                if hasattr(request, 'url'):
-                    event.setdefault('request', {})['url'] = str(request.url)
-                if hasattr(request, 'method'):
-                    event.setdefault('request', {})['method'] = request.method
+            if "request" in hint:
+                request = hint["request"]
+                if hasattr(request, "url"):
+                    event.setdefault("request", {})["url"] = str(request.url)
+                if hasattr(request, "method"):
+                    event.setdefault("request", {})["method"] = request.method
 
             # Add timestamp
-            event['timestamp'] = datetime.utcnow().isoformat()
+            event["timestamp"] = datetime.utcnow().isoformat()
 
             return event
 
@@ -264,13 +317,10 @@ class SentryIntegration:
                 httpx_integration = HttpxIntegration()
 
             integrations = [
-                LoggingIntegration(
-                    level=logging.INFO,
-                    event_level=logging.ERROR
-                ),
+                LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
                 asyncio_integration,
                 RedisIntegration(),
-                httpx_integration
+                httpx_integration,
             ]
 
             # Add SQLAlchemy integration if available
@@ -293,16 +343,20 @@ class SentryIntegration:
                 debug=self.config.debug,
                 integrations=integrations,
                 before_send=self._before_send_filter,
-                before_send_transaction=self._before_send_transaction
+                before_send_transaction=self._before_send_transaction,
             )
 
             self.is_initialized = True
-            logger.info(f"Sentry initialized for environment: {self.config.environment}")
+            logger.info(
+                f"Sentry initialized for environment: {self.config.environment}"
+            )
 
         except Exception as e:
             logger.error(f"Failed to initialize Sentry: {e}")
 
-    def _before_send_filter(self, event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _before_send_filter(
+        self, event: dict[str, Any], hint: dict[str, Any]
+    ) -> dict[str, Any] | None:
         """Filter events before sending to Sentry."""
         try:
             # Skip if not initialized
@@ -310,13 +364,13 @@ class SentryIntegration:
                 return None
 
             # Filter ignored exceptions
-            if 'exc_info' in hint and hint['exc_info']:
-                exc_type = hint['exc_info'][1].__class__.__name__
+            if "exc_info" in hint and hint["exc_info"]:
+                exc_type = hint["exc_info"][1].__class__.__name__
                 if exc_type in self.config.ignore_exceptions:
                     return None
 
             # Filter ignored loggers
-            if event.get('logger') in self.config.ignore_logger_names:
+            if event.get("logger") in self.config.ignore_logger_names:
                 return None
 
             # Apply PII filtering
@@ -336,7 +390,9 @@ class SentryIntegration:
             logger.error(f"Error in before_send filter: {e}")
             return event
 
-    def _before_send_transaction(self, event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _before_send_transaction(
+        self, event: dict[str, Any], hint: dict[str, Any]
+    ) -> dict[str, Any] | None:
         """Filter transaction events before sending to Sentry."""
         try:
             # Skip if not initialized
@@ -346,9 +402,9 @@ class SentryIntegration:
             # Add service context to transactions
             service_context = current_service_context.get()
             if service_context:
-                event.setdefault('contexts', {})['service'] = {
-                    'name': service_context,
-                    'type': 'service'
+                event.setdefault("contexts", {})["service"] = {
+                    "name": service_context,
+                    "type": "service",
                 }
 
             return event
@@ -357,42 +413,48 @@ class SentryIntegration:
             logger.error(f"Error in before_send_transaction filter: {e}")
             return event
 
-    def _filter_event_pii(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def _filter_event_pii(self, event: dict[str, Any]) -> dict[str, Any]:
         """Filter PII from Sentry event."""
         try:
             # Filter exception contexts
-            if 'exception' in event:
-                for exc_value in event['exception'].get('values', []):
-                    if 'stacktrace' in exc_value:
-                        for frame in exc_value['stacktrace'].get('frames', []):
-                            if 'vars' in frame:
-                                frame['vars'] = self.pii_filter.filter_dict(frame['vars'])
+            if "exception" in event:
+                for exc_value in event["exception"].get("values", []):
+                    if "stacktrace" in exc_value:
+                        for frame in exc_value["stacktrace"].get("frames", []):
+                            if "vars" in frame:
+                                frame["vars"] = self.pii_filter.filter_dict(
+                                    frame["vars"]
+                                )
 
             # Filter request data
-            if 'request' in event:
-                if 'data' in event['request']:
-                    if isinstance(event['request']['data'], dict):
-                        event['request']['data'] = self.pii_filter.filter_dict(event['request']['data'])
-                    elif isinstance(event['request']['data'], str):
-                        event['request']['data'] = self.pii_filter.filter_string(event['request']['data'])
+            if "request" in event:
+                if "data" in event["request"]:
+                    if isinstance(event["request"]["data"], dict):
+                        event["request"]["data"] = self.pii_filter.filter_dict(
+                            event["request"]["data"]
+                        )
+                    elif isinstance(event["request"]["data"], str):
+                        event["request"]["data"] = self.pii_filter.filter_string(
+                            event["request"]["data"]
+                        )
 
                 # Filter headers
-                if 'headers' in event['request']:
+                if "headers" in event["request"]:
                     filtered_headers = {}
-                    for key, value in event['request']['headers'].items():
-                        if key.lower() in ['authorization', 'cookie', 'x-api-key']:
-                            filtered_headers[key] = '[FILTERED]'
+                    for key, value in event["request"]["headers"].items():
+                        if key.lower() in ["authorization", "cookie", "x-api-key"]:
+                            filtered_headers[key] = "[FILTERED]"
                         else:
                             filtered_headers[key] = value
-                    event['request']['headers'] = filtered_headers
+                    event["request"]["headers"] = filtered_headers
 
             # Filter extra data
-            if 'extra' in event:
-                event['extra'] = self.pii_filter.filter_dict(event['extra'])
+            if "extra" in event:
+                event["extra"] = self.pii_filter.filter_dict(event["extra"])
 
             # Filter contexts
-            if 'contexts' in event:
-                event['contexts'] = self.pii_filter.filter_dict(event['contexts'])
+            if "contexts" in event:
+                event["contexts"] = self.pii_filter.filter_dict(event["contexts"])
 
             return event
 
@@ -400,67 +462,72 @@ class SentryIntegration:
             logger.error(f"Error filtering PII from event: {e}")
             return event
 
-    def _event_too_large(self, event: Dict[str, Any]) -> bool:
+    def _event_too_large(self, event: dict[str, Any]) -> bool:
         """Check if event is too large."""
         try:
             import json
+
             event_size = len(json.dumps(event, default=str))
             return event_size > 200000  # 200KB limit
         except:
             return False
 
-    def _truncate_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def _truncate_event(self, event: dict[str, Any]) -> dict[str, Any]:
         """Truncate large events."""
         try:
             # Remove or truncate large fields
-            if 'exception' in event:
-                for exc_value in event['exception'].get('values', []):
-                    if 'stacktrace' in exc_value:
-                        frames = exc_value['stacktrace'].get('frames', [])
+            if "exception" in event:
+                for exc_value in event["exception"].get("values", []):
+                    if "stacktrace" in exc_value:
+                        frames = exc_value["stacktrace"].get("frames", [])
                         if len(frames) > 50:
-                            exc_value['stacktrace']['frames'] = frames[:25] + frames[-25:]
+                            exc_value["stacktrace"]["frames"] = (
+                                frames[:25] + frames[-25:]
+                            )
 
             # Truncate extra data
-            if 'extra' in event:
-                for key, value in event['extra'].items():
+            if "extra" in event:
+                for key, value in event["extra"].items():
                     if isinstance(value, str) and len(value) > 10000:
-                        event['extra'][key] = value[:10000] + "... [TRUNCATED]"
+                        event["extra"][key] = value[:10000] + "... [TRUNCATED]"
 
             return event
         except Exception as e:
             logger.error(f"Error truncating event: {e}")
             return event
 
-    def set_user_context(self, user_id: Optional[str], session_id: Optional[str] = None, **kwargs):
+    def set_user_context(
+        self, user_id: str | None, session_id: str | None = None, **kwargs
+    ):
         """Set user context for error tracking."""
         try:
             # Hash user ID for privacy
             if user_id:
                 import hashlib
-                user_hash = hashlib.sha256(f"br_user_{user_id}".encode()).hexdigest()[:16]
+
+                user_hash = hashlib.sha256(f"br_user_{user_id}".encode()).hexdigest()[
+                    :16
+                ]
             else:
                 user_hash = None
 
             # Hash session ID
             if session_id:
-                session_hash = hashlib.sha256(f"br_session_{session_id}".encode()).hexdigest()[:16]
+                session_hash = hashlib.sha256(
+                    f"br_session_{session_id}".encode()
+                ).hexdigest()[:16]
             else:
                 session_hash = None
 
             # Set context variable
-            current_user_context.set({
-                'user_hash': user_hash,
-                'session_hash': session_hash,
-                **kwargs
-            })
+            current_user_context.set(
+                {"user_hash": user_hash, "session_hash": session_hash, **kwargs}
+            )
 
             # Set Sentry user context
             if SENTRY_AVAILABLE and self.is_initialized:
                 with configure_scope() as scope:
-                    scope.set_user({
-                        'id': user_hash,
-                        'session_id': session_hash
-                    })
+                    scope.set_user({"id": user_hash, "session_id": session_hash})
 
         except Exception as e:
             logger.error(f"Error setting user context: {e}")
@@ -472,21 +539,22 @@ class SentryIntegration:
 
             if SENTRY_AVAILABLE and self.is_initialized:
                 with configure_scope() as scope:
-                    scope.set_tag('service', service)
-                    scope.set_context('service', {
-                        'name': service,
-                        'type': 'brain_researcher_service'
-                    })
+                    scope.set_tag("service", service)
+                    scope.set_context(
+                        "service", {"name": service, "type": "brain_researcher_service"}
+                    )
         except Exception as e:
             logger.error(f"Error setting service context: {e}")
 
-    def capture_exception(self,
-                         exception: Exception = None,
-                         level: str = "error",
-                         tags: Optional[Dict[str, str]] = None,
-                         extra: Optional[Dict[str, Any]] = None,
-                         user: Optional[Dict[str, str]] = None,
-                         fingerprint: Optional[List[str]] = None) -> Optional[str]:
+    def capture_exception(
+        self,
+        exception: Exception = None,
+        level: str = "error",
+        tags: dict[str, str] | None = None,
+        extra: dict[str, Any] | None = None,
+        user: dict[str, str] | None = None,
+        fingerprint: list[str] | None = None,
+    ) -> str | None:
         """Capture exception with context enrichment."""
         try:
             if not SENTRY_AVAILABLE or not self.is_initialized:
@@ -499,7 +567,7 @@ class SentryIntegration:
 
                 if extra:
                     filtered_extra = self.pii_filter.filter_dict(extra)
-                    scope.set_context('extra_data', filtered_extra)
+                    scope.set_context("extra_data", filtered_extra)
 
                 if user:
                     scope.set_user(user)
@@ -515,11 +583,13 @@ class SentryIntegration:
             logger.error(f"Error capturing exception in Sentry: {e}")
             return None
 
-    def capture_message(self,
-                       message: str,
-                       level: str = "info",
-                       tags: Optional[Dict[str, str]] = None,
-                       extra: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    def capture_message(
+        self,
+        message: str,
+        level: str = "info",
+        tags: dict[str, str] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> str | None:
         """Capture message with context."""
         try:
             if not SENTRY_AVAILABLE or not self.is_initialized:
@@ -532,7 +602,7 @@ class SentryIntegration:
 
                 if extra:
                     filtered_extra = self.pii_filter.filter_dict(extra)
-                    scope.set_context('extra_data', filtered_extra)
+                    scope.set_context("extra_data", filtered_extra)
 
                 scope.set_level(level)
 
@@ -545,11 +615,13 @@ class SentryIntegration:
             logger.error(f"Error capturing message in Sentry: {e}")
             return None
 
-    def add_breadcrumb(self,
-                      message: str,
-                      category: str = "custom",
-                      level: str = "info",
-                      data: Optional[Dict[str, Any]] = None):
+    def add_breadcrumb(
+        self,
+        message: str,
+        category: str = "custom",
+        level: str = "info",
+        data: dict[str, Any] | None = None,
+    ):
         """Add breadcrumb for debugging."""
         try:
             if not SENTRY_AVAILABLE or not self.is_initialized:
@@ -562,7 +634,7 @@ class SentryIntegration:
                 message=filtered_message,
                 category=category,
                 level=level,
-                data=filtered_data
+                data=filtered_data,
             )
 
         except Exception as e:
@@ -578,21 +650,21 @@ class SentryIntegration:
             logger.error(f"Error starting transaction: {e}")
             return None
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get Sentry integration statistics."""
         return {
-            'initialized': self.is_initialized,
-            'dsn_configured': bool(self.config.dsn),
-            'environment': self.config.environment,
-            'sample_rate': self.config.sample_rate,
-            'pii_filtering_enabled': self.config.enable_pii_filtering,
-            'tracing_enabled': self.config.enable_tracing,
-            'sentry_available': SENTRY_AVAILABLE
+            "initialized": self.is_initialized,
+            "dsn_configured": bool(self.config.dsn),
+            "environment": self.config.environment,
+            "sample_rate": self.config.sample_rate,
+            "pii_filtering_enabled": self.config.enable_pii_filtering,
+            "tracing_enabled": self.config.enable_tracing,
+            "sentry_available": SENTRY_AVAILABLE,
         }
 
 
 # Global Sentry instance
-_sentry_instance: Optional[SentryIntegration] = None
+_sentry_instance: SentryIntegration | None = None
 
 
 def initialize_sentry(config: SentryConfig) -> SentryIntegration:
@@ -602,18 +674,20 @@ def initialize_sentry(config: SentryConfig) -> SentryIntegration:
     return _sentry_instance
 
 
-def get_sentry() -> Optional[SentryIntegration]:
+def get_sentry() -> SentryIntegration | None:
     """Get global Sentry instance."""
     return _sentry_instance
 
 
 # Convenience functions
-def capture_exception_with_context(exception: Exception = None,
-                                  service: Optional[ServiceType] = None,
-                                  user_id: Optional[str] = None,
-                                  session_id: Optional[str] = None,
-                                  tags: Optional[Dict[str, str]] = None,
-                                  extra: Optional[Dict[str, Any]] = None) -> Optional[str]:
+def capture_exception_with_context(
+    exception: Exception = None,
+    service: ServiceType | None = None,
+    user_id: str | None = None,
+    session_id: str | None = None,
+    tags: dict[str, str] | None = None,
+    extra: dict[str, Any] | None = None,
+) -> str | None:
     """Capture exception with Brain Researcher context."""
     sentry = get_sentry()
     if not sentry:
@@ -628,11 +702,13 @@ def capture_exception_with_context(exception: Exception = None,
     return sentry.capture_exception(exception, tags=tags, extra=extra)
 
 
-def capture_message_with_context(message: str,
-                                level: str = "info",
-                                service: Optional[ServiceType] = None,
-                                tags: Optional[Dict[str, str]] = None,
-                                extra: Optional[Dict[str, Any]] = None) -> Optional[str]:
+def capture_message_with_context(
+    message: str,
+    level: str = "info",
+    service: ServiceType | None = None,
+    tags: dict[str, str] | None = None,
+    extra: dict[str, Any] | None = None,
+) -> str | None:
     """Capture message with Brain Researcher context."""
     sentry = get_sentry()
     if not sentry:
@@ -645,10 +721,11 @@ def capture_message_with_context(message: str,
 
 
 # Decorator for automatic error tracking
-def track_errors(service: ServiceType,
-                capture_args: bool = False,
-                capture_result: bool = False):
+def track_errors(
+    service: ServiceType, capture_args: bool = False, capture_result: bool = False
+):
     """Decorator to automatically track function errors."""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             sentry = get_sentry()
@@ -661,23 +738,23 @@ def track_errors(service: ServiceType,
             except Exception as e:
                 extra_data = {}
                 if capture_args:
-                    extra_data['function_args'] = {
-                        'args_count': len(args),
-                        'kwargs_keys': list(kwargs.keys())
+                    extra_data["function_args"] = {
+                        "args_count": len(args),
+                        "kwargs_keys": list(kwargs.keys()),
                     }
 
                 if sentry:
                     sentry.capture_exception(
-                        exception=e,
-                        tags={'function': func.__name__},
-                        extra=extra_data
+                        exception=e, tags={"function": func.__name__}, extra=extra_data
                     )
 
                 raise
 
         # Handle async functions
         import asyncio
+
         if asyncio.iscoroutinefunction(func):
+
             async def async_wrapper(*args, **kwargs):
                 sentry = get_sentry()
                 if sentry:
@@ -689,19 +766,20 @@ def track_errors(service: ServiceType,
                 except Exception as e:
                     extra_data = {}
                     if capture_args:
-                        extra_data['function_args'] = {
-                            'args_count': len(args),
-                            'kwargs_keys': list(kwargs.keys())
+                        extra_data["function_args"] = {
+                            "args_count": len(args),
+                            "kwargs_keys": list(kwargs.keys()),
                         }
 
                     if sentry:
                         sentry.capture_exception(
                             exception=e,
-                            tags={'function': func.__name__},
-                            extra=extra_data
+                            tags={"function": func.__name__},
+                            extra=extra_data,
                         )
 
                     raise
+
             return async_wrapper
         else:
             return wrapper
@@ -713,11 +791,13 @@ def track_errors(service: ServiceType,
 class SentryContext:
     """Context manager for Sentry operations."""
 
-    def __init__(self,
-                 service: Optional[ServiceType] = None,
-                 user_id: Optional[str] = None,
-                 session_id: Optional[str] = None,
-                 tags: Optional[Dict[str, str]] = None):
+    def __init__(
+        self,
+        service: ServiceType | None = None,
+        user_id: str | None = None,
+        session_id: str | None = None,
+        tags: dict[str, str] | None = None,
+    ):
         self.service = service
         self.user_id = user_id
         self.session_id = session_id
@@ -736,21 +816,19 @@ class SentryContext:
         if exc_type and exc_val:
             sentry = get_sentry()
             if sentry:
-                sentry.capture_exception(
-                    exception=exc_val,
-                    tags=self.tags
-                )
+                sentry.capture_exception(exception=exc_val, tags=self.tags)
 
 
 def create_sentry_config_from_env() -> SentryConfig:
     """Create Sentry configuration from environment variables."""
     return SentryConfig(
-        dsn=os.environ.get('SENTRY_DSN'),
-        environment=os.environ.get('ENVIRONMENT', 'development'),
-        release=os.environ.get('RELEASE_VERSION'),
-        sample_rate=float(os.environ.get('SENTRY_SAMPLE_RATE', '1.0')),
-        traces_sample_rate=float(os.environ.get('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
-        debug=os.environ.get('SENTRY_DEBUG', 'false').lower() == 'true',
-        enable_pii_filtering=os.environ.get('SENTRY_PII_FILTERING', 'true').lower() == 'true',
-        enable_tracing=os.environ.get('SENTRY_TRACING', 'true').lower() == 'true'
+        dsn=os.environ.get("SENTRY_DSN"),
+        environment=os.environ.get("ENVIRONMENT", "development"),
+        release=os.environ.get("RELEASE_VERSION"),
+        sample_rate=float(os.environ.get("SENTRY_SAMPLE_RATE", "1.0")),
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+        debug=os.environ.get("SENTRY_DEBUG", "false").lower() == "true",
+        enable_pii_filtering=os.environ.get("SENTRY_PII_FILTERING", "true").lower()
+        == "true",
+        enable_tracing=os.environ.get("SENTRY_TRACING", "true").lower() == "true",
     )

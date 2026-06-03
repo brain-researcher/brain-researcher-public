@@ -1,11 +1,12 @@
 """Upper Confidence Bound (UCB) algorithms for contextual bandits."""
 
-import numpy as np
 import logging
-from typing import Dict, List, Optional, Tuple, Any, Union
-from scipy.linalg import inv, LinAlgError
+from typing import Any
 
-from .contextual_bandit import ContextualBandit, Context, BanditAction
+import numpy as np
+from scipy.linalg import LinAlgError, inv
+
+from .contextual_bandit import BanditAction, Context, ContextualBandit
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +18,9 @@ class UCBAlgorithm(ContextualBandit):
         self,
         n_arms: int,
         context_dim: int,
-        actions: Optional[List[BanditAction]] = None,
+        actions: list[BanditAction] | None = None,
         confidence_level: float = 2.0,
-        exploration_bonus: float = 1.0
+        exploration_bonus: float = 1.0,
     ):
         super().__init__(n_arms, context_dim, actions, exploration_bonus)
 
@@ -29,10 +30,10 @@ class UCBAlgorithm(ContextualBandit):
 
     def select_arm(
         self,
-        context: Union[np.ndarray, Context],
-        available_arms: Optional[List[int]] = None,
-        exploit: bool = False
-    ) -> Tuple[int, Dict[str, Any]]:
+        context: np.ndarray | Context,
+        available_arms: list[int] | None = None,
+        exploit: bool = False,
+    ) -> tuple[int, dict[str, Any]]:
         """Select arm using UCB strategy."""
         available_arms = available_arms or list(range(self.n_arms))
 
@@ -51,8 +52,11 @@ class UCBAlgorithm(ContextualBandit):
 
             selection_info = {
                 "method": "exploit",
-                "mean_rewards": {str(arm): float(reward) for arm, reward in zip(available_arms, mean_rewards)},
-                "selected_reward": float(mean_rewards[best_arm_idx])
+                "mean_rewards": {
+                    str(arm): float(reward)
+                    for arm, reward in zip(available_arms, mean_rewards, strict=False)
+                },
+                "selected_reward": float(mean_rewards[best_arm_idx]),
             }
 
             self._exploitation_count += 1
@@ -65,7 +69,7 @@ class UCBAlgorithm(ContextualBandit):
             for arm in available_arms:
                 if self.action_counts[arm] == 0:
                     # Infinite UCB for unobserved arms
-                    ucb_values.append(float('inf'))
+                    ucb_values.append(float("inf"))
                 else:
                     mean_reward = self.total_rewards[arm] / self.action_counts[arm]
 
@@ -85,26 +89,41 @@ class UCBAlgorithm(ContextualBandit):
 
             selection_info = {
                 "method": "ucb",
-                "ucb_values": {str(arm): float(ucb) for arm, ucb in zip(available_arms, ucb_values)},
+                "ucb_values": {
+                    str(arm): float(ucb)
+                    for arm, ucb in zip(available_arms, ucb_values, strict=False)
+                },
                 "mean_rewards": {
-                    str(arm): float(self.total_rewards[arm] / max(1, self.action_counts[arm]))
+                    str(arm): float(
+                        self.total_rewards[arm] / max(1, self.action_counts[arm])
+                    )
                     for arm in available_arms
                 },
                 "confidence_radii": {
                     str(arm): float(
-                        self.confidence_level * np.sqrt(np.log(max(2, total_pulls)) / max(1, self.action_counts[arm]))
+                        self.confidence_level
+                        * np.sqrt(
+                            np.log(max(2, total_pulls))
+                            / max(1, self.action_counts[arm])
+                        )
                     )
                     for arm in available_arms
                 },
-                "selected_ucb": float(ucb_values[best_arm_idx])
+                "selected_ucb": float(ucb_values[best_arm_idx]),
             }
 
             # Determine if this was exploration or exploitation
-            mean_reward = self.total_rewards[selected_arm] / max(1, self.action_counts[selected_arm])
-            best_mean_arm = available_arms[np.argmax([
-                self.total_rewards[arm] / max(1, self.action_counts[arm])
-                for arm in available_arms
-            ])]
+            mean_reward = self.total_rewards[selected_arm] / max(
+                1, self.action_counts[selected_arm]
+            )
+            best_mean_arm = available_arms[
+                np.argmax(
+                    [
+                        self.total_rewards[arm] / max(1, self.action_counts[arm])
+                        for arm in available_arms
+                    ]
+                )
+            ]
 
             if selected_arm == best_mean_arm:
                 self._exploitation_count += 1
@@ -113,27 +132,29 @@ class UCBAlgorithm(ContextualBandit):
                 self._exploration_count += 1
                 selection_info["decision_type"] = "exploration"
 
-        selection_info.update({
-            "selected_arm": selected_arm,
-            "available_arms": available_arms,
-            "total_pulls": int(np.sum(self.action_counts)),
-            "exploration_count": self._exploration_count,
-            "exploitation_count": self._exploitation_count,
-            "confidence_level": self.confidence_level
-        })
+        selection_info.update(
+            {
+                "selected_arm": selected_arm,
+                "available_arms": available_arms,
+                "total_pulls": int(np.sum(self.action_counts)),
+                "exploration_count": self._exploration_count,
+                "exploitation_count": self._exploitation_count,
+                "confidence_level": self.confidence_level,
+            }
+        )
 
         return selected_arm, selection_info
 
-    def _get_algorithm_state(self) -> Dict[str, Any]:
+    def _get_algorithm_state(self) -> dict[str, Any]:
         """Get UCB specific state."""
         return {
             "algorithm": "ucb",
             "confidence_level": self.confidence_level,
             "exploration_count": self._exploration_count,
-            "exploitation_count": self._exploitation_count
+            "exploitation_count": self._exploitation_count,
         }
 
-    def _set_algorithm_state(self, state: Dict[str, Any]) -> None:
+    def _set_algorithm_state(self, state: dict[str, Any]) -> None:
         """Set UCB specific state."""
         if "confidence_level" in state:
             self.confidence_level = state["confidence_level"]
@@ -150,10 +171,10 @@ class LinUCB(ContextualBandit):
         self,
         n_arms: int,
         context_dim: int,
-        actions: Optional[List[BanditAction]] = None,
+        actions: list[BanditAction] | None = None,
         alpha: float = 1.0,
         regularization: float = 1.0,
-        exploration_bonus: float = 1.0
+        exploration_bonus: float = 1.0,
     ):
         super().__init__(n_arms, context_dim, actions, exploration_bonus)
 
@@ -161,19 +182,23 @@ class LinUCB(ContextualBandit):
         self.regularization = regularization
 
         # Initialize parameters for each arm
-        self.A = [np.eye(context_dim) * regularization for _ in range(n_arms)]  # Design matrices
+        self.A = [
+            np.eye(context_dim) * regularization for _ in range(n_arms)
+        ]  # Design matrices
         self.b = [np.zeros(context_dim) for _ in range(n_arms)]  # Reward vectors
-        self.theta = [np.zeros(context_dim) for _ in range(n_arms)]  # Parameter estimates
+        self.theta = [
+            np.zeros(context_dim) for _ in range(n_arms)
+        ]  # Parameter estimates
 
         self._exploration_count = 0
         self._exploitation_count = 0
 
     def select_arm(
         self,
-        context: Union[np.ndarray, Context],
-        available_arms: Optional[List[int]] = None,
-        exploit: bool = False
-    ) -> Tuple[int, Dict[str, Any]]:
+        context: np.ndarray | Context,
+        available_arms: list[int] | None = None,
+        exploit: bool = False,
+    ) -> tuple[int, dict[str, Any]]:
         """Select arm using LinUCB strategy."""
         context_vector = self._extract_context_features(context)
         available_arms = available_arms or list(range(self.n_arms))
@@ -190,8 +215,13 @@ class LinUCB(ContextualBandit):
 
             selection_info = {
                 "method": "exploit",
-                "expected_rewards": {str(arm): float(reward) for arm, reward in zip(available_arms, expected_rewards)},
-                "selected_reward": float(expected_rewards[best_arm_idx])
+                "expected_rewards": {
+                    str(arm): float(reward)
+                    for arm, reward in zip(
+                        available_arms, expected_rewards, strict=False
+                    )
+                },
+                "selected_reward": float(expected_rewards[best_arm_idx]),
             }
 
             self._exploitation_count += 1
@@ -229,10 +259,23 @@ class LinUCB(ContextualBandit):
 
             selection_info = {
                 "method": "linucb",
-                "ucb_values": {str(arm): float(ucb) for arm, ucb in zip(available_arms, ucb_values)},
-                "expected_rewards": {str(arm): float(reward) for arm, reward in zip(available_arms, expected_rewards)},
-                "confidence_radii": {str(arm): float(radius) for arm, radius in zip(available_arms, confidence_radii)},
-                "selected_ucb": float(ucb_values[best_arm_idx])
+                "ucb_values": {
+                    str(arm): float(ucb)
+                    for arm, ucb in zip(available_arms, ucb_values, strict=False)
+                },
+                "expected_rewards": {
+                    str(arm): float(reward)
+                    for arm, reward in zip(
+                        available_arms, expected_rewards, strict=False
+                    )
+                },
+                "confidence_radii": {
+                    str(arm): float(radius)
+                    for arm, radius in zip(
+                        available_arms, confidence_radii, strict=False
+                    )
+                },
+                "selected_ucb": float(ucb_values[best_arm_idx]),
             }
 
             # Determine exploration vs exploitation
@@ -245,23 +288,28 @@ class LinUCB(ContextualBandit):
                 self._exploration_count += 1
                 selection_info["decision_type"] = "exploration"
 
-        selection_info.update({
-            "selected_arm": selected_arm,
-            "available_arms": available_arms,
-            "exploration_count": self._exploration_count,
-            "exploitation_count": self._exploitation_count,
-            "alpha": self.alpha,
-            "theta_norms": {str(arm): float(np.linalg.norm(self.theta[arm])) for arm in available_arms}
-        })
+        selection_info.update(
+            {
+                "selected_arm": selected_arm,
+                "available_arms": available_arms,
+                "exploration_count": self._exploration_count,
+                "exploitation_count": self._exploitation_count,
+                "alpha": self.alpha,
+                "theta_norms": {
+                    str(arm): float(np.linalg.norm(self.theta[arm]))
+                    for arm in available_arms
+                },
+            }
+        )
 
         return selected_arm, selection_info
 
     def update(
         self,
-        context: Union[np.ndarray, Context],
+        context: np.ndarray | Context,
         action: int,
         reward: float,
-        feedback: Optional[Any] = None
+        feedback: Any | None = None,
     ) -> None:
         """Update LinUCB parameters."""
         context_vector = self._extract_context_features(context)
@@ -275,7 +323,9 @@ class LinUCB(ContextualBandit):
             A_inv = inv(self.A[action])
             self.theta[action] = A_inv @ self.b[action]
         except LinAlgError:
-            logger.warning(f"Numerical instability updating LinUCB parameters for arm {action}")
+            logger.warning(
+                f"Numerical instability updating LinUCB parameters for arm {action}"
+            )
             # Fallback to gradient descent update
             learning_rate = 1.0 / (self.action_counts[action] + 1)
             prediction_error = reward - np.dot(self.theta[action], context_vector)
@@ -287,9 +337,7 @@ class LinUCB(ContextualBandit):
         logger.debug(f"Updated LinUCB parameters for arm {action}")
 
     def predict_rewards(
-        self,
-        contexts: np.ndarray,
-        arms: Optional[List[int]] = None
+        self, contexts: np.ndarray, arms: list[int] | None = None
     ) -> np.ndarray:
         """Predict rewards using linear models."""
         arms = arms or list(range(self.n_arms))
@@ -304,9 +352,9 @@ class LinUCB(ContextualBandit):
     def get_confidence_intervals(
         self,
         contexts: np.ndarray,
-        arms: Optional[List[int]] = None,
-        confidence_level: float = 0.95
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        arms: list[int] | None = None,
+        confidence_level: float = 0.95,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Get confidence intervals for predictions."""
         arms = arms or list(range(self.n_arms))
         predictions = self.predict_rewards(contexts, arms)
@@ -332,7 +380,7 @@ class LinUCB(ContextualBandit):
 
         return lower_bounds, upper_bounds
 
-    def get_feature_importance(self) -> Dict[str, float]:
+    def get_feature_importance(self) -> dict[str, float]:
         """Get feature importance based on parameter magnitudes."""
         # Average parameter magnitudes across all arms
         avg_params = np.mean([np.abs(theta) for theta in self.theta], axis=0)
@@ -344,7 +392,7 @@ class LinUCB(ContextualBandit):
 
         return {f"feature_{i}": float(avg_params[i]) for i in range(self.context_dim)}
 
-    def get_arm_analysis(self, arm_id: int) -> Dict[str, Any]:
+    def get_arm_analysis(self, arm_id: int) -> dict[str, Any]:
         """Get detailed analysis for a specific arm."""
         if arm_id not in range(self.n_arms):
             raise ValueError(f"Invalid arm_id: {arm_id}")
@@ -358,17 +406,21 @@ class LinUCB(ContextualBandit):
             condition_number = np.linalg.cond(self.A[arm_id])
         except LinAlgError:
             parameter_std = np.ones(self.context_dim)
-            condition_number = float('inf')
+            condition_number = float("inf")
 
         analysis = {
             "parameters": theta.tolist(),
             "parameter_std": parameter_std.tolist(),
-            "parameter_confidence": (1.96 * parameter_std).tolist(),  # 95% CI half-widths
+            "parameter_confidence": (
+                1.96 * parameter_std
+            ).tolist(),  # 95% CI half-widths
             "design_matrix_condition": float(condition_number),
             "total_observations": int(self.action_counts[arm_id]),
             "parameter_norm": float(np.linalg.norm(theta)),
             "design_matrix_trace": float(np.trace(self.A[arm_id])),
-            "design_matrix_determinant": float(np.linalg.det(self.A[arm_id])) if condition_number < 1e12 else 0.0
+            "design_matrix_determinant": (
+                float(np.linalg.det(self.A[arm_id])) if condition_number < 1e12 else 0.0
+            ),
         }
 
         return analysis
@@ -378,28 +430,30 @@ class LinUCB(ContextualBandit):
         validation_contexts: np.ndarray,
         validation_actions: np.ndarray,
         validation_rewards: np.ndarray,
-        alpha_range: Tuple[float, float] = (0.1, 5.0),
-        num_trials: int = 20
+        alpha_range: tuple[float, float] = (0.1, 5.0),
+        num_trials: int = 20,
     ) -> float:
         """Adaptively tune the alpha parameter using validation data."""
         logger.info("Adapting LinUCB alpha parameter")
 
         best_alpha = self.alpha
-        best_score = float('-inf')
+        best_score = float("-inf")
 
         # Save current state
         original_A = [A.copy() for A in self.A]
         original_b = [b.copy() for b in self.b]
         original_theta = [theta.copy() for theta in self.theta]
-        original_alpha = self.alpha
 
-        for trial in range(num_trials):
+        for _trial in range(num_trials):
             # Sample alpha
             trial_alpha = np.random.uniform(*alpha_range)
             self.alpha = trial_alpha
 
             # Reset parameters
-            self.A = [np.eye(self.context_dim) * self.regularization for _ in range(self.n_arms)]
+            self.A = [
+                np.eye(self.context_dim) * self.regularization
+                for _ in range(self.n_arms)
+            ]
             self.b = [np.zeros(self.context_dim) for _ in range(self.n_arms)]
             self.theta = [np.zeros(self.context_dim) for _ in range(self.n_arms)]
 
@@ -407,7 +461,12 @@ class LinUCB(ContextualBandit):
             total_reward = 0.0
             correct_selections = 0
 
-            for context, action, reward in zip(validation_contexts, validation_actions, validation_rewards):
+            for context, action, reward in zip(
+                validation_contexts,
+                validation_actions,
+                validation_rewards,
+                strict=False,
+            ):
                 # Select arm with current alpha
                 selected_arm, _ = self.select_arm(context)
 
@@ -437,7 +496,7 @@ class LinUCB(ContextualBandit):
         logger.info(f"Best alpha: {best_alpha:.3f} (score: {best_score:.3f})")
         return best_alpha
 
-    def _get_algorithm_state(self) -> Dict[str, Any]:
+    def _get_algorithm_state(self) -> dict[str, Any]:
         """Get LinUCB specific state."""
         return {
             "algorithm": "linucb",
@@ -447,10 +506,10 @@ class LinUCB(ContextualBandit):
             "exploitation_count": self._exploitation_count,
             "A": [A.tolist() for A in self.A],
             "b": [b.tolist() for b in self.b],
-            "theta": [theta.tolist() for theta in self.theta]
+            "theta": [theta.tolist() for theta in self.theta],
         }
 
-    def _set_algorithm_state(self, state: Dict[str, Any]) -> None:
+    def _set_algorithm_state(self, state: dict[str, Any]) -> None:
         """Set LinUCB specific state."""
         if "alpha" in state:
             self.alpha = state["alpha"]

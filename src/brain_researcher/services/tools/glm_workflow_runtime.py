@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import nibabel as nib
 import pandas as pd
-
 
 _MNI_SPACE_PREFERENCE = [
     "MNI152NLin2009cAsym",
@@ -30,7 +30,7 @@ _EVENT_DROP_PREFIXES = ("space-", "res-", "desc-", "den-", "echo-", "part-")
 def normalize_participant_labels(raw: Any) -> list[str]:
     if raw is None:
         return []
-    if isinstance(raw, (list, tuple, set)):
+    if isinstance(raw, list | tuple | set):
         items = raw
     else:
         items = [raw]
@@ -148,7 +148,9 @@ def _list_subject_dirs(root: Path) -> list[Path]:
     return sorted(path for path in root.glob("sub-*") if path.is_dir())
 
 
-def _preferred_bold_key(path: Path, *, requested_space: str | None) -> tuple[int, int, str]:
+def _preferred_bold_key(
+    path: Path, *, requested_space: str | None
+) -> tuple[int, int, str]:
     name = path.name
     if requested_space and f"space-{requested_space}" in name:
         space_rank = 0
@@ -215,7 +217,7 @@ def _resolve_direct_subject_records(
     events_list = _normalize_events_argument(events, len(imgs))
     bids_root = Path(str(bids_dir)).expanduser().resolve() if bids_dir else None
     resolved: list[dict[str, Any]] = []
-    for idx, (img_item, events_item) in enumerate(zip(imgs, events_list)):
+    for idx, (img_item, events_item) in enumerate(zip(imgs, events_list, strict=False)):
         img_path = Path(str(img_item)).expanduser().resolve()
         if not img_path.exists():
             raise FileNotFoundError(f"img not found: {img_path}")
@@ -351,7 +353,11 @@ def resolve_task_glm_group_inputs(
         [record.get("events") for record in subject_records]
     )
     resolved_tr = next(
-        (record.get("t_r") for record in subject_records if record.get("t_r") is not None),
+        (
+            record.get("t_r")
+            for record in subject_records
+            if record.get("t_r") is not None
+        ),
         None,
     )
     return {
@@ -361,7 +367,9 @@ def resolve_task_glm_group_inputs(
         "n_subjects": len(subject_records),
         "participant_label": [record["subject"][4:] for record in subject_records],
         "task": task,
-        "bids_dir": str(Path(str(bids_dir)).expanduser().resolve()) if bids_dir else None,
+        "bids_dir": (
+            str(Path(str(bids_dir)).expanduser().resolve()) if bids_dir else None
+        ),
         "fmriprep_dir": (
             str(canonical_fmriprep_root(fmriprep_dir)) if fmriprep_dir else None
         ),

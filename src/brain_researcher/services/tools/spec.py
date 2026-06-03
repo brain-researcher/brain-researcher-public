@@ -10,10 +10,11 @@ from __future__ import annotations
 import inspect
 import logging
 import re
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field, model_validator
 
 from brain_researcher.services.tools.metadata_schema import normalize_tags
-from pydantic import BaseModel, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +131,7 @@ def _normalize_allowed_phases(
     side_effects: list[str],
     dangerous: bool,
     cost_hint: str | None,
-    execution_capabilities: "ToolExecutionCapabilities | None",
+    execution_capabilities: ToolExecutionCapabilities | None,
 ) -> list[ToolPhase]:
     if isinstance(value, list):
         normalized: list[ToolPhase] = []
@@ -196,7 +197,7 @@ def _normalize_approval_level(
     dangerous: bool,
     side_effects: list[str],
     cost_hint: str | None,
-    execution_capabilities: "ToolExecutionCapabilities | None",
+    execution_capabilities: ToolExecutionCapabilities | None,
 ) -> ApprovalLevel:
     candidate = _normalize_text(value)
     if candidate in _APPROVAL_ORDER and not (
@@ -248,14 +249,14 @@ def infer_requires_runtime(
     return "python"
 
 
-def normalize_hard_dependencies(value: Any) -> List[str]:
+def normalize_hard_dependencies(value: Any) -> list[str]:
     """Normalize hard dependency metadata to a stable list[str]."""
     if isinstance(value, str):
         dep = value.strip()
         return [dep] if dep else []
     if not isinstance(value, list):
         return []
-    normalized: List[str] = []
+    normalized: list[str] = []
     for item in value:
         dep = str(item).strip()
         if dep:
@@ -263,7 +264,7 @@ def normalize_hard_dependencies(value: Any) -> List[str]:
     return normalized
 
 
-def normalize_qc_spec(value: Any) -> Optional[ToolQCSpec]:
+def normalize_qc_spec(value: Any) -> ToolQCSpec | None:
     """Normalize semantic QC metadata into a structured ToolQCSpec."""
 
     if value is None:
@@ -300,7 +301,7 @@ def normalize_qc_spec(value: Any) -> Optional[ToolQCSpec]:
 
     retry_rules = payload.get("retry_rules")
     if isinstance(retry_rules, list):
-        normalized_rules: List[ToolQCRetryRule] = []
+        normalized_rules: list[ToolQCRetryRule] = []
         for rule in retry_rules:
             if isinstance(rule, ToolQCRetryRule):
                 normalized_rules.append(rule)
@@ -318,8 +319,8 @@ class ToolExample(BaseModel):
     """Example of tool usage with query and parameters."""
 
     user_query: str = Field(description="Natural language query from user")
-    params: Dict[str, Any] = Field(description="Parameters that should be used")
-    notes: Optional[str] = Field(
+    params: dict[str, Any] = Field(description="Parameters that should be used")
+    notes: str | None = Field(
         default=None, description="Additional context or explanation"
     )
 
@@ -327,23 +328,23 @@ class ToolExample(BaseModel):
 class ToolExecutionCapabilities(BaseModel):
     """Declarative runtime capabilities/policy requirements for a tool."""
 
-    needs_network: Optional[bool] = Field(
+    needs_network: bool | None = Field(
         default=None,
         description="Whether this tool requires network access to function correctly",
     )
-    allowed_domains: List[str] = Field(
+    allowed_domains: list[str] = Field(
         default_factory=list,
         description="Optional allowlist of domains the tool may contact",
     )
-    writes_files: Optional[bool] = Field(
+    writes_files: bool | None = Field(
         default=None,
         description="Whether this tool writes files (beyond its designated output_dir)",
     )
-    allowed_paths: List[str] = Field(
+    allowed_paths: list[str] = Field(
         default_factory=list,
         description="Optional allowlist of filesystem paths the tool may access",
     )
-    needs_secrets: List[str] = Field(
+    needs_secrets: list[str] = Field(
         default_factory=list,
         description="Names of required secrets/env vars (values are never stored)",
     )
@@ -371,7 +372,7 @@ class ToolQCJudgeConfig(BaseModel):
 class ToolQCRetryRule(BaseModel):
     """Deterministic retry/fallback rule triggered by semantic QC failure codes."""
 
-    match_any_failure_modes: List[str] = Field(
+    match_any_failure_modes: list[str] = Field(
         default_factory=list,
         description="Apply this rule when any listed failure mode is present",
     )
@@ -380,20 +381,20 @@ class ToolQCRetryRule(BaseModel):
         ge=0,
         description="Minimum zero-based QC retry attempt index this rule applies to",
     )
-    max_attempt: Optional[int] = Field(
+    max_attempt: int | None = Field(
         default=None,
         ge=0,
         description="Optional maximum zero-based QC retry attempt index this rule applies to",
     )
-    param_updates: Dict[str, Any] = Field(
+    param_updates: dict[str, Any] = Field(
         default_factory=dict,
         description="Deterministic parameter updates to apply before re-running the same tool",
     )
-    fallback_tool: Optional[str] = Field(
+    fallback_tool: str | None = Field(
         default=None,
         description="Optional fallback tool to switch to when this rule matches",
     )
-    notes: Optional[str] = Field(
+    notes: str | None = Field(
         default=None,
         description="Human-readable explanation for the rule",
     )
@@ -402,15 +403,15 @@ class ToolQCRetryRule(BaseModel):
 class ToolQCRenderContract(BaseModel):
     """Metadata describing how QC visualizations should be rendered."""
 
-    kind: Optional[str] = Field(
+    kind: str | None = Field(
         default=None,
         description="High-level visualization kind, for example mask_overlay or checkerboard",
     )
-    layout: Optional[str] = Field(
+    layout: str | None = Field(
         default=None,
         description="Layout policy, for example tri_planar_montage",
     )
-    notes: Optional[str] = Field(
+    notes: str | None = Field(
         default=None,
         description="Short operator-facing note about how to interpret the QC image",
     )
@@ -419,11 +420,11 @@ class ToolQCRenderContract(BaseModel):
 class ToolQCPrecheckConfig(BaseModel):
     """Deterministic checks that run before the vision judge."""
 
-    required_outputs: Dict[str, str] = Field(
+    required_outputs: dict[str, str] = Field(
         default_factory=dict,
         description="Map output keys to failure modes when the expected output is missing",
     )
-    required_artifacts: Dict[str, str] = Field(
+    required_artifacts: dict[str, str] = Field(
         default_factory=dict,
         description="Map artifact keys to failure modes when the expected artifact is missing",
     )
@@ -433,31 +434,31 @@ class ToolQCSpec(BaseModel):
     """Per-tool semantic QC configuration executed after a step succeeds."""
 
     enabled: bool = Field(default=True, description="Whether semantic QC is enabled")
-    artifact_output_keys: List[str] = Field(
+    artifact_output_keys: list[str] = Field(
         default_factory=list,
         description="Output artifact keys expected to contain QC image paths",
     )
-    checklist: List[str] = Field(
+    checklist: list[str] = Field(
         default_factory=list,
         description="Domain-specific checklist injected into the QC judge prompt",
     )
-    failure_modes: List[str] = Field(
+    failure_modes: list[str] = Field(
         default_factory=list,
         description="Allowed structured semantic QC failure codes",
     )
-    judge: Optional[ToolQCJudgeConfig] = Field(
+    judge: ToolQCJudgeConfig | None = Field(
         default=None,
         description="Vision model selection policy for QC judgment",
     )
-    render_contract: Optional[ToolQCRenderContract] = Field(
+    render_contract: ToolQCRenderContract | None = Field(
         default=None,
         description="Metadata describing the expected QC visualization contract",
     )
-    prechecks: Optional[ToolQCPrecheckConfig] = Field(
+    prechecks: ToolQCPrecheckConfig | None = Field(
         default=None,
         description="Deterministic pre-judge checks for required outputs and artifacts",
     )
-    retry_rules: List[ToolQCRetryRule] = Field(
+    retry_rules: list[ToolQCRetryRule] = Field(
         default_factory=list,
         description="Ordered deterministic retry/fallback rules keyed by failure modes",
     )
@@ -476,7 +477,7 @@ class ToolSpec(BaseModel):
         description="Tool identifier (canonical runtime ID like 'fsl_bet' or namespaced public ID like 'br_kg.client')"
     )
     description: str = Field(description="Clear description of what the tool does")
-    json_schema: Dict[str, Any] = Field(
+    json_schema: dict[str, Any] = Field(
         default_factory=dict, description="JSON Schema from Pydantic model"
     )
 
@@ -485,32 +486,32 @@ class ToolSpec(BaseModel):
         default="python",
         description="Execution backend: niwrap, python, or external_api",
     )
-    python_class: Optional[str] = Field(
+    python_class: str | None = Field(
         default=None, description="Python import path for wrapper class"
     )
-    niwrap_id: Optional[str] = Field(
+    niwrap_id: str | None = Field(
         default=None,
         description="Adapter-private NiWrap descriptor ID (for example 'fsl.bet.run')",
     )
 
     # Routing metadata
-    modalities: List[str] = Field(
+    modalities: list[str] = Field(
         default_factory=list,
         description="Supported imaging modalities: fmri, smri, dmri, etc",
     )
-    intents: List[str] = Field(
+    intents: list[str] = Field(
         default_factory=list,
         description="Task intents: skull_strip_mri, registration, etc",
     )
-    kind: Optional[Kind] = Field(
+    kind: Kind | None = Field(
         default=None,
         description="Coarse tool category: imaging, kg, viz, meta, data, analysis",
     )
-    search_hint: Optional[str] = Field(
+    search_hint: str | None = Field(
         default=None,
         description="Short retrieval-oriented phrase used for tool discovery and routing",
     )
-    allowed_phases: List[ToolPhase] = Field(
+    allowed_phases: list[ToolPhase] = Field(
         default_factory=list,
         description="Planning phases in which this tool should be considered",
     )
@@ -520,54 +521,54 @@ class ToolSpec(BaseModel):
     )
 
     # I/O types
-    consumes: List[str] = Field(
+    consumes: list[str] = Field(
         default_factory=list, description="Input resource types this tool accepts"
     )
-    produces: List[str] = Field(
+    produces: list[str] = Field(
         default_factory=list, description="Output resource types this tool produces"
     )
 
     # Legacy fields (preserved for compatibility)
-    required: List[str] = Field(
+    required: list[str] = Field(
         default_factory=list, description="Required parameter names"
     )
-    defaults: Dict[str, Any] = Field(
+    defaults: dict[str, Any] = Field(
         default_factory=dict, description="Default values for optional params"
     )
-    synonyms: Dict[str, List[str]] = Field(
+    synonyms: dict[str, list[str]] = Field(
         default_factory=dict, description="Parameter name synonyms"
     )
-    examples: List[ToolExample] = Field(
+    examples: list[ToolExample] = Field(
         default_factory=list, description="Usage examples"
     )
-    safety_constraints: List[str] = Field(
+    safety_constraints: list[str] = Field(
         default_factory=list, description="Resource/safety limits"
     )
-    category: Optional[str] = Field(
+    category: str | None = Field(
         default=None, description="Tool category (e.g., 'glm', 'connectivity')"
     )
-    tags: List[str] = Field(
+    tags: list[str] = Field(
         default_factory=list, description="Lightweight tags for routing/filters"
     )
     dangerous: bool = Field(
         default=False, description="Whether this tool is unsafe for chat/direct calls"
     )
-    cost_hint: Optional[str] = Field(
+    cost_hint: str | None = Field(
         default=None, description="Rough cost hint: cheap|normal|expensive"
     )
     device: str = Field(default="cpu", description="Required device: cpu or gpu")
-    timeout_s: Optional[float] = Field(
+    timeout_s: float | None = Field(
         default=None,
         description="Max execution time (seconds) for a single tool call",
     )
-    retry_policy: Optional[str] = Field(
+    retry_policy: str | None = Field(
         default=None,
         description="Retry policy label (e.g., none|transient|aggressive)",
     )
-    idempotent: Optional[bool] = Field(
+    idempotent: bool | None = Field(
         default=None, description="Whether repeated calls are safe"
     )
-    side_effects: List[str] = Field(
+    side_effects: list[str] = Field(
         default_factory=list,
         description="Declared side effects (e.g., writes_files, network, external_state)",
     )
@@ -575,25 +576,25 @@ class ToolSpec(BaseModel):
         default="production",
         description="Implementation maturity level (e.g., production, beta, stub)",
     )
-    requires_runtime: Optional[str] = Field(
+    requires_runtime: str | None = Field(
         default=None,
         description="Primary runtime needed to execute this tool (python|container|network|none)",
     )
-    hard_dependencies: List[str] = Field(
+    hard_dependencies: list[str] = Field(
         default_factory=list,
         description="Optional hard runtime/library dependencies for this tool",
     )
-    execution_capabilities: Optional[ToolExecutionCapabilities] = Field(
+    execution_capabilities: ToolExecutionCapabilities | None = Field(
         default=None,
         description="Declarative runtime capabilities and policy requirements",
     )
-    qc_spec: Optional[ToolQCSpec] = Field(
+    qc_spec: ToolQCSpec | None = Field(
         default=None,
         description="Optional semantic QC configuration executed after successful tool runs",
     )
 
     @model_validator(mode="after")
-    def _populate_agent_routing_metadata(self) -> "ToolSpec":
+    def _populate_agent_routing_metadata(self) -> ToolSpec:
         self.search_hint = _normalize_search_hint(
             self.search_hint,
             name=self.name,
@@ -681,7 +682,7 @@ class ToolSpec(BaseModel):
 
         return "\n".join(lines)
 
-    def to_json_function_declaration(self) -> Dict[str, Any]:
+    def to_json_function_declaration(self) -> dict[str, Any]:
         """
         Convert to OpenAI/Gemini function calling format.
 
@@ -717,7 +718,7 @@ class ToolSpec(BaseModel):
         return "\n".join(parts)
 
 
-def spec_from_tool(tool) -> Optional[ToolSpec]:
+def spec_from_tool(tool) -> ToolSpec | None:
     """
     Extract ToolSpec from a tool instance.
 
@@ -816,7 +817,7 @@ def spec_from_tool(tool) -> Optional[ToolSpec]:
         elif not isinstance(side_effects, list):
             side_effects = []
         if not side_effects and getattr(template_spec, "side_effects", None):
-            side_effects = list(getattr(template_spec, "side_effects"))
+            side_effects = list(template_spec.side_effects)
 
         # Extract execution capabilities
         execution_capabilities = None
@@ -920,7 +921,7 @@ def spec_from_tool(tool) -> Optional[ToolSpec]:
         return None
 
 
-def compress_schema(schema: Dict[str, Any], max_properties: int = 10) -> Dict[str, Any]:
+def compress_schema(schema: dict[str, Any], max_properties: int = 10) -> dict[str, Any]:
     """
     Compress a JSON schema to reduce token usage.
 
@@ -949,7 +950,7 @@ def compress_schema(schema: Dict[str, Any], max_properties: int = 10) -> Dict[st
 
     # Remove verbose descriptions if too long
     if "properties" in compressed:
-        for prop_name, prop_info in compressed["properties"].items():
+        for _prop_name, prop_info in compressed["properties"].items():
             if "description" in prop_info and len(prop_info["description"]) > 100:
                 prop_info["description"] = prop_info["description"][:97] + "..."
 
@@ -997,18 +998,18 @@ class ToolSpecRegistry:
     """Registry for managing tool specifications."""
 
     def __init__(self):
-        self.specs: Dict[str, ToolSpec] = {}
+        self.specs: dict[str, ToolSpec] = {}
 
     def register(self, spec: ToolSpec):
         """Register a tool specification."""
         self.specs[spec.name] = spec
         logger.info(f"Registered tool spec: {spec.name}")
 
-    def get(self, name: str) -> Optional[ToolSpec]:
+    def get(self, name: str) -> ToolSpec | None:
         """Get a tool specification by name."""
         return self.specs.get(name)
 
-    def search(self, query: str, top_k: int = 8) -> List[ToolSpec]:
+    def search(self, query: str, top_k: int = 8) -> list[ToolSpec]:
         """
         Search for relevant tools based on query.
 

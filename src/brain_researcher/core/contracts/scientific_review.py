@@ -180,9 +180,9 @@ def derive_verdict_metadata(
     """
 
     # --- report_action ------------------------------------------------------
-    report_action: (
-        Literal["write_report", "revise_report", "continue_loop"] | None
-    ) = None
+    report_action: Literal["write_report", "revise_report", "continue_loop"] | None = (
+        None
+    )
     if overall_decision == "stop_with_rationale" or judgment.decision == "unsound":
         report_action = "revise_report"
     elif overall_decision in ("diagnose", "explore_more"):
@@ -218,7 +218,8 @@ def derive_verdict_metadata(
     blocking = [
         f
         for f in correctness.findings
-        if getattr(f, "action", None) == "block" or getattr(f, "severity", None) == "critical"
+        if getattr(f, "action", None) == "block"
+        or getattr(f, "severity", None) == "critical"
     ]
     for finding in blocking[:5]:
         fix = finding.suggested_fix or finding.message

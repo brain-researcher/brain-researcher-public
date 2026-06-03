@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import yaml
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any
 
+import yaml
 
 DEFAULT_PROFILE = {
     "step_budget": 2,
@@ -15,18 +15,19 @@ DEFAULT_PROFILE = {
     "allow_external_net": False,
 }
 
+
 @dataclass
 class Profile:
     name: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
 
-    def effective(self) -> Dict[str, Any]:
+    def effective(self) -> dict[str, Any]:
         merged = DEFAULT_PROFILE.copy()
         merged.update(self.data or {})
         return merged
 
 
-def iter_config_paths() -> Tuple[Path, ...]:
+def iter_config_paths() -> tuple[Path, ...]:
     paths: list[Path] = []
     env_path = os.environ.get("BRAINR_CONFIG")
     if env_path:
@@ -52,8 +53,8 @@ def iter_config_paths() -> Tuple[Path, ...]:
     return tuple(unique)
 
 
-def load_profiles() -> Tuple[Dict[str, Profile], str]:
-    config: Dict[str, Any] = {"profile": "dev", "profiles": {"dev": DEFAULT_PROFILE}}
+def load_profiles() -> tuple[dict[str, Profile], str]:
+    config: dict[str, Any] = {"profile": "dev", "profiles": {"dev": DEFAULT_PROFILE}}
     for path in iter_config_paths():
         if path.exists():
             with path.open("r", encoding="utf-8") as fh:

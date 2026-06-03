@@ -45,9 +45,10 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -60,11 +61,11 @@ class AllenHBAProfile:
     region_id: str
     atlas: str
     uri: str
-    etag: Optional[str] = None
-    n_genes: Optional[int] = None
-    donors: List[str] = field(default_factory=list)
-    norm_pipeline: Optional[str] = None
-    top_genes: List[Dict[str, Any]] = field(default_factory=list)
+    etag: str | None = None
+    n_genes: int | None = None
+    donors: list[str] = field(default_factory=list)
+    norm_pipeline: str | None = None
+    top_genes: list[dict[str, Any]] = field(default_factory=list)
 
 
 class AllenHBALoader:
@@ -88,7 +89,9 @@ class AllenHBALoader:
             return self._profiles
 
         if not self.manifest_path.exists():
-            raise FileNotFoundError(f"Allen HBA manifest not found: {self.manifest_path}")
+            raise FileNotFoundError(
+                f"Allen HBA manifest not found: {self.manifest_path}"
+            )
 
         raw = self.manifest_path.read_text(encoding="utf-8").strip()
         if not raw:
@@ -100,9 +103,13 @@ class AllenHBALoader:
             if raw.lstrip().startswith("["):
                 payload = json.loads(raw)
             else:
-                payload = [json.loads(line) for line in raw.splitlines() if line.strip()]
+                payload = [
+                    json.loads(line) for line in raw.splitlines() if line.strip()
+                ]
         except json.JSONDecodeError as exc:
-            raise ValueError(f"Failed to parse Allen HBA manifest {self.manifest_path}: {exc}")
+            raise ValueError(
+                f"Failed to parse Allen HBA manifest {self.manifest_path}: {exc}"
+            )
 
         profiles: list[AllenHBAProfile] = []
         for entry in payload:
@@ -121,7 +128,9 @@ class AllenHBALoader:
                     )
                 )
             except KeyError as exc:
-                logger.warning("Skipping malformed manifest entry missing %s: %s", exc, entry)
+                logger.warning(
+                    "Skipping malformed manifest entry missing %s: %s", exc, entry
+                )
 
         if not profiles:
             logger.warning("Allen HBA manifest did not yield any profiles")
@@ -140,7 +149,7 @@ def upsert_expression_spine(
     db,
     loader: AllenHBALoader,
     *,
-    max_genes_per_region: Optional[int] = None,
+    max_genes_per_region: int | None = None,
 ) -> dict:
     """Insert ExpressionProfile nodes plus lightweight COVERS_GENE edges.
 
@@ -161,7 +170,11 @@ def upsert_expression_spine(
         region_matches = db.find_nodes("Region", {"id": profile.region_id})
         if not region_matches:
             stats["missing_regions"] += 1
-            logger.debug("Skipping expression profile %s: missing region %s", profile.profile_id, profile.region_id)
+            logger.debug(
+                "Skipping expression profile %s: missing region %s",
+                profile.profile_id,
+                profile.region_id,
+            )
             continue
 
         profile_props = {
@@ -176,7 +189,11 @@ def upsert_expression_spine(
 
         existing = db.find_nodes("ExpressionProfile", {"id": profile.profile_id})
         if existing:
-            db._save_node(profile.profile_id, existing[0][1].get("labels", ["ExpressionProfile"]), profile_props)
+            db._save_node(
+                profile.profile_id,
+                existing[0][1].get("labels", ["ExpressionProfile"]),
+                profile_props,
+            )
             stats["profile_updates"] += 1
             profile_node_id = profile.profile_id
         else:
@@ -184,7 +201,9 @@ def upsert_expression_spine(
             stats["profiles_created"] += 1
 
         region_node_id = region_matches[0][0]
-        db.create_relationship(profile_node_id, region_node_id, "OF_REGION", {"source": "allen_hba"})
+        db.create_relationship(
+            profile_node_id, region_node_id, "OF_REGION", {"source": "allen_hba"}
+        )
 
         # Seed lightweight gene summaries (Top-K per region)
         for summary in profile.top_genes[:max_genes]:
@@ -206,7 +225,9 @@ def upsert_expression_spine(
                 "rank": summary.get("rank"),
                 "source": "allen_hba",
             }
-            if db.create_relationship(profile_node_id, gene_node_id, "COVERS_GENE", rel_props):
+            if db.create_relationship(
+                profile_node_id, gene_node_id, "COVERS_GENE", rel_props
+            ):
                 stats["covers_gene_edges"] += 1
 
     return stats

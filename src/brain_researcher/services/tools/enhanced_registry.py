@@ -5,36 +5,34 @@ This module implements sophisticated tool selection, parameter inference, and
 execution monitoring capabilities for the Brain Researcher Agent system.
 """
 
-import asyncio
 import json
 import logging
 import time
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 from uuid import uuid4
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
-from brain_researcher.services.tools.tool_registry import ToolRegistry
-from brain_researcher.services.tools.tool_base import NeuroToolWrapper
-from brain_researcher.services.shared.toolsagent_tool_metadata_bridge import (
-    get_resource_hints,
-)
 from brain_researcher.services.shared.toolsagent_evidence_collection import (
     ConfidenceLevel,
     EvidenceCollector,
     EvidenceType,
 )
+from brain_researcher.services.shared.toolsagent_tool_metadata_bridge import (
+    get_resource_hints,
+)
+from brain_researcher.services.tools.tool_base import NeuroToolWrapper
+from brain_researcher.services.tools.tool_registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
 
 class ParameterInferenceStrategy(Enum):
     """Strategies for parameter inference."""
+
     SEMANTIC_MATCHING = "semantic_matching"
     CONTEXT_BASED = "context_based"
     HISTORICAL_PATTERNS = "historical_patterns"
@@ -43,6 +41,7 @@ class ParameterInferenceStrategy(Enum):
 
 class ConfidenceMetric(Enum):
     """Types of confidence metrics."""
+
     TOOL_MATCH_CONFIDENCE = "tool_match_confidence"
     PARAMETER_CONFIDENCE = "parameter_confidence"
     EXECUTION_CONFIDENCE = "execution_confidence"
@@ -52,40 +51,43 @@ class ConfidenceMetric(Enum):
 @dataclass
 class ParameterInference:
     """Result of parameter inference for a tool."""
+
     tool_name: str
-    inferred_parameters: Dict[str, Any]
-    confidence_scores: Dict[str, float]
+    inferred_parameters: dict[str, Any]
+    confidence_scores: dict[str, float]
     inference_strategy: ParameterInferenceStrategy
     reasoning: str
-    fallback_parameters: Dict[str, Any] = field(default_factory=dict)
+    fallback_parameters: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class ToolRecommendation:
     """Tool recommendation with confidence and reasoning."""
+
     tool: NeuroToolWrapper
     confidence_score: float
-    match_reasons: List[str]
-    parameter_suggestions: Dict[str, Any]
+    match_reasons: list[str]
+    parameter_suggestions: dict[str, Any]
     estimated_execution_time: float
-    resource_requirements: List[str]
+    resource_requirements: list[str]
     success_probability: float
 
 
 @dataclass
 class ExecutionMetrics:
     """Comprehensive execution metrics for monitoring."""
+
     execution_id: str
     tool_name: str
     start_time: float
-    end_time: Optional[float] = None
-    duration: Optional[float] = None
-    success: Optional[bool] = None
-    error_message: Optional[str] = None
-    resource_usage: Dict[str, Any] = field(default_factory=dict)
-    output_size: Optional[int] = None
-    confidence_scores: Dict[ConfidenceMetric, float] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    end_time: float | None = None
+    duration: float | None = None
+    success: bool | None = None
+    error_message: str | None = None
+    resource_usage: dict[str, Any] = field(default_factory=dict)
+    output_size: int | None = None
+    confidence_scores: dict[ConfidenceMetric, float] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class ParameterInferenceEngine:
@@ -94,16 +96,14 @@ class ParameterInferenceEngine:
     def __init__(self, use_ml_inference: bool = True):
         """Initialize parameter inference engine."""
         self.use_ml_inference = use_ml_inference
-        self.parameter_history: Dict[str, List[Dict[str, Any]]] = {}
-        self.user_preferences: Dict[str, Any] = {}
-        self.context_patterns: Dict[str, Any] = {}
+        self.parameter_history: dict[str, list[dict[str, Any]]] = {}
+        self.user_preferences: dict[str, Any] = {}
+        self.context_patterns: dict[str, Any] = {}
 
         # Initialize TF-IDF vectorizer for semantic matching
         if use_ml_inference:
             self.vectorizer = TfidfVectorizer(
-                max_features=1000,
-                stop_words='english',
-                ngram_range=(1, 2)
+                max_features=1000, stop_words="english", ngram_range=(1, 2)
             )
             self.fitted_vectorizer = False
 
@@ -113,8 +113,8 @@ class ParameterInferenceEngine:
         self,
         tool: NeuroToolWrapper,
         query: str,
-        context: Dict[str, Any] = None,
-        user_preferences: Dict[str, Any] = None
+        context: dict[str, Any] = None,
+        user_preferences: dict[str, Any] = None,
     ) -> ParameterInference:
         """
         Infer optimal parameters for a tool based on query and context.
@@ -139,7 +139,7 @@ class ParameterInferenceEngine:
             self._semantic_matching_inference,
             self._context_based_inference,
             self._historical_patterns_inference,
-            self._user_preferences_inference
+            self._user_preferences_inference,
         ]
 
         inference_results = []
@@ -154,49 +154,53 @@ class ParameterInferenceEngine:
         # Combine results from different strategies
         return self._combine_inference_results(tool, inference_results, query)
 
-    def _get_tool_parameter_schema(self, tool: NeuroToolWrapper) -> Dict[str, Any]:
+    def _get_tool_parameter_schema(self, tool: NeuroToolWrapper) -> dict[str, Any]:
         """Extract parameter schema from tool."""
         try:
             # Get tool's structured schema
             langchain_tool = tool.as_langchain_tool()
-            if hasattr(langchain_tool, 'args_schema') and langchain_tool.args_schema:
+            if hasattr(langchain_tool, "args_schema") and langchain_tool.args_schema:
                 schema = langchain_tool.args_schema.schema()
-                return schema.get('properties', {})
+                return schema.get("properties", {})
 
             # Fallback to tool description parsing
             return self._parse_tool_description_for_parameters(tool)
 
         except Exception as e:
-            logger.warning(f"Failed to get parameter schema for {tool.get_tool_name()}: {e}")
+            logger.warning(
+                f"Failed to get parameter schema for {tool.get_tool_name()}: {e}"
+            )
             return {}
 
-    def _parse_tool_description_for_parameters(self, tool: NeuroToolWrapper) -> Dict[str, Any]:
+    def _parse_tool_description_for_parameters(
+        self, tool: NeuroToolWrapper
+    ) -> dict[str, Any]:
         """Parse tool description to extract parameter information."""
         description = tool.get_tool_description()
         parameters = {}
 
         # Simple heuristics for common neuroimaging parameters
         common_params = {
-            'threshold': {'type': 'number', 'default': 0.05, 'range': [0.001, 0.1]},
-            'fwhm': {'type': 'number', 'default': 6.0, 'range': [2.0, 12.0]},
-            'tr': {'type': 'number', 'default': 2.0, 'range': [0.5, 5.0]},
-            'mask': {'type': 'string', 'pattern': '.*\\.nii(\\.gz)?$'},
-            'output_dir': {'type': 'string', 'default': '/tmp/analysis'},
-            'n_jobs': {'type': 'integer', 'default': 1, 'range': [1, 8]},
-            'memory': {'type': 'string', 'default': '8GB'}
+            "threshold": {"type": "number", "default": 0.05, "range": [0.001, 0.1]},
+            "fwhm": {"type": "number", "default": 6.0, "range": [2.0, 12.0]},
+            "tr": {"type": "number", "default": 2.0, "range": [0.5, 5.0]},
+            "mask": {"type": "string", "pattern": ".*\\.nii(\\.gz)?$"},
+            "output_dir": {"type": "string", "default": "/tmp/analysis"},
+            "n_jobs": {"type": "integer", "default": 1, "range": [1, 8]},
+            "memory": {"type": "string", "default": "8GB"},
         }
 
         # Extract parameters mentioned in description
         desc_lower = description.lower()
         for param, schema in common_params.items():
-            if param in desc_lower or param.replace('_', ' ') in desc_lower:
+            if param in desc_lower or param.replace("_", " ") in desc_lower:
                 parameters[param] = schema
 
         return parameters
 
     def _semantic_matching_inference(
         self, tool, query, tool_schema, context, user_prefs
-    ) -> Optional[ParameterInference]:
+    ) -> ParameterInference | None:
         """Infer parameters using semantic matching."""
         if not self.use_ml_inference:
             return None
@@ -209,42 +213,46 @@ class ParameterInferenceEngine:
         query_lower = query.lower()
 
         # Statistical threshold inference
-        if 'significant' in query_lower or 'threshold' in query_lower:
-            if 'threshold' in tool_schema:
-                if 'strict' in query_lower or 'conservative' in query_lower:
-                    inferred_params['threshold'] = 0.001
-                    confidence_scores['threshold'] = 0.8
+        if "significant" in query_lower or "threshold" in query_lower:
+            if "threshold" in tool_schema:
+                if "strict" in query_lower or "conservative" in query_lower:
+                    inferred_params["threshold"] = 0.001
+                    confidence_scores["threshold"] = 0.8
                     reasoning_parts.append("Conservative threshold for strict analysis")
-                elif 'liberal' in query_lower or 'exploratory' in query_lower:
-                    inferred_params['threshold'] = 0.1
-                    confidence_scores['threshold'] = 0.7
+                elif "liberal" in query_lower or "exploratory" in query_lower:
+                    inferred_params["threshold"] = 0.1
+                    confidence_scores["threshold"] = 0.7
                     reasoning_parts.append("Liberal threshold for exploratory analysis")
                 else:
-                    inferred_params['threshold'] = 0.05
-                    confidence_scores['threshold'] = 0.9
-                    reasoning_parts.append("Standard threshold for significance testing")
+                    inferred_params["threshold"] = 0.05
+                    confidence_scores["threshold"] = 0.9
+                    reasoning_parts.append(
+                        "Standard threshold for significance testing"
+                    )
 
         # Smoothing inference
-        if 'smooth' in query_lower and 'fwhm' in tool_schema:
-            if 'high resolution' in query_lower or 'precise' in query_lower:
-                inferred_params['fwhm'] = 4.0
-                confidence_scores['fwhm'] = 0.7
+        if "smooth" in query_lower and "fwhm" in tool_schema:
+            if "high resolution" in query_lower or "precise" in query_lower:
+                inferred_params["fwhm"] = 4.0
+                confidence_scores["fwhm"] = 0.7
                 reasoning_parts.append("Small smoothing kernel for high resolution")
             else:
-                inferred_params['fwhm'] = 6.0
-                confidence_scores['fwhm'] = 0.8
+                inferred_params["fwhm"] = 6.0
+                confidence_scores["fwhm"] = 0.8
                 reasoning_parts.append("Standard smoothing kernel")
 
         # Parallelization inference based on computational requirements
-        if 'n_jobs' in tool_schema:
+        if "n_jobs" in tool_schema:
             tool_name = tool.get_tool_name().lower()
-            if any(term in tool_name for term in ['fmriprep', 'preprocessing', 'glm']):
-                inferred_params['n_jobs'] = 4
-                confidence_scores['n_jobs'] = 0.9
-                reasoning_parts.append("Parallel processing for computationally intensive task")
+            if any(term in tool_name for term in ["fmriprep", "preprocessing", "glm"]):
+                inferred_params["n_jobs"] = 4
+                confidence_scores["n_jobs"] = 0.9
+                reasoning_parts.append(
+                    "Parallel processing for computationally intensive task"
+                )
             else:
-                inferred_params['n_jobs'] = 1
-                confidence_scores['n_jobs'] = 0.6
+                inferred_params["n_jobs"] = 1
+                confidence_scores["n_jobs"] = 0.6
                 reasoning_parts.append("Single-threaded processing for simple task")
 
         if inferred_params:
@@ -253,51 +261,55 @@ class ParameterInferenceEngine:
                 inferred_parameters=inferred_params,
                 confidence_scores=confidence_scores,
                 inference_strategy=ParameterInferenceStrategy.SEMANTIC_MATCHING,
-                reasoning="; ".join(reasoning_parts)
+                reasoning="; ".join(reasoning_parts),
             )
 
         return None
 
     def _context_based_inference(
         self, tool, query, tool_schema, context, user_prefs
-    ) -> Optional[ParameterInference]:
+    ) -> ParameterInference | None:
         """Infer parameters based on execution context."""
         inferred_params = {}
         confidence_scores = {}
         reasoning_parts = []
 
         # Use previous execution results for context
-        if 'previous_results' in context:
-            prev_results = context['previous_results']
+        if "previous_results" in context:
+            prev_results = context["previous_results"]
 
             # Adapt thresholds based on previous findings
-            if 'threshold' in tool_schema and isinstance(prev_results, dict):
-                significant_findings = prev_results.get('significant_results', 0)
+            if "threshold" in tool_schema and isinstance(prev_results, dict):
+                significant_findings = prev_results.get("significant_results", 0)
                 if significant_findings == 0:
                     # No significant findings, suggest more liberal threshold
-                    inferred_params['threshold'] = 0.1
-                    confidence_scores['threshold'] = 0.6
-                    reasoning_parts.append("Liberal threshold due to no previous significant findings")
+                    inferred_params["threshold"] = 0.1
+                    confidence_scores["threshold"] = 0.6
+                    reasoning_parts.append(
+                        "Liberal threshold due to no previous significant findings"
+                    )
                 elif significant_findings > 1000:
                     # Too many findings, suggest stricter threshold
-                    inferred_params['threshold'] = 0.001
-                    confidence_scores['threshold'] = 0.7
-                    reasoning_parts.append("Conservative threshold due to many findings")
+                    inferred_params["threshold"] = 0.001
+                    confidence_scores["threshold"] = 0.7
+                    reasoning_parts.append(
+                        "Conservative threshold due to many findings"
+                    )
 
         # Use dataset characteristics if available
-        if 'dataset_info' in context:
-            dataset = context['dataset_info']
+        if "dataset_info" in context:
+            dataset = context["dataset_info"]
 
             # Infer TR from dataset
-            if 'tr' in tool_schema and 'repetition_time' in dataset:
-                inferred_params['tr'] = dataset['repetition_time']
-                confidence_scores['tr'] = 0.95
+            if "tr" in tool_schema and "repetition_time" in dataset:
+                inferred_params["tr"] = dataset["repetition_time"]
+                confidence_scores["tr"] = 0.95
                 reasoning_parts.append("TR from dataset metadata")
 
             # Infer number of subjects for group analysis
-            if 'n_subjects' in tool_schema and 'num_subjects' in dataset:
-                inferred_params['n_subjects'] = dataset['num_subjects']
-                confidence_scores['n_subjects'] = 0.9
+            if "n_subjects" in tool_schema and "num_subjects" in dataset:
+                inferred_params["n_subjects"] = dataset["num_subjects"]
+                confidence_scores["n_subjects"] = 0.9
                 reasoning_parts.append("Subject count from dataset")
 
         if inferred_params:
@@ -306,14 +318,14 @@ class ParameterInferenceEngine:
                 inferred_parameters=inferred_params,
                 confidence_scores=confidence_scores,
                 inference_strategy=ParameterInferenceStrategy.CONTEXT_BASED,
-                reasoning="; ".join(reasoning_parts)
+                reasoning="; ".join(reasoning_parts),
             )
 
         return None
 
     def _historical_patterns_inference(
         self, tool, query, tool_schema, context, user_prefs
-    ) -> Optional[ParameterInference]:
+    ) -> ParameterInference | None:
         """Infer parameters based on historical usage patterns."""
         tool_name = tool.get_tool_name()
 
@@ -333,13 +345,16 @@ class ParameterInferenceEngine:
             param_values = [h.get(param_name) for h in history if param_name in h]
             if param_values:
                 # Use most common value or median for numerical parameters
-                if all(isinstance(v, (int, float)) for v in param_values):
+                if all(isinstance(v, int | float) for v in param_values):
                     inferred_params[param_name] = np.median(param_values)
                     confidence_scores[param_name] = min(0.8, len(param_values) / 10)
-                    reasoning_parts.append(f"Median {param_name} from {len(param_values)} historical uses")
+                    reasoning_parts.append(
+                        f"Median {param_name} from {len(param_values)} historical uses"
+                    )
                 else:
                     # Use most common non-numerical value
                     from collections import Counter
+
                     most_common = Counter(param_values).most_common(1)[0][0]
                     inferred_params[param_name] = most_common
                     confidence_scores[param_name] = 0.7
@@ -351,14 +366,14 @@ class ParameterInferenceEngine:
                 inferred_parameters=inferred_params,
                 confidence_scores=confidence_scores,
                 inference_strategy=ParameterInferenceStrategy.HISTORICAL_PATTERNS,
-                reasoning="; ".join(reasoning_parts)
+                reasoning="; ".join(reasoning_parts),
             )
 
         return None
 
     def _user_preferences_inference(
         self, tool, query, tool_schema, context, user_prefs
-    ) -> Optional[ParameterInference]:
+    ) -> ParameterInference | None:
         """Infer parameters based on user preferences."""
         if not user_prefs:
             return None
@@ -382,7 +397,9 @@ class ParameterInferenceEngine:
                 if param_name in tool_schema:
                     inferred_params[param_name] = value
                     confidence_scores[param_name] = 0.95
-                    reasoning_parts.append(f"Tool-specific user preference for {param_name}")
+                    reasoning_parts.append(
+                        f"Tool-specific user preference for {param_name}"
+                    )
 
         if inferred_params:
             return ParameterInference(
@@ -390,13 +407,13 @@ class ParameterInferenceEngine:
                 inferred_parameters=inferred_params,
                 confidence_scores=confidence_scores,
                 inference_strategy=ParameterInferenceStrategy.USER_PREFERENCES,
-                reasoning="; ".join(reasoning_parts)
+                reasoning="; ".join(reasoning_parts),
             )
 
         return None
 
     def _combine_inference_results(
-        self, tool, results: List[ParameterInference], query: str
+        self, tool, results: list[ParameterInference], query: str
     ) -> ParameterInference:
         """Combine results from multiple inference strategies."""
         if not results:
@@ -405,7 +422,7 @@ class ParameterInferenceEngine:
                 inferred_parameters={},
                 confidence_scores={},
                 inference_strategy=ParameterInferenceStrategy.SEMANTIC_MATCHING,
-                reasoning="No parameters could be inferred"
+                reasoning="No parameters could be inferred",
             )
 
         # Merge parameters with weighted confidence scores
@@ -417,7 +434,7 @@ class ParameterInferenceEngine:
             ParameterInferenceStrategy.USER_PREFERENCES: 1.0,
             ParameterInferenceStrategy.CONTEXT_BASED: 0.9,
             ParameterInferenceStrategy.HISTORICAL_PATTERNS: 0.7,
-            ParameterInferenceStrategy.SEMANTIC_MATCHING: 0.6
+            ParameterInferenceStrategy.SEMANTIC_MATCHING: 0.6,
         }
 
         # Collect all parameters across strategies
@@ -433,10 +450,9 @@ class ParameterInferenceEngine:
 
             for result in results:
                 if param in result.inferred_parameters:
-                    weighted_confidence = (
-                        result.confidence_scores.get(param, 0.5) *
-                        strategy_weights.get(result.inference_strategy, 0.5)
-                    )
+                    weighted_confidence = result.confidence_scores.get(
+                        param, 0.5
+                    ) * strategy_weights.get(result.inference_strategy, 0.5)
 
                     if weighted_confidence > best_confidence:
                         best_confidence = weighted_confidence
@@ -456,23 +472,29 @@ class ParameterInferenceEngine:
             inferred_parameters=combined_params,
             confidence_scores=combined_confidence,
             inference_strategy=ParameterInferenceStrategy.SEMANTIC_MATCHING,
-            reasoning="; ".join(combined_reasoning) if combined_reasoning else "Combined inference",
-            fallback_parameters=fallback_params
+            reasoning=(
+                "; ".join(combined_reasoning)
+                if combined_reasoning
+                else "Combined inference"
+            ),
+            fallback_parameters=fallback_params,
         )
 
-    def _create_fallback_parameters(self, tool, inferred_params: Dict[str, Any]) -> Dict[str, Any]:
+    def _create_fallback_parameters(
+        self, tool, inferred_params: dict[str, Any]
+    ) -> dict[str, Any]:
         """Create fallback parameters for critical missing parameters."""
         fallback = {}
 
         # Common neuroimaging defaults
         defaults = {
-            'threshold': 0.05,
-            'fwhm': 6.0,
-            'tr': 2.0,
-            'n_jobs': 1,
-            'output_dir': '/tmp/analysis',
-            'mask': None,
-            'memory': '4GB'
+            "threshold": 0.05,
+            "fwhm": 6.0,
+            "tr": 2.0,
+            "n_jobs": 1,
+            "output_dir": "/tmp/analysis",
+            "mask": None,
+            "memory": "4GB",
         }
 
         tool_schema = self._get_tool_parameter_schema(tool)
@@ -483,7 +505,9 @@ class ParameterInferenceEngine:
 
         return fallback
 
-    def record_execution(self, tool_name: str, parameters: Dict[str, Any], success: bool):
+    def record_execution(
+        self, tool_name: str, parameters: dict[str, Any], success: bool
+    ):
         """Record successful parameter usage for future inference."""
         if tool_name not in self.parameter_history:
             self.parameter_history[tool_name] = []
@@ -494,9 +518,11 @@ class ParameterInferenceEngine:
 
             # Keep only recent history (last 100 executions)
             if len(self.parameter_history[tool_name]) > 100:
-                self.parameter_history[tool_name] = self.parameter_history[tool_name][-100:]
+                self.parameter_history[tool_name] = self.parameter_history[tool_name][
+                    -100:
+                ]
 
-    def update_user_preferences(self, preferences: Dict[str, Any]):
+    def update_user_preferences(self, preferences: dict[str, Any]):
         """Update user preferences for parameter inference."""
         self.user_preferences.update(preferences)
         logger.info(f"Updated user preferences: {list(preferences.keys())}")
@@ -508,19 +534,19 @@ class ToolRecommendationEngine:
     def __init__(self, tool_registry: ToolRegistry):
         """Initialize tool recommendation engine."""
         self.tool_registry = tool_registry
-        self.usage_statistics: Dict[str, Dict[str, Any]] = {}
-        self.context_patterns: Dict[str, List[str]] = {}
-        self.success_rates: Dict[str, float] = {}
+        self.usage_statistics: dict[str, dict[str, Any]] = {}
+        self.context_patterns: dict[str, list[str]] = {}
+        self.success_rates: dict[str, float] = {}
 
         logger.info("Tool recommendation engine initialized")
 
     def recommend_tools(
         self,
         query: str,
-        context: Dict[str, Any] = None,
+        context: dict[str, Any] = None,
         max_recommendations: int = 5,
-        min_confidence: float = 0.3
-    ) -> List[ToolRecommendation]:
+        min_confidence: float = 0.3,
+    ) -> list[ToolRecommendation]:
         """
         Recommend tools based on query and context with confidence scoring.
 
@@ -554,24 +580,26 @@ class ToolRecommendationEngine:
         return recommendations[:max_recommendations]
 
     def _evaluate_tool_for_query(
-        self, tool: NeuroToolWrapper, query: str, context: Dict[str, Any]
-    ) -> Optional[ToolRecommendation]:
+        self, tool: NeuroToolWrapper, query: str, context: dict[str, Any]
+    ) -> ToolRecommendation | None:
         """Evaluate how well a tool matches the query and context."""
         tool_name = tool.get_tool_name()
         tool_description = tool.get_tool_description()
 
         # Calculate different confidence components
-        semantic_confidence = self._calculate_semantic_confidence(query, tool_description)
+        semantic_confidence = self._calculate_semantic_confidence(
+            query, tool_description
+        )
         context_confidence = self._calculate_context_confidence(tool_name, context)
         historical_confidence = self._calculate_historical_confidence(tool_name, query)
         success_confidence = self.success_rates.get(tool_name, 0.5)
 
         # Weighted combination of confidence scores
         overall_confidence = (
-            0.4 * semantic_confidence +
-            0.3 * context_confidence +
-            0.2 * historical_confidence +
-            0.1 * success_confidence
+            0.4 * semantic_confidence
+            + 0.3 * context_confidence
+            + 0.2 * historical_confidence
+            + 0.1 * success_confidence
         )
 
         # Skip tools with very low confidence
@@ -600,10 +628,12 @@ class ToolRecommendationEngine:
             parameter_suggestions={},  # Will be filled by parameter inference
             estimated_execution_time=estimated_time,
             resource_requirements=resource_requirements,
-            success_probability=success_confidence
+            success_probability=success_confidence,
         )
 
-    def _calculate_semantic_confidence(self, query: str, tool_description: str) -> float:
+    def _calculate_semantic_confidence(
+        self, query: str, tool_description: str
+    ) -> float:
         """Calculate semantic similarity between query and tool description."""
         # Simple keyword-based matching (can be enhanced with embeddings)
         query_words = set(query.lower().split())
@@ -620,8 +650,16 @@ class ToolRecommendationEngine:
 
         # Boost confidence for exact matches of important terms
         important_terms = {
-            'glm', 'analysis', 'fmri', 'connectivity', 'preprocessing',
-            'statistical', 'coordinate', 'brain', 'activation', 'network'
+            "glm",
+            "analysis",
+            "fmri",
+            "connectivity",
+            "preprocessing",
+            "statistical",
+            "coordinate",
+            "brain",
+            "activation",
+            "network",
         }
 
         query_important = query_words & important_terms
@@ -632,32 +670,44 @@ class ToolRecommendationEngine:
 
         return min(1.0, base_confidence)
 
-    def _calculate_context_confidence(self, tool_name: str, context: Dict[str, Any]) -> float:
+    def _calculate_context_confidence(
+        self, tool_name: str, context: dict[str, Any]
+    ) -> float:
         """Calculate how well the tool fits the current context."""
         confidence = 0.5  # Base confidence
 
         # Check if tool is suitable for the data type
-        if 'data_type' in context:
-            data_type = context['data_type'].lower()
+        if "data_type" in context:
+            data_type = context["data_type"].lower()
             tool_name_lower = tool_name.lower()
 
-            if data_type == 'fmri' and 'fmri' in tool_name_lower:
+            if data_type == "fmri" and "fmri" in tool_name_lower:
                 confidence += 0.3
-            elif data_type == 'dwi' and ('dwi' in tool_name_lower or 'diffusion' in tool_name_lower):
+            elif data_type == "dwi" and (
+                "dwi" in tool_name_lower or "diffusion" in tool_name_lower
+            ):
                 confidence += 0.3
-            elif data_type == 'anat' and ('anat' in tool_name_lower or 'structural' in tool_name_lower):
+            elif data_type == "anat" and (
+                "anat" in tool_name_lower or "structural" in tool_name_lower
+            ):
                 confidence += 0.3
 
         # Check if tool is appropriate for the analysis stage
-        if 'analysis_stage' in context:
-            stage = context['analysis_stage'].lower()
+        if "analysis_stage" in context:
+            stage = context["analysis_stage"].lower()
             tool_name_lower = tool_name.lower()
 
-            if stage == 'preprocessing' and 'prep' in tool_name_lower:
+            if stage == "preprocessing" and "prep" in tool_name_lower:
                 confidence += 0.2
-            elif stage == 'analysis' and any(term in tool_name_lower for term in ['glm', 'analysis', 'statistical']):
+            elif stage == "analysis" and any(
+                term in tool_name_lower for term in ["glm", "analysis", "statistical"]
+            ):
                 confidence += 0.2
-            elif stage == 'visualization' and 'plot' in tool_name_lower or 'viz' in tool_name_lower:
+            elif (
+                stage == "visualization"
+                and "plot" in tool_name_lower
+                or "viz" in tool_name_lower
+            ):
                 confidence += 0.2
 
         return min(1.0, confidence)
@@ -668,7 +718,7 @@ class ToolRecommendationEngine:
             return 0.5
 
         stats = self.usage_statistics[tool_name]
-        total_uses = stats.get('total_uses', 0)
+        total_uses = stats.get("total_uses", 0)
 
         if total_uses == 0:
             return 0.5
@@ -677,11 +727,14 @@ class ToolRecommendationEngine:
         usage_confidence = min(1.0, total_uses / 100)
 
         # Check for similar queries in history
-        similar_queries = stats.get('similar_queries', [])
-        query_similarity = max([
-            self._calculate_query_similarity(query, hist_query)
-            for hist_query in similar_queries
-        ], default=0.0)
+        similar_queries = stats.get("similar_queries", [])
+        query_similarity = max(
+            [
+                self._calculate_query_similarity(query, hist_query)
+                for hist_query in similar_queries
+            ],
+            default=0.0,
+        )
 
         return (usage_confidence + query_similarity) / 2
 
@@ -698,15 +751,17 @@ class ToolRecommendationEngine:
 
         return intersection / union
 
-    def _estimate_execution_time(self, tool_name: str, context: Dict[str, Any]) -> float:
+    def _estimate_execution_time(
+        self, tool_name: str, context: dict[str, Any]
+    ) -> float:
         """Estimate execution time based on tool and context."""
         # Base estimates for different tool types
         time_estimates = {
-            'fmriprep': 3600,  # 1 hour
-            'glm': 300,        # 5 minutes
-            'connectivity': 600, # 10 minutes
-            'preprocessing': 1800, # 30 minutes
-            'visualization': 60,   # 1 minute
+            "fmriprep": 3600,  # 1 hour
+            "glm": 300,  # 5 minutes
+            "connectivity": 600,  # 10 minutes
+            "preprocessing": 1800,  # 30 minutes
+            "visualization": 60,  # 1 minute
         }
 
         tool_name_lower = tool_name.lower()
@@ -714,20 +769,20 @@ class ToolRecommendationEngine:
         for tool_type, base_time in time_estimates.items():
             if tool_type in tool_name_lower:
                 # Adjust based on context
-                if 'num_subjects' in context:
+                if "num_subjects" in context:
                     # Scale with number of subjects
-                    multiplier = max(1, context['num_subjects'] / 10)
+                    multiplier = max(1, context["num_subjects"] / 10)
                     return base_time * multiplier
                 return base_time
 
         # Default estimate
         return 180  # 3 minutes
 
-    def _estimate_resource_requirements(self, tool_name: str) -> List[str]:
+    def _estimate_resource_requirements(self, tool_name: str) -> list[str]:
         """Estimate resource requirements for the tool."""
         hints = get_resource_hints(tool_name)
         if hints:
-            labels: List[str] = []
+            labels: list[str] = []
             cpu = hints.get("cpu")
             if cpu is not None:
                 labels.append(f"CPU: {cpu}")
@@ -742,39 +797,41 @@ class ToolRecommendationEngine:
         requirements = []
         tool_name_lower = tool_name.lower()
 
-        if 'fmriprep' in tool_name_lower or 'preprocessing' in tool_name_lower:
-            requirements.extend(['High CPU', 'High Memory', 'Large Storage'])
-        elif 'glm' in tool_name_lower or 'analysis' in tool_name_lower:
-            requirements.extend(['Medium CPU', 'Medium Memory'])
-        elif 'connectivity' in tool_name_lower:
-            requirements.extend(['Medium CPU', 'Medium Memory'])
+        if "fmriprep" in tool_name_lower or "preprocessing" in tool_name_lower:
+            requirements.extend(["High CPU", "High Memory", "Large Storage"])
+        elif "glm" in tool_name_lower or "analysis" in tool_name_lower:
+            requirements.extend(["Medium CPU", "Medium Memory"])
+        elif "connectivity" in tool_name_lower:
+            requirements.extend(["Medium CPU", "Medium Memory"])
         else:
-            requirements.extend(['Low CPU', 'Low Memory'])
+            requirements.extend(["Low CPU", "Low Memory"])
 
         return requirements
 
-    def record_tool_usage(self, tool_name: str, query: str, success: bool, execution_time: float):
+    def record_tool_usage(
+        self, tool_name: str, query: str, success: bool, execution_time: float
+    ):
         """Record tool usage for improving recommendations."""
         if tool_name not in self.usage_statistics:
             self.usage_statistics[tool_name] = {
-                'total_uses': 0,
-                'successful_uses': 0,
-                'similar_queries': []
+                "total_uses": 0,
+                "successful_uses": 0,
+                "similar_queries": [],
             }
 
         stats = self.usage_statistics[tool_name]
-        stats['total_uses'] += 1
+        stats["total_uses"] += 1
 
         if success:
-            stats['successful_uses'] += 1
+            stats["successful_uses"] += 1
 
         # Update success rate
-        self.success_rates[tool_name] = stats['successful_uses'] / stats['total_uses']
+        self.success_rates[tool_name] = stats["successful_uses"] / stats["total_uses"]
 
         # Store similar queries (keep only recent ones)
-        stats['similar_queries'].append(query)
-        if len(stats['similar_queries']) > 50:
-            stats['similar_queries'] = stats['similar_queries'][-50:]
+        stats["similar_queries"].append(query)
+        if len(stats["similar_queries"]) > 50:
+            stats["similar_queries"] = stats["similar_queries"][-50:]
 
 
 class ExecutionMonitor:
@@ -782,17 +839,14 @@ class ExecutionMonitor:
 
     def __init__(self):
         """Initialize execution monitor."""
-        self.active_executions: Dict[str, ExecutionMetrics] = {}
-        self.completed_executions: List[ExecutionMetrics] = []
-        self.performance_metrics: Dict[str, Any] = {}
+        self.active_executions: dict[str, ExecutionMetrics] = {}
+        self.completed_executions: list[ExecutionMetrics] = []
+        self.performance_metrics: dict[str, Any] = {}
 
         logger.info("Execution monitor initialized")
 
     def start_execution(
-        self,
-        tool_name: str,
-        parameters: Dict[str, Any],
-        context: Dict[str, Any] = None
+        self, tool_name: str, parameters: dict[str, Any], context: dict[str, Any] = None
     ) -> str:
         """Start monitoring a tool execution."""
         execution_id = f"exec_{uuid4().hex[:8]}"
@@ -801,10 +855,7 @@ class ExecutionMonitor:
             execution_id=execution_id,
             tool_name=tool_name,
             start_time=time.time(),
-            metadata={
-                'parameters': parameters,
-                'context': context or {}
-            }
+            metadata={"parameters": parameters, "context": context or {}},
         )
 
         self.active_executions[execution_id] = metrics
@@ -817,7 +868,7 @@ class ExecutionMonitor:
         execution_id: str,
         success: bool,
         result: Any = None,
-        error_message: str = None
+        error_message: str = None,
     ):
         """End monitoring of a tool execution."""
         if execution_id not in self.active_executions:
@@ -834,7 +885,9 @@ class ExecutionMonitor:
             metrics.output_size = self._estimate_output_size(result)
 
         # Calculate confidence scores
-        metrics.confidence_scores = self._calculate_execution_confidence(metrics, result)
+        metrics.confidence_scores = self._calculate_execution_confidence(
+            metrics, result
+        )
 
         # Move to completed executions
         self.completed_executions.append(metrics)
@@ -845,15 +898,15 @@ class ExecutionMonitor:
             f"success={success}, duration={metrics.duration:.2f}s"
         )
 
-    def get_execution_status(self, execution_id: str) -> Optional[ExecutionMetrics]:
+    def get_execution_status(self, execution_id: str) -> ExecutionMetrics | None:
         """Get current status of an execution."""
         return self.active_executions.get(execution_id)
 
-    def get_active_executions(self) -> List[ExecutionMetrics]:
+    def get_active_executions(self) -> list[ExecutionMetrics]:
         """Get all active executions."""
         return list(self.active_executions.values())
 
-    def get_performance_summary(self) -> Dict[str, Any]:
+    def get_performance_summary(self) -> dict[str, Any]:
         """Get performance summary across all executions."""
         if not self.completed_executions:
             return {"message": "No completed executions"}
@@ -861,33 +914,37 @@ class ExecutionMonitor:
         # Calculate aggregate statistics
         total_executions = len(self.completed_executions)
         successful_executions = sum(1 for e in self.completed_executions if e.success)
-        average_duration = np.mean([e.duration for e in self.completed_executions if e.duration])
+        average_duration = np.mean(
+            [e.duration for e in self.completed_executions if e.duration]
+        )
 
         # Tool-specific statistics
         tool_stats = {}
         for execution in self.completed_executions:
             tool = execution.tool_name
             if tool not in tool_stats:
-                tool_stats[tool] = {'count': 0, 'successes': 0, 'avg_duration': 0}
+                tool_stats[tool] = {"count": 0, "successes": 0, "avg_duration": 0}
 
-            tool_stats[tool]['count'] += 1
+            tool_stats[tool]["count"] += 1
             if execution.success:
-                tool_stats[tool]['successes'] += 1
+                tool_stats[tool]["successes"] += 1
 
         # Calculate success rates and average durations
         for tool, stats in tool_stats.items():
-            stats['success_rate'] = stats['successes'] / stats['count']
-            tool_executions = [e for e in self.completed_executions if e.tool_name == tool]
+            stats["success_rate"] = stats["successes"] / stats["count"]
+            tool_executions = [
+                e for e in self.completed_executions if e.tool_name == tool
+            ]
             durations = [e.duration for e in tool_executions if e.duration]
-            stats['avg_duration'] = np.mean(durations) if durations else 0
+            stats["avg_duration"] = np.mean(durations) if durations else 0
 
         return {
-            'total_executions': total_executions,
-            'successful_executions': successful_executions,
-            'overall_success_rate': successful_executions / total_executions,
-            'average_duration': average_duration,
-            'tool_statistics': tool_stats,
-            'active_executions': len(self.active_executions)
+            "total_executions": total_executions,
+            "successful_executions": successful_executions,
+            "overall_success_rate": successful_executions / total_executions,
+            "average_duration": average_duration,
+            "tool_statistics": tool_stats,
+            "active_executions": len(self.active_executions),
         }
 
     def _estimate_output_size(self, result: Any) -> int:
@@ -897,7 +954,7 @@ class ExecutionMonitor:
                 return len(result)
             elif isinstance(result, dict):
                 return len(json.dumps(result, default=str))
-            elif hasattr(result, '__len__'):
+            elif hasattr(result, "__len__"):
                 return len(result)
             else:
                 return len(str(result))
@@ -906,7 +963,7 @@ class ExecutionMonitor:
 
     def _calculate_execution_confidence(
         self, metrics: ExecutionMetrics, result: Any
-    ) -> Dict[ConfidenceMetric, float]:
+    ) -> dict[ConfidenceMetric, float]:
         """Calculate various confidence metrics for the execution."""
         confidence_scores = {}
 
@@ -954,10 +1011,10 @@ class EnhancedToolRegistry(ToolRegistry):
     def get_intelligent_recommendations(
         self,
         query: str,
-        context: Dict[str, Any] = None,
-        user_preferences: Dict[str, Any] = None,
-        max_recommendations: int = 5
-    ) -> List[ToolRecommendation]:
+        context: dict[str, Any] = None,
+        user_preferences: dict[str, Any] = None,
+        max_recommendations: int = 5,
+    ) -> list[ToolRecommendation]:
         """
         Get intelligent tool recommendations with parameter inference.
 
@@ -972,9 +1029,7 @@ class EnhancedToolRegistry(ToolRegistry):
         """
         # Get tool recommendations
         recommendations = self.recommendation_engine.recommend_tools(
-            query=query,
-            context=context,
-            max_recommendations=max_recommendations
+            query=query, context=context, max_recommendations=max_recommendations
         )
 
         # Enhance recommendations with parameter inference
@@ -984,29 +1039,36 @@ class EnhancedToolRegistry(ToolRegistry):
                     tool=recommendation.tool,
                     query=query,
                     context=context,
-                    user_preferences=user_preferences
+                    user_preferences=user_preferences,
                 )
 
-                recommendation.parameter_suggestions = parameter_inference.inferred_parameters
+                recommendation.parameter_suggestions = (
+                    parameter_inference.inferred_parameters
+                )
 
                 # Add parameter confidence to overall confidence
                 if parameter_inference.confidence_scores:
-                    avg_param_confidence = np.mean(list(parameter_inference.confidence_scores.values()))
+                    avg_param_confidence = np.mean(
+                        list(parameter_inference.confidence_scores.values())
+                    )
                     recommendation.confidence_score = (
-                        recommendation.confidence_score * 0.7 + avg_param_confidence * 0.3
+                        recommendation.confidence_score * 0.7
+                        + avg_param_confidence * 0.3
                     )
 
             except Exception as e:
-                logger.warning(f"Failed to infer parameters for {recommendation.tool.get_tool_name()}: {e}")
+                logger.warning(
+                    f"Failed to infer parameters for {recommendation.tool.get_tool_name()}: {e}"
+                )
 
         return recommendations
 
     async def execute_with_monitoring(
         self,
         tool: NeuroToolWrapper,
-        parameters: Dict[str, Any],
-        context: Dict[str, Any] = None
-    ) -> Dict[str, Any]:
+        parameters: dict[str, Any],
+        context: dict[str, Any] = None,
+    ) -> dict[str, Any]:
         """
         Execute a tool with comprehensive monitoring and evidence collection.
 
@@ -1022,9 +1084,7 @@ class EnhancedToolRegistry(ToolRegistry):
 
         # Start execution monitoring
         execution_id = self.execution_monitor.start_execution(
-            tool_name=tool_name,
-            parameters=parameters,
-            context=context
+            tool_name=tool_name, parameters=parameters, context=context
         )
 
         # Start evidence collection chain
@@ -1037,7 +1097,7 @@ class EnhancedToolRegistry(ToolRegistry):
             tool_name=tool_name,
             parameters=parameters,
             execution_time=None,
-            success=False  # Will be updated
+            success=False,  # Will be updated
         )
 
         try:
@@ -1048,9 +1108,7 @@ class EnhancedToolRegistry(ToolRegistry):
 
             # End monitoring with success
             self.execution_monitor.end_execution(
-                execution_id=execution_id,
-                success=True,
-                result=result
+                execution_id=execution_id, success=True, result=result
             )
 
             # Update evidence with success
@@ -1058,68 +1116,73 @@ class EnhancedToolRegistry(ToolRegistry):
                 type=EvidenceType.RESULT,
                 source=tool_name,
                 content={
-                    'result': result,
-                    'execution_time': execution_time,
-                    'parameters': parameters
+                    "result": result,
+                    "execution_time": execution_time,
+                    "parameters": parameters,
                 },
-                confidence=ConfidenceLevel.HIGH
+                confidence=ConfidenceLevel.HIGH,
             )
 
             # Collect output artifact files (best-effort)
             try:
                 data = result.get("data") if isinstance(result, dict) else None
                 if isinstance(data, dict) and data.get("outputs"):
-                    self.evidence_collector.collect_output_files(tool_name, data["outputs"])
+                    self.evidence_collector.collect_output_files(
+                        tool_name, data["outputs"]
+                    )
             except Exception as e:
-                logger.warning(f"Failed to collect output artifacts for {tool_name}: {e}")
+                logger.warning(
+                    f"Failed to collect output artifacts for {tool_name}: {e}"
+                )
 
             # Record successful execution for future inference
-            self.parameter_inference_engine.record_execution(tool_name, parameters, True)
-            self.recommendation_engine.record_tool_usage(tool_name, "", True, execution_time)
+            self.parameter_inference_engine.record_execution(
+                tool_name, parameters, True
+            )
+            self.recommendation_engine.record_tool_usage(
+                tool_name, "", True, execution_time
+            )
 
             return {
-                'status': 'success',
-                'result': result,
-                'execution_id': execution_id,
-                'execution_time': execution_time,
-                'evidence_chain_id': evidence_chain.chain_id
+                "status": "success",
+                "result": result,
+                "execution_id": execution_id,
+                "execution_time": execution_time,
+                "evidence_chain_id": evidence_chain.chain_id,
             }
 
         except Exception as e:
             # End monitoring with failure
             self.execution_monitor.end_execution(
-                execution_id=execution_id,
-                success=False,
-                error_message=str(e)
+                execution_id=execution_id, success=False, error_message=str(e)
             )
 
             # Collect error evidence
             self.evidence_collector.collect(
                 type=EvidenceType.RESULT,
                 source=tool_name,
-                content={
-                    'error': str(e),
-                    'parameters': parameters
-                },
-                confidence=ConfidenceLevel.HIGH
+                content={"error": str(e), "parameters": parameters},
+                confidence=ConfidenceLevel.HIGH,
             )
 
             # Record failed execution
-            self.parameter_inference_engine.record_execution(tool_name, parameters, False)
+            self.parameter_inference_engine.record_execution(
+                tool_name, parameters, False
+            )
             self.recommendation_engine.record_tool_usage(tool_name, "", False, 0)
 
             return {
-                'status': 'error',
-                'error': str(e),
-                'execution_id': execution_id,
-                'evidence_chain_id': evidence_chain.chain_id
+                "status": "error",
+                "error": str(e),
+                "execution_id": execution_id,
+                "evidence_chain_id": evidence_chain.chain_id,
             }
 
         finally:
             # End evidence chain
             self.evidence_collector.end_chain()
 
-    def get_registry_statistics(self) -> Dict[str, Any]:
+    def get_registry_statistics(self) -> dict[str, Any]:
         """Get comprehensive statistics about the registry."""
         base_stats = self.get_tool_info()
 
@@ -1128,14 +1191,14 @@ class EnhancedToolRegistry(ToolRegistry):
 
         return {
             **base_stats,
-            'performance_summary': performance_summary,
-            'parameter_inference_history': {
-                tool: len(history) for tool, history
-                in self.parameter_inference_engine.parameter_history.items()
+            "performance_summary": performance_summary,
+            "parameter_inference_history": {
+                tool: len(history)
+                for tool, history in self.parameter_inference_engine.parameter_history.items()
             },
-            'recommendation_statistics': {
-                tool: stats['total_uses'] for tool, stats
-                in self.recommendation_engine.usage_statistics.items()
+            "recommendation_statistics": {
+                tool: stats["total_uses"]
+                for tool, stats in self.recommendation_engine.usage_statistics.items()
             },
-            'evidence_summary': self.evidence_collector.generate_report()['summary']
+            "evidence_summary": self.evidence_collector.generate_report()["summary"],
         }

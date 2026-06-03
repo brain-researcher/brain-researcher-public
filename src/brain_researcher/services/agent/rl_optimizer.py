@@ -10,13 +10,13 @@ import pickle
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,9 @@ class State:
     """RL state representation."""
 
     query_embedding: np.ndarray
-    dataset_features: Dict[str, float]
-    system_load: Dict[str, float]
-    context_features: Dict[str, Any]
+    dataset_features: dict[str, float]
+    system_load: dict[str, float]
+    context_features: dict[str, Any]
     timestamp: datetime = field(default_factory=datetime.now)
 
     def to_tensor(self) -> torch.Tensor:
@@ -48,19 +48,23 @@ class State:
 
         # Only add extra features if they exist and have values
         if self.dataset_features:
-            features.extend([
-                self.dataset_features.get('size_gb', 0),
-                self.dataset_features.get('num_subjects', 0),
-                self.dataset_features.get('num_sessions', 0),
-                self.dataset_features.get('has_derivatives', 0)
-            ])
+            features.extend(
+                [
+                    self.dataset_features.get("size_gb", 0),
+                    self.dataset_features.get("num_subjects", 0),
+                    self.dataset_features.get("num_sessions", 0),
+                    self.dataset_features.get("has_derivatives", 0),
+                ]
+            )
 
         if self.system_load:
-            features.extend([
-                self.system_load.get('cpu_percent', 0),
-                self.system_load.get('memory_percent', 0),
-                self.system_load.get('gpu_percent', 0)
-            ])
+            features.extend(
+                [
+                    self.system_load.get("cpu_percent", 0),
+                    self.system_load.get("memory_percent", 0),
+                    self.system_load.get("gpu_percent", 0),
+                ]
+            )
 
         return np.array(features, dtype=np.float32)
 
@@ -69,12 +73,12 @@ class State:
 class Action:
     """RL action representation."""
 
-    tool_sequence: List[str]
-    parameters: Dict[str, Any]
-    resource_allocation: Dict[str, float]
+    tool_sequence: list[str]
+    parameters: dict[str, Any]
+    resource_allocation: dict[str, float]
     parallelization_strategy: str
 
-    def to_index(self, action_space: List['Action']) -> int:
+    def to_index(self, action_space: list["Action"]) -> int:
         """Convert action to index."""
         for i, a in enumerate(action_space):
             if a.tool_sequence == self.tool_sequence:
@@ -89,9 +93,9 @@ class Transition:
     state: State
     action: Action
     reward: float
-    next_state: Optional[State]
+    next_state: State | None
     done: bool
-    info: Dict[str, Any] = field(default_factory=dict)
+    info: dict[str, Any] = field(default_factory=dict)
 
 
 class ReplayBuffer(Dataset):
@@ -104,7 +108,7 @@ class ReplayBuffer(Dataset):
             capacity: Maximum buffer size
         """
         self.capacity = capacity
-        self.buffer: List[Transition] = []
+        self.buffer: list[Transition] = []
         self.position = 0
 
     def push(self, transition: Transition):
@@ -115,7 +119,7 @@ class ReplayBuffer(Dataset):
             self.buffer[self.position] = transition
         self.position = (self.position + 1) % self.capacity
 
-    def sample(self, batch_size: int) -> List[Transition]:
+    def sample(self, batch_size: int) -> list[Transition]:
         """Sample batch of transitions."""
         indices = np.random.choice(len(self.buffer), batch_size, replace=False)
         return [self.buffer[i] for i in indices]
@@ -128,12 +132,12 @@ class ReplayBuffer(Dataset):
 
     def save(self, path: Path):
         """Save buffer to disk."""
-        with open(path, 'wb') as f:
+        with open(path, "wb") as f:
             pickle.dump(self.buffer, f)
 
     def load(self, path: Path):
         """Load buffer from disk."""
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             self.buffer = pickle.load(f)
 
 
@@ -224,7 +228,7 @@ class IQLAgent:
         gamma: float = 0.99,
         tau: float = 0.005,
         beta: float = 3.0,
-        device: str = "cuda" if torch.cuda.is_available() else "cpu"
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
         """Initialize IQL agent.
 
@@ -250,12 +254,16 @@ class IQLAgent:
         self.v_network = ValueNetwork(state_dim).to(device)
 
         # Optimizers
-        self.q_optimizer = torch.optim.Adam(self.q_network.parameters(), lr=learning_rate)
-        self.v_optimizer = torch.optim.Adam(self.v_network.parameters(), lr=learning_rate)
+        self.q_optimizer = torch.optim.Adam(
+            self.q_network.parameters(), lr=learning_rate
+        )
+        self.v_optimizer = torch.optim.Adam(
+            self.v_network.parameters(), lr=learning_rate
+        )
 
         self.total_steps = 0
 
-    def update(self, batch: List[Transition]) -> Dict[str, float]:
+    def update(self, batch: list[Transition]) -> dict[str, float]:
         """Update agent with batch of transitions.
 
         Args:
@@ -267,12 +275,22 @@ class IQLAgent:
         # Convert batch to tensors
         states = torch.stack([t.state.to_tensor() for t in batch]).to(self.device)
         actions = torch.tensor([t.action.to_index([]) for t in batch]).to(self.device)
-        rewards = torch.tensor([t.reward for t in batch], dtype=torch.float32).to(self.device)
-        next_states = torch.stack([
-            t.next_state.to_tensor() if t.next_state else torch.zeros_like(states[0])
-            for t in batch
-        ]).to(self.device)
-        dones = torch.tensor([t.done for t in batch], dtype=torch.float32).to(self.device)
+        rewards = torch.tensor([t.reward for t in batch], dtype=torch.float32).to(
+            self.device
+        )
+        next_states = torch.stack(
+            [
+                (
+                    t.next_state.to_tensor()
+                    if t.next_state
+                    else torch.zeros_like(states[0])
+                )
+                for t in batch
+            ]
+        ).to(self.device)
+        dones = torch.tensor([t.done for t in batch], dtype=torch.float32).to(
+            self.device
+        )
 
         # Update value network
         with torch.no_grad():
@@ -309,17 +327,21 @@ class IQLAgent:
         self.total_steps += 1
 
         return {
-            'v_loss': v_loss.item(),
-            'q_loss': q_loss.item(),
-            'v_mean': v_pred.mean().item(),
-            'q_mean': q_pred.mean().item(),
-            'advantage_mean': advantage.mean().item()
+            "v_loss": v_loss.item(),
+            "q_loss": q_loss.item(),
+            "v_mean": v_pred.mean().item(),
+            "q_mean": q_pred.mean().item(),
+            "advantage_mean": advantage.mean().item(),
         }
 
     def _soft_update(self):
         """Soft update target network."""
-        for target_param, param in zip(self.q_target.parameters(), self.q_network.parameters()):
-            target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+        for target_param, param in zip(
+            self.q_target.parameters(), self.q_network.parameters(), strict=False
+        ):
+            target_param.data.copy_(
+                self.tau * param.data + (1 - self.tau) * target_param.data
+            )
 
     def select_action(self, state: State, epsilon: float = 0.0) -> int:
         """Select action using epsilon-greedy policy.
@@ -341,24 +363,27 @@ class IQLAgent:
 
     def save(self, path: Path):
         """Save agent state."""
-        torch.save({
-            'q_network': self.q_network.state_dict(),
-            'q_target': self.q_target.state_dict(),
-            'v_network': self.v_network.state_dict(),
-            'q_optimizer': self.q_optimizer.state_dict(),
-            'v_optimizer': self.v_optimizer.state_dict(),
-            'total_steps': self.total_steps
-        }, path)
+        torch.save(
+            {
+                "q_network": self.q_network.state_dict(),
+                "q_target": self.q_target.state_dict(),
+                "v_network": self.v_network.state_dict(),
+                "q_optimizer": self.q_optimizer.state_dict(),
+                "v_optimizer": self.v_optimizer.state_dict(),
+                "total_steps": self.total_steps,
+            },
+            path,
+        )
 
     def load(self, path: Path):
         """Load agent state."""
         checkpoint = torch.load(path, map_location=self.device)
-        self.q_network.load_state_dict(checkpoint['q_network'])
-        self.q_target.load_state_dict(checkpoint['q_target'])
-        self.v_network.load_state_dict(checkpoint['v_network'])
-        self.q_optimizer.load_state_dict(checkpoint['q_optimizer'])
-        self.v_optimizer.load_state_dict(checkpoint['v_optimizer'])
-        self.total_steps = checkpoint['total_steps']
+        self.q_network.load_state_dict(checkpoint["q_network"])
+        self.q_target.load_state_dict(checkpoint["q_target"])
+        self.v_network.load_state_dict(checkpoint["v_network"])
+        self.q_optimizer.load_state_dict(checkpoint["q_optimizer"])
+        self.v_optimizer.load_state_dict(checkpoint["v_optimizer"])
+        self.total_steps = checkpoint["total_steps"]
 
 
 class CQLAgent(IQLAgent):
@@ -372,7 +397,7 @@ class CQLAgent(IQLAgent):
         gamma: float = 0.99,
         tau: float = 0.005,
         alpha: float = 0.2,
-        device: str = "cuda" if torch.cuda.is_available() else "cpu"
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
         """Initialize CQL agent.
 
@@ -385,11 +410,13 @@ class CQLAgent(IQLAgent):
             alpha: CQL regularization weight
             device: Computation device
         """
-        super().__init__(state_dim, action_dim, learning_rate, gamma, tau, device=device)
+        super().__init__(
+            state_dim, action_dim, learning_rate, gamma, tau, device=device
+        )
         self.alpha = alpha
         self.action_dim = action_dim
 
-    def update(self, batch: List[Transition]) -> Dict[str, float]:
+    def update(self, batch: list[Transition]) -> dict[str, float]:
         """Update agent with CQL objective.
 
         Args:
@@ -401,12 +428,22 @@ class CQLAgent(IQLAgent):
         # Convert batch to tensors
         states = torch.stack([t.state.to_tensor() for t in batch]).to(self.device)
         actions = torch.tensor([t.action.to_index([]) for t in batch]).to(self.device)
-        rewards = torch.tensor([t.reward for t in batch], dtype=torch.float32).to(self.device)
-        next_states = torch.stack([
-            t.next_state.to_tensor() if t.next_state else torch.zeros_like(states[0])
-            for t in batch
-        ]).to(self.device)
-        dones = torch.tensor([t.done for t in batch], dtype=torch.float32).to(self.device)
+        rewards = torch.tensor([t.reward for t in batch], dtype=torch.float32).to(
+            self.device
+        )
+        next_states = torch.stack(
+            [
+                (
+                    t.next_state.to_tensor()
+                    if t.next_state
+                    else torch.zeros_like(states[0])
+                )
+                for t in batch
+            ]
+        ).to(self.device)
+        dones = torch.tensor([t.done for t in batch], dtype=torch.float32).to(
+            self.device
+        )
 
         # Compute Q targets
         with torch.no_grad():
@@ -421,7 +458,9 @@ class CQLAgent(IQLAgent):
         # CQL regularization
         q_values = self.q_network(states)
         logsumexp = torch.logsumexp(q_values, dim=1)
-        cql_loss = (logsumexp - q_values.gather(1, actions.unsqueeze(1)).squeeze()).mean()
+        cql_loss = (
+            logsumexp - q_values.gather(1, actions.unsqueeze(1)).squeeze()
+        ).mean()
 
         # Total loss
         q_loss = td_loss + self.alpha * cql_loss
@@ -437,11 +476,11 @@ class CQLAgent(IQLAgent):
         self.total_steps += 1
 
         return {
-            'td_loss': td_loss.item(),
-            'cql_loss': cql_loss.item(),
-            'q_loss': q_loss.item(),
-            'q_mean': q_pred.mean().item(),
-            'q_std': q_pred.std().item()
+            "td_loss": td_loss.item(),
+            "cql_loss": cql_loss.item(),
+            "q_loss": q_loss.item(),
+            "q_mean": q_pred.mean().item(),
+            "q_std": q_pred.std().item(),
         }
 
 
@@ -454,7 +493,7 @@ class RLOptimizer:
         state_dim: int = 128,
         action_dim: int = 50,
         buffer_size: int = 100000,
-        model_dir: Path = Path("models/rl")
+        model_dir: Path = Path("models/rl"),
     ):
         """Initialize RL optimizer.
 
@@ -496,11 +535,8 @@ class RLOptimizer:
         self.buffer.push(transition)
 
     def train(
-        self,
-        num_epochs: int = 100,
-        batch_size: int = 256,
-        save_interval: int = 10
-    ) -> List[Dict[str, float]]:
+        self, num_epochs: int = 100, batch_size: int = 256, save_interval: int = 10
+    ) -> list[dict[str, float]]:
         """Train the RL agent.
 
         Args:
@@ -512,7 +548,9 @@ class RLOptimizer:
             Training statistics
         """
         if len(self.buffer) < batch_size:
-            logger.warning(f"Insufficient data in buffer: {len(self.buffer)} < {batch_size}")
+            logger.warning(
+                f"Insufficient data in buffer: {len(self.buffer)} < {batch_size}"
+            )
             return []
 
         logger.info(f"Starting training for {num_epochs} epochs")
@@ -533,7 +571,7 @@ class RLOptimizer:
                 key: np.mean([s[key] for s in epoch_stats])
                 for key in epoch_stats[0].keys()
             }
-            epoch_summary['epoch'] = epoch
+            epoch_summary["epoch"] = epoch
             stats.append(epoch_summary)
 
             # Log progress
@@ -556,10 +594,8 @@ class RLOptimizer:
         return stats
 
     def optimize_plan(
-        self,
-        state: State,
-        action_space: List[Action]
-    ) -> Tuple[Action, float]:
+        self, state: State, action_space: list[Action]
+    ) -> tuple[Action, float]:
         """Optimize execution plan using learned policy.
 
         Args:
@@ -575,7 +611,7 @@ class RLOptimizer:
             q_values = self.agent.q_network(state_tensor).squeeze().cpu().numpy()
 
         # Select best action
-        best_idx = np.argmax(q_values[:len(action_space)])
+        best_idx = np.argmax(q_values[: len(action_space)])
         best_action = action_space[best_idx]
         best_value = q_values[best_idx]
 
@@ -584,9 +620,8 @@ class RLOptimizer:
         return best_action, best_value
 
     def evaluate_performance(
-        self,
-        test_transitions: List[Transition]
-    ) -> Dict[str, float]:
+        self, test_transitions: list[Transition]
+    ) -> dict[str, float]:
         """Evaluate agent performance.
 
         Args:
@@ -606,15 +641,19 @@ class RLOptimizer:
         for t in test_transitions:
             with torch.no_grad():
                 state_tensor = t.state.to_tensor().unsqueeze(0).to(self.agent.device)
-                value = self.agent.v_network(state_tensor).item() if hasattr(self.agent, 'v_network') else 0
+                value = (
+                    self.agent.v_network(state_tensor).item()
+                    if hasattr(self.agent, "v_network")
+                    else 0
+                )
                 values.append(value)
 
         return {
-            'total_reward': total_reward,
-            'avg_reward': avg_reward,
-            'avg_value': np.mean(values) if values else 0,
-            'value_std': np.std(values) if values else 0,
-            'num_episodes': len(test_transitions)
+            "total_reward": total_reward,
+            "avg_reward": avg_reward,
+            "avg_value": np.mean(values) if values else 0,
+            "value_std": np.std(values) if values else 0,
+            "num_episodes": len(test_transitions),
         }
 
     def save(self, path: Path):
@@ -631,7 +670,7 @@ class RLOptimizer:
 
         # Save statistics
         stats_path = path.parent / f"{path.stem}_stats.json"
-        with open(stats_path, 'w') as f:
+        with open(stats_path, "w") as f:
             json.dump(self.training_stats, f, indent=2, default=str)
 
         logger.info(f"Saved optimizer to {path}")
@@ -652,13 +691,13 @@ class RLOptimizer:
         # Load statistics
         stats_path = path.parent / f"{path.stem}_stats.json"
         if stats_path.exists():
-            with open(stats_path, 'r') as f:
+            with open(stats_path) as f:
                 self.training_stats = json.load(f)
 
         logger.info(f"Loaded optimizer from {path}")
 
 
-def create_rl_optimizer(config: Dict[str, Any]) -> RLOptimizer:
+def create_rl_optimizer(config: dict[str, Any]) -> RLOptimizer:
     """Factory function to create RL optimizer.
 
     Args:
@@ -668,9 +707,9 @@ def create_rl_optimizer(config: Dict[str, Any]) -> RLOptimizer:
         RL optimizer instance
     """
     return RLOptimizer(
-        algorithm=config.get('algorithm', 'iql'),
-        state_dim=config.get('state_dim', 128),
-        action_dim=config.get('action_dim', 50),
-        buffer_size=config.get('buffer_size', 100000),
-        model_dir=Path(config.get('model_dir', 'models/rl'))
+        algorithm=config.get("algorithm", "iql"),
+        state_dim=config.get("state_dim", 128),
+        action_dim=config.get("action_dim", 50),
+        buffer_size=config.get("buffer_size", 100000),
+        model_dir=Path(config.get("model_dir", "models/rl")),
     )

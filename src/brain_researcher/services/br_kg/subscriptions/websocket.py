@@ -3,13 +3,15 @@
 import asyncio
 import json
 import logging
-from datetime import datetime
-from typing import Dict, List, Set, Any, Optional, Callable
-from enum import Enum
 import uuid
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter
-from pydantic import BaseModel, Field
+from collections.abc import Callable
+from datetime import datetime
+from enum import Enum
+from typing import Any
+
 import redis.asyncio as redis
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +20,7 @@ router = APIRouter()
 
 class EventType(str, Enum):
     """Types of graph events."""
+
     NODE_CREATED = "node_created"
     NODE_UPDATED = "node_updated"
     NODE_DELETED = "node_deleted"
@@ -31,30 +34,34 @@ class EventType(str, Enum):
 
 class SubscriptionFilter(BaseModel):
     """Filter criteria for subscriptions."""
-    event_types: Optional[List[EventType]] = Field(default=None)
-    node_types: Optional[List[str]] = Field(default=None)
-    edge_types: Optional[List[str]] = Field(default=None)
-    node_ids: Optional[List[str]] = Field(default=None)
-    properties: Optional[Dict[str, Any]] = Field(default=None)
+
+    event_types: list[EventType] | None = Field(default=None)
+    node_types: list[str] | None = Field(default=None)
+    edge_types: list[str] | None = Field(default=None)
+    node_ids: list[str] | None = Field(default=None)
+    properties: dict[str, Any] | None = Field(default=None)
 
 
 class GraphEvent(BaseModel):
     """Graph change event."""
+
     event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     event_type: EventType
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    data: Dict[str, Any]
-    metadata: Optional[Dict[str, Any]] = None
+    data: dict[str, Any]
+    metadata: dict[str, Any] | None = None
 
 
 class Subscription:
     """Represents a client subscription."""
 
-    def __init__(self,
-                subscription_id: str,
-                client_id: str,
-                filter: SubscriptionFilter,
-                callback: Optional[Callable] = None):
+    def __init__(
+        self,
+        subscription_id: str,
+        client_id: str,
+        filter: SubscriptionFilter,
+        callback: Callable | None = None,
+    ):
         """Initialize subscription.
 
         Args:
@@ -86,25 +93,25 @@ class Subscription:
 
         # Check node type
         if self.filter.node_types:
-            node_type = event.data.get('node_type') or event.data.get('type')
+            node_type = event.data.get("node_type") or event.data.get("type")
             if node_type not in self.filter.node_types:
                 return False
 
         # Check edge type
         if self.filter.edge_types:
-            edge_type = event.data.get('edge_type') or event.data.get('type')
+            edge_type = event.data.get("edge_type") or event.data.get("type")
             if edge_type not in self.filter.edge_types:
                 return False
 
         # Check node IDs
         if self.filter.node_ids:
-            node_id = event.data.get('node_id') or event.data.get('id')
+            node_id = event.data.get("node_id") or event.data.get("id")
             if node_id not in self.filter.node_ids:
                 return False
 
         # Check properties
         if self.filter.properties:
-            event_props = event.data.get('properties', {})
+            event_props = event.data.get("properties", {})
             for key, value in self.filter.properties.items():
                 if event_props.get(key) != value:
                     return False
@@ -117,13 +124,15 @@ class ConnectionManager:
 
     def __init__(self):
         """Initialize connection manager."""
-        self.active_connections: Dict[str, WebSocket] = {}
-        self.subscriptions: Dict[str, Subscription] = {}
-        self.client_subscriptions: Dict[str, Set[str]] = {}  # client_id -> subscription_ids
-        self.redis_client: Optional[redis.Redis] = None
-        self.pubsub: Optional[redis.client.PubSub] = None
+        self.active_connections: dict[str, WebSocket] = {}
+        self.subscriptions: dict[str, Subscription] = {}
+        self.client_subscriptions: dict[str, set[str]] = (
+            {}
+        )  # client_id -> subscription_ids
+        self.redis_client: redis.Redis | None = None
+        self.pubsub: redis.client.PubSub | None = None
         self.event_queue: asyncio.Queue = asyncio.Queue()
-        self.background_tasks: List[asyncio.Task] = []
+        self.background_tasks: list[asyncio.Task] = []
 
     async def initialize(self, redis_url: str = "redis://localhost:6379"):
         """Initialize Redis connection for pub/sub.
@@ -160,11 +169,14 @@ class ConnectionManager:
         self.client_subscriptions[client_id] = set()
 
         # Send connection confirmation
-        await self.send_to_client(client_id, {
-            "type": "connection_established",
-            "client_id": client_id,
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        await self.send_to_client(
+            client_id,
+            {
+                "type": "connection_established",
+                "client_id": client_id,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
 
         logger.info(f"Client {client_id} connected")
 
@@ -187,9 +199,7 @@ class ConnectionManager:
 
         logger.info(f"Client {client_id} disconnected")
 
-    async def subscribe(self,
-                       client_id: str,
-                       filter: SubscriptionFilter) -> str:
+    async def subscribe(self, client_id: str, filter: SubscriptionFilter) -> str:
         """Create subscription for client.
 
         Args:
@@ -202,9 +212,7 @@ class ConnectionManager:
         subscription_id = str(uuid.uuid4())
 
         subscription = Subscription(
-            subscription_id=subscription_id,
-            client_id=client_id,
-            filter=filter
+            subscription_id=subscription_id, client_id=client_id, filter=filter
         )
 
         self.subscriptions[subscription_id] = subscription
@@ -214,11 +222,14 @@ class ConnectionManager:
         self.client_subscriptions[client_id].add(subscription_id)
 
         # Send confirmation
-        await self.send_to_client(client_id, {
-            "type": EventType.SUBSCRIPTION_CONFIRMED.value,
-            "subscription_id": subscription_id,
-            "filter": filter.dict()
-        })
+        await self.send_to_client(
+            client_id,
+            {
+                "type": EventType.SUBSCRIPTION_CONFIRMED.value,
+                "subscription_id": subscription_id,
+                "filter": filter.dict(),
+            },
+        )
 
         logger.info(f"Created subscription {subscription_id} for client {client_id}")
         return subscription_id
@@ -249,10 +260,7 @@ class ConnectionManager:
 
         # Also publish to Redis if available
         if self.redis_client:
-            await self.redis_client.publish(
-                "graph_events",
-                event.json()
-            )
+            await self.redis_client.publish("graph_events", event.json())
 
     async def _process_event_queue(self):
         """Process events from queue."""
@@ -273,7 +281,7 @@ class ConnectionManager:
             try:
                 message = await self.pubsub.get_message(ignore_subscribe_messages=True)
                 if message:
-                    event_data = json.loads(message['data'])
+                    event_data = json.loads(message["data"])
                     event = GraphEvent(**event_data)
                     await self._distribute_event(event)
             except Exception as e:
@@ -295,8 +303,8 @@ class ConnectionManager:
                     subscription.client_id,
                     {
                         "subscription_id": subscription.subscription_id,
-                        "event": event.dict()
-                    }
+                        "event": event.dict(),
+                    },
                 )
 
                 # Call callback if exists
@@ -306,7 +314,7 @@ class ConnectionManager:
                     except Exception as e:
                         logger.error(f"Callback error: {e}")
 
-    async def send_to_client(self, client_id: str, data: Dict[str, Any]):
+    async def send_to_client(self, client_id: str, data: dict[str, Any]):
         """Send data to specific client.
 
         Args:
@@ -321,7 +329,7 @@ class ConnectionManager:
                 logger.error(f"Error sending to client {client_id}: {e}")
                 await self.disconnect(client_id)
 
-    async def broadcast(self, data: Dict[str, Any]):
+    async def broadcast(self, data: dict[str, Any]):
         """Broadcast to all connected clients.
 
         Args:
@@ -339,7 +347,7 @@ class ConnectionManager:
         for client_id in disconnected:
             await self.disconnect(client_id)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get connection and subscription statistics.
 
         Returns:
@@ -356,7 +364,7 @@ class ConnectionManager:
             "total_subscriptions": len(self.subscriptions),
             "clients": list(self.active_connections.keys()),
             "event_counts": event_counts,
-            "queue_size": self.event_queue.qsize()
+            "queue_size": self.event_queue.qsize(),
         }
 
     async def cleanup(self):

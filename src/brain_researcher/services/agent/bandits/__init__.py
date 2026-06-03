@@ -1,9 +1,9 @@
 """Contextual bandits for tool selection and parameter optimization."""
 
 from .contextual_bandit import ContextualBandit
-from .thompson_sampling import ThompsonSampling, BayesianLinearRegression
-from .ucb_algorithm import UCBAlgorithm, LinUCB
+from .thompson_sampling import BayesianLinearRegression, ThompsonSampling
 from .tool_selector import BanditToolSelector
+from .ucb_algorithm import LinUCB, UCBAlgorithm
 
 __all__ = [
     "ContextualBandit",
@@ -11,5 +11,5 @@ __all__ = [
     "BayesianLinearRegression",
     "UCBAlgorithm",
     "LinUCB",
-    "BanditToolSelector"
+    "BanditToolSelector",
 ]

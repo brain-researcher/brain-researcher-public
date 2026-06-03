@@ -5,7 +5,7 @@ Unit tests for the tool registry system.
 import os
 import tempfile
 import unittest
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import BaseModel, Field
@@ -67,17 +67,19 @@ class TestToolRegistry:
 
         # Should discover all real tools from various tool modules
         # We expect at least 25 tools from the current implementation
-        assert len(registry.tools) >= 25, f"Expected at least 25 tools, got {len(registry.tools)}"
+        assert (
+            len(registry.tools) >= 25
+        ), f"Expected at least 25 tools, got {len(registry.tools)}"
 
         # Verify some key real tools are present
         expected_tools = [
-            'glm_analysis',           # From FMRITools
-            'validate_bids',          # From BIDSTools
-            'graph_query',            # From BRKGTools
-            'openneuro_download',     # From ArchiveTools
-            'run_fmriprep',          # From PipelineTools
-            'mriqc_group_report',    # From QCTools
-            'coreg_qc_gallery',      # From QCTools
+            "glm_analysis",  # From FMRITools
+            "validate_bids",  # From BIDSTools
+            "graph_query",  # From BRKGTools
+            "openneuro_download",  # From ArchiveTools
+            "run_fmriprep",  # From PipelineTools
+            "mriqc_group_report",  # From QCTools
+            "coreg_qc_gallery",  # From QCTools
         ]
 
         for tool_name in expected_tools:
@@ -109,7 +111,9 @@ class TestToolRegistry:
         registry.register_tool(tool1)
 
         # Should log warning but still register
-        with patch("brain_researcher.services.tools.tool_registry.logger") as mock_logger:
+        with patch(
+            "brain_researcher.services.tools.tool_registry.logger"
+        ) as mock_logger:
             registry.register_tool(tool2)
             mock_logger.warning.assert_called_once()
 
@@ -397,11 +401,16 @@ class CustomTool(BRKGToolWrapper):
 
         with patch("importlib.import_module", return_value=mock_module):
             # Capture log output to verify error was logged
-            with self.assertLogs('brain_researcher.services.tools.tool_registry', level='ERROR') as log_context:
+            with self.assertLogs(
+                "brain_researcher.services.tools.tool_registry", level="ERROR"
+            ) as log_context:
                 tools = DynamicToolLoader.load_tools_from_module("mock.module")
 
                 # Should have logged an error for the failing tool
-                assert any("Failed to instantiate FailingTool" in msg for msg in log_context.output)
+                assert any(
+                    "Failed to instantiate FailingTool" in msg
+                    for msg in log_context.output
+                )
 
                 # Should still load the good tool
                 assert len(tools) == 1
@@ -417,14 +426,18 @@ class TestRegistryIntegration:
         registry = ToolRegistry(auto_discover=True)
 
         # Test 1: Verify registry has real tools
-        assert len(registry.tools) >= 25, f"Expected at least 25 tools, got {len(registry.tools)}"
+        assert (
+            len(registry.tools) >= 25
+        ), f"Expected at least 25 tools, got {len(registry.tools)}"
 
         # Test 2: Tool selection for GLM analysis task
         task = "I need to run GLM analysis on fMRI data"
         selected_tools = registry.get_tools_for_task(task, k=3)
 
         # Should find relevant tools based on keyword matching
-        assert len(selected_tools) >= 1, "Should find at least one tool for GLM analysis"
+        assert (
+            len(selected_tools) >= 1
+        ), "Should find at least one tool for GLM analysis"
         tool_names = [t.get_tool_name() for t in selected_tools]
 
         # GLM analysis tool should be in the results
@@ -438,16 +451,23 @@ class TestRegistryIntegration:
         kg_tool_names = [t.get_tool_name() for t in kg_tools]
 
         # Should find concept-related tools
-        expected_kg_tools = ['find_related_concepts', 'coordinate_to_concept', 'graph_query']
-        assert any(tool in kg_tool_names for tool in expected_kg_tools),\
-            f"Expected at least one of {expected_kg_tools} in {kg_tool_names}"
+        expected_kg_tools = [
+            "find_related_concepts",
+            "coordinate_to_concept",
+            "graph_query",
+        ]
+        assert any(
+            tool in kg_tool_names for tool in expected_kg_tools
+        ), f"Expected at least one of {expected_kg_tools} in {kg_tool_names}"
 
         # Test 4: Complex workflow with multiple steps
         complex_task = "Run GLM analysis, then find concepts related to the activation, and search literature"
         workflow_tools = registry.get_tools_for_task(complex_task, k=5)
 
-        assert len(workflow_tools) >= 3, "Should find multiple tools for complex workflow"
-        workflow_names = [t.get_tool_name() for t in workflow_tools]
+        assert (
+            len(workflow_tools) >= 3
+        ), "Should find multiple tools for complex workflow"
+        [t.get_tool_name() for t in workflow_tools]
 
         # Test 5: Workflow suggestion
         sequences = registry.suggest_tools_sequence(complex_task)
@@ -455,7 +475,9 @@ class TestRegistryIntegration:
 
         # Test 6: Get all tools as LangChain tools
         lc_tools = registry.get_langchain_tools()
-        assert len(lc_tools) == len(registry.tools), "Should convert all tools to LangChain format"
+        assert len(lc_tools) == len(
+            registry.tools
+        ), "Should convert all tools to LangChain format"
 
         # Test 7: Tool info retrieval
         info = registry.get_tool_info()

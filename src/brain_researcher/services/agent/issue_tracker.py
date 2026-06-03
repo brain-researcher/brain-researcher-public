@@ -10,7 +10,8 @@ import asyncio
 import logging
 import os
 import re
-from typing import Any, Callable, Optional, Protocol, Tuple
+from collections.abc import Callable
+from typing import Any, Protocol
 
 from brain_researcher.services.agent.mcp_caller import create_linear_mcp_caller
 
@@ -44,7 +45,7 @@ def redact_pii(text: str) -> str:
     return out
 
 
-def _resolve_env(new_key: str, legacy_key: str) -> Tuple[Optional[str], bool]:
+def _resolve_env(new_key: str, legacy_key: str) -> tuple[str | None, bool]:
     """Resolve env with one-release compatibility."""
     new_val = os.getenv(new_key)
     if new_val:
@@ -58,7 +59,7 @@ def _resolve_env(new_key: str, legacy_key: str) -> Tuple[Optional[str], bool]:
     return None, False
 
 
-def _parse_csv(raw: Optional[str]) -> list[str]:
+def _parse_csv(raw: str | None) -> list[str]:
     if not raw:
         return []
     return [part.strip() for part in raw.split(",") if part.strip()]
@@ -79,14 +80,14 @@ class IssueTrackerBackend(Protocol):
         title: str,
         description: str,
         state: Any,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Create an issue and return provider issue id."""
 
     async def update_issue_state(
         self,
         issue_id: str,
         state: Any,
-        comment: Optional[str] = None,
+        comment: str | None = None,
     ) -> bool:
         """Update issue state and optionally add comment."""
 
@@ -99,10 +100,10 @@ class LinearIssueTrackerBackend:
 
     def __init__(
         self,
-        mcp_caller: Optional[Callable] = None,
-        team_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        labels: Optional[list[str]] = None,
+        mcp_caller: Callable | None = None,
+        team_id: str | None = None,
+        project_id: str | None = None,
+        labels: list[str] | None = None,
     ) -> None:
         team_env, _ = _resolve_env("BR_PLAN_TRACKER_LINEAR_TEAM_ID", "LINEAR_TEAM_ID")
         project_env, _ = _resolve_env(
@@ -135,7 +136,7 @@ class LinearIssueTrackerBackend:
             "cancelled": state_cancelled or "Cancelled",
         }
 
-        self._available: Optional[bool] = None
+        self._available: bool | None = None
         self._state_ids: dict[str, str] = {}
 
     @property
@@ -152,7 +153,7 @@ class LinearIssueTrackerBackend:
         value = getattr(state, "value", state)
         return str(value).lower().strip()
 
-    async def _call_mcp(self, tool_name: str, params: dict[str, Any]) -> Optional[dict]:
+    async def _call_mcp(self, tool_name: str, params: dict[str, Any]) -> dict | None:
         if not self.mcp_caller:
             return None
 
@@ -164,7 +165,7 @@ class LinearIssueTrackerBackend:
             logger.warning("MCP call %s failed: %s", tool_name, exc)
             return None
 
-    async def _get_state_id(self, state_name: str) -> Optional[str]:
+    async def _get_state_id(self, state_name: str) -> str | None:
         if state_name in self._state_ids:
             return self._state_ids[state_name]
 
@@ -174,9 +175,7 @@ class LinearIssueTrackerBackend:
                 {"teamId": self.team_id},
             )
             nodes = (
-                result.get("team", {})
-                .get("states", {})
-                .get("nodes", [])
+                result.get("team", {}).get("states", {}).get("nodes", [])
                 if result
                 else []
             )
@@ -196,7 +195,7 @@ class LinearIssueTrackerBackend:
         title: str,
         description: str,
         state: Any,
-    ) -> Optional[str]:
+    ) -> str | None:
         del state  # Initial state for Linear is controlled by workflow config.
 
         if not self.available:
@@ -240,7 +239,7 @@ class LinearIssueTrackerBackend:
         self,
         issue_id: str,
         state: Any,
-        comment: Optional[str] = None,
+        comment: str | None = None,
     ) -> bool:
         if not self.available or not issue_id:
             return False
@@ -295,15 +294,17 @@ class LinearIssueTrackerBackend:
 
 
 def create_issue_tracker_backend(
-    provider: Optional[str] = None,
-    mcp_caller: Optional[Callable] = None,
-) -> Optional[IssueTrackerBackend]:
+    provider: str | None = None,
+    mcp_caller: Callable | None = None,
+) -> IssueTrackerBackend | None:
     """Create configured issue tracker backend.
 
     Env:
       - BR_PLAN_TRACKER_PROVIDER: auto|none|linear (default: auto)
     """
-    selected = (provider or os.getenv("BR_PLAN_TRACKER_PROVIDER", "auto")).strip().lower()
+    selected = (
+        (provider or os.getenv("BR_PLAN_TRACKER_PROVIDER", "auto")).strip().lower()
+    )
     disabled_values = {"none", "off", "disabled", "false", "0"}
 
     if selected in disabled_values:
@@ -316,5 +317,7 @@ def create_issue_tracker_backend(
             return backend
         return None
 
-    logger.warning("Unknown tracker provider '%s'; external tracker disabled.", selected)
+    logger.warning(
+        "Unknown tracker provider '%s'; external tracker disabled.", selected
+    )
     return None

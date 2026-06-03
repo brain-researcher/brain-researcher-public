@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
 
 import yaml
 
@@ -25,10 +25,10 @@ class TaxonomySuggestion:
     method: str
     source: str
     confidence: float
-    rule_id: Optional[str]
-    evidence: Dict[str, object]
+    rule_id: str | None
+    evidence: dict[str, object]
 
-    def relationship_properties(self) -> Dict[str, object]:
+    def relationship_properties(self) -> dict[str, object]:
         props = {
             "source": self.source,
             "method": self.method,
@@ -48,13 +48,17 @@ class TaxonomyLinker:
 
     def __init__(
         self,
-        entities_path: Optional[str | Path] = None,
-        cao_map_path: Optional[str | Path] = None,
+        entities_path: str | Path | None = None,
+        cao_map_path: str | Path | None = None,
     ) -> None:
         repo_root = Path(__file__).resolve().parents[5]
         taxonomy_dir = repo_root / "semantics" / "taxonomy"
-        legacy_cao_map = repo_root / "services" / "br_kg" / "mappings" / "cao_to_trm.yaml"
-        self.entities_path = Path(entities_path) if entities_path else taxonomy_dir / "entities.json"
+        legacy_cao_map = (
+            repo_root / "services" / "br_kg" / "mappings" / "cao_to_trm.yaml"
+        )
+        self.entities_path = (
+            Path(entities_path) if entities_path else taxonomy_dir / "entities.json"
+        )
         self.cao_map_path = resolve_mapping_path(
             "cao_to_trm",
             requested_path=cao_map_path,
@@ -66,7 +70,7 @@ class TaxonomyLinker:
         self._cao_to_trm = self._load_cao_to_trm_map()
 
     # ------------------------------------------------------------------ public API
-    def suggestions_for_task(self, task: Dict[str, object]) -> List[TaxonomySuggestion]:
+    def suggestions_for_task(self, task: dict[str, object]) -> list[TaxonomySuggestion]:
         """Return suggestions for a single Neurostore task payload."""
 
         match = task.get("taxonomy_match") if isinstance(task, dict) else None
@@ -94,7 +98,7 @@ class TaxonomyLinker:
 
         evidence = {"taxonomy": {"match": match}}
 
-        suggestions: List[TaxonomySuggestion] = []
+        suggestions: list[TaxonomySuggestion] = []
         for concept_id in concept_ids:
             resolved = self._resolve_cao_mapping(concept_id)
             suggestions.append(
@@ -118,7 +122,7 @@ class TaxonomyLinker:
         self._cao_to_trm = self._load_cao_to_trm_map()
 
     # ------------------------------------------------------------------ helpers
-    def _load_entities(self) -> Dict[str, Dict[str, object]]:
+    def _load_entities(self) -> dict[str, dict[str, object]]:
         try:
             payload = json.loads(self.entities_path.read_text(encoding="utf-8"))
             return payload.get("entities", {})
@@ -129,8 +133,8 @@ class TaxonomyLinker:
             logger.warning("Failed to load taxonomy entities: %s", exc)
             return {}
 
-    def _build_canonical_concept_map(self) -> Dict[str, List[str]]:
-        cache: Dict[str, List[str]] = {}
+    def _build_canonical_concept_map(self) -> dict[str, list[str]]:
+        cache: dict[str, list[str]] = {}
         for canonical_id in self.entities.keys():
             targets = self._resolve_concept_ids(canonical_id)
             if targets:
@@ -140,8 +144,8 @@ class TaxonomyLinker:
     def _resolve_concept_ids(
         self,
         entity_id: str,
-        _visited: Optional[set[str]] = None,
-    ) -> List[str]:
+        _visited: set[str] | None = None,
+    ) -> list[str]:
         entity = self.entities.get(entity_id)
         if not entity:
             return []
@@ -152,7 +156,7 @@ class TaxonomyLinker:
             return []
         _visited.add(entity_id)
 
-        concept_ids: List[str] = []
+        concept_ids: list[str] = []
         links = entity.get("links") or {}
         cogat = links.get("cogat") if isinstance(links, dict) else None
         if cogat:
@@ -163,9 +167,9 @@ class TaxonomyLinker:
 
         return list(dict.fromkeys(concept_ids))
 
-    def _resolve_confidence(self, match: Dict[str, object]) -> float:
+    def _resolve_confidence(self, match: dict[str, object]) -> float:
         value = match.get("confidence")
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             try:
                 return float(value)
             except (TypeError, ValueError):  # pragma: no cover
@@ -178,11 +182,13 @@ class TaxonomyLinker:
             return 0.8
         return 0.75
 
-    def _load_cao_to_trm_map(self) -> Dict[str, str]:
+    def _load_cao_to_trm_map(self) -> dict[str, str]:
         try:
             if self.cao_map_path.exists():
-                rows = yaml.safe_load(self.cao_map_path.read_text(encoding="utf-8")) or []
-                mapping: Dict[str, str] = {}
+                rows = (
+                    yaml.safe_load(self.cao_map_path.read_text(encoding="utf-8")) or []
+                )
+                mapping: dict[str, str] = {}
                 for row in rows:
                     cao_id = str(row.get("cao_id", "")).upper()
                     trm_id = row.get("trm_id")
@@ -213,8 +219,7 @@ class TaxonomyLinker:
 
 def iter_taxonomy_suggestions(
     linker: TaxonomyLinker,
-    tasks: Iterable[Dict[str, object]],
+    tasks: Iterable[dict[str, object]],
 ) -> Iterable[TaxonomySuggestion]:
     for task in tasks:
-        for suggestion in linker.suggestions_for_task(task):
-            yield suggestion
+        yield from linker.suggestions_for_task(task)
