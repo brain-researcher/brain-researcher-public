@@ -12,7 +12,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 
 import redis
@@ -155,7 +155,7 @@ class ExecutionTracker:
         execution_id: str | None = None,
         redis_client: redis.Redis | None = None,
         persistence_ttl: int = 86400,  # 24 hours
-        update_callback: callable | None = None,
+        update_callback: Callable[[dict[str, Any]], Any] | None = None,
     ):
         """
         Initialize execution tracker.
@@ -700,9 +700,9 @@ class AsyncExecutionTracker(ExecutionTracker):
     def __init__(self, *args, **kwargs):
         """Initialize async tracker."""
         super().__init__(*args, **kwargs)
-        self.update_listeners: list[callable] = []
+        self.update_listeners: list[Callable[[dict[str, Any]], Any]] = []
 
-    async def add_listener(self, listener: callable):
+    async def add_listener(self, listener: Callable[[dict[str, Any]], Any]):
         """Add an update listener."""
         self.update_listeners.append(listener)
 

@@ -8,13 +8,86 @@ command automatically loads the nearest `.env` file unless
 still the most reliable way to make keys available across new terminals and
 non-CLI processes.
 
+For Docker, the usual path is:
+
+1. Create one LLM provider key.
+2. Copy `.env.example` to `.env`.
+3. Generate local service secrets.
+4. Fill `.env` with the generated secrets and the provider key.
+
+Never commit the filled `.env` file. Do not put secret API keys in
+`NEXT_PUBLIC_*` variables because those can be exposed to the browser bundle.
+
+## Get an LLM Provider Key
+
+Choose one provider to start. More can be added later.
+
+| Provider | Create/manage keys | Env var | Example `DEFAULT_LLM_MODEL` |
+|---|---|---|---|
+| Google Gemini | [Google AI Studio API keys](https://aistudio.google.com/app/apikey) | `GEMINI_API_KEY` | `gemini-3-flash-preview` |
+| OpenAI | [OpenAI API keys](https://platform.openai.com/api-keys) | `OPENAI_API_KEY` | `gpt-4o` |
+| Anthropic | [Anthropic Console keys](https://console.anthropic.com/settings/keys) | `ANTHROPIC_API_KEY` | `claude-3-5-sonnet` |
+| DeepSeek | [DeepSeek API keys](https://platform.deepseek.com/api_keys) | `DEEPSEEK_API_KEY` | `deepseek-chat` |
+
+## Project `.env` Example
+
+Create the local file:
+
+```bash
+cp .env.example .env
+```
+
+Generate local service secrets:
+
+```bash
+python - <<'PY'
+import secrets
+
+print("NEO4J_PASSWORD=" + secrets.token_urlsafe(24))
+print("JWT_SECRET_KEY=" + secrets.token_urlsafe(48))
+print("NEXTAUTH_SECRET=" + secrets.token_urlsafe(48))
+PY
+```
+
+Paste the generated values into `.env`, then add one provider key. For example,
+with Gemini:
+
+```env
+NEO4J_PASSWORD=replace_with_generated_value
+JWT_SECRET_KEY=replace_with_generated_value
+NEXTAUTH_SECRET=replace_with_generated_value
+
+GEMINI_API_KEY=replace_with_key_from_google_ai_studio
+DEFAULT_LLM_MODEL=gemini-3-flash-preview
+```
+
+Equivalent provider alternatives:
+
+```env
+OPENAI_API_KEY=replace_with_key_from_openai
+DEFAULT_LLM_MODEL=gpt-4o
+```
+
+```env
+ANTHROPIC_API_KEY=replace_with_key_from_anthropic
+DEFAULT_LLM_MODEL=claude-3-5-sonnet
+```
+
+```env
+DEEPSEEK_API_KEY=replace_with_key_from_deepseek
+DEFAULT_LLM_MODEL=deepseek-chat
+```
+
+`docker compose up` automatically reads `.env` from the repository root. For
+manual service runs, use one of the options below.
+
 ### Option 1: Shell Profile (Recommended)
 
 Add to `~/.bashrc` or `~/.zshrc`:
 
 ```bash
-export GEMINI_API_KEY="your-api-key-here"
-export DEFAULT_LLM_MODEL="gemini-2.5-pro"
+export GEMINI_API_KEY="replace_with_key_from_google_ai_studio"
+export DEFAULT_LLM_MODEL="gemini-3-flash-preview"
 ```
 
 Then reload:
@@ -40,8 +113,8 @@ source ~/.bashrc  # or source ~/.zshrc
 
 3. Create `.envrc` in project root (git-ignored):
 ```bash
-export GEMINI_API_KEY="your-api-key-here"
-export DEFAULT_LLM_MODEL="gemini-2.5-pro"
+export GEMINI_API_KEY="replace_with_key_from_google_ai_studio"
+export DEFAULT_LLM_MODEL="gemini-3-flash-preview"
 ```
 
 4. Allow direnv:
@@ -60,14 +133,14 @@ br serve agent --port 8000
 
 | Provider | Environment Variable | Example Model |
 |----------|---------------------|---------------|
-| Google Gemini | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-2.5-pro` |
-| OpenAI | `OPENAI_API_KEY` | `gpt-4` or `gpt-3.5-turbo` |
+| Google Gemini | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-3-flash-preview` |
+| OpenAI | `OPENAI_API_KEY` | `gpt-4o` |
 | DeepSeek | `DEEPSEEK_API_KEY` | `deepseek-chat` |
-| Anthropic | `ANTHROPIC_API_KEY` | `claude-3-5-sonnet-20241022` |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-3-5-sonnet` |
 
 Set the model with:
 ```bash
-export DEFAULT_LLM_MODEL="gemini-2.5-pro"  # or your preferred model
+export DEFAULT_LLM_MODEL="gemini-3-flash-preview"  # or your preferred model
 ```
 
 ## Troubleshooting
@@ -80,8 +153,16 @@ export DEFAULT_LLM_MODEL="gemini-2.5-pro"  # or your preferred model
 `.env` loading or shell exports
 
 **Fix**:
-1. Verify keys are exported: `echo $GEMINI_API_KEY`
-2. If empty, export the key: `export GEMINI_API_KEY="your-key"`
+1. Verify a key is present without printing it:
+   ```bash
+   python - <<'PY'
+   import os
+   keys = ["GEMINI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "DEEPSEEK_API_KEY"]
+   print({key: bool(os.getenv(key)) for key in keys})
+   PY
+   ```
+2. If all values are `False`, add one provider key to `.env` or export it in
+   the shell.
 3. Restart the agent: `pkill -f "br serve agent" && br serve agent --port 8000`
 4. Test: `curl http://localhost:8000/health` should show `"status": "healthy"`
 

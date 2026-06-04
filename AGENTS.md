@@ -27,9 +27,9 @@
 - `apps/web-ui/`: Next.js frontend and Studio/chat UX
 - `tests/`: unit, integration, and behavior/contract coverage
 - `scripts/`: operational and reproducible helper scripts
-- `docs/`: design docs and active specs under `docs/specs/`
-- `benchmarks/`: evaluation assets and benchmark fixtures
-- `skills/`: repository-local skills and workflow guidance
+- `docs/`: operations docs, MCP docs, appendices, release notes, and use cases
+- `benchmarks/`: evaluation harness code and public-safe benchmark fixtures when present
+- Agent skills, AGENTS templates, demos, and eval rubrics live in the companion [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit) repository, not in this public core repo.
 - `data/`, `configs/`, `infrastructure/`: datasets, runtime config, and deployment assets
 
 ## Workflow

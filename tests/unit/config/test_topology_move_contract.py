@@ -89,21 +89,6 @@ RELOCATED_PATHS = {
         "tests/unit/agent/test_ui_api_coding_stream.py"
     ),
     "src/brain_researcher/services/br_kg/scripts": "scripts/br-kg",
-    "src/brain_researcher/services/agent/launch_agent.py": (
-        "scripts/root_legacy/launch_agent.py"
-    ),
-    "src/brain_researcher/services/agent/run_langgraph.py": (
-        "scripts/root_legacy/run_langgraph.py"
-    ),
-    "src/brain_researcher/services/agent/debug_services.py": (
-        "scripts/root_legacy/debug_services.py"
-    ),
-    "src/brain_researcher/services/agent/working_tools_demo.py": (
-        "scripts/root_legacy/working_tools_demo.py"
-    ),
-    "src/brain_researcher/services/agent/demo_enhanced_features.py": (
-        "scripts/root_legacy/demo_enhanced_features.py"
-    ),
     "src/brain_researcher/services/agent/Dockerfile": (
         "infrastructure/docker/Dockerfile.agent"
     ),

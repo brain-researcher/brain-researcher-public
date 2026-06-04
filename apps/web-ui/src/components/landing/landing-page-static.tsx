@@ -50,7 +50,7 @@ const BIBTEX = `@misc{brain_researcher_2026,
   author       = {{Brain Researcher contributors}},
   title        = {Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses},
   year         = {2026},
-  howpublished = {\\url{https://${PUBLIC_HOSTNAME}}},
+  howpublished = {\\url{https://\${PUBLIC_HOSTNAME}}},
   note         = {arXiv:XXXX.XXXXX (preprint pending); Zenodo DOI pending}
 }`
 

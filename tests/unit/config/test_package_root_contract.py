@@ -51,12 +51,6 @@ REQUIRED_SUBSTRINGS = {
         'export PYTHONPATH="$REPO_ROOT/src${PYTHONPATH:+:$PYTHONPATH}"',
         "python -m brain_researcher.services.br_kg.api.graph_api",
     ),
-    "scripts/root_legacy/check_env.py": (
-        "REPO_ROOT = Path(__file__).resolve().parents[2]",
-        '"Agent .env": "src/brain_researcher/services/agent/.env"',
-        '"BR-KG .env": "src/brain_researcher/services/br_kg/.env"',
-        'print("  br serve web     # Next.js Web UI")',
-    ),
     "src/brain_researcher/services/tools/niwrap/boutiques.py": (
         "src/brain_researcher/services/tools/niwrap/boutiques.py",
     ),
@@ -90,11 +84,6 @@ FORBIDDEN_SUBSTRINGS = {
     "scripts/services/br-kg/restart_api.sh": (
         "/data/ECoG-foundation-model/mnndl_temp/brain_researcher/services/br_kg",
         "python -m api.graph_api",
-    ),
-    "scripts/root_legacy/check_env.py": (
-        '"Agent .env": "brain_researcher/services/agent/.env"',
-        '"BR-KG .env": "brain_researcher/services/br_kg/.env"',
-        'print("  br serve ui      # Dashboard")',
     ),
     "src/brain_researcher/services/tools/niwrap/boutiques.py": (
         "This file is at: brain_researcher/services/tools/niwrap/boutiques.py",

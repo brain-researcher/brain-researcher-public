@@ -55,7 +55,7 @@ The BR-KG service requires Neo4j (no SQLite fallback).
 
 - Start a local Neo4j instance via Docker Compose (`docker compose up neo4j`)
   or standalone `docker run`.
-- Seed test data with the provided mini dump:
+- Seed local test data only when you have an authorized local mini dump:
 
   ```bash
   scripts/tools/dev/seed_from_dump.sh    # defaults to data/neo4j/mini_dump
@@ -66,8 +66,9 @@ The BR-KG service requires Neo4j (no SQLite fallback).
   - `NEO4J_USER` (default `neo4j`)
   - `NEO4J_PASSWORD`
 
-For the full KG (1.3 GB) the `scripts/download_kg.sh` helper will pull
-the latest dump from the GitHub Release attachment.
+The full compiled BR-KG graph and Neo4j dumps are private. This public
+repository does not ship a full KG dump and does not publish one as a GitHub
+Release attachment.
 
 ---
 
@@ -189,8 +190,11 @@ module load physio/r7771                # SPM12 + PhysIO
 ## Docker stack
 
 ```bash
-# Quick start — run all services
+# Quick start: run default runtime services
 docker compose up -d
+
+# Include the optional orchestrator worker
+docker compose --profile worker up -d
 
 # Or use the helper script
 ./scripts/docker_manager.sh start
@@ -198,6 +202,11 @@ docker compose up -d
 # Check status
 ./scripts/docker_manager.sh status
 ```
+
+Compose runs `init-local-dirs` as a one-shot setup job before the Python
+services. It creates writable `data/agent_outputs/`, `data/br-kg/`, and
+`logs/` directories for the non-root containers and should show as exited 0 in
+`docker compose ps`.
 
 **Default service URLs:**
 

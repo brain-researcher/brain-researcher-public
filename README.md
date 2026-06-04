@@ -1,11 +1,11 @@
 # Brain Researcher
 
-**An LLM-driven research assistant for neuroimaging.** Brain Researcher combines a large-language-model planning loop with a neuroscience knowledge graph (Neo4j), a curated catalog of fMRI / diffusion / EEG analysis tools, and an evidence-grounded scientific-review system. It turns natural-language research questions into reproducible analyses, with every step traceable to its plan, inputs, and primary literature.
+**An AI-assisted research infrastructure workspace for neuroimaging analyses.** Brain Researcher combines a large-language-model planning loop with a neuroscience knowledge graph (Neo4j), a curated catalog of fMRI / diffusion / EEG analysis tools, and evidence-grounded review surfaces. This public repository contains the open code, contracts, docs, service stack, and public-safe helper scripts. Private benchmark corpora, internal run artifacts, and site-specific launchers are intentionally not shipped here.
 
-> **Status — v0.1.0 OSS preview.** Stable surface (10 closed-loop MCP tools, contract_version `2026-05-27`) + companion agent-kit. The canonical citation, Zenodo DOI, and arXiv preprint will be linked here at the v1.0 launch.
+> **Status - v0.1.0 OSS preview.** Stable MCP contracts are versioned under [`contracts/`](contracts/) (`contracts/VERSION` currently `2026-05-27`). Some runtime surfaces require local environment variables, data mounts, or external services; this README distinguishes shipped code and contracts from private data and deployment-specific execution.
 
 📦 **Companion kit** (skills, AGENTS templates, demos, eval rubrics): [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit)
-🗂️ **Public KG snapshot** (sanitized Neo4j dump): attached to each GitHub Release — see [`docs/neurokg/public_dump.md`](docs/neurokg/public_dump.md)
+🗂️ **KG data boundary:** Neo4j graph contents are private. This repo ships code, schemas, and contracts, not KG dumps.
 📊 **Benchmark scope:** the task corpus is not shipped in this repo — see [`docs/release/benchmark.md`](docs/release/benchmark.md)
 
 <p align="center">
@@ -21,9 +21,9 @@
 
 ## What it does
 
-- **Plan → Recipe → Verify loop.** Natural-language research questions become typed plans, MCP recipes, local/agent handoff prompts, and evidence-grounded reports. Hosted execution is surfaced only when runtime readiness, auth, and credits pass.
+- **Plan → Recipe → Verify loop.** Natural-language research questions become typed plans, MCP recipes, local/agent handoff prompts, and evidence-grounded reports. Hosted execution is deployment-specific and should be treated as unavailable unless runtime readiness, auth, data, and credits pass.
 - **Brain-researcher knowledge graph (BR-KG).** Neo4j-backed graph linking concepts, brain regions, datasets, tasks, methods, papers, and tools. Supports multi-hop QA, hypothesis-candidate retrieval, behavior↔fMRI cross-modal queries.
-- **MCP tool surface.** Planning, KG search, workflow recipes, run inspection, scientific review, deep research, and hypothesis workflows exposed via the [Model Context Protocol](https://modelcontextprotocol.io/) — usable from Claude Code, Codex, Cursor, or any MCP client. v0.1.0 ships **10 stable-tier tools** with versioned JSON contracts under [`contracts/tools/`](contracts/tools/); 89 additional tools are exposed as `experimental`.
+- **MCP tool surface.** Planning, KG search, workflow recipes, run inspection, scientific review, deep research, and hypothesis workflows exposed via the [Model Context Protocol](https://modelcontextprotocol.io/) for Claude Code, Codex, Cursor, or any MCP client. v0.1.0 ships **10 stable-tier tool contracts** under [`contracts/tools/`](contracts/tools/). Public compatibility claims are limited to these versioned contracts.
 - **Neuroimaging toolchain.** Workflow recipes target [Neurodesk](https://www.neurodesk.org/) containers (FSL, MRtrix3, SPM, ANTs, FreeSurfer, fMRIPrep, MRIQC, …) and Python packages such as Nilearn, MNE, NiMARE, and custom pipelines.
 - **SLURM-ready.** Pluggable cluster profiles (`configs/slurm/profiles/*.yaml`) — easy to add your own.
 
@@ -40,8 +40,8 @@
              ▼                          ▼
    ┌────────────────────┐    ┌────────────────────┐     ┌───────────────────┐
    │   Orchestrator     │◀──▶│       Agent        │◀───▶│   MCP Server      │
-   │  (FastAPI / SSE)   │    │ (LLM router +      │     │ 10 stable + ~90   │
-   │ plans, runs, jobs  │    │   tool executor)   │     │ experimental tools│
+   │  (FastAPI / SSE)   │    │ (LLM router +      │     │ stable public     │
+   │ plans, runs, jobs  │    │   tool executor)   │     │  MCP contracts    │
    └────────┬───────────┘    └────────┬───────────┘     └─────────┬─────────┘
             │                         │                           │
             ▼                         ▼                           │
@@ -57,9 +57,35 @@ For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the
 
 ---
 
+## Where the important pieces live
+
+| Area | Start here | What to expect |
+|---|---|---|
+| Web UI | `apps/web-ui/src/` | Next.js app code for chat, Studio-style views, demos, and browser-facing workflows. |
+| UI config, messages, assets | `apps/web-ui/next.config*.js`, `apps/web-ui/messages/`, `apps/web-ui/public/` | Frontend configuration, locale files, service workers, and public browser assets. |
+| CLI entrypoints | `src/brain_researcher/cli/` | Typer commands behind `brain-researcher` / `br`, including service startup commands. |
+| Agent runtime | `src/brain_researcher/services/agent/` | Agent planner, router, backends, execution helpers, logging, subagents, and state utilities. |
+| Agent skills and templates | [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit) | Companion repository for skills, AGENTS templates, demos, adapters, and eval rubrics. |
+| Orchestrator | `src/brain_researcher/services/orchestrator/` | FastAPI/SSE job, run, resource, and collaboration surfaces used by the web stack. |
+| MCP server | `src/brain_researcher/services/mcp/server.py`, `src/brain_researcher/services/mcp/routers/` | MCP tool exposure, route grouping, planning/review/run/artifact adapters, and compatibility wrappers. |
+| Stable contracts | `contracts/`, `docs/mcp_tools.schema.json`, `docs/contract-tiers.md` | Versioned public tool schemas and the policy for stable, experimental, and deprecated MCP surfaces. |
+| Tool implementations | `src/brain_researcher/services/tools/` | Python tool wrappers for neuroimaging workflows, dataset utilities, KG bridge tools, visualization, and execution recipes. |
+| Tool metadata/catalogs | `configs/tools_catalog_overrides.yaml`, `configs/catalog/`, `scripts/tools/` | Declarative tool metadata, family mappings, capability overlays, and catalog validation/generation helpers. |
+| BR-KG service code | `src/brain_researcher/services/br_kg/` | Neo4j-backed API, graph/query/ETL/schema code. The compiled graph data itself is private. |
+| KG configs and schemas | `configs/br-kg/`, `scripts/kg/schema.cypher` | Public-safe schema/config references for KG shape and local test setup; not KG dumps. |
+| Review layer | `src/brain_researcher/services/review/`, `configs/review_rules.yaml`, `docs/appendices/07_appendix_G_review.md` | Scientific/code review rules, review bundles, and documented review boundaries. |
+| Shared public Python namespace | `src/brain_researcher/br/` | Stable imports such as `br.retry`, `br.provenance`, `br.artifact`, `br.http`, and `br.redaction`. |
+| Docs and appendices | `docs/` | Operations, MCP docs, release notes, appendices, use cases, and public-surface explanations. |
+| Tests | `tests/` | Unit, integration, architecture, contract, and browser/e2e checks. |
+
+---
+
 ## Quick start (local Docker)
 
-Brings up the full 5-service stack: Neo4j + Redis + BR-KG + agent + web UI.
+Brings up the default runtime stack: Neo4j + Redis + BR-KG + agent + web UI.
+Compose also runs a one-shot `init-local-dirs` job to prepare writable local
+`data/` and `logs/` subdirectories for non-root service containers. The
+orchestrator worker is optional and can be added with the `worker` profile.
 
 ```bash
 git clone https://github.com/zjc062/brain-researcher-public.git
@@ -69,22 +95,33 @@ cd brain-researcher-public
 cp .env.example .env
 $EDITOR .env
 
-# 2. Start the stack (5 services).
+# 2. Start the default stack.
 docker compose up -d
 
-# 3. Verify: all 5 services healthy in ~30s.
+# 3. Verify: the init job exits 0 and runtime services become healthy.
 docker compose ps
-# → neo4j, redis, neurokg, agent, web-ui   (Status: healthy)
+# → init-local-dirs (Exited 0)
+# → neo4j, redis, br-kg, agent, web-ui   (Status: healthy)
 
 # 4. Open the web UI.
 xdg-open http://localhost:3000   # or just navigate in your browser
 ```
 
+To build and start every compose service, including the optional orchestrator:
+
+```bash
+docker compose --profile worker build
+docker compose --profile worker up -d
+docker compose --profile worker ps
+# → init-local-dirs (Exited 0)
+# → neo4j, redis, br-kg, agent, orchestrator, web-ui
+```
+
 **Port collision?** Override defaults via env vars:
 
 ```bash
-BR_NEO4J_HTTP_PORT=7484 BR_NEO4J_BOLT_PORT=7697 BR_NEUROKG_PORT=5010 \
-  AGENT_PORT=8010 WEB_UI_PORT=3010 \
+BR_NEO4J_HTTP_PORT=7484 BR_NEO4J_BOLT_PORT=7697 BR_KG_PORT=5010 \
+  AGENT_PORT=8010 ORCHESTRATOR_PORT=3011 WEB_UI_PORT=3010 \
   docker compose -p brpub up -d
 ```
 
@@ -97,26 +134,52 @@ BR_NEO4J_HTTP_PORT=7484 BR_NEO4J_BOLT_PORT=7697 BR_NEUROKG_PORT=5010 \
 | `NEXTAUTH_SECRET` | web UI session signing | ≥ 32 chars |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `DEEPSEEK_API_KEY` | LLM access (any one) | — |
 
-### Optional: load the public KG snapshot
-
-The first boot brings up an empty Neo4j. To populate it with the sanitized public KG snapshot (~50K nodes spanning Atlas / Author / Concept / Dataset / Publication / Region / Task / GABRIEL claims / review catalog):
+Generate local service secrets:
 
 ```bash
-./scripts/oss/download_public_kg.sh v0.1.0
-# → curls dump + sha256 + manifest from the GitHub Release,
-#   verifies integrity, loads into the running compose neo4j.
+python - <<'PY'
+import secrets
+
+print("NEO4J_PASSWORD=" + secrets.token_urlsafe(24))
+print("JWT_SECRET_KEY=" + secrets.token_urlsafe(48))
+print("NEXTAUTH_SECRET=" + secrets.token_urlsafe(48))
+PY
 ```
 
-See [`docs/neurokg/public_dump.md`](docs/neurokg/public_dump.md) for what's in vs out of the dump and license-aggregation notes.
+Then paste those values into `.env` and add one LLM provider key. Official key
+pages:
+
+- Gemini: <https://aistudio.google.com/app/apikey>
+- OpenAI: <https://platform.openai.com/api-keys>
+- Anthropic: <https://console.anthropic.com/settings/keys>
+- DeepSeek: <https://platform.deepseek.com/api_keys>
+
+Example `.env` fragment:
+
+```env
+NEO4J_PASSWORD=replace_with_generated_value
+JWT_SECRET_KEY=replace_with_generated_value
+NEXTAUTH_SECRET=replace_with_generated_value
+
+GEMINI_API_KEY=replace_with_key_from_google_ai_studio
+DEFAULT_LLM_MODEL=gemini-3-flash-preview
+```
+
+### Neo4j data boundary
+
+The first boot brings up an empty Neo4j. The compiled BR-KG graph, Neo4j
+dumps, and internal graph-derived datasets are private and are not attached to
+GitHub Releases. Populate Neo4j only from private or local sources you are
+authorized to use.
 
 ---
 
 ## Install as a Python package
 
-The MCP server + CLI live under `packages/brain-researcher/`:
+The MCP server + CLI live under `src/brain_researcher/` and can be installed from the repo root:
 
 ```bash
-pip install -e packages/brain-researcher[all]
+pip install -e ".[all]"
 brain-researcher --help
 ```
 
@@ -144,10 +207,10 @@ helm template brain-researcher infrastructure/k8s/helm/brain-researcher/ \
 
 # Or raw manifests
 kubectl apply -f infrastructure/k8s/manifests/
-# (08-ingress.yaml requires Istio CRDs — see infrastructure/k8s/helm/brain-researcher-istio/README.md)
+# (Istio overlay resources require Istio CRDs; see infrastructure/k8s/helm/brain-researcher-istio/)
 ```
 
-The main helm chart renders 26 K8s resources cleanly; the istio overlay subchart is experimental (see its README for known template bugs).
+The main Helm chart renders 26 Kubernetes resources cleanly; the Istio overlay subchart is experimental, so inspect its chart values and templates before use.
 
 ---
 
@@ -160,10 +223,10 @@ The main helm chart renders 26 K8s resources cleanly; the istio overlay subchart
 | `apps/web-ui/` | Next.js 14 frontend (chat, studio, demo replay, KG explorer) |
 | `contracts/` | OSS API stability surface: `VERSION`, `br-tool-contract.schema.json`, `tools/*.json` (10 stable-tier tool schemas) |
 | `configs/` | Tool catalogs, mappings, taxonomy, and public runtime defaults |
-| `docs/` | MCP, specs, appendices, use cases, migration notes, and contributor-facing docs |
+| `docs/` | MCP docs, appendices, use cases, release notes, and contributor-facing docs |
 | `tests/` | Unit + integration + contracts (Pact) + e2e (Playwright) |
 | `infrastructure/` | docker-compose, Helm chart, K8s manifests, monitoring, nginx, haproxy |
-| `scripts/` | ETL / analysis / build / CI helpers; OSS-specific tools under `scripts/oss/` |
+| `scripts/` | ETL / analysis / build / CI helpers and focused maintenance utilities |
 
 For the current import-boundary ratchet, see [`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py) and [`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt). For the agent-kit (skills + AGENTS templates + adapters + demos + eval rubrics), see the companion repo [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit).
 
@@ -193,7 +256,7 @@ We welcome bug reports, feature ideas, case studies, and code contributions.
 
 - **Read first:** [`CONTRIBUTING.md`](CONTRIBUTING.md) — dev workflow, codegraph-accelerated review, test conventions.
 - **Code of conduct:** [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
-- **Security:** report vulnerabilities privately per [`SECURITY.md`](SECURITY.md); see also [`THREAT_MODEL.md`](THREAT_MODEL.md) for the MCP server attack surface and [`REDACTION_POLICY.md`](REDACTION_POLICY.md) for the redaction rules applied by `br.redaction`.
+- **Security:** report vulnerabilities privately per [`SECURITY.md`](SECURITY.md); see also [`THREAT_MODEL.md`](THREAT_MODEL.md) for the MCP server attack surface. Runtime payload scrubbing is provided by `br.redaction`.
 - **Adding a new tool:** see [`docs/how-to-add-tool.md`](docs/how-to-add-tool.md) for the workflow from `@mcp.tool` decoration through contract-layer inclusion.
 
 For agent-policy templates (research / code-review / brain-researcher), see [`brain-researcher-agent-kit/agents/`](https://github.com/zjc062/brain-researcher-agent-kit).

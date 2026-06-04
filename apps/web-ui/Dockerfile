@@ -22,8 +22,6 @@ RUN npm run sync:monaco
 COPY configs/ ./configs/
 # Copy prompt/result artifacts used by demo replay pages
 COPY docs/use_cases/brain_researcher_hybrid/ ./docs/use_cases/brain_researcher_hybrid/
-COPY docs/runbooks/ ./docs/runbooks/
-COPY docs/figures/ ./docs/figures/
 
 # Build-time env for Next.js public vars (required for client bundle)
 ARG NEXT_PUBLIC_SUPABASE_URL

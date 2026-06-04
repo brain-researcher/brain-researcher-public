@@ -48,7 +48,6 @@ case "${1:-help}" in
             tests/unit/core/test_grounding_references.py \
             tests/unit/core/test_analysis_bundle.py \
             tests/unit/agent/test_execution_runners.py \
-            tests/unit/skills/test_br_session_handoff_skill.py \
             --tb=short
         ;;
 

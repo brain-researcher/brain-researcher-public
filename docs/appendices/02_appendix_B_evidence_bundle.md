@@ -119,7 +119,7 @@ The goal is to make BR-KG easy to improve while keeping the compiled graph schem
 |------|--------------------|-------------------|--------------------|
 | 1. Raw sources | Publications, datasets, ontology trees, and other upstream materials. | Immutable in this workflow. Update only through source refreshes or new source versions. | Cite upstream sources directly; do not let community edits rewrite raw evidence. |
 | 2. Wiki layer | Human-friendly Markdown files, one template per entity type, with YAML frontmatter for structured fields. | Community edits through GitHub PRs; schema validation gates each change. | Best place for domain expertise, corrections, relation proposals, and documentation. |
-| 3. Compiled graph | Validated, machine-readable Neo4j graph built periodically from raw sources plus accepted wiki records. | Changes only after validation and review. Rebuild cadence should be explicit. | Public KG claims should reference compiled graph snapshot, source provenance, and accepted wiki revisions. |
+| 3. Compiled graph | Validated, machine-readable Neo4j graph built periodically from raw sources plus accepted wiki records. | Changes only after validation and review. Rebuild cadence should be explicit. | Public-facing KG-derived claims should reference an internal compiled graph snapshot, source provenance, and accepted wiki revisions. |
 
 ### Contribution flow
 
@@ -651,43 +651,43 @@ Suggested fixes:
 | Gabriel manifests | 32 `data/BR-KG/raw/gabriel/runs/*/manifest.json` files | 0 source-marked nodes/edges | Gabriel exists as raw/run artifacts, not visible as a marked live KG source | decide whether Gabriel was not ingested, was candidate-only, or was ingested without `source=gabriel` |
 | Gabriel review queues | 12 `data/BR-KG/raw/gabriel/runs/*/review_queue*.jsonl` files | 0 source-marked nodes/edges | review/candidate artifacts exist outside live source counts | document accepted vs candidate-only vs rejected lanes before release |
 | KGGen summaries | 75 `data/BR-KG/raw/kggen/**/*.summary.json` files | 0 source-marked nodes/edges | KGGen exists as comparison/generation artifacts, not as a marked live KG source | keep KGGen as research/comparison lane unless accepted records are explicitly ingested and marked |
-| KGGen JSONL outputs | 81 `data/BR-KG/raw/kggen/**/*.jsonl` files | 0 source-marked nodes/edges | generated candidate files exist | document model/prompt/validation before any public KG claim |
+| KGGen JSONL outputs | 81 `data/BR-KG/raw/kggen/**/*.jsonl` files | 0 source-marked nodes/edges | generated candidate files exist | document model/prompt/validation before any public-facing KG-derived claim |
 
 ## Appendix F (system card). All-source release audit (summary)
 
 > **Note.** The detailed two-part audit (lane summary + evidence/artifact/loader/license matrix) is preserved in the source `BR-KG_reader_question_live_values_20260503.json.txt` artifact. The condensed disposition table below records each lane's release status; cross-reference the artifact for the full evidence, loader paths, and per-license narratives.
 
-| Audit source or lane | Class | Live counts (approx.) | Release disposition |
+| Audit source or lane | Class | Live counts (approx.) | Private KG disposition |
 |----------------------|-------|------------------------|----------------------|
-| Neurosynth | external upstream meta-analysis | 464,946 nodes / 805,548 edges | release after snapshot, license, citation pin |
-| NeuroVault | external upstream image/stat-map | 37,467 nodes / 1,076,839 edges | release after license matrix + pull date |
-| Neurostore | external study/analysis metadata | 97,238 nodes / 61,260 edges | release after snapshot, license, citation |
-| Cognitive Atlas | external ontology/task/concept | 4,859 nodes / 14,596 edges | release after snapshot and citation pin; normalize CogAtlas alias |
-| NiCLIP / CogAtlas enrichment | derived embedding/enrichment | 25,637 nodes / 0 edges | release as derived lane after model + upstream citations |
-| ONVOC | local ontology + linker | 752 nodes / 35,210 edges | release after ONVOC version, ontology license, linker-rule provenance |
-| OpenNeuro GLMFitLins / BIDS-derived | external + derived GLM/stat-map | 45,403 nodes / 272,680 edges | release with per-dataset license matrix and manifest hash |
+| Neurosynth | external upstream meta-analysis | 464,946 nodes / 805,548 edges | private; requires snapshot, license, and citation pin before any public-facing claim |
+| NeuroVault | external upstream image/stat-map | 37,467 nodes / 1,076,839 edges | private; requires license matrix and pull date before any public-facing claim |
+| Neurostore | external study/analysis metadata | 97,238 nodes / 61,260 edges | private; requires snapshot, license, and citation before any public-facing claim |
+| Cognitive Atlas | external ontology/task/concept | 4,859 nodes / 14,596 edges | private; requires snapshot and citation pin; normalize CogAtlas alias |
+| NiCLIP / CogAtlas enrichment | derived embedding/enrichment | 25,637 nodes / 0 edges | private derived lane; requires model and upstream citations before public-facing claims |
+| ONVOC | local ontology + linker | 752 nodes / 35,210 edges | private; requires ONVOC version, ontology license, and linker-rule provenance |
+| OpenNeuro GLMFitLins / BIDS-derived | external + derived GLM/stat-map | 45,403 nodes / 272,680 edges | private; requires per-dataset license matrix and manifest hash before public-facing claims |
 | BIDS literal source | schema/format standard | 0 / 0 | document as standard dependency |
-| Multiverse FitLins run-only | internal derived analysis-run | 60 / 1,020 | release with run manifests + upstream licenses |
-| Neurobagel | external federated dataset metadata | 2,022 / 1,620 | release after snapshot dates + license matrix |
-| PubMed | external bibliographic metadata | 1,208 / 5 | release after API pull date, NCBI attribution, citation policy |
+| Multiverse FitLins run-only | internal derived analysis-run | 60 / 1,020 | private; requires run manifests and upstream licenses before public-facing claims |
+| Neurobagel | external federated dataset metadata | 2,022 / 1,620 | private; requires snapshot dates and license matrix before public-facing claims |
+| PubMed | external bibliographic metadata | 1,208 / 5 | private; requires API pull date, NCBI attribution, and citation policy |
 | PubMed Central / PMC | external full-text repository | 0 / 0 | mark absent unless intentionally ingested and licensed |
-| Scholarly metadata (Crossref/OpenAlex) | external bibliographic | 2,890 / 3,919 | release after per-provider attribution + cache snapshot |
+| Scholarly metadata (Crossref/OpenAlex) | external bibliographic | 2,890 / 3,919 | private; requires per-provider attribution and cache snapshot |
 | Allen HBA / Allen CCF | external atlas/expression | 1,329 / 2,654 | normalize alias `allen_hba`; audit synthetic/sample marker |
-| Nilearn atlases / Yeo2011 | external atlas definitions | 817 / 810 | release after per-atlas license/citation/version |
-| Neuromaps | external annotation library | 86 / 0 | release after annotation-level license/citation |
+| Nilearn atlases / Yeo2011 | external atlas definitions | 817 / 810 | private; requires per-atlas license, citation, and version |
+| Neuromaps | external annotation library | 86 / 0 | private; requires annotation-level license and citation |
 | NeuroQuery | external/on-demand evidence | 0 / 0 | document as on-demand adapter |
 | NiMARE | software-derived meta-analysis | 0 / 0 | document as software/derived evidence dependency |
 | NeuroScout | external/on-demand feature | 0 / 0 | document as on-demand adapter |
 | NIDM results | external/standardized results metadata | 0 / 0 | configured but not persisted |
-| BrainMap | external/licensed coordinate database | 0 / 0 | do not release unless licensed and cited |
+| BrainMap | external/licensed coordinate database | 0 / 0 | private; do not expose unless licensed and cited |
 | Wikidata | external linked-data ontology | 0 / 0 | configured but absent |
 | Virtual Brain | external software/simulation | 0 / 0 | document as configured/adapter lane |
 | GWAS Catalog / OpenMed / PGC | external genetics metadata | 0 in current scan | reconcile with 2026-04-08 validation counts |
-| Psych-101 / psychology task registry | external/curated behavioral task registry | 127 / 390 | release as curated registry after snapshot + license |
-| Tool/capability catalog (`capabilities.merged.yaml`) | internal BR capability registry | 2,073 / 0 | include only if public KG intentionally includes BR runtime/tool nodes |
-| `config_text_backfill` | internal generated enrichment | 0 / 104,603 | release only with rule definition and edge-type audit |
-| Taxonomy rules | internal generated taxonomy | 4 / 612 | release with rule/version manifest or exclude |
-| Task family enrichment | internal/generated task-family catalog | 328 / 126 | release with version + curator/source evidence |
+| Psych-101 / psychology task registry | external/curated behavioral task registry | 127 / 390 | private curated registry; requires snapshot and license before public-facing claims |
+| Tool/capability catalog (`capabilities.merged.yaml`) | internal BR capability registry | 2,073 / 0 | keep internal unless a future public export is explicitly approved |
+| `config_text_backfill` | internal generated enrichment | 0 / 104,603 | private; requires rule definition and edge-type audit before public-facing claims |
+| Taxonomy rules | internal generated taxonomy | 4 / 612 | private; requires rule/version manifest or exclusion rationale |
+| Task family enrichment | internal/generated task-family catalog | 328 / 126 | private; requires version plus curator/source evidence before public-facing claims |
 | Disease path backfill | internal generated backfill | 0 / 34 | audit before release |
 | Seed/bootstrap | internal/manual bootstrap | 0 / 4 | attribute or exclude |
 | Bulk loader operational lane | operational loader marker | 0 / 1 | audit as operational provenance |

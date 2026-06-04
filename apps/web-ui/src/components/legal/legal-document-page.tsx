@@ -72,7 +72,7 @@ export function LegalDocumentPage({
                     href="mailto:support@${PUBLIC_HOSTNAME}"
                     className="font-medium text-primary underline"
                   >
-                    support@${PUBLIC_HOSTNAME}
+                    {'support@${PUBLIC_HOSTNAME}'}
                   </a>
                   .
                 </p>

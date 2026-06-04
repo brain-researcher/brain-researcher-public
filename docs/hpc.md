@@ -73,7 +73,9 @@ after reviewing the generated script.
 
 ## Sherlock-specific docs
 
-For Stanford Sherlock users, the original workflow guidance lives at
+For Stanford Sherlock users, workflow guidance is maintained in the companion
+`brain-researcher-agent-kit` repository under
 `skills/sherlock-oak-workflow/`. The legacy `DEFAULT_PROFILE =
-sherlock_russpold` lookup means existing Sherlock users see no behavior
-change post-rename.
+sherlock_russpold` lookup means existing Sherlock users see no behavior change
+post-rename, but this public core repository does not ship the Sherlock skill
+files.

@@ -64,11 +64,11 @@ SlurmAction = Literal[
 ]
 
 SCRIPT_SOURCES = [
-    "skills/sherlock-oak-workflow/SKILL.md",
-    "skills/sherlock-oak-workflow/references/login-and-access.md",
-    "skills/sherlock-oak-workflow/references/storage-and-paths.md",
-    "skills/sherlock-oak-workflow/references/slurm-recipes.md",
-    "skills/sherlock-oak-workflow/references/poldracklab-data-assets.md",
+    "brain-researcher-agent-kit/skills/sherlock-oak-workflow/SKILL.md",
+    "brain-researcher-agent-kit/skills/sherlock-oak-workflow/references/login-and-access.md",
+    "brain-researcher-agent-kit/skills/sherlock-oak-workflow/references/storage-and-paths.md",
+    "brain-researcher-agent-kit/skills/sherlock-oak-workflow/references/slurm-recipes.md",
+    "brain-researcher-agent-kit/skills/sherlock-oak-workflow/references/poldracklab-data-assets.md",
 ]
 
 DEFAULT_PROFILE = os.environ.get("BR_SLURM_PROFILE", "sherlock_russpold")
@@ -87,7 +87,7 @@ _FALLBACK_PROFILES: dict[str, dict[str, Any]] = {
         "default_output": "slurm-%j.out",
         "default_error": "slurm-%j.err",
         "notes": [
-            "Profile follows the checked-in sherlock-oak-workflow skill.",
+            "Profile follows the companion brain-researcher-agent-kit sherlock-oak-workflow skill.",
             "Adjust partition/qos if your group uses a different Sherlock queue.",
         ],
     }
@@ -453,13 +453,14 @@ def sherlock_get_guide(topic: GuideTopic, pi_group: str = "russpold") -> dict[st
                 {
                     "label": "acl_dry_run",
                     "command": (
-                        "bash skills/sherlock-oak-workflow/scripts/restrict_acl.sh "
+                        "bash ${BRAIN_RESEARCHER_AGENT_KIT}/skills/sherlock-oak-workflow/scripts/restrict_acl.sh "
                         "--dir ${CLUSTER_GROUP_ROOT}/data/<dataset> "
                         "--user <sunetid> --group oak_russpold"
                     ),
                 }
             ],
             notes=[
+                "Set BRAIN_RESEARCHER_AGENT_KIT to a local clone of the companion agent-kit before running this helper.",
                 "Preview first, then add --apply when PI/group policy is confirmed.",
                 "Document access restrictions in the dataset README.",
             ],
@@ -474,12 +475,13 @@ def sherlock_get_guide(topic: GuideTopic, pi_group: str = "russpold") -> dict[st
                 {
                     "label": "readonly_dry_run",
                     "command": (
-                        "bash skills/sherlock-oak-workflow/scripts/lock_dataset_readonly.sh "
+                        "bash ${BRAIN_RESEARCHER_AGENT_KIT}/skills/sherlock-oak-workflow/scripts/lock_dataset_readonly.sh "
                         "--dir ${CLUSTER_GROUP_ROOT}/data/<dataset>"
                     ),
                 }
             ],
             notes=[
+                "Set BRAIN_RESEARCHER_AGENT_KIT to a local clone of the companion agent-kit before running this helper.",
                 "The helper script defaults to dry-run mode.",
                 "Apply read-only only after derivative versions and README provenance are in place.",
             ],
