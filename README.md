@@ -2,11 +2,7 @@
 
 **Brain Researcher is a workspace-centric infrastructure for auditable AI-assisted neuroimaging.** It turns research questions into bounded episodes that connect evidence, admissible analysis choices, tool/recipe selection, provenance, and review verdicts. This public repository ships the open code, MCP contracts, service stack, Web UI, docs, and public-safe helpers; private benchmark corpora, Neo4j graph contents, internal run artifacts, and site-specific launchers are not included.
 
-> **Status - v0.1.0 OSS preview.** Stable MCP contracts live under [`contracts/`](contracts/) (`contracts/VERSION`: `2026-05-27`). Some surfaces require local API keys, data mounts, Neo4j state, or deployment-specific services; this README separates shipped code from private data and hosted execution.
-
-📦 **Companion kit** (skills, AGENTS templates, demos, eval rubrics): [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit)
-🗂️ **KG data boundary:** Neo4j graph contents are private. This repo ships code, schemas, and contracts, not KG dumps.
-📊 **Benchmark scope:** the task corpus is not shipped in this repo — see [`docs/release/benchmark.md`](docs/release/benchmark.md)
+Use it through MCP from Claude Code, Codex, Cursor, or another MCP client. For setup guides, MCP client configuration, skills, AGENTS templates, demos, and evaluation rubrics, see [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit).
 
 <p align="center">
   <img src="docs/assets/doraemon/0.png" alt="Brain Researcher Doraemon frame 1" width="620"><br>
@@ -65,7 +61,7 @@ For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the
 | UI config, messages, assets | `apps/web-ui/next.config*.js`, `apps/web-ui/messages/`, `apps/web-ui/public/` | Frontend configuration, locale files, service workers, and public browser assets. |
 | CLI entrypoints | `src/brain_researcher/cli/` | Typer commands behind `brain-researcher` / `br`, including service startup commands. |
 | Agent runtime | `src/brain_researcher/services/agent/` | Agent planner, router, backends, execution helpers, logging, subagents, and state utilities. |
-| Agent skills and templates | [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit) | Companion repository for skills, AGENTS templates, demos, adapters, and eval rubrics. |
+| Agent skills and templates | [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit) | Companion repository for skills, AGENTS templates, demos, adapters, and eval rubrics. |
 | Orchestrator | `src/brain_researcher/services/orchestrator/` | FastAPI/SSE job, run, resource, and collaboration surfaces used by the web stack. |
 | MCP server | `src/brain_researcher/services/mcp/server.py`, `src/brain_researcher/services/mcp/routers/` | MCP tool exposure, route grouping, planning/review/run/artifact adapters, and compatibility wrappers. |
 | Stable contracts | `contracts/`, `docs/mcp_tools.schema.json`, `docs/contract-tiers.md` | Versioned public tool schemas and the policy for stable, experimental, and deprecated MCP surfaces. |
@@ -132,7 +128,8 @@ BR_NEO4J_HTTP_PORT=7484 BR_NEO4J_BOLT_PORT=7697 BR_KG_PORT=5010 \
 | `NEO4J_PASSWORD` | KG password | ≥ 8 chars |
 | `JWT_SECRET_KEY` | service auth signing | ≥ 32 chars |
 | `NEXTAUTH_SECRET` | web UI session signing | ≥ 32 chars |
-| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `DEEPSEEK_API_KEY` | LLM access (any one) | — |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `DEEPSEEK_API_KEY` | BR runtime LLM access (any one) | Directly read by the default runtime |
+| `ZAI_API_KEY` / `OPENROUTER_API_KEY` | Optional external/coding-agent access | For GLM/OpenRouter/opencode-style clients or gateways |
 
 Generate local service secrets:
 
@@ -153,6 +150,14 @@ pages:
 - OpenAI: <https://platform.openai.com/api-keys>
 - Anthropic: <https://console.anthropic.com/settings/keys>
 - DeepSeek: <https://platform.deepseek.com/api_keys>
+- Z.AI / GLM: <https://docs.z.ai/guides>
+- OpenRouter: <https://openrouter.ai/docs/api-keys>
+- OpenCode providers: <https://dev.opencode.ai/docs/providers/>
+
+The default Brain Researcher runtime reads Gemini, OpenAI, Anthropic, or
+DeepSeek keys directly. Z.AI/GLM, OpenRouter, and OpenCode are included for
+external coding-agent or OpenAI-compatible gateway setups; configure those
+clients explicitly before relying on them for runtime calls.
 
 Example `.env` fragment:
 
@@ -228,7 +233,7 @@ The main Helm chart renders 26 Kubernetes resources cleanly; the Istio overlay s
 | `infrastructure/` | docker-compose, Helm chart, K8s manifests, monitoring, nginx, haproxy |
 | `scripts/` | ETL / analysis / build / CI helpers and focused maintenance utilities |
 
-For the current import-boundary ratchet, see [`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py) and [`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt). For the agent-kit (skills + AGENTS templates + adapters + demos + eval rubrics), see the companion repo [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit).
+For the current import-boundary ratchet, see [`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py) and [`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt). For the agent-kit (skills + AGENTS templates + adapters + demos + eval rubrics), see the companion repo [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit).
 
 ---
 
@@ -259,7 +264,7 @@ We welcome bug reports, feature ideas, case studies, and code contributions.
 - **Security:** report vulnerabilities privately per [`SECURITY.md`](SECURITY.md); see also [`THREAT_MODEL.md`](THREAT_MODEL.md) for the MCP server attack surface. Runtime payload scrubbing is provided by `br.redaction`.
 - **Adding a new tool:** see [`docs/how-to-add-tool.md`](docs/how-to-add-tool.md) for the workflow from `@mcp.tool` decoration through contract-layer inclusion.
 
-For agent-policy templates (research / code-review / brain-researcher), see [`brain-researcher-agent-kit/agents/`](https://github.com/zjc062/brain-researcher-agent-kit).
+For agent-policy templates (research / code-review / brain-researcher), see [`brain-researcher-agent-kit/agents/`](https://github.com/brain-researcher/brain-researcher-agent-kit).
 
 ---
 

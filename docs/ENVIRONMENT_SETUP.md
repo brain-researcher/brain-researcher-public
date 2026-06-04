@@ -22,12 +22,20 @@ Never commit the filled `.env` file. Do not put secret API keys in
 
 Choose one provider to start. More can be added later.
 
-| Provider | Create/manage keys | Env var | Example `DEFAULT_LLM_MODEL` |
+| Provider | Create/manage keys | Env var | Example model |
 |---|---|---|---|
 | Google Gemini | [Google AI Studio API keys](https://aistudio.google.com/app/apikey) | `GEMINI_API_KEY` | `gemini-3-flash-preview` |
 | OpenAI | [OpenAI API keys](https://platform.openai.com/api-keys) | `OPENAI_API_KEY` | `gpt-4o` |
-| Anthropic | [Anthropic Console keys](https://console.anthropic.com/settings/keys) | `ANTHROPIC_API_KEY` | `claude-3-5-sonnet` |
+| Anthropic | [Anthropic Console keys](https://console.anthropic.com/settings/keys) | `ANTHROPIC_API_KEY` | `claude-sonnet-4-8` |
 | DeepSeek | [DeepSeek API keys](https://platform.deepseek.com/api_keys) | `DEEPSEEK_API_KEY` | `deepseek-chat` |
+| Z.AI / GLM | [Z.AI quick start and API keys](https://docs.z.ai/guides) | `ZAI_API_KEY` | `glm-5.1` |
+| OpenRouter | [OpenRouter API keys](https://openrouter.ai/docs/api-keys) | `OPENROUTER_API_KEY` | `z-ai/glm-5.1` or another routed model |
+| OpenCode | [OpenCode provider setup](https://dev.opencode.ai/docs/providers/) | use `/connect`, not `.env` | choose with `/models` |
+
+The default Brain Researcher runtime directly reads Gemini, OpenAI, Anthropic,
+and DeepSeek keys. Z.AI/GLM, OpenRouter, and OpenCode entries are for external
+coding-agent use or OpenAI-compatible gateway setups; configure the relevant
+client/gateway before expecting runtime calls to use them.
 
 ## Project `.env` Example
 
@@ -70,13 +78,27 @@ DEFAULT_LLM_MODEL=gpt-4o
 
 ```env
 ANTHROPIC_API_KEY=replace_with_key_from_anthropic
-DEFAULT_LLM_MODEL=claude-3-5-sonnet
+DEFAULT_LLM_MODEL=claude-sonnet-4-8
 ```
 
 ```env
 DEEPSEEK_API_KEY=replace_with_key_from_deepseek
 DEFAULT_LLM_MODEL=deepseek-chat
 ```
+
+Optional external/coding-agent providers:
+
+```env
+# Z.AI / GLM for OpenAI-compatible external clients.
+ZAI_API_KEY=replace_with_key_from_zai
+
+# OpenRouter for routed model access, including GLM/Qwen/other providers.
+OPENROUTER_API_KEY=replace_with_key_from_openrouter
+```
+
+For OpenCode, run `/connect` in the OpenCode TUI and follow its provider
+selector. OpenCode stores those credentials under its own user config rather
+than relying on this project's `.env`.
 
 `docker compose up` automatically reads `.env` from the repository root. For
 manual service runs, use one of the options below.
@@ -136,7 +158,10 @@ br serve agent --port 8000
 | Google Gemini | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-3-flash-preview` |
 | OpenAI | `OPENAI_API_KEY` | `gpt-4o` |
 | DeepSeek | `DEEPSEEK_API_KEY` | `deepseek-chat` |
-| Anthropic | `ANTHROPIC_API_KEY` | `claude-3-5-sonnet` |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-sonnet-4-8` |
+| Z.AI / GLM | `ZAI_API_KEY` for external OpenAI-compatible clients | `glm-5.1` |
+| OpenRouter | `OPENROUTER_API_KEY` for external routed-model clients | `z-ai/glm-5.1` |
+| OpenCode | `/connect` in the OpenCode TUI | selected with `/models` |
 
 Set the model with:
 ```bash
@@ -157,7 +182,14 @@ export DEFAULT_LLM_MODEL="gemini-3-flash-preview"  # or your preferred model
    ```bash
    python - <<'PY'
    import os
-   keys = ["GEMINI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "DEEPSEEK_API_KEY"]
+   keys = [
+       "GEMINI_API_KEY",
+       "OPENAI_API_KEY",
+       "ANTHROPIC_API_KEY",
+       "DEEPSEEK_API_KEY",
+       "ZAI_API_KEY",
+       "OPENROUTER_API_KEY",
+   ]
    print({key: bool(os.getenv(key)) for key in keys})
    PY
    ```
