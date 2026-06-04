@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Generate a short-lived HS256 JWT for Playwright e2e tests.
 
-This token is intended for CI where we don't want to depend on interactive
-NextAuth sign-in flows. The Web UI's `/api/analyses*` endpoints require auth
-and validate JWTs using `JWT_SECRET_KEY`/`NEXTAUTH_SECRET` and (optionally)
-issuer/audience constraints.
+This token is intended for local or maintainer-run e2e checks where we do not
+want to depend on interactive NextAuth sign-in flows. The Web UI's
+`/api/analyses*` endpoints require auth and validate JWTs using
+`JWT_SECRET_KEY`/`NEXTAUTH_SECRET` and (optionally) issuer/audience constraints.
 
 Env vars:
   - JWT_SECRET_KEY or NEXTAUTH_SECRET (required)
@@ -81,4 +81,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

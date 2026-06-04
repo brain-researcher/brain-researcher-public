@@ -23,7 +23,7 @@ from brain_researcher.services.shared.planner.models import ResourceType
 def get_repo_root() -> Path:
     """Get repository root directory."""
     script_path = Path(__file__).resolve()
-    return script_path.parents[2]  # scripts/ci/generate_resources_schema.py -> repo root
+    return script_path.parents[2]  # scripts/maintenance/generate_resources_schema.py -> repo root
 
 
 def load_resource_types_from_yaml(path: Path) -> list[str]:

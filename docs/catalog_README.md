@@ -38,7 +38,7 @@ print(f'Python tools: {python_count}')
 
 ```bash
 # Run validation
-python scripts/ci/validate_capabilities.py
+python scripts/maintenance/validate_capabilities.py
 
 # Should output:
 # ✓ Schema validation passed
@@ -74,7 +74,7 @@ python scripts/ci/validate_capabilities.py
 2. **Validate**:
 
 ```bash
-python scripts/ci/validate_capabilities.py
+python scripts/maintenance/validate_capabilities.py
 ```
 
 3. **Test**:
@@ -149,7 +149,7 @@ Auto-generated from `src/brain_researcher/services/shared/planner/models.py`:
 
 `bids_root`, `bvals`, `bvecs`, `clean_eeg`, `connectivity_matrix`, `contacts_mni`, `coord_table`, `epochs`, `events_tsv`, `features_table`, `kg_edges`, `kg_nodes`, `mask_path`, `montage`, `parcellation_labels`, `power_spectra`, `raw_eeg`, `report_html`, `stat_map`, `subject_label`, `surface_mesh`, `timeseries`, `volume_3d`, `volume_4d`
 
-**Note**: Resource types are validated via `resources.schema.json`, which is auto-generated. Run `scripts/ci/generate_resources_schema.py` to regenerate.
+**Note**: Resource types are validated via `resources.schema.json`, which is auto-generated. Run `scripts/maintenance/generate_resources_schema.py` to regenerate.
 
 ### Valid Runtimes
 `apptainer`, `singularity`, `docker`
@@ -170,7 +170,7 @@ For detailed information, see:
 - ✓ Auto-generated resource types schema
 - ✓ Legacy tool conversion (41 Python tools)
 - ✓ Loader with enrichment and indexing
-- ✓ CI validation with schema generation
+- ✓ Maintenance validation with schema generation
 - ✓ Comprehensive unit tests (25 tests total)
 - ✓ Documentation updated
 
@@ -194,6 +194,6 @@ For detailed information, see:
 ## Support
 
 For issues or questions:
-- Check validation output: `python scripts/ci/validate_capabilities.py`
+- Check validation output: `python scripts/maintenance/validate_capabilities.py`
 - Run tests: `pytest tests/unit/planner/ -v`
 - See [Catalog README](catalog_README.md)

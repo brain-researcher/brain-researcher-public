@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CI validation script for capabilities catalog.
+"""Maintenance validation script for capabilities catalog.
 
 This script validates the capabilities.yaml file against:
 1. JSON Schema (capabilities.schema.json)
@@ -30,7 +30,7 @@ except ImportError as e:
 def get_repo_root() -> Path:
     """Get repository root directory."""
     script_path = Path(__file__).resolve()
-    return script_path.parents[2]  # scripts/ci/validate_capabilities.py -> repo root
+    return script_path.parents[2]  # scripts/maintenance/validate_capabilities.py -> repo root
 
 
 def validate_schema(
@@ -258,7 +258,9 @@ def main():
     # 0. Generate resources schema
     print("[0/4] Generate Resource Types Schema")
     print("-" * 60)
-    generator_script = repo_root / "scripts" / "ci" / "generate_resources_schema.py"
+    generator_script = (
+        repo_root / "scripts" / "maintenance" / "generate_resources_schema.py"
+    )
     try:
         result = subprocess.run(
             [sys.executable, str(generator_script)],

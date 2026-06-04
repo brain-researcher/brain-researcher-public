@@ -242,7 +242,7 @@ The main Helm chart renders 26 Kubernetes resources cleanly; the Istio overlay s
 | `docs/` | MCP docs, appendices, use cases, release notes, and contributor-facing docs |
 | `tests/` | Unit + integration + contracts (Pact) + e2e (Playwright) |
 | `infrastructure/` | docker-compose, Helm chart, K8s manifests, monitoring, nginx, haproxy |
-| `scripts/` | ETL / analysis / build / CI helpers and focused maintenance utilities |
+| `scripts/` | ETL, analysis, build, validation, and focused maintenance utilities |
 
 For the current import-boundary ratchet, see [`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py) and [`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt). For the agent-kit (skills + AGENTS templates + adapters + demos + eval rubrics), see the companion repo [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit).
 
