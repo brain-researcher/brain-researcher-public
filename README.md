@@ -12,6 +12,9 @@ evidence and neuroimaging recipes, then review the result before treating it as
 analysis output. For concrete services, paths, and setup commands, continue to
 the sections below.
 
+For more detailed, source-linked information about this repository, visit the
+[Brain Researcher public DeepWiki](https://deepwiki.com/brain-researcher/brain-researcher-public).
+
 <p align="center">
   <img src="docs/assets/doraemon/0.png" alt="Brain Researcher visual overview frame 1" width="620"><br>
   <img src="docs/assets/doraemon/1.png" alt="Brain Researcher visual overview frame 2" width="620"><br>
