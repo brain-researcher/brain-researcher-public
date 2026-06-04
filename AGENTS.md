@@ -29,7 +29,7 @@
 - `scripts/`: operational and reproducible helper scripts
 - `docs/`: operations docs, MCP docs, appendices, release notes, and use cases
 - `benchmarks/`: evaluation harness code and public-safe benchmark fixtures when present
-- Agent skills, AGENTS templates, demos, and eval rubrics live in the companion [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit) repository, not in this public core repo.
+- Agent skills, AGENTS templates, demos, and eval rubrics live in the companion [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit) repository, not in this public core repo.
 - `data/`, `configs/`, `infrastructure/`: datasets, runtime config, and deployment assets
 
 ## Workflow

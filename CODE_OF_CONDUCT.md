@@ -12,14 +12,11 @@ representing the project or its community in public spaces.
 
 ## Reporting
 
-Instances of unacceptable behavior may be reported by contacting the
-project maintainers at **person@example.com**. All reports are reviewed
-and investigated promptly and fairly. The maintainers are obligated to
-respect the privacy and security of the reporter of any incident.
-
-Reports may also be filed via GitHub's
-[private reporting flow](https://github.com/zjc062/brain_researcher/security/advisories/new)
-if you prefer that channel.
+Instances of unacceptable behavior may be reported privately through the
+project's [security reporting flow](SECURITY.md). Please do not open a
+public issue for sensitive conduct reports. All reports are reviewed and
+investigated promptly and fairly. The maintainers are obligated to respect
+the privacy and security of the reporter of any incident.
 
 ## Enforcement
 

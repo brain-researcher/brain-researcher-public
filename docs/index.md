@@ -19,6 +19,6 @@ Brain Researcher is an OSS-preview neuroimaging research assistant with a recipe
 
 ## Support
 
-- [GitHub Issues](https://github.com/zjc062/brain_researcher/issues)
+- [GitHub Issues](https://github.com/brain-researcher/brain-researcher-public/issues)
 - [Contributing](../CONTRIBUTING.md)
 - [Security](../SECURITY.md)

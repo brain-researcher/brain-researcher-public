@@ -3,22 +3,21 @@
 ## Supported versions
 
 Brain Researcher is in pre-1.0 OSS preview. Security fixes are applied
-to the `master` branch only. Once v1.0 is tagged, this section will be
+to the `main` branch only. Once v1.0 is tagged, this section will be
 updated with a published support window.
 
 | Version | Supported |
 |---|---|
-| `master` (latest) | ✅ |
+| `main` (latest) | ✅ |
 | pre-1.0 tagged releases | ⚠️ best-effort |
 
 ## Reporting a vulnerability
 
 **Please do not file a public GitHub issue** for security
-vulnerabilities. Instead, use one of the private channels below:
+vulnerabilities. Instead, use the private channel below:
 
-1. **GitHub's private advisory flow** (preferred):
-   [Open a private security advisory](https://github.com/zjc062/brain_researcher/security/advisories/new).
-2. **Email**: `person@example.com` with subject `[brain-researcher SECURITY]`.
+**GitHub's private advisory flow**:
+[Open a private security advisory](https://github.com/brain-researcher/brain-researcher-public/security/advisories/new).
 
 Please include, where possible:
 
