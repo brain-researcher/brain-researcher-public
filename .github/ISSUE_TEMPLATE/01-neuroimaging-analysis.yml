@@ -1,0 +1,115 @@
+name: Neuroimaging analysis or run problem
+description: Report a failed, confusing, or scientifically wrong analysis workflow.
+title: "[ANALYSIS] "
+labels:
+  - type/bug
+  - area/analysis
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when you tried to run or plan an fMRI, diffusion, structural,
+        EEG/MEG, surface, or meta-analysis workflow and something failed or
+        looked scientifically wrong.
+
+  - type: dropdown
+    id: modality
+    attributes:
+      label: Modality
+      options:
+        - fMRI
+        - diffusion MRI
+        - structural MRI
+        - surface / morphometry
+        - EEG / MEG
+        - meta-analysis
+        - multimodal
+        - other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: entry_point
+    attributes:
+      label: Entry point
+      options:
+        - Web UI
+        - MCP client
+        - CLI
+        - Python API
+        - Docker / compose
+        - documentation only
+        - not sure
+    validations:
+      required: true
+
+  - type: input
+    id: workflow_tool
+    attributes:
+      label: Workflow or tool involved
+      placeholder: fMRIPrep, MRIQC, Nilearn GLM, FSL FEAT, MRtrix, FreeSurfer, MCP planning
+    validations:
+      required: false
+
+  - type: input
+    id: data_source
+    attributes:
+      label: Data source
+      placeholder: OpenNeuro dsXXXXXX, local BIDS dataset, HCP, UKB, synthetic, unknown
+    validations:
+      required: false
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: What were you trying to do?
+      placeholder: Describe the analysis goal in your own words.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps you followed
+      placeholder: Numbered steps, commands, prompt, or UI click path.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      placeholder: Error, blocked state, wrong output, confusing recommendation, or unexpected scientific claim.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Error text, logs, screenshots, or copied output
+      placeholder: Redact usernames, private paths, credentials, PHI, and private dataset identifiers.
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: OS, Python version, Docker yes/no, MCP client, browser, package version, if known.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I did not include PHI, credentials, API keys, tokens, Neo4j passwords, or private dataset paths.
+          required: true

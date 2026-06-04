@@ -1,0 +1,69 @@
+name: Docs, setup, or MCP problem
+description: Report setup friction in the README, environment docs, MCP config, Web UI, or local services.
+title: "[SETUP] "
+labels:
+  - type/bug
+  - area/docs
+body:
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - README / quickstart
+        - environment variables / API keys
+        - MCP client setup
+        - Web UI
+        - Docker / compose
+        - Python package install
+        - Neo4j / KG service
+        - docs page
+        - other / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps followed
+      placeholder: Commands, docs section, page URL, or MCP client configuration steps.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      placeholder: Error message, missing docs, confusing instruction, or blocked service.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: OS, Python version, Docker version, MCP client, browser, package version, if known.
+    validations:
+      required: false
+
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested docs or setup fix
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I did not include PHI, credentials, API keys, tokens, Neo4j passwords, or private dataset paths.
+          required: true

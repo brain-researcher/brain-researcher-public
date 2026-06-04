@@ -1,0 +1,84 @@
+name: Request a tool or workflow
+description: Ask for a missing neuroimaging tool, recipe, workflow, or MCP capability.
+title: "[REQUEST] "
+labels:
+  - type/feature-request
+  - area/workflow
+body:
+  - type: dropdown
+    id: request_type
+    attributes:
+      label: Request type
+      options:
+        - missing analysis tool
+        - missing workflow recipe
+        - missing MCP tool or contract
+        - missing UI workflow
+        - unclear existing capability
+        - other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: modality
+    attributes:
+      label: Modality
+      options:
+        - fMRI
+        - diffusion MRI
+        - structural MRI
+        - surface / morphometry
+        - EEG / MEG
+        - meta-analysis
+        - multimodal
+        - other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: tool_or_workflow
+    attributes:
+      label: Tool or workflow name
+      placeholder: QSIPrep, XCP-D, FreeSurfer recon-all, FSL randomise, Nilearn first-level GLM
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Research use case
+      placeholder: What analysis would this enable, and for what kind of dataset?
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_attempt
+    attributes:
+      label: What did you try already?
+      placeholder: Search terms, pages, tools, or docs you checked.
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected_inputs_outputs
+    attributes:
+      label: Expected inputs and outputs
+      placeholder: BIDS inputs, derivatives, confounds, atlas, contrasts, figures, tables, reports.
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References or examples
+      placeholder: Tool docs, papers, example commands, or workflow descriptions.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I did not include PHI, credentials, API keys, tokens, Neo4j passwords, or private dataset paths.
+          required: true

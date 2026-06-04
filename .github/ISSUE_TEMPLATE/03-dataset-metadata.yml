@@ -1,0 +1,84 @@
+name: Dataset or metadata issue
+description: Report missing datasets, wrong metadata, BIDS confusion, or Add-to-Plan failures.
+title: "[DATASET] "
+labels:
+  - type/bug
+  - area/datasets
+body:
+  - type: dropdown
+    id: data_source
+    attributes:
+      label: Data source
+      options:
+        - OpenNeuro
+        - HCP
+        - UK Biobank
+        - local BIDS dataset
+        - public atlas
+        - public paper / meta-analysis source
+        - synthetic or demo data
+        - other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: dataset_id
+    attributes:
+      label: Dataset name or ID
+      placeholder: ds000XXX, HCP task/rest, UKB field, atlas name, or paper/source name
+    validations:
+      required: false
+
+  - type: dropdown
+    id: problem_type
+    attributes:
+      label: Problem type
+      options:
+        - dataset missing
+        - search or filter issue
+        - wrong metadata
+        - incomplete metadata
+        - BIDS field confusion
+        - Add to Plan failed
+        - access/license status unclear
+        - other / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: search_context
+    attributes:
+      label: Search, filter, or path context
+      placeholder: Query terms, filters, page URL, BIDS fields, or command used.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior or metadata
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior or metadata shown
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      placeholder: Screenshot, copied card text, BIDS sidecar field names, or public source link.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I did not include PHI, credentials, API keys, tokens, Neo4j passwords, or private dataset paths.
+          required: true

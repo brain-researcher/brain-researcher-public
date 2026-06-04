@@ -1,5 +1,8 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
+  - name: Security vulnerability
+    url: https://github.com/brain-researcher/brain-researcher-public/security/policy
+    about: Please do not report vulnerabilities in public issues.
   - name: General community discussion
-    url: https://github.com/zjc062/brain-researcher-public/discussions
+    url: https://github.com/brain-researcher/brain-researcher-public/discussions
     about: Use Discussions for open-ended conversation and non-tracked topics.

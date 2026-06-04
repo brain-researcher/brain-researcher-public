@@ -1,204 +1,126 @@
 # Contributing to Brain Researcher
 
-Thanks for your interest in contributing! Brain Researcher is an academic
-research tool first and an open-source project second — we try to keep
-the contribution process light while preserving scientific
-reproducibility.
+Thanks for your interest in Brain Researcher. This repository is public code,
+contracts, documentation, and service scaffolding for AI-assisted neuroimaging.
+Private benchmark corpora, Neo4j graph contents, internal run artifacts, and
+site-specific launchers are not shipped here.
 
-By participating in this project you agree to abide by the
+By participating in this project you agree to follow the
 [Code of Conduct](CODE_OF_CONDUCT.md).
 
----
+## Report an Issue
 
-## Quick links
+Choose the path closest to what you were trying to do:
 
-- 🐛 [File a bug](https://github.com/zjc062/brain_researcher/issues/new?template=bug.md)
-- ✨ [Suggest a feature](https://github.com/zjc062/brain_researcher/issues/new?template=feature.md)
-- 🔐 Report a vulnerability — see [`SECURITY.md`](SECURITY.md), **do not** open a public issue.
-- 💬 Open-ended questions: [GitHub Discussions](https://github.com/zjc062/brain_researcher/discussions)
+- [Neuroimaging analysis or run problem](https://github.com/brain-researcher/brain-researcher-public/issues/new?template=01-neuroimaging-analysis.yml):
+  an fMRI, diffusion, structural, EEG/MEG, surface, or meta-analysis workflow
+  failed, blocked, or produced a questionable result.
+- [Request a tool or workflow](https://github.com/brain-researcher/brain-researcher-public/issues/new?template=02-tool-workflow-request.yml):
+  a tool, recipe, MCP capability, or UI workflow is missing or hard to find.
+- [Dataset or metadata issue](https://github.com/brain-researcher/brain-researcher-public/issues/new?template=03-dataset-metadata.yml):
+  dataset search, BIDS metadata, access status, or Add-to-Plan behavior looks
+  wrong.
+- [Scientific validity concern](https://github.com/brain-researcher/brain-researcher-public/issues/new?template=04-scientific-validity.yml):
+  a default, workflow order, statistical model, atlas/space choice, evidence
+  grounding, or interpretation seems scientifically risky.
+- [Docs, setup, or MCP problem](https://github.com/brain-researcher/brain-researcher-public/issues/new?template=05-docs-setup.yml):
+  README, environment variables, MCP setup, Web UI, Docker, Python install, or
+  service startup is confusing or broken.
 
----
+If none of those fit, open a blank issue:
+<https://github.com/brain-researcher/brain-researcher-public/issues/new>.
 
-## Development setup
+For vulnerabilities, do not open a public issue. Use
+[`SECURITY.md`](SECURITY.md).
 
-```bash
-git clone https://github.com/zjc062/brain_researcher.git
-cd brain_researcher
-python -m venv .venv && source .venv/bin/activate
-pip install -e .[all,dev]              # dev extras: pytest, ruff, mypy, etc.
-cp .env.example .env                   # add an LLM API key
-docker compose up -d neo4j postgres redis   # backing services
-pytest tests/unit -x                   # quick smoke (~30s)
-```
+## What to Include
 
-For the full local stack (agent + MCP + KG + web UI), follow the
-`docker compose up -d` path in [README](README.md) or the
-service-by-service walkthrough in [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
+For neuroimaging reports, the most useful details are:
 
----
+- Modality: fMRI, diffusion MRI, structural MRI, surface, EEG/MEG, or
+  meta-analysis.
+- Data source: OpenNeuro ID, local BIDS dataset, HCP, UKB, atlas, synthetic
+  data, or unknown.
+- Entry point: Web UI, MCP client, CLI, Python API, Docker, or docs.
+- Workflow or tool: for example fMRIPrep, MRIQC, FreeSurfer, MRtrix, FSL,
+  Nilearn, NiMARE, or Brain Researcher MCP planning.
+- What you expected and what happened instead.
+- Error text, screenshots, logs, or copied output when available.
 
-## PR workflow
+Do not include PHI, private dataset paths, API keys, tokens, cloud secrets, or
+Neo4j passwords.
 
-### 1. Plan the change
-
-Before writing code, especially for non-trivial work, open a Discussion
-or draft issue describing:
-- What you want to change and why
-- Which datasets / tools / KG nodes are affected
-- Whether a new dependency is needed
-
-For substantial refactors, run the codegraph baseline first so you can
-quantify the blast radius:
-
-```bash
-python scripts/analyze_code_import_graph.py \
-  --src-root src/brain_researcher \
-  --markdown-out /tmp/codegraph_local.md \
-  --boundary core:services --boundary llmcore:services
-```
-
-Compare against the canonical ratchet in
-[`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py)
-and [`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt);
-PRs must not introduce new cross-boundary violations.
-
-For function-level impact (e.g., before renaming or moving a symbol),
-the [code-review-graph](https://github.com/tirth8205/code-review-graph)
-MCP tool surface is helpful:
+## Development Setup
 
 ```bash
-pip install code-review-graph
-code-review-graph build
-code-review-graph serve     # then call `impact` / `affected` from your MCP client
+git clone https://github.com/brain-researcher/brain-researcher-public.git
+cd brain-researcher-public
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .[all,dev]
+cp .env.example .env
 ```
 
-### 2. Branch
+Add one LLM provider key to `.env` if you need runtime LLM behavior. See
+[`docs/ENVIRONMENT_SETUP.md`](docs/ENVIRONMENT_SETUP.md) for provider-specific
+setup.
+
+For the full local stack, follow the service walkthrough in
+[`README.md`](README.md) and [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
+Some surfaces require local API keys, data mounts, Neo4j state, or
+deployment-specific services.
+
+## Pull Requests
+
+1. Open or link an issue for non-trivial changes.
+2. Create a focused branch:
 
 ```bash
 git checkout -b <type>/<short-slug>
 ```
 
-Type prefix one of: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`,
-`perf`, `ci`.
+Useful prefixes are `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, and
+`perf`.
 
-### 3. Make the change
+3. Keep the change scoped. Separate behavior changes, refactors, and docs-only
+   updates when practical.
+4. Update docs for user-facing changes.
+5. Run the narrowest meaningful local validation and include the command output
+   in the PR body.
 
-- **Style**: ruff + black + isort enforced via `.pre-commit-config.yaml`.
-  Install hooks with `pre-commit install` (skip if you use git-annex —
-  see [`docs/OPERATIONS.md`](docs/OPERATIONS.md)).
-- **Types**: `mypy src/brain_researcher` should be clean for new code.
-- **Tests**: add unit tests for new behavior; integration tests for new
-  service surfaces. Mark slow / external-data tests with the appropriate
-  `pytest.mark.*`.
-- **Docs**: update `docs/` for user-facing changes; update
-  `AGENTS.md` for new repository conventions.
-
-### 4. Verify before pushing
+Examples:
 
 ```bash
-ruff check src/ tests/
-black --check src/ tests/
-mypy src/brain_researcher --ignore-missing-imports
-pytest tests/unit -x                  # required to pass
-pytest tests/integration              # required for service changes
+python -m py_compile path/to/changed_file.py
+python -m pytest tests/unit -x
+python -m mkdocs build -f mkdocs-simple.yml --quiet
+git diff --check
 ```
 
-Pre-commit hooks (gitleaks, ruff, bandit, …) will run automatically.
-Do not bypass them with `--no-verify` unless you're fixing a hook bug.
+Maintainers may run additional local checks before merge. This public
+repository does not currently ship GitHub Actions workflows.
 
-### 5. Open the PR
+Use the [pull request template](.github/pull_request_template.md) and include:
 
-Use the [PR template](.github/PULL_REQUEST_TEMPLATE.md) (if present) or
-include:
+- What changed and why.
+- Linked issue or discussion, if any.
+- What you ran locally.
+- What remains out of scope.
 
-- **What** changed and **why**
-- Linked issue / discussion (if any)
-- **Test plan** — what you ran, what passed
-- **Impact** — for refactors, paste the codegraph diff or impact-report
-  excerpt
-- **Out-of-scope** — anything intentionally left for a follow-up
+## Repository Conventions
 
-PRs go through CI (lint + tests + helm-render + secret scan). Reviewers
-focus on correctness, test coverage, and scientific defensibility (for
-analysis-touching changes).
+- Do not commit secrets, real `.env` files, PHI, tokens, cloud credentials, or
+  Neo4j passwords.
+- Do not commit absolute machine-specific paths such as `/home/<user>/...` into
+  source, configs, or active docs.
+- Use repo-relative paths, environment variables, or documented config roots.
+- Large generated benchmark bundles and private run artifacts are not part of
+  the public release surface.
+- New analysis tools should live under
+  `src/brain_researcher/services/tools/`, with matching contracts/config/docs
+  where applicable.
 
----
+## Recognition
 
-## Repository conventions
-
-### Hardcoded paths
-
-**Never** commit absolute paths (`/home/<user>/...`) into source,
-configs, or active docs. Use:
-- env-var defaults: `os.environ.get("BR_DATA_ROOT", "/app/data")`
-- repo-relative: `Path(__file__).resolve().parents[N] / "data"`
-- helpers from `brain_researcher.config.paths`: `get_data_root()`,
-  `get_config_root()`, etc.
-
-The CI gitleaks step blocks new committed secrets; a manual grep
-keeps personal paths out:
-
-```bash
-grep -rln "/home/$USER" src/ apps/ configs/ scripts/ tests/ docs/ \
-  --include="*.py" --include="*.ts" --include="*.tsx" \
-  --include="*.yaml" --include="*.yml" --include="*.json" \
-  --exclude-dir=audits --exclude-dir=operations --exclude-dir=archive
-# Should print nothing.
-```
-
-### Captured experiment archives
-
-Large generated benchmark and audit bundles are not part of the public release
-surface. If a generated use case is intentionally checked in under
-`docs/use_cases/`, treat it as a frozen artifact: regenerate via a new run
-rather than editing historical output in place.
-
-### MCP tool naming
-
-New MCP tools go under canonical SLURM/SLURM-style generic names
-(`slurm_*` not `sherlock_*`). The existing `sherlock_*` tools are
-kept as deprecated aliases for one release cycle and will be removed
-post-v1.1.
-
----
-
-## Adding a new analysis tool
-
-To register a new analysis tool in the catalog so it's discoverable
-from the agent / MCP loop:
-
-1. Implement the tool under `src/brain_researcher/services/tools/`.
-2. Add a contract entry in `configs/tools_catalog.json` (validated by
-   `configs/schemas/tools_catalog.schema.json` in CI).
-3. Add the tool name to `configs/catalog/exposed_tools.yaml`.
-4. Add an example invocation in `configs/catalog/chat_tool_schemas.yaml`.
-5. Add a unit test under `tests/unit/tools/`.
-6. Document inputs/outputs in `docs/mcp.md` and `docs/mcp_tools.schema.json`.
-
----
-
-## Adding a new SLURM cluster profile
-
-See [`docs/hpc.md`](docs/hpc.md). One YAML in
-`configs/slurm/profiles/<your_cluster>.yaml` is all it takes.
-
----
-
-## Releasing
-
-Releases are cut by the maintainers. The general flow:
-
-1. Bump version in `pyproject.toml` and `CITATION.cff`.
-2. Update `CHANGELOG.md` (Keep-a-Changelog format).
-3. Tag the commit: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push --tags`.
-4. CI builds Docker images, publishes to GHCR, and uploads PyPI.
-5. Zenodo automatically mints a DOI for the tagged release.
-
----
-
-## Contributor recognition
-
-Significant contributions are acknowledged in the paper acknowledgments
-section and in `CITATION.cff`'s `authors` block. Casual contributions
-are recognized via GitHub's contributors graph. We do not require a CLA
-— the MIT license covers both the project and contributions.
+Significant contributions may be acknowledged in release notes, project
+documentation, or `CITATION.cff`. The project uses the MIT license.

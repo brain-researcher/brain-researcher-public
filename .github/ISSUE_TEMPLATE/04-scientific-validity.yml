@@ -1,0 +1,86 @@
+name: Scientific validity concern
+description: Flag questionable defaults, workflow ordering, evidence grounding, statistics, or interpretation.
+title: "[VALIDITY] "
+labels:
+  - type/scientific-review
+  - area/scientific-validity
+body:
+  - type: dropdown
+    id: concern_area
+    attributes:
+      label: Concern area
+      options:
+        - workflow ordering
+        - preprocessing default
+        - statistical model
+        - contrast or target definition
+        - brain space / atlas / parcellation
+        - QC gate or exclusion rule
+        - evidence grounding
+        - interpretation / overclaim
+        - other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: modality
+    attributes:
+      label: Modality
+      options:
+        - fMRI
+        - diffusion MRI
+        - structural MRI
+        - surface / morphometry
+        - EEG / MEG
+        - meta-analysis
+        - multimodal
+        - other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: workflow
+    attributes:
+      label: Workflow, tool, page, or claim involved
+      placeholder: Workflow name, MCP tool, UI page, docs section, or claim.
+    validations:
+      required: true
+
+  - type: textarea
+    id: concern
+    attributes:
+      label: What seems scientifically wrong or risky?
+    validations:
+      required: true
+
+  - type: textarea
+    id: why_matters
+    attributes:
+      label: Why does this matter?
+      placeholder: Bias, invalid inference, wrong modality/space pairing, leakage, unsupported claim, poor reproducibility.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_change
+    attributes:
+      label: Suggested correction
+      placeholder: Better default, caveat, validation gate, reference, or workflow change.
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence or reference
+      placeholder: Public paper, tool docs, copied output, screenshot, or minimal example.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I did not include PHI, credentials, API keys, tokens, Neo4j passwords, or private dataset paths.
+          required: true
