@@ -46,7 +46,7 @@ def _infer_model_from_available_keys() -> str | None:
         ("GOOGLE_API_KEY", "gemini-3-flash-preview"),
         ("GEMINI_API_KEY", "gemini-3-flash-preview"),
         ("OPENAI_API_KEY", "gpt-4o"),
-        ("ANTHROPIC_API_KEY", "claude-sonnet-4-8"),
+        ("ANTHROPIC_API_KEY", "claude-opus-4-8"),
         ("DEEPSEEK_API_KEY", DEEPSEEK_MODEL or "deepseek-chat"),
     ]
 

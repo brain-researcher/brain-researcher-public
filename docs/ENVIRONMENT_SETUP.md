@@ -26,7 +26,7 @@ Choose one provider to start. More can be added later.
 |---|---|---|---|
 | Google Gemini | [Google AI Studio API keys](https://aistudio.google.com/app/apikey) | `GEMINI_API_KEY` | `gemini-3-flash-preview` |
 | OpenAI | [OpenAI API keys](https://platform.openai.com/api-keys) | `OPENAI_API_KEY` | `gpt-4o` |
-| Anthropic | [Anthropic Console keys](https://console.anthropic.com/settings/keys) | `ANTHROPIC_API_KEY` | `claude-sonnet-4-8` |
+| Anthropic | [Anthropic Console keys](https://console.anthropic.com/settings/keys) | `ANTHROPIC_API_KEY` | `claude-opus-4-8` |
 | DeepSeek | [DeepSeek API keys](https://platform.deepseek.com/api_keys) | `DEEPSEEK_API_KEY` | `deepseek-chat` |
 | Z.AI / GLM | [Z.AI quick start and API keys](https://docs.z.ai/guides) | `ZAI_API_KEY` | `glm-5.1` |
 | OpenRouter | [OpenRouter API keys](https://openrouter.ai/docs/api-keys) | `OPENROUTER_API_KEY` | `z-ai/glm-5.1` or another routed model |
@@ -78,7 +78,7 @@ DEFAULT_LLM_MODEL=gpt-4o
 
 ```env
 ANTHROPIC_API_KEY=replace_with_key_from_anthropic
-DEFAULT_LLM_MODEL=claude-sonnet-4-8
+DEFAULT_LLM_MODEL=claude-opus-4-8
 ```
 
 ```env
@@ -158,7 +158,7 @@ br serve agent --port 8000
 | Google Gemini | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-3-flash-preview` |
 | OpenAI | `OPENAI_API_KEY` | `gpt-4o` |
 | DeepSeek | `DEEPSEEK_API_KEY` | `deepseek-chat` |
-| Anthropic | `ANTHROPIC_API_KEY` | `claude-sonnet-4-8` |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-4-8` |
 | Z.AI / GLM | `ZAI_API_KEY` for external OpenAI-compatible clients | `glm-5.1` |
 | OpenRouter | `OPENROUTER_API_KEY` for external routed-model clients | `z-ai/glm-5.1` |
 | OpenCode | `/connect` in the OpenCode TUI | selected with `/models` |
