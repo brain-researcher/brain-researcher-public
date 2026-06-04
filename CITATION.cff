@@ -26,8 +26,8 @@ abstract: >-
   authority moves upstream, not out of the process.
 type: software
 license: MIT
-repository-code: "https://github.com/zjc062/brain-researcher-public"
-url: "https://github.com/zjc062/brain-researcher-public"
+repository-code: "https://github.com/brain-researcher/brain-researcher-public"
+url: "https://github.com/brain-researcher/brain-researcher-public"
 # Update at v1.0 release:
 # - `version`, `date-released`, `doi` (Zenodo) below
 # - the `preferred-citation` block (arXiv preprint)

@@ -1,8 +1,8 @@
 # Brain Researcher
 
-**An AI-assisted research infrastructure workspace for neuroimaging analyses.** Brain Researcher combines a large-language-model planning loop with a neuroscience knowledge graph (Neo4j), a curated catalog of fMRI / diffusion / EEG analysis tools, and evidence-grounded review surfaces. This public repository contains the open code, contracts, docs, service stack, and public-safe helper scripts. Private benchmark corpora, internal run artifacts, and site-specific launchers are intentionally not shipped here.
+**Brain Researcher is a workspace-centric infrastructure for auditable AI-assisted neuroimaging.** It turns research questions into bounded episodes that connect evidence, admissible analysis choices, tool/recipe selection, provenance, and review verdicts. This public repository ships the open code, MCP contracts, service stack, Web UI, docs, and public-safe helpers; private benchmark corpora, Neo4j graph contents, internal run artifacts, and site-specific launchers are not included.
 
-> **Status - v0.1.0 OSS preview.** Stable MCP contracts are versioned under [`contracts/`](contracts/) (`contracts/VERSION` currently `2026-05-27`). Some runtime surfaces require local environment variables, data mounts, or external services; this README distinguishes shipped code and contracts from private data and deployment-specific execution.
+> **Status - v0.1.0 OSS preview.** Stable MCP contracts live under [`contracts/`](contracts/) (`contracts/VERSION`: `2026-05-27`). Some surfaces require local API keys, data mounts, Neo4j state, or deployment-specific services; this README separates shipped code from private data and hosted execution.
 
 📦 **Companion kit** (skills, AGENTS templates, demos, eval rubrics): [`brain-researcher-agent-kit`](https://github.com/zjc062/brain-researcher-agent-kit)
 🗂️ **KG data boundary:** Neo4j graph contents are private. This repo ships code, schemas, and contracts, not KG dumps.
@@ -88,7 +88,7 @@ Compose also runs a one-shot `init-local-dirs` job to prepare writable local
 orchestrator worker is optional and can be added with the `worker` profile.
 
 ```bash
-git clone https://github.com/zjc062/brain-researcher-public.git
+git clone https://github.com/brain-researcher/brain-researcher-public.git
 cd brain-researcher-public
 
 # 1. Set required env vars (at least: NEO4J_PASSWORD, JWT_SECRET_KEY, NEXTAUTH_SECRET, one LLM API key).
@@ -239,9 +239,9 @@ If you use Brain Researcher in published work, please cite:
 ```bibtex
 @misc{brain_researcher_2026,
   author       = {Chen, Zijiao and {Brain Researcher contributors}},
-  title        = {Brain Researcher: An LLM-driven Research Assistant for Neuroimaging},
+  title        = {Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses},
   year         = {2026},
-  howpublished = {\url{https://github.com/zjc062/brain-researcher-public}},
+  howpublished = {\url{https://github.com/brain-researcher/brain-researcher-public}},
   note         = {arXiv:XXXX.XXXXX (preprint pending); Zenodo DOI pending}
 }
 ```

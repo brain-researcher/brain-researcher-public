@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/zjc062/brain-researcher-public/contracts/br-tool-contract.schema.json",
+  "$id": "https://github.com/brain-researcher/brain-researcher-public/contracts/br-tool-contract.schema.json",
   "title": "Brain Researcher Tool Contract Envelope",
   "description": "Schema for a single tool entry under contracts/tools/<name>.json. The aggregate at docs/mcp_tools.schema.json contains an array of these entries.",
   "type": "object",
