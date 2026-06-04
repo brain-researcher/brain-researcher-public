@@ -85,17 +85,8 @@ RETIRED_ARCHIVE_RELOCATIONS = {
 }
 
 RELOCATED_PATHS = {
-    "src/brain_researcher/infrastructure/cdn/scripts/deploy-cdn.sh": (
-        "scripts/deployment/deploy_cdn.sh"
-    ),
     "src/brain_researcher/tests/unit/agent/test_ui_api_coding_stream.py": (
         "tests/unit/agent/test_ui_api_coding_stream.py"
-    ),
-    "src/brain_researcher/services/gateway/asgi_app.py": (
-        "src/brain_researcher/legacy/gateway/asgi_app.py"
-    ),
-    "src/brain_researcher/services/gateway/br_kg_proxy.py": (
-        "src/brain_researcher/legacy/gateway/br_kg_proxy.py"
     ),
     "src/brain_researcher/services/br_kg/scripts": "scripts/br-kg",
     "src/brain_researcher/services/agent/launch_agent.py": (
@@ -113,12 +104,6 @@ RELOCATED_PATHS = {
     "src/brain_researcher/services/agent/demo_enhanced_features.py": (
         "scripts/root_legacy/demo_enhanced_features.py"
     ),
-    "src/brain_researcher/services/agent/langserve_app.py": (
-        "src/brain_researcher/legacy/agent/langserve_app.py"
-    ),
-    "src/brain_researcher/services/agent/web_service_langgraph.py": (
-        "src/brain_researcher/legacy/agent/web_service_langgraph.py"
-    ),
     "src/brain_researcher/services/agent/Dockerfile": (
         "infrastructure/docker/Dockerfile.agent"
     ),
@@ -131,26 +116,8 @@ RELOCATED_PATHS = {
     "src/brain_researcher/services/communication/config/service_mesh.yaml": (
         "configs/runtime/service_mesh.yaml"
     ),
-    "src/brain_researcher/services/api_gateway/legacy/__init__.py": (
-        "src/brain_researcher/legacy/api_gateway/__init__.py"
-    ),
-    "src/brain_researcher/services/api_gateway/legacy/cli.py": (
-        "src/brain_researcher/legacy/api_gateway/cli.py"
-    ),
-    "src/brain_researcher/services/api_gateway/legacy/job_submission.py": (
-        "src/brain_researcher/legacy/api_gateway/job_submission.py"
-    ),
-    "src/brain_researcher/services/api_gateway/legacy/job_status.py": (
-        "src/brain_researcher/legacy/api_gateway/job_status.py"
-    ),
-    "src/brain_researcher/services/api_gateway/legacy/start_gateway.py": (
-        "src/brain_researcher/legacy/api_gateway/start_gateway.py"
-    ),
     "src/brain_researcher/services/orchestrator/Dockerfile": (
         "infrastructure/docker/Dockerfile.orchestrator"
-    ),
-    "src/brain_researcher/services/api_gateway/requirements.txt": (
-        "src/brain_researcher/legacy/api_gateway/requirements.txt"
     ),
     "src/brain_researcher/services/agent/tool_mappings.yaml": (
         "configs/catalog/tool_mappings.yaml"
@@ -375,7 +342,6 @@ def test_services_api_gateway_tree_is_reduced_to_package_marker() -> None:
         if path.is_file()
     }
     assert remaining_files == {
-        "src/brain_researcher/services/api_gateway/README.md",
         "src/brain_researcher/services/api_gateway/__init__.py",
     }, (
         "services/api_gateway should only retain the package marker and README; "

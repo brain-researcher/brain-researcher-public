@@ -136,7 +136,6 @@ services:
       - BR_ORCHESTRATOR_URL=http://orchestrator:3001
       - NEXT_PUBLIC_AGENT_URL=http://agent:8000
       - NEXT_PUBLIC_BR_KG_URL=http://br-kg:5000
-      - NEXT_PUBLIC_BR_KG_API=http://br-kg:5000 # legacy alias
       - BR_KG_URL=http://br-kg:5000
       - NEXT_PUBLIC_API_URL=http://agent:8000 # legacy alias
       - NEXT_PUBLIC_ORCHESTRATOR_URL=http://localhost:3001

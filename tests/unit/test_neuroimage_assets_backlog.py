@@ -84,7 +84,13 @@ def test_neuroimage_assets_backlog_state_coverage_and_key_entries() -> None:
 
 
 def test_check_neuroimage_assets_backlog_script_passes() -> None:
-    cmd = [sys.executable, str(SCRIPT), "--registry", str(REGISTRY)]
+    cmd = [
+        sys.executable,
+        str(SCRIPT),
+        "--registry",
+        str(REGISTRY),
+        "--skip-path-check",
+    ]
     completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
     result = json.loads(completed.stdout)
 

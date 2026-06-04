@@ -37,7 +37,6 @@ This appendix has two parts.
 | `src/brain_researcher/services/mcp/sherlock_tools.py` | Sherlock/OAK guide, Slurm rendering, log/job diagnostics |
 | `docs/mcp.md` | user-facing MCP flow, env knobs, execution policy, external coding-agent loop |
 | `docs/mcp.md#surface-tiers` | default, advanced, ops tiers and capability-family policy |
-| `docs/specs/br_mcp_mode_profile_spec.md` | hosted cloud, local Docker, and HPC deployment-mode contract |
 | `docs/mcp_tools.schema.json` | machine-readable tool catalog (72 entries) |
 | `infrastructure/docker/Dockerfile.mcp` | Docker packaging, port 7000, runtime dependencies |
 | `configs/claude/mcp.http.template.json.tmpl` | HTTP client template (`/mcp` URL + bearer header) |

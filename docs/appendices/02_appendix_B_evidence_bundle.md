@@ -251,9 +251,6 @@ Suggested fixes:
 | `docs/use_cases/br_kg_plot_probe_20260502/SUMMARY.md` | Production schema/plot probe | Bounded production queries through ${GCE_VM_NAME} and brain-researcher-BR-KG-0; useful but not a full data export. |
 | `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_schema_inventory.html` | Searchable schema inventory | Retained public table browser for schema-level inspection. |
 | `docs/use_cases/br_kg_plot_probe_20260502/tables/br-kg_schema_inventory_data_dictionary.md` | Schema inventory file layout | Documents the generated tables. Raw CSV/JSON exports are intentionally not committed in the public docs tree. |
-| `docs/specs/br-kg_structural_quality_benchmark_v1.md` | KG structural-quality framing | Evaluation should be a versioned quality card, not only node/edge counts. |
-| `docs/services/br-kg/gabriel_full_pipeline.md` | Gabriel paper-mining generation/ingest lane | Anchors LLM/heuristic extraction, review queues, candidate lanes, and KGGen evaluation. |
-| `docs/standards/BR-KG_Standards.md` | Standards skeleton | Useful for ID/provenance/merge-policy intent; verify before citing as implemented. |
 
 ### Status vocabulary
 

@@ -15,10 +15,7 @@ from brain_researcher.autoresearch.artifact_schema import (
     canonicalize_line_path,
     resolve_line_paths,
 )
-from brain_researcher.services.tools.tribe_stimulus_library import (
-    DEFAULT_TRIBE_STIMULUS_LIBRARY,
-    resolve_project_paths,
-)
+from brain_researcher.services.tools.tribe_stimulus_library import resolve_project_paths
 
 IGNORED_EMBEDDED_PATH_PREFIXES = (
     Path("/run"),
@@ -273,8 +270,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--stimulus-library",
         type=Path,
-        default=DEFAULT_TRIBE_STIMULUS_LIBRARY,
-        help="Path to configs/experiments/tribe_ibc_stimulus_library.yaml",
+        required=True,
+        help="Path to an explicit TRIBE stimulus-library YAML.",
     )
     parser.add_argument(
         "--project-root",

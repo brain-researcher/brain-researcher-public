@@ -6,7 +6,6 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-
 TAXONOMY_ROWS: list[dict[str, Any]] = [
     {
         "taxonomy_id": "SC-1",
@@ -94,7 +93,6 @@ TAXONOMY_ROWS: list[dict[str, Any]] = [
             "src/brain_researcher/services/br_kg/query_service.py#L4785",
             "src/brain_researcher/services/br_kg/query_service.py#L5605",
             "src/brain_researcher/services/br_kg/query_service.py#L9980",
-            "docs/specs/kg_verify_hypothesis_spec.md#L61",
         ],
         "required_regression_assertion": (
             "If literature changes the verdict but the card still omits the core "
@@ -118,7 +116,13 @@ PROBE_ROWS: list[dict[str, Any]] = [
             },
             {
                 "role": "population_comparator",
-                "any_of": ["younger", "older", "aging", "older adults", "younger adults"],
+                "any_of": [
+                    "younger",
+                    "older",
+                    "aging",
+                    "older adults",
+                    "younger adults",
+                ],
             },
         ],
         "query_role_terms_optional": [
@@ -158,11 +162,24 @@ PROBE_ROWS: list[dict[str, Any]] = [
         "query_role_terms_required": [
             {
                 "role": "representation_target",
-                "any_of": ["visual image", "visual representation", "image reconstruction"],
+                "any_of": [
+                    "visual image",
+                    "visual representation",
+                    "image reconstruction",
+                ],
             },
             {
                 "role": "region_scope",
-                "any_of": ["visual cortex", "v1", "v2", "v4", "ffa", "loc", "roi", "regions"],
+                "any_of": [
+                    "visual cortex",
+                    "v1",
+                    "v2",
+                    "v4",
+                    "ffa",
+                    "loc",
+                    "roi",
+                    "regions",
+                ],
             },
         ],
         "query_role_terms_optional": [
@@ -233,8 +250,7 @@ def build_probe_rows() -> list[dict[str, Any]]:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Materialize the idea-mining failure-taxonomy regression pack "
-            "artifacts."
+            "Materialize the idea-mining failure-taxonomy regression pack " "artifacts."
         )
     )
     parser.add_argument("--output-dir", required=True)
@@ -297,9 +313,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     _write_json(
         output_dir / "idea_mining_failure_regression_manifest_v1.json", manifest
     )
-    _write_json(
-        output_dir / "idea_mining_failure_regression_summary_v1.json", summary
-    )
+    _write_json(output_dir / "idea_mining_failure_regression_summary_v1.json", summary)
     return 0
 
 

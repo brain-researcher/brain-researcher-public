@@ -1,7 +1,5 @@
 # Data Contracts Configuration
 # Defines idempotent, verifiable I/O contracts for loaders and linkers
-# Referenced by: docs/standards/BR-KG_Standards.md (data_contracts section)
-# Related to: invariants.md (DATA-01, DATA-02)
 #
 # Schema definitions (node/edge types, properties, ID formats) are now in:
 # configs/br-kg/config.yml (schema section)
@@ -257,7 +255,7 @@ post_ingestion_qa:
   # SHACL validation (if RDF export enabled)
   shacl:
     enabled: false  # Optional - only if exporting to RDF
-    schema_path: "docs/standards/shacl/nodes_shapes.ttl"
+    schema_path: null
     notes: "Validate exported RDF view against SHACL shapes"
 
 # Error Handling

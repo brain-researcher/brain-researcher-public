@@ -103,7 +103,6 @@ families:
         evidence_paths:
           - configs/datasets/catalog.v1.jsonl
           - configs/datasets/catalog.schema.json
-          - docs/services/br-kg/kg_tool_schema.md
         notes:
           dataset_count: 1693
           datasets_with_phenotype_summary: 305
@@ -167,7 +166,6 @@ families:
         why_it_matters: "Dataset-level metadata is strong, but reusable assets like dataset_description, participants, events, confounds, TR/TE, and QC are not cataloged as first-class assets."
         next_action: "Add normalized per-dataset file-group inventory records for sidecars, events, confounds, QC summaries, and masks."
         evidence_paths:
-          - docs/archive/TOOL_DISCOVERY_IMPLEMENTATION_SUMMARY.md
           - src/brain_researcher/services/tools/behavior_tools.py
 
   - family_id: templates_spaces_transforms
@@ -541,7 +539,6 @@ families:
         why_it_matters: "The repo knows how to talk about confounds, events, and QC, but not as canonical reusable assets."
         next_action: "Normalize derivative file-group detection into reusable asset records keyed by dataset, subject scope, and modality."
         evidence_paths:
-          - docs/archive/TOOL_DISCOVERY_IMPLEMENTATION_SUMMARY.md
           - src/brain_researcher/services/tools/behavior_tools.py
       - asset_name: normalized_masks_confounds_qc_and_surface_derivative_inventory
         current_state: missing_and_should_acquire
@@ -558,7 +555,6 @@ families:
         next_action: "Add registry records for masks, confounds, QC summaries, and CIFTI or surface outputs with explicit scope and space metadata."
         evidence_paths:
           - configs/datasets/catalog.v1.jsonl
-          - docs/archive/TOOL_DISCOVERY_IMPLEMENTATION_SUMMARY.md
 
   - family_id: semantic_provenance_glue
     title: "Semantic and provenance glue"

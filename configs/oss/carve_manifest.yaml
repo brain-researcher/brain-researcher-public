@@ -125,7 +125,7 @@ targets:
     redact:                       # ship, but scrub via REDACTION_POLICY first
       - "configs/runtime/**"                            # localhost/internal service refs
       - "src/brain_researcher/config/metadata_loading.json"  # /home/.../data/brainmap
-      - "docs/{OPERATIONS,DEPLOYMENT,DEPLOYMENT_GKE,E2E_DEMO_EXECUTION_PLAN,UI_WIRING_CHECKLIST}.md"
+      - "docs/{OPERATIONS,DEPLOYMENT}.md"
       - "docker-compose.prod.yml"
       - "environment.brain_researcher.yml"
       - "neuroimage_env.yaml"

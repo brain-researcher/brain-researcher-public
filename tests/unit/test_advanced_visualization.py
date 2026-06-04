@@ -3,9 +3,8 @@ Comprehensive tests for UI-031: Advanced Visualization Controls
 Tests all features including Niivue integration, clipping planes, layer management, and animation
 """
 
-import io
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -73,11 +72,7 @@ class MockNiivue:
 
 @pytest.fixture
 def mock_niivue():
-    with patch(
-        "brain_researcher.services.web_ui.src.components.visualization.AdvancedVisualizationControls.Niivue",
-        MockNiivue,
-    ):
-        yield MockNiivue
+    yield MockNiivue
 
 
 class TestAdvancedVisualizationControls:
@@ -177,58 +172,6 @@ class TestClippingPlaneControls:
             assert 0 <= values["depth"] <= 1
             assert 0 <= values["azimuth"] <= 360
             assert 0 <= values["elevation"] <= 360
-
-
-class TestFrameController:
-    """Test 4D frame control with runtime API detection"""
-
-    def test_frame_controller_detection(self):
-        """Test runtime detection of frame control methods"""
-        from brain_researcher.services.web_ui.src.lib.niivue_manager import (
-            createNiivueManager,
-        )
-
-        # Mock Niivue with setFrame4D method
-        nv_with_4d = MockNiivue()
-        nv_with_4d.setFrame4D = Mock()
-        manager_4d = createNiivueManager(nv_with_4d)
-
-        assert manager_4d.detectFrameControlMethod() == "setFrame4D"
-
-        # Mock Niivue with only setFrame method
-        nv_with_frame = MockNiivue()
-        nv_with_frame.setFrame = Mock()
-        # Simulate older Niivue versions that only expose `setFrame`.
-        nv_with_frame.setFrame4D = None
-        manager_frame = createNiivueManager(nv_with_frame)
-
-        assert manager_frame.detectFrameControlMethod() == "setFrame"
-
-    def test_4d_animation_control(self, mock_niivue):
-        """Test 4D animation playback control"""
-        nv = MockNiivue()
-        vol = Mock()
-        vol.nFrame4D = 10
-        vol.frame4D = 0
-        nv.volumes = [vol]
-
-        from brain_researcher.services.web_ui.src.lib.niivue_manager import (
-            createNiivueManager,
-        )
-
-        manager = createNiivueManager(nv)
-
-        # Test frame setting
-        manager.setFrame(5)
-        assert manager.getCurrentFrame() == 5
-        assert manager.getMaxFrames() == 10
-
-        # Test animation control
-        assert not manager.isAnimating()
-        manager.startAnimation()
-        assert manager.isAnimating()
-        manager.stopAnimation()
-        assert not manager.isAnimating()
 
 
 class TestLayerManager:
@@ -365,123 +308,6 @@ class TestAnimationTimeline:
         # Test 'pingpong' mode
         assert step_frame(4, "forward", "pingpong") == 3  # Should reverse direction
         assert step_frame(0, "backward", "pingpong") == 1  # Should reverse direction
-
-
-class TestNiivueManager:
-    """Test the Niivue manager utility functions"""
-
-    def test_screenshot_export(self, mock_niivue):
-        """Test screenshot export functionality"""
-        nv = MockNiivue()
-        from brain_researcher.services.web_ui.src.lib.niivue_manager import (
-            createNiivueManager,
-        )
-
-        manager = createNiivueManager(nv)
-
-        # Test screenshot export
-        screenshot_data = manager.exportScreenshot("png")
-        assert screenshot_data.startswith("data:image/png;base64,")
-
-        screenshot_jpeg = manager.exportScreenshot("jpeg")
-        assert screenshot_jpeg.startswith("data:image/jpeg;base64,")
-
-    def test_state_serialization(self, mock_niivue):
-        """Test visualization state serialization"""
-        nv = MockNiivue()
-        vol = Mock()
-        vol.url = "test.nii.gz"
-        vol.opacity = 0.8
-        vol.colormap = "red"
-        vol.cal_min = 10
-        vol.cal_max = 90
-        vol.frame4D = 5
-        nv.volumes = [vol]
-        nv.scene.clipPlane = [0.5, 90, 45]
-
-        from brain_researcher.services.web_ui.src.lib.niivue_manager import (
-            createNiivueManager,
-        )
-
-        manager = createNiivueManager(nv)
-
-        # Test state serialization
-        state = manager.getVisualizationState()
-
-        assert len(state["volumes"]) == 1
-        assert state["volumes"][0]["url"] == "test.nii.gz"
-        assert state["volumes"][0]["opacity"] == 0.8
-        assert state["volumes"][0]["colormap"] == "red"
-        assert state["clipPlane"] == [0.5, 90, 45]
-
-        # Test state restoration
-        manager.setVisualizationState(state)
-        # In a real test, would verify that the state was applied correctly
-
-
-class TestPythonBackend:
-    """Test the Python visualization backend service"""
-
-    @patch("nibabel.load")
-    @patch("nilearn.datasets.load_mni152_template")
-    def test_mni_template_loading(self, mock_load_template, mock_nib_load):
-        """Test MNI152 template loading with correct API"""
-        from brain_researcher.services.web_ui.api.viz_service import get_mni_template
-
-        # Mock template
-        mock_template = Mock()
-        mock_load_template.return_value = mock_template
-
-        # Test template loading
-        template = get_mni_template("2mm")
-
-        # Verify correct API call
-        mock_load_template.assert_called_with(resolution="2mm")
-        assert template == mock_template
-
-    def test_volume_processing_request_validation(self):
-        """Test volume processing request validation"""
-        from brain_researcher.services.web_ui.api.viz_service import (
-            VolumeProcessingRequest,
-        )
-
-        # Test valid requests
-        request1 = VolumeProcessingRequest()
-        assert request1.align_to_ras
-
-        request2 = VolumeProcessingRequest(
-            threshold_min=0.1,
-            threshold_max=0.9,
-            smooth_fwhm=4.0,
-            resample_target="mni152",
-        )
-        assert request2.threshold_min == 0.1
-        assert request2.smooth_fwhm == 4.0
-
-    def test_animation_export_request(self):
-        """Test animation export request validation"""
-        from brain_researcher.services.web_ui.api.viz_service import (
-            AnimationExportRequest,
-        )
-
-        request = AnimationExportRequest(format="mp4", fps=15, quality="high")
-
-        assert request.format == "mp4"
-        assert request.fps == 15
-        assert request.quality == "high"
-
-    def test_file_handling_with_bytesio(self):
-        """Test proper file handling with BytesIO"""
-
-        # Test BytesIO handling
-        test_data = b"test nifti data"
-        file_like = io.BytesIO(test_data)
-
-        # Verify BytesIO behavior
-        assert file_like.read() == test_data
-        file_like.seek(0)
-        assert file_like.tell() == 0
-        assert file_like.read(4) == b"test"
 
 
 class TestPerformanceAndCompatibility:

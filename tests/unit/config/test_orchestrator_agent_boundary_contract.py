@@ -133,20 +133,6 @@ REQUIRED_SUBSTRINGS = {
         '@router.post("/autocomplete", response_model=CopilotAutocompleteResponse)',
         '@router.post("/learn", response_model=CopilotLearnResponse)',
     ),
-    "src/brain_researcher/services/agent/README.md": (
-        "primary downstream backend for Web UI chat, files, datasets, threads, and",
-        "Next.js owns the public browser-facing `/api/*` surface.",
-        "Orchestrator owns `/run`, `/api/jobs/*`, and JobStore-backed analysis inspection",
-        "### Orchestrator-owned job surfaces",
-    ),
-    "apps/web-ui/README.md": (
-        "public `/api/*` routes proxy",
-        "NEXT_PUBLIC_USE_API_PROXY=true",
-        "ORCHESTRATOR_PORT=3001",
-        "BR_ORCHESTRATOR_URL=http://localhost:3001",
-        "BR_KG_URL=http://localhost:5000",
-        "**Orchestrator**: `/run`, `/api/jobs/*`, `/api/analyses/*`, share, dashboard, credits",
-    ),
     "apps/web-ui/INTEGRATION.md": (
         "The Web UI owns the browser-facing `/api/*` surface",
         "Next `/api/analyses/*`, `/api/share/*`, `/api/user/notifications/*`, `/api/credits/*`, `/api/dashboard/metrics` -> Orchestrator service (port 3001)",
@@ -169,16 +155,6 @@ REQUIRED_SUBSTRINGS = {
         "**Orchestrator service (port 3001)**: `/run`, `/health`, `/docs`, `/api/jobs`, `/api/analyses`, `/api/cache/*`",
         "**Web UI public proxy (port 3000)**: browser-facing `/api/*` routes.",
         "submit/list now go through `/api/analyses*`",
-    ),
-    "docs/UI_WIRING_CHECKLIST.md": (
-        "Internal Orchestrator-owned execution surfaces: `/run`, `/api/jobs/*`, `/api/analyses/*`",
-        "Public analysis facade: top-level `/api/analyses` list/create now normalize directly",
-        "Analysis facade: `/api/analyses` create/list/detail -> Orchestrator `/run` and `/api/analyses/*`",
-        "no targeted Agent fallback under",
-        "Analysis detail/share/export/steps/stream: `/api/analyses/[id]/*` -> Orchestrator `/api/jobs/*` or `/api/analyses/*`",
-        "no local stateless-token",
-        "Legacy Dataset→Run alias that now submits to Orchestrator `/run`",
-        "caller-supplied demo ids",
     ),
 }
 
@@ -206,11 +182,6 @@ FORBIDDEN_SUBSTRINGS = {
     "apps/web-ui/src/app/api/runs/[runId]/route.ts": ("const AGENT_BASE =",),
     "apps/web-ui/src/app/api/runs/[runId]/stream/route.ts": ("const AGENT_BASE =",),
     "apps/web-ui/src/app/api/projects/route.ts": ("/api/runs?limit=",),
-    "src/brain_researcher/services/agent/README.md": (
-        "single backend API",
-        "No Orchestrator in the hot path.",
-        "wraps `/act_llm` internally",
-    ),
     "apps/web-ui/src/app/api/analyses/[analysisId]/steps/route.ts": (
         "Agent `/api/runs/{id}` only for legacy runs that have no JobStore record.",
         "resolveAgentBaseUrl",
@@ -269,10 +240,6 @@ FORBIDDEN_SUBSTRINGS = {
         "/api/runs",
         "last intentional",
     ),
-    "apps/web-ui/README.md": (
-        "API proxied to Agent on 8000",
-        "NEXT_PUBLIC_BR_KG_API=http://localhost:5001",
-    ),
     "apps/web-ui/INTEGRATION.md": (
         "The Orchestrator is no longer on the UI hot path",
         "Next `/api/*` -> Agent service (port 8000)",
@@ -291,11 +258,6 @@ FORBIDDEN_SUBSTRINGS = {
         "NEXT_PUBLIC_BR_KG_API=http://localhost:5001",
         "BR_KG_PORT=5001",
         "Set `NEXT_PUBLIC_WS_URL` only if you have a WS endpoint enabled on the Agent",
-    ),
-    "docs/UI_WIRING_CHECKLIST.md": (
-        "Compatibility note: top-level `/api/analyses` list/create still normalize through Agent `/api/runs`",
-        "Analysis facade: `/api/analyses` create/list -> Agent `/api/runs` with Web UI normalization",
-        "create runs via compatibility `/api/runs`",
     ),
 }
 

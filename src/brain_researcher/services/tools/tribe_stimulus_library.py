@@ -13,19 +13,12 @@ from brain_researcher.autoresearch.artifact_schema import (
     resolve_line_paths,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-DEFAULT_TRIBE_STIMULUS_LIBRARY = (
-    REPO_ROOT / "configs" / "experiments" / "tribe_ibc_stimulus_library.yaml"
-)
-
 
 def _resolve_path(value: str | Path) -> Path:
     return Path(value).expanduser().resolve()
 
 
-def load_stimulus_library_config(
-    config_path: Path | str = DEFAULT_TRIBE_STIMULUS_LIBRARY,
-) -> dict[str, Any]:
+def load_stimulus_library_config(config_path: Path | str) -> dict[str, Any]:
     resolved = _resolve_path(config_path)
     payload = yaml.safe_load(resolved.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -68,9 +61,7 @@ class TribeTaskConfig:
     br_kg_tags: tuple[str, ...]
 
 
-def resolve_project_paths(
-    config_path: Path | str = DEFAULT_TRIBE_STIMULUS_LIBRARY,
-) -> TribeProjectPaths:
+def resolve_project_paths(config_path: Path | str) -> TribeProjectPaths:
     resolved_config = _resolve_path(config_path)
     payload = load_stimulus_library_config(resolved_config)
     raw_paths = payload.get("brain_researcher_paths")
@@ -112,7 +103,7 @@ def resolve_project_paths(
 
 def resolve_task_config(
     task_id: str,
-    config_path: Path | str = DEFAULT_TRIBE_STIMULUS_LIBRARY,
+    config_path: Path | str,
 ) -> TribeTaskConfig:
     payload = load_stimulus_library_config(config_path)
     tasks = payload.get("tasks")
@@ -164,7 +155,6 @@ def resolve_task_config(
 
 
 __all__ = [
-    "DEFAULT_TRIBE_STIMULUS_LIBRARY",
     "TribeProjectPaths",
     "TribeTaskConfig",
     "load_stimulus_library_config",

@@ -1,6 +1,5 @@
 # Ingestion Modes Configuration
 # Defines how data sources are ingested into BR-KG
-# Referenced by: docs/standards/ingestion_modes.md
 #
 # Schema definitions (node/edge types, properties, ID formats) are now in:
 # configs/br-kg/config.yml (schema section)

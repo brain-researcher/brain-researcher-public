@@ -67,7 +67,6 @@ Important interpretation:
 | `src/brain_researcher/services/agent/preflight.py` | query-understanding preflight and candidate diagnostics; parser constructed with `llm=None` by default |
 | `docs/mcp.md` | user-facing MCP flow, env knobs, execution policy, external coding-agent loop |
 | `docs/mcp.md#surface-tiers` | default, advanced, ops tiers and capability-family policy |
-| `docs/specs/br_mcp_mode_profile_spec.md` | hosted cloud, local Docker, and HPC deployment-mode contract |
 | `docs/mcp_tools.schema.json` | machine-readable tool catalog, currently 72 entries |
 | `configs/tools_catalog_merged.json` | generated tool universe, currently 2,044 catalog entries |
 | `configs/tools_catalog_overrides.yaml` | tracked overlay for critical Python/MCP tool entries |

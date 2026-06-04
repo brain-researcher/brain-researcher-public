@@ -240,7 +240,6 @@
 
 ## 📚 Documentation
 
-- **Configuration Guide**: `docs/NICLIP_CONFIGURATION.md`
 - **Environment Setup**: `docs/ENVIRONMENT_SETUP.md`
 - **Test Results (Original)**: `tests/tool_calling/TEST_RESULTS.md`
 - **Service Restart Script**: `scripts/services/restart_services_with_niclip.sh`

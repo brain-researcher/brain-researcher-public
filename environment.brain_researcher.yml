@@ -12,7 +12,7 @@ name: brain_researcher
 #
 # Local setup:  bash scripts/setup/setup_local_runtime.sh
 # GCP setup:    bake this file into the singleuser Docker image
-#               (see docs/specs/brain_researcher_runtime_stack.md)
+#               (see docs/OPERATIONS.md)
 channels:
   - conda-forge
   - defaults

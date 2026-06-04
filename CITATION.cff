@@ -1,17 +1,33 @@
 cff-version: 1.2.0
 message: "If you use Brain Researcher in academic work, please cite both the software and the accompanying paper (when available)."
-title: "Brain Researcher: An LLM-driven Research Assistant for Neuroimaging"
+title: "Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses"
 abstract: >-
-  Brain Researcher combines large-language-model planning with a
-  neuroscience knowledge graph (Neo4j), a curated catalog of
-  fMRI/diffusion/EEG analysis tools, and an evidence-grounded
-  scientific-review system. It converts natural-language research
-  questions into reproducible analyses, with every step traceable to
-  its plan, inputs, and primary literature.
+  AI agents can now write code, run analyses, and propose hypotheses, but a
+  generated output is not a scientific claim by default. A claim becomes
+  trustworthy only when a researcher can see the evidence behind it, the
+  alternatives it was weighed against, the checks it survived and the limits
+  beyond which it should not be interpreted. Here we present Brain Researcher,
+  a workspace-centric infrastructure for auditable AI-assisted science that
+  turns researcher judgment into executable commitments: allowed alternatives,
+  validation rules, provenance records and claim boundaries that constrain what
+  the system may do and what each result may assert. We use neuroimaging as a
+  demanding testbed, where heterogeneous datasets, multi-stage pipelines and
+  flexible analytic choices make automation valuable and interpretation fragile.
+  Across seven foundation models, Brain Researcher lifted tool-selection
+  capability from 51% to 63% at baseline to about 93% and raised the share of
+  claims backed by evidence that could be located and judged supportive nearly
+  sixfold. Applied to four live questions from collaborating scientists, the
+  system returned bounded claim records, with some accepted and others
+  qualified, blocked or rejected, instead of unqualified findings. In two
+  self-evolving campaigns, fixed human-written gates rejected attractive
+  hypotheses, deferred unsupported claims and licensed revised successors.
+  AI-assisted science can become both more capable and more trustworthy when
+  human judgment is part of the executable infrastructure: the researcher's
+  authority moves upstream, not out of the process.
 type: software
 license: MIT
-repository-code: "https://github.com/zjc062/brain_researcher"
-url: "https://github.com/zjc062/brain_researcher"
+repository-code: "https://github.com/zjc062/brain-researcher-public"
+url: "https://github.com/zjc062/brain-researcher-public"
 # Update at v1.0 release:
 # - `version`, `date-released`, `doi` (Zenodo) below
 # - the `preferred-citation` block (arXiv preprint)
@@ -19,7 +35,6 @@ version: "0.0-dev"
 authors:
   - family-names: "Chen"
     given-names: "Zijiao"
-    email: "person@example.com"
     affiliation: "Stanford University"
   - name: "Brain Researcher contributors"
 keywords:
@@ -34,7 +49,7 @@ keywords:
 # Uncomment and fill in once the preprint is on arXiv:
 # preferred-citation:
 #   type: article
-#   title: "Brain Researcher: An LLM-driven Research Assistant for Neuroimaging"
+#   title: "Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses"
 #   authors:
 #     - family-names: "Chen"
 #       given-names: "Zijiao"

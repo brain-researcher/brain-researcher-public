@@ -320,11 +320,6 @@ To verify the configuration works end-to-end:
 
 ### Documentation
 
-Full configuration guide: `docs/NICLIP_CONFIGURATION.md`
-
-Key topics covered:
-- Environment variable setup
-- Data structure and symlinks
-- Troubleshooting common issues
-- Verification methods
-- Real vs mock data identification
+The old NiCLIP configuration guide is not part of the public docs surface.
+Use `docs/ENVIRONMENT_SETUP.md` and the restart/verification scripts above
+when reproducing these legacy tool-calling results.

@@ -1,7 +1,5 @@
 # Merge Policies Configuration
 # Defines when and how to auto-merge duplicate entities vs queue for manual review
-# Referenced by: docs/standards/BR-KG_Standards.md (merge_policies section)
-# Related to: invariants.md (MERGE-01, MERGE-02)
 #
 # Schema definitions (node/edge types, properties, ID formats) are now in:
 # configs/br-kg/config.yml (schema section)

@@ -13,10 +13,7 @@ from typing import Any
 import numpy as np
 from scipy.io import loadmat
 
-from brain_researcher.services.tools.tribe_stimulus_library import (
-    DEFAULT_TRIBE_STIMULUS_LIBRARY,
-    resolve_task_config,
-)
+from brain_researcher.services.tools.tribe_stimulus_library import resolve_task_config
 
 WALKER_LABELS = {
     0: "BMLwalker",
@@ -411,8 +408,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--stimulus-library",
         type=Path,
-        default=DEFAULT_TRIBE_STIMULUS_LIBRARY,
-        help="Path to configs/experiments/tribe_ibc_stimulus_library.yaml",
+        required=True,
+        help="Path to an explicit TRIBE stimulus-library YAML.",
     )
     parser.add_argument(
         "--walker-mat",

@@ -73,8 +73,6 @@ archive/**
 !archive/README.md
 *.nii
 *.nii.gz
-!brain_researcher/services/web_ui/public/demo-volumes/*.nii
-!brain_researcher/services/web_ui/public/demo-volumes/*.nii.gz
 *.pkl
 *.bin
 *.faiss
@@ -237,9 +235,6 @@ model_weights/
 !apps/web-ui/public/benchmarks/*.json
 !apps/web-ui/public/understand-br/
 !apps/web-ui/public/understand-br/**/*.png
-!apps/web-ui/public/demo-volumes/
-!apps/web-ui/public/demo-volumes/*.nii
-!apps/web-ui/public/demo-volumes/*.nii.gz
 !benchmarks/**/*.schema.json
 !configs/demo/run_bundles/**/run_bundle.json
 !configs/demo/**/*.json
@@ -270,6 +265,12 @@ __pycache__/
 # Documentation build
 docs/_build/
 site/
+
+# Generated synthetic test outputs
+smart_test_output/
+test_synthetic_complete/
+tests/comprehensive_synthetic/smart_test_output/
+tests/comprehensive_synthetic/test_synthetic_complete/
 
 # Manuscript drafts
 manuscript/
