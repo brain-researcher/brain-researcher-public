@@ -4,13 +4,21 @@
 
 Use it through MCP from Claude Code, Codex, Cursor, or another MCP client. For setup guides, MCP client configuration, skills, AGENTS templates, demos, and evaluation rubrics, see [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit).
 
+## Understand Brain Researcher
+
+The storyboard below is a quick visual overview of the intended workflow: start
+with a research question, route planning and tools through MCP, connect KG
+evidence and neuroimaging recipes, then review the result before treating it as
+analysis output. For concrete services, paths, and setup commands, continue to
+the sections below.
+
 <p align="center">
-  <img src="docs/assets/doraemon/0.png" alt="Brain Researcher Doraemon frame 1" width="620"><br>
-  <img src="docs/assets/doraemon/1.png" alt="Brain Researcher Doraemon frame 2" width="620"><br>
-  <img src="docs/assets/doraemon/2.png" alt="Brain Researcher Doraemon frame 3" width="620"><br>
-  <img src="docs/assets/doraemon/3.png" alt="Brain Researcher Doraemon frame 4" width="620"><br>
-  <img src="docs/assets/doraemon/4.png" alt="Brain Researcher Doraemon frame 5" width="620"><br>
-  <img src="docs/assets/doraemon/5.png" alt="Brain Researcher Doraemon frame 6" width="620">
+  <img src="docs/assets/doraemon/0.png" alt="Brain Researcher visual overview frame 1" width="620"><br>
+  <img src="docs/assets/doraemon/1.png" alt="Brain Researcher visual overview frame 2" width="620"><br>
+  <img src="docs/assets/doraemon/2.png" alt="Brain Researcher visual overview frame 3" width="620"><br>
+  <img src="docs/assets/doraemon/3.png" alt="Brain Researcher visual overview frame 4" width="620"><br>
+  <img src="docs/assets/doraemon/4.png" alt="Brain Researcher visual overview frame 5" width="620"><br>
+  <img src="docs/assets/doraemon/5.png" alt="Brain Researcher visual overview frame 6" width="620">
 </p>
 
 ---
