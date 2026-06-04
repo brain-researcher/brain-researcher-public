@@ -19,13 +19,13 @@ redistribution limits remain with the upstream providers.
 - [NeuroSynth](https://neurosynth.org/)
 - [NeuroVault](https://neurovault.org/)
 - [Neurostore](https://neurostore.org/)
-- [NeuroQuery](https://neuroquery.org/)
+- [NeuroQuery](https://github.com/neuroquery/neuroquery)
 - [NeuroBagel](https://neurobagel.org/)
 - [NIDM-Results](https://github.com/incf-nidash/nidmresults)
 - [Allen Brain Atlas](https://portal.brain-map.org/)
 - [Allen Human Brain Atlas](https://human.brain-map.org/)
-- [Allen Common Coordinate Framework](https://portal.brain-map.org/explore/classes-and-methods/ccf)
-- [BrainMap](https://www.brainmap.org/)
+- [Allen Common Coordinate Framework](https://portal.brain-map.org/anatomy)
+- [BrainMap](http://brainmap.org/)
 - [Wikidata](https://www.wikidata.org/)
 - [PubMed](https://pubmed.ncbi.nlm.nih.gov/) and
   [PubMed Central](https://pmc.ncbi.nlm.nih.gov/)
@@ -75,7 +75,7 @@ software conventions, or public documentation inform the project:
 - [FOOOF/specparam](https://fooof-tools.github.io/fooof/)
 - [PyBIDS](https://bids-standard.github.io/pybids/)
 - [pyneurovault](https://github.com/neurovault/pyneurovault)
-- [cognitiveatlas-python](https://github.com/CognitiveAtlas/cognitiveatlas-python)
+- [cognitiveatlas-python](https://github.com/CognitiveAtlas/cogat-python)
 - [neurostore-python-sdk](https://github.com/neurostuff/neurostore-python-sdk)
 - [FSL](https://fsl.fmrib.ox.ac.uk/)
 - [AFNI](https://afni.nimh.nih.gov/)
@@ -90,7 +90,7 @@ software conventions, or public documentation inform the project:
 - [QSIRecon](https://qsirecon.readthedocs.io/)
 - [XCP-D](https://xcp-d.readthedocs.io/)
 - [ASLPrep](https://aslprep.readthedocs.io/)
-- [NiWrap](https://github.com/nipreps/niwrap)
+- [NiWrap](https://niwrap.dev/)
 - [Neurodesk](https://www.neurodesk.org/)
 
 ## Scientific Python, Machine Learning, and Graph Libraries
@@ -111,7 +111,7 @@ software conventions, or public documentation inform the project:
 - [bctpy](https://github.com/aestrivex/bctpy)
 - [XGBoost](https://xgboost.readthedocs.io/)
 - [LightGBM](https://lightgbm.readthedocs.io/)
-- [PyTorch Geometric](https://pyg.org/)
+- [PyTorch Geometric](https://pytorch-geometric.readthedocs.io/)
 - [FAISS](https://faiss.ai/)
 - [sentence-transformers](https://www.sbert.net/)
 - [spaCy](https://spacy.io/)
@@ -131,7 +131,7 @@ software conventions, or public documentation inform the project:
 - [LangChain](https://www.langchain.com/)
 - [LangGraph](https://langchain-ai.github.io/langgraph/)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
-- [DeepXiv](https://github.com/zilliztech/deep-searcher/tree/main/deepxiv)
+- [DeepXiv](https://github.com/DeepXiv/deepxiv_sdk)
 - [TaskBeacon](https://github.com/TaskBeacon)
 
 ## Language Model Providers and Agent Clients
@@ -157,7 +157,7 @@ agentic research workflows possible:
 
 - [FastAPI](https://fastapi.tiangolo.com/)
 - [Flask](https://flask.palletsprojects.com/)
-- [Uvicorn](https://www.uvicorn.org/)
+- [Uvicorn](https://github.com/encode/uvicorn)
 - [Gunicorn](https://gunicorn.org/)
 - [Pydantic](https://docs.pydantic.dev/)
 - [Typer](https://typer.tiangolo.com/)
