@@ -133,12 +133,10 @@ br-kg = [
 
     # PDF and document generation
     "weasyprint>=65.1",
-    "xhtml2pdf>=0.2.17",
     "reportlab>=4.4.1",
     "fpdf2>=2.8.3",
     "PyPDF2>=3.0.0",
     "pillow>=11.2.0",
-    "svglib>=1.5.1",
 
     # Data processing
     "tqdm>=4.60.0",
@@ -215,7 +213,14 @@ visualization = [
 ]
 
 ui = [
-    "gradio>=4.39.0,<5",
+    "gradio>=5.0.0,<6",
+]
+
+reporting = [
+    # Optional SVG-to-PDF QC gallery support. Requires system Cairo headers on
+    # some platforms via pycairo, so keep it out of the default all extra.
+    "svglib>=1.5.1",
+    "xhtml2pdf>=0.2.17",
 ]
 
 notebook = [
