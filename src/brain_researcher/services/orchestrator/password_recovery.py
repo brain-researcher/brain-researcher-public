@@ -22,10 +22,10 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SEED_PASSWORDS: dict[str, tuple[str, str]] = {
-    "demo@brain-researcher.ai": ("demo", "demo123"),
-    "admin@brain-researcher.ai": ("admin", "admin123"),
-    "researcher@university.edu": ("researcher", "research123"),
+SEED_USERS: dict[str, tuple[str, str]] = {
+    "demo@brain-researcher.ai": ("demo", "BR_DEMO_USER_PASSWORD"),
+    "admin@brain-researcher.ai": ("admin", "BR_DEMO_ADMIN_PASSWORD"),
+    "researcher@university.edu": ("researcher", "BR_DEMO_RESEARCHER_PASSWORD"),
 }
 
 
@@ -51,6 +51,7 @@ def repair_missing_password_hashes(
         "missing_hash": 0,
         "normalized_provider": 0,
         "restored_seed_users": 0,
+        "missing_seed_password_env": 0,
         "marked_reset_required": 0,
         "unchanged": 0,
         "errors": [],
@@ -72,7 +73,7 @@ def repair_missing_password_hashes(
         provider = str(user.get("auth_provider") or "").lower()
         email = str(user.get("email") or "").lower()
         username = str(user.get("username") or "")
-        seed = SEED_PASSWORDS.get(email)
+        seed = SEED_USERS.get(email)
         is_seed_credential_user = bool(seed and username == seed[0])
 
         if provider != "password" and not is_seed_credential_user:
@@ -96,13 +97,18 @@ def repair_missing_password_hashes(
         updated = False
 
         if restore_seed_users and seed and username == seed[0]:
-            user["hashed_password"] = pwd_context.hash(seed[1])
-            prefs = dict(user.get("preferences") or {})
-            prefs.pop("must_reset_password", None)
-            prefs.pop("password_reset", None)
-            user["preferences"] = prefs
-            report["restored_seed_users"] += 1
-            updated = True
+            password_env = seed[1]
+            seed_password = (os.getenv(password_env) or "").strip()
+            if seed_password:
+                user["hashed_password"] = pwd_context.hash(seed_password)
+                prefs = dict(user.get("preferences") or {})
+                prefs.pop("must_reset_password", None)
+                prefs.pop("password_reset", None)
+                user["preferences"] = prefs
+                report["restored_seed_users"] += 1
+                updated = True
+            else:
+                report["missing_seed_password_env"] += 1
         elif mark_reset_required:
             prefs = dict(user.get("preferences") or {})
             prefs["must_reset_password"] = True
@@ -143,7 +149,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--restore-seed-users",
         action="store_true",
-        help="Restore known seed users (demo/admin/researcher) with default passwords",
+        help="Restore known seed users using BR_DEMO_* password env vars",
     )
     return parser.parse_args()
 

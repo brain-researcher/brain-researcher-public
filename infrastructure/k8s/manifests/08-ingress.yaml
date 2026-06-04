@@ -260,10 +260,10 @@ metadata:
     app.kubernetes.io/component: auth
 type: Opaque
 stringData:
-  # Generated with: htpasswd -c auth admin
-  # Password: admin123 (change in production!)
+  # Generate with: htpasswd -nb admin '<strong-password>'
+  # Replace this placeholder before applying the manifest.
   auth: |
-    admin:$2y$10$H6lxqotCSMwKVjjKFTGene.FVBf3GOaWJaWeDK3P9k7LNml8IRuTu
+    admin:<bcrypt-hash-generated-by-operator>
 
 ---
 # Certificate resource for automatic SSL certificate provisioning

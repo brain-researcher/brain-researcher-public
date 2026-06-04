@@ -873,6 +873,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
             return False
 
 
+def _env_flag(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     """Create a JWT access token."""
     to_encode = data.copy()
@@ -1163,36 +1170,52 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Warning: Failed to load retry settings: {e}")
 
-    # Initialize demo users without clobbering existing account state in Redis.
-    _seed_users = [
-        {
-            "user_id": "user_demo",
-            "username": "demo",
-            "email": "demo@brain-researcher.ai",
-            "full_name": "Demo User",
-            "role": UserRole.RESEARCHER,
-            "password": "demo123",
-            "preferences": {"theme": "light", "notifications": True},
-        },
-        {
-            "user_id": "user_admin",
-            "username": "admin",
-            "email": "admin@brain-researcher.ai",
-            "full_name": "System Administrator",
-            "role": UserRole.ADMIN,
-            "password": "admin123",
-            "preferences": {"theme": "dark", "notifications": True},
-        },
-        {
-            "user_id": "user_researcher",
-            "username": "researcher",
-            "email": "researcher@university.edu",
-            "full_name": "Dr. Research Scientist",
-            "role": UserRole.RESEARCHER,
-            "password": "research123",
-            "preferences": {"theme": "light", "notifications": False},
-        },
-    ]
+    # Optional local demo users. Public/runtime deployments should not create
+    # guessable accounts unless an operator explicitly opts in and provides
+    # passwords via environment variables.
+    _seed_users = []
+    if _env_flag("BR_ENABLE_DEMO_USERS", default=False):
+        _seed_user_specs = [
+            {
+                "user_id": "user_demo",
+                "username": "demo",
+                "email": "demo@brain-researcher.ai",
+                "full_name": "Demo User",
+                "role": UserRole.RESEARCHER,
+                "password_env": "BR_DEMO_USER_PASSWORD",
+                "preferences": {"theme": "light", "notifications": True},
+            },
+            {
+                "user_id": "user_admin",
+                "username": "admin",
+                "email": "admin@brain-researcher.ai",
+                "full_name": "System Administrator",
+                "role": UserRole.ADMIN,
+                "password_env": "BR_DEMO_ADMIN_PASSWORD",
+                "preferences": {"theme": "dark", "notifications": True},
+            },
+            {
+                "user_id": "user_researcher",
+                "username": "researcher",
+                "email": "researcher@university.edu",
+                "full_name": "Dr. Research Scientist",
+                "role": UserRole.RESEARCHER,
+                "password_env": "BR_DEMO_RESEARCHER_PASSWORD",
+                "preferences": {"theme": "light", "notifications": False},
+            },
+        ]
+        for seed in _seed_user_specs:
+            password_env = seed["password_env"]
+            seed_password = (os.getenv(password_env) or "").strip()
+            if not seed_password:
+                logger.warning(
+                    "BR_ENABLE_DEMO_USERS=true but %s is not set; skipping %s seed user",
+                    password_env,
+                    seed["username"],
+                )
+                continue
+            _seed_users.append({**seed, "password": seed_password})
+
     for seed in _seed_users:
         seed_id = seed["user_id"]
         seed_username = seed["username"]
@@ -1235,7 +1258,7 @@ async def lifespan(app: FastAPI):
 
         if not existing.hashed_password:
             logger.warning(
-                "Seed user %s missing password hash on startup; restoring default seed password",
+                "Seed user %s missing password hash on startup; restoring configured seed password",
                 existing.username,
             )
             await _user_store.set_password_hash(
@@ -1249,16 +1272,17 @@ async def lifespan(app: FastAPI):
 
         users_db[existing.id] = existing
 
-    # Create welcome notification for demo user
-    await NotificationManager.create_notification(
-        user_id="user_demo",
-        notification_type=NotificationType.WELCOME,
-        title="Welcome to Brain Researcher!",
-        message="Get started by exploring our demo scenarios or creating your first analysis.",
-        priority=NotificationPriority.NORMAL,
-        action_url="/demo/scenarios",
-        action_text="Try Demo",
-    )
+    # Create welcome notification only when the optional demo user exists.
+    if "user_demo" in users_db:
+        await NotificationManager.create_notification(
+            user_id="user_demo",
+            notification_type=NotificationType.WELCOME,
+            title="Welcome to Brain Researcher!",
+            message="Get started by exploring our demo scenarios or creating your first analysis.",
+            priority=NotificationPriority.NORMAL,
+            action_url="/demo/scenarios",
+            action_text="Try Demo",
+        )
 
     # Initialize partner data
     partners_db.update(

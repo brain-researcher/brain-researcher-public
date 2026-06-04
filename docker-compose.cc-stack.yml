@@ -72,7 +72,7 @@ services:
   # Exposes all 58 BR tools over HTTP (streamable-http transport).
   # CC's brainResearcherPlugin connects here via BR_MCP_URL.
   br-mcp:
-    image: zjc062/mcp:20260401024730
+    image: brain-researcher/mcp:latest
     container_name: br-mcp
     networks:
       - brain-researcher

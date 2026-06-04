@@ -4,8 +4,8 @@ site_author: Brain Researcher Team
 site_url: https://brain-researcher.readthedocs.io
 
 # Repository
-repo_name: brain-researcher
-repo_url: https://github.com/your-org/brain-researcher
+repo_name: brain-researcher-public
+repo_url: https://github.com/brain-researcher/brain-researcher-public
 edit_uri: edit/main/docs/
 
 # Theme configuration
@@ -87,8 +87,8 @@ markdown_extensions:
   - pymdownx.keys
   - pymdownx.magiclink:
       repo_url_shorthand: true
-      user: your-org
-      repo: brain-researcher
+      user: brain-researcher
+      repo: brain-researcher-public
   - pymdownx.mark
   - pymdownx.smartsymbols
   - pymdownx.superfences:
@@ -115,9 +115,7 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/your-org/brain-researcher
-    - icon: fontawesome/brands/docker
-      link: https://hub.docker.com/r/your-org/brain-researcher
+      link: https://github.com/brain-researcher/brain-researcher-public
   version:
     provider: mike
     default: stable

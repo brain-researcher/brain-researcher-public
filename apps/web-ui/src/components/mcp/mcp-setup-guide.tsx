@@ -6,7 +6,7 @@ import { Copy, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 
-const STARTER_REPO_URL = 'https://github.com/zjc062/brain_researcher'
+const STARTER_REPO_URL = 'https://github.com/brain-researcher/brain-researcher-agent-kit'
 
 const SMOKE_PROMPT_CODEX =
   'show me the status of brain_researcher_mcp. Use the Brain Researcher MCP server_info and system_self_test tools. Keep the answer concise.'

@@ -226,8 +226,8 @@ $ kubectl delete pod {{ include "brain-researcher.fullname" . }}-agent-0 -n {{ i
 ================================================================================
 
 📖 Documentation: https://docs.{{ .Values.global.domain }}
-🐛 Issue tracking: https://github.com/brain-researcher/brain-researcher/issues
-💬 Community support: https://github.com/brain-researcher/brain-researcher/discussions
+🐛 Issue tracking: https://github.com/brain-researcher/brain-researcher-public/issues
+💬 Community support: https://github.com/brain-researcher/brain-researcher-public/discussions
 🔧 API Reference: https://{{ .Values.global.domain }}/api/docs
 
 ================================================================================
@@ -280,6 +280,6 @@ $ kubectl delete pod {{ include "brain-researcher.fullname" . }}-br-kg-0 -n {{ i
 
 Happy researching! 🧠✨
 
-For support, visit: https://github.com/brain-researcher/brain-researcher
+For support, visit: https://github.com/brain-researcher/brain-researcher-public
 
 ================================================================================

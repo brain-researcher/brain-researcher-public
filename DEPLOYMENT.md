@@ -78,9 +78,8 @@ BR-KG API ─────────────▶ Neo4j (7474 / 7687)
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-org/brain-researcher.git
-cd brain-researcher
-git lfs pull  # Download large files
+git clone https://github.com/brain-researcher/brain-researcher-public.git
+cd brain-researcher-public
 ```
 
 ### 2. Configure Environment

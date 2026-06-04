@@ -1,4 +1,4 @@
-FROM docker.io/zjc062/agent:20260324221455-agent-psych101-workflow-parity
+FROM brain-researcher/agent:latest
 
 # Keep the patch image minimal: only bake in the agent tool-surface changes
 # needed for public behavior-to-fMRI retrieval exposure.

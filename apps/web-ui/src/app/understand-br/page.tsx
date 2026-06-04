@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     'A short visual explanation of how Brain Researcher turns neuroscience questions into reviewable, evidence-linked workflows.',
 }
 
-const CODEWIKI_URL = 'https://deepwiki.com/zjc062/brain_researcher'
+const CODEWIKI_URL = 'https://deepwiki.com/brain-researcher/brain-researcher-public'
 
 const storySteps = [
   {

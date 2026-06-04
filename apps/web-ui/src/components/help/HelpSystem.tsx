@@ -44,11 +44,11 @@ export function HelpSystem({ showHelpButton = true, className }: HelpSystemProps
   }
 
   const handleReportBug = () => {
-    window.open('https://github.com/zjc062/brain_researcher/issues/new?template=bug_report.md', '_blank')
+    window.open('https://github.com/brain-researcher/brain-researcher-public/issues/new/choose', '_blank')
   }
 
   const handleRequestFeature = () => {
-    window.open('https://github.com/zjc062/brain_researcher/issues/new?template=feature_request.md', '_blank')
+    window.open('https://github.com/brain-researcher/brain-researcher-public/issues/new/choose', '_blank')
   }
 
   const handleContactSupport = () => {

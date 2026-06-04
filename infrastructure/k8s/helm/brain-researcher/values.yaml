@@ -98,7 +98,7 @@ nginx:
 # Orchestrator service configuration
 orchestrator:
   enabled: true
-  replicaCount: 3
+  replicaCount: 1
 
   # Optional per-service image tag override (defaults to global.imageTag when empty).
   imageTag: ""
@@ -124,9 +124,9 @@ orchestrator:
       cpu: "1000m"
 
   autoscaling:
-    enabled: true
-    minReplicas: 3
-    maxReplicas: 12
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 1
     targetCPUUtilizationPercentage: 65
     targetMemoryUtilizationPercentage: 70
 

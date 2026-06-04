@@ -9,7 +9,7 @@ appVersion: "0.1.0-oss-preview"
 # Chart maintainers
 maintainers:
   - name: Brain Researcher Team
-    url: https://github.com/zjc062/brain_researcher
+    url: https://github.com/brain-researcher/brain-researcher-public
 
 # Keywords for chart discovery
 keywords:
@@ -25,7 +25,7 @@ keywords:
 # Home page and source URLs
 home: https://${PUBLIC_HOSTNAME}
 sources:
-  - https://github.com/zjc062/brain_researcher
+  - https://github.com/brain-researcher/brain-researcher-public
 
 # Annotations for additional metadata
 annotations:
@@ -38,26 +38,26 @@ annotations:
   # Links for documentation
   "artifacthub.io/links": |
     - name: Documentation
-      url: https://github.com/zjc062/brain_researcher/tree/main/docs
+      url: https://github.com/brain-researcher/brain-researcher-public/tree/main/docs
     - name: Release Gates
-      url: https://github.com/zjc062/brain_researcher/tree/main/docs/release
+      url: https://github.com/brain-researcher/brain-researcher-public/tree/main/docs/release
     - name: Support
-      url: https://github.com/zjc062/brain_researcher/issues
+      url: https://github.com/brain-researcher/brain-researcher-public/issues
 
   # Images used in the chart
   "artifacthub.io/images": |
     - name: nginx
       image: nginx:1.25-alpine
     - name: orchestrator
-      image: docker.io/zjc062/orchestrator:latest
+      image: brain-researcher/orchestrator:latest
     - name: agent
-      image: docker.io/zjc062/agent:latest
+      image: brain-researcher/agent:latest
     - name: br-kg
-      image: docker.io/zjc062/br-kg:latest
+      image: brain-researcher/br-kg:latest
     - name: niclip
-      image: docker.io/zjc062/niclip:latest
+      image: brain-researcher/niclip:latest
     - name: web-ui
-      image: docker.io/zjc062/web-ui:latest
+      image: brain-researcher/web-ui:latest
     - name: postgres
       image: postgres:15-alpine
     - name: redis

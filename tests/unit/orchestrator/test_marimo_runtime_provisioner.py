@@ -142,7 +142,7 @@ def test_kubernetes_runtime_pod_disables_service_account_token_automount(
     core_v1 = _CoreV1()
     runtime_provisioner = object.__new__(KubernetesMarimoRuntimeProvisioner)
     runtime_provisioner._core_v1 = core_v1
-    runtime_provisioner._image = "docker.io/zjc062/marimo-singleuser:test"
+    runtime_provisioner._image = "brain-researcher/marimo-singleuser:test"
     runtime_provisioner._image_pull_policy = "IfNotPresent"
     runtime_provisioner._service_account = "br-marimo-runtime"
     runtime_provisioner._workspace_pvc_template = None
@@ -199,7 +199,7 @@ def _fake_marimo_pod(*, image: str, env_names):
 def _bare_ensure_pod_provisioner(core_v1):
     p = object.__new__(KubernetesMarimoRuntimeProvisioner)
     p._core_v1 = core_v1
-    p._image = "docker.io/zjc062/marimo-singleuser:desired"
+    p._image = "brain-researcher/marimo-singleuser:desired"
     p._image_pull_policy = "IfNotPresent"
     p._service_account = "br-marimo-runtime"
     p._workspace_pvc_template = None
@@ -223,9 +223,9 @@ def _ensure_pod_demo_spec() -> MarimoRuntimeSpec:
     "image,env_names",
     [
         # old image (predates the skew env-pin) -> stale random skew token
-        ("docker.io/zjc062/marimo-singleuser:OLD", ["BR_MARIMO_SKEW_PROTECTION_TOKEN"]),
+        ("brain-researcher/marimo-singleuser:OLD", ["BR_MARIMO_SKEW_PROTECTION_TOKEN"]),
         # desired image but missing the skew env-pin
-        ("docker.io/zjc062/marimo-singleuser:desired", []),
+        ("brain-researcher/marimo-singleuser:desired", []),
     ],
 )
 def test_ensure_pod_recreates_drifted_pod(image, env_names) -> None:
@@ -277,7 +277,7 @@ def test_ensure_pod_reuses_matching_pod() -> None:
 
         def read_namespaced_pod(self, *, name, namespace):
             return _fake_marimo_pod(
-                image="docker.io/zjc062/marimo-singleuser:desired",
+                image="brain-researcher/marimo-singleuser:desired",
                 env_names=["BR_MARIMO_SKEW_PROTECTION_TOKEN"],
             )
 
@@ -569,7 +569,7 @@ def test_runtime_extra_kubernetes_mounts_parse_hostpath_and_secret(monkeypatch) 
 def _bare_k8s_provisioner(core_v1, *, pvc_template):
     p = object.__new__(KubernetesMarimoRuntimeProvisioner)
     p._core_v1 = core_v1
-    p._image = "docker.io/zjc062/marimo-singleuser:test"
+    p._image = "brain-researcher/marimo-singleuser:test"
     p._image_pull_policy = "IfNotPresent"
     p._service_account = None
     p._workspace_pvc_template = pvc_template

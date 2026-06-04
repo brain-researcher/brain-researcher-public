@@ -22,6 +22,7 @@ class _FakeRedis:
 
 
 def test_repair_restores_seed_user_with_missing_provider(monkeypatch):
+    monkeypatch.setenv("BR_DEMO_USER_PASSWORD", "local-demo-password")
     user = {
         "id": "user_demo",
         "username": "demo",

@@ -99,7 +99,7 @@ describe('McpConfigurationPanel', () => {
     expect(screen.getAllByText('get_execution_recipe').length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: /Open starter repo/i })).toHaveAttribute(
       'href',
-      'https://github.com/zjc062/brain_researcher',
+      'https://github.com/brain-researcher/brain-researcher-agent-kit',
     )
   })
 })

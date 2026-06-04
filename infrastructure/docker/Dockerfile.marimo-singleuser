@@ -1,4 +1,4 @@
-ARG BR_AGENT_BASE_IMAGE=docker.io/zjc062/agent:20260405010701-d87e8a71
+ARG BR_AGENT_BASE_IMAGE=brain-researcher/agent:latest
 FROM ${BR_AGENT_BASE_IMAGE}
 
 ENV DEBIAN_FRONTEND=noninteractive \

@@ -13,7 +13,7 @@ This guide deploys **Brain Researcher** to a **GCE VM** running **k3s**, using *
 
 ```bash
 export DOMAIN="${PUBLIC_HOSTNAME}"
-export DH_NS="zjc062"                           # Docker Hub namespace
+export DH_NS="<your-dockerhub-namespace>"        # Docker Hub namespace
 export TAG="$(git rev-parse --short HEAD)"
 ```
 
@@ -89,7 +89,7 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    email: zijiaochen@stanford.edu
+    email: admin@example.com
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-prod
