@@ -229,6 +229,7 @@ model_weights/
 !configs/tools_catalog.json
 !configs/chat_scenarios.json
 !configs/hypothesis/*.json
+!.devin/wiki.json
 !docs/proposals/KG_CFS_ADJACENCY_GRAPH_VERIFICATION.json
 !docs/architecture/codegraph_baseline.json
 !apps/web-ui/public/benchmarks/

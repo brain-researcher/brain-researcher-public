@@ -1,0 +1,188 @@
+{
+  "pages": [
+    {
+      "title": "Project Overview and Public Boundaries",
+      "paths": [
+        "README.md",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/index.md",
+        "docs/index-simple.md",
+        "docs/release/benchmark.md",
+        "CITATION.cff",
+        "LICENSE"
+      ],
+      "importance": "high"
+    },
+    {
+      "title": "Local Setup and Service Stack",
+      "paths": [
+        "README.md",
+        "docs/ENVIRONMENT_SETUP.md",
+        "docs/OPERATIONS.md",
+        "DEPLOYMENT.md",
+        "docker-compose.yml",
+        "docker-compose.prod.yml",
+        "Dockerfile",
+        ".env.example",
+        "deployment.env.example",
+        "pyproject.toml",
+        "Makefile"
+      ],
+      "importance": "high"
+    },
+    {
+      "title": "Command Line Interface and Service Entrypoints",
+      "paths": [
+        "src/brain_researcher/cli",
+        "src/brain_researcher/br",
+        "src/brain_researcher/services/shared",
+        "tests/cli",
+        "docs/OPERATIONS.md"
+      ],
+      "importance": "high"
+    },
+    {
+      "title": "MCP Contracts and Protocol Surfaces",
+      "paths": [
+        "contracts",
+        "docs/mcp.md",
+        "docs/mcp",
+        "docs/mcp_tools.schema.json",
+        "docs/contract-tiers.md",
+        "src/brain_researcher/services/mcp",
+        "src/brain_researcher/core/contracts",
+        "scripts/contracts",
+        "tests/unit/config/test_active_runtime_surface_contract.py",
+        "tests/unit/mcp"
+      ],
+      "importance": "high"
+    },
+    {
+      "title": "Agent Loop, Planning, and Review Surfaces",
+      "paths": [
+        "src/brain_researcher/services/agent",
+        "src/brain_researcher/services/orchestrator",
+        "src/brain_researcher/services/review",
+        "src/brain_researcher/autoresearch",
+        "src/brain_researcher/research",
+        "docs/appendices/01_appendix_A_episode_control_plane.md",
+        "docs/appendices/02_appendix_B_evidence_bundle.md",
+        "docs/appendices/07_appendix_G_review.md",
+        "scripts/autoresearch",
+        "tests/orchestrator",
+        "tests/unit"
+      ],
+      "importance": "high"
+    },
+    {
+      "title": "Knowledge Graph Code and Private Data Boundary",
+      "paths": [
+        "src/brain_researcher/services/br_kg",
+        "src/brain_researcher/core/kg",
+        "scripts/br-kg",
+        "configs/br-kg",
+        "configs/schemas",
+        "docs/appendices/03_appendix_C_dataset_resource.md",
+        "docs/appendices/04_appendix_D_tool_registry.md",
+        "docs/release/benchmark.md"
+      ],
+      "importance": "high"
+    },
+    {
+      "title": "Tool Catalog, Recipes, and Public Evaluation Harnesses",
+      "paths": [
+        "docs/catalog_README.md",
+        "docs/how-to-add-tool.md",
+        "configs/catalog",
+        "configs/tools_catalog.json",
+        "src/brain_researcher/services/tools",
+        "src/brain_researcher/core/datasets",
+        "scripts/eval",
+        "tests/eval",
+        "tests/tools"
+      ],
+      "importance": "medium"
+    },
+    {
+      "title": "Web UI and User-Facing Surfaces",
+      "paths": [
+        "apps/web-ui/README-real-pipeline.md",
+        "apps/web-ui/CONFIG.md",
+        "apps/web-ui/INTEGRATION.md",
+        "apps/web-ui/src/app",
+        "apps/web-ui/src/components",
+        "apps/web-ui/src/lib",
+        "apps/web-ui/package.json",
+        "apps/web-ui/next.config.js"
+      ],
+      "importance": "medium"
+    },
+    {
+      "title": "Deployment, Operations, and Infrastructure Templates",
+      "paths": [
+        "docs/OPERATIONS.md",
+        "docs/hpc.md",
+        "infrastructure/docker",
+        "infrastructure/k8s",
+        "infrastructure/nginx",
+        "infrastructure/monitoring",
+        "scripts/services",
+        "scripts/setup",
+        "scripts/maintenance"
+      ],
+      "importance": "medium"
+    },
+    {
+      "title": "Security, Contribution, and Public Release Rules",
+      "paths": [
+        "SECURITY.md",
+        "THREAT_MODEL.md",
+        "CODE_OF_CONDUCT.md",
+        "CONTRIBUTING.md",
+        ".gitleaks.toml",
+        ".gitignore",
+        ".dockerignore",
+        "docs/release/benchmark.md"
+      ],
+      "importance": "medium"
+    }
+  ],
+  "exclude": [
+    ".git/**",
+    ".pytest_cache/**",
+    ".pytest_tmp/**",
+    ".ruff_cache/**",
+    ".mypy_cache/**",
+    ".venv/**",
+    ".venv*/**",
+    "__pycache__/**",
+    "**/__pycache__/**",
+    "**/*.pyc",
+    "node_modules/**",
+    "apps/web-ui/node_modules/**",
+    "apps/web-ui/.next/**",
+    "apps/web-ui/out/**",
+    "apps/web-ui/coverage/**",
+    "apps/web-ui/package-lock.json",
+    "apps/web-ui/pnpm-lock.yaml",
+    "site/**",
+    "build/**",
+    "dist/**",
+    "*.egg-info/**",
+    "src/brain_researcher.egg-info/**",
+    "data/**",
+    "backups/**",
+    "logs/**",
+    "out/**",
+    "tmp/**",
+    "docs/assets/doraemon/**",
+    "docs/use_cases/**/figures/**",
+    "docs/use_cases/**/reports/*.pdf",
+    "configs/catalog/capabilities.generated.yaml",
+    "configs/catalog/capabilities.merged.yaml",
+    "configs/catalog/capabilities.python.generated.yaml",
+    "configs/tools_catalog_merged.json"
+  ],
+  "instructions": "Generate a concise public-facing code wiki. Prioritize the open code, contracts, setup flow, MCP usage, service boundaries, and security/data-boundary notes. Do not imply that private Neo4j graph contents, private benchmark corpora, internal run artifacts, hosted services, or site-specific launchers are shipped in this repository. Treat deployment templates as examples unless the README or docs state a verified local command."
+}
