@@ -1,0 +1,43 @@
+{
+  "allowed_alternatives": [
+    "attention"
+  ],
+  "attack_strategies": [
+    "strict_evidence_profile",
+    "compositional_specificity",
+    "network_coactivation"
+  ],
+  "claim_id": "demo-wm-dlpfc-ips-v1",
+  "claim_text": "Working-memory-labeled Neurosynth studies show dlPFC activation and dlPFC-IPS coactivation within coordinate evidence.",
+  "commitment_hash": "4871ea4346e81bc74a86bf77b877e8d215a4bc0341dbd5ffd9a58faac6d3fdf1",
+  "commitment_id": "commit:demo-wm-dlpfc-ips-v1",
+  "confirmatory": true,
+  "extra": {},
+  "failure_criteria": "Downgrade the claim if conservative evidence, attention-excluded specificity, or dlPFC-IPS coactivation does not clear its bar.",
+  "locked_at": "2026-06-13T14:48:01.826043+00:00",
+  "rubric_refs": {
+    "compositional_specificity": {
+      "hash": "3fc529aa8af3660783e547723850393d3595273178f0a7d5b20f1b614fa4fc34",
+      "path": "scripts/autoresearch/run_neurolang_vhrl_demo.py"
+    },
+    "network_coactivation": {
+      "hash": "3fc529aa8af3660783e547723850393d3595273178f0a7d5b20f1b614fa4fc34",
+      "path": "scripts/autoresearch/run_neurolang_vhrl_demo.py"
+    },
+    "strict_evidence_profile": {
+      "hash": "3fc529aa8af3660783e547723850393d3595273178f0a7d5b20f1b614fa4fc34",
+      "path": "scripts/autoresearch/run_neurolang_vhrl_demo.py"
+    }
+  },
+  "same_null_constraint": null,
+  "schema_version": "commitment-card-v1",
+  "scope_boundary": {
+    "datasets": [
+      "Neurosynth v7"
+    ],
+    "modality": "fMRI",
+    "population": null,
+    "workflow_family": "NeuroLang probabilistic-Datalog over Neurosynth"
+  },
+  "success_criteria": "Default NeuroLang forward evidence and dlPFC-IPS coactivation clear the lenient evidence bar."
+}

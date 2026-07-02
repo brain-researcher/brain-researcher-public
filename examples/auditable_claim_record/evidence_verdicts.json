@@ -1,0 +1,206 @@
+{
+  "forward_default": {
+    "association_probability": 0.24014665444546288,
+    "backend": "neurolang",
+    "confidence": 0.24014665444546288,
+    "conflicting_refs": [],
+    "inference": "forward_inference",
+    "n_conflicting": 0,
+    "n_supporting": 1091,
+    "normalized_claim": null,
+    "profile": "default",
+    "raw": {
+      "inference": "forward_inference",
+      "lift": 1.6332927454026251,
+      "lift_bar": 1.5,
+      "n_region": 2113,
+      "n_term": 1091,
+      "n_total": 14371,
+      "neurolang_version": "0.1a21.dev18+g6cd1e90d6",
+      "p_region": 0.14703221766056643,
+      "p_region_given_term": 0.24014665444546288
+    },
+    "region_confidence": 0.65,
+    "region_source": "focus:dlPFC_L",
+    "reproducible_query": {
+      "backend": "neurolang",
+      "engine": "neurolang.frontend.NeurolangPDL",
+      "label_threshold": 0.001,
+      "lift_bar": 1.5,
+      "query": "forward_inference",
+      "radius_mm": 10.0,
+      "strictness": "high_recall",
+      "target_region": "dlpfc",
+      "target_region_label": "dlPFC_L",
+      "target_xyz": [
+        -44.0,
+        18.0,
+        28.0
+      ],
+      "term": "terms_abstract_tfidf__working memory",
+      "venv_python": "${BR_NEUROLANG_PYTHON}"
+    },
+    "status": "supported_within_scope",
+    "supporting_refs": [],
+    "term_confidence": 0.9,
+    "term_source": "vocab:direct",
+    "warnings": [
+      "forward inference P(activation@region | term) via NeuroLang probabilistic Datalog (out-of-process); region grounded to dlPFC_L (conf 0.65), term 'working memory'"
+    ]
+  },
+  "forward_strict": {
+    "association_probability": 0.24014665444546288,
+    "backend": "neurolang",
+    "confidence": 0.24014665444546288,
+    "conflicting_refs": [],
+    "inference": "forward_inference",
+    "n_conflicting": 0,
+    "n_supporting": 1091,
+    "normalized_claim": null,
+    "profile": "strict",
+    "raw": {
+      "inference": "forward_inference",
+      "lift": 1.6332927454026251,
+      "lift_bar": 3.0,
+      "n_region": 2113,
+      "n_term": 1091,
+      "n_total": 14371,
+      "neurolang_version": "0.1a21.dev18+g6cd1e90d6",
+      "p_region": 0.14703221766056643,
+      "p_region_given_term": 0.24014665444546288
+    },
+    "region_confidence": 0.65,
+    "region_source": "focus:dlPFC_L",
+    "reproducible_query": {
+      "backend": "neurolang",
+      "engine": "neurolang.frontend.NeurolangPDL",
+      "label_threshold": 0.001,
+      "lift_bar": 3.0,
+      "query": "forward_inference",
+      "radius_mm": 10.0,
+      "strictness": "conservative",
+      "target_region": "dlpfc",
+      "target_region_label": "dlPFC_L",
+      "target_xyz": [
+        -44.0,
+        18.0,
+        28.0
+      ],
+      "term": "terms_abstract_tfidf__working memory",
+      "venv_python": "${BR_NEUROLANG_PYTHON}"
+    },
+    "status": "weakened",
+    "supporting_refs": [],
+    "term_confidence": 0.9,
+    "term_source": "vocab:direct",
+    "warnings": [
+      "forward inference P(activation@region | term) via NeuroLang probabilistic Datalog (out-of-process); region grounded to dlPFC_L (conf 0.65), term 'working memory'"
+    ]
+  },
+  "network_coactivation": {
+    "association_probability": 0.08982584784601283,
+    "backend": "neurolang",
+    "confidence": 0.08982584784601283,
+    "conflicting_refs": [],
+    "inference": "forward_inference",
+    "n_conflicting": 0,
+    "n_supporting": 572,
+    "normalized_claim": null,
+    "profile": "default",
+    "raw": {
+      "coactivation_lift": 1.5635401128952062,
+      "expected_if_independent": 0.0574502995511144,
+      "inference": "forward_inference",
+      "joint_forward_lift": 2.256795908033305,
+      "lift_bar": 1.5,
+      "n_joint": 572,
+      "n_term": 1091,
+      "n_total": 14371,
+      "neurolang_version": "0.1a21.dev18+g6cd1e90d6",
+      "p_joint": 0.039802379792637954,
+      "p_joint_given_term": 0.08982584784601283,
+      "per_region_given_term": {
+        "dlPFC_L": 0.24014665444546288,
+        "inferior_parietal_L": 0.2392300641613199
+      }
+    },
+    "region_confidence": null,
+    "region_source": "",
+    "reproducible_query": {
+      "backend": "neurolang",
+      "engine": "neurolang.frontend.NeurolangPDL",
+      "lift_bar": 1.5,
+      "query": "network_coactivation",
+      "radius_mm": 10.0,
+      "regions": [
+        "dlPFC_L",
+        "inferior_parietal_L"
+      ],
+      "strictness": "high_recall",
+      "term": "terms_abstract_tfidf__working memory",
+      "venv_python": "${BR_NEUROLANG_PYTHON}"
+    },
+    "status": "supported_within_scope",
+    "supporting_refs": [],
+    "term_confidence": 0.9,
+    "term_source": "vocab:direct",
+    "warnings": [
+      "network co-activation: P(all regions peak | term) via NeuroLang multi-region Datalog conjunction; term 'working memory', regions ['dlPFC_L', 'inferior_parietal_L']"
+    ]
+  },
+  "specificity_excluding_rivals": {
+    "association_probability": 0.2441860465116279,
+    "backend": "neurolang",
+    "confidence": 0.2441860465116279,
+    "conflicting_refs": [],
+    "inference": "forward_inference",
+    "n_conflicting": 0,
+    "n_supporting": 860,
+    "normalized_claim": null,
+    "profile": "default",
+    "raw": {
+      "inference": "forward_inference",
+      "lift_bar": 1.5,
+      "lift_include": 1.6332927454026251,
+      "lift_specific": 1.6607655818355913,
+      "n_eligible": 860,
+      "n_excluded": 231,
+      "n_include": 1091,
+      "n_total": 14371,
+      "neurolang_version": "0.1a21.dev18+g6cd1e90d6",
+      "p_region": 0.14703221766056643,
+      "p_region_given_include": 0.24014665444546288,
+      "p_region_given_specific": 0.2441860465116279,
+      "specificity_drop": -0.004039392066165021
+    },
+    "region_confidence": 0.65,
+    "region_source": "focus:dlPFC_L",
+    "reproducible_query": {
+      "backend": "neurolang",
+      "engine": "neurolang.frontend.NeurolangPDL",
+      "exclude_terms": [
+        "attention"
+      ],
+      "lift_bar": 1.5,
+      "query": "compositional_forward",
+      "radius_mm": 10.0,
+      "strictness": "high_recall",
+      "target_region": "dlpfc",
+      "target_region_label": "dlPFC_L",
+      "target_xyz": [
+        -44.0,
+        18.0,
+        28.0
+      ],
+      "term": "terms_abstract_tfidf__working memory",
+      "venv_python": "${BR_NEUROLANG_PYTHON}"
+    },
+    "status": "supported_within_scope",
+    "supporting_refs": [],
+    "term_confidence": 0.9,
+    "term_source": "vocab:direct",
+    "warnings": [
+      "compositional specificity: P(region | term AND NOT rivals) via NeuroLang Datalog negation; region dlPFC_L (conf 0.65), term 'working memory', excluded ['attention']"
+    ]
+  }
+}
