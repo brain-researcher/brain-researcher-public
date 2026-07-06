@@ -17,11 +17,11 @@ Information to its archived location in this package.
 | Appendix J NeuroimageKnowledge examples | `appendix_ledgers/appendix_j_neuroimageknowledge_examples.tex` | Representative item-level answers are archive material. |
 | Appendix J unified benchmark-bundle inventory | `appendix_ledgers/appendix_j_benchmark_bundle_inventory.tex` | Full benchmark-bundle artifact inventory is archive material. |
 | Appendix J representative benchmark-bundle cases | `appendix_ledgers/appendix_j_benchmark_bundle_cases.tex` | Representative benchmark cases are archive material. |
-| Appendix L case 1 report | `case_reports/case1_leading_report.pdf` | Full per-case report moved out of supplement; summary statistics remain in S11.2 and Appendix J. |
-| Appendix L case 2 report | `case_reports/case2_report.pdf` | Full per-case report moved out of supplement; summary statistics remain in S11.2 and Appendix J. |
-| Appendix L case 4 report | `case_reports/case4_report.pdf` | Full per-case report moved out of supplement; summary statistics remain in S11.2 and Appendix J. |
+| Appendix L case 1 report | `case_reports/case1_leading_report.pdf` | Full per-case report moved out of supplement; summary statistics remain in S11.2.1 and Appendix J. |
+| Appendix L case 2 report | `case_reports/case2_report.pdf` | Full per-case report moved out of supplement; summary statistics remain in S11.2.1 and Appendix J. |
+| Appendix L case 4 report | `case_reports/case4_report.pdf` | Full per-case report moved out of supplement; summary statistics remain in S11.2.1 and Appendix J. |
 | Appendix L case 5 report | `case_reports/case5_hcp_prediction.pdf` | Full per-case report moved out of supplement; failure modes and caveats remain in S11.3.2. |
 | Appendix L case 6 report | `case_reports/case6_tribe_encoding.pdf` | Full per-case report moved out of supplement; failure modes and caveats remain in S11.3.2. |
-| Appendix M benchmark human-audit sheet | `benchmark_records/human_audit_20pct/benchmark_human_audit_20pct.pdf` | Full 44-page item-level sheet moved out of supplement; summary and flagged-item accounting remain in Tables S11. |
+| Appendix M benchmark human-audit sheet | `benchmark_records/human_audit_20pct/benchmark_human_audit_20pct.pdf` | Full 44-page item-level sheet moved out of supplement; summary and flagged-item accounting remain in S11.1.3 (Tables S11). |
 | NeuroMark claim card | `claim_records/case1_neuromark_schizophrenia_multiverse/claim_card.json` | Small public audit record copied into this package for reviewer convenience. |
 | NeuroMark evidence verdicts | `claim_records/case1_neuromark_schizophrenia_multiverse/evidence_verdicts.json` | Small public audit record copied into this package for reviewer convenience. |
