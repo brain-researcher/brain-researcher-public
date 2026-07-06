@@ -1,0 +1,136 @@
+% Supplementary Information entry point.
+% This file is intended to compile separately from main.tex.
+
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+
+\usepackage{graphicx}%
+\usepackage{pdfpages}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{array}%
+\usepackage{longtable}%
+\usepackage{tabularx}%
+\usepackage{colortbl}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{calc}%
+\usepackage{fvextra}%
+\usepackage{microtype}%
+\usepackage{ragged2e}%
+\usepackage{xr-hyper}%
+\usepackage{capt-of}%
+
+\definecolor{brtablehead}{RGB}{221,235,247}%
+
+\DefineVerbatimEnvironment{suppcode}{Verbatim}{
+  fontsize=\footnotesize,
+  breaklines=true,
+  breakanywhere=false,
+  breakindent=2em,
+  breaksymbolleft={},
+  xleftmargin=0pt,
+  framesep=0pt
+}
+
+\newcommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\raggedbottom
+\emergencystretch=8em
+\tolerance=3000
+\hbadness=10000
+\hfuzz=4pt
+\hypersetup{bookmarksdepth=1}
+\makeatletter
+\let\br@bibcite\bibcite
+\let\br@citation\citation
+\let\br@bibdata\bibdata
+\let\br@bibstyle\bibstyle
+\let\bibcite\@gobbletwo
+\let\citation\@gobble
+\let\bibdata\@gobble
+\let\bibstyle\@gobble
+\IfFileExists{main_2500.aux}{\externaldocument{main_2500}}{}
+\let\bibcite\br@bibcite
+\let\citation\br@citation
+\let\bibdata\br@bibdata
+\let\bibstyle\br@bibstyle
+\renewcommand{\sn@addauthor}[2]{%
+  \ifx\sn@authorlist\@empty
+    {\gappto\sn@authorlist{\textbf{#2}\ifstrempty{#1}{}{\textsuperscript{#1}}\sn@pendingequal}}%
+  \else
+    \gappto\sn@authorlist{, \textbf{#2}\ifstrempty{#1}{}{\textsuperscript{#1}}\sn@pendingequal}%
+  \fi
+  \gdef\sn@pendingemail{}\gdef\sn@pendingequal{}%
+}
+\renewcommand{\email}[1]{\gappto\sn@authorlist{\par\small Correspondence: \texttt{#1}}}
+\renewcommand{\maketitle}{%
+  \begin{center}
+    {\LARGE\bfseries \sn@titletext\par}\vspace{1em}
+    {\sn@authorlist\par}\vspace{0.75em}
+    {\small\sn@affillist\par}
+  \end{center}
+  \vspace{1em}
+}
+\makeatother
+\renewcommand{\figurename}{Supplementary Figure}
+\renewcommand{\thefigure}{S\arabic{figure}}
+
+\IfFileExists{supplementary.aux}{\externaldocument{supplementary}}{}
+
+\begin{document}
+\setcounter{secnumdepth}{0}
+
+\begin{center}
+{\LARGE\bfseries Extended Data}\\[0.4em]
+{\large Full appendix ledgers and benchmark manifests for\\[0.2em]
+``Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses''}
+\end{center}
+\vspace{1.2em}
+
+\noindent This document reproduces, in full, the data-card ledgers, the per-rule
+scientific-review registry, and the benchmark item/example/bundle manifests that
+were moved out of the lean reviewer-facing Supplementary Information to keep it
+short. The Supplementary Information retains a one-paragraph data card for each
+appendix (Appendix~A--J) and the reviewer-facing Appendices~G, I, J, and~K; this
+Extended Data document carries the corresponding full ledgers. Appendix and
+section labels match the Supplementary Information. See \texttt{supplement\_crosswalk.md}
+and \texttt{MANIFEST.json} in this package for the mapping and checksums.
+\vspace{0.5em}
+
+\tableofcontents
+\clearpage
+
+\input{appendix_ledgers/appendix_a_episode_control_plane_card.tex}
+\clearpage
+\input{appendix_ledgers/appendix_b_evidence_bundle_brkg_atlas_card.tex}
+\clearpage
+\input{appendix_ledgers/appendix_c_dataset_resource_readiness_card.tex}
+\clearpage
+\input{appendix_ledgers/appendix_d_tool_registry_candidate_ranking_specification_ledger.tex}
+\clearpage
+\input{appendix_ledgers/appendix_e_constraint_compiler_commitment_gate.tex}
+\clearpage
+\input{appendix_ledgers/appendix_f_execution_trace_artifact_manifest_provenance.tex}
+\clearpage
+\section{\texorpdfstring{\textbf{Appendix G. Full scientific-review rule registry}}{Appendix G. Full scientific-review rule registry}}
+\input{appendix_ledgers/appendix_g_full_rule_registry.tex}
+\clearpage
+\input{appendix_ledgers/appendix_h_memory_claim_relation_brkg_promotion.tex}
+\clearpage
+\section{\texorpdfstring{\textbf{Appendix J. NeuroimageKnowledge item manifest}}{Appendix J. NeuroimageKnowledge item manifest}}
+\input{appendix_ledgers/appendix_j_neuroimageknowledge_items.tex}
+\clearpage
+\section{\texorpdfstring{\textbf{Appendix J. Representative paired NeuroimageKnowledge answers}}{Appendix J. Representative paired NeuroimageKnowledge answers}}
+\input{appendix_ledgers/appendix_j_neuroimageknowledge_examples.tex}
+\clearpage
+\section{\texorpdfstring{\textbf{Appendix J. Unified benchmark-bundle inventory}}{Appendix J. Unified benchmark-bundle inventory}}
+\input{appendix_ledgers/appendix_j_benchmark_bundle_inventory.tex}
+\clearpage
+\section{\texorpdfstring{\textbf{Appendix J. Representative benchmark-bundle cases}}{Appendix J. Representative benchmark-bundle cases}}
+\input{appendix_ledgers/appendix_j_benchmark_bundle_cases.tex}
+
+\end{document}

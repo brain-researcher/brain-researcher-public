@@ -11,6 +11,14 @@ excerpts.
 
 ## Contents
 
+- `extended_data.pdf`: the appendix ledgers below compiled into a single
+  human-readable PDF (110 pages), so the moved tables can be read directly
+  without recompiling. Built from `extended_data.tex` + `appendix_ledgers/` +
+  `sn-jnl.cls` (the same document class and preamble as the Supplementary
+  Information); cross-references to reviewer-facing appendices and figures
+  resolve against the compiled supplement.
+- `extended_data.tex`, `sn-jnl.cls`: the build recipe for `extended_data.pdf`
+  (recompile with `latexmk -pdf extended_data.tex`).
 - `appendix_ledgers/`: full appendix/data-card source files moved out of the
   lean supplement, including the full BR-KG atlas/inventories (Appendix B), the
   tool-registry ledger (Appendix D), constraint, execution/provenance, and
