@@ -1,0 +1,118 @@
+{
+  "package": "brainresearcher_supplement_archive_20260705",
+  "created_date": "2026-07-05",
+  "purpose": "Reviewer artifact package for full ledgers, per-case reports, item-level sheets, and claim records moved out of the lean BrainResearcher Supplementary Information.",
+  "file_count": 22,
+  "files": [
+    {
+      "path": "README.md",
+      "size_bytes": 2289,
+      "sha256": "29704903b80a003a07a3aa554c7210ac6735423467b8c92ece0170211e22762b"
+    },
+    {
+      "path": "appendix_ledgers/appendix_a_episode_control_plane_card.tex",
+      "size_bytes": 48679,
+      "sha256": "4d7a67595977620f1ec3dd8d4e6e55d63a7ea2c4a6804305ff3385d959215efe"
+    },
+    {
+      "path": "appendix_ledgers/appendix_b_evidence_bundle_brkg_atlas_card.tex",
+      "size_bytes": 1101531,
+      "sha256": "b4cf57cc49ab51e38753b9e15c69a36c7bd925a37ea09f7ea3e663256f9df6a0"
+    },
+    {
+      "path": "appendix_ledgers/appendix_c_dataset_resource_readiness_card.tex",
+      "size_bytes": 20971,
+      "sha256": "1cb3f1fc2b42657a23e898b4b6477b2b71955a16bfcc6878405410e2318d9891"
+    },
+    {
+      "path": "appendix_ledgers/appendix_d_tool_registry_candidate_ranking_specification_ledger.tex",
+      "size_bytes": 114228,
+      "sha256": "809dfda3d396b45fd8f581d77d5a0aa1775a0c497a2fe4c56989e70e6d5544b8"
+    },
+    {
+      "path": "appendix_ledgers/appendix_e_constraint_compiler_commitment_gate.tex",
+      "size_bytes": 22759,
+      "sha256": "825e6bf1061aae91f0e2abc5728f243a96f25c91a2c0f7b65414500422f84753"
+    },
+    {
+      "path": "appendix_ledgers/appendix_f_execution_trace_artifact_manifest_provenance.tex",
+      "size_bytes": 20314,
+      "sha256": "9912c4c8441dd43abe044ee389655ce20c11033e6b53734901af5aaf84d011a3"
+    },
+    {
+      "path": "appendix_ledgers/appendix_g_full_rule_registry.tex",
+      "size_bytes": 15772,
+      "sha256": "be71cf06b9ce6526e03e179e8d3ddb82938437bac8d62b470ce0d11071483c99"
+    },
+    {
+      "path": "appendix_ledgers/appendix_h_memory_claim_relation_brkg_promotion.tex",
+      "size_bytes": 20173,
+      "sha256": "f69e77277d61de57664d94bb22e8118fc28a8b8635f074453f4dfb158d95c139"
+    },
+    {
+      "path": "appendix_ledgers/appendix_j_benchmark_bundle_cases.tex",
+      "size_bytes": 3292,
+      "sha256": "08c964c7ae6edc62516d091f22036c2d008b442eebe12857ac9efa6aa2c12d44"
+    },
+    {
+      "path": "appendix_ledgers/appendix_j_benchmark_bundle_inventory.tex",
+      "size_bytes": 5078,
+      "sha256": "92d259bd585f86451974d6e9ef2d59485f82f942778f60f3fbcb00d73d98ab2d"
+    },
+    {
+      "path": "appendix_ledgers/appendix_j_neuroimageknowledge_examples.tex",
+      "size_bytes": 8554,
+      "sha256": "8de99b409b7a7a489dee4498b9f424774bdcfc7402dfe330921659aad7b459dd"
+    },
+    {
+      "path": "appendix_ledgers/appendix_j_neuroimageknowledge_items.tex",
+      "size_bytes": 13403,
+      "sha256": "be3b7ca16c66df40511bff5b70e6f78c1314f146a276a1d0df7bab7ff004d52a"
+    },
+    {
+      "path": "benchmark_records/human_audit_20pct/benchmark_human_audit_20pct.pdf",
+      "size_bytes": 527505,
+      "sha256": "438f0cd5eb527fd51d54fd4a2d6a1c869cb343ba65729a3a80bcccf076af23fd"
+    },
+    {
+      "path": "case_reports/case1_leading_report.pdf",
+      "size_bytes": 2563091,
+      "sha256": "00c55b16a2c5f8229d42055aa524d443ee3b6c0bd425673faf8a3502f4dfae86"
+    },
+    {
+      "path": "case_reports/case2_report.pdf",
+      "size_bytes": 2566716,
+      "sha256": "5668d3c56cd34238a2d388365e0615d29da9b6b37051bde0f5dadc4d67b4b2c1"
+    },
+    {
+      "path": "case_reports/case4_report.pdf",
+      "size_bytes": 685614,
+      "sha256": "b459f77d593adf8ebd0ee4021413612d29d9ccac53126d716655f7b4dd91afa2"
+    },
+    {
+      "path": "case_reports/case5_hcp_prediction.pdf",
+      "size_bytes": 3899211,
+      "sha256": "cf2a6c88bb0c789659c15aec01774740216a0c306afca9d83041f112416aa407"
+    },
+    {
+      "path": "case_reports/case6_tribe_encoding.pdf",
+      "size_bytes": 4667985,
+      "sha256": "231cbc17dba703fa4893b1a9fc82f8704e60907e72ebd388182777f71f33abb1"
+    },
+    {
+      "path": "claim_records/case1_neuromark_schizophrenia_multiverse/claim_card.json",
+      "size_bytes": 5736,
+      "sha256": "78ae865307a99f9383c3fd00005588969bee26670c5ca9a40f2f18c64ede6bed"
+    },
+    {
+      "path": "claim_records/case1_neuromark_schizophrenia_multiverse/evidence_verdicts.json",
+      "size_bytes": 7901,
+      "sha256": "82008aada125089de28f5b632734070c1b3467c3df38027c08407b232f0c7592"
+    },
+    {
+      "path": "supplement_crosswalk.md",
+      "size_bytes": 4379,
+      "sha256": "d21fce37bb6b4dec132ed851a4e79c48d11080eda501bdf046d9728fe6d509f8"
+    }
+  ]
+}

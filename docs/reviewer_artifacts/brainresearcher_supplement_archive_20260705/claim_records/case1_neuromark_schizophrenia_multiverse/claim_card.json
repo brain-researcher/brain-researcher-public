@@ -1,0 +1,81 @@
+{
+  "schema_version": "claim-card-v1",
+  "claim_id": "case1-neuromark-schizophrenia-multiverse-v1",
+  "claim_text": "Within the reviewed 480-specification NeuroMark schizophrenia multiverse artifact set, H1 is fragile, H2 is estimator-split, and H3 has limited direction-aware support; these are internally supported exploratory findings, not pre-registered biomarker claims.",
+  "status": "internally_supported_with_major_caveats",
+  "status_not_ground_truth": true,
+  "commitment_card_ref": null,
+  "commitment_hash": null,
+  "evidence_bundle_refs": [
+    "evidence_verdicts.json"
+  ],
+  "generated_at": "2026-07-05T12:45:32Z",
+  "record_type": "public_audit_export",
+  "record_boundary": {
+    "source": "reviewed evidence artifacts",
+    "pre_run_commitment_card_found": false,
+    "pre_run_commitment_hash_found": false,
+    "not_pre_run_commitment_record": true,
+    "public_export_notes": [
+      "This public export omits private filesystem paths and restricted data.",
+      "No commitment_card.json is included because no pre-run commitment card was found on the searched surfaces.",
+      "This record should be cited as a reviewed-evidence claim card, not as a sealed pre-run commitment record."
+    ]
+  },
+  "scope_boundary": {
+    "dataset": "FBIRN NeuroMark 2.2 FNC case-control sample as described in the reviewed report",
+    "population": "181 healthy controls and 182 schizophrenia participants, per the reviewed report",
+    "modality": "resting-state fMRI functional network connectivity",
+    "workflow_family": "NeuroMark 2.2 schizophrenia multiverse analysis",
+    "artifact_scope": "Reviewed report summary and BR external-review logs; restricted source data and private workspace paths are not included in this public export."
+  },
+  "survived_checks": [
+    "Latest reviewed report and rereview agree on a 480-row multiverse result table with 480 unique branch combinations and zero recorded spec errors.",
+    "H1 summary is internally consistent in the latest reviewed report and rereview: 72/384 latent-evaluable specifications favour latent representations, median delta_auc -0.0319.",
+    "H2 summary is internally consistent in the latest reviewed report and rereview: 12/24 unique H2 contrasts are favourable after deduplicating classifier/reduction duplicates.",
+    "H3 summary is internally consistent in the latest reviewed report and rereview: 100/384 latent specifications are favourable under the corrected direction-aware rule."
+  ],
+  "failed_checks": [
+    "No pre-run commitment card, sealed commitment hash, claim_report.json, society/claim_card.json, or original evidence_verdicts.json was found for the original NeuroMark analysis on the searched surfaces.",
+    "The reviewed results/multiverse_full directory was reported by rereview as lacking run_manifest.json.",
+    "Raw restricted source data and private result directories are not included in this public export for direct checksum or rerun validation.",
+    "Joint specification-count p-values remain dependence-naive and should be treated as descriptive.",
+    "ComBat-adjusted H2/H3 branches still need site-by-diagnosis and residual site-predictability diagnostics before stronger group-effect interpretation."
+  ],
+  "next_required_evidence": [
+    "Export a public-safe manifest for the reviewed results/multiverse_full directory, including file hashes and software versions.",
+    "If the external runner finds true original BR run-store audit files, publish those separately and identify them as original run-store artifacts.",
+    "Add dependence-aware specification-curve inference or label the binomial count tests as descriptive.",
+    "Add site-by-diagnosis and residual site-predictability diagnostics for ComBat branches."
+  ],
+  "pipeline_summary": {
+    "public_demo_bundle": "configs/demo/run_bundles/case1-neuromark-schizophrenia-multiverse/run_bundle.json",
+    "public_demo_bundle_sha256": "a325d81bbd36822e6e11277feba97353a1fab84b23a71d670eecb7c31eefb6e2",
+    "public_case_report_pdf": "docs/use_cases/brain_researcher_hybrid/reports/case1_leading_case_report.pdf",
+    "public_case_report_pdf_sha256": "58626afbf2af21d1d1a522268e464d85c4ece13d0c26772b99a445fcf75e7844",
+    "public_case_report_status": "superseded_320_spec_report",
+    "reviewed_current_report_status": "480_spec_report_reviewed_but_not_included_in_this_public_export",
+    "external_review_runs": [
+      "br_20260626_142905_91775df522",
+      "br_20260626_144807_555e05575a"
+    ],
+    "audit_search_run": "br_20260705_123711_9a79bbef00"
+  },
+  "extra": {
+    "calibration": {
+      "binding_status": "internally_supported_with_major_caveats",
+      "binding_rationale": "The latest reviewed report and external rereview agree on H1/H2/H3 summary values after the H3 direction fix. The binding is limited because no pre-run commitment card or original manifest-backed run bundle is available in the public export.",
+      "calibrated_claim_text": "The NeuroMark case supports an exploratory, internally reviewed 480-specification multiverse summary: H1 fragile, H2 estimator-split, H3 limited under the corrected direction-aware rule. It does not support a claim that a pre-run BR commitment card existed for this analysis."
+    },
+    "allowed_public_wording": [
+      "Reviewed-evidence claim card for the NeuroMark multiverse case.",
+      "BR external-review logs exist for the NeuroMark bundle.",
+      "No pre-run BR commitment card was found on the searched surfaces."
+    ],
+    "disallowed_public_wording": [
+      "A commitment card was written before the NeuroMark analysis.",
+      "The NeuroMark commitment hash was sealed before any analysis runs.",
+      "The original BR episode audit record was recovered."
+    ]
+  }
+}

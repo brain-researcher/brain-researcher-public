@@ -1,0 +1,2374 @@
+\section{\texorpdfstring{\textbf{Appendix D. Tool registry, candidate ranking, and specification ledger card}}{Appendix D. Tool registry, candidate ranking, and specification ledger card}}\label{appendix-d.-tool-registry-candidate-ranking-and-specification-ledger-card}\label{app:d}
+
+\hyperref[app:d]{Appendix D} is the tool-registry ledger: it proves how Brain Researcher moved from a scientific intent to candidate tool families, ranked candidates, rejected alternatives, selected canonical tool/\allowbreak{}workflow IDs, and generated backend-specific recipes.
+
+\subsection{\texorpdfstring{\textbf{D1. Purpose and scope}}{D1. Purpose and scope}}\label{d1.-purpose-and-scope}
+
+This card records how Brain Researcher selected, ranked, rejected, and resolved candidate tools and workflows during an episode. It links the episode intent and resource ledger to the typed tool registry, family cards, canonical tool IDs, parameter schemas, compatibility checks, backend recipes, and rejected-candidate ledger.
+
+\subsection{\texorpdfstring{\textbf{D2. Registry snapshot and inventory level}}{D2. Registry snapshot and inventory level}}\label{d2.-registry-snapshot-and-inventory-level}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3084}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3308}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3132}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Recommended entry}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Why it matters}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Registry snapshot ID
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+registry\_\allowbreak{}YYYYMMDD or immutable hash
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Pins the tool catalog used by the episode.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+MCP surface
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+87 operations /\allowbreak{} 3 resources if using the checked implementation
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Separates public MCP operations from the broader neuroimaging catalog.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Exposed + workflow specs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+177 in the checked quick self-test
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Records planning and recipe-generation surface.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Total registry specs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+2,089 in the checked registry
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Documents the broader searchable catalog without printing all specs.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Executable-wrapper inventory
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textasciitilde196 Python-native tools + \textasciitilde2,100 command-line wrappers
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Records executable scale separately from MCP endpoints.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Allowlist mode
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+interactive-safe /\allowbreak{} diagnostic /\allowbreak{} benchmark
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Explains which tools could be retrieved.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Embedding index state
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+loaded /\allowbreak{} unavailable /\allowbreak{} not used
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Documents whether semantic family retrieval influenced ranking.
+\end{minipage} \\
+\end{longtable}
+}
+
+\textbf{D3. Intent and resource-category binding}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3148}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3308}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3084}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Example}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Source}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Episode ID
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:a]{Appendix A}
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+User intent
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+prediction
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Planner /\allowbreak{} episode record
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Modality
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+resting-state fMRI /\allowbreak{} FC
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:b]{Appendix B}/\allowbreak{}\hyperref[app:c]{C}
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Required resources
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+feature matrix; target vector; covariate table; fold manifest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:c]{Appendix C}
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Expected outputs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+predictions; model artifact; scorecard; null-test output
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:d]{Appendix D}/\allowbreak{}\hyperref[app:f]{F}
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Incompatible families
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+raw preprocessing; whole-brain GLM; map-level meta-analysis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Intent-output mismatch or missing assets
+\end{minipage} \\
+\end{longtable}
+}
+
+\begin{quote}
+family\_\allowbreak{}card\_\allowbreak{}query:\\
+episode\_\allowbreak{}id: ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001\\
+intent: prediction\\
+modality: resting\_\allowbreak{}state\_\allowbreak{}fMRI\\
+required\_\allowbreak{}resources:\\
+- feature\_\allowbreak{}matrix\\
+- target\_\allowbreak{}vector\\
+- covariate\_\allowbreak{}table\\
+- fold\_\allowbreak{}manifest\\
+expanded\_\allowbreak{}families:\\
+- predictive\_\allowbreak{}modeling\\
+- functional\_\allowbreak{}connectivity\\
+rejected\_\allowbreak{}families:\\
+- family: dynamic\_\allowbreak{}fc\\
+reason: missing\_\allowbreak{}time\_\allowbreak{}series\_\allowbreak{}asset\\
+- family: whole\_\allowbreak{}brain\_\allowbreak{}glm\\
+reason: output\_\allowbreak{}type\_\allowbreak{}mismatch
+\end{quote}
+
+\subsection{\texorpdfstring{\textbf{D4. Family cards queried}}{D4. Family cards queried}}\label{d4.-family-cards-queried}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2621}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2299}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2283}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2315}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Family card}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Why queried}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Required inputs}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Status}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+predictive\_\allowbreak{}modeling
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Matches prediction intent
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+features; targets; folds
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+expanded
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+functional\_\allowbreak{}connectivity
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Matches FC feature space
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+time series or FC matrix
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+considered
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+dynamic\_\allowbreak{}fc
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Potential alternative feature family
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+time-series derivative
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+rejected if missing asset
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+whole\_\allowbreak{}brain\_\allowbreak{}glm
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Common fMRI family but wrong output type
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+BOLD + events
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+rejected for prediction episode
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{D5. Ranked tool/workflow candidates}}{D5. Ranked tool/workflow candidates}}\label{d5.-ranked-toolworkflow-candidates}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2154}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2749}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2379}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2267}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Rank}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Candidate}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Compatibility summary}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Decision}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+1
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+predictive\_\allowbreak{}modeling\_\allowbreak{}path\_\allowbreak{}b
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Input pass; output pass; Python/\allowbreak{}Slurm backend; constraints warn only
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+selected
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+2
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+nested\_\allowbreak{}cv\_\allowbreak{}elastic\_\allowbreak{}net
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Input pass; output pass; backend pass; alternative model family
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+backup or sensitivity
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+3
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+dynamic\_\allowbreak{}fc\_\allowbreak{}state\_\allowbreak{}model
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Requires time-series derivative not available in this episode
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+rejected
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+4
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+whole\_\allowbreak{}brain\_\allowbreak{}glm
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Wrong output type for the prediction question
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+rejected
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{D6. Rejected-candidate ledger}}{D6. Rejected-candidate ledger}}\label{d6.-rejected-candidate-ledger}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3389}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3051}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3084}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Rejected candidate}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Reason}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Evidence pointer}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+dynamic\_\allowbreak{}fc\_\allowbreak{}state\_\allowbreak{}model
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Missing required time-series derivative
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:c]{Appendix C} asset ledger
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+whole\_\allowbreak{}brain\_\allowbreak{}glm
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Output type does not match prediction question
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Intent/\allowbreak{}output binding
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+map\_\allowbreak{}correlation\_\allowbreak{}workflow
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Requires statistical maps rather than FC features
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Resource mismatch
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}X
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Backend unavailable or not allowlisted
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Backend /\allowbreak{} policy check
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}Y
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Tool-contract clause violated
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:e]{Appendix E} constraint card
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{D7. Canonical tool IDs, backend mapping, and selected specification}}{D7. Canonical tool IDs, backend mapping, and selected specification}}\label{d7.-canonical-tool-ids-backend-mapping-and-selected-specification}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2717}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2203}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2299}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2331}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Canonical ID}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Backend target}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Runtime mapping}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Expected outputs}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+predictive\_\allowbreak{}modeling\_\allowbreak{}path\_\allowbreak{}b
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Python /\allowbreak{} Slurm
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+local script or rendered batch script
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+predictions.tsv; scorecard.json; model artifact
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pyspi\_\allowbreak{}catalogue
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Python
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pyspi statistic runner
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+statistic matrix; feature table
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+neuromark\_\allowbreak{}fnc\_\allowbreak{}workflow
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Python /\allowbreak{} container
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+post-preprocessing FNC workflow
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+FNC matrix; adjusted model output; report
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+fsl\_\allowbreak{}randomise
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Neurodesk
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+FSL command template in curated runtime
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+corrected maps; permutation output
+\end{minipage} \\
+\end{longtable}
+}
+
+\begin{quote}
+selected\_\allowbreak{}specification:\\
+canonical\_\allowbreak{}workflow\_\allowbreak{}id: predictive\_\allowbreak{}modeling\_\allowbreak{}path\_\allowbreak{}b\\
+registry\_\allowbreak{}snapshot: registry\_\allowbreak{}YYYYMMDD\\
+backend\_\allowbreak{}targets:\\
+- python\\
+- slurm\\
+required\_\allowbreak{}inputs:\\
+- feature\_\allowbreak{}matrix\\
+- target\_\allowbreak{}vector\\
+- covariate\_\allowbreak{}table\\
+- fold\_\allowbreak{}manifest\\
+expected\_\allowbreak{}outputs:\\
+- predictions\_\allowbreak{}tsv\\
+- scorecard\_\allowbreak{}json\\
+- model\_\allowbreak{}artifact\\
+- null\_\allowbreak{}test\_\allowbreak{}report
+\end{quote}
+
+\subsection{\texorpdfstring{\textbf{D8. Parameter schema and tool-contract clauses}}{D8. Parameter schema and tool-contract clauses}}\label{d8.-parameter-schema-and-tool-contract-clauses}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2444}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2347}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2331}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2412}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Parameter /\allowbreak{} clause}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Required?}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Bound value source}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Review relevance}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+feature\_\allowbreak{}matrix
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:c]{Appendix C} asset ledger
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Input compatibility
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+target\_\allowbreak{}variable
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Phenotype manifest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Outcome definition
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+covariates
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes or conditional
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Covariate table
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Confound handling
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+fold\_\allowbreak{}manifest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes for prediction
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Fixed fold manifest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Leakage and reproducibility
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+no feature selection outside CV
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hard clause
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Pipeline DAG /\allowbreak{} tool contract
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+BLOCK if violated
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grouped or family-block null
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+conditional hard clause
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Episode contract
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Inference validity
+\end{minipage} \\
+\end{longtable}
+}
+
+\begin{quote}
+tool\_\allowbreak{}contract:\\
+canonical\_\allowbreak{}id: predictive\_\allowbreak{}modeling\_\allowbreak{}path\_\allowbreak{}b\\
+required\_\allowbreak{}inputs:\\
+- feature\_\allowbreak{}matrix\\
+- target\_\allowbreak{}vector\\
+- fold\_\allowbreak{}manifest\\
+required\_\allowbreak{}checks:\\
+- no\_\allowbreak{}feature\_\allowbreak{}selection\_\allowbreak{}outside\_\allowbreak{}cv\\
+- grouped\_\allowbreak{}or\_\allowbreak{}family\_\allowbreak{}block\_\allowbreak{}cv\\
+- post\_\allowbreak{}selection\_\allowbreak{}correction\_\allowbreak{}if\_\allowbreak{}configurations\_\allowbreak{}replayed\\
+output\_\allowbreak{}contract:\\
+- predictions\\
+- scorecard\\
+- configuration\_\allowbreak{}manifest
+\end{quote}
+
+\subsection{\texorpdfstring{\textbf{D9. Compatibility checks}}{D9. Compatibility checks}}\label{d9.-compatibility-checks}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3196}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3116}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3212}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Check}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Possible result}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Consequence}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Input resource compatibility
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Candidate retained or rejected.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Output artifact compatibility
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} mismatch
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Candidate retained or rejected.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Backend availability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} warn /\allowbreak{} block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Recipe generated, fallback selected, or candidate rejected.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Parameter schema completeness
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} revise
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Plan can commit or must return to planning.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Tool-contract clause
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} warn /\allowbreak{} block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Passed to \hyperref[app:e]{Appendix E} if active.
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{D10. Embedding-guided retrieval metadata}}{D10. Embedding-guided retrieval metadata}}\label{d10.-embedding-guided-retrieval-metadata}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4717}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4797}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Recommended entry}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Family-card embedding input
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+title + description + command tags + resource labels
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Embedding lane
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool-description lane
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Model identity and dimension
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+record exact model and vector dimension
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Ranking criteria
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+semantic similarity plus typed compatibility, backend, policy, and constraint fit
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Allowlist mode
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+interactive-safe /\allowbreak{} diagnostic /\allowbreak{} benchmark
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Cache state
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+loaded snapshot /\allowbreak{} invalidated /\allowbreak{} not used
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{D11. MCP Public Surface} }{D11. MCP Public Surface }}\label{d11.-mcp-public-surface}
+
+Brain Researcher MCP exposes a FastMCP("brain-researcher") server with:
+
+\begin{itemize}
+\item
+  87 decorated operational tools in server.py.
+\item
+  3 resources: tool:/\allowbreak{}/\allowbreak{}\{tool\_\allowbreak{}id\}, dataset:/\allowbreak{}/\allowbreak{}\{dataset\_\allowbreak{}ref\}, and workflow:/\allowbreak{}/\allowbreak{}\{workflow\_\allowbreak{}id\}.
+\item
+  Tool discovery and execution-recipe helpers over the broader BR tool registry.
+\item
+  Read-only KG, dataset, literature, grounding, run, artifact, and memory helpers.
+\item
+  Manual/\allowbreak{}admin execution paths that are intentionally gated.
+\item
+  Transport modes: stdio, SSE, and streamable HTTP.
+\item
+  A Starlette HTTP wrapper that adds /\allowbreak{}healthz, /\allowbreak{}resolve, bearer/\allowbreak{}JWT auth, allowed host/\allowbreak{}origin checks, and MCP session-bootstrap middleware.
+\end{itemize}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.2593}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.7407}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Capability family}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Tools}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact\_\allowbreak{}inspection
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact\_\allowbreak{}list, artifact\_\allowbreak{}read\_\allowbreak{}text, artifact\_\allowbreak{}get\_\allowbreak{}metadata, artifact\_\allowbreak{}read\_\allowbreak{}bytes
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+autoresearch\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}autoresearch\_\allowbreak{}scientific\_\allowbreak{}review
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+dataset\_\allowbreak{}resolution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+dataset\_\allowbreak{}get\_\allowbreak{}resources
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+execution\_\allowbreak{}recipe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+get\_\allowbreak{}execution\_\allowbreak{}recipe
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}research
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}file\_\allowbreak{}search, google\_\allowbreak{}deep\_\allowbreak{}research\_\allowbreak{}start, google\_\allowbreak{}deep\_\allowbreak{}research\_\allowbreak{}get, google\_\allowbreak{}deep\_\allowbreak{}research
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grounding
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grounding\_\allowbreak{}resolve, grounding\_\allowbreak{}gate\_\allowbreak{}evidence\_\allowbreak{}basis
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}explore
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}search\_\allowbreak{}nodes, kg\_\allowbreak{}get\_\allowbreak{}node, kg\_\allowbreak{}neighbors, kg\_\allowbreak{}search\_\allowbreak{}datasets, kg\_\allowbreak{}related\_\allowbreak{}datasets, kg\_\allowbreak{}behavior\_\allowbreak{}to\_\allowbreak{}fmri\_\allowbreak{}retrieval, kg\_\allowbreak{}list\_\allowbreak{}dataset\_\allowbreak{}onvoc\_\allowbreak{}links
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}verify\_\allowbreak{}hypothesis, verify\_\allowbreak{}hypothesis\_\allowbreak{}with\_\allowbreak{}kg, kg\_\allowbreak{}sample\_\allowbreak{}ood\_\allowbreak{}hypothesis, kg\_\allowbreak{}hypothesis\_\allowbreak{}workflow, kg\_\allowbreak{}verify\_\allowbreak{}sampled\_\allowbreak{}hypotheses, kg\_\allowbreak{}sample\_\allowbreak{}and\_\allowbreak{}verify\_\allowbreak{}hypotheses, kg\_\allowbreak{}hypothesis\_\allowbreak{}candidate\_\allowbreak{}cards, hypothesis\_\allowbreak{}hot\_\allowbreak{}load\_\allowbreak{}research, hypothesis\_\allowbreak{}run\_\allowbreak{}start, hypothesis\_\allowbreak{}run\_\allowbreak{}get, kg\_\allowbreak{}hypothesis\_\allowbreak{}candidate\_\allowbreak{}cards\_\allowbreak{}start, kg\_\allowbreak{}hypothesis\_\allowbreak{}candidate\_\allowbreak{}cards\_\allowbreak{}get
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}probe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}probe, kg\_\allowbreak{}find\_\allowbreak{}structural\_\allowbreak{}leverage, kg\_\allowbreak{}detect\_\allowbreak{}contradiction\_\allowbreak{}motifs, kg\_\allowbreak{}find\_\allowbreak{}contradiction\_\allowbreak{}frontiers, kg\_\allowbreak{}mine\_\allowbreak{}assumption\_\allowbreak{}cracks, kg\_\allowbreak{}find\_\allowbreak{}analogy\_\allowbreak{}transfers, kg\_\allowbreak{}detect\_\allowbreak{}topology\_\allowbreak{}shifts
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}reasoning
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}multihop\_\allowbreak{}qa
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+literature\_\allowbreak{}search
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+deepxiv
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+memory
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+memory\_\allowbreak{}write, memory\_\allowbreak{}search, memory\_\allowbreak{}get
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}plan\_\allowbreak{}validate, pipeline\_\allowbreak{}plan\_\allowbreak{}review, run\_\allowbreak{}code\_\allowbreak{}review, run\_\allowbreak{}scientific\_\allowbreak{}review, pipeline\_\allowbreak{}execute
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan\_\allowbreak{}handoff
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+get\_\allowbreak{}latest\_\allowbreak{}plan
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+planning
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan\_\allowbreak{}preflight, plan\_\allowbreak{}create
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+report\_\allowbreak{}generation
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+latex\_\allowbreak{}report\_\allowbreak{}render
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}logging
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+log\_\allowbreak{}research\_\allowbreak{}event, write\_\allowbreak{}session\_\allowbreak{}snapshot, research\_\allowbreak{}session\_\allowbreak{}digest, research\_\allowbreak{}log\_\allowbreak{}summary
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}synthesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+generate\_\allowbreak{}research\_\allowbreak{}trajectory\_\allowbreak{}and\_\allowbreak{}insights, generate\_\allowbreak{}bug\_\allowbreak{}digest, generate\_\allowbreak{}repo\_\allowbreak{}repair\_\allowbreak{}context
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}get, run\_\allowbreak{}bundle\_\allowbreak{}get, run\_\allowbreak{}scorecard, run\_\allowbreak{}compare, run\_\allowbreak{}list, run\_\allowbreak{}logs, run\_\allowbreak{}find\_\allowbreak{}latest\_\allowbreak{}reviewable, run\_\allowbreak{}request\_\allowbreak{}summary, run\_\allowbreak{}cancel, run\_\allowbreak{}metrics
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}report
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}report\_\allowbreak{}generate
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+request\_\allowbreak{}scientific\_\allowbreak{}review, request\_\allowbreak{}external\_\allowbreak{}scientific\_\allowbreak{}review\_\allowbreak{}directive, submit\_\allowbreak{}external\_\allowbreak{}scientific\_\allowbreak{}review\_\allowbreak{}verdict, refuted\_\allowbreak{}landscape\_\allowbreak{}summary, companion\_\allowbreak{}diagnostic\_\allowbreak{}suggester
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+server\_\allowbreak{}ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+server\_\allowbreak{}info, loop\_\allowbreak{}profile\_\allowbreak{}get, system\_\allowbreak{}self\_\allowbreak{}test
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+sherlock
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+sherlock\_\allowbreak{}guide, sherlock\_\allowbreak{}slurm
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}discovery
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}search, workflow\_\allowbreak{}search, tool\_\allowbreak{}search\_\allowbreak{}structured, tool\_\allowbreak{}resolve, tool\_\allowbreak{}get
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}execution\_\allowbreak{}admin
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}execute
+\end{minipage} \\
+\end{longtable}
+}
+
+\textbf{D11. Neuroimaging Tooling Behind MCP}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2500}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2500}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2500}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2500}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Layer}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{What it contains}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{MCP entrypoints}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Decision value}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Registry-scale tool catalog
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+The broader BR neuroimaging and workflow registry. The latest quick self-test loaded 177 exposed-plus-workflow specs and 2,089 total registry specs.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+`tool\_\allowbreak{}search`, `workflow\_\allowbreak{}search`, `tool\_\allowbreak{}search\_\allowbreak{}structured`, `tool\_\allowbreak{}resolve`, `tool\_\allowbreak{}get`
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Lets the LLM/\allowbreak{}client narrow a broad scientific request into a small set of concrete tools or workflows.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Dataset and BIDS resources
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Dataset references, local paths, BIDS-style resources, derivatives, and URLs needed before execution.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+`dataset\_\allowbreak{}get\_\allowbreak{}resources`, `dataset:/\allowbreak{}/\allowbreak{}\{dataset\_\allowbreak{}ref\}`
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Prevents the system from planning an analysis around missing or unresolved inputs.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Workflow definitions
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Multi-step analysis recipes and exposed workflow specifications that combine lower-level tools.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+`workflow\_\allowbreak{}search`, `workflow:/\allowbreak{}/\allowbreak{}\{workflow\_\allowbreak{}id\}`
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Moves from single-method selection to end-to-end analysis plans.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Neuroimaging runtime wrappers
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Tool specs that can be converted into Python commands, Neurodesk calls, container invocations, or Slurm scripts.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+`get\_\allowbreak{}execution\_\allowbreak{}recipe` with `target\_\allowbreak{}runtime`
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Separates scientific tool choice from the machine where the job will run.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Quality and review layer
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run bundles, scorecards, comparisons, code/\allowbreak{}scientific review, and artifact inspection.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+`run\_\allowbreak{}bundle\_\allowbreak{}get`, `run\_\allowbreak{}scorecard`, `run\_\allowbreak{}compare`, `artifact\_\allowbreak{}*`, `run\_\allowbreak{}scientific\_\allowbreak{}review`
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Lets the LLM decide whether outputs are complete, reproducible, and scientifically usable.
+\end{minipage} \\
+\end{longtable}
+}
+
+\textbf{D12. Execution Backends and Where Work actually runs}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.2000}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.2000}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.2000}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.2000}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.2000}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Backend}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Hosted where}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Typical use}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Who triggers it}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Persistence /\allowbreak{} evidence}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Local Python
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Local repo checkout, developer machine, or lightweight container.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Small scripts, wrappers, quick checks, validation jobs, or tools with Python entrypoints.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Usually the external coding agent or user shell, using a recipe from MCP.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+If run through MCP admin execution, records land under the MCP run root; otherwise MCP observes imported artifacts/\allowbreak{}logs.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Neurodesk
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Containerized neuroimaging runtime with domain software images.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Neuroimaging tools that need a curated imaging software environment rather than the slim MCP container.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+External agent/\allowbreak{}user launches the generated Neurodesk recipe.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Outputs are written to allowed mounted roots and can later be inspected through run/\allowbreak{}artifact tools.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Generic container
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Docker/\allowbreak{}Singularity-style runtime with controlled mounts.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Reproducible execution when dependencies should not leak into the MCP service image.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+External agent/\allowbreak{}user, or gated admin execution if enabled.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+The recipe declares mounts, command, parameters, and expected output locations.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Slurm /\allowbreak{} HPC
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Cluster login/\allowbreak{}dev node and scheduler-managed compute nodes.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Long-running or high-memory neuroimaging jobs, especially batch or array workloads.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+External agent/\allowbreak{}user submits scripts rendered by `get\_\allowbreak{}execution\_\allowbreak{}recipe` or `sherlock\_\allowbreak{}slurm`.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Job logs, status, and produced artifacts become evidence for run bundles and review.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+MCP admin execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+The MCP service process or a worker process spawned by it.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Explicitly approved manual/\allowbreak{}admin runs, previews, or policy-tested pipeline execution.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+`tool\_\allowbreak{}execute` or `pipeline\_\allowbreak{}execute`; disabled by default and governed by allowlists, roots, and approval phrases.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Creates persisted run ids, step records, trace logs, metrics, and artifacts in the run root.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Hosted HTTP MCP service
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+A long-running FastMCP/\allowbreak{}Starlette service, commonly on port 7000 for streamable HTTP/\allowbreak{}SSE.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Remote discovery, planning, evidence retrieval, and observability from notebooks/\allowbreak{}web assistants.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Authenticated clients call `/\allowbreak{}mcp`; browser clients should not hold raw MCP credentials.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Service calls are logged by the research telemetry wrapper when session/\allowbreak{}run binding is present.
+\end{minipage} \\
+\end{longtable}
+}
+
+\textbf{D13. How MCP Decides vs. What the LLM Decides}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2500}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2500}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2500}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2500}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Step}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{LLM /\allowbreak{} client role}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{MCP role}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Evidence returned}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+1. Interpret request
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Turn a natural-language research goal into candidate modalities, datasets, methods, and constraints.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Receives structured or semi-structured query arguments.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Initial query, session context, optional plan handoff.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+2. Discover tools
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Ask for candidate tools/\allowbreak{}workflows and inspect summaries instead of guessing a command.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Searches the registry, applies exposed/\allowbreak{}default filters, and returns ranked cards/\allowbreak{}specs.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Tool cards, workflow cards, schema summaries, total counts when requested.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+3. Resolve selection
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Choose a specific method/\allowbreak{}software/\allowbreak{}workflow from returned options.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Resolves method/\allowbreak{}software/\allowbreak{}op keys to a concrete registry tool or workflow id.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Resolved tool id, metadata, parameter schema.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+4. Preflight inputs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Check whether the proposed analysis has required datasets, modality, and safe roots.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Runs `plan\_\allowbreak{}preflight`, `dataset\_\allowbreak{}get\_\allowbreak{}resources`, and policy-aware validation.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Blockers, missing inputs, resolved resource paths, execution envelope.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+5. Generate recipe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Ask for a backend-specific recipe rather than writing ad-hoc commands from memory.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Builds a stateless recipe for Python, Neurodesk, container, or Slurm.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Recipe text, expected mounts, parameters, and output conventions.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+6. Execute work
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Normally delegates to an external coding agent, shell, container runtime, or scheduler.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Only executes if the ops/\allowbreak{}admin gate is enabled, allowlisted, and approved.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run id, logs, stdout/\allowbreak{}stderr, Slurm status, produced files.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+7. Review outputs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Decide whether the result supports the scientific claim or needs another iteration.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Normalizes bundles, scorecards, comparisons, artifacts, and review results.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Observation bundle, scorecard, metric deltas, artifact metadata, review verdicts.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+8. Explain or iterate
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Summarize evidence, cite run/\allowbreak{}artifact support, and choose the next MCP call if needed.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Provides durable logs, memory, grounding checks, and run/\allowbreak{}session digests.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Final evidence basis or next-step plan.
+\end{minipage} \\
+\end{longtable}
+}
+
+\textbf{D14. Downstream Workflow Roles}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.2000}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3704}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.4296}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Downstream use}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{MCP role}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Primary tools}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+External coding-agent loop
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+deterministic discovery, recipe, observation, comparison, session logging
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+loop\_\allowbreak{}profile\_\allowbreak{}get, tool\_\allowbreak{}search, get\_\allowbreak{}execution\_\allowbreak{}recipe, run\_\allowbreak{}bundle\_\allowbreak{}get, run\_\allowbreak{}scorecard, run\_\allowbreak{}compare, write\_\allowbreak{}session\_\allowbreak{}snapshot
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Neuroimaging planning
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+read-only facts, blockers, tool candidates, handoff envelope
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan\_\allowbreak{}preflight, plan\_\allowbreak{}create, get\_\allowbreak{}latest\_\allowbreak{}plan
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+correctness/\allowbreak{}completeness/\allowbreak{}judgment review over BR or external artifacts
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}code\_\allowbreak{}review, run\_\allowbreak{}scientific\_\allowbreak{}review, request\_\allowbreak{}external\_\allowbreak{}scientific\_\allowbreak{}review\_\allowbreak{}directive, submit\_\allowbreak{}external\_\allowbreak{}scientific\_\allowbreak{}review\_\allowbreak{}verdict
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+NeuroKG reasoning
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+retrieve nodes, paths, datasets, structural signals, hypotheses
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}search\_\allowbreak{}nodes, kg\_\allowbreak{}neighbors, kg\_\allowbreak{}multihop\_\allowbreak{}qa, kg\_\allowbreak{}probe, kg\_\allowbreak{}hypothesis\_\allowbreak{}workflow
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Hypothesis generation
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+candidate cards, hot-load research, topology shifts
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis\_\allowbreak{}candidate\_\allowbreak{}cards, hypothesis\_\allowbreak{}hot\_\allowbreak{}load\_\allowbreak{}research, kg\_\allowbreak{}detect\_\allowbreak{}topology\_\allowbreak{}shifts
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Literature grounding
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+file search, deep research, arXiv/\allowbreak{}PMC search/\allowbreak{}read
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}file\_\allowbreak{}search, google\_\allowbreak{}deep\_\allowbreak{}research\_\allowbreak{}start, google\_\allowbreak{}deep\_\allowbreak{}research, deepxiv
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Evidence-basis gate
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+validate/\allowbreak{}downgrade final-answer anchors
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grounding\_\allowbreak{}resolve, grounding\_\allowbreak{}gate\_\allowbreak{}evidence\_\allowbreak{}basis
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+HPC/\allowbreak{}Sherlock execution support
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+render Slurm scripts and diagnose jobs/\allowbreak{}logs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+sherlock\_\allowbreak{}guide, sherlock\_\allowbreak{}slurm
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Report artifacts
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+render report templates and inspect produced files
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}report\_\allowbreak{}generate, latex\_\allowbreak{}report\_\allowbreak{}render, artifact\_\allowbreak{}*
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Neuroimaging execution handoff
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Selects a registry tool/\allowbreak{}workflow and converts it into an executable backend recipe while leaving heavy execution outside MCP by default.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+`tool\_\allowbreak{}search`, `tool\_\allowbreak{}resolve`, `tool\_\allowbreak{}get`, `get\_\allowbreak{}execution\_\allowbreak{}recipe`, `sherlock\_\allowbreak{}slurm`, `dataset\_\allowbreak{}get\_\allowbreak{}resources`
+\end{minipage} \\
+\end{longtable}
+}
+
+\textbf{D15. MCP Tool Inventory}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.2074}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.1148}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.0704}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.5259}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.0815}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Tool}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Family}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Tier}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Arguments}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Status}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+server\_\allowbreak{}info
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+server\_\allowbreak{}ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+none
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+loop\_\allowbreak{}profile\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+server\_\allowbreak{}ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+profile\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+system\_\allowbreak{}self\_\allowbreak{}test
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+server\_\allowbreak{}ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+mode, include\_\allowbreak{}kg, include\_\allowbreak{}container, include\_\allowbreak{}script, include\_\allowbreak{}inventory, inventory\_\allowbreak{}limit, kg\_\allowbreak{}query, strict
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+sherlock\_\allowbreak{}guide
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+sherlock
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+action, topic, intent, sunet, pi\_\allowbreak{}group, partition, qos, time, cpus, mem, gpus, dataset, script\_\allowbreak{}path, job\_\allowbreak{}id, log\_\allowbreak{}path, mount\_\allowbreak{}path
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+sherlock\_\allowbreak{}slurm
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+sherlock
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+action, cluster\_\allowbreak{}profile, template\_\allowbreak{}kind, job\_\allowbreak{}name, time, partition, qos, account, cpus\_\allowbreak{}per\_\allowbreak{}task, mem, nodes, ntasks\_\allowbreak{}per\_\allowbreak{}node, gpus, gpus\_\allowbreak{}per\_\allowbreak{}node, array, array\_\allowbreak{}concurrency, output, error, mail\_\allowbreak{}user, mail\_\allowbreak{}type, workdir, module\_\allowbreak{}lines, env\_\allowbreak{}lines, command, task\_\allowbreak{}file, launcher, include\_\allowbreak{}export\_\allowbreak{}none, change\_\allowbreak{}request, script\_\allowbreak{}text, script\_\allowbreak{}path, job\_\allowbreak{}id, include\_\allowbreak{}squeue, include\_\allowbreak{}sacct, include\_\allowbreak{}scontrol, log\_\allowbreak{}path, stream, tail, grep, stdout\_\allowbreak{}text, stderr\_\allowbreak{}text, sacct\_\allowbreak{}state
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}search
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}discovery
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, limit, offset, modalities, kind, phases, exposed\_\allowbreak{}only, include\_\allowbreak{}workflows, include\_\allowbreak{}total
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+workflow\_\allowbreak{}search
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}discovery
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, limit, offset, include\_\allowbreak{}param\_\allowbreak{}schema\_\allowbreak{}summary
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}search\_\allowbreak{}structured
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}discovery
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, primary\_\allowbreak{}intents, softwares, exposed\_\allowbreak{}only, default\_\allowbreak{}only, k\_\allowbreak{}methods, k\_\allowbreak{}softwares, k\_\allowbreak{}candidates, force\_\allowbreak{}fallback
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}resolve
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}discovery
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+method, software, op\_\allowbreak{}key, prefer\_\allowbreak{}version, exposed\_\allowbreak{}only, default\_\allowbreak{}only, force\_\allowbreak{}fallback
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}discovery
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}id, include\_\allowbreak{}schema
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+get\_\allowbreak{}execution\_\allowbreak{}recipe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+execution\_\allowbreak{}recipe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}id, params, target\_\allowbreak{}runtime, cluster\_\allowbreak{}profile
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan\_\allowbreak{}preflight
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+planning
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, domain, modality, inputs, allowlist\_\allowbreak{}mode, semantic, selection\_\allowbreak{}mode
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan\_\allowbreak{}create
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+planning
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, domain, modality, inputs, allowlist\_\allowbreak{}mode, query\_\allowbreak{}understanding, include\_\allowbreak{}debug, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+get\_\allowbreak{}latest\_\allowbreak{}plan
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan\_\allowbreak{}handoff
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+thread\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}execute
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}execution\_\allowbreak{}admin
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}id, params, work\_\allowbreak{}dir, output\_\allowbreak{}dir, preview, allow\_\allowbreak{}remap, allow\_\allowbreak{}fallback
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}plan\_\allowbreak{}validate
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}plan\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan, workflow\_\allowbreak{}id, use\_\allowbreak{}kg
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}code\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, workflow\_\allowbreak{}id, force\_\allowbreak{}recompute, use\_\allowbreak{}kg
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}scientific\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, workflow\_\allowbreak{}id, use\_\allowbreak{}judgment\_\allowbreak{}critic, force\_\allowbreak{}recompute
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}autoresearch\_\allowbreak{}scientific\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+autoresearch\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+autoresearch\_\allowbreak{}dir, logs\_\allowbreak{}dir, task\_\allowbreak{}id, use\_\allowbreak{}judgment\_\allowbreak{}critic, force\_\allowbreak{}recompute
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+request\_\allowbreak{}scientific\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+goal, run\_\allowbreak{}id, autoresearch\_\allowbreak{}dir, hints, workflow\_\allowbreak{}id, logs\_\allowbreak{}dir, task\_\allowbreak{}id, use\_\allowbreak{}judgment\_\allowbreak{}critic, force\_\allowbreak{}recompute, session\_\allowbreak{}id, source\_\allowbreak{}client, client\_\allowbreak{}session\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}report\_\allowbreak{}generate
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}report
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, autoresearch\_\allowbreak{}dir, workflow\_\allowbreak{}id, logs\_\allowbreak{}dir, task\_\allowbreak{}id, title, authors, analysis\_\allowbreak{}sections,
+
+subtitle, institution, date, use\_\allowbreak{}judgment\_\allowbreak{}critic, force\_\allowbreak{}recompute, compile\_\allowbreak{}pdf, halt\_\allowbreak{}on\_\allowbreak{}review\_\allowbreak{}block, revision\_\allowbreak{}instructions, revision\_\allowbreak{}source\_\allowbreak{}artifacts, local\_\allowbreak{}workspace, local\_\allowbreak{}workspace\_\allowbreak{}manifest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+request\_\allowbreak{}external\_\allowbreak{}scientific\_\allowbreak{}review\_\allowbreak{}directive
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+goal, hints, session\_\allowbreak{}id, source\_\allowbreak{}client, client\_\allowbreak{}session\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+submit\_\allowbreak{}external\_\allowbreak{}scientific\_\allowbreak{}review\_\allowbreak{}verdict
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+directive\_\allowbreak{}id, verdict, session\_\allowbreak{}id, reviewer, notes, source\_\allowbreak{}client, client\_\allowbreak{}session\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+refuted\_\allowbreak{}landscape\_\allowbreak{}summary
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+findings, session\_\allowbreak{}id, run\_\allowbreak{}ids, top\_\allowbreak{}k
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+companion\_\allowbreak{}diagnostic\_\allowbreak{}suggester
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scientific\_\allowbreak{}review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+metric\_\allowbreak{}name, observed\_\allowbreak{}value, context, top\_\allowbreak{}k
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}execute
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ops
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan, dry\_\allowbreak{}run, approval\_\allowbreak{}phrase
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+log\_\allowbreak{}research\_\allowbreak{}event
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}logging
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kind, content, session\_\allowbreak{}id, run\_\allowbreak{}id, source, context, tags, source\_\allowbreak{}client, client\_\allowbreak{}session\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+write\_\allowbreak{}session\_\allowbreak{}snapshot
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}logging
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+goal, done, open, next\_\allowbreak{}command, session\_\allowbreak{}id, run\_\allowbreak{}id, source, tags, source\_\allowbreak{}client, client\_\allowbreak{}session\_\allowbreak{}id, context
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}session\_\allowbreak{}digest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}logging
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, session\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}log\_\allowbreak{}summary
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}logging
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+top\_\allowbreak{}k, since\_\allowbreak{}days
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+memory\_\allowbreak{}write
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+memory
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+card\_\allowbreak{}type, card\_\allowbreak{}data
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+memory\_\allowbreak{}search
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+memory
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, card\_\allowbreak{}type, filters, limit
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+memory\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+memory
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+card\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}bundle\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}scorecard
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, profile\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}compare
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+baseline\_\allowbreak{}run\_\allowbreak{}id, candidate\_\allowbreak{}run\_\allowbreak{}id, profile\_\allowbreak{}id, metric\_\allowbreak{}keys
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+generate\_\allowbreak{}research\_\allowbreak{}trajectory\_\allowbreak{}and\_\allowbreak{}insights
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}synthesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, candidate\_\allowbreak{}id, agent\_\allowbreak{}log\_\allowbreak{}paths, persist
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+generate\_\allowbreak{}bug\_\allowbreak{}digest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}synthesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, candidate\_\allowbreak{}id, bug\_\allowbreak{}query, agent\_\allowbreak{}log\_\allowbreak{}paths, persist
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+generate\_\allowbreak{}repo\_\allowbreak{}repair\_\allowbreak{}context
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research\_\allowbreak{}synthesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+top\_\allowbreak{}n, persist
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}list
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+limit, cursor
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}logs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}find\_\allowbreak{}latest\_\allowbreak{}reviewable
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+limit, max\_\allowbreak{}candidates, include\_\allowbreak{}non\_\allowbreak{}succeeded
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}request\_\allowbreak{}summary
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+top\_\allowbreak{}k, since\_\allowbreak{}days
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}cancel
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, reason
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}metrics
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+latex\_\allowbreak{}report\_\allowbreak{}render
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+report\_\allowbreak{}generation
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+title, authors, sections, subtitle, institution, date, compile\_\allowbreak{}pdf, sections\_\allowbreak{}are\_\allowbreak{}latex, template\_\allowbreak{}preset, front\_\allowbreak{}matter\_\allowbreak{}latex, back\_\allowbreak{}matter\_\allowbreak{}latex, bibliography\_\allowbreak{}bibtex, bibliography\_\allowbreak{}style, include\_\allowbreak{}execution\_\allowbreak{}pack
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact\_\allowbreak{}list
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact\_\allowbreak{}inspection
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact\_\allowbreak{}read\_\allowbreak{}text
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact\_\allowbreak{}inspection
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, relpath, max\_\allowbreak{}bytes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact\_\allowbreak{}get\_\allowbreak{}metadata
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact\_\allowbreak{}inspection
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, relpath, include\_\allowbreak{}sha256
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact\_\allowbreak{}read\_\allowbreak{}bytes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact\_\allowbreak{}inspection
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id, relpath, max\_\allowbreak{}bytes, offset, start, end
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}search\_\allowbreak{}nodes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}explore
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, node\_\allowbreak{}types, limit, allow\_\allowbreak{}degraded
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}get\_\allowbreak{}node
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}explore
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}id, allow\_\allowbreak{}degraded
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}neighbors
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}explore
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}id, relation\_\allowbreak{}types, direction, limit, allow\_\allowbreak{}degraded
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}search\_\allowbreak{}datasets
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}explore
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+text, task\_\allowbreak{}ids, modality, min\_\allowbreak{}subjects, species, limit, allow\_\allowbreak{}degraded
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+dataset\_\allowbreak{}get\_\allowbreak{}resources
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+dataset\_\allowbreak{}resolution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+dataset\_\allowbreak{}ref, dataset\_\allowbreak{}version
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}related\_\allowbreak{}datasets
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}explore
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}id, limit, allow\_\allowbreak{}degraded
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}behavior\_\allowbreak{}to\_\allowbreak{}fmri\_\allowbreak{}retrieval
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}explore
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+seed\_\allowbreak{}id, label, name, limit, max\_\allowbreak{}maps, max\_\allowbreak{}paths, max\_\allowbreak{}regions\_\allowbreak{}per\_\allowbreak{}map, max\_\allowbreak{}behavior\_\allowbreak{}neighbors, min\_\allowbreak{}behavior\_\allowbreak{}similarity, allow\_\allowbreak{}degraded
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}list\_\allowbreak{}dataset\_\allowbreak{}onvoc\_\allowbreak{}links
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}explore
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+onvoc\_\allowbreak{}id, page, page\_\allowbreak{}size, allow\_\allowbreak{}degraded
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}multihop\_\allowbreak{}qa
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}reasoning
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+question, max\_\allowbreak{}hops, mode, max\_\allowbreak{}results, allowed\_\allowbreak{}edge\_\allowbreak{}types, return\_\allowbreak{}subgraph, allow\_\allowbreak{}degraded, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}verify\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hypothesis, entity\_\allowbreak{}hints, allowed\_\allowbreak{}node\_\allowbreak{}types, max\_\allowbreak{}evidence, max\_\allowbreak{}paths, strictness, min\_\allowbreak{}evidence\_\allowbreak{}score, include\_\allowbreak{}subgraph, include\_\allowbreak{}path\_\allowbreak{}details, confidence\_\allowbreak{}scoring\_\allowbreak{}version, candidate\_\allowbreak{}lane\_\allowbreak{}mode, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+verify\_\allowbreak{}hypothesis\_\allowbreak{}with\_\allowbreak{}kg
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+same as kg\_\allowbreak{}verify\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}probe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}probe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+probe\_\allowbreak{}type, query, entity\_\allowbreak{}hints, seed\_\allowbreak{}kg\_\allowbreak{}ids, start\_\allowbreak{}kg\_\allowbreak{}ids, kg\_\allowbreak{}id, max\_\allowbreak{}results, top\_\allowbreak{}k, max\_\allowbreak{}hops, allowed\_\allowbreak{}edge\_\allowbreak{}types, hypothesis, claim, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}find\_\allowbreak{}structural\_\allowbreak{}leverage
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}probe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+start\_\allowbreak{}kg\_\allowbreak{}ids, max\_\allowbreak{}hops, top\_\allowbreak{}k, allowed\_\allowbreak{}edge\_\allowbreak{}types, seed\_\allowbreak{}kg\_\allowbreak{}ids, kg\_\allowbreak{}id, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}detect\_\allowbreak{}contradiction\_\allowbreak{}motifs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}probe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hypothesis, entity\_\allowbreak{}hints, max\_\allowbreak{}results, claim, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}find\_\allowbreak{}contradiction\_\allowbreak{}frontiers
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}probe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hypothesis, entity\_\allowbreak{}hints, max\_\allowbreak{}results, claim, allowed\_\allowbreak{}edge\_\allowbreak{}types, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}mine\_\allowbreak{}assumption\_\allowbreak{}cracks
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}probe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hypothesis, entity\_\allowbreak{}hints, max\_\allowbreak{}results, claim, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}find\_\allowbreak{}analogy\_\allowbreak{}transfers
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}probe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hypothesis, entity\_\allowbreak{}hints, max\_\allowbreak{}results, claim, allowed\_\allowbreak{}edge\_\allowbreak{}types, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}sample\_\allowbreak{}ood\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+seed\_\allowbreak{}kg\_\allowbreak{}ids, n\_\allowbreak{}samples, max\_\allowbreak{}hops, strategy, start\_\allowbreak{}kg\_\allowbreak{}ids, kg\_\allowbreak{}id, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis\_\allowbreak{}workflow
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+operation, query, sampled\_\allowbreak{}hypotheses, seed\_\allowbreak{}kg\_\allowbreak{}ids, start\_\allowbreak{}kg\_\allowbreak{}ids, kg\_\allowbreak{}id, n\_\allowbreak{}samples, verify\_\allowbreak{}top\_\allowbreak{}k, max\_\allowbreak{}hops, strategy, strictness, allowed\_\allowbreak{}node\_\allowbreak{}types, max\_\allowbreak{}evidence, max\_\allowbreak{}paths, min\_\allowbreak{}evidence\_\allowbreak{}score, include\_\allowbreak{}subgraph, include\_\allowbreak{}path\_\allowbreak{}details, confidence\_\allowbreak{}scoring\_\allowbreak{}version, candidate\_\allowbreak{}lane\_\allowbreak{}mode, use\_\allowbreak{}external\_\allowbreak{}literature, external\_\allowbreak{}literature\_\allowbreak{}top\_\allowbreak{}k, external\_\allowbreak{}literature\_\allowbreak{}recency\_\allowbreak{}days, external\_\allowbreak{}literature\_\allowbreak{}exclude\_\allowbreak{}domains, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}verify\_\allowbreak{}sampled\_\allowbreak{}hypotheses
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+sampled hypotheses plus verification options
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}sample\_\allowbreak{}and\_\allowbreak{}verify\_\allowbreak{}hypotheses
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, seed ids, sampling options, verification options
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis\_\allowbreak{}candidate\_\allowbreak{}cards
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, seed\_\allowbreak{}kg\_\allowbreak{}ids, relation\_\allowbreak{}types, top\_\allowbreak{}n, top\_\allowbreak{}k, taste\_\allowbreak{}mode, controller\_\allowbreak{}mode, candidate\_\allowbreak{}lane\_\allowbreak{}mode, frontier\_\allowbreak{}mode, with\_\allowbreak{}deep\_\allowbreak{}research, deep\_\allowbreak{}research\_\allowbreak{}interaction\_\allowbreak{}id, recency\_\allowbreak{}days, exclude\_\allowbreak{}domains, semantic
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hypothesis\_\allowbreak{}hot\_\allowbreak{}load\_\allowbreak{}research
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, max\_\allowbreak{}cards, depth, candidate\_\allowbreak{}lane\_\allowbreak{}mode, frontier\_\allowbreak{}mode, seed\_\allowbreak{}kg\_\allowbreak{}ids, exclude\_\allowbreak{}domains
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hypothesis\_\allowbreak{}run\_\allowbreak{}start
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, max\_\allowbreak{}cards, depth, candidate\_\allowbreak{}lane\_\allowbreak{}mode, frontier\_\allowbreak{}mode, seed\_\allowbreak{}kg\_\allowbreak{}ids, exclude\_\allowbreak{}domains
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hypothesis\_\allowbreak{}run\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis\_\allowbreak{}candidate\_\allowbreak{}cards\_\allowbreak{}start
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+candidate-card arguments plus background launch
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis\_\allowbreak{}candidate\_\allowbreak{}cards\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}detect\_\allowbreak{}topology\_\allowbreak{}shifts
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}probe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+mode, baseline\_\allowbreak{}ref, current\_\allowbreak{}ref, scope, approval\_\allowbreak{}phrase
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}file\_\allowbreak{}search
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}research
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+operation, store\_\allowbreak{}name, display\_\allowbreak{}name, file\_\allowbreak{}path, file\_\allowbreak{}name, query, metadata\_\allowbreak{}filter, max\_\allowbreak{}tokens\_\allowbreak{}per\_\allowbreak{}chunk, max\_\allowbreak{}overlap\_\allowbreak{}tokens, top\_\allowbreak{}k, page\_\allowbreak{}size, page\_\allowbreak{}token
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grounding\_\allowbreak{}resolve
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grounding
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ref, document\_\allowbreak{}resolver, kg\_\allowbreak{}resolver, session\_\allowbreak{}resolver
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grounding\_\allowbreak{}gate\_\allowbreak{}evidence\_\allowbreak{}basis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grounding
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+evidence\_\allowbreak{}basis, anchors, document\_\allowbreak{}resolver, kg\_\allowbreak{}resolver, session\_\allowbreak{}resolver, alignment\_\allowbreak{}mode, partial\_\allowbreak{}action, min\_\allowbreak{}claim\_\allowbreak{}chars
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}deep\_\allowbreak{}research\_\allowbreak{}start
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}research
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+input, agent, file\_\allowbreak{}search\_\allowbreak{}store\_\allowbreak{}names, store\_\allowbreak{}names, previous\_\allowbreak{}interaction\_\allowbreak{}id, query, scientific\_\allowbreak{}mode
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}deep\_\allowbreak{}research\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}research
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+interaction\_\allowbreak{}id, include\_\allowbreak{}raw
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+compat/\allowbreak{}manual
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}deep\_\allowbreak{}research
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+google\_\allowbreak{}research
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+advanced
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query, model, max\_\allowbreak{}output\_\allowbreak{}tokens, temperature, recency\_\allowbreak{}days, exclude\_\allowbreak{}domains, scientific\_\allowbreak{}mode, include\_\allowbreak{}raw
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+deepxiv
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+literature\_\allowbreak{}search
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+action, query, paper\_\allowbreak{}id, section\_\allowbreak{}name, limit, search\_\allowbreak{}mode, categories, date\_\allowbreak{}from, date\_\allowbreak{}to, authors, min\_\allowbreak{}citation, days
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+schema
+\end{minipage} \\
+\end{longtable}
+}

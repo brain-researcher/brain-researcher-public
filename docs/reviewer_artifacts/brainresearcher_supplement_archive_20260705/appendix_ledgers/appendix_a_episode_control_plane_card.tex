@@ -1,0 +1,1214 @@
+\section{\texorpdfstring{\textbf{Appendix A. Episode and control-plane card}}{Appendix A. Episode and control-plane card}}\label{appendix-a.-episode-and-control-plane-card}\label{app:a}
+
+\subsection{\texorpdfstring{\textbf{A1. Purpose}}{A1. Purpose}}\label{a1.-purpose}
+
+\hyperref[app:a]{Appendix A} records the fixed identity and control-plane configuration of each research episode. It answers: under what MCP implementation, model route, registry snapshot, BR-KG snapshot, policy profile, memory namespace, and episode-state history did this result occur?
+
+\subsection{\texorpdfstring{\textbf{A2. Episode identity and final state}}{A2. Episode identity and final state}}\label{a2.-episode-identity-and-final-state}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.2152}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3774}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3597}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Example /\allowbreak{} value}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Why it belongs in \hyperref[app:a]{Appendix A}}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Episode ID
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Stable identity linking the episode to all downstream cards.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Episode mode
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+interactive /\allowbreak{} benchmark /\allowbreak{} collaborator /\allowbreak{} bounded autonomous
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Defines who exercises the commitment gate and how the episode is evaluated.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Scientific question
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Predict behavioral score from HCP-YA resting-state FC features.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Defines the episode-level research target.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Episode source
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+collaborator case /\allowbreak{} benchmark task /\allowbreak{} autonomous campaign
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Connects the episode to the evaluation arm.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Start and completion time
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+timestamp or run date
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Supports reproducibility and run lookup.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Final state
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+completed /\allowbreak{} completed\_\allowbreak{}with\_\allowbreak{}qualifications /\allowbreak{} blocked /\allowbreak{} terminated
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Summarizes the endpoint without replacing the run bundle.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Main output
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scorecard, review card, claim card, report, figure
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Points readers to the artifact families produced by the episode.
+\end{minipage} \\
+\end{longtable}
+}
+
+\textbf{A3. Fixed model and prompt configuration}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.2505}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.2714}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.4304}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Example /\allowbreak{} value}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Notes}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Model provider
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+fixed provider ID
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Use a stable identifier for reported evaluations.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Model version
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+fixed model version
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Avoid reporting claims from undocumented model drift.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Task route
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+planning /\allowbreak{} coding /\allowbreak{} review /\allowbreak{} summarization
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Different tasks may be routed to different model classes.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Prompt-template version
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+planning\_\allowbreak{}v3, review\_\allowbreak{}v2
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Records the prompt contract used for the episode.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Provider fallback allowed?
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+For benchmark claims, fallback should usually be disabled or logged.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Evaluation locked?
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Indicates whether model/\allowbreak{}prompt/\allowbreak{}registry/\allowbreak{}KG snapshots were fixed.
+\end{minipage} \\
+\end{longtable}
+}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 3\tabcolsep) * \real{0.9503}}|}
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+model\_\allowbreak{}route:
+
+task\_\allowbreak{}type: scientific\_\allowbreak{}review
+
+provider: fixed\_\allowbreak{}provider\_\allowbreak{}id
+
+model\_\allowbreak{}version: fixed\_\allowbreak{}model\_\allowbreak{}version
+
+prompt\_\allowbreak{}template: review\_\allowbreak{}v2
+
+evaluation\_\allowbreak{}locked: true
+\end{minipage} \\
+\hline
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{A4. MCP implementation snapshot}}{A4. MCP implementation snapshot}}\label{a4.-mcp-implementation-snapshot}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.3112}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.6401}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Value to record}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Primary implementation
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+src/\allowbreak{}brain\_\allowbreak{}researcher/\allowbreak{}services/\allowbreak{}mcp/\allowbreak{}server.py
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Helper modules
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+execution\_\allowbreak{}recipes.py; loop\_\allowbreak{}primitives.py; research\_\allowbreak{}summaries.py; sherlock\_\allowbreak{}tools.py
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Decorated MCP operations
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+87
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Decorated MCP resources
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+3
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Published schema entries
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+72
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Claude Code hint metadata entries
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+83
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Exposed plus workflow specs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+177
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Total registry specs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+2,089
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+MCP-related test files
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+33
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Default loop profile
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+external\_\allowbreak{}coding\_\allowbreak{}v1
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run root
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+recorded path or redacted path
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Policy flags
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+network /\allowbreak{} dangerous /\allowbreak{} direct execution flags
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{A5. MCP capability-family summary}}{A5. MCP capability-family summary}}\label{a5.-mcp-capability-family-summary}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.3064}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.6449}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Capability family}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Role in the episode}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Tool/\allowbreak{}workflow discovery
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Returns candidate tools and workflows rather than requiring the LLM to invent commands.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Dataset resolution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Resolves dataset identity, access, and asset readiness.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Planning/\allowbreak{}preflight
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Identifies blockers, warnings, and the execution envelope.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Execution recipe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Converts a selected workflow into Python, Neurodesk, container, or Slurm instructions.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Reads run status, logs, bundles, scorecards, and artifacts.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Artifact inspection
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Reads produced files and metadata.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+BR-KG access
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Retrieves structured evidence and graph paths.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Grounding
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Validates or downgrades evidence anchors.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Scientific review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Returns review verdicts and revision routes.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Memory
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Reads or writes reviewed memory cards.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Slurm/\allowbreak{}HPC support
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Renders or diagnoses cluster jobs.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Report generation
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Produces manuscript/\allowbreak{}report artifacts.
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{A7. LLM/MCP decision boundary}}{A7. LLM/MCP decision boundary}}\label{a7.-llmmcp-decision-boundary}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.1720}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2685}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2717}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2428}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Step}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{LLM /\allowbreak{} client role}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{MCP /\allowbreak{} backend role}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Evidence returned}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Interpret request
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Proposes candidate modality, dataset, method, and constraints.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Receives structured query arguments.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Query/\allowbreak{}session context.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Discover tools
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Asks for candidate tools or workflows.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Searches registry and returns ranked cards.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Tool/\allowbreak{}workflow cards.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Resolve selection
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Chooses among returned options.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Resolves canonical ID and schema.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Metadata and parameter schema.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Preflight inputs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Asks whether the plan is feasible.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Checks resources, policy, and constraints.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Blockers and warnings.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Generate recipe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Requests a backend-specific plan.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Returns Python, Neurodesk, container, or Slurm recipe.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Recipe and expected outputs.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Execute work
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Delegates to shell, container, scheduler, or admin gate.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Executes only if explicitly enabled and allowed.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run ID, logs, artifacts.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Review outputs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Proposes interpretation.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Normalizes bundles, scorecards, and review outputs.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Review verdict and revision route.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Explain or iterate
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Summarizes evidence and selects next step.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Provides durable logs, memory, grounding, and run/\allowbreak{}session digests.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Final evidence basis or next-step plan.
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{A8. Policy and loop-profile summary}}{A8. Policy and loop-profile summary}}\label{a8.-policy-and-loop-profile-summary}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.3176}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.6337}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Value to record}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Loop profile
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+external\_\allowbreak{}coding\_\allowbreak{}v1 or configured alternative
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Repository mutation inside MCP
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+disabled by default /\allowbreak{} enabled only under gated mode
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Direct MCP execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+disabled unless admin gate is enabled
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Network access
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+enabled/\allowbreak{}disabled
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Dangerous tools
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+enabled/\allowbreak{}disabled
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Allowed roots
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+recorded or redacted
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Timeout policy
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+recorded timeout values
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Auth mode
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+local stdio /\allowbreak{} HTTP bearer /\allowbreak{} JWT
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Memory namespace
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+benchmark /\allowbreak{} collaborator /\allowbreak{} autonomous /\allowbreak{} development
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{A9. Checkpoint and state-transition excerpt}}{A9. Checkpoint and state-transition excerpt}}\label{a9.-checkpoint-and-state-transition-excerpt}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.1253}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.2329}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.5942}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Step}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{State}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Event}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+001
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+initialized
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Episode record and run root created.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+002
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+planning
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Candidates, evidence bundle, and resource ledger populated.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+003
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+committed or blocked
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Preflight and commitment-gate verdict returned.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+004
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Backend recipe delegated or run started.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+005
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+review
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run bundle and candidate claims reviewed.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+006
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+completed or terminated
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Final state and writeback status recorded.
+\end{minipage} \\
+\end{longtable}
+}
+
+\textbf{A10. Example episode-control card}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 3\tabcolsep) * \real{1.0000}}|}
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+episode\_\allowbreak{}control\_\allowbreak{}card:
+
+episode\_\allowbreak{}id: ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001
+
+mode: benchmark
+
+scientific\_\allowbreak{}question: "Predict behavioral score from HCP-YA resting-state FC features."
+
+final\_\allowbreak{}state: completed\_\allowbreak{}with\_\allowbreak{}qualifications
+
+model\_\allowbreak{}route: planning\_\allowbreak{}model: fixed\_\allowbreak{}model\_\allowbreak{}id
+
+review\_\allowbreak{}model: fixed\_\allowbreak{}model\_\allowbreak{}id
+
+prompt\_\allowbreak{}templates:
+
+planning: planning\_\allowbreak{}v3
+
+review: review\_\allowbreak{}v2
+
+snapshots:
+
+registry\_\allowbreak{}snapshot: registry\_\allowbreak{}YYYYMMDD
+
+brkg\_\allowbreak{}snapshot: brkg\_\allowbreak{}YYYYMMDD
+
+mcp\_\allowbreak{}schema\_\allowbreak{}version: mcp\_\allowbreak{}schema\_\allowbreak{}YYYYMMDD
+
+mcp\_\allowbreak{}surface:
+
+operations: 87
+
+exposed\_\allowbreak{}plus\_\allowbreak{}workflow\_\allowbreak{}specs: 177
+
+total\_\allowbreak{}registry\_\allowbreak{}specs: 2089
+
+policy:
+
+loop\_\allowbreak{}profile: external\_\allowbreak{}coding\_\allowbreak{}v1
+
+network: true
+
+dangerous\_\allowbreak{}tools: false
+
+direct\_\allowbreak{}tool\_\allowbreak{}execution: false
+
+memory\_\allowbreak{}namespace: benchmark\_\allowbreak{}isolated
+\end{minipage} \\
+\hline
+\end{longtable}
+}
+
+\textbf{A11. Architecture and Runtime Boundaries}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.1296}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2259}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.3648}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2796}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Layer}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Component}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Responsibility}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Notes}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Transport
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+FastMCP
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+MCP protocol server over stdio, SSE, or streamable HTTP
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+mcp = FastMCP("brain-researcher")
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+HTTP wrapper
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+build\_\allowbreak{}http\_\allowbreak{}app
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Starlette wrapper for auth, /\allowbreak{}healthz, /\allowbreak{}resolve, session bootstrap
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Used for HTTP transports only
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Tool surface
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+decorated functions in server.py
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Public MCP tools and resources
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+87 tools, 3 resources
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Discovery layer
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+UnifiedToolRegistry, tool\_\allowbreak{}search, tool\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Search BR tool specs and workflow specs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Quick self-test loaded 177 exposed+workflow specs and 2,089 all specs
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Recipe layer
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+execution\_\allowbreak{}recipes.py
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Build stateless local execution recipes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Targets: python, neurodesk, container, slurm
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Admin execution layer
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}execute, pipeline\_\allowbreak{}execute
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Preview or execute gated tools/\allowbreak{}pipelines
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Disabled by default for agents; allowlist and policy gates apply
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run store
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+data/\allowbreak{}runs/\allowbreak{}mcp\_\allowbreak{}runs by default
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Persist run records, traces, artifacts, bundles, research logs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Uses build\_\allowbreak{}mcp\_\allowbreak{}run\_\allowbreak{}dir, iter\_\allowbreak{}mcp\_\allowbreak{}run\_\allowbreak{}dir\_\allowbreak{}candidates
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Loop primitives
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+loop\_\allowbreak{}primitives.py
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Normalize run bundles, scorecards, comparisons
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Used by external coding-agent loop
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+KG access
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}* tools
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Read-only Neo4j query helpers plus hypothesis/\allowbreak{}probe workflows
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+KG reads fail fast unless degraded mode is explicitly allowed
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Dataset resolution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+dataset\_\allowbreak{}get\_\allowbreak{}resources
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Resolve local paths, BIDS paths, derivatives, URLs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Uses shared dataset mounts/\allowbreak{}resources
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Grounding
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grounding\_\allowbreak{}resolve, grounding\_\allowbreak{}gate\_\allowbreak{}evidence\_\allowbreak{}basis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Resolve and gate evidence anchors
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Rejects malformed anchors, downgrades unresolved grounded anchors
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Research logging
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+log\_\allowbreak{}research\_\allowbreak{}event, write\_\allowbreak{}session\_\allowbreak{}snapshot
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Durable session start/\allowbreak{}note/\allowbreak{}snapshot record
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Also attached to automatic tool-call telemetry
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Memory
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+MemoryStore, memory\_\allowbreak{}* tools
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Derived memory cards and relation events
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Local store under run-root memory index/\allowbreak{}cards when present
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Literature
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Google tools, DeepXiv
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+File search, Gemini Deep Research, arXiv/\allowbreak{}PMC search/\allowbreak{}read
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Network and API-key gated
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Sherlock/\allowbreak{}HPC
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+sherlock\_\allowbreak{}tools.py
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Slurm script rendering, validation, job/\allowbreak{}log diagnostics
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Advanced surface, not separate product
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Docker package
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+infrastructure/\allowbreak{}docker/\allowbreak{}Dockerfile.mcp
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Slim MCP runtime image
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Exposes port 7000; leaves behavior-task heavy deps out
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Neuroimaging registry
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+BR tool registry and workflow catalog
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Stores the larger neuroimaging method/\allowbreak{}workflow surface that MCP can search, resolve, and package into recipes.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Inventory reports 177 exposed-plus-workflow specs and 2,089 total registry specs loaded by quick self-test.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Backend recipe targets
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Python, Neurodesk, container, Slurm
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Converts a selected registry tool/\allowbreak{}workflow into a backend-specific command, container invocation, or batch script.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Recipes are stateless handoffs unless the admin execution gate is explicitly enabled.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+LLM client boundary
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+External coding agent, notebook, IDE, or web assistant
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Interprets the goal, calls MCP tools, chooses among returned candidates, and explains results.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+The LLM does not bypass MCP policy gates and is not the default repository mutator inside MCP.
+\end{minipage} \\
+\end{longtable}
+}
+
+\textbf{A12. Compute Nodes}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.1645}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2754}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2754}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2847}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Node}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Inputs}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Outputs}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Persistence}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+MCP transport
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+JSON-RPC over stdio, SSE, or streamable HTTP
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool list, tool result, resource result
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+none by itself
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+HTTP middleware
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+headers, auth token, host/\allowbreak{}origin, optional session id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+authenticated request, session bootstrap, errors
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+in-memory session cache
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool list wrapper
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+FastMCP tool manager
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+MCP tool schemas plus optional Claude Code annotations/\allowbreak{}search hints
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+none
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research telemetry wrapper
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool name, args, result, session binding
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+trace events, directives, session binding metadata
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run root
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+discovery registry
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool registry configs, workflow catalog, query
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ranked tool/\allowbreak{}workflow cards
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+in-memory caches and registry files
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+planning
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+user query, domain/\allowbreak{}modality, inputs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+preflight facts, blockers, display plan, execution envelope
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+latest handoff cache
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+execution recipe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool/\allowbreak{}workflow id, params, runtime target
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+command/\allowbreak{}script/\allowbreak{}container/\allowbreak{}Slurm recipe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+response only unless caller persists
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+admin execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+gated plan/\allowbreak{}tool call, policy flags, allowlist, roots
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run id, step records, artifacts, preflight issues
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run root
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run observability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run id
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run status, logs, metrics, bundle, scorecard, compare
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+reads run root
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+KG access
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+KG ids/\allowbreak{}query/\allowbreak{}hypothesis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+nodes, neighbors, paths, evidence, candidate cards
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Neo4j read; optional run artifacts for workflows
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grounding
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+reference anchors, evidence rows, resolvers
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+resolved support or downgraded evidence basis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+response and optional run/\allowbreak{}session artifacts
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research logging
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+session id, event/\allowbreak{}snapshot payload
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research event log, session snapshot, digest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run root
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+memory
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+card payloads, query filters
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+memory cards, relation events, search hits
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run-root memory store
+\end{minipage} \\
+\end{longtable}
+}
+
+\textbf{A13. High-Level Directed Edges}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.1848}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2403}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2699}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.3050}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Edge}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Trigger}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Main function/\allowbreak{}tool}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Main output}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+client -\textgreater{} discovery
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+user asks what to use
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}search, workflow\_\allowbreak{}search, tool\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+candidate tools/\allowbreak{}workflows
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+discovery -\textgreater{} recipe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+selected tool/\allowbreak{}workflow
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+get\_\allowbreak{}execution\_\allowbreak{}recipe
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+local execution instructions
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query -\textgreater{} preflight -\textgreater{} plan
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+user asks for a plan
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan\_\allowbreak{}preflight, plan\_\allowbreak{}create
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+display plan and execution envelope
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+plan -\textgreater{} admin execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+explicit manual/\allowbreak{}admin approval
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline\_\allowbreak{}plan\_\allowbreak{}validate, pipeline\_\allowbreak{}execute
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+persisted run
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool id -\textgreater{} admin execution
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+explicitly allowed single-tool call
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool\_\allowbreak{}execute
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+preview or persisted run
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run -\textgreater{} bundle
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+user/\allowbreak{}agent needs evidence
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}bundle\_\allowbreak{}get
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+normalized run observation
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+bundle -\textgreater{} scorecard
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+quality inspection
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}scorecard
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+artifact completeness and quality signals
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+baseline + candidate -\textgreater{} compare
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+keep/\allowbreak{}discard decision
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}compare
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+directional metric comparison
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+query/\allowbreak{}entities -\textgreater{} KG
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+research grounding/\allowbreak{}hypothesis work
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+kg\_\allowbreak{}* tools
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+KG evidence and structural signals
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+KG/\allowbreak{}literature -\textgreater{} grounding
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+final-answer evidence check
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+grounding\_\allowbreak{}resolve, grounding\_\allowbreak{}gate\_\allowbreak{}evidence\_\allowbreak{}basis
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+valid, downgraded, or rejected anchors
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+work session -\textgreater{} durable memory
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+start/\allowbreak{}note/\allowbreak{}close
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+log\_\allowbreak{}research\_\allowbreak{}event, write\_\allowbreak{}session\_\allowbreak{}snapshot
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+session digest and resumable snapshot
+\end{minipage} \\
+\end{longtable}
+}

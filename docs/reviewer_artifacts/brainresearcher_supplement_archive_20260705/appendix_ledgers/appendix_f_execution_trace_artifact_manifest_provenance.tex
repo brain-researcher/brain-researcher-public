@@ -1,0 +1,516 @@
+\section{\texorpdfstring{\textbf{Appendix F. Execution trace, artifact manifest, and provenance card}}{Appendix F. Execution trace, artifact manifest, and provenance card}}\label{appendix-f.-execution-trace-artifact-manifest-and-provenance-card}\label{app:f}
+
+\hyperref[app:f]{Appendix F} is the execution evidence ledger: it proves what actually ran, where it ran, what artifacts were expected and produced, and whether failures, retries, checksums, and environment versions were recorded.
+
+\subsection{\texorpdfstring{\textbf{F1. Purpose and scope}}{F1. Purpose and scope}}\label{f1.-purpose-and-scope}
+
+This card records the authoritative execution provenance for an episode. It stores the run bundle, event trace, trajectory document, observation record, analysis bundle, artifact manifest, logs, checksums, backend and software versions, preflight results, failures, retries, recovery events, and final execution status. Scientific interpretation and claim eligibility are handled in \hyperref[app:g]{Appendix G}.
+
+\subsection{\texorpdfstring{\textbf{F2. Run-bundle identity}}{F2. Run-bundle identity}}\label{f2.-run-bundle-identity}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4668}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4845}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Recommended entry}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Episode ID
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run ID
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+run\_\allowbreak{}hcp\_\allowbreak{}pathb\_\allowbreak{}001
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run mode
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+benchmark /\allowbreak{} collaborator /\allowbreak{} bounded autonomous
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Selected workflow
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+canonical workflow ID from \hyperref[app:d]{Appendix D}
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Backend
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+local Python /\allowbreak{} Slurm /\allowbreak{} Neurodesk /\allowbreak{} container
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run root
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+redacted path or artifact root
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Start/\allowbreak{}end time
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+timestamps
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Final execution status
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+completed /\allowbreak{} failed /\allowbreak{} recovered /\allowbreak{} partial
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{F3. Run-bundle components}}{F3. Run-bundle components}}\label{f3.-run-bundle-components}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4749}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4765}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Component}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{What it records}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Event trace
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Ordered execution events, timestamps, session IDs, and phase markers.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Trajectory document
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Plan decisions, tool calls, parameter bindings, and constraint verdicts.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Observation record
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Intermediate results, QC outputs, diagnostics, and observed runtime state.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Analysis bundle
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Final artifacts, metadata, checksums, and provenance chains.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run card
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Policy hashes, model references, registry versions, and evaluation configuration.
+\end{minipage} \\
+\end{longtable}
+}
+
+\begin{quote}
+run\_\allowbreak{}bundle:\\
+episode\_\allowbreak{}id: ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001\\
+run\_\allowbreak{}id: run\_\allowbreak{}hcp\_\allowbreak{}pathb\_\allowbreak{}001\\
+components:\\
+event\_\allowbreak{}trace: trace.jsonl\\
+trajectory: trajectory.yaml\\
+observation\_\allowbreak{}record: observation.json\\
+analysis\_\allowbreak{}bundle: analysis\_\allowbreak{}bundle.json\\
+run\_\allowbreak{}card: run\_\allowbreak{}card.yaml\\
+authoritative: true
+\end{quote}
+
+\subsection{\texorpdfstring{\textbf{F4. Execution backend and recipe record}}{F4. Execution backend and recipe record}}\label{f4.-execution-backend-and-recipe-record}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4684}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4829}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Example}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Backend target
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Python /\allowbreak{} Neurodesk /\allowbreak{} container /\allowbreak{} Slurm
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Recipe source
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+get\_\allowbreak{}execution\_\allowbreak{}recipe
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Command or script path
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+redacted path or script hash
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Runtime environment
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+local /\allowbreak{} container /\allowbreak{} cluster
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Container or module ID
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+image digest /\allowbreak{} Neurodesk module /\allowbreak{} Slurm module
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Submission method
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+shell /\allowbreak{} Slurm job /\allowbreak{} container runtime
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Job ID
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+if applicable
+\end{minipage} \\
+\end{longtable}
+}
+
+\begin{quote}
+execution\_\allowbreak{}backend:\\
+target\_\allowbreak{}runtime: slurm\\
+recipe\_\allowbreak{}source: get\_\allowbreak{}execution\_\allowbreak{}recipe\\
+script: run\_\allowbreak{}predictive\_\allowbreak{}modeling.sbatch\\
+job\_\allowbreak{}id: 123456\\
+container\_\allowbreak{}or\_\allowbreak{}module: python\_\allowbreak{}env\_\allowbreak{}YYYYMMDD\\
+output\_\allowbreak{}root: redacted
+\end{quote}
+
+\subsection{\texorpdfstring{\textbf{F5. Preflight execution record}}{F5. Preflight execution record}}\label{f5.-preflight-execution-record}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3164}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3084}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3276}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Preflight item}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Result}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Evidence}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Filesystem access
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+path/\allowbreak{}output-root check
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Backend availability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+module/\allowbreak{}container check
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Required assets
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:c]{Appendix C} asset IDs
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Parameter schema
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:d]{Appendix D} tool schema
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Hard constraints
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:e]{Appendix E} active constraints
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Soft warnings
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+warn
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+caveat carried forward to G/\allowbreak{}H
+\end{minipage} \\
+\end{longtable}
+}
+
+\begin{quote}
+preflight\_\allowbreak{}record:\\
+operational:\\
+filesystem\_\allowbreak{}access: pass\\
+backend\_\allowbreak{}available: pass\\
+output\_\allowbreak{}root\_\allowbreak{}writable: pass\\
+scientific:\\
+fold\_\allowbreak{}manifest: pass\\
+subject\_\allowbreak{}intersection: pass\\
+covariate\_\allowbreak{}table: pass\\
+final\_\allowbreak{}preflight\_\allowbreak{}status: pass\_\allowbreak{}with\_\allowbreak{}warnings
+\end{quote}
+
+\subsection{\texorpdfstring{\textbf{F6. Expected vs produced artifact manifest}}{F6. Expected vs produced artifact manifest}}\label{f6.-expected-vs-produced-artifact-manifest}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2331}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2395}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2444}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2347}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Expected artifact}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Produced?}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{File/\allowbreak{}object}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Used by}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Predictions table
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+predictions.tsv + checksum
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scorecard /\allowbreak{} review
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Scorecard
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+scorecard.json + checksum
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\hyperref[app:g]{Appendix G}
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Model artifact
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes or n/\allowbreak{}a
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+model file or manifest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+reproducibility
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Configuration manifest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+config.yaml
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+replay
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Null-test result
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+permutation.json
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+statistical review
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+QC summary
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+complete/\allowbreak{}partial
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+qc\_\allowbreak{}summary.json
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+measurement review
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{F7. Logs, traces, environment versions, and recovery}}{F7. Logs, traces, environment versions, and recovery}}\label{f7.-logs-traces-environment-versions-and-recovery}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4668}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4845}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Record type}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Recommended entries}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Log manifest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+stdout.log; stderr.log; trace.jsonl; tool\_\allowbreak{}trace.jsonl; scheduler log; research\_\allowbreak{}events.jsonl
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Environment versions
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Python version; package lock hash; container digest; Neurodesk module; Slurm module; tool versions; random seeds
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Failure/\allowbreak{}retry ledger
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+failed step; cause; recovery action; outcome; whether original failure remains preserved
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Scorecard summary
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+expected artifacts; produced artifacts; artifact-completeness ratio; required statistic present; logs complete
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Final execution status
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+completed /\allowbreak{} completed with warnings /\allowbreak{} failed /\allowbreak{} recovered /\allowbreak{} partial /\allowbreak{} terminated
+\end{minipage} \\
+\end{longtable}
+}
+
+\begin{quote}
+recovery\_\allowbreak{}events:\\
+- event\_\allowbreak{}id: rec\_\allowbreak{}001\\
+failed\_\allowbreak{}step: artifact\_\allowbreak{}validation\\
+failure\_\allowbreak{}reason: missing\_\allowbreak{}scorecard\\
+recovery\_\allowbreak{}action: rerun\_\allowbreak{}scorecard\_\allowbreak{}generation\\
+outcome: recovered
+\end{quote}
+
+\subsection{\texorpdfstring{\textbf{F8. Example run-bundle excerpts}}{F8. Example run-bundle excerpts}}\label{f8.-example-run-bundle-excerpts}
+
+\begin{quote}
+run\_\allowbreak{}bundle\_\allowbreak{}card:\\
+episode\_\allowbreak{}id: ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001\\
+run\_\allowbreak{}id: run\_\allowbreak{}hcp\_\allowbreak{}pathb\_\allowbreak{}001\\
+workflow: HCP\_\allowbreak{}YA\_\allowbreak{}predictive\_\allowbreak{}modeling\\
+backend: python\_\allowbreak{}or\_\allowbreak{}slurm\\
+final\_\allowbreak{}execution\_\allowbreak{}status: completed\\
+\strut \\
+expected\_\allowbreak{}artifacts:\\
+- predictions\_\allowbreak{}tsv\\
+- scorecard\_\allowbreak{}json\\
+- configuration\_\allowbreak{}manifest\\
+- family\_\allowbreak{}block\_\allowbreak{}permutation\_\allowbreak{}result\\
+- post\_\allowbreak{}selection\_\allowbreak{}correction\_\allowbreak{}report\\
+\strut \\
+produced\_\allowbreak{}artifacts:\\
+predictions\_\allowbreak{}tsv: pass\\
+scorecard\_\allowbreak{}json: pass\\
+configuration\_\allowbreak{}manifest: pass\\
+family\_\allowbreak{}block\_\allowbreak{}permutation\_\allowbreak{}result: pass\\
+post\_\allowbreak{}selection\_\allowbreak{}correction\_\allowbreak{}report: pass\\
+\strut \\
+provenance:\\
+registry\_\allowbreak{}snapshot: registry\_\allowbreak{}YYYYMMDD\\
+brkg\_\allowbreak{}snapshot: brkg\_\allowbreak{}YYYYMMDD\\
+software\_\allowbreak{}versions: software\_\allowbreak{}versions.yaml\\
+checksum\_\allowbreak{}manifest: sha256\_\allowbreak{}manifest.txt\\
+\strut \\
+recovery\_\allowbreak{}events: {[}{]}\\
+ready\_\allowbreak{}for\_\allowbreak{}review: true
+
+run\_\allowbreak{}bundle\_\allowbreak{}card:\\
+episode\_\allowbreak{}id: ep\_\allowbreak{}neuromark\_\allowbreak{}fnc\_\allowbreak{}001\\
+run\_\allowbreak{}id: run\_\allowbreak{}neuromark\_\allowbreak{}fnc\_\allowbreak{}001\\
+workflow: post\_\allowbreak{}preprocessing\_\allowbreak{}fnc\_\allowbreak{}analysis\\
+backend: python\_\allowbreak{}or\_\allowbreak{}container\\
+final\_\allowbreak{}execution\_\allowbreak{}status: completed\_\allowbreak{}with\_\allowbreak{}warnings\\
+\strut \\
+expected\_\allowbreak{}artifacts:\\
+- fnc\_\allowbreak{}matrix\\
+- covariate\_\allowbreak{}adjusted\_\allowbreak{}model\_\allowbreak{}output\\
+- group\_\allowbreak{}difference\_\allowbreak{}table\\
+- qc\_\allowbreak{}summary\\
+- report\_\allowbreak{}figure\\
+\strut \\
+produced\_\allowbreak{}artifacts:\\
+fnc\_\allowbreak{}matrix: pass\\
+covariate\_\allowbreak{}adjusted\_\allowbreak{}model\_\allowbreak{}output: pass\\
+group\_\allowbreak{}difference\_\allowbreak{}table: pass\\
+qc\_\allowbreak{}summary: partial\\
+report\_\allowbreak{}figure: pass\\
+\strut \\
+warnings:\\
+- qc\_\allowbreak{}summary\_\allowbreak{}partial\\
+ready\_\allowbreak{}for\_\allowbreak{}review: true
+\end{quote}

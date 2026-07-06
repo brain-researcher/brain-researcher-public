@@ -1,0 +1,42 @@
+% Representative benchmark cases sourced from UNIFIED_BENCHMARK_BUNDLE. These
+% are examples and boundary cases, not additional aggregate metrics.
+
+\subsection{\texorpdfstring{\textbf{J2e. Representative NeuroimageKnowledge benchmark cases}}{J2e. Representative NeuroimageKnowledge benchmark cases}}\label{j2e.-representative-benchmark-cases-from-the-unified-bundle}
+
+The cases below are selected from the NeuroimageKnowledge task-level audit files to show how Appendix J connects aggregate evidence-citation metrics to concrete benchmark items. They are illustrative examples and do not add new denominators beyond Tables~\ref{tab:nik-groundable-items} and \ref{tab:appendix-j-bundle-denominators}.
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.12\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.24\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.28\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.26\linewidth}|}
+\caption{Representative NeuroimageKnowledge task-level cases from the 50-question analysis set.}\label{tab:appendix-j-nik-cases}\\
+\hline
+\rowcolor{brtablehead}\textbf{Task ID} & \textbf{Scenario focus} & \textbf{Observed task-level pattern} & \textbf{Interpretation boundary} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{brtablehead}\textbf{Task ID} & \textbf{Scenario focus} & \textbf{Observed task-level pattern} & \textbf{Interpretation boundary} \\
+\hline
+\endhead
+\hline
+\multicolumn{4}{r}{\footnotesize Continued on next page}\\
+\endfoot
+\hline
+\endlastfoot
+NIK-NK-H-003 & Evidence required to claim that a region implements a computation. & Largest-separation case; verified groundedness increased from 0.025 to 0.529; all 7 models had positive verified-groundedness deltas. & A high-separation case where BR materially improves source-backed auditability for an inferentially difficult claim. \\
+\hline
+NIK-ME-H-003 & Session effects in longitudinal fMRI. & Rank 2; verified groundedness increased from 0.000 to 0.525, while mean correctness score decreased by 0.054; all 7 models had positive verified-groundedness deltas. & Demonstrates why Appendix J separates auditability metrics from raw correctness. \\
+\hline
+NIK-TR-H-001 & One subject drives a group effect and removing them flips the conclusion. & Rank 3; verified groundedness increased from 0.000 to 0.297; mean correctness score increased by 0.381; with-BR citation-spam rate was 0.000. & A case where BR improved both the scientific answer and the evidence basis. \\
+\hline
+NIK-BP-E-004 & Trying multiple pipelines and selecting the strongest expected-region activation. & Rank 11; verified groundedness increased from 0.073 to 0.484; mean correctness score delta was 0.000. & Content can already be strong without BR, but BR changes the evidence boundary by adding resolvable anchors. \\
+\hline
+NIK-BP-H-003 & Leakage and memorization controls for literature-based neuroimaging benchmarks. & Rank 42; verified groundedness increased from 0.000 to 0.054; only 2 models had positive verified-groundedness deltas. & Included as a weak-separation boundary case; it cautions against claiming that BR always improves the answer or evidence audit. \\
+\hline
+\end{longtable}
+}

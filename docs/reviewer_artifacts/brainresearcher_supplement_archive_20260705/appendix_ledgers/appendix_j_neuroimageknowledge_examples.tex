@@ -1,0 +1,81 @@
+% Representative paired NeuroimageKnowledge examples. Excerpts are shortened
+% for layout; complete traces and judgment logs are retained in the benchmark
+% artifacts. The structure is intentionally one task -> without-BR answer ->
+% with-BR answer -> scoring interpretation, rather than a dense comparison
+% table.
+{
+\footnotesize
+
+\paragraph{Example 1: content tie where no-BR recalls strong canonical sources.}
+\textbf{Task and model.} \texttt{codex\_gpt55}, \texttt{NIK-BP-E-004}.
+
+\textbf{Question.} Your team says, ``let's try different pipelines and pick the one with strongest activation in expected regions.'' Why is this problematic?
+
+\textbf{without-BR answer excerpt.} Trying many preprocessing or analysis pipelines and then choosing the one with the strongest activation in expected regions is a form of analytic circularity or researcher degrees of freedom. The same prior expectation is being used both to select the analysis and to support the result, so the final activation is no longer an independent test of the hypothesis.
+
+\textbf{with-BR proper answer excerpt.} This is problematic because it turns pipeline choice into a results-contingent decision. If the team tries many preprocessing, modeling, or thresholding variants and then reports the one with the strongest activation in expected regions, the nominal statistical evidence no longer reflects a single planned test.
+
+\textbf{Evidence and scoring.} The without-BR answer cited real canonical sources from memory, including DOI:10.1038/nn.2303 / PMID:19396166, DOI:10.1177/0956797611417632, and DOI:10.1038/s41586-020-2314-9. The support judge marked 3 without-BR evidence rows as yes. The with-BR answer used retrieved-document anchors; the support judge marked 4 rows as yes and 1 as partial. Both pairwise judges marked content as a tie and audit-aware judging as without-BR.
+
+\textbf{Takeaway.} no-BR is not treated as wrong merely because it did not call BR. If a memory-based DOI or PMID resolves and supports the claim, it receives credit.
+
+\medskip
+
+\paragraph{Example 2: content tie where BR improves evidence closure.}
+\textbf{Task and model.} \texttt{codex\_gpt55}, \texttt{NIK-NK-E-003}.
+
+\textbf{Question.} Which evidence strategy most reduces reverse-inference risk?
+
+\textbf{without-BR answer excerpt.} To reduce reverse inference risk, avoid claiming that activation in a region proves engagement of a specific mental process. A safer interpretation is that the observed pattern is consistent with the proposed process, but not diagnostic unless supported by converging evidence.
+
+\textbf{with-BR proper answer excerpt.} The manuscript should not infer a specific mental process solely from regional activation. A safer interpretation is that the task condition was associated with activity in regions or networks previously implicated in a broader functional domain, while the specific cognitive process remains a hypothesis unless supported by converging task, behavioral, decoding, meta-analytic, or perturbation evidence.
+
+\textbf{Evidence and scoring.} The without-BR answer used general-principle rows without concrete references, so the support-judge denominator contained no claimed-grounded source rows. The with-BR answer used retrieved-document anchors, and the support judge marked 5 rows as yes. Both pairwise judges marked content as a tie and audit-aware judging as with-BR.
+
+\textbf{Takeaway.} The answers make the same conservative scientific point, but BR turns that point into resolvable evidence rows.
+
+\medskip
+
+\paragraph{Example 3: BR improves both content and auditability.}
+\textbf{Task and model.} \texttt{codex\_gpt55}, \texttt{NIK-BP-H-002}.
+
+\textbf{Question.} When reporting results across multiple pipelines, what should be included?
+
+\textbf{without-BR answer excerpt.} For multi-pipeline neuroimaging results, report enough detail for each pipeline that another lab can rerun, compare, and audit the analyses. At minimum, provide a pipeline manifest, preprocessing and modeling choices, software or container versions, parameter settings, inclusion and exclusion rules, quality-control outputs, harmonized outcome definitions, and both per-pipeline and aggregate results.
+
+\textbf{with-BR proper answer excerpt.} For a multi-pipeline neuroimaging study, report every pipeline as an auditable analysis path: software and versions, preprocessing steps, subject-level model, group model, nuisance regressors, smoothing, HRF basis, thresholding, multiple-comparison correction, excluded data, and runtime environment. Publish the analysis code, configuration files, provenance metadata, QC outputs, primary statistical maps, and where feasible, all alternative-pipeline results.
+
+\textbf{Evidence and scoring.} The without-BR answer used general-principle rows without concrete references. The with-BR answer used retrieved-document anchors; the support judge marked 5 rows as yes and 2 as partial. Both Codex and Claude pairwise judges selected with-BR for content-only and audit-aware criteria.
+
+\textbf{Takeaway.} This is a case where BR improves the checklist itself and also attaches that checklist to source-grounded evidence rows.
+
+\medskip
+
+\paragraph{Example 4: no-BR wins on content and audit-aware judgment.}
+\textbf{Task and model.} \texttt{opencode\_gemini31\_pro}, \texttt{NIK-BP-H-003}.
+
+\textbf{Question.} How should a neuroimaging benchmark based on published literature control for leakage or memorization, including both preventative measures and detection diagnostics?
+
+\textbf{without-BR answer excerpt.} To appropriately control for leakage and memorization in a neuroimaging benchmark based on published literature, adopt a hybrid approach using temporal holdouts for prevention and n-gram overlap or membership-inference diagnostics for detection. Relying solely on temporal cutoffs is insufficient due to preprint ingestion and undocumented rolling updates in foundation models.
+
+\textbf{with-BR proper answer excerpt.} To effectively control for leakage and memorization in neuroimaging benchmarks, implement nested cross-validation with strict subject-level or site-level splitting to prevent training on repeated scans from the same individuals. Ensure all preprocessing and feature selection occurs exclusively within training folds to avoid double-dipping, and validate against an independent out-of-distribution set.
+
+\textbf{Evidence and scoring.} The without-BR answer used general-principle rows. The with-BR answer had one retrieved-document yes row plus uncertain and general-principle rows. Both pairwise judges selected without-BR for content-only and audit-aware criteria.
+
+\textbf{Takeaway.} This counterexample shows why the evaluation does not claim that BR always improves answer quality. The no-BR answer is better matched to the literature-benchmark leakage question, while the with-BR answer drifts toward predictive-model leakage.
+
+\medskip
+
+\paragraph{Example 5: weak-model case where BR reduces off-target citations.}
+\textbf{Task and model.} \texttt{opencode\_glm51}, \texttt{NIK-NK-H-003}.
+
+\textbf{Question.} What evidence is needed to claim that a brain region implements a computation such as uncertainty?
+
+\textbf{without-BR answer excerpt.} To claim a region implements a computation such as uncertainty, you need convergent evidence across multiple criteria: selective activation by conditions that parametrically vary the target computation, multivariate or model-based fMRI evidence that the pattern carries information about the computational variable, and controls for alternative explanations.
+
+\textbf{with-BR proper answer excerpt.} To claim a brain region implements a computation such as uncertainty, you need substantially more than showing the region activates more under uncertain conditions. The core requirement is evidence that the region selectively and necessarily carries out that computational transformation, something activation alone cannot establish.
+
+\textbf{Evidence and scoring.} The without-BR answer used specific citations and general-principle rows, but the support judge marked 3 claimed-grounded rows as no\_unrelated. The with-BR answer used retrieved-document anchors; the support judge marked 6 rows as yes and 1 as partial. Codex selected with-BR for content and audit; Claude marked content as a tie and audit-aware judging as with-BR.
+
+\textbf{Takeaway.} The no-BR answer content is plausible, but the evidence basis is noisy. BR keeps the conservative scientific point while replacing off-target evidence with resolvable support.
+}

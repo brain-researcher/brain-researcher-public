@@ -1,0 +1,181 @@
+% Full NeuroimageKnowledge groundable item manifest. This table is included from
+% appendix_j_evaluation_protocol_metric_ledger.tex. It lists the benchmark item
+% set as the open-ended scenarios presented to agents.
+{
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.13\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.125\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.075\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.145\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.425\linewidth}|}
+\caption{Full NeuroimageKnowledge groundable benchmark item set. The table reports only the open-ended agent-facing scenarios used by the benchmark harness.}\label{tab:nik-groundable-items}\\
+\hline
+\rowcolor{brtablehead}\textbf{Task ID} & \textbf{Domain} & \textbf{Diff.} & \textbf{Task type} & \textbf{Agent-facing scenario} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{brtablehead}\textbf{Task ID} & \textbf{Domain} & \textbf{Diff.} & \textbf{Task type} & \textbf{Agent-facing scenario} \\
+\hline
+\endhead
+\hline
+\multicolumn{5}{r}{\footnotesize Continued on next page}\\
+\endfoot
+\hline
+\endlastfoot
+NIK-NK-E-002 & Neuroscientific Knowledge & easy & claim critique & risk profile for reverse inference as an inferential/logical step in cognitive neuroscience \\
+\hline
+NIK-NK-E-003 & Neuroscientific Knowledge & easy & claim critique & evidence strategy to reduce reverse inference risk \\
+\hline
+NIK-NK-M-001 & Neuroscientific Knowledge & medium & conceptual explanation & To distinguish prediction error from salience/surprise in model-based fMRI \\
+\hline
+NIK-NK-M-002 & Neuroscientific Knowledge & medium & claim critique & You have strong RT differences between conditions. Deciding whether to include RT as covariate requires \\
+\hline
+NIK-NK-H-001 & Neuroscientific Knowledge & hard & method design & Functional connectivity (correlation between regional BOLD signals) primarily \\
+\hline
+NIK-NK-H-002 & Neuroscientific Knowledge & hard & conceptual explanation & Major confounds in resting-state functional connectivity include \\
+\hline
+NIK-NK-H-003 & Neuroscientific Knowledge & hard & conceptual explanation & To claim a region 'implements' a computation (e.g. uncertainty), you need \\
+\hline
+NIK-ME-H-001 & Methods & hard & method design & Gradient-echo BOLD is criticized for 'vein dominance' because \\
+\hline
+NIK-ME-H-002 & Methods & hard & method design & To reduce macrovascular (large vessel) contribution to BOLD using established approaches \\
+\hline
+NIK-ME-H-003 & Methods & hard & method design & Session effects in longitudinal fMRI can arise from \\
+\hline
+NIK-ME-H-004 & Methods & hard & preprocessing review & Prospective motion correction offers advantages over post-hoc realignment because it \\
+\hline
+NIK-PP-M-001 & Preprocessing & medium & reproducibility review & When reporting results with GSR in resting-state you should \\
+\hline
+NIK-PP-M-002 & Preprocessing & medium & statistical review & Filtering data before regression but not filtering regressors \\
+\hline
+NIK-PP-H-001 & Preprocessing & hard & preprocessing review & When comparing groups with different motion levels, the PRIMARY tradeoff between motion-matching vs covarying \\
+\hline
+NIK-PP-H-002 & Preprocessing & hard & reproducibility review & Best practice for group differences with unequal motion \\
+\hline
+NIK-PP-H-003 & Preprocessing & hard & preprocessing review & Surface-based analysis primarily improves \\
+\hline
+NIK-PP-H-004 & Preprocessing & hard & troubleshooting memo & When using surface-based analysis with clinical groups \\
+\hline
+NIK-PP-H-005 & Preprocessing & hard & preprocessing review & In diffusion MRI preprocessing, topup and eddy have distinct roles \\
+\hline
+NIK-PP-H-006 & Preprocessing & hard & troubleshooting memo & Wrong phase-encoding direction in topup parameters \\
+\hline
+NIK-ST-E-003 & Stats & easy & reproducibility review & When reporting fMRI results, you should include \\
+\hline
+NIK-ST-M-001 & Stats & medium & statistical review & You preregistered a confirmatory family (whole-brain + 10 ROIs). You also ran 15 brain-behavior correlations labeled as exploratory. The MOST defensible multiplicity correction strategy \\
+\hline
+NIK-ST-M-002 & Stats & medium & troubleshooting memo & decision point: scenario represents double dipping \\
+\hline
+NIK-ST-M-003 & Stats & medium & statistical review & Valid strategies to avoid double dipping in ROI analysis \\
+\hline
+NIK-ST-M-004 & Stats & medium & troubleshooting memo & Your model-based regressor correlates 0.7 with condition labels and 0.5 with RT. Signs of problematic collinearity include \\
+\hline
+NIK-ST-M-005 & Stats & medium & troubleshooting memo & Task t-statistics dropped after adding 24 motion parameters + CompCor. The PRIMARY diagnostic to determine if you removed artifact vs over-controlled signal \\
+\hline
+NIK-ST-M-006 & Stats & medium & statistical review & To make cluster-based inference transparent and reproducible, you should report \\
+\hline
+NIK-ST-M-007 & Stats & medium & statistical review & Filtering fMRI data before nuisance regression, but NOT filtering the nuisance regressors, \\
+\hline
+NIK-ST-M-008 & Stats & medium & statistical review & Permutation tests are MOST valuable in fMRI when \\
+\hline
+NIK-ST-M-009 & Stats & medium & statistical review & You want to control false positives while maintaining reasonable power for exploratory whole-brain analysis. Between FWE (family-wise error) and FDR (false discovery rate), the MOST appropriate choice \\
+\hline
+NIK-ST-M-010 & Stats & medium & statistical review & A result survives FDR q < 0.05 but not FWE p < 0.05. This \\
+\hline
+NIK-ST-M-011 & Stats & medium & statistical review & Type S (sign) error \\
+\hline
+NIK-ST-M-012 & Stats & medium & statistical review & Type M (magnitude) error is MOST likely when \\
+\hline
+NIK-ST-H-001 & Stats & hard & troubleshooting memo & You normalized features using full dataset mean/variance before cross-validation. This is problematic because \\
+\hline
+NIK-ST-H-002 & Stats & hard & statistical review & To properly avoid leakage in cross-validated classification \\
+\hline
+NIK-ST-H-003 & Stats & hard & troubleshooting memo & You report 85\% accuracy on the same dataset used for feature selection and hyperparameter tuning. The PRIMARY statistical issue \\
+\hline
+NIK-ST-H-004 & Stats & hard & statistical review & If an external held-out dataset is available, the gold-standard evaluation setup for high-dimensional brain-behavior prediction \\
+\hline
+NIK-ST-H-005 & Stats & hard & statistical review & To make a causal mediation claim (condition $\rightarrow$ brain signal $\rightarrow$ behavior) in fMRI, you must assume \\
+\hline
+NIK-ST-H-006 & Stats & hard & statistical review & To claim 'no meaningful group difference in BOLD response', you must \\
+\hline
+NIK-ST-H-007 & Stats & hard & statistical review & In an underpowered fMRI study (power = 20\%) that finds a 'significant' effect, you should be concerned about \\
+\hline
+NIK-ST-H-008 & Stats & hard & statistical review & A Bayes Factor BF$_{10}$ = 0.1 (or BF$_{01}$ = 10) \\
+\hline
+NIK-ST-H-009 & Stats & hard & statistical review & ROPE (Region of Practical Equivalence) in Bayesian analysis is used to \\
+\hline
+NIK-TR-H-001 & Troubleshooting & hard & troubleshooting memo & One subject drives the group effect; removing them flips the conclusion. The scientifically correct approach \\
+\hline
+NIK-TR-H-002 & Troubleshooting & hard & troubleshooting memo & Reviewers suspect motion-driven distance bias in your connectivity group differences. To test this, you should \\
+\hline
+NIK-TR-H-003 & Troubleshooting & hard & troubleshooting memo & decision point: pattern would MOST reassure you that group connectivity differences are not motion artifacts \\
+\hline
+NIK-TR-H-004 & Troubleshooting & hard & troubleshooting memo & After preprocessing, some subjects have NaN or extreme outliers in ROI timeseries, but the pipeline didn't crash. Silent causes include \\
+\hline
+NIK-TR-H-005 & Troubleshooting & hard & troubleshooting memo & To locate the source of NaN values in ROI timeseries, the MOST SYSTEMATIC diagnostic approach \\
+\hline
+NIK-TR-H-006 & Troubleshooting & hard & troubleshooting memo & To diagnose scanner drift separate from participant motion in longitudinal data \\
+\hline
+NIK-IN-E-002 & Interpretation & easy & claim critique & Regarding scientific interpretation, a significant contrast 'A > B' does NOT demonstrate \\
+\hline
+NIK-IN-E-004 & Interpretation & easy & reproducibility review & When reporting 'deactivation', the MOST scientifically accurate phrasing \\
+\hline
+NIK-IN-M-001 & Interpretation & medium & claim critique & The same region activates in Task A (working memory) and Task B (cognitive control). The MOST scientifically defensible interpretation \\
+\hline
+NIK-IN-M-002 & Interpretation & medium & claim critique & To strengthen claims beyond simple overlap, you need \\
+\hline
+NIK-IN-M-005 & Interpretation & medium & claim critique & Clinical group shows higher BOLD activation than controls. Before claiming neural differences, consider \\
+\hline
+NIK-IN-M-006 & Interpretation & medium & claim critique & To interpret hyperactivation as 'compensation' rather than artifact or inefficiency, you MUST show \\
+\hline
+NIK-IN-M-008 & Interpretation & medium & statistical review & You found a strong brain-behavior correlation after exploring many ROIs and behavioral metrics. To keep it in the paper defensibly, you should \\
+\hline
+NIK-IN-H-001 & Interpretation & hard & claim critique & BOLD group differences could reflect \\
+\hline
+NIK-IN-H-002 & Interpretation & hard & claim critique & To strengthen the interpretation of BOLD group differences as neural (not vascular), you could \\
+\hline
+NIK-IN-H-003 & Interpretation & hard & claim critique & To claim a region 'implements' a computation (e.g. uncertainty estimation), beyond simple correlation with a model regressor, you need \\
+\hline
+NIK-IN-H-004 & Interpretation & hard & claim critique & Your main effect appears only with one preprocessing choice (e.g. only with GSR, not without). The MOST appropriate interpretation and reporting strategy \\
+\hline
+NIK-IN-H-005 & Interpretation & hard & claim critique & Your behavioral effect replicates across labs but the fMRI effect does not. The MOST scientifically defensible interpretation \\
+\hline
+NIK-IN-H-006 & Interpretation & hard & claim critique & Causal language about brain-behavior relationships (e.g. 'Region X generates behavior Y') is MOST justified when \\
+\hline
+NIK-BP-E-004 & Best Practices & easy & conceptual explanation & Your team says 'let's try different pipelines and pick the one with strongest activation in expected regions.' This is problematic because \\
+\hline
+NIK-BP-E-006 & Best Practices & easy & reproducibility review & When reporting fMRI results, you should include behavioral performance \\
+\hline
+NIK-BP-M-001 & Best Practices & medium & reproducibility review & When preregistering an fMRI analysis, the PRIMARY distinction between confirmatory and exploratory \\
+\hline
+NIK-BP-M-002 & Best Practices & medium & reproducibility review & A preregistration for fMRI should include \\
+\hline
+NIK-BP-M-003 & Best Practices & medium & statistical review & You have 10 ROIs and 5 behavioral measures. To avoid 'garden of forking paths' while remaining useful for theory, the BEST strategy \\
+\hline
+NIK-BP-M-004 & Best Practices & medium & reproducibility review & The PRIMARY purpose of sensitivity analyses (e.g. with/without GSR, different motion thresholds) is to \\
+\hline
+NIK-BP-M-005 & Best Practices & medium & reproducibility review & To prevent 'it ran on my machine' reproducibility failures when sharing code \\
+\hline
+NIK-BP-M-006 & Best Practices & medium & troubleshooting memo & To ensure QC-based exclusions are defensible and not biased, you should \\
+\hline
+NIK-BP-M-007 & Best Practices & medium & reproducibility review & When comparing groups with different motion levels, best practice reporting includes \\
+\hline
+NIK-BP-M-008 & Best Practices & medium & reproducibility review & Your conclusion changes substantially with different normalization settings. You should \\
+\hline
+NIK-BP-H-001 & Best Practices & hard & reproducibility review & You tried five preprocessing variants. The MOST defensible reporting approach to avoid p-hacking while enabling exploration \\
+\hline
+NIK-BP-H-002 & Best Practices & hard & reproducibility review & When reporting results across multiple pipelines, include \\
+\hline
+NIK-BP-H-003 & Best Practices & hard & method design & To CONTROL FOR leakage/memorization in a neuroimaging benchmark using published literature (preventative measures AND detection diagnostics) \\
+\hline
+NIK-BP-H-004 & Best Practices & hard & method design & Before claiming clinical relevance from a neuroimaging prediction model, you must \\
+\hline
+NIK-BP-H-005 & Best Practices & hard & reproducibility review & The PRIMARY purpose of multiverse analysis (testing all reasonable analytic combinations) is to \\
+\hline
+NIK-BP-H-006 & Best Practices & hard & conceptual explanation & When facing unavoidable researcher degrees of freedom (multiple defensible preprocessing choices), the approach that BEST balances rigor and discovery \\
+\hline
+\end{longtable}
+}

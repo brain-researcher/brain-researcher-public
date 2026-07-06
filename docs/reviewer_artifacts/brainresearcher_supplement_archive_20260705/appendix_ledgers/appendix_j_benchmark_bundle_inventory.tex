@@ -1,0 +1,71 @@
+% Unified benchmark bundle support inventory for Appendix J. This file is a
+% manuscript-safe ledger: it summarizes bundle artifacts without copying raw
+% traces or private answer-key mappings into the Overleaf replica.
+
+\subsection{\texorpdfstring{\textbf{J2d. Unified benchmark bundle artifact inventory}}{J2d. Unified benchmark bundle artifact inventory}}\label{j2d.-unified-benchmark-bundle-artifact-inventory}
+
+The Appendix J benchmark tables and examples are grounded in the unified bundle at \nolinkurl{benchmarks/UNIFIED_BENCHMARK_BUNDLE}. The appendix includes public manifests, source-safe task descriptions, metric denominators, and selected examples. Raw episode payloads, private answer-key mappings, judge logs, and rerun scripts remain in the bundle and are referenced as provenance rather than copied into the manuscript source.
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.14}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.22\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.35\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.34\linewidth}|}
+\caption{Unified benchmark bundle artifacts used to support Appendix J. File paths are relative to \nolinkurl{benchmarks/UNIFIED_BENCHMARK_BUNDLE}.}\label{tab:appendix-j-bundle-inventory}\\
+\hline
+\rowcolor{brtablehead}\textbf{Bundle component} & \textbf{Canonical files} & \textbf{Appendix role and guardrail} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{brtablehead}\textbf{Bundle component} & \textbf{Canonical files} & \textbf{Appendix role and guardrail} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\footnotesize Continued on next page}\\
+\endfoot
+\hline
+\endlastfoot
+Tool-calling traces and metrics & \nolinkurl{tool_routing/traces/INDEX.csv}; \nolinkurl{tool_routing/eval/results/}. & Trace index records 840 episode paths, matching 60 tasks times 7 models times 2 modes. Action-budget metrics are reported as trajectory-level quantities, not execution success claims. \\
+\hline
+Tool-calling canonical provenance & \nolinkurl{tool_routing/CANONICAL_PROVENANCE.md}; \nolinkurl{tool_routing/canonical_versions/}. & Documents the v0 to v7 lineage: parser repair, clean-finish reruns, multi-model consensus, Claude expert review, and the v7 dual-reviewer intersection used for the main result. \\
+\hline
+NeuroimageKnowledge task manifests & \nolinkurl{neuroimage_knowledge/tasks/source_v3_canonical.csv}; \nolinkurl{neuroimage_knowledge/tasks/task_index.csv}; \nolinkurl{neuroimage_knowledge/tasks/agent_prompts.jsonl}; \nolinkurl{neuroimage_knowledge/tasks/schema.json}. & Source for the 76-item groundable manifest in Table~\ref{tab:nik-groundable-items}. The private answer-key mapping remains in the benchmark bundle and is not exposed in Appendix J. \\
+\hline
+NeuroimageKnowledge traces and metrics & \nolinkurl{neuroimage_knowledge/traces/INDEX.csv}; \nolinkurl{neuroimage_knowledge/eval/methodology.md}; \nolinkurl{neuroimage_knowledge/eval/results/comparison_paper_grade.json}; \nolinkurl{neuroimage_knowledge/eval/results/}. & Trace index records 1,064 episode paths, matching 76 tasks times 7 models times 2 modes. The 50-question analysis files define the evidence-citation aggregate used for the Results. \\
+\hline
+NeuroimageKnowledge ground-truth audit & \nolinkurl{neuroimage_knowledge/gt_cross_review/README.md}; \nolinkurl{nik_review_packet.json}; \nolinkurl{gemini_nik_review.json}; \nolinkurl{codex_nik_review.json}; \nolinkurl{v2_to_v3_edits.json}. & Records the independent ground-truth cross-review and two wording-only v2 to v3 clarifications. It supports task validity, not model performance. \\
+\hline
+Out-of-scope supplementary NIK content & \nolinkurl{../UNIFIED_BENCHMARK_BUNDLE_supplementary/nik_definitional_61/}. & Preserves 61 definitional items where BR was not expected to help and the empirical effect was mixed. These are excluded from the main positive-results bundle and main Appendix J metrics. \\
+\hline
+\end{longtable}
+}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.25\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.18\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.18\linewidth}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{0.29\linewidth}|}
+\caption{Bundle denominators used by Appendix J.}\label{tab:appendix-j-bundle-denominators}\\
+\hline
+\rowcolor{brtablehead}\textbf{Surface} & \textbf{Task set} & \textbf{Episode index rows} & \textbf{Paper-facing subset} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{brtablehead}\textbf{Surface} & \textbf{Task set} & \textbf{Episode index rows} & \textbf{Paper-facing subset} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+Tool calling & 60 canonical v7 routing tasks & 840 & Full 60-task surface; 420 model-item trajectories per mode. \\
+\hline
+NeuroimageKnowledge & 76 groundable open-ended tasks & 1,064 & Full 76-item auditability surface; 50-item BR-separation cut for the main paper-grade grounding result. \\
+\hline
+\end{longtable}
+}

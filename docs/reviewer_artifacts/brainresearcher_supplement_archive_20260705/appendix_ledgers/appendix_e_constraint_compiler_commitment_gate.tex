@@ -1,0 +1,569 @@
+\section{\texorpdfstring{\textbf{Appendix E. Constraint compiler, pre-execution validity checks, and commitment-gate card}}{Appendix E. Constraint compiler, pre-execution validity checks, and commitment-gate card}}\label{appendix-e.-constraint-compiler-pre-execution-validity-checks-and-commitment-gate-card}\label{app:e}
+
+\hyperref[app:e]{Appendix E} is the pre-execution validity gate: it proves which hard and soft constraints were active, how they were bound to the selected plan, and who allowed, revised, or blocked execution.
+
+\subsection{\texorpdfstring{\textbf{E1. Purpose and scope}}{E1. Purpose and scope}}\label{e1.-purpose-and-scope}
+
+This card records the active validity boundary between planning and execution. It documents the hard and soft constraints compiled for the selected workflow, their provenance, bound episode fields, pass/\allowbreak{}warn/\allowbreak{}block outcomes, required sensitivity analyses, caveat requirements, and commitment-gate decision.
+
+\subsection{\texorpdfstring{\textbf{E2. Constraint sources}}{E2. Constraint sources}}\label{e2.-constraint-sources}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3164}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3228}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3132}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Constraint source}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{What it contributes}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Example}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Tool contract
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Required inputs, parameter restrictions, output requirements
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Fold manifest required for prediction.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+BR-KG method-condition record
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Known failure modes or assumption dependencies
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Feature selection outside CV violates prediction validity.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Community validator
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+BIDS, metadata, coordinate-space, naming rules
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+BIDS validation failure or warning.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Resource resolver
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Missing assets, access blockers, backend compatibility
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Missing target variable blocks a prediction workflow.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Review-rule registry
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Known BLOCK/\allowbreak{}WARN families
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+GSR requires sensitivity analysis or caveat.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Episode contract
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Benchmark or autonomous constraints
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Fixed budget, fixed folds, validation ladder.
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{E3. Active constraint set}}{E3. Active constraint set}}\label{e3.-active-constraint-set}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2926}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2042}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2170}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 9\tabcolsep) * \real{0.2395}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Constraint ID}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Type}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Source}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Bound field /\allowbreak{} result}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+fold\_\allowbreak{}manifest\_\allowbreak{}required
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hard
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tool contract
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+fold\_\allowbreak{}manifest.tsv found -\textgreater{} pass
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+no\_\allowbreak{}feature\_\allowbreak{}selection\_\allowbreak{}outside\_\allowbreak{}cv
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hard
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+method-condition record
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pipeline DAG satisfies clause -\textgreater{} pass
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+family\_\allowbreak{}block\_\allowbreak{}permutation\_\allowbreak{}required
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hard
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+episode contract
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+null test specified -\textgreater{} pass
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+gsr\_\allowbreak{}sensitivity\_\allowbreak{}required
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+soft
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+review-rule registry
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+unresolved choice -\textgreater{} warn
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+external\_\allowbreak{}validation\_\allowbreak{}missing
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+soft
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+validation ladder
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+external gate deferred -\textgreater{} caveat
+\end{minipage} \\
+\end{longtable}
+}
+
+\begin{quote}
+constraint\_\allowbreak{}compiler\_\allowbreak{}output:\\
+episode\_\allowbreak{}id: ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001\\
+selected\_\allowbreak{}workflow: predictive\_\allowbreak{}modeling\_\allowbreak{}path\_\allowbreak{}b\\
+compiled\_\allowbreak{}from:\\
+- tool\_\allowbreak{}contracts\\
+- method\_\allowbreak{}condition\_\allowbreak{}records\\
+- resource\_\allowbreak{}resolver\\
+- review\_\allowbreak{}rule\_\allowbreak{}registry\\
+active\_\allowbreak{}constraints:\\
+hard: 4\\
+soft: 2\\
+final\_\allowbreak{}pre\_\allowbreak{}execution\_\allowbreak{}verdict: approve\_\allowbreak{}with\_\allowbreak{}warnings
+\end{quote}
+
+\subsection{\texorpdfstring{\textbf{E4. Hard constraints}}{E4. Hard constraints}}\label{e4.-hard-constraints}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3196}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3148}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3180}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Hard check}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Why it matters}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Consequence}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Required resource exists
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Workflow cannot run without required asset.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Block if missing.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Fold manifest exists
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Prevents CV leakage and irreproducible partitions.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Block or revise if missing.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Standardization inside CV
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Prevents test-set leakage.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Block if violated.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Valid null /\allowbreak{} exchangeability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Required for permutation inference.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Block or revise if invalid.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Design-output compatibility
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Selected workflow must match intended claim.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Reject candidate if mismatch.
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{E5. Soft constraints and caveat requirements}}{E5. Soft constraints and caveat requirements}}\label{e5.-soft-constraints-and-caveat-requirements}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3084}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3132}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3292}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Soft constraint}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Trigger}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Required action /\allowbreak{} claim consequence}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+GSR choice
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Preprocessing includes or excludes GSR
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Run with/\allowbreak{}without GSR or require caveat.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Dynamic-FC window
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Sliding-window choice
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Window sensitivity or surrogate-null check.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Graph thresholding
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Density threshold chosen
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Multi-threshold curve or caveat.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Missing external validation
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+No independent dataset
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Internal-validation claim only.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Small sample
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Unstable estimate risk
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Confidence intervals/\allowbreak{}permutation; no biomarker claim.
+\end{minipage} \\
+\end{longtable}
+}
+
+\begin{quote}
+soft\_\allowbreak{}constraints:\\
+- id: external\_\allowbreak{}validation\_\allowbreak{}missing\\
+source: validation\_\allowbreak{}ladder\\
+status: unresolved\\
+verdict: warn\\
+required\_\allowbreak{}caveat: "Internal validation only; no external generalization claim."
+\end{quote}
+
+\subsection{\texorpdfstring{\textbf{E6. Verdict legend and commitment gate}}{E6. Verdict legend and commitment gate}}\label{e6.-verdict-legend-and-commitment-gate}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3132}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3164}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3212}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Verdict}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Meaning}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Next action}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Constraint satisfied.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Proceed.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+warn
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Issue does not block execution but requires caveat or sensitivity.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Proceed conditionally.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+revise
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Plan is fixable but not ready.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Return to planning.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Hard validity or resource failure.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Stop or redesign.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+deferred
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Not required for current execution but limits claim strength.
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Record caveat.
+\end{minipage} \\
+\end{longtable}
+}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4717}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.4797}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Gate field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Recommended entry}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Gate decision
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+approve /\allowbreak{} approve with warnings /\allowbreak{} revise /\allowbreak{} block
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Gate authority
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+human researcher /\allowbreak{} autonomous critic /\allowbreak{} evaluation harness
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Approved workflow
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+canonical workflow ID from \hyperref[app:d]{Appendix D}
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Approved resources
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+links to \hyperref[app:c]{Appendix C} resource IDs
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Open warnings
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+list of unresolved soft constraints
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Required caveats
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+claim restrictions passed to \hyperref[app:g]{Appendix G}/\allowbreak{}\hyperref[app:h]{H}
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Benchmark pass-through?
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no; pass-through does not remove constraints
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Execution allowed?
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no
+\end{minipage} \\
+\end{longtable}
+}
+
+\begin{quote}
+commitment\_\allowbreak{}gate:\\
+episode\_\allowbreak{}id: ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001\\
+authority: evaluation\_\allowbreak{}harness\\
+decision: approve\_\allowbreak{}with\_\allowbreak{}warnings\\
+approved\_\allowbreak{}workflow: predictive\_\allowbreak{}modeling\_\allowbreak{}path\_\allowbreak{}b\\
+open\_\allowbreak{}warnings:\\
+- external\_\allowbreak{}validation\_\allowbreak{}missing\\
+required\_\allowbreak{}caveats:\\
+- "Do not describe the result as externally validated."\\
+execution\_\allowbreak{}allowed: true
+\end{quote}
+
+\subsection{\texorpdfstring{\textbf{E7. Gate authority by episode mode}}{E7. Gate authority by episode mode}}\label{e7.-gate-authority-by-episode-mode}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3148}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3212}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.3164}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Mode}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Gate authority}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{What \hyperref[app:e]{Appendix E} records}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Interactive
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+human researcher
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Approval, modification, or rejection of the proposed plan.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Collaborator case
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+researcher plus system preview
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Collaborator-approved plan and caveats.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Bounded autonomous
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+critic/\allowbreak{}supervisor
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Approve, revise, block under declared budget and policy.
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{E8. Example constraint/commitment excerpts}}{E8. Example constraint/commitment excerpts}}\label{e8.-example-constraintcommitment-excerpts}
+
+\begin{quote}
+constraint\_\allowbreak{}commitment\_\allowbreak{}card:\\
+episode\_\allowbreak{}id: ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001\\
+workflow: HCP\_\allowbreak{}YA\_\allowbreak{}predictive\_\allowbreak{}modeling\\
+mode: bounded\_\allowbreak{}replay\_\allowbreak{}or\_\allowbreak{}benchmark\\
+\strut \\
+hard\_\allowbreak{}constraints:\\
+- id: fixed\_\allowbreak{}fold\_\allowbreak{}manifest\_\allowbreak{}required\\
+status: pass\\
+verdict: pass\\
+- id: family\_\allowbreak{}block\_\allowbreak{}permutation\_\allowbreak{}required\\
+status: pass\\
+verdict: pass\\
+- id: no\_\allowbreak{}post\_\allowbreak{}selection\_\allowbreak{}unadjusted\_\allowbreak{}claim\\
+status: pass\\
+verdict: pass\\
+\strut \\
+soft\_\allowbreak{}constraints:\\
+- id: external\_\allowbreak{}validation\_\allowbreak{}deferred\\
+status: unresolved\\
+verdict: warn\\
+required\_\allowbreak{}caveat: "HCP-Aging validation remains deferred."\\
+\strut \\
+commitment\_\allowbreak{}gate:\\
+decision: approve\_\allowbreak{}with\_\allowbreak{}warnings\\
+authority: evaluation\_\allowbreak{}harness\\
+execution\_\allowbreak{}allowed: true\\
+memory\_\allowbreak{}policy: qualified\_\allowbreak{}claim\_\allowbreak{}only
+
+constraint\_\allowbreak{}commitment\_\allowbreak{}card:\\
+episode\_\allowbreak{}id: ep\_\allowbreak{}neuromark\_\allowbreak{}fnc\_\allowbreak{}001\\
+workflow: post\_\allowbreak{}preprocessing\_\allowbreak{}fnc\_\allowbreak{}analysis\\
+\strut \\
+hard\_\allowbreak{}constraints:\\
+- id: derivative\_\allowbreak{}timecourses\_\allowbreak{}required\\
+status: pass\\
+- id: diagnostic\_\allowbreak{}label\_\allowbreak{}required\\
+status: pass\\
+- id: raw\_\allowbreak{}preprocessing\_\allowbreak{}not\_\allowbreak{}claimed\\
+status: pass\\
+\strut \\
+soft\_\allowbreak{}constraints:\\
+- id: site\_\allowbreak{}covariate\_\allowbreak{}required\_\allowbreak{}or\_\allowbreak{}caveated\\
+status: partial\\
+verdict: warn\\
+required\_\allowbreak{}action: include\_\allowbreak{}site\_\allowbreak{}covariate\_\allowbreak{}or\_\allowbreak{}report\_\allowbreak{}limitation\\
+\strut \\
+commitment\_\allowbreak{}gate:\\
+decision: approve\_\allowbreak{}with\_\allowbreak{}warnings\\
+authority: human\_\allowbreak{}researcher\\
+execution\_\allowbreak{}allowed: true
+\end{quote}

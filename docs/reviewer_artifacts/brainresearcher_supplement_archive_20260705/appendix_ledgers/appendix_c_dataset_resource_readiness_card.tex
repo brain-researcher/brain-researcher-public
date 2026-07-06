@@ -1,0 +1,604 @@
+\section{\texorpdfstring{\textbf{Appendix C. Dataset/resource and readiness card}}{Appendix C. Dataset/resource and readiness card}}\label{appendix-c.-datasetresource-and-readiness-card}\label{app:c}
+
+\subsection{\texorpdfstring{\textbf{Purpose}}{Purpose}}\label{purpose}
+
+\hyperref[app:c]{Appendix C} should record the dataset-level and asset-level resources used or ruled out in an episode. It answers whether a conceptually suitable dataset was actually reachable, authorized, complete enough, and compatible with the selected workflow. It documents dataset identity, access class, BIDS and derivative roots, phenotype and covariate availability, target variables, feature assets, missing resources, backend reachability, readiness verdicts, blockers, and non-executable candidates.
+
+\subsection{\texorpdfstring{\textbf{C2. Dataset identity and access class}}{C2. Dataset identity and access class}}\label{c2.-dataset-identity-and-access-class}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.3176}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.6337}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Example /\allowbreak{} value}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Dataset ID
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+HCP-YA
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Aliases
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Human Connectome Project Young Adult
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Episode ID
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Dataset role
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+primary /\allowbreak{} candidate /\allowbreak{} rejected /\allowbreak{} validation
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Modality
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+resting-state fMRI
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Data type
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+FC matrix /\allowbreak{} time series /\allowbreak{} statistical map /\allowbreak{} phenotype
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Access class
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+public /\allowbreak{} controlled /\allowbreak{} local /\allowbreak{} collaborator-provided
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Local availability
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes /\allowbreak{} no /\allowbreak{} partial
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Remote source
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+OpenNeuro /\allowbreak{} HCP /\allowbreak{} local lab /\allowbreak{} collaborator
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Governance note
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+DUA /\allowbreak{} license /\allowbreak{} restricted /\allowbreak{} internal only
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{C3. Dataset-level readiness}}{C3. Dataset-level readiness}}\label{c3.-dataset-level-readiness}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.2730}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.1991}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 7\tabcolsep) * \real{0.4802}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Readiness field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Status}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Notes}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+dataset record exists
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} warn /\allowbreak{} block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Found in registry, BR-KG, catalogue, or local resource card.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+access authorized
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} warn /\allowbreak{} block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+DUA, license, local access, or collaborator permission.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+local path reachable
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Path exists or is unavailable.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+BIDS root available
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} warn /\allowbreak{} n/\allowbreak{}a
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Raw BIDS available or not required.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+derivative root available
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Required derivatives exist or are missing.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+phenotype manifest available
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Target and covariate fields checked.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+backend reachable
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} warn /\allowbreak{} block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Local, Neurodesk, container, or Slurm compatibility.
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{C4. Asset-level ledger}}{C4. Asset-level ledger}}\label{c4.-asset-level-ledger}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.1964}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.1738}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.1609}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.2511}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 11\tabcolsep) * \real{0.1722}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Asset class}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Required?}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Found?}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Path /\allowbreak{} manifest}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Status}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+feature matrix
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+redacted path or hash
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass/\allowbreak{}block
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+target variable
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+phenotype manifest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass/\allowbreak{}block
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+covariates
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}optional
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}partial/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+age, sex, motion, site
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass/\allowbreak{}warn/\allowbreak{}block
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+fold manifest
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes for prediction
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+fold\_\allowbreak{}manifest.tsv
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass/\allowbreak{}block
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+mask /\allowbreak{} atlas
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes if used
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Schaefer-100 x 7 or other atlas
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass/\allowbreak{}block
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+connectivity matrix
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes if FC/\allowbreak{}FNC
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+FC or FNC matrix
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass/\allowbreak{}block
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+QC report
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+required/\allowbreak{}optional
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}partial/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+MRIQC or motion table
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass/\allowbreak{}warn
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+derivative outputs
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes if postprocessing
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+yes/\allowbreak{}no
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+derivative root
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass/\allowbreak{}block
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{C5. BIDS/OpenNeuro/derivative discovery record}}{C5. BIDS/OpenNeuro/derivative discovery record}}\label{c5.-bidsopenneuroderivative-discovery-record}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.3112}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.6401}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Field}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Meaning}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+BIDS root
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Raw dataset root if used.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+BIDS validation status
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass /\allowbreak{} warn /\allowbreak{} fail /\allowbreak{} not run.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Derivative root
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+fMRIPrep, GLM, connectivity, NeuroMark, or other derivative root.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Derivative type
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+preprocessed images, time courses, FC/\allowbreak{}FNC, maps, GLM outputs.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+OpenNeuro parsing
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+tasks, contrasts, condition weights, and contrast-to-concept mappings.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Fallback query used?
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Whether file listing failed and entity queries were used instead.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Selective download required?
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Whether remote resources had to be downloaded.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Local/\allowbreak{}remote mismatch
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Any mismatch between catalogue metadata and reachable files.
+\end{minipage} \\
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{Resolver output snippets}}{Resolver output snippets}}\label{resolver-output-snippets}
+
+Pass or warn example:
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 3\tabcolsep) * \real{0.9503}}|}
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+resource\_\allowbreak{}resolution:
+
+episode\_\allowbreak{}id: ep\_\allowbreak{}hcp\_\allowbreak{}predict\_\allowbreak{}001
+
+dataset\_\allowbreak{}id: HCP-YA
+
+dataset\_\allowbreak{}readiness: pass
+
+asset\_\allowbreak{}readiness: warn
+
+access\_\allowbreak{}class: controlled\_\allowbreak{}available
+
+required\_\allowbreak{}assets:
+
+- feature\_\allowbreak{}matrix
+
+- target\_\allowbreak{}variable
+
+- covariate\_\allowbreak{}table
+
+- fold\_\allowbreak{}manifest
+
+resolved\_\allowbreak{}assets:
+
+feature\_\allowbreak{}matrix: pass
+
+target\_\allowbreak{}variable: pass
+
+covariate\_\allowbreak{}table: pass
+
+fold\_\allowbreak{}manifest: pass
+
+missing\_\allowbreak{}assets: {[}{]}
+
+backend\_\allowbreak{}reachability: pass
+
+final\_\allowbreak{}resource\_\allowbreak{}verdict: pass
+\end{minipage} \\
+\hline
+\end{longtable}
+}
+
+Blocker example:
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 3\tabcolsep) * \real{0.9503}}|}
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+resource\_\allowbreak{}resolution:
+
+dataset\_\allowbreak{}id: candidate\_\allowbreak{}dataset\_\allowbreak{}X
+
+dataset\_\allowbreak{}readiness: pass
+
+asset\_\allowbreak{}readiness: block
+
+missing\_\allowbreak{}assets:
+
+- target\_\allowbreak{}variable
+
+- fold\_\allowbreak{}manifest
+
+final\_\allowbreak{}resource\_\allowbreak{}verdict: block
+
+consequence: "candidate not committed for predictive modeling"
+\end{minipage} \\
+\hline
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{C8. NeuroMark resource card}}{C8. NeuroMark resource card}}\label{c8.-neuromark-resource-card}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 3\tabcolsep) * \real{0.9503}}|}
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+neuromark\_\allowbreak{}resource\_\allowbreak{}card:
+
+dataset\_\allowbreak{}family: FBIRN
+
+resource\_\allowbreak{}type: NeuroMark\_\allowbreak{}2.2\_\allowbreak{}ICN\_\allowbreak{}time\_\allowbreak{}courses
+
+episode\_\allowbreak{}type: post\_\allowbreak{}preprocessing\_\allowbreak{}FNC
+
+raw\_\allowbreak{}preprocessing\_\allowbreak{}required: false
+
+derivative\_\allowbreak{}assets:
+
+icn\_\allowbreak{}time\_\allowbreak{}courses: pass
+
+fnc\_\allowbreak{}matrix: pass
+
+phenotype\_\allowbreak{}assets:
+
+diagnostic\_\allowbreak{}label: pass
+
+covariates: partial
+
+covariates\_\allowbreak{}bound:
+
+- age
+
+- sex
+
+- site
+
+final\_\allowbreak{}resource\_\allowbreak{}verdict: pass\_\allowbreak{}with\_\allowbreak{}warnings
+\end{minipage} \\
+\hline
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{C9. HCP-YA resource card}}{C9. HCP-YA resource card}}\label{c9.-hcp-ya-resource-card}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 3\tabcolsep) * \real{0.9503}}|}
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+hcp\_\allowbreak{}ya\_\allowbreak{}resource\_\allowbreak{}card:
+
+dataset\_\allowbreak{}id: HCP-YA
+
+sample\_\allowbreak{}size: 326
+
+feature\_\allowbreak{}space: Schaefer-100\_\allowbreak{}x\_\allowbreak{}7
+
+component\_\allowbreak{}set: five\_\allowbreak{}Liu\_\allowbreak{}components
+
+statistic\_\allowbreak{}catalogue: pyspi
+
+fold\_\allowbreak{}manifest: fixed
+
+required\_\allowbreak{}assets:
+
+- feature\_\allowbreak{}matrix
+
+- behavioral\_\allowbreak{}target
+
+- covariates
+
+- fold\_\allowbreak{}manifest
+
+missingness\_\allowbreak{}rule: subject\_\allowbreak{}intersection\_\allowbreak{}required
+
+backend\_\allowbreak{}reachability: pass
+
+non\_\allowbreak{}executable\_\allowbreak{}candidates\_\allowbreak{}recorded: true
+\end{minipage} \\
+\hline
+\end{longtable}
+}
+
+\subsection{\texorpdfstring{\textbf{C10. Resource-readiness verdict legend}}{C10. Resource-readiness verdict legend}}\label{c10.-resource-readiness-verdict-legend}
+
+{
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.3032}}|
+  >{\RaggedRight\hspace{0pt}\arraybackslash}p{(\linewidth - 5\tabcolsep) * \real{0.6481}}|}
+\hline
+\rowcolor{brtablehead}
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Verdict}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+\textbf{Meaning}
+\end{minipage} \\
+\hline
+\endhead
+\hline
+\endlastfoot
+
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Required dataset and assets are available for the selected workflow.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+pass\_\allowbreak{}with\_\allowbreak{}warnings
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Executable, but caveats or sensitivity checks are required.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+block
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Required resource missing; plan cannot be committed.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+deferred
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Planned for later or external validation, not used in current claim.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+non\_\allowbreak{}executable
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Considered but not runnable under current resources.
+\end{minipage} \\
+\hline
+\begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+unavailable
+\end{minipage} & \begin{minipage}[t]{\linewidth}\RaggedRight\hspace{0pt}
+Access, path, or governance prevents use.
+\end{minipage} \\
+\end{longtable}
+}

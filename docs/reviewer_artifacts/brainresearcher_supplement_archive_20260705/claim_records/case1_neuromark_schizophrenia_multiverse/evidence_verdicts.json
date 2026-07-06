@@ -1,0 +1,155 @@
+{
+  "schema_version": "evidence-verdicts-v1",
+  "generated_at": "2026-07-05T12:45:32Z",
+  "record_type": "public_audit_export",
+  "claim_id": "case1-neuromark-schizophrenia-multiverse-v1",
+  "overall_verdict": {
+    "status": "internally_supported_with_major_caveats",
+    "summary": "The latest reviewed report and BR external rereview support a bounded exploratory 480-specification NeuroMark multiverse summary. No pre-run commitment card or sealed hash was found on the searched surfaces."
+  },
+  "evidence_items": [
+    {
+      "evidence_id": "current-reviewed-report-summary",
+      "type": "reviewed_report_summary",
+      "status": "supports_with_scope_limits",
+      "observations": [
+        "The current reviewed report is dated 2026-06-26 and describes a 480-pipeline grid: 4 x 3 x 5 x 4 x 2.",
+        "The current reviewed report table gives H1 72/384 favourable, H2 12/24 favourable, and H3 100/384 favourable.",
+        "The current reviewed report states that results/multiverse_full lacks run_manifest.json.",
+        "The current reviewed report is not included in this public export; the older public Case 1 PDF is marked superseded below."
+      ],
+      "limitations": [
+        "The public export does not include restricted source data or private workspace paths.",
+        "The source result CSVs are not included here for direct recalculation."
+      ]
+    },
+    {
+      "evidence_id": "first-external-review-log",
+      "type": "br_mcp_research_event_log",
+      "run_id": "br_20260626_142905_91775df522",
+      "session_id": "codex:codex-br-neuromark-2026-06-26",
+      "directive_id": "ext_review_dir_d389bf8a3c9a",
+      "verdict_id": "ext_review_verdict_364bedb984f3",
+      "status": "supports_problem_diagnosis",
+      "observations": [
+        "Reviewed an external BR-NeuroMark workspace with fbirn_experiment code and results/multiverse_full outputs.",
+        "Validated 480 rows, 480 unique specs, and zero recorded errors.",
+        "Flagged the earlier H3 direction-blind significance summary.",
+        "Flagged stale report counts in the older report builder: 320 specs, no ComBat, 256 H1/H3 rows, and 16 H2 pipelines instead of the reviewed 480-spec result set."
+      ],
+      "limitations": [
+        "This BR run is research_logging, not a completed analysis episode.",
+        "Bundle completeness is 2/5: trace.jsonl and provenance.json present; trajectory.json, observation.json, and analysis_bundle.json missing."
+      ]
+    },
+    {
+      "evidence_id": "second-external-rereview-log",
+      "type": "br_mcp_research_event_log",
+      "run_id": "br_20260626_144807_555e05575a",
+      "session_id": "codex:codex-br-neuromark-rereview-2026-06-26",
+      "directive_id": "ext_review_dir_4357ff5427d2",
+      "verdict_id": "ext_review_verdict_7cfd0198837b",
+      "status": "supports_current_summary",
+      "observations": [
+        "Reviewed the same external BR-NeuroMark workspace after recent feedback updates.",
+        "Validated latest results table: 480 rows, spec_id 0-479, 480 unique branch combinations, zero recorded errors.",
+        "Validated summary CSVs: H1 72/384; H2 12/24; H3 100/384.",
+        "Validated corrected H3 logic: h3_favourable requires h3_wilcoxon_p < alpha and h3_between_gt_within > h3_n_factors / 2."
+      ],
+      "limitations": [
+        "No run_manifest.json was present in results/multiverse_full at rereview time.",
+        "CLI regeneration path failed without matplotlib before writing CSVs.",
+        "The run is research_logging, not a completed analysis episode."
+      ]
+    },
+    {
+      "evidence_id": "public-demo-run-bundle",
+      "type": "demo_run_bundle",
+      "path": "configs/demo/run_bundles/case1-neuromark-schizophrenia-multiverse/run_bundle.json",
+      "sha256": "a325d81bbd36822e6e11277feba97353a1fab84b23a71d670eecb7c31eefb6e2",
+      "status": "supports_public_demo_presence_only",
+      "observations": [
+        "Bundle slug is case1-neuromark-schizophrenia-multiverse.",
+        "evidence_mode is real and log_mode is summary_only.",
+        "source_run_ids is empty.",
+        "The bundle is a public demo bundle, not a raw analysis run bundle."
+      ],
+      "limitations": [
+        "This bundle does not contain commitment or claim-card records.",
+        "It cannot establish that a pre-run BR episode audit record existed."
+      ]
+    },
+    {
+      "evidence_id": "public-case1-report-pdf",
+      "type": "report_pdf",
+      "path": "docs/use_cases/brain_researcher_hybrid/reports/case1_leading_case_report.pdf",
+      "sha256": "58626afbf2af21d1d1a522268e464d85c4ece13d0c26772b99a445fcf75e7844",
+      "status": "superseded",
+      "observations": [
+        "The public PDF report date is 2026-05-15.",
+        "It describes a 320-specification grid and older H2/H3 interpretations.",
+        "The first external review flagged stale 320-spec reporting relative to the reviewed 480-spec result set."
+      ],
+      "limitations": [
+        "Do not use this PDF as current quantitative evidence for the final NeuroMark summary."
+      ]
+    },
+    {
+      "evidence_id": "audit-record-search",
+      "type": "negative_audit_search",
+      "status": "supports_missing_pre_run_audit_record",
+      "observations": [
+        "BR MCP jobstore search found two external NeuroMark-related research_logging runs, not completed analysis episode bundles.",
+        "artifact_list and run_logs for both external runs returned no additional artifact/log files.",
+        "Direct Neo4j scans found zero nodes matching the external run ids, session ids, BR-NeuroMark keyword, fbirn_experiment, or results/multiverse_full.",
+        "Repository search did not find original NeuroMark commitment.json, claim_report.json, society/claim_card.json, or evidence_verdicts.json."
+      ],
+      "limitations": [
+        "The external runner's private filesystem and run store were not accessible during this public export."
+      ]
+    }
+  ],
+  "hypothesis_verdicts": [
+    {
+      "hypothesis_id": "H1",
+      "claim": "Latent representations improve schizophrenia classification over raw edges.",
+      "verdict": "fragile_not_primary_support",
+      "current_summary": {
+        "evaluable_specs": 384,
+        "favourable_specs": 72,
+        "favourable_percent": 18.8,
+        "median_delta_auc": -0.0319
+      },
+      "interpretation": "Raw edges remain the conservative default overall; latent gains concentrate in specific forks such as ICA, OLS confounds, and partial correlation."
+    },
+    {
+      "hypothesis_id": "H2",
+      "claim": "Between-domain edges show larger group-effect magnitude than within-domain edges.",
+      "verdict": "estimator_split_exploratory_support",
+      "current_summary": {
+        "unique_contrasts": 24,
+        "favourable_contrasts": 12,
+        "favourable_percent": 50.0,
+        "median_effect": 0.0079
+      },
+      "interpretation": "Support is conditional on connectivity estimator: Pearson and Spearman are favourable, while partial correlation and mutual information are not."
+    },
+    {
+      "hypothesis_id": "H3",
+      "claim": "Latent factors place greater loading mass on between-domain than within-domain edges.",
+      "verdict": "limited_direction_aware_support",
+      "current_summary": {
+        "evaluable_specs": 384,
+        "favourable_specs": 100,
+        "favourable_percent": 26.0,
+        "median_wilcoxon_p": 0.0543
+      },
+      "interpretation": "The corrected direction-aware rule substantially weakens the earlier direction-blind count; H3 should be treated as exploratory."
+    }
+  ],
+  "audit_limitations": [
+    "No raw restricted source data or private result directory is included in this public export.",
+    "No original BR analysis episode with observation.json and analysis_bundle.json was found.",
+    "No pre-run commitment card or sealed commitment hash was found on the searched surfaces."
+  ]
+}

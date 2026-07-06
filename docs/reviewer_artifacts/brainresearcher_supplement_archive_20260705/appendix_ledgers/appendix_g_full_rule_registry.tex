@@ -1,0 +1,146 @@
+\subsection{\texorpdfstring{\textbf{G9. Full scientific review rule registry}}{G9. Full scientific review rule registry}}\label{g9.-full-scientific-review-rule-registry}
+
+This appendix gives the reader-facing view of the scientific review rule registry used to define, calibrate, and prioritize Brain Researcher's verification layer. The full machine-readable registry is part of the release package. The tables below preserve the audit surface without printing the raw registry file in the supplement. A rule's presence here does not mean that it is enforced in every episode; the lifecycle table in G4 distinguishes implemented rules, deterministic candidates, schema-dependent candidates, text-interpretation candidates, and calibration-only cases.
+
+\subsubsection{\texorpdfstring{\textbf{G9.1 Registry organization}}{G9.1 Registry organization}}
+
+\begin{longtable}{|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.23\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.29\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.38\textwidth}|}
+\hline
+\rowcolor{brtablehead}\textbf{Registry field} & \textbf{Values} & \textbf{Use in review} \\
+\hline
+Severity & BLOCK; WARN; allow or positive modifier & Sets the default review action. BLOCK rules require revision before acceptance; WARN rules require reviewer attention, sensitivity analysis, reporting repair, or claim narrowing. \\
+\hline
+Lifecycle status & Implemented; deterministic candidate; schema-dependent candidate; NLP/LLM candidate; calibration-only & Separates rules currently enforced from rules that require additional metadata, text interpretation, or calibration before enforcement. \\
+\hline
+Validity layer & Statistical, measurement, construct, generalization, claim & Explains which part of the scientific inference is at risk. A single rule may touch more than one layer. \\
+\hline
+Reason tags & leakage; circularity; confound; null mismatch; low reliability; claim inflation; prior conflict; controversial choice & Provides a compact vocabulary for review cards, summary statistics, and post-hoc calibration. \\
+\hline
+Detection surface & Review-context schema, manifests, pipeline logs, provenance records, result metadata, claim text, or reviewer annotations & Defines what evidence a rule can inspect. Missing fields cause most candidate rules to skip rather than block. \\
+\hline
+\end{longtable}
+
+\subsubsection{\texorpdfstring{\textbf{G9.2 Rule families}}{G9.2 Rule families}}
+
+\begin{longtable}{|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.22\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.44\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.24\textwidth}|}
+\hline
+\rowcolor{brtablehead}\textbf{Rule family} & \textbf{Representative checks} & \textbf{Default treatment} \\
+\hline
+Split, cross-validation, and leakage integrity & Nested-CV manifest completeness; subject and selection-manifest coverage; feature selection, standardization, PCA, harmonization, or confound regression fitted outside the training fold; test-set model selection; temporal splits that ignore run, story, or segment structure. & BLOCK when train-test isolation or generalization claims are invalid. \\
+\hline
+Design-model mismatch & Repeated-measures designs analyzed as independent samples; factorial designs reported as isolated simple effects without the interaction; longitudinal analyses with no subject effect; fixed-effects analyses making population claims; runs or time points treated as independent subjects. & BLOCK for invalid p-values or population claims; WARN when the error is repairable through model specification or claim narrowing. \\
+\hline
+Multiple comparisons and inference framework & Uncorrected whole-brain inference; spatial-domain mismatch between data and correction method; unrestricted permutation in hierarchical data; brain-map correlation without a spatial null; arbitrary cluster extent; ROI multiple comparisons without correction. & BLOCK for deterministic null-framework errors; WARN for soft reporting or sensitivity issues. \\
+\hline
+Circularity & ROI or feature definition from the same data and model used for effect testing; less obvious reuse such as deriving a mean activation feature and then testing the same effect. & BLOCK unless an independent localizer, atlas, or other non-circular provenance is supplied. \\
+\hline
+Confounds and measurement quality & Group motion imbalance in resting-state or FC analyses; uncontrolled demographic confounds; missing motion distribution reporting; missing MRIQC or visual QA; EPI distortion or dropout not addressed; VBM or cortical-thickness analyses without ICV/TIV; multi-site diagnosis-by-site confounding. & BLOCK for high-confidence confounds that invalidate inference; WARN for reporting gaps or correctable quality-control omissions. \\
+\hline
+Multivariate, RSA, and predictive modeling & RSA model comparisons without correction; missing hierarchical uncertainty; within-run trial-pattern correlations without appropriate regularization; voxelwise centering or scaling that induces similarity differences; post-hoc layer selection; above-chance claims without permutation or confidence intervals; fold-wise standard errors treated as independent. & Usually WARN, upgraded to BLOCK when leakage or null-framework errors are deterministic. \\
+\hline
+Reliability and sample size & Strong biomarker or BWAS claims at small sample size; ``replicable'' or ``predictive'' language without external validation; individual-difference claims without test-retest reliability or ICC. & WARN with required claim narrowing or validation language. \\
+\hline
+Claim inflation & Reverse inference from region to process; correlation described as prediction without out-of-sample evidence; model fit treated as mechanism without ablation or alternatives; fixed-stimulus effects generalized to stimulus populations; cognitive interpretation without behavioral covariates. & WARN even when the numerical analysis is formally correct, because the claim exceeds the evidence. \\
+\hline
+Controversial methodological choices & Global signal regression without on/off sensitivity; dynamic FC or TVFC without null or window sensitivity; graph thresholding without density sweeps; task FC or PPI without adequate task-evoked removal; canonical HRF in aging or clinical samples without sensitivity; single harmonization method with no comparison. & WARN plus a minimum sensitivity template; BLOCK only if the same workflow also triggers a deterministic hard error. \\
+\hline
+Prior conflict and novelty triggers & Extreme effects without robustness checks; single-ROI outliers; activation patterns dominated by unexpected regions relative to the task and literature. & WARN and audit. Prior conflict alone is not a veto. \\
+\hline
+Reporting and reproducibility & Missing COBIDAS fields; BIDS Validator failure; missing random seed for stochastic methods; missing software versions; BIDS Stats Models JSON as a positive reporting modifier. & WARN for missing reproducibility fields; allow or positive modifier for complete structured reporting. \\
+\hline
+\end{longtable}
+
+\subsubsection{\texorpdfstring{\textbf{G9.3 Policy decisions encoded in the registry}}{G9.3 Policy decisions encoded in the registry}}
+
+\begin{longtable}{|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.34\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.18\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.38\textwidth}|}
+\hline
+\rowcolor{brtablehead}\textbf{Policy question} & \textbf{Decision} & \textbf{Reason} \\
+\hline
+Can a generic statistic value, such as a t, F, z, or p value, serve as an effect-size prior? & No & These values are not comparable across sample sizes, models, or outcome scales. The registry uses standardized effects, predictive scores, or modality-stratified summaries where possible. \\
+\hline
+Can synthetic or demonstration data enter automated priors? & No & Synthetic data can support unit tests, but including them in priors would contaminate novelty and prior-conflict checks. \\
+\hline
+Can prior conflict alone block a claim? & No & A result can be novel or surprising without being invalid. Prior conflict is an audit trigger unless paired with a hard methodological error. \\
+\hline
+Can novelty override a hard method error? & No & Novel findings do not rescue invalid p-values, leakage, circularity, or broken generalization claims. \\
+\hline
+Can claim-inflation rules warn when the statistics are formally correct? & Yes & Reverse inference, prediction language without out-of-sample evidence, and mechanism language without ablation are inferential problems rather than arithmetic errors. \\
+\hline
+Should controversial preprocessing choices be blocked automatically? & Usually no & Global signal regression, dynamic FC, graph thresholding, HRF choices, and harmonization choices usually trigger sensitivity analysis rather than automatic rejection. \\
+\hline
+\end{longtable}
+
+\subsubsection{\texorpdfstring{\textbf{G9.4 Implementation priority queue}}{G9.4 Implementation priority queue}}
+
+\begin{longtable}{|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.18\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.42\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.30\textwidth}|}
+\hline
+\rowcolor{brtablehead}\textbf{Tier} & \textbf{Rules or rule groups} & \textbf{Implementation requirement} \\
+\hline
+Tier 1: deterministic & Standardization outside CV; harmonization outside CV; confound regression outside CV; test-set model selection; temporal split autocorrelation; double dipping; uncorrected whole-brain inference; spatial-domain mismatch; brain-map correlation without spatial null. & Uses existing review-context fields, manifests, pipeline logs, and result metadata. These rules follow the same deterministic pattern as the nested-CV checks. \\
+\hline
+Tier 2: schema extensions & Pseudoreplication; motion group imbalance; motion reporting gaps; COBIDAS mandatory fields. & Requires additional structured fields, such as observation counts, subject counts, group labels, QC summaries, and reporting checklists. \\
+\hline
+Tier 3: text and critic layer & Correlation described as prediction; model fit described as mechanism; extreme-effect audit; controversial-choice sensitivity requirements. & Requires claim extraction, semantic comparison, or LLM-assisted review of narrative language. \\
+\hline
+\end{longtable}
+
+\subsubsection{\texorpdfstring{\textbf{G9.5 Calibration case library}}{G9.5 Calibration case library}}
+
+The registry includes 60 calibration cases (C01--C60) for annotator training and regression testing. They are summarized by rule family here; the machine-readable release contains the case-level labels, severity, novelty flag, and rule identifiers.
+
+\begin{longtable}{|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.18\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.48\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.24\textwidth}|}
+\hline
+\rowcolor{brtablehead}\textbf{Cases} & \textbf{Scenarios covered} & \textbf{Typical label} \\
+\hline
+C01--C06 & Repeated-measures, mixed-design, longitudinal, and spatial-domain errors, plus valid paired-test and motor-task controls. & BLOCK for invalid design or spatial correction; allow for valid controls. \\
+\hline
+C07--C12 & Extreme or unexpected effects, ordinary morphometry effects, motion-confounded small-sample FC, and expected task activation. & WARN for prior conflict or confounding; allow for expected, well-scoped effects. \\
+\hline
+C13--C24 & Whole-brain correction, cluster-threshold, localization, double-dipping, ROI multiplicity, analytic flexibility, pseudoreplication, fixed-effects population claims, exchangeability, and spatial-null examples. & BLOCK for hard inference errors; WARN for soft multiplicity or reporting issues. \\
+\hline
+C25--C36 & Motion reporting, motion imbalance, global signal regression, dynamic FC, graph thresholding, task FC/PPI, EPI distortion, MRIQC, small sample, missing external validation, and multiband QC. & WARN except for high-confidence motion confounds that block inference. \\
+\hline
+C37--C41 & Reverse inference, stimulus generalization, missing behavioral covariates, ICV/TIV omission, and multi-site site confounding. & WARN with claim narrowing or added covariates/sensitivity. \\
+\hline
+C42--C55 & Harmonization, feature selection, standardization, test-set selection, split grouping, permutation, fold-wise error, prediction language, temporal splits, post-hoc layer selection, RSA multiplicity and hierarchy, and missing ICC. & BLOCK for leakage and test-set use; WARN for missing reliability, uncertainty, or permutation support. \\
+\hline
+C56--C60 & Extreme effects, single-pipeline significance, COBIDAS fields, BIDS validation, and BIDS Stats Models reporting. & WARN for incomplete robustness or reporting; allow/positive modifier for structured reporting. \\
+\hline
+\end{longtable}
+
+\clearpage
+\subsubsection{\texorpdfstring{\textbf{G9.6 Review-context fields and sensitivity templates}}{G9.6 Review-context fields and sensitivity templates}}
+
+\begin{longtable}{|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.22\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.40\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.28\textwidth}|}
+\hline
+\rowcolor{brtablehead}\textbf{Field group} & \textbf{Examples} & \textbf{Rules enabled} \\
+\hline
+Statistical model specification & Model type; subject effect; interaction terms; HRF model; confound regressors; stimulus effect. & Design-model mismatch, pseudoreplication, HRF sensitivity, confound checks, fixed-stimulus generalization. \\
+\hline
+Multiple-comparison metadata & Correction method, correction level, null framework, primary threshold, correction domain, spatial-null method. & Whole-brain correction, cluster-threshold, localization overclaim, spatial-domain mismatch, brain-map correlation. \\
+\hline
+Measurement and QC & MRIQC and visual-QA flags; group FD comparison; EPI-to-T1w mask overlap; site labels. & Motion, distortion, QC, and multi-site confounding rules. \\
+\hline
+Pipeline DAG and fit scope & Step name and fit scope for standardization, PCA, ComBat, feature selection, and confound regression. & Leakage rules that require train-fold fitting. \\
+\hline
+Provenance and reproducibility & ROI provenance; random seed; software versions; BIDS Validator status; BIDS Stats Models JSON. & Circularity, random-seed, software-version, BIDS-validation, and structured-reporting rules. \\
+\hline
+\end{longtable}
+
+\begin{longtable}{|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.24\textwidth}|>{\RaggedRight\hspace{0pt}\arraybackslash}p{0.66\textwidth}|}
+\hline
+\rowcolor{brtablehead}\textbf{Trigger} & \textbf{Minimum sensitivity requirement} \\
+\hline
+Global signal regression & Report the main findings with and without GSR; report global-signal correlation with motion or physiology; discuss alternative denoising when anticorrelation is central. \\
+\hline
+Dynamic FC or TVFC & Report results across at least three window lengths; include a surrogate null; report motion or physiology under stricter denoising; report state-feature test-retest when available. \\
+\hline
+Graph thresholding & Report key graph metrics across at least three density thresholds; include a weighted-network comparison; report overall FC level differences between groups. \\
+\hline
+HRF model & Compare canonical, canonical plus derivatives, and FIR models for key results; discuss neurovascular-coupling assumptions in aging or clinical samples. \\
+\hline
+Harmonization & Compare inside-CV and full-data fitting where relevant; compare at least two harmonization methods; report residual site predictability after harmonization. \\
+\hline
+\end{longtable}
+
+\clearpage
