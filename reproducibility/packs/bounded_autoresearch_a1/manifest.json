@@ -1,0 +1,52 @@
+{
+  "schema_version": "br.reproducibility_pack_manifest.v1",
+  "pack_id": "bounded_autoresearch_a1",
+  "artifact_count": 9,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "sha256:eca3633e9994dce30ac8938b8753a470957a372212abfcce0c610b481c48b4a9",
+      "size_bytes": 2777
+    },
+    {
+      "path": "REPRODUCTION.md",
+      "sha256": "sha256:e8f886cb6b165925301addc5a1153fc6f4da158058eb0f2f4227304f39c6f388",
+      "size_bytes": 6157
+    },
+    {
+      "path": "provenance_card.md",
+      "sha256": "sha256:e96ff14247070f9061a7599805b2204c0c374906524d144e75304308e64f8bc8",
+      "size_bytes": 1296
+    },
+    {
+      "path": "artifacts/liu_component_behavior_residualised_cognition.csv",
+      "sha256": "sha256:f62365e25793b199ce8fdd18a6a7dc48485cc36fe2065b5af25c4ae71bbc0e64",
+      "size_bytes": 34073
+    },
+    {
+      "path": "artifacts/residualised_target_provenance.json",
+      "sha256": "sha256:7f5e88ad46231541810d2699962d5fbaa46734987175ef66b8416711b6c2830c",
+      "size_bytes": 1972
+    },
+    {
+      "path": "artifacts/family_block_null_summary.json",
+      "sha256": "sha256:83eabfb146f0ac28672fd2e8d40f0fbf96e480cac7656b825e1415a12e8f91aa",
+      "size_bytes": 12966
+    },
+    {
+      "path": "artifacts/residualised_cheap_check.json",
+      "sha256": "sha256:5dc29332cd26046693dd2b8a8dc7f8937737e252d8b259f8c4b1366e3eafed17",
+      "size_bytes": 4237
+    },
+    {
+      "path": "artifacts/residualised_target_summary.json",
+      "sha256": "sha256:b593730059c31e46cbbf0a8db1015b8bf1b2505b85fa8ec4dbaa2f971442a1fa",
+      "size_bytes": 2316
+    },
+    {
+      "path": "reproduction/rerun_20260708_null_seeds_1_30.jsonl",
+      "sha256": "sha256:1495777bcf75ea125d04bd45ee9bcfa432339f4037a261ed65f7e6b2795774f2",
+      "size_bytes": 69215
+    }
+  ]
+}

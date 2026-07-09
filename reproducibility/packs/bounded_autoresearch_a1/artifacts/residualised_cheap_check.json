@@ -1,0 +1,185 @@
+{
+  "schema_version": "liu_a1_residualised_cheap_check_v1",
+  "target_csv": "a1_governed_root:project/autoresearch_confirmatory_permutation_line_20260425_shared_null/intelligence_residualised_cognition/liu_component_behavior_residualised_cognition.csv",
+  "description": "A1 sanity check. Frozen Path B refit on the intelligence-residualised Cognition target, then within-fold residualisation against {Age, Gender, Handedness, BMI, Acquisition (one-hot), PMAT24, ListSort, ReadEng}. Expected: near-zero further loss on Cognition (target already orthogonal to PMAT24/ListSort/ReadEng at the population level).",
+  "covariate_cols": [
+    "Age_in_Yrs",
+    "Handedness",
+    "BMI",
+    "PMAT24_A_CR",
+    "ListSort_Unadj",
+    "ReadEng_Unadj",
+    "Gender",
+    "acq_Q01",
+    "acq_Q02",
+    "acq_Q03",
+    "acq_Q04",
+    "acq_Q05",
+    "acq_Q06",
+    "acq_Q07",
+    "acq_Q08",
+    "acq_Q09",
+    "acq_Q10",
+    "acq_Q12"
+  ],
+  "per_component": [
+    {
+      "component": "ICA_Cognition",
+      "raw_fold_mean_r": 0.183158,
+      "deconf_fold_mean_r": 0.14165,
+      "delta_deconf_minus_raw": -0.041508,
+      "fraction_retained": 0.773377,
+      "per_fold_raw_r": [
+        0.083704,
+        -0.011339,
+        0.035694,
+        0.046065,
+        0.475646,
+        0.249221,
+        0.353887,
+        0.127235,
+        0.16074,
+        0.310725
+      ],
+      "per_fold_deconf_r": [
+        -0.024036,
+        -0.039436,
+        0.143914,
+        0.198142,
+        0.373022,
+        0.210039,
+        0.421317,
+        -0.20686,
+        -0.011869,
+        0.352266
+      ]
+    },
+    {
+      "component": "ICA_TobaccoUse",
+      "raw_fold_mean_r": 0.264051,
+      "deconf_fold_mean_r": 0.043387,
+      "delta_deconf_minus_raw": -0.220663,
+      "fraction_retained": 0.164315,
+      "per_fold_raw_r": [
+        0.354802,
+        0.138355,
+        0.222472,
+        0.465858,
+        0.207266,
+        0.39952,
+        0.393829,
+        0.202,
+        0.157666,
+        0.09874
+      ],
+      "per_fold_deconf_r": [
+        0.187115,
+        -0.163576,
+        -0.122769,
+        0.228746,
+        0.361097,
+        -0.043177,
+        0.042787,
+        -0.029689,
+        -0.221989,
+        0.195328
+      ]
+    },
+    {
+      "component": "ICA_PersonalityEmotion",
+      "raw_fold_mean_r": 0.157379,
+      "deconf_fold_mean_r": 0.126409,
+      "delta_deconf_minus_raw": -0.03097,
+      "fraction_retained": 0.803215,
+      "per_fold_raw_r": [
+        0.397994,
+        0.097999,
+        0.013919,
+        -0.021056,
+        0.277116,
+        0.130352,
+        0.30381,
+        0.284115,
+        0.009431,
+        0.080106
+      ],
+      "per_fold_deconf_r": [
+        0.340046,
+        0.175268,
+        -0.054065,
+        0.083777,
+        0.432637,
+        -0.102532,
+        0.299237,
+        0.244723,
+        -0.022734,
+        -0.13227
+      ]
+    },
+    {
+      "component": "ICA_IllicitDrugUse",
+      "raw_fold_mean_r": 0.020034,
+      "deconf_fold_mean_r": 0.017024,
+      "delta_deconf_minus_raw": -0.00301,
+      "fraction_retained": 0.849762,
+      "per_fold_raw_r": [
+        -0.315291,
+        0.119985,
+        0.092,
+        0.051254,
+        0.064971,
+        0.039055,
+        0.377279,
+        -0.011135,
+        0.135551,
+        -0.353324
+      ],
+      "per_fold_deconf_r": [
+        -0.2702,
+        -0.071547,
+        0.045265,
+        -0.040049,
+        0.082551,
+        0.176786,
+        0.430247,
+        -0.102358,
+        0.200392,
+        -0.280842
+      ]
+    },
+    {
+      "component": "ICA_MentalHealth",
+      "raw_fold_mean_r": 0.129613,
+      "deconf_fold_mean_r": 0.124663,
+      "delta_deconf_minus_raw": -0.00495,
+      "fraction_retained": 0.96181,
+      "per_fold_raw_r": [
+        -0.195528,
+        -0.090797,
+        0.198236,
+        0.153306,
+        0.180701,
+        0.180079,
+        0.244394,
+        0.106493,
+        0.269403,
+        0.249846
+      ],
+      "per_fold_deconf_r": [
+        0.041837,
+        0.043062,
+        -0.072368,
+        0.225804,
+        0.157775,
+        0.094574,
+        0.324147,
+        0.029511,
+        0.145704,
+        0.256588
+      ]
+    }
+  ],
+  "aggregate_raw_mean_r": 0.150847,
+  "aggregate_deconf_mean_r": 0.090627,
+  "wall_time_sec": 7.069
+}

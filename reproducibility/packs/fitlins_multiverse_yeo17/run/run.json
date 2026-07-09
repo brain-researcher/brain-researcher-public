@@ -1,0 +1,48 @@
+{
+  "run_id": "fitlins-multiverse-binding-golden",
+  "steps": [
+    {
+      "step_id": "step_004",
+      "tool_id": "fitlins.run_multiverse",
+      "params": {
+        "output_dir": "artifacts/statmaps",
+        "dataset_id": "ds003425",
+        "task": "stroop",
+        "multiverse_run_id": "mv:ds003425:stroop:golden123",
+        "bids_model": {
+          "Nodes": [
+            {
+              "Level": "Run",
+              "Contrasts": [
+                {
+                  "Name": "incongruentMinusCongruent",
+                  "ConditionList": [
+                    "incongruent",
+                    "congruent"
+                  ],
+                  "Weights": [
+                    1,
+                    -1
+                  ],
+                  "Test": "t"
+                },
+                {
+                  "Name": "errorsMinusCorrect",
+                  "ConditionList": [
+                    "errors",
+                    "correct"
+                  ],
+                  "Weights": [
+                    1,
+                    -1
+                  ],
+                  "Test": "t"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

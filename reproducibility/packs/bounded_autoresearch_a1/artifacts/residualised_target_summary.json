@@ -1,0 +1,110 @@
+{
+  "aggregate_mean_r": 0.150847,
+  "n_hit_mean": 4,
+  "n_hit_best": 0,
+  "predict_sha256": "380cbb505a2e541ca10bfbfcf2711c952e5a6b1beeaf18246af71ce6891e017a",
+  "harness_sha256": "3fe2eea1c1e20ab7e7630ac87e7b6e2b7cd5a2786a5351e8b410930f062962a1",
+  "per_component": [
+    {
+      "component": "ICA_Cognition",
+      "fold_mean_r": 0.183158,
+      "fold_std_r": 0.15074,
+      "reference_mean_r": 0.215,
+      "hit_mean": false,
+      "hit_best": false,
+      "per_fold_r": [
+        0.083704,
+        -0.011339,
+        0.035694,
+        0.046065,
+        0.475646,
+        0.249221,
+        0.353887,
+        0.127235,
+        0.16074,
+        0.310725
+      ]
+    },
+    {
+      "component": "ICA_TobaccoUse",
+      "fold_mean_r": 0.264051,
+      "fold_std_r": 0.12141,
+      "reference_mean_r": 0.143,
+      "hit_mean": true,
+      "hit_best": false,
+      "per_fold_r": [
+        0.354802,
+        0.138355,
+        0.222472,
+        0.465858,
+        0.207266,
+        0.39952,
+        0.393829,
+        0.202,
+        0.157666,
+        0.09874
+      ]
+    },
+    {
+      "component": "ICA_PersonalityEmotion",
+      "fold_mean_r": 0.157379,
+      "fold_std_r": 0.139382,
+      "reference_mean_r": 0.084,
+      "hit_mean": true,
+      "hit_best": false,
+      "per_fold_r": [
+        0.397994,
+        0.097999,
+        0.013919,
+        -0.021056,
+        0.277116,
+        0.130352,
+        0.30381,
+        0.284115,
+        0.009431,
+        0.080106
+      ]
+    },
+    {
+      "component": "ICA_IllicitDrugUse",
+      "fold_mean_r": 0.020034,
+      "fold_std_r": 0.203053,
+      "reference_mean_r": 0.01,
+      "hit_mean": true,
+      "hit_best": false,
+      "per_fold_r": [
+        -0.315291,
+        0.119985,
+        0.092,
+        0.051254,
+        0.064971,
+        0.039055,
+        0.377279,
+        -0.011135,
+        0.135551,
+        -0.353324
+      ]
+    },
+    {
+      "component": "ICA_MentalHealth",
+      "fold_mean_r": 0.129613,
+      "fold_std_r": 0.14575,
+      "reference_mean_r": 0.014,
+      "hit_mean": true,
+      "hit_best": false,
+      "per_fold_r": [
+        -0.195528,
+        -0.090797,
+        0.198236,
+        0.153306,
+        0.180701,
+        0.180079,
+        0.244394,
+        0.106493,
+        0.269403,
+        0.249846
+      ]
+    }
+  ],
+  "wall_time_sec": 8.234
+}
