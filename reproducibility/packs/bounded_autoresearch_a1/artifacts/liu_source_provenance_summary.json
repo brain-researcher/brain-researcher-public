@@ -1,0 +1,205 @@
+{
+  "schema_version": "br.public_liu_source_provenance_summary.v1",
+  "pack_id": "bounded_autoresearch_a1",
+  "summary_date": "2026-07-09",
+  "scope": "Public-safe summary of the Liu/Tian HCP-YA source-data and reconstruction records used by the bounded_autoresearch_a1 reproducibility pack.",
+  "source_access_boundary": {
+    "hcp_behavior_data": "User-staged HCP-YA behavior export under HCP Data Use Terms; raw subject rows are not redistributed in this repository.",
+    "public_residualised_target_csv": "The shipped liu_component_behavior_residualised_cognition.csv is a row-indexed public copy of the target values; the governed output checksum remains in residualised_target_provenance.json.",
+    "liu_fc_pyspi_assets": "Download/checksum route is the upstream OSF project plus the recorded liu_fc_pyspi_osf_manifest.json summary below.",
+    "privacy": {
+      "raw_hcp_subject_rows_exported": false,
+      "subject_identifiers_exported": false,
+      "public_target_csv_contains_subject_ids": false,
+      "raw_fc_files_exported": false,
+      "absolute_local_paths_exported": false
+    }
+  },
+  "liu_fc_pyspi_osf_manifest": {
+    "manifest_file": {
+      "name": "liu_fc_pyspi_osf_manifest.json",
+      "size_bytes": 738510,
+      "sha256": "fb19a74beebb826c337d31f0937414813d2a9ff797d219014a8ecc10ce0f0736"
+    },
+    "generated_by_entrypoint": "scripts/analysis/fc_benchmarking/setup_liu_fc_pyspi.py",
+    "repo_url": "https://github.com/netneurolab/liu_fc-pyspi",
+    "osf_project_url": "https://osf.io/75je2",
+    "osf_api_root": "https://api.osf.io/v2/nodes/75je2/files/osfstorage/",
+    "vendor_commit": "6617f0f6ba7e00c94a7ce59032b92e1f268eb27f",
+    "requested_folders": [
+      "derivatives",
+      "raw"
+    ],
+    "folders": {
+      "raw": {
+        "file_count": 1308,
+        "total_bytes": 26895158784
+      },
+      "derivatives": {
+        "file_count": 23,
+        "total_bytes": 1545870346
+      }
+    },
+    "key_derivative_files": [
+      {
+        "name": "HCP_S1200_schaefer100x7_PhiIDFull_MMI.mat",
+        "size_bytes": 926865598,
+        "download_url": "https://osf.io/download/zemnu/",
+        "sha256": "5ec425be6c520efabd0caf25424d36ed909237f7ab18dd8b15d4cfd2adc60114"
+      },
+      {
+        "name": "bbpred_res_202401_2.pkl",
+        "size_bytes": 561929,
+        "download_url": "https://osf.io/download/y4sz3/",
+        "sha256": "0fed02a609913b3de687116a27f3a5878a593cf613e3a75904cfe32ffb5b21ca"
+      },
+      {
+        "name": "pyspi_hcp_schaefer100x7_subj_term_profile_updated.npy",
+        "size_bytes": 595886400,
+        "download_url": "https://osf.io/download/nw39x/",
+        "sha256": "79de857849daac6a7910c03c76b11c1585e87bf4b8c1b2b0924ee9fe5ca46df0"
+      },
+      {
+        "name": "pyspi_terms_clean.txt",
+        "size_bytes": 8136,
+        "download_url": "https://osf.io/download/7a4fe/",
+        "sha256": "72b4d41c393a1b51d1c3d6f05da2df90e3f7054e6309a5349aea5b7bba85bb0b"
+      }
+    ],
+    "redaction": {
+      "download_dir_exported": false,
+      "destination_paths_exported": false,
+      "raw_subject_file_examples_exported": false
+    }
+  },
+  "liu_component_behavior_reconstruction": {
+    "provenance_file": {
+      "name": "liu_component_behavior.provenance.json",
+      "size_bytes": 28733,
+      "sha256": "0d17c1f578ba427adb5d2f13d78ea4786148944eb05cde1720ca95b871411b05"
+    },
+    "created_from_script_module": "brain_researcher.research.predictive.liu_component_projection",
+    "header_alignment_validated": true,
+    "source_behavior_csv_sha256": "1fdcee3a066c45daa8325f0207ca3b8db9176ca56edcf6afc316380daad3a11e",
+    "source_demixing_mat_url": "https://raw.githubusercontent.com/yetianmed/subcortex/master/Behavior/ica.mat",
+    "source_demixing_mat_sha256": "e1b9646d8bb7386aaae262be27aa2a2a0bf0b88155f01946832eb26e828b3345",
+    "source_supplement_url": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41593-020-00711-6/MediaObjects/41593_2020_711_MOESM1_ESM.pdf",
+    "paper_method_summary": {
+      "behavior_items": 109,
+      "confounds_regressed": [
+        "age",
+        "sex"
+      ],
+      "continuous_items_transformed": 87,
+      "projection": "component_scores = residual_behavior_matrix @ demixing_matrix.T",
+      "transform": "rank-based inverse Gaussian transformation via norm.ppf((rank - 0.5) / n)"
+    },
+    "reconstruction_caveats": [
+      "The paper reports 958 participants after exclusions; the local ConnectomeDB export yields 999 strict complete-case rows for the 109 mapped items plus age/sex.",
+      "The component CSV is reconstructed from the published de-mixing matrix and Supplementary Table 4 HCP mapping because individual component weights are not publicly released.",
+      "When an explicit FC subject list is supplied, missing behavioral items inside that cohort are imputed so the exported component CSV covers the full FC subject set."
+    ],
+    "mapping_counts": {
+      "supplementary_table4_items": 109,
+      "component_rows": 5
+    },
+    "local_projection_summary": {
+      "source_row_count": 1206,
+      "age_sex_available_row_count": 1206,
+      "complete_case_row_count": 999,
+      "requested_subject_count": 326,
+      "output_row_count": 326,
+      "subject_selection_mode": "explicit_subject_list",
+      "selected_subject_list_name": "subjects_reinder326_recovered.txt",
+      "continuous_column_count": 87,
+      "continuous_selection_rule": "n_unique > 7 on complete-case cohort, plus MMSE_Score and Odor_Unadj overrides; matches the paper's 87/109 continuous-item count",
+      "imputed_cell_count": 86,
+      "raw_imputation_strategy": {
+        "categorical_or_discrete": "mode of source cohort observed values",
+        "continuous": "median of source cohort observed values"
+      },
+      "residual_imputation_strategy": "median residual from source cohort observed values",
+      "missing_behavior_subject_count": 0,
+      "subjects_with_imputed_items_count": 15
+    },
+    "redaction": {
+      "source_paths_exported": false,
+      "subject_ids_exported": false,
+      "full_column_mapping_exported": false
+    }
+  },
+  "liu_component_target_manifest": {
+    "manifest_file": {
+      "name": "liu_component_target_manifest.json",
+      "size_bytes": 3021,
+      "sha256": "381a3fc05970e0ca3d19192b30a0cd3b65421ad139c4d683127abd215a6f1e79"
+    },
+    "source_paper": "Liu et al.",
+    "benchmark_family": "separate_literature_aligned_reconstructed_line",
+    "benchmark_name": "reconstructed_liu_component_autoresearch",
+    "phase_name": "phase_liu_component_reconstructed",
+    "comparability_status": "reconstructed_not_paper_exact",
+    "comparability_rules": {
+      "must_label_outputs_as_reconstructed": true,
+      "must_not_claim_direct_paper_reproduction": true,
+      "must_not_compare_against_raw_target_pmats_or_memory_scores": true,
+      "must_report_pearson_r_as_primary_literature_metric": true,
+      "must_treat_r2_as_secondary_internal_metric": true,
+      "must_use_component_targets": true
+    },
+    "validation": {
+      "row_count": 326,
+      "column_count": 6,
+      "sha256": "1fbade58d6e2820fdfda5029d5a77f9c34f726d42afb5b39c24f1ab237b0e1a4",
+      "fieldnames": [
+        "Subject",
+        "ICA_Cognition",
+        "ICA_TobaccoUse",
+        "ICA_PersonalityEmotion",
+        "ICA_IllicitDrugUse",
+        "ICA_MentalHealth"
+      ],
+      "target_columns": [
+        "ICA_Cognition",
+        "ICA_TobaccoUse",
+        "ICA_PersonalityEmotion",
+        "ICA_IllicitDrugUse",
+        "ICA_MentalHealth"
+      ],
+      "subject_id_column": "Subject",
+      "validated_at_utc": "2026-04-09T06:47:45.257372+00:00"
+    },
+    "redaction": {
+      "csv_path_exported": false,
+      "provenance_path_exported": false,
+      "subject_ids_exported": false
+    }
+  },
+  "liu_project_data_manifest": {
+    "manifest_file": {
+      "name": "data_manifest.json",
+      "size_bytes": 36746,
+      "sha256": "a53f4dafe443c24e69e4e6c6f2193ed04f1beae802e7247a363d1ab20fddb927"
+    },
+    "lane_id": "laneA_liu_derivatives_only",
+    "vendor_commit": "6617f0f6ba7e00c94a7ce59032b92e1f268eb27f",
+    "source_manifest_name": "liu_fc_pyspi_osf_manifest.json",
+    "available_atlases": [
+      "aparc",
+      "schaefer100x7",
+      "schaefer100x7_intersect",
+      "schaefer100x7gsr",
+      "schaefer200x7_intersect"
+    ],
+    "prediction_asset_name": "bbpred_res_202401_2.pkl",
+    "term_count": 239,
+    "subject_count": 326,
+    "session_count": 4,
+    "derivatives_file_count": 23,
+    "derivatives_total_bytes": 1545870346,
+    "redaction": {
+      "local_roots_exported": false,
+      "absolute_paths_exported": false
+    }
+  }
+}

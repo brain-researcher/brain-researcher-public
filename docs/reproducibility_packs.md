@@ -27,7 +27,7 @@ prove that an LLM rerun will be byte-identical.
 
 | Pack | Status | Boundary |
 |---|---|---|
-| `bounded_autoresearch_a1` | Real recorded result | Checksum-verifiable artifacts for the HCP-YA bounded-autoresearch A1 result. Full rerun is data-gated because the HCP-YA behavior inputs are not redistributed. |
+| `bounded_autoresearch_a1` | Real recorded result | Checksum-verifiable artifacts for the HCP-YA bounded-autoresearch A1 result. Full rerun is data-gated because HCP-YA behavior rows are not redistributed; the public pack includes a redacted Liu/Tian source-provenance summary with OSF node `75je2`, key checksums, component-reconstruction caveats, and the `reconstructed_not_paper_exact` boundary. |
 | `fitlins_multiverse_yeo17` | Synthetic schema exemplar | Shows the run-bundle and multiverse layout. It is a format template, not a real-data result; statmap entries are `schema_only`. |
 
 ## Audit Protocol Boundary
@@ -48,3 +48,11 @@ Public packs should not contain user session logs, bearer tokens, private MCP
 tool names, or machine-local absolute paths. Session access in a deployed MCP
 service should remain scoped to the requesting user; public artifacts are
 separate, redacted exports.
+
+For governed datasets such as HCP-YA, a public pack should expose the source
+route and checksums without shipping restricted rows. The A1 pack follows that
+pattern: `artifacts/liu_source_provenance_summary.json` records the Liu FC-pyspi
+OSF route, reconstruction provenance, and redaction rules while omitting raw HCP
+rows, subject identifiers, raw FC files, credentials, and local absolute paths.
+The shipped A1 residualised-target CSV is also row-indexed; the governed output
+checksum is retained in provenance, but HCP `Subject` identifiers are not shipped.

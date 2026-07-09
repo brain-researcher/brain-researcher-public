@@ -28,6 +28,29 @@ HCP-YA Liu-intersection subjects and residualises the cognition target.
 
 Both match the recorded run's `source_files` checksums exactly → same data.
 
+The public-safe source route for these inputs is now recorded in
+`artifacts/liu_source_provenance_summary.json`. In brief:
+
+- The Liu FC-pyspi assets were obtained from the upstream OSF project
+  `https://osf.io/75je2` using the project entrypoint
+  `scripts/analysis/fc_benchmarking/setup_liu_fc_pyspi.py`. The recorded OSF
+  manifest has `sha256:fb19a74beebb826c337d31f0937414813d2a9ff797d219014a8ecc10ce0f0736`,
+  vendor commit `6617f0f6ba7e00c94a7ce59032b92e1f268eb27f`, 1308 raw files,
+  and 23 derivative files.
+- The component behavior table was reconstructed with
+  `brain_researcher.research.predictive.liu_component_projection` from the HCP
+  behavior export, the Liu/Tian Supplementary Table 4 mapping, and the published
+  demixing matrix
+  `https://raw.githubusercontent.com/yetianmed/subcortex/master/Behavior/ica.mat`
+  (`sha256:e1b9646d8bb7386aaae262be27aa2a2a0bf0b88155f01946832eb26e828b3345`).
+- The target manifest labels this line `reconstructed_not_paper_exact`: it is a
+  reconstructed benchmark target, not a direct redistribution of paper-exact
+  subject-level component weights.
+
+The public pack deliberately omits raw HCP rows, raw FC files, subject IDs,
+credentials, and absolute local paths. Those omissions are privacy/data-use
+requirements, not missing provenance.
+
 ## Result — REPRODUCED (tolerance-equivalent)
 | quantity | recorded | re-run | Δ |
 |---|---|---|---|
@@ -36,10 +59,18 @@ Both match the recorded run's `source_files` checksums exactly → same data.
 | residual_std | 0.6755793349896194 | 0.6755793349896193 | 1.11e-16 |
 | max \|OLS β diff\| | — | — | 1.78e-15 |
 
-The output CSV is **not byte-identical** (recorded `sha256:f62365e25793b199…`, re-run
-`sha256:440fa49dae21c202…`) — it differs only in the float formatting of the last
-unit-in-the-last-place. All estimated quantities reproduce to ~1e-15 (IEEE-754
-machine epsilon; BLAS thread-order non-associativity in the OLS solve).
+The governed output CSV is **not byte-identical** to the 2026-07-08 re-run
+(recorded `sha256:f62365e25793b199…`, re-run `sha256:440fa49dae21c202…`) — it
+differs only in the float formatting of the last unit-in-the-last-place. All
+estimated quantities reproduce to ~1e-15 (IEEE-754 machine epsilon; BLAS
+thread-order non-associativity in the OLS solve).
+
+For public release, the shipped
+`artifacts/liu_component_behavior_residualised_cognition.csv` is a row-indexed
+copy of the target values with the HCP `Subject` column removed. Its checksum is
+therefore the public redacted artifact checksum, not the governed run output
+checksum. The governed checksum remains recorded in
+`artifacts/residualised_target_provenance.json`.
 
 **Verdict: reproduced within numerical tolerance.** For numerical pipelines this
 is the honest bar — bit-for-bit equivalence modulo floating-point non-determinism,
