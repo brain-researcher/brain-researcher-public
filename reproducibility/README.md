@@ -29,7 +29,7 @@ produced-vs-expected checksums.
 
 | id | kind | what it demonstrates |
 |----|------|----------------------|
-| `bounded_autoresearch_a1` | recorded result | A real bounded-autoresearch A1 result (HCP-YA component↔behavior residualised-cognition target + family-block null). Shipped artifacts + real sha256 verify; re-run is data-gated (see the pack README). |
+| `bounded_autoresearch_a1` | recorded result | A real bounded-autoresearch A1 result (HCP-YA component↔behavior residualised-cognition target + family-block null). Shipped artifacts + real sha256 verify; re-run is data-gated, but the pack includes a redacted Liu/Tian source-provenance summary for the OSF/download route, component reconstruction, and privacy boundary. |
 | `fitlins_multiverse_yeo17` | schema exemplar (synthetic) | The run-bundle + multiverse-spec structure for a FitLins Yeo-17 multiverse. A **synthetic** proxy — shipped specs/summary verify by checksum; the statmap NIfTIs are provenance keys only (`schema_only`). Use as the format template, not a real-data result. |
 
 ## Reproduce end-to-end
