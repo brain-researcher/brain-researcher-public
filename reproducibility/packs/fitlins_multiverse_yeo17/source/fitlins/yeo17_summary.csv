@@ -1,0 +1,11 @@
+model_id,variant_id,contrast,metric,region_id,value,pct_active,z_thr
+mv01,v1,incongruentMinusCongruent,mean_z,yeo17:03,1.00,0.02,2.3
+mv02,v2,incongruentMinusCongruent,mean_z,yeo17:03,1.10,0.02,2.3
+mv03,v3,incongruentMinusCongruent,mean_z,yeo17:03,1.20,0.02,2.3
+mv04,v4,incongruentMinusCongruent,mean_z,yeo17:03,1.30,0.02,2.3
+mv05,v5,incongruentMinusCongruent,mean_z,yeo17:03,1.40,0.02,2.3
+mv01,v1,errorsMinusCorrect,mean_z,yeo17:11,-0.80,0.02,2.3
+mv02,v2,errorsMinusCorrect,mean_z,yeo17:11,-0.90,0.02,2.3
+mv03,v3,errorsMinusCorrect,mean_z,yeo17:11,-1.00,0.02,2.3
+mv04,v4,errorsMinusCorrect,mean_z,yeo17:11,-1.10,0.02,2.3
+mv05,v5,errorsMinusCorrect,mean_z,yeo17:11,-1.20,0.02,2.3

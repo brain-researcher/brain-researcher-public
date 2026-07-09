@@ -1,0 +1,52 @@
+{
+  "dataset_id": "ds003425",
+  "task": "stroop",
+  "multiverse_run_id": "mv:ds003425:stroop:golden123",
+  "variants": [
+    {
+      "model_id": "mv01",
+      "variant_id": "v1",
+      "path": "mv01_specs.json",
+      "contrast": "incongruentMinusCongruent",
+      "hrf": "canonical",
+      "confounds": "24mot",
+      "high_pass": 100
+    },
+    {
+      "model_id": "mv02",
+      "variant_id": "v2",
+      "path": "mv01_specs.json",
+      "contrast": "incongruentMinusCongruent",
+      "hrf": "glover",
+      "confounds": "24mot",
+      "high_pass": 100
+    },
+    {
+      "model_id": "mv03",
+      "variant_id": "v3",
+      "path": "mv01_specs.json",
+      "contrast": "incongruentMinusCongruent",
+      "hrf": "fir",
+      "confounds": "24mot",
+      "high_pass": 100
+    },
+    {
+      "model_id": "mv04",
+      "variant_id": "v4",
+      "path": "mv01_specs.json",
+      "contrast": "incongruentMinusCongruent",
+      "hrf": "canonical",
+      "confounds": "acompcor",
+      "high_pass": 128
+    },
+    {
+      "model_id": "mv05",
+      "variant_id": "v5",
+      "path": "mv01_specs.json",
+      "contrast": "incongruentMinusCongruent",
+      "hrf": "glover",
+      "confounds": "acompcor",
+      "high_pass": 128
+    }
+  ]
+}

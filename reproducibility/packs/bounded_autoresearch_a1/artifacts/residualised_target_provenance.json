@@ -1,0 +1,41 @@
+{
+  "schema_version": "liu_intelligence_residualised_cognition_v1",
+  "n_subjects": 326,
+  "iq_columns": [
+    "PMAT24_A_CR",
+    "ListSort_Unadj",
+    "ReadEng_Unadj"
+  ],
+  "iq_missing_count": {
+    "PMAT24_A_CR": 1,
+    "ListSort_Unadj": 0,
+    "ReadEng_Unadj": 0
+  },
+  "iq_imputation": "fill with full-sample mean of present values",
+  "iq_means": {
+    "PMAT24_A_CR": 16.661538461538463,
+    "ListSort_Unadj": 111.17803680981595,
+    "ReadEng_Unadj": 116.71989266871167
+  },
+  "ols_formula": "ICA_Cognition ~ 1 + PMAT24_A_CR + ListSort_Unadj + ReadEng_Unadj",
+  "ols_betas": {
+    "Intercept": -8.705875587963945,
+    "PMAT24_A_CR": 0.037609332470620635,
+    "ListSort_Unadj": 0.03031738990110714,
+    "ReadEng_Unadj": 0.04057967993601733
+  },
+  "r2_explained_by_iq": 0.5492256453154527,
+  "residual_mean": -5.792231043811246e-15,
+  "residual_std": 0.6755793349896194,
+  "original_cognition_mean": 0.027837528573528704,
+  "original_cognition_std": 1.0062288302689704,
+  "source_files": {
+    "behavior_csv": "a1_governed_root:inputs/hcp_behavior/liu_component_behavior.csv",
+    "behavior_csv_sha256": "1fbade58d6e2820fdfda5029d5a77f9c34f726d42afb5b39c24f1ab237b0e1a4",
+    "hcp_csv": "a1_governed_root:inputs/hcp_behavior/HCP_YA_subjects_2026_03_31_18_06_54.csv",
+    "hcp_csv_sha256": "1fdcee3a066c45daa8325f0207ca3b8db9176ca56edcf6afc316380daad3a11e"
+  },
+  "output_csv": "a1_governed_root:project/autoresearch_confirmatory_permutation_line_20260425_shared_null/intelligence_residualised_cognition/liu_component_behavior_residualised_cognition.csv",
+  "output_csv_sha256": "f62365e25793b199ce8fdd18a6a7dc48485cc36fe2065b5af25c4ae71bbc0e64",
+  "note": "Residualisation is computed on the full 326-subject sample, not within fold. This is acceptable because the IQ regressors are subject-level covariates whose joint distribution is fixed; within-fold OLS would only differ by O(1/n). The frozen Path B predictor is then re-fit against this residualised target."
+}

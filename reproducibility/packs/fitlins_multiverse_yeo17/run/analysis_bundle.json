@@ -1,0 +1,15 @@
+{
+  "schema_version": "analysis-bundle-v1",
+  "file_manifest": [
+    {
+      "role": "artifact",
+      "path": "artifacts/statmaps/sub-01_contrast-incongruentMinusCongruent_stat-z_statmap.nii.gz",
+      "checksum": "sha256:111111111111"
+    },
+    {
+      "role": "artifact",
+      "path": "artifacts/statmaps/sub-01_contrast-responseConflict_stat-z_statmap.nii.gz",
+      "checksum": "sha256:222222222222"
+    }
+  ]
+}

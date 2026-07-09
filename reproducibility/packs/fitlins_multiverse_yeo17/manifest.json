@@ -1,0 +1,58 @@
+{
+  "schema_version": "br.reproducibility_pack_manifest.v1",
+  "pack_id": "fitlins_multiverse_yeo17",
+  "artifact_count": 9,
+  "pack_type": "schema_exemplar",
+  "synthetic": true,
+  "notes": [
+    "This pack is a synthetic schema exemplar, not a real-data result.",
+    "Statmap NIfTI entries are provenance keys only; bytes are intentionally not shipped."
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "sha256:3d806bb11e9376e010de419373c6227fdc300685ccb959b651064155463c5f9d",
+      "size_bytes": 1411
+    },
+    {
+      "path": "provenance_card.md",
+      "sha256": "sha256:a01bbe2a823ac06927caff8ca4da27520b05bd8c46655a2202817415926a946b",
+      "size_bytes": 1329
+    },
+    {
+      "path": "run/run.json",
+      "sha256": "sha256:b91e1fd50739a44f134ffa07e9143f9a3317e390a94faf71712468001cec325c",
+      "size_bytes": 1190
+    },
+    {
+      "path": "run/analysis_bundle.json",
+      "sha256": "sha256:5bb50b63dea743db3efe68056e044765dd29801cc36c4bb5380c9246c6d93f0f",
+      "size_bytes": 419
+    },
+    {
+      "path": "source/specs/mv01_specs.json",
+      "sha256": "sha256:bc277a55a353659634db691804f898e2be899b71cf22c809928d87e230e5aaca",
+      "size_bytes": 692
+    },
+    {
+      "path": "source/specs/multiverse_manifest.json",
+      "sha256": "sha256:547fd743372949ad2ed3bd903ce1d79947bc3238d1f588ebbcb817e01c8fe099",
+      "size_bytes": 1230
+    },
+    {
+      "path": "source/fitlins/yeo17_summary.csv",
+      "sha256": "sha256:bafec1ed462cfaf6a7311860e163165ffe3e8ce8f0149ccb3e64d0cfdc9975d0",
+      "size_bytes": 679
+    },
+    {
+      "path": "artifacts/statmaps/sub-01_contrast-incongruentMinusCongruent_stat-z_statmap.nii.gz",
+      "schema_only": true,
+      "note": "Provenance key recorded in run/analysis_bundle.json; NIfTI bytes are not shipped in this synthetic exemplar."
+    },
+    {
+      "path": "artifacts/statmaps/sub-01_contrast-responseConflict_stat-z_statmap.nii.gz",
+      "schema_only": true,
+      "note": "Provenance key recorded in run/analysis_bundle.json; NIfTI bytes are not shipped in this synthetic exemplar."
+    }
+  ]
+}

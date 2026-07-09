@@ -1,0 +1,365 @@
+{
+  "schema_version": "liu_confirmatory_permutation_v1",
+  "workspace": "a1_governed_root:project/autoresearch_confirmatory_permutation_line_20260425_shared_null/intelligence_residualised_cognition",
+  "out_dir": "a1_governed_root:project/autoresearch_confirmatory_permutation_line_20260425_shared_null/intelligence_residualised_cognition/family_block_null",
+  "n_perm_requested": 1000,
+  "n_perm_completed": 1000,
+  "is_publication_grade_primary_complete": true,
+  "null_mode": "family_block",
+  "null_design": {
+    "label_shuffle": "Family_ID block permutation of the 5-component target matrix within each training fold; blocks are shuffled among same-size within-fold family blocks",
+    "env_var": "LIU_FAMILY_BLOCK_PERMUTE_Y",
+    "exchangeability_manifest": "a1_governed_root:project/manifests/hcp_exchangeability_manifest.json",
+    "permutation_seed_formula": "numpy.default_rng(base_seed * 1_000_000 + fold_id); block permutation by Family_ID group size",
+    "folds": "fixed 10-fold HCP split, seed=42",
+    "test_labels": "never permuted",
+    "model_selection": "frozen final autoresearch pipeline; inner ridge selection reruns inside each permuted training fold"
+  },
+  "permutation_seed_audit": {
+    "requested_seed_range": [
+      1,
+      1000
+    ],
+    "completed_seed_min": 1,
+    "completed_seed_max": 1000,
+    "completed_seed_count": 1000,
+    "completed_seeds_unique": true,
+    "completed_seeds_contiguous_from_1": true,
+    "seed_record_location": "a1_governed_root:project/autoresearch_confirmatory_permutation_line_20260425_shared_null/intelligence_residualised_cognition/family_block_null/confirmatory_family_block_perm.jsonl"
+  },
+  "frozen_pipeline": {
+    "run_py_sha256": "3fe2eea1c1e20ab7e7630ac87e7b6e2b7cd5a2786a5351e8b410930f062962a1",
+    "predict_py_sha256": "380cbb505a2e541ca10bfbfcf2711c952e5a6b1beeaf18246af71ce6891e017a",
+    "predict_config": {
+      "description": "Iter 8 swap_metric: PE (k=2) routed to [cov, dcorr, prec] at K=80 under Ridge (pre-registered from iter-7 next_hypothesis). Iter 7 established PE=0.1453 with [prec, dcorr] K=80, +0.027 over iter-3 [cov, dcorr] K=80 PE=0.1182. This iter tests capacity-via-terms: union pool (150 PCs) at K=80 vs [prec,dcorr] (100 PCs) at K=80. Other components unchanged: Cog [cov,dcorr,prec] K=60; Tob/IllicitDrug [cov,dcorr] K=40; MentalHealth [cov,dcorr] K=20.",
+      "path": "B",
+      "terms": [
+        "cov_EmpiricalCovariance",
+        "dcorr",
+        "prec_GraphicalLassoCV"
+      ],
+      "fc_metric": "cov_EmpiricalCovariance+dcorr+prec_GraphicalLassoCV",
+      "parcellation": "schaefer100x7",
+      "feature_selection": "qcod_10_90+per_term_pca_50+per_component_terms+per_component_topk_by_component_60_40_100_40_20",
+      "scaler": "StandardScaler",
+      "model": "PerComponentTermsTopKByComponentRidge",
+      "alpha_grid": [
+        0.1,
+        1.0,
+        10.0,
+        100.0
+      ],
+      "inner_cv_splits": 10,
+      "inner_cv_random_state": 42,
+      "inner_cv_n_jobs": -1,
+      "pca_components": null,
+      "per_term_pca": 50,
+      "per_component_topk": 40,
+      "per_component_topk_by_component": {
+        "0": 60,
+        "1": 40,
+        "2": 100,
+        "3": 40,
+        "4": 20
+      },
+      "per_component_terms": {
+        "0": [
+          "cov_EmpiricalCovariance",
+          "dcorr",
+          "prec_GraphicalLassoCV"
+        ],
+        "1": [
+          "cov_EmpiricalCovariance",
+          "dcorr"
+        ],
+        "2": [
+          "prec_GraphicalLassoCV",
+          "dcorr"
+        ],
+        "3": [
+          "cov_EmpiricalCovariance",
+          "dcorr"
+        ],
+        "4": [
+          "cov_EmpiricalCovariance",
+          "dcorr"
+        ]
+      },
+      "per_component_per_term_topk": null,
+      "probe_alpha": 100.0,
+      "probe_mode": "topk",
+      "random_probe_seed": null,
+      "multi_output": true,
+      "kg_integration_mode": "none",
+      "model_head": "ridge",
+      "per_component_model_head": null,
+      "kernel_ridge_gamma_grid": null
+    },
+    "data_spec": {
+      "n_subjects": 326,
+      "n_rois": 100,
+      "n_features_per_term": 4950,
+      "parcellation": "schaefer100x7",
+      "components": [
+        "ICA_Cognition",
+        "ICA_TobaccoUse",
+        "ICA_PersonalityEmotion",
+        "ICA_IllicitDrugUse",
+        "ICA_MentalHealth"
+      ],
+      "cv": {
+        "n_folds": 10,
+        "seed": 42,
+        "source": "a1_governed_root:project/manifests/fold_manifest.json"
+      },
+      "confound_regression": false
+    }
+  },
+  "pre_specified_claims": {
+    "positive": [
+      "ICA_Cognition",
+      "ICA_TobaccoUse",
+      "ICA_PersonalityEmotion"
+    ],
+    "caveated": [
+      "ICA_MentalHealth"
+    ],
+    "nonrobust_or_negative_control": [
+      "ICA_IllicitDrugUse"
+    ]
+  },
+  "aggregate_all_five": {
+    "observed_mean_fold_r": 0.15084699999999998,
+    "plus_one_p": 0.000999000999000999,
+    "n_perm_ge_observed": 0,
+    "effect_vs_null": {
+      "observed_minus_null_mean": 0.15289789839999998,
+      "permutation_z": 5.744855922357832,
+      "empirical_percentile": 1.0
+    },
+    "null": {
+      "mean": -0.0020508984,
+      "sd": 0.026614748997438195,
+      "min": -0.08628559999999999,
+      "max": 0.0742636,
+      "p95": 0.04110943,
+      "p99": 0.054601597999999994
+    }
+  },
+  "per_component": {
+    "ICA_Cognition": {
+      "observed_fold_mean_r": 0.183158,
+      "observed_fold_std_r": 0.15074,
+      "reference_mean_r": 0.215,
+      "reference_best_r": 0.42,
+      "surplus_over_ref_mean": -0.031842,
+      "surplus_over_ref_best": -0.236842,
+      "raw_plus_one_p": 0.000999000999000999,
+      "raw_n_perm_ge_observed": 0,
+      "max_t_fwer_plus_one_p": 0.004995004995004995,
+      "max_t_n_perm_ge_observed": 4,
+      "effect_vs_null": {
+        "observed_minus_null_mean": 0.18658045599999998,
+        "permutation_z": 3.3732944296701866,
+        "empirical_percentile": 1.0
+      },
+      "null": {
+        "mean": -0.0034224559999999995,
+        "sd": 0.05531104974380855,
+        "min": -0.172681,
+        "max": 0.158976,
+        "p95": 0.08834924999999996,
+        "p99": 0.11990013999999999
+      },
+      "bh_fdr_q": 0.0024975024975024975
+    },
+    "ICA_TobaccoUse": {
+      "observed_fold_mean_r": 0.264051,
+      "observed_fold_std_r": 0.12141,
+      "reference_mean_r": 0.143,
+      "reference_best_r": 0.357,
+      "surplus_over_ref_mean": 0.121051,
+      "surplus_over_ref_best": -0.092949,
+      "raw_plus_one_p": 0.000999000999000999,
+      "raw_n_perm_ge_observed": 0,
+      "max_t_fwer_plus_one_p": 0.000999000999000999,
+      "max_t_n_perm_ge_observed": 0,
+      "effect_vs_null": {
+        "observed_minus_null_mean": 0.2695958,
+        "permutation_z": 4.412136648950811,
+        "empirical_percentile": 1.0
+      },
+      "null": {
+        "mean": -0.0055448,
+        "sd": 0.06110322989749396,
+        "min": -0.173906,
+        "max": 0.193944,
+        "p95": 0.09460550000000001,
+        "p99": 0.12845362999999996
+      },
+      "bh_fdr_q": 0.0024975024975024975
+    },
+    "ICA_PersonalityEmotion": {
+      "observed_fold_mean_r": 0.157379,
+      "observed_fold_std_r": 0.139382,
+      "reference_mean_r": 0.084,
+      "reference_best_r": 0.245,
+      "surplus_over_ref_mean": 0.073379,
+      "surplus_over_ref_best": -0.087621,
+      "raw_plus_one_p": 0.005994005994005994,
+      "raw_n_perm_ge_observed": 5,
+      "max_t_fwer_plus_one_p": 0.014985014985014986,
+      "max_t_n_perm_ge_observed": 14,
+      "effect_vs_null": {
+        "observed_minus_null_mean": 0.155851346,
+        "permutation_z": 2.746671854800765,
+        "empirical_percentile": 0.995
+      },
+      "null": {
+        "mean": 0.0015276539999999996,
+        "sd": 0.05674188772408162,
+        "min": -0.185371,
+        "max": 0.208104,
+        "p95": 0.09386419999999991,
+        "p99": 0.13038832
+      },
+      "bh_fdr_q": 0.00999000999000999
+    },
+    "ICA_IllicitDrugUse": {
+      "observed_fold_mean_r": 0.020034,
+      "observed_fold_std_r": 0.203053,
+      "reference_mean_r": 0.01,
+      "reference_best_r": 0.199,
+      "surplus_over_ref_mean": 0.010034,
+      "surplus_over_ref_best": -0.178966,
+      "raw_plus_one_p": 0.34665334665334663,
+      "raw_n_perm_ge_observed": 346,
+      "max_t_fwer_plus_one_p": 0.8761238761238761,
+      "max_t_n_perm_ge_observed": 876,
+      "effect_vs_null": {
+        "observed_minus_null_mean": 0.022536725,
+        "permutation_z": 0.4078777365777439,
+        "empirical_percentile": 0.654
+      },
+      "null": {
+        "mean": -0.002502725,
+        "sd": 0.055253628670915135,
+        "min": -0.163786,
+        "max": 0.2096,
+        "p95": 0.08968794999999997,
+        "p99": 0.12699060999999995
+      },
+      "bh_fdr_q": 0.34665334665334663
+    },
+    "ICA_MentalHealth": {
+      "observed_fold_mean_r": 0.129613,
+      "observed_fold_std_r": 0.14575,
+      "reference_mean_r": 0.014,
+      "reference_best_r": 0.174,
+      "surplus_over_ref_mean": 0.115613,
+      "surplus_over_ref_best": -0.044387,
+      "raw_plus_one_p": 0.00999000999000999,
+      "raw_n_perm_ge_observed": 9,
+      "max_t_fwer_plus_one_p": 0.04395604395604396,
+      "max_t_n_perm_ge_observed": 43,
+      "effect_vs_null": {
+        "observed_minus_null_mean": 0.129925165,
+        "permutation_z": 2.364227722285988,
+        "empirical_percentile": 0.991
+      },
+      "null": {
+        "mean": -0.00031216499999999983,
+        "sd": 0.054954589938728274,
+        "min": -0.193276,
+        "max": 0.152125,
+        "p95": 0.08820759999999998,
+        "p99": 0.12313944999999997
+      },
+      "bh_fdr_q": 0.012487512487512488
+    }
+  },
+  "subset_tests": {
+    "all_five_components": {
+      "components": [
+        "ICA_Cognition",
+        "ICA_TobaccoUse",
+        "ICA_PersonalityEmotion",
+        "ICA_IllicitDrugUse",
+        "ICA_MentalHealth"
+      ],
+      "observed_mean_fold_r": 0.15084699999999998,
+      "plus_one_p": 0.000999000999000999,
+      "n_perm_ge_observed": 0,
+      "effect_vs_null": {
+        "observed_minus_null_mean": 0.15289789839999998,
+        "permutation_z": 5.744855922357832,
+        "empirical_percentile": 1.0
+      },
+      "null": {
+        "mean": -0.0020508984,
+        "sd": 0.026614748997438195,
+        "min": -0.08628559999999999,
+        "max": 0.0742636,
+        "p95": 0.04110943,
+        "p99": 0.054601597999999994
+      }
+    },
+    "pre_specified_positive_three": {
+      "components": [
+        "ICA_Cognition",
+        "ICA_TobaccoUse",
+        "ICA_PersonalityEmotion"
+      ],
+      "observed_mean_fold_r": 0.2015293333333333,
+      "plus_one_p": 0.000999000999000999,
+      "n_perm_ge_observed": 0,
+      "effect_vs_null": {
+        "observed_minus_null_mean": 0.20400920066666664,
+        "permutation_z": 5.914668686878182,
+        "empirical_percentile": 1.0
+      },
+      "null": {
+        "mean": -0.002479867333333333,
+        "sd": 0.034492075797798345,
+        "min": -0.10947766666666665,
+        "max": 0.09611900000000001,
+        "p95": 0.05285728333333331,
+        "p99": 0.07840810666666664
+      }
+    },
+    "positive_plus_caveated_four_excluding_illicit": {
+      "components": [
+        "ICA_Cognition",
+        "ICA_TobaccoUse",
+        "ICA_PersonalityEmotion",
+        "ICA_MentalHealth"
+      ],
+      "observed_mean_fold_r": 0.18355024999999997,
+      "plus_one_p": 0.000999000999000999,
+      "n_perm_ge_observed": 0,
+      "effect_vs_null": {
+        "observed_minus_null_mean": 0.18548819174999998,
+        "permutation_z": 6.16768476317412,
+        "empirical_percentile": 1.0
+      },
+      "null": {
+        "mean": -0.0019379417499999997,
+        "sd": 0.030074201077446256,
+        "min": -0.09122124999999999,
+        "max": 0.0895475,
+        "p95": 0.04637422499999999,
+        "p99": 0.06492815999999998
+      }
+    }
+  },
+  "optional_model_selection_correction": {
+    "max_over_pipelines_null": "not_executed",
+    "reason": "Primary analysis freezes the selected pipeline. A max-over-pipelines null would rerun the whole autoresearch selection policy per label shuffle and is much more expensive; it is recommended only if the claim is about the adaptive search procedure rather than the frozen final pipeline."
+  },
+  "artifact_paths": {
+    "real_result": "a1_governed_root:project/autoresearch_confirmatory_permutation_line_20260425_shared_null/intelligence_residualised_cognition/family_block_null/real_result.json",
+    "permutations_jsonl": "a1_governed_root:project/autoresearch_confirmatory_permutation_line_20260425_shared_null/intelligence_residualised_cognition/family_block_null/confirmatory_family_block_perm.jsonl",
+    "summary_json": "a1_governed_root:project/autoresearch_confirmatory_permutation_line_20260425_shared_null/intelligence_residualised_cognition/family_block_null/confirmatory_permutation_summary.json",
+    "summary_md": "a1_governed_root:project/autoresearch_confirmatory_permutation_line_20260425_shared_null/intelligence_residualised_cognition/family_block_null/confirmatory_permutation_report.md"
+  }
+}

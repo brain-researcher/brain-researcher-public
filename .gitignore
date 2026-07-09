@@ -253,6 +253,11 @@ model_weights/
 !docs/use_cases/**/*.json
 !docs/use_cases/**/*.csv
 !docs/use_cases/**/*.pdf
+!reproducibility/
+!reproducibility/**
+!reproducibility/packs/**/*.csv
+!reproducibility/packs/**/*.json
+!reproducibility/packs/**/*.jsonl
 !configs/schemas/brain_researcher_case_package.schema.json
 !contracts/**/*.json
 !contracts/*.json
