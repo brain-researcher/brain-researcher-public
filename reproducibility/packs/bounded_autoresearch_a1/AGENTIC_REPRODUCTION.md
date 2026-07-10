@@ -84,7 +84,10 @@ IllicitDrugUse lead exercised:
   rejecting a tempting-but-unsupported lead, not the agent choosing to.
 
 This is the KG-as-prior step of the loop working end to end from a natural-language
-query — the precondition for every downstream typed, verifiable action.
+query — the precondition for every downstream typed, verifiable action. The
+captured call (params + the surviving hypothesis + the literature-vetoed
+candidate + the deployed server's `contract_version` / `toolset_hash`) is saved
+at [`artifacts/agentic_kg_hypothesis_demo.json`](artifacts/agentic_kg_hypothesis_demo.json).
 
 ## A starter prompt (paste into Claude Code with the MCP connected)
 

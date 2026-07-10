@@ -1,0 +1,81 @@
+{
+  "schema_version": "br.a1_agentic_kg_hypothesis_demo.v1",
+  "what_this_is": "A captured live call to the deployed Brain Researcher MCP kg_hypothesis_workflow tool, illustrating the surface -> literature-verify -> veto machinery the A1 case report's KG layer (section 3.3, the wPLI / IllicitDrugUse lead) exercised. See AGENTIC_REPRODUCTION.md.",
+  "provenance": {
+    "captured_on": "2026-07-10",
+    "deployed_mcp": {
+      "name": "brain-researcher",
+      "contract_version": "2026-07-08",
+      "toolset_hash": "9601ba17e9352b8b99f8f9cf16fe065e26dbe87655c68ee725deb32d3c054ba3",
+      "runtime_tool_count": 98
+    },
+    "tool": "kg_hypothesis_workflow",
+    "params": {
+      "operation": "sample",
+      "seed_kg_ids": ["pmid:27920976"],
+      "query": "A weighted phase-lag-index resting-state connectivity lead that could predict a behavioral trait (connectivity-statistic to behavior hypothesis)",
+      "n_samples": 5,
+      "strategy": "evidence_first",
+      "max_hops": 2
+    },
+    "seed_note": "pmid:27920976 is a real BR-KG Publication node: resting-state functional (dys)connectivity in generalized social anxiety disorder using the Weighted Phase Lag Index (WPLI).",
+    "nondeterminism_note": "KG hypothesis sampling + OOD literature verification are non-deterministic and budget-bounded; a re-run reproduces the mechanism (structured hypotheses + literature veto), not necessarily the identical candidates. This capture had an exhausted verification budget (partial return)."
+  },
+  "result": {
+    "mode": "ood_hypothesis_sampling",
+    "input_seed_kg_ids": ["pmid:27920976"],
+    "expanded_seed_kg_ids": ["ONVOC_0000176", "ONVOC_0000204", "concept:generalized_social_anxiety_disorder"],
+    "seed_provenance": {
+      "ONVOC_0000176": ["expanded_from:pmid:27920976:ABOUT"],
+      "ONVOC_0000204": ["expanded_from:pmid:27920976:ABOUT"],
+      "concept:generalized_social_anxiety_disorder": ["expanded_from:pmid:27920976:MENTIONS"]
+    },
+    "survived_hypothesis": {
+      "rank": 1,
+      "anchor_label": "Alzheimer's Disease",
+      "candidate_label": "Hospital Anxiety and Depression Scale (HADS A)",
+      "claim_type": "transfer",
+      "statement": "If Alzheimer's Disease and Hospital Anxiety and Depression Scale (HADS A) may rely on the same representation-carrying bottleneck rather than only sharing a task family, then when training on Alzheimer's Disease and evaluating on Hospital Anxiety and Depression Scale (HADS A) versus training on the same anchor and evaluating on task-mismatched controls is manipulated relative to the task-mismatched or label-shuffled transfer baseline, cross-condition decoding accuracy anchored on Alzheimer's Disease should remain above the transfer baseline only when the shared bottleneck is present.",
+      "mechanism": "Alzheimer's Disease and Hospital Anxiety and Depression Scale (HADS A) may rely on the same representation-carrying bottleneck rather than only sharing a task family.",
+      "independent_variable": "training on Alzheimer's Disease and evaluating on Hospital Anxiety and Depression Scale (HADS A) versus training on the same anchor and evaluating on task-mismatched controls",
+      "dependent_variable": "cross-condition decoding accuracy anchored on Alzheimer's Disease",
+      "control_condition": "the task-mismatched or label-shuffled transfer baseline",
+      "minimal_test": "Train on Alzheimer's Disease, test on Hospital Anxiety and Depression Scale (HADS A), and compare transfer accuracy against a label-shuffled or task-mismatched baseline.",
+      "falsifier": "Reject this transfer hypothesis if cross-condition performance between Alzheimer's Disease and Hospital Anxiety and Depression Scale (HADS A) stays at control levels.",
+      "verification_status": "survived",
+      "verification_reason": "no_hard_veto",
+      "scores": {
+        "novelty_score": 0.5304,
+        "contradiction_score": 0.25,
+        "coherence_score": 0.689,
+        "feasibility_score": 0.669383,
+        "ood_score": 0.55771
+      }
+    },
+    "vetoed_candidate": {
+      "candidate_label": "Screen for Child Anxiety Related Emotional Disorders (SCARED)",
+      "claim_type": "transfer",
+      "verification_status": "vetoed",
+      "verification_reason": "literature_contradiction",
+      "contradicting_paper": {
+        "title": "Visual search for feature conjunctions: an fMRI study comparing alcohol-related neurodevelopmental disorder (ARND) to ADHD",
+        "doi": "10.1186/s11689-015-9106-9",
+        "pmid": "25750685",
+        "pmcid": "PMC4351830"
+      }
+    },
+    "summary": {
+      "n_input_seeds": 1,
+      "n_requested": 5,
+      "n_hypotheses": 1,
+      "n_returned": 1,
+      "n_quality_passed": 1,
+      "n_rejected_pre_synthesis": 16,
+      "n_vetoed": 1,
+      "n_collapsed_duplicate_candidates": 7,
+      "verification_status_counts": { "survived": 1, "vetoed": 1 },
+      "verification_reason_counts": { "no_hard_veto": 1, "literature_contradiction": 1 }
+    },
+    "warnings": ["OOD verification budget exhausted; returning partial sampled hypotheses"]
+  }
+}
