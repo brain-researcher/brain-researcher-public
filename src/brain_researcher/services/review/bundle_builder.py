@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from brain_researcher.core.contracts.code_review import CodeReviewBundle
+from brain_researcher.services.review.audit_bundle import collect_audit_sources
 from brain_researcher.services.review.native_bundle_resolver import (
     load_json_artifact as _load_json_artifact,
 )
@@ -771,6 +772,36 @@ def _plan_steps_from_native_bundle(run_dir: Path) -> list[dict[str, Any]]:
     return normalized
 
 
+def _fallback_artifact_key(name: str) -> str:
+    path = Path(name)
+    if path.suffix == ".json":
+        return path.stem
+    return path.name
+
+
+def _load_json_tree(path: Path) -> dict[str, Any] | None:
+    if not path.is_dir():
+        return None
+    payloads: dict[str, Any] = {}
+    for candidate in sorted(path.rglob("*.json")):
+        payload = _load_json_artifact(candidate)
+        if payload is None:
+            continue
+        try:
+            rel = candidate.relative_to(path).with_suffix("").as_posix()
+        except ValueError:
+            rel = candidate.stem
+        payloads[rel] = payload
+    return payloads or None
+
+
+def _load_fallback_artifact(run_dir: Path, name: str) -> Any | None:
+    path = run_dir / name
+    if path.is_dir():
+        return _load_json_tree(path)
+    return _load_json_artifact(path)
+
+
 def _observed_artifacts_from_run_dir(run_dir: Path) -> dict[str, Any]:
     observed: dict[str, Any] = {}
     sidecars = _discover_review_sidecars(run_dir)
@@ -829,10 +860,16 @@ def _observed_artifacts_from_run_dir(run_dir: Path) -> dict[str, Any]:
         else False
     )
 
+    audit_sources = collect_audit_sources(run_dir)
+    audit_fallback_artifacts = (
+        *audit_sources.relative_source_paths(),
+        "audit",
+    )
     fallback_artifacts = (
         "analysis_bundle.json",
         "quote_grounded_claims.json",
         "quote_grounded_evidence_items.json",
+        *audit_fallback_artifacts,
     )
     if legacy_external_mode or not bundle:
         fallback_artifacts = (
@@ -848,10 +885,10 @@ def _observed_artifacts_from_run_dir(run_dir: Path) -> dict[str, Any]:
         )
 
     for name in fallback_artifacts:
-        key = name.removesuffix(".json")
+        key = _fallback_artifact_key(name)
         if key in observed:
             continue
-        payload = _load_json_artifact(run_dir / name)
+        payload = _load_fallback_artifact(run_dir, name)
         if payload is not None:
             observed[key] = payload
     return observed

@@ -371,6 +371,12 @@ def get_mcp_run_root() -> Path:
     return _expand_path(os.getenv("BR_MCP_RUN_ROOT", str(MCP_RUN_ROOT_DEFAULT)))
 
 
+def is_audit_persist_enabled() -> bool:
+    """Return whether canonical audit bundles should be persisted for runs."""
+
+    return _env_bool("BR_AUDIT_PERSIST", True)
+
+
 def get_mcp_run_root_aliases(primary_root: Path | None = None) -> tuple[Path, ...]:
     """Return MCP run-root aliases used for backward-compatible reads."""
 
@@ -515,6 +521,7 @@ __all__ = [
     "get_recorder_config",
     "get_recorder_root",
     "get_repo_root",
+    "is_audit_persist_enabled",
     "is_active_run",
     "is_run_date_dir",
     "iter_recorded_path_candidates",
