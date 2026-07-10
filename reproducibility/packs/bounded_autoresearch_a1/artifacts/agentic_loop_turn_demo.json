@@ -1,0 +1,35 @@
+{
+  "schema_version": "br.a1_agentic_loop_turn_demo.v1",
+  "what_this_is": "One captured turn of the external-coding loop run over THIS pack on public FC features: edit the editable predictor -> the frozen evaluator re-scores -> compare. It shows the loop is launchable from the pack and that the evaluator is deterministic (a score change comes only from a predictor edit, tracked by predict_sha256). See AGENTIC_REPRODUCTION.md.",
+  "provenance": {
+    "captured_on": "2026-07-10",
+    "evaluator": "scripts/run_prediction.py (immutable frozen evaluator; 10-fold CV, seed 42, no confound regression)",
+    "editable_surface": "scripts/predict.py (the only file the agent may edit)",
+    "terms_dir": "Liu FC-pyspi per-term features from OSF 75je2 (the public GitHub release fetched by scripts/fetch_fc_features.py)",
+    "reproduce_this_turn": [
+      "python scripts/fetch_fc_features.py",
+      "python scripts/run_prediction.py                      # baseline",
+      "# edit scripts/predict.py PER_COMPONENT_TERMS[0] from 3 terms to [\"cov_EmpiricalCovariance\"]",
+      "python scripts/run_prediction.py                      # edited variant"
+    ]
+  },
+  "baseline": {
+    "predict_py_edit": "none (as shipped)",
+    "predict_sha256_prefix": "380cbb505a2e",
+    "run_1": { "ICA_Cognition_fold_mean_r": 0.183158, "aggregate_mean_r": 0.150847 },
+    "run_2": { "ICA_Cognition_fold_mean_r": 0.183158, "aggregate_mean_r": 0.150847 },
+    "determinism": "run_1 == run_2 (identical predict_sha256, identical scores). The frozen evaluator is deterministic.",
+    "matches_published": "ICA_Cognition 0.183158 equals the recorded value in artifacts/residualised_cheap_check.json"
+  },
+  "agent_edit_turn": {
+    "predict_py_edit": "PER_COMPONENT_TERMS[0] (ICA_Cognition): [cov_EmpiricalCovariance, dcorr, prec_GraphicalLassoCV] -> [cov_EmpiricalCovariance] (ablate to Liu's single covariance term)",
+    "predict_sha256_prefix": "60e83b22d1bb",
+    "result": { "ICA_Cognition_fold_mean_r": 0.194154, "aggregate_mean_r": 0.153046 },
+    "delta_vs_baseline": { "ICA_Cognition_fold_mean_r": 0.010996, "aggregate_mean_r": 0.002199 }
+  },
+  "reading": [
+    "The evaluator is deterministic: the baseline is bit-reproducible (same predict_sha256 -> same scores), and equals the published number.",
+    "The result is 'not identical' ONLY because the predictor was edited: predict_sha256 changed (380cbb -> 60e83b) and the score moved accordingly. Every predict.py scores identically; the evaluator records which predictor produced each score.",
+    "Non-determinism in an agentic reproduction lives in the agent's *choice of edits* (the search trajectory), never in the evaluator. This is exactly the M1 claim: the discipline and the frozen confirmatory numbers reproduce; the trajectory need not."
+  ]
+}

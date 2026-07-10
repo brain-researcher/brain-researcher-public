@@ -66,6 +66,15 @@ and (b) once you freeze the *same* predictor, the **confirmatory numbers**
 (`ICA_Cognition` fold-mean r ≈ 0.183, aggregate ≈ 0.151). That the trajectory
 varies while the discipline holds *is* the M1 claim.
 
+The evaluator itself is **deterministic**, so "not identical" never comes from
+drift: a captured loop turn
+([`artifacts/agentic_loop_turn_demo.json`](artifacts/agentic_loop_turn_demo.json))
+shows the shipped predictor scoring `ICA_Cognition` r = 0.183158 on two
+back-to-back runs (identical `predict_sha256`, equal to the published number),
+and a one-line predictor edit moving it to 0.194154 with a *changed*
+`predict_sha256` — the score moves only because the predictor changed, and the
+evaluator records which predictor produced it.
+
 ## Live example — the KG hypothesis step, run against the deployed MCP
 
 Calling `kg_hypothesis_workflow` (seeded from a real weighted-phase-lag-index

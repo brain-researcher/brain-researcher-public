@@ -1,7 +1,7 @@
 {
   "schema_version": "br.reproducibility_pack_manifest.v1",
   "pack_id": "bounded_autoresearch_a1",
-  "artifact_count": 19,
+  "artifact_count": 20,
   "artifacts": [
     {
       "path": "README.md",
@@ -90,13 +90,18 @@
     },
     {
       "path": "AGENTIC_REPRODUCTION.md",
-      "sha256": "sha256:21fd222833edb27d37fac2f0d9ab01d18f396532bfd3690c983be86c7f1ed63e",
-      "size_bytes": 6602
+      "sha256": "sha256:2c333515f7f199a66d84a60ff3b382a67a498859d15e71dde9e482dad00e760a",
+      "size_bytes": 7141
     },
     {
       "path": "artifacts/agentic_kg_hypothesis_demo.json",
       "sha256": "sha256:45ccfd73c1ffc161b4770f2e214b6ca994f5d624bc1ad8fa23fd838a72404324",
       "size_bytes": 5073
+    },
+    {
+      "path": "artifacts/agentic_loop_turn_demo.json",
+      "sha256": "sha256:8228852f12daa10b7806b8fed879e5de4b48a17de48490046118377b201cc677",
+      "size_bytes": 2798
     }
   ]
 }
