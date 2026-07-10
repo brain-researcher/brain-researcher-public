@@ -50,10 +50,66 @@ there:
 That is the whole record — there is nothing hidden behind it. The appendix in
 the paper only walks through the same schema field by field.
 
-## Provenance
+## Reproduce it yourself
 
-These files were emitted by the demo generator
-`scripts/autoresearch/run_neurolang_vhrl_demo.py`; the generated run bundle lives
-under `docs/results/neurolang_vhrl_working_memory_demo/`, and this directory is
-the compact public-facing copy. The `commitment_hash` in `claim_card.json` and
-`commitment_card.json` match, so the record is internally consistent.
+This example runs on public Neurosynth data — no account or data-use agreement —
+and everything the generator needs is in this repository.
+
+### Prerequisites
+
+- A Python environment with `nimare`, `nilearn`, and `numpy` (the environment
+  used elsewhere in this repo).
+- A **separate NeuroLang interpreter** for the out-of-process probabilistic-
+  Datalog backend. NeuroLang pins older dependencies, so it lives in its own
+  virtualenv rather than the main environment:
+  ```bash
+  python3.12 -m venv ~/.venvs/neurolang-py312
+  ~/.venvs/neurolang-py312/bin/pip install neurolang
+  ```
+  The generator looks for `~/.venvs/neurolang-py312/bin/python` by default;
+  point `$BR_NEUROLANG_PYTHON` (or `--venv-python`) at any interpreter that has
+  `neurolang` installed.
+
+### Steps
+
+1. Download and convert the public Neurosynth v7 corpus (run from the repo
+   root):
+   ```bash
+   python scripts/data/download_neurosynth_data.py   # -> data/neurosynth_nimare/neurosynth_v7/
+   python scripts/data/convert_neurosynth.py         # -> data/neurosynth_nimare/neurosynth_dataset_v7.pkl
+   ```
+2. Run the generator, pointing it at that corpus:
+   ```bash
+   python scripts/autoresearch/run_neurolang_vhrl_demo.py \
+     --case working_memory \
+     --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl \
+     --output-dir /tmp/wm_demo
+   ```
+
+The generator seals the commitment card, runs the graded NeuroLang evidence
+queries, and writes `claim_card.json`, `evidence_verdicts.json`,
+`demo_bundle.json`, and a `README.md` to the output directory. The standalone
+`commitment_card.json` shipped in this folder is `demo_bundle.json`'s
+`calibration.commitment_card`.
+
+### What "reproduces" means here
+
+A fresh run reproduces the **finding** and an **internally-consistent record**:
+the claim ends `weakened`, the same five checks pass and the same
+`strict-evidence-profile` check fails, and `claim_card.json`'s `commitment_hash`
+equals the commitment card's — so no post-hoc edit to the sealed plan could go
+undetected.
+
+The `commitment_hash` value itself is sealed per run (it covers a `locked_at`
+timestamp and the exact engine version), so a fresh run produces a *different*
+hash from the frozen `4871ea43…` snapshot committed here. That is expected: the
+committed files are one sealed instance. The reproducible invariants are the
+status, the surviving/failing checks, and the intra-run hash match — not the
+hash value.
+
+## Data
+
+Every source used here — the public Neurosynth corpus for this example, and the
+data for the other manuscript cases (including the controlled-access HCP-YA data
+and the Liu et al. 2025 benchmark) — is documented with download locations in
+[`DATA_SOURCES.md`](DATA_SOURCES.md).
