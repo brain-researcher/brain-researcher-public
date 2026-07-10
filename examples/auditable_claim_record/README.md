@@ -53,7 +53,9 @@ the paper only walks through the same schema field by field.
 ## Reproduce it yourself
 
 This example runs on public Neurosynth data — no account or data-use agreement —
-and everything the generator needs is in this repository.
+and everything the generator needs is in this repository. To reproduce it the way
+the platform produces it — a coding agent driving the sealed claim episode from
+language through the MCP — see [`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md).
 
 ### Prerequisites
 
