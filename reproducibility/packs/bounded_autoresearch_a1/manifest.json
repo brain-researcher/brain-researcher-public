@@ -5,8 +5,8 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:93e07fec7df6956815157592a214073f2ad9c3f7b6c89f397900fa079499eaad",
-      "size_bytes": 5214
+      "sha256": "sha256:f17e1f39ce7d0d869853bf671fbcfc0737d0b9d7a1a4b2316431248e90bfb8e4",
+      "size_bytes": 5852
     },
     {
       "path": "REPRODUCTION.md",

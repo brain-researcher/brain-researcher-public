@@ -8,6 +8,23 @@ re-run. The redesign→recovery headline (`ICA_Cognition` fold-mean r ≈ 0.183)
 reproduces on **public data alone** — see the "Run it yourself" section of
 [`REPRODUCTION.md`](REPRODUCTION.md).
 
+## Quickstart
+
+No HCP account needed. Reproduces `ICA_Cognition` fold-mean r ≈ 0.183 in ~8 s:
+
+```bash
+pip install numpy pandas h5py scikit-learn
+
+git clone https://github.com/brain-researcher/brain-researcher-public
+cd brain-researcher-public/reproducibility/packs/bounded_autoresearch_a1
+
+python scripts/fetch_fc_features.py   # download + sha256-verify FC features (~937 MB) -> inputs/
+python scripts/run_prediction.py      # -> ICA_Cognition r ≈ 0.183, aggregate ≈ 0.151
+```
+
+Optional integrity check: `python ../../verify.py .` (17/17 checksums match).
+The deeper, HCP-gated steps are in [`REPRODUCTION.md`](REPRODUCTION.md).
+
 ## Contents
 - `artifacts/liu_component_behavior_residualised_cognition.csv` — row-indexed
   public copy of the residualised target values. The governed run output had an
