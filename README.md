@@ -252,7 +252,7 @@ The main Helm chart renders 26 Kubernetes resources cleanly; the Istio overlay s
 | `infrastructure/` | docker-compose, Helm chart, K8s manifests, monitoring, nginx, haproxy |
 | `scripts/` | ETL, analysis, build, validation, and focused maintenance utilities |
 
-For the current import-boundary ratchet, see [`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py) and [`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt). For public audit artifacts, start with [`docs/reproducibility_packs.md`](docs/reproducibility_packs.md) and [`reproducibility/README.md`](reproducibility/README.md). For the agent-kit (skills + AGENTS templates + adapters + demos + eval rubrics), see the companion repo [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit).
+For the current import-boundary ratchet, see [`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py) and [`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt). For public audit artifacts, start with [`docs/reproducibility_packs.md`](docs/reproducibility_packs.md) and [`reproducibility/README.md`](reproducibility/README.md) — including the "Reproduce From Language" guides for driving each worked case from natural language with Claude Code / Codex + MCP. For the agent-kit (skills + AGENTS templates + adapters + demos + eval rubrics), see the companion repo [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit).
 
 ---
 

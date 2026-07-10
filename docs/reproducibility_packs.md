@@ -30,6 +30,25 @@ prove that an LLM rerun will be byte-identical.
 | `bounded_autoresearch_a1` | Real recorded result | Checksum-verifiable artifacts for the HCP-YA bounded-autoresearch A1 result. Full rerun is data-gated because HCP-YA behavior rows are not redistributed; the public pack includes a redacted Liu/Tian source-provenance summary with OSF node `75je2`, key checksums, component-reconstruction caveats, and the `reconstructed_not_paper_exact` boundary. |
 | `fitlins_multiverse_yeo17` | Synthetic schema exemplar | Shows the run-bundle and multiverse layout. It is a format template, not a real-data result; statmap entries are `schema_only`. |
 
+## Reproduce From Language (Claude Code / Codex + MCP)
+
+Beyond re-running the frozen scripts, each worked case can be reproduced the way
+the platform actually produces it — a coding agent driving the loop from natural
+language through the MCP. These guides map each step to the typed MCP tool that
+makes it a verifiable action, and include a paste-ready starter prompt:
+
+| Case | Shape | Agentic guide |
+|---|---|---|
+| Bounded autoresearch A1 | Multi-turn feature/pipeline **search** loop (edit `predict.py` → frozen evaluator → score/compare → cheap-check → freeze → confirmatory null) | [`reproducibility/packs/bounded_autoresearch_a1/AGENTIC_REPRODUCTION.md`](../reproducibility/packs/bounded_autoresearch_a1/AGENTIC_REPRODUCTION.md) |
+| Auditable claim record | Single sealed **claim episode** (commit-before-observe → graded evidence → adjudicate → emit card) | [`examples/auditable_claim_record/AGENTIC_REPRODUCTION.md`](../examples/auditable_claim_record/AGENTIC_REPRODUCTION.md) |
+
+Honest scope: an agent's *search path* is non-deterministic, so a rerun
+reproduces the **discipline** (commit-before-observe, frozen evaluator,
+cheap-check-before-expensive-compute, literature-vetoed hypotheses) and — once the
+same predictor/claim is frozen — the **confirmatory numbers / verdict**, not the
+exact trajectory. Connect the MCP per [`mcp.md`](mcp.md); start each loop by
+calling `loop_profile_get`.
+
 ## Audit Protocol Boundary
 
 Brain Researcher can emit richer audit bundles when work runs through the
