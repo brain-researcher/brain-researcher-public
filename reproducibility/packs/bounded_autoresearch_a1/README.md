@@ -22,8 +22,10 @@ python scripts/fetch_fc_features.py   # download + sha256-verify FC features (~9
 python scripts/run_prediction.py      # -> ICA_Cognition r ≈ 0.183, aggregate ≈ 0.151
 ```
 
-Optional integrity check: `python ../../verify.py .` (17/17 checksums match).
-The deeper, HCP-gated steps are in [`REPRODUCTION.md`](REPRODUCTION.md).
+Optional integrity check: `python ../../verify.py .` (checksums match).
+The deeper, HCP-gated steps are in [`REPRODUCTION.md`](REPRODUCTION.md). To
+reproduce A1 the way it was produced — a coding agent driving the loop from
+language through the MCP — see [`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md).
 
 ## Contents
 - `artifacts/liu_component_behavior_residualised_cognition.csv` — row-indexed

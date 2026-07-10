@@ -1,12 +1,12 @@
 {
   "schema_version": "br.reproducibility_pack_manifest.v1",
   "pack_id": "bounded_autoresearch_a1",
-  "artifact_count": 17,
+  "artifact_count": 18,
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:f17e1f39ce7d0d869853bf671fbcfc0737d0b9d7a1a4b2316431248e90bfb8e4",
-      "size_bytes": 5852
+      "sha256": "sha256:8b16955ede0401ea549dae5e67ecbbc50f0efacd1e8c48df758d3f31900ff79a",
+      "size_bytes": 6014
     },
     {
       "path": "REPRODUCTION.md",
@@ -87,6 +87,11 @@
       "path": "scripts/fetch_fc_features.py",
       "sha256": "sha256:3d9e8b2c3df9b4edd3530f121fe6289458959f05d48a0093d57254eadff2a73b",
       "size_bytes": 4213
+    },
+    {
+      "path": "AGENTIC_REPRODUCTION.md",
+      "sha256": "sha256:1e7fd6803065472cf4421700032ea60b71201e07a0991c9556779dae750008cf",
+      "size_bytes": 6352
     }
   ]
 }
