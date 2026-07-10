@@ -1,17 +1,17 @@
 {
   "schema_version": "br.reproducibility_pack_manifest.v1",
   "pack_id": "bounded_autoresearch_a1",
-  "artifact_count": 10,
+  "artifact_count": 17,
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:53d647aa597f1b4340bb5cbb863149f521dadbd60b0a320d2cfe5250dcd483fb",
-      "size_bytes": 4342
+      "sha256": "sha256:93e07fec7df6956815157592a214073f2ad9c3f7b6c89f397900fa079499eaad",
+      "size_bytes": 5214
     },
     {
       "path": "REPRODUCTION.md",
-      "sha256": "sha256:e4a5fd4273e856ee0ff10e16904c7e608fddc9c5845a754062184c329646ea8c",
-      "size_bytes": 7857
+      "sha256": "sha256:7903cc2fe5357a0762fb988ef864851fd51a38f7ddf22e0388ee38b1c54c4d82",
+      "size_bytes": 10670
     },
     {
       "path": "provenance_card.md",
@@ -52,6 +52,41 @@
       "path": "reproduction/rerun_20260708_null_seeds_1_30.jsonl",
       "sha256": "sha256:1495777bcf75ea125d04bd45ee9bcfa432339f4037a261ed65f7e6b2795774f2",
       "size_bytes": 69215
+    },
+    {
+      "path": "manifests/fold_manifest.json",
+      "sha256": "sha256:406378cfd1307a3aa42e50eca7b26769ff31802baae624729fb939748d8bcb1d",
+      "size_bytes": 42567
+    },
+    {
+      "path": "manifests/liu_component_target_manifest.json",
+      "sha256": "sha256:3ce95d81ce16dcd5a7f3b0d646c5ca7b95603dbf43019e5ca2d722a21687fb63",
+      "size_bytes": 2882
+    },
+    {
+      "path": "scripts/build_residualised_target.py",
+      "sha256": "sha256:8cc1fa3b4e4b468827802001a9f5a792421efc9a70726fee4978685171dc97c8",
+      "size_bytes": 7086
+    },
+    {
+      "path": "scripts/predict.py",
+      "sha256": "sha256:380cbb505a2e541ca10bfbfcf2711c952e5a6b1beeaf18246af71ce6891e017a",
+      "size_bytes": 39478
+    },
+    {
+      "path": "scripts/run_prediction.py",
+      "sha256": "sha256:dc256faa848b5426a0c649f61a4dce9a0e91b438876148d5865c5b524547ef35",
+      "size_bytes": 17837
+    },
+    {
+      "path": "scripts/run_residualised_cheap_check.py",
+      "sha256": "sha256:184a2bf9fe318c9f39f49cd5fa5d286c59bc67488ac2645ae81010f36a34aacd",
+      "size_bytes": 7746
+    },
+    {
+      "path": "scripts/fetch_fc_features.py",
+      "sha256": "sha256:3d9e8b2c3df9b4edd3530f121fe6289458959f05d48a0093d57254eadff2a73b",
+      "size_bytes": 4213
     }
   ]
 }

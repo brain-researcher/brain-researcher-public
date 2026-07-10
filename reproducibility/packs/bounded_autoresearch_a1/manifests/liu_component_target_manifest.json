@@ -1,0 +1,80 @@
+{
+  "behavior_csv_path": "<staged-locally>/liu_component_behavior.csv",
+  "benchmark_family": "separate_literature_aligned_reconstructed_line",
+  "benchmark_name": "reconstructed_liu_component_autoresearch",
+  "comparability_status": "reconstructed_not_paper_exact",
+  "comparability_rules": {
+    "must_label_outputs_as_reconstructed": true,
+    "must_not_claim_direct_paper_reproduction": true,
+    "must_not_compare_against_raw_target_pmats_or_memory_scores": true,
+    "must_report_pearson_r_as_primary_literature_metric": true,
+    "must_treat_r2_as_secondary_internal_metric": true,
+    "must_use_component_targets": true
+  },
+  "phase_name": "phase_liu_component_reconstructed",
+  "primary_metric": "gold_r",
+  "provenance_path": "<staged-locally>/liu_component_behavior.provenance.json",
+  "reference_type": "pearson_r",
+  "source_paper": "Liu et al.",
+  "subject_id_column": "Subject",
+  "targets": [
+    {
+      "display_name": "Cognition",
+      "notes": "Reconstructed Liu-component benchmark target; do not claim paper-exact reproduction.",
+      "reference_best_r": 0.42,
+      "reference_mean_r": 0.215,
+      "target_column": "ICA_Cognition"
+    },
+    {
+      "display_name": "Tobacco Use",
+      "notes": "Reconstructed Liu-component benchmark target; do not claim paper-exact reproduction.",
+      "reference_best_r": 0.357,
+      "reference_mean_r": 0.143,
+      "target_column": "ICA_TobaccoUse"
+    },
+    {
+      "display_name": "Personality / Emotion",
+      "notes": "Reconstructed Liu-component benchmark target; do not claim paper-exact reproduction.",
+      "reference_best_r": 0.245,
+      "reference_mean_r": 0.084,
+      "target_column": "ICA_PersonalityEmotion"
+    },
+    {
+      "display_name": "Illicit Drug Use",
+      "notes": "Reconstructed Liu-component benchmark target; do not claim paper-exact reproduction.",
+      "reference_best_r": 0.199,
+      "reference_mean_r": 0.01,
+      "target_column": "ICA_IllicitDrugUse"
+    },
+    {
+      "display_name": "Mental Health",
+      "notes": "Reconstructed Liu-component benchmark target; do not claim paper-exact reproduction.",
+      "reference_best_r": 0.174,
+      "reference_mean_r": 0.014,
+      "target_column": "ICA_MentalHealth"
+    }
+  ],
+  "validation": {
+    "column_count": 6,
+    "csv_path": "<staged-locally>/liu_component_behavior.csv",
+    "fieldnames": [
+      "Subject",
+      "ICA_Cognition",
+      "ICA_TobaccoUse",
+      "ICA_PersonalityEmotion",
+      "ICA_IllicitDrugUse",
+      "ICA_MentalHealth"
+    ],
+    "row_count": 326,
+    "sha256": "1fbade58d6e2820fdfda5029d5a77f9c34f726d42afb5b39c24f1ab237b0e1a4",
+    "subject_id_column": "Subject",
+    "target_columns": [
+      "ICA_Cognition",
+      "ICA_TobaccoUse",
+      "ICA_PersonalityEmotion",
+      "ICA_IllicitDrugUse",
+      "ICA_MentalHealth"
+    ],
+    "validated_at_utc": "2026-04-09T06:47:45.257372+00:00"
+  }
+}

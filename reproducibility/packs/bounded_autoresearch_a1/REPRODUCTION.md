@@ -11,11 +11,65 @@ the family-block permutation null. Step 1 reproduces to machine epsilon; steps 2
 
 ---
 
+## Run it yourself
+
+This pack ships the runnable scripts (`scripts/`), the row-indexed target and
+manifests, and the frozen result artifacts. What is *not* in git is the ~937 MB
+functional-connectivity feature set (too large) and any HCP-controlled row — see
+the data-access boundary below.
+
+### Data-access boundary
+
+| Input | Access | Needed for |
+|---|---|---|
+| Liu FC-pyspi per-term features (`--terms-dir`) | **Public** — GitHub release asset, fetched by `scripts/fetch_fc_features.py` (repackaged from OSF [75je2](https://osf.io/75je2); `tar.gz sha256 ac3d0f369ea99e0f7587a2bb144664a3a2ea490e7ebfafac1ecf22bf14e811f5`) | the prediction (all steps) |
+| Residualised target CSV | **Shipped** (`artifacts/…residualised_cognition.csv`, row-indexed, de-identified) | the prediction (recovery) |
+| HCP-YA behavior export | **HCP Open Access** (click-through Data Use Terms) | rebuilding the target (step 1) and the §5.1 cheap check |
+| HCP-YA `Family_ID` | **HCP Restricted** (application) | the family-block confirmatory null (step 3) |
+
+### The headline result reproduces on public data alone (no HCP account)
+
+Two commands, from the pack root — fetch the public FC features, then run the
+frozen predictor over the shipped residualised target:
+
+```bash
+python scripts/fetch_fc_features.py     # downloads + sha256-checks + unpacks to inputs/
+python scripts/run_prediction.py        # -> ICA_Cognition r ≈ 0.183, aggregate ≈ 0.151
+```
+
+`fetch_fc_features.py` pulls the ~937 MB per-term features from the GitHub release
+(`a1-fc-features-v1`; verified against `tar.gz sha256 ac3d0f36…`) into `inputs/`
+(git-ignored). `run_prediction.py` then reads that directory plus the shipped
+`artifacts/` target CSV and `manifests/` — no flags needed, no HCP account. This
+is the redesign→recovery half of the self-evolving loop, reproducible with zero
+controlled data. (To use your own copy of the features, pass
+`--terms-dir <dir>` / `$A1_TERMS_DIR`.)
+
+### Deeper provenance (needs your own HCP-YA export)
+
+The three audited steps below rebuild the target from HCP behavior and re-run the
+confirmatory null. Stage your HCP-YA data (Open Access; `Family_ID` needs
+Restricted), then point the scripts at it:
+
+```bash
+# step 1 — rebuild the (subject-keyed) target from HCP Open Access behavior
+python scripts/build_residualised_target.py --behavior-dir /path/to/hcp \
+  --component-csv liu_component_behavior.csv --hcp-csv HCP_YA_subjects.csv \
+  --out-dir /tmp/a1_rebuilt
+# step 2 — §5.1 within-fold cheap check (needs the subject-keyed target + HCP covariates)
+python scripts/run_residualised_cheap_check.py --resid-csv /tmp/a1_rebuilt/…residualised_cognition.csv \
+  --hcp-csv /path/to/hcp/HCP_YA_subjects.csv
+```
+
+The exact numbers those steps must reproduce are recorded below.
+
+---
+
 ## Step 1 — rebuild the residualised target
 
 ### Command
 ```
-python build_residualised_target.py   # (from the A1 use-case artifacts dir)
+python scripts/build_residualised_target.py --behavior-dir <staged HCP-YA dir>
 ```
 Fits `ICA_Cognition ~ 1 + PMAT24_A_CR + ListSort_Unadj + ReadEng_Unadj` on the 326
 HCP-YA Liu-intersection subjects and residualises the cognition target.
@@ -90,7 +144,7 @@ summarized above.
 
 ### Command
 ```
-python run_residualised_cheap_check.py   # from the intelligence_residualised_cognition/ workspace
+python scripts/run_residualised_cheap_check.py --resid-csv <subject-keyed target> --hcp-csv <HCP-YA export>
 ```
 Takes the **freshly-rebuilt** target from step 1 and re-fits the frozen Path-B FC
 predictor over the 10-fold manifest, then within-fold-residualises against
