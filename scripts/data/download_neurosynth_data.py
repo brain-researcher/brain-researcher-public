@@ -2,27 +2,24 @@
 """Script to download Neurosynth v0.7 data files."""
 
 import os
+
 import requests
-import shutil
 from tqdm import tqdm  # For progress bar, ensure it's in requirements or handle absence
 
-# Define file URLs and target directory
-# URLs are based on common locations for Neurosynth data, verify if these are current
-# Typically from https://github.com/neurosynth/neurosynth-data/tree/master/data
-# Or directly from neurosynth.org archives if available.
-# Using a direct link to a specific commit on GitHub for stability.
-BASE_URL = "https://raw.githubusercontent.com/neurosynth/neurosynth-data/d23309a279f18b600019b4773347000300700007/data/"
+# Neurosynth v7 data lives at the ROOT of the neurosynth/neurosynth-data repo
+# (the files are named ``data-neurosynth_version-7_*``; there is no ``data/``
+# subdirectory). Pinned to a real commit for reproducibility.
+BASE_URL = "https://raw.githubusercontent.com/neurosynth/neurosynth-data/209c33cd009d0b069398a802198b41b9c488b9b7/"
 
-FILES_TO_DOWNLOAD = {
-    "data-neurosynth_version-7_coordinates.tsv.gz": BASE_URL
-    + "neurosynth_version-7_coordinates.tsv.gz",
-    "data-neurosynth_version-7_metadata.tsv.gz": BASE_URL
-    + "neurosynth_version-7_metadata.tsv.gz",
-    "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz": BASE_URL
-    + "neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz",
-    "data-neurosynth_version-7_vocab-terms_vocabulary.txt": BASE_URL
-    + "neurosynth_version-7_vocab-terms_vocabulary.txt",
-}
+# Each file is fetched from ``BASE_URL + <filename>`` and saved under that same
+# filename (the repo path and the local name are identical).
+_V7_FILES = (
+    "data-neurosynth_version-7_coordinates.tsv.gz",
+    "data-neurosynth_version-7_metadata.tsv.gz",
+    "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz",
+    "data-neurosynth_version-7_vocab-terms_vocabulary.txt",
+)
+FILES_TO_DOWNLOAD = {name: BASE_URL + name for name in _V7_FILES}
 
 # Project root is assumed to be the parent directory of this script's location if placed in mri_assistant/scripts
 # Or adjust as needed if script is placed elsewhere.
