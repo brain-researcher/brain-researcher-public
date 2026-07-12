@@ -19,12 +19,25 @@ same tool from the starter prompt there. It needs a reachable MCP server:
     # or a local one: scripts/mcp/start_http_local.sh first, then
     python drive_from_language.py
 
-The full lenient-vs-conservative sensitivity sweep (which is what flags the claim
-threshold-fragile / ``weakened``) is a long call and can exceed an interactive
-MCP timeout; it is OFF here by default (the verdict ships with a loud
-"robustness unknown" caveat). Pass ``--full`` for it, or use the generator script
-for the fully sealed record.
+The full lenient-vs-conservative sensitivity sweep is what can flag a claim
+threshold-fragile. It is a second, deliberately conservative verify pass, so a
+synchronous ``--full`` call can approach an interactive MCP timeout (worst with
+the ``kg_verify`` backend, which re-queries the graph per bar). Two ways to run
+it without the caveat:
 
+    # (a) run the sweep off the interactive path (start + poll), recommended:
+    python drive_from_language.py --full --async
+
+    # (b) run it synchronously (fine for the fast nimare backend):
+    python drive_from_language.py --full
+
+Without ``--full`` the verdict ships with a loud "robustness unknown" caveat.
+``--strictness`` picks the *reported* evidence bar (lenient / balanced /
+conservative); with ``--full`` the sweep is always measured against a strictly
+more conservative bar than the reported one (and is a no-op when you already
+report the most conservative bar).
+
+    python drive_from_language.py --strictness conservative --full --async
     python drive_from_language.py --from-file verdict.json   # offline: summarize a saved payload
 """
 
@@ -34,8 +47,12 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
+
+# Terminal run states for the async (start + poll) path.
+_TERMINAL_STATUSES = {"succeeded", "failed", "cancelled", "canceled", "error"}
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
@@ -79,6 +96,54 @@ def call_mcp(
         return json.loads(proc.stdout)
     except json.JSONDecodeError as exc:  # pragma: no cover - defensive
         raise RuntimeError(f"{tool} returned non-JSON:\n{proc.stdout[:800]}") from exc
+
+
+def poll_async(
+    run_id: str,
+    *,
+    url: str | None,
+    token: str | None,
+    poll_interval_s: float,
+    poll_max_s: float,
+) -> dict[str, Any]:
+    """Poll ``neuroclaim_compile_get`` until the background run is terminal.
+
+    Returns the inlined neuroclaim report. Prints one line per poll (stage +
+    elapsed) so the wait is observable, and fails loudly on a non-success
+    terminal state or on exceeding ``poll_max_s``.
+    """
+    started = time.monotonic()
+    while True:
+        elapsed = time.monotonic() - started
+        resp = call_mcp(
+            "neuroclaim_compile_get",
+            {"run_id": run_id},
+            url=url,
+            token=token,
+            timeout_s=60,
+        )
+        run = resp.get("run") or {}
+        status = str(resp.get("status") or run.get("status") or "")
+        stage = (run.get("progress") or {}).get("current_stage") or "?"
+        print(f"  [poll {elapsed:5.0f}s] status={status or '?'} stage={stage}")
+        if resp.get("done") or status in _TERMINAL_STATUSES:
+            if status != "succeeded":
+                raise RuntimeError(
+                    f"background compile ended {status!r}: {run.get('error')}"
+                )
+            report = resp.get("result")
+            if not isinstance(report, dict):
+                raise RuntimeError(
+                    "background compile succeeded but no report was inlined under "
+                    "'result' (run_get artifact inlining did not fire)"
+                )
+            return report
+        if elapsed > poll_max_s:
+            raise TimeoutError(
+                f"background compile still {status!r} after {poll_max_s:.0f}s "
+                f"(run_id={run_id}); poll again with neuroclaim_compile_get"
+            )
+        time.sleep(poll_interval_s)
 
 
 def summarize(report: dict[str, Any], *, claim: str) -> str:
@@ -146,6 +211,21 @@ def main() -> int:
         help="Run the full lenient-vs-conservative sensitivity sweep (slow).",
     )
     ap.add_argument(
+        "--strictness",
+        default=None,
+        choices=["lenient", "balanced", "conservative"],
+        help="Reported evidence bar (default: server default = lenient/high-recall).",
+    )
+    ap.add_argument(
+        "--async",
+        dest="use_async",
+        action="store_true",
+        help="Run the compile as a background run (start + poll) so the sweep "
+        "does not block on an interactive MCP timeout.",
+    )
+    ap.add_argument("--poll-interval-s", type=float, default=10.0)
+    ap.add_argument("--poll-max-s", type=float, default=600.0)
+    ap.add_argument(
         "--url", default=None, help="MCP URL (default BR_MCP_HTTP_URL / local)."
     )
     ap.add_argument(
@@ -166,19 +246,41 @@ def main() -> int:
         info = call_mcp("server_info", {}, url=args.url, token=args.token, timeout_s=30)
         data = info.get("data") or info
         print(f"  MCP: {data.get('name')} contract {data.get('contract_version')}")
-        report = call_mcp(
-            "neuroclaim_compile",
-            {
-                "claim_text": args.claim,
-                "modality": args.modality,
-                "workflow_family": args.workflow_family,
-                "backend": args.backend,
-                "run_sensitivity": bool(args.full),
-            },
-            url=args.url,
-            token=args.token,
-            timeout_s=args.timeout_s,
-        )
+        compile_args = {
+            "claim_text": args.claim,
+            "modality": args.modality,
+            "workflow_family": args.workflow_family,
+            "backend": args.backend,
+            "run_sensitivity": bool(args.full),
+        }
+        if args.strictness:
+            compile_args["strictness"] = args.strictness
+        if args.use_async:
+            launch = call_mcp(
+                "neuroclaim_compile_start",
+                compile_args,
+                url=args.url,
+                token=args.token,
+                timeout_s=60,
+            )
+            run_id = launch.get("run_id")
+            assert run_id, f"start did not return a run_id: {launch}"
+            print(f"  started background run {run_id} — polling")
+            report = poll_async(
+                run_id,
+                url=args.url,
+                token=args.token,
+                poll_interval_s=args.poll_interval_s,
+                poll_max_s=args.poll_max_s,
+            )
+        else:
+            report = call_mcp(
+                "neuroclaim_compile",
+                compile_args,
+                url=args.url,
+                token=args.token,
+                timeout_s=args.timeout_s,
+            )
 
     print(summarize(report, claim=args.claim))
     print()
