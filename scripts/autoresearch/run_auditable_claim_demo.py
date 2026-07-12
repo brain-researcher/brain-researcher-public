@@ -1,17 +1,25 @@
 #!/usr/bin/env python
-"""Generate NeuroLang -> V-HRL calibrated ClaimCard demo artifacts.
+"""Generate a V-HRL calibrated auditable ClaimCard from public Neurosynth evidence.
 
 This script is intentionally narrow and rerunnable. It reads a local NiMARE
-Neurosynth corpus, runs the out-of-process NeuroLang backend, and writes a JSON
-bundle plus a Markdown summary under ``docs/results/`` by default.
+Neurosynth corpus, runs the evidence backend, and writes a JSON bundle plus a
+Markdown summary under ``docs/results/`` by default.
+
+The default backend is **NiMARE** (``pip install nimare nilearn`` -- standard
+scientific-Python, no second interpreter). NeuroLang is an optional *reference*
+engine (``--backend neurolang``) that reproduces the exact committed reference
+card; it is not required and must not be installed with ``pip install neurolang``
+(see ``examples/auditable_claim_record/README.md`` for its isolated-venv recipe).
 
 Inputs:
   --corpus: NiMARE Neurosynth dataset pickle. Defaults to BR_NEUROCLAIM_CORPUS or
     ``~/.nimare/neurosynth/neurosynth_terms_dataset.pkl.gz``.
   --case: demo case to run. Defaults to ``working_memory``.
+  --backend: ``nimare`` (default, light) or ``neurolang`` (optional reference).
   --output-dir: output directory. Defaults to the selected case's result folder.
-  --venv-python: optional NeuroLang Python interpreter. Defaults to
-    BR_NEUROLANG_PYTHON or ``~/.venvs/neurolang-py312/bin/python``.
+  --venv-python: optional NeuroLang interpreter, only used with
+    ``--backend neurolang``. Defaults to BR_NEUROLANG_PYTHON or
+    ``~/.venvs/neurolang-py312/bin/python``.
 
 Outputs:
   evidence_verdicts.json
@@ -503,12 +511,29 @@ def _markdown(bundle: dict[str, Any]) -> str:
             "",
             "## Reproduce",
             "",
+            "Local light path -- standard scientific-Python only (NiMARE is the "
+            "default backend; you do NOT need the full Brain Researcher platform):",
+            "",
             "```bash",
-            "source ${HOME}/miniconda3/etc/profile.d/conda.sh",
-            "conda activate brain_researcher",
-            "PYTHONPATH=src BR_NEUROLANG_PYTHON=$HOME/.venvs/neurolang-py312/bin/python "
-            f"python scripts/autoresearch/run_neurolang_vhrl_demo.py --case {bundle['case_key']}",
+            "pip install nimare nilearn",
+            "python scripts/data/download_neurosynth_data.py",
+            "python scripts/data/convert_neurosynth.py",
+            "python scripts/autoresearch/run_auditable_claim_demo.py "
+            f"--case {bundle['case_key']} \\",
+            "  --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl",
             "```",
+            "",
+            "Or the language-driven path through the Brain Researcher MCP (no local "
+            "install -- one call to the hosted server returns the gated verdict):",
+            "",
+            "```bash",
+            "python examples/auditable_claim_record/drive_from_language.py",
+            "```",
+            "",
+            "NeuroLang is an optional *reference* engine only -- do NOT "
+            "`pip install neurolang` (it is not installable from PyPI). The venv "
+            "recipe, only if you want to regenerate that exact reference card, is in "
+            "`examples/auditable_claim_record/README.md`.",
             "",
         ]
     )

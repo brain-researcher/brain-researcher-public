@@ -30,7 +30,7 @@ python scripts/data/download_neurosynth_data.py
 python scripts/data/convert_neurosynth.py
 
 echo "== [4/4] execute the claim -> sealed record (default NiMARE backend) =="
-python scripts/autoresearch/run_neurolang_vhrl_demo.py \
+python scripts/autoresearch/run_auditable_claim_demo.py \
   --case working_memory \
   --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl \
   --output-dir "${OUT}"

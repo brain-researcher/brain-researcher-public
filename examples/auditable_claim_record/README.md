@@ -96,7 +96,7 @@ interpreter, no pinned legacy dependencies.
    ```
 3. Run the generator (NiMARE is the default backend, so `--backend` is optional):
    ```bash
-   python scripts/autoresearch/run_neurolang_vhrl_demo.py \
+   python scripts/autoresearch/run_auditable_claim_demo.py \
      --case working_memory \
      --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl \
      --output-dir /tmp/wm_demo
@@ -153,7 +153,7 @@ Then point the generator at that interpreter and select the backend:
 
 ```bash
 BR_NEUROLANG_PYTHON=~/.venvs/neurolang/bin/python \
-python scripts/autoresearch/run_neurolang_vhrl_demo.py \
+python scripts/autoresearch/run_auditable_claim_demo.py \
   --case working_memory --backend neurolang \
   --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl \
   --output-dir /tmp/wm_neurolang

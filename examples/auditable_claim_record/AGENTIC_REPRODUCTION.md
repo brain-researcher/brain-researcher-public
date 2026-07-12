@@ -68,7 +68,7 @@ Or run locally: `scripts/mcp/start_http_local.sh`. Sanity-check with `server_inf
 | Report / review gate | Gate the claim through the evidence kernel; escalate if needed | `report_claim_evidence_check`, `request_scientific_review` |
 
 The one-shot realization of exactly this episode is the shipped generator,
-`scripts/autoresearch/run_neurolang_vhrl_demo.py` (it seals via `lock_commitment`,
+`scripts/autoresearch/run_auditable_claim_demo.py` (it seals via `lock_commitment`,
 runs the graded queries, and emits `claim_card.json` / `evidence_verdicts.json` /
 `demo_bundle.json`). The agentic path calls the same machinery through typed MCP
 tools instead of one script.
