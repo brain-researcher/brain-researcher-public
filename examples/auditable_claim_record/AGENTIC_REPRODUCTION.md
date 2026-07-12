@@ -15,6 +15,22 @@ The discipline is structural: the commitment card is sealed and hash-verified
 is detectable. The agent frames the claim and drives the tools; it cannot make
 the record self-consistent after seeing the evidence.
 
+## Run the language step as one command
+
+[`drive_from_language.py`](drive_from_language.py) is the scripted realization of
+the compile step below: it takes the claim as natural language, calls
+`server_info` then `neuroclaim_compile` through the MCP, and prints the gated
+verdict with its named-uncertainty vector and re-runnable query.
+
+```bash
+# needs a reachable MCP (hosted BR_MCP_HTTP_URL + BR_MCP_TOKEN, or a local server)
+python examples/auditable_claim_record/drive_from_language.py
+python examples/auditable_claim_record/drive_from_language.py --full   # + sensitivity sweep (slow)
+```
+
+A coding agent would drive the same tools conversationally from the starter
+prompt at the bottom of this file. The steps below are what that call sequence is.
+
 ## Connect the MCP
 
 See [`../../docs/mcp.md`](../../docs/mcp.md). For Claude Code against a hosted

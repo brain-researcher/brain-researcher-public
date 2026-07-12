@@ -60,11 +60,22 @@ the paper only walks through the same schema field by field.
 This example runs on public Neurosynth data — no account or data-use agreement.
 You do **not** need the full Brain Researcher platform: the generator, the two
 data scripts, and a small evidence backend in this repository are all it takes.
+
+**One command, from scratch** (environment → public corpus → executed evidence →
+sealed record, with a built-in check that the result did not drift):
+
+```bash
+bash examples/auditable_claim_record/run_end_to_end.sh
+```
+
 To reproduce it the way the platform produces it — a coding agent driving the
-sealed claim episode from language through the MCP — see
+sealed claim episode **from language** through the MCP — run
+[`drive_from_language.py`](drive_from_language.py) (one MCP call, gates the claim
+and returns the verdict with its named uncertainty) or follow the full episode in
 [`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md).
 
-There are two evidence backends. The **NiMARE backend is the default** and the
+The rest of this section is the same chain, step by step. There are two evidence
+backends. The **NiMARE backend is the default** and the
 light path a reader should start with; the **NeuroLang backend** is the
 reference engine that produced the exact sealed card committed in this folder.
 

@@ -29,8 +29,15 @@ the data-access boundary below.
 
 ### The headline result reproduces on public data alone (no HCP account)
 
-Two commands, from the pack root — fetch the public FC features, then run the
-frozen predictor over the shipped residualised target:
+**One command, from scratch** (light env → public FC features → frozen evaluator,
+with a built-in check that the numbers did not drift):
+
+```bash
+bash reproducibility/packs/bounded_autoresearch_a1/run_end_to_end.sh
+```
+
+Or the two underlying steps, from the pack root — fetch the public FC features,
+then run the frozen predictor over the shipped residualised target:
 
 ```bash
 python scripts/fetch_fc_features.py     # downloads + sha256-checks + unpacks to inputs/

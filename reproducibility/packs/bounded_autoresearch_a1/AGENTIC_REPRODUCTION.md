@@ -23,6 +23,25 @@ Recommended call order (from the profile):
 `loop_profile_get → tool_search → tool_get → get_execution_recipe →
 pipeline_plan_validate → run_bundle_get → run_scorecard → run_compare`.
 
+## Run the KG-as-prior step as one command
+
+[`drive_from_language.py`](drive_from_language.py) runs the loop's language-driven
+precondition — the KG hypothesis step — as a single MCP call: from a
+natural-language query it surfaces falsifiable connectivity→behavior leads and
+prints what the literature check let survive versus vetoed / downranked.
+
+```bash
+# needs a reachable MCP (hosted BR_MCP_HTTP_URL + BR_MCP_TOKEN, or a local server)
+python reproducibility/packs/bounded_autoresearch_a1/drive_from_language.py
+# offline, against the captured demo call:
+python reproducibility/packs/bounded_autoresearch_a1/drive_from_language.py \
+  --from-file reproducibility/packs/bounded_autoresearch_a1/artifacts/agentic_kg_hypothesis_demo.json
+```
+
+Sampling + verification are budget-bounded and non-deterministic; what is
+invariant is the machinery (falsifier-carrying leads, duplicate collapse,
+same-family downrank, literature veto). The full loop is the starter prompt below.
+
 ## Connect the MCP
 
 See [`docs/mcp.md`](../../../docs/mcp.md) for the full connection guide. In brief,
