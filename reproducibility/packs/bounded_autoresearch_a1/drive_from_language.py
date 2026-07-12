@@ -36,7 +36,7 @@ from pathlib import Path
 from typing import Any
 
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = HERE.parents[3]
+REPO_ROOT = HERE.parents[2]
 CALL_TOOL = REPO_ROOT / "scripts" / "mcp" / "call_http_tool.py"
 
 # pmid:27920976 is a real BR-KG Publication node: resting-state (dys)connectivity
