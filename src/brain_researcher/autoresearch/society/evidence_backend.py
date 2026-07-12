@@ -113,8 +113,7 @@ class ProbabilisticEvidenceBackend(Protocol):
 
     name: str
 
-    def available(self) -> bool:
-        ...
+    def available(self) -> bool: ...
 
     def verify(
         self,
@@ -122,8 +121,7 @@ class ProbabilisticEvidenceBackend(Protocol):
         scope: ScopeBoundaryV1,
         *,
         profile: EvidenceProfile = DEFAULT_PROFILE,
-    ) -> EvidenceVerdict:
-        ...
+    ) -> EvidenceVerdict: ...
 
 
 def _refs(items: Any, *, cap: int = 20) -> list[str]:
@@ -138,7 +136,9 @@ def _refs(items: Any, *, cap: int = 20) -> list[str]:
                 or it.get("id")
                 or it.get("title")
             )
-            out.append(str(ref) if ref is not None else json.dumps(it, default=str)[:120])
+            out.append(
+                str(ref) if ref is not None else json.dumps(it, default=str)[:120]
+            )
         else:
             out.append(str(it))
     return out
@@ -294,7 +294,9 @@ class NeuroLangBackend:
     ) -> None:
         self._corpus = corpus
         self._venv_python = os.path.expanduser(
-            venv_python or os.environ.get("BR_NEUROLANG_PYTHON") or _DEFAULT_NEUROLANG_PYTHON
+            venv_python
+            or os.environ.get("BR_NEUROLANG_PYTHON")
+            or _DEFAULT_NEUROLANG_PYTHON
         )
         self._radius = float(radius_mm)
         self._label_threshold = float(label_threshold)
@@ -354,7 +356,9 @@ class NeuroLangBackend:
                 timeout=self._timeout,
             )
         except (OSError, subprocess.SubprocessError) as exc:
-            raise EvidenceBackendUnavailable(f"neurolang worker failed to run: {exc}") from exc
+            raise EvidenceBackendUnavailable(
+                f"neurolang worker failed to run: {exc}"
+            ) from exc
         if proc.returncode != 0:
             raise EvidenceBackendUnavailable(
                 f"neurolang worker exited {proc.returncode}: {proc.stderr[:300]}"
@@ -366,7 +370,9 @@ class NeuroLangBackend:
                 f"neurolang worker emitted non-JSON: {proc.stdout[:300]}"
             ) from exc
         if not out.get("ok", False):
-            raise EvidenceBackendUnavailable(f"neurolang worker error: {out.get('error')}")
+            raise EvidenceBackendUnavailable(
+                f"neurolang worker error: {out.get('error')}"
+            )
         return out
 
     def _region_studies(self, xyz: tuple[float, float, float]) -> list[str]:
@@ -380,7 +386,9 @@ class NeuroLangBackend:
         # matches ``corpus.ids`` / ``get_studies_by_label``; fall back to ``study_id``.
         id_col = "id" if "id" in coords.columns else "study_id"
         xyz_arr = np.asarray(xyz, dtype=float)
-        dist = np.linalg.norm(coords[["x", "y", "z"]].to_numpy(dtype=float) - xyz_arr, axis=1)
+        dist = np.linalg.norm(
+            coords[["x", "y", "z"]].to_numpy(dtype=float) - xyz_arr, axis=1
+        )
         return sorted({str(s) for s in coords.loc[dist <= self._radius, id_col]})
 
     def verify(
@@ -408,8 +416,13 @@ class NeuroLangBackend:
                 backend=self.name,
                 profile=profile.name,
                 n_supporting=n_total,
-                reproducible_query={"backend": self.name, "note": f"no {missing} resolved"},
-                warnings=[f"no target {missing} resolved from the claim (grounding lexicon)"],
+                reproducible_query={
+                    "backend": self.name,
+                    "note": f"no {missing} resolved",
+                },
+                warnings=[
+                    f"no target {missing} resolved from the claim (grounding lexicon)"
+                ],
             )
 
         term_studies = [
@@ -439,7 +452,9 @@ class NeuroLangBackend:
         n_term = int(out.get("n_term", len(term_studies)))
         if n_term < _MIN_TERM_STUDIES:
             status = ClaimStatusV1.unresolved
-            warnings.append(f"underpowered: only {n_term} studies about the term (<{_MIN_TERM_STUDIES})")
+            warnings.append(
+                f"underpowered: only {n_term} studies about the term (<{_MIN_TERM_STUDIES})"
+            )
         else:
             status = _status_from_lift(lift, bar)
         assoc = max(0.0, min(1.0, p_rgt)) if isinstance(p_rgt, int | float) else None
@@ -518,8 +533,13 @@ class NeuroLangBackend:
                 backend=self.name,
                 profile=profile.name,
                 n_supporting=n_total,
-                reproducible_query={"backend": self.name, "note": f"no {missing} resolved"},
-                warnings=[f"no target {missing} resolved from the claim (grounding lexicon)"],
+                reproducible_query={
+                    "backend": self.name,
+                    "note": f"no {missing} resolved",
+                },
+                warnings=[
+                    f"no target {missing} resolved from the claim (grounding lexicon)"
+                ],
             )
 
         include_studies = [
@@ -565,7 +585,9 @@ class NeuroLangBackend:
             f"term '{term_res.term}', excluded {sorted(exclude_studies)}"
         ]
         if unresolved_excludes:
-            warnings.append(f"rival terms not in the corpus vocab (ignored): {unresolved_excludes}")
+            warnings.append(
+                f"rival terms not in the corpus vocab (ignored): {unresolved_excludes}"
+            )
         if n_eligible < _MIN_TERM_STUDIES:
             status = ClaimStatusV1.unresolved
             warnings.append(
@@ -585,7 +607,11 @@ class NeuroLangBackend:
                 f"NOT specific: association clears the bar pooled (lift {lift_include:.2f}) but "
                 f"collapses after excluding rivals (lift {lift_specific:.2f}) — likely confounded"
             )
-        assoc = max(0.0, min(1.0, p_specific)) if isinstance(p_specific, int | float) else None
+        assoc = (
+            max(0.0, min(1.0, p_specific))
+            if isinstance(p_specific, int | float)
+            else None
+        )
         return EvidenceVerdict(
             status=status,
             backend=self.name,
@@ -704,7 +730,9 @@ class NeuroLangBackend:
             f"Datalog conjunction; term '{term_res.term}', regions {sorted(resolved)}"
         ]
         if unresolved_regions:
-            warnings.append(f"regions not in the grounding lexicon (ignored): {unresolved_regions}")
+            warnings.append(
+                f"regions not in the grounding lexicon (ignored): {unresolved_regions}"
+            )
         if n_joint < _MIN_TERM_STUDIES:
             status = ClaimStatusV1.unresolved
             warnings.append(
@@ -724,7 +752,9 @@ class NeuroLangBackend:
                 f"regions associate with the term but do NOT co-activate beyond independence "
                 f"(co-activation lift {coact:.2f}) — parallel recruitment, not integration"
             )
-        assoc = max(0.0, min(1.0, p_joint)) if isinstance(p_joint, int | float) else None
+        assoc = (
+            max(0.0, min(1.0, p_joint)) if isinstance(p_joint, int | float) else None
+        )
         return EvidenceVerdict(
             status=status,
             backend=self.name,
@@ -783,7 +813,9 @@ _ALPHA_BY_STRICTNESS: dict[str, float] = {
 _LENIENT_ALPHA = 0.05
 
 
-def _status_from_significance(z_positive: bool, p: float, alpha: float) -> ClaimStatusV1:
+def _status_from_significance(
+    z_positive: bool, p: float, alpha: float
+) -> ClaimStatusV1:
     """Map a one-sided significance onto the ladder.
 
     Significant at this profile's bar -> supported; significant only at the lenient
@@ -872,7 +904,9 @@ class NimareBackend:
             from nimare.meta.cbma.mkda import MKDAChi2
 
             present = list(
-                self._corpus.get_studies_by_label(term, label_threshold=self._label_threshold)
+                self._corpus.get_studies_by_label(
+                    term, label_threshold=self._label_threshold
+                )
             )
             absent = sorted(set(self._corpus.ids) - set(present))
             if not present or not absent:
@@ -896,7 +930,9 @@ class NimareBackend:
         xyz = region.xyz
         z = self._sample(result, "z_desc-association", xyz)
         p = self._sample(result, "p_desc-association", xyz)
-        posterior = self._sample(result, "prob_desc-FgA", xyz)  # P(term | activation@region)
+        posterior = self._sample(
+            result, "prob_desc-FgA", xyz
+        )  # P(term | activation@region)
         alpha = _ALPHA_BY_STRICTNESS.get(profile.strictness, 0.05)
         # Over-representation only: a negative association z means the term is LESS
         # likely at this region, which never supports an engagement claim.
@@ -944,6 +980,303 @@ class NimareBackend:
             ],
         )
 
+    def _region_studies(self, xyz: tuple[float, float, float]) -> list[str]:
+        """Study ids with at least one reported peak within ``radius_mm`` of ``xyz``.
+
+        In-process coordinate membership over ``corpus.coordinates`` — the set primitive
+        the compositional specificity/network queries need, computed without NiMARE's
+        CBMA estimators (which cannot express them).
+        """
+        import numpy as np
+
+        coords = self._corpus.coordinates
+        dx = coords["x"].to_numpy(dtype=float) - float(xyz[0])
+        dy = coords["y"].to_numpy(dtype=float) - float(xyz[1])
+        dz = coords["z"].to_numpy(dtype=float) - float(xyz[2])
+        within = (dx * dx + dy * dy + dz * dz) <= (self._radius * self._radius)
+        return sorted({str(s) for s in np.asarray(coords["id"])[within]})
+
+    def verify_specificity(
+        self,
+        claim_text: str,
+        scope: ScopeBoundaryV1,
+        *,
+        exclude_terms: list[str],
+        profile: EvidenceProfile = DEFAULT_PROFILE,
+    ) -> EvidenceVerdict:
+        """Is the region-term association *specific*, or driven by a rival term?
+
+        Set-based analogue of the NeuroLang ``P(region | term AND NOT rivals)`` contrast
+        that NiMARE's estimators cannot express: compares the fraction of *term* studies
+        peaking at the target region against the same fraction with every ``exclude_terms``
+        (rival) study removed, reported as a lift over the corpus base rate. A large drop
+        when the rivals are excluded is surfaced as a warning. This is coordinate set
+        arithmetic over the corpus, not a NiMARE CBMA.
+        """
+        if not self.available():
+            raise EvidenceBackendUnavailable(
+                "NimareBackend needs a corpus and nimare installed"
+            )
+        region = resolve_region(claim_text)
+        labels = self._term_labels()
+        excl = region_surface_aliases(region.region_label) if region is not None else ()
+        term_res = resolve_term(claim_text, labels, exclude_surfaces=excl)
+        all_ids = {str(s) for s in getattr(self._corpus, "ids", [])}
+        n_total = len(all_ids)
+        if region is None or term_res is None:
+            missing = "region" if region is None else "term"
+            return EvidenceVerdict(
+                status=ClaimStatusV1.unresolved,
+                backend=self.name,
+                profile=profile.name,
+                n_supporting=n_total,
+                reproducible_query={
+                    "backend": self.name,
+                    "note": f"no {missing} resolved",
+                },
+                warnings=[
+                    f"no target {missing} resolved from the claim (grounding lexicon)"
+                ],
+            )
+        region_ids = set(self._region_studies(region.xyz))
+        include = {
+            str(s)
+            for s in self._corpus.get_studies_by_label(
+                term_res.label, label_threshold=self._label_threshold
+            )
+        }
+        exclude_ids: set[str] = set()
+        resolved_rivals: dict[str, int] = {}
+        unresolved_excludes: list[str] = []
+        for raw_term in exclude_terms:
+            res = resolve_term(raw_term, labels)
+            if res is None:
+                unresolved_excludes.append(raw_term)
+                continue
+            rs = {
+                str(s)
+                for s in self._corpus.get_studies_by_label(
+                    res.label, label_threshold=self._label_threshold
+                )
+            }
+            resolved_rivals[res.term] = len(rs)
+            exclude_ids |= rs
+        specific = include - exclude_ids
+        base_rate = (len(region_ids) / n_total) if n_total else 0.0
+
+        def _frac(subset: set[str]) -> float:
+            return (len(region_ids & subset) / len(subset)) if subset else 0.0
+
+        p_term = _frac(include)
+        p_specific = _frac(specific)
+        specific_lift = (p_specific / base_rate) if base_rate > 0 else None
+        retained = (p_specific / p_term) if p_term > 0 else 0.0
+        bar = _LIFT_BY_STRICTNESS.get(profile.strictness, 1.5)
+        if len(specific) < _MIN_TERM_STUDIES:
+            status = ClaimStatusV1.unresolved
+        else:
+            status = _status_from_lift(specific_lift, bar)
+        warnings = [
+            "specificity: P(region peak | term AND NOT rivals) over corpus base rate via "
+            f"coordinate set arithmetic (not a NiMARE CBMA); term '{term_res.term}', "
+            f"rivals {sorted(resolved_rivals)}; region grounded to {region.region_label}"
+        ]
+        if unresolved_excludes:
+            warnings.append(
+                f"rival terms not in the corpus lexicon (ignored): {unresolved_excludes}"
+            )
+        if p_term > 0 and retained < 0.5:
+            warnings.append(
+                f"association drops to {retained:.0%} of its value when rivals are excluded "
+                "— partly confound-driven, not fully specific"
+            )
+        assoc = max(0.0, min(1.0, p_specific))
+        return EvidenceVerdict(
+            status=status,
+            backend=self.name,
+            profile=profile.name,
+            association_probability=assoc,
+            confidence=assoc,
+            inference="specificity_set_contrast",
+            region_confidence=region.confidence,
+            term_confidence=term_res.confidence,
+            region_source=region.source,
+            term_source=term_res.source,
+            n_supporting=len(specific),
+            n_conflicting=len(exclude_ids),
+            reproducible_query={
+                "backend": self.name,
+                "method": "coordinate_set_contrast",
+                "term": term_res.label,
+                "exclude_terms": sorted(resolved_rivals),
+                "target_region": region.name,
+                "target_region_label": region.region_label,
+                "target_xyz": list(region.xyz),
+                "radius_mm": self._radius,
+                "lift_bar": bar,
+                "strictness": profile.strictness,
+            },
+            raw={
+                "p_region_given_term": p_term,
+                "p_region_given_term_not_rivals": p_specific,
+                "base_rate": base_rate,
+                "specific_lift": specific_lift,
+                "retained_fraction": retained,
+                "n_term": len(include),
+                "n_excluded": len(exclude_ids),
+                "n_specific": len(specific),
+                "n_total": n_total,
+                "lift_bar": bar,
+                "inference": "specificity_set_contrast",
+            },
+            warnings=warnings,
+        )
+
+    def verify_network(
+        self,
+        claim_text: str,
+        scope: ScopeBoundaryV1,
+        *,
+        regions: list[str],
+        profile: EvidenceProfile = DEFAULT_PROFILE,
+    ) -> EvidenceVerdict:
+        """Do ``regions`` *co-activate* for the claim's term, beyond independence?
+
+        Set-based analogue of the NeuroLang multi-region conjunction NiMARE cannot
+        express: studies peaking in ALL ``regions`` (coordinate membership) intersected
+        with the term studies give ``P(joint | term)``; the co-activation lift
+        ``P(joint|term) / prod_i P(region_i|term)`` separates an integrated network (>1)
+        from parallel recruitment (~1). Status is the joint forward lift; a co-activation
+        lift below 1 downgrades a supported joint to ``weakened``.
+        """
+        if not self.available():
+            raise EvidenceBackendUnavailable(
+                "NimareBackend needs a corpus and nimare installed"
+            )
+        term_res = resolve_term(
+            claim_text, self._term_labels(), exclude_surfaces=tuple(regions)
+        )
+        all_ids = {str(s) for s in getattr(self._corpus, "ids", [])}
+        n_total = len(all_ids)
+        resolved: dict[str, set[str]] = {}
+        unresolved_regions: list[str] = []
+        for name in regions:
+            reg = resolve_region(name)
+            if reg is None:
+                unresolved_regions.append(name)
+                continue
+            resolved[reg.region_label] = set(self._region_studies(reg.xyz))
+        if term_res is None or len(resolved) < 2:
+            why = "term" if term_res is None else "two resolvable regions"
+            return EvidenceVerdict(
+                status=ClaimStatusV1.unresolved,
+                backend=self.name,
+                profile=profile.name,
+                n_supporting=n_total,
+                reproducible_query={"backend": self.name, "note": f"need a {why}"},
+                warnings=[
+                    f"network query needs a {why}; resolved regions {sorted(resolved)}, "
+                    f"unresolved {unresolved_regions}"
+                ],
+            )
+        term_ids = {
+            str(s)
+            for s in self._corpus.get_studies_by_label(
+                term_res.label, label_threshold=self._label_threshold
+            )
+        }
+        if not term_ids:
+            return EvidenceVerdict(
+                status=ClaimStatusV1.unresolved,
+                backend=self.name,
+                profile=profile.name,
+                n_supporting=0,
+                reproducible_query={
+                    "backend": self.name,
+                    "note": "no studies for the term",
+                },
+                warnings=[f"no corpus studies carry the term '{term_res.term}'"],
+            )
+        joint = set.intersection(*resolved.values())
+        per_region_given_term = {
+            lbl: (len(term_ids & rs) / len(term_ids)) for lbl, rs in resolved.items()
+        }
+        n_joint = len(term_ids & joint)
+        p_joint_given_term = n_joint / len(term_ids)
+        expected_if_independent = 1.0
+        for v in per_region_given_term.values():
+            expected_if_independent *= v
+        coact = (
+            (p_joint_given_term / expected_if_independent)
+            if expected_if_independent > 0
+            else None
+        )
+        p_joint_corpus = (len(joint) / n_total) if n_total else 0.0
+        joint_lift = (
+            (p_joint_given_term / p_joint_corpus) if p_joint_corpus > 0 else None
+        )
+        bar = _LIFT_BY_STRICTNESS.get(profile.strictness, 1.5)
+        warnings = [
+            "network co-activation: P(all regions peak | term) via coordinate set "
+            f"intersection (not a NiMARE CBMA); term '{term_res.term}', regions {sorted(resolved)}"
+        ]
+        if unresolved_regions:
+            warnings.append(
+                f"regions not in the grounding lexicon (ignored): {unresolved_regions}"
+            )
+        if n_joint < _MIN_TERM_STUDIES:
+            status = ClaimStatusV1.unresolved
+            warnings.append(
+                f"underpowered: only {n_joint} studies co-activate all regions (<{_MIN_TERM_STUDIES})"
+            )
+        else:
+            status = _status_from_lift(joint_lift, bar)
+        if (
+            coact is not None
+            and coact < 1.0
+            and status is ClaimStatusV1.supported_within_scope
+        ):
+            status = ClaimStatusV1.weakened
+            warnings.append(
+                f"regions associate with the term but do NOT co-activate beyond independence "
+                f"(co-activation lift {coact:.2f}) — parallel recruitment, not integration"
+            )
+        assoc = max(0.0, min(1.0, p_joint_given_term))
+        return EvidenceVerdict(
+            status=status,
+            backend=self.name,
+            profile=profile.name,
+            association_probability=assoc,
+            confidence=assoc,
+            inference="network_set_conjunction",
+            term_confidence=term_res.confidence,
+            term_source=term_res.source,
+            n_supporting=n_joint,
+            reproducible_query={
+                "backend": self.name,
+                "method": "coordinate_set_conjunction",
+                "term": term_res.label,
+                "regions": sorted(resolved),
+                "radius_mm": self._radius,
+                "lift_bar": bar,
+                "strictness": profile.strictness,
+            },
+            raw={
+                "p_joint_given_term": p_joint_given_term,
+                "p_joint": p_joint_corpus,
+                "joint_forward_lift": joint_lift,
+                "coactivation_lift": coact,
+                "per_region_given_term": per_region_given_term,
+                "expected_if_independent": expected_if_independent,
+                "lift_bar": bar,
+                "n_joint": n_joint,
+                "n_term": len(term_ids),
+                "n_total": n_total,
+                "inference": "network_set_conjunction",
+            },
+            warnings=warnings,
+        )
+
     def verify(
         self,
         claim_text: str,
@@ -963,8 +1296,13 @@ class NimareBackend:
                 backend=self.name,
                 profile=profile.name,
                 n_supporting=n_studies,
-                reproducible_query={"backend": self.name, "note": "no target region resolved"},
-                warnings=["no target region resolved from the claim (grounding lexicon)"],
+                reproducible_query={
+                    "backend": self.name,
+                    "note": "no target region resolved",
+                },
+                warnings=[
+                    "no target region resolved from the claim (grounding lexicon)"
+                ],
             )
 
         # Reverse inference (P(term | region), MKDAChi2) when the corpus carries a
@@ -990,8 +1328,13 @@ class NimareBackend:
                 region_confidence=region.confidence,
                 region_source=region.source,
                 n_supporting=n_studies,
-                reproducible_query={"backend": self.name, "note": "no corpus term matched the claim"},
-                warnings=["reverse inference requested but no corpus term matched the claim"],
+                reproducible_query={
+                    "backend": self.name,
+                    "note": "no corpus term matched the claim",
+                },
+                warnings=[
+                    "reverse inference requested but no corpus term matched the claim"
+                ],
             )
 
         # Forward convergence (ALE) fallback.
@@ -1060,10 +1403,14 @@ def resolve_backend(
     :class:`KgVerifyBackend`), so the call site always gets a working backend.
     """
     fallback = fallback or KgVerifyBackend()
-    requested = (name or os.environ.get("BR_NEUROCLAIM_BACKEND") or "kg_verify").strip().lower()
+    requested = (
+        (name or os.environ.get("BR_NEUROCLAIM_BACKEND") or "kg_verify").strip().lower()
+    )
     canonical = _BACKENDS.get(requested)
     if canonical is None:
-        logger.warning("neuroclaim: unknown backend %r; using %s", requested, fallback.name)
+        logger.warning(
+            "neuroclaim: unknown backend %r; using %s", requested, fallback.name
+        )
         return fallback
     if canonical == "kg":
         return KgVerifyBackend()

@@ -48,6 +48,7 @@ from brain_researcher.autoresearch.society.evidence_backend import (
     STRICT_PROFILE,
     EvidenceVerdict,
     NeuroLangBackend,
+    NimareBackend,
 )
 from brain_researcher.autoresearch.society.hypotheses import (
     CriticalTestV1,
@@ -414,9 +415,16 @@ def run_neurolang_evidence(
     corpus_path: Path,
     venv_python: str | None,
     case: DemoCase = WORKING_MEMORY_CASE,
+    backend_name: str = "neurolang",
 ) -> dict[str, EvidenceVerdict]:
     corpus = load_neurosynth_corpus(str(corpus_path))
-    backend = NeuroLangBackend(corpus=corpus, venv_python=venv_python, timeout_s=180)
+    backend: NeuroLangBackend | NimareBackend
+    if backend_name == "nimare":
+        backend = NimareBackend(corpus=corpus)
+    else:
+        backend = NeuroLangBackend(
+            corpus=corpus, venv_python=venv_python, timeout_s=180
+        )
     inputs = build_demo_inputs(case)
     claim_text = inputs.claim.extra["evidence_claim_text"]
     scope = inputs.claim.scope_boundary
@@ -512,10 +520,14 @@ def run_demo(
     output_dir: Path,
     venv_python: str | None,
     case: DemoCase = WORKING_MEMORY_CASE,
+    backend_name: str = "neurolang",
 ) -> dict[str, Any]:
     inputs = build_demo_inputs(case)
     evidence = run_neurolang_evidence(
-        corpus_path=corpus_path, venv_python=venv_python, case=case
+        corpus_path=corpus_path,
+        venv_python=venv_python,
+        case=case,
+        backend_name=backend_name,
     )
     evidence_json = {name: _model_dump(verdict) for name, verdict in evidence.items()}
     script_path = Path(__file__).resolve()
@@ -582,7 +594,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--venv-python",
         default=os.environ.get("BR_NEUROLANG_PYTHON"),
-        help="Python interpreter for the isolated NeuroLang venv.",
+        help="Python interpreter for the isolated NeuroLang venv (neurolang backend only).",
+    )
+    parser.add_argument(
+        "--backend",
+        default=os.environ.get("BR_NEUROCLAIM_BACKEND", "nimare"),
+        choices=["neurolang", "nimare"],
+        help=(
+            "Evidence backend. 'nimare' (default light path) runs in-process on the "
+            "NiMARE/Neurosynth corpus with no extra interpreter; 'neurolang' uses the "
+            "out-of-process probabilistic-Datalog engine (needs the NeuroLang venv)."
+        ),
     )
     return parser.parse_args()
 
@@ -601,6 +623,7 @@ def main() -> None:
         output_dir=output_dir,
         venv_python=args.venv_python,
         case=case,
+        backend_name=args.backend,
     )
     print(f"wrote {output_dir}")
     print(f"case={bundle['case_key']}")
