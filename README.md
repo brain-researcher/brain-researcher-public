@@ -261,16 +261,23 @@ For the current import-boundary ratchet, see [`tests/architecture/test_import_bo
 If you use Brain Researcher in published work, please cite:
 
 ```bibtex
-@misc{brain_researcher_2026,
+@software{chen_2026_brain_researcher,
   author       = {Chen, Zijiao and {Brain Researcher contributors}},
   title        = {Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses},
   year         = {2026},
-  howpublished = {\url{https://github.com/brain-researcher/brain-researcher-public}},
-  note         = {arXiv:XXXX.XXXXX (preprint pending); Zenodo DOI pending}
+  version      = {br-reproducibility-20260709.1},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.21282320},
+  url          = {https://doi.org/10.5281/zenodo.21282320}
 }
 ```
 
-A machine-readable citation lives in [`CITATION.cff`](CITATION.cff) and will be updated with the arXiv ID and Zenodo DOI at v1.0 release.
+The DOI above identifies the archived `br-reproducibility-20260709.1`
+release. The concept DOI
+[`10.5281/zenodo.21282319`](https://doi.org/10.5281/zenodo.21282319)
+resolves to the latest Brain Researcher Zenodo version. A machine-readable
+citation with both identifiers lives in [`CITATION.cff`](CITATION.cff). No
+paper or preprint identifier is claimed by this software citation.
 
 ---
 
