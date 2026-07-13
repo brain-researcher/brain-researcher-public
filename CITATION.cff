@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use Brain Researcher in academic work, please cite both the software and the accompanying paper (when available)."
+message: "If you use Brain Researcher, please cite the archived software release identified by this file."
 title: "Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses"
 abstract: >-
   AI agents can now write code, run analyses, and propose hypotheses, but a
@@ -28,10 +28,16 @@ type: software
 license: MIT
 repository-code: "https://github.com/brain-researcher/brain-researcher-public"
 url: "https://github.com/brain-researcher/brain-researcher-public"
-# Update at v1.0 release:
-# - `version`, `date-released`, `doi` (Zenodo) below
-# - the `preferred-citation` block (arXiv preprint)
-version: "0.0-dev"
+version: "br-reproducibility-20260709.1"
+date-released: "2026-07-09"
+doi: "10.5281/zenodo.21282320"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21282320"
+    description: "Version DOI for br-reproducibility-20260709.1"
+  - type: doi
+    value: "10.5281/zenodo.21282319"
+    description: "Concept DOI for all Brain Researcher Zenodo versions"
 authors:
   - family-names: "Chen"
     given-names: "Zijiao"
@@ -46,17 +52,3 @@ keywords:
   - "reproducibility"
   - "MCP"
   - "Model Context Protocol"
-# Uncomment and fill in once the preprint is on arXiv:
-# preferred-citation:
-#   type: article
-#   title: "Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses"
-#   authors:
-#     - family-names: "Chen"
-#       given-names: "Zijiao"
-#       affiliation: "Stanford University"
-#   year: 2026
-#   journal: "arXiv preprint"
-#   identifiers:
-#     - type: other
-#       value: "arXiv:XXXX.XXXXX"
-#       description: "arXiv preprint"
