@@ -11,7 +11,7 @@ reproduces on **public data alone** — see the "Run it yourself" section of
 This is a formal reproducibility pack: `manifest.json` and
 `provenance_card.md` define its audit boundary. For a tutorial that generates an
 auditable claim record but is not a checksum pack, see
-[`../../../examples/auditable_claim_record/`](../../../examples/auditable_claim_record/).
+[`../../tutorials/auditable_claim_record/`](../../tutorials/auditable_claim_record/).
 
 ## Working directory
 

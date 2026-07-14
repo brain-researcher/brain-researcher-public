@@ -5,10 +5,10 @@ This repository includes public-safe reproducibility packs under
 who want to inspect the audit record behind a Brain Researcher result without
 access to private runtime logs or governed datasets.
 
-Do not confuse those packs with
-[`examples/auditable_claim_record/`](../examples/auditable_claim_record/). The
-example is a runnable tutorial that emits claim-card JSON; it has no pack
-manifest and is not accepted by `reproducibility/verify.py`. The similar
+The same reproducibility umbrella also contains
+[`reproducibility/tutorials/auditable_claim_record/`](../reproducibility/tutorials/auditable_claim_record/).
+That runnable tutorial emits claim-card JSON; it has no pack manifest and is not
+accepted by `reproducibility/verify.py`. The similar
 `run_end_to_end.sh` and `AGENTIC_REPRODUCTION.md` filenames describe parallel
 user journeys, not the same artifact contract.
 
@@ -49,7 +49,7 @@ prove that an LLM rerun will be byte-identical.
 
 ## Reproduce From Language (Claude Code / Codex + MCP)
 
-The real A1 pack and the separate auditable-claim example each include an
+The real A1 pack and the auditable-claim tutorial each include an
 agentic guide. These describe how a coding agent drives typed MCP steps from
 natural language. They are not both packs, and recipe/validation calls do not by
 themselves prove that an analysis executed. Each guide states which part is a
@@ -58,7 +58,7 @@ runnable driver and which part remains a multi-step handoff:
 | Case | Shape | Agentic guide |
 |---|---|---|
 | Bounded autoresearch A1 | Multi-turn feature/pipeline **search** loop (edit `predict.py` → frozen evaluator → score/compare → cheap-check → freeze → confirmatory null) | [`reproducibility/packs/bounded_autoresearch_a1/AGENTIC_REPRODUCTION.md`](../reproducibility/packs/bounded_autoresearch_a1/AGENTIC_REPRODUCTION.md) |
-| Auditable claim record | Single sealed **claim episode** (commit-before-observe → graded evidence → adjudicate → emit card) | [`examples/auditable_claim_record/AGENTIC_REPRODUCTION.md`](../examples/auditable_claim_record/AGENTIC_REPRODUCTION.md) |
+| Auditable claim record | Single sealed **claim episode** (commit-before-observe → graded evidence → adjudicate → emit card) | [`reproducibility/tutorials/auditable_claim_record/AGENTIC_REPRODUCTION.md`](../reproducibility/tutorials/auditable_claim_record/AGENTIC_REPRODUCTION.md) |
 
 Honest scope: an agent's *search path* is non-deterministic, so a rerun
 reproduces the **discipline** (commit-before-observe, frozen evaluator,

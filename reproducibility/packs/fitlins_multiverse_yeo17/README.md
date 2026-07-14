@@ -7,9 +7,9 @@ It is **not** a real-data result and is **not runnable end to end as shipped**.
 Use this pack when you want to inspect the expected file layout. Use
 [`../bounded_autoresearch_a1/`](../bounded_autoresearch_a1/) when you want a
 public-data result with an actual rerun command. The worked claim-record tutorial
-under [`../../../examples/auditable_claim_record/`](../../../examples/auditable_claim_record/)
-is a third, different surface: it generates claim-card JSON and is not a
-manifest-backed pack.
+under [`../../tutorials/auditable_claim_record/`](../../tutorials/auditable_claim_record/)
+is a different contract under the same reproducibility umbrella: it generates
+claim-card JSON and is not a manifest-backed pack.
 
 ## Working directory
 

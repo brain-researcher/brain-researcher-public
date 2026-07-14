@@ -17,15 +17,14 @@ stand-in you can point to.
 This directory is a **worked tutorial**, not a formal reproducibility pack. It
 has no `manifest.json` or `provenance_card.md`, and
 `reproducibility/verify.py` does not accept it. Manifest-backed result and schema
-packs live under [`../../reproducibility/`](../../reproducibility/); the folder
-split is intentional even though both surfaces include similarly named rerun
-guides.
+packs live alongside it under [`../../packs/`](../../packs/): `packs/` and
+`tutorials/` are two contracts within the same reproducibility umbrella.
 
 ## Working directory
 
 Unless a block explicitly says otherwise, run every command below from the
-**repository root**, the directory containing `pyproject.toml`, `examples/`, and
-`scripts/`. From anywhere inside the clone:
+**repository root**, the directory containing `pyproject.toml`,
+`reproducibility/`, and `scripts/`. From anywhere inside the clone:
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
@@ -89,7 +88,7 @@ git clone https://github.com/brain-researcher/brain-researcher-public.git
 cd brain-researcher-public
 python3.11 -m venv ~/.venvs/br-claim-repro
 source ~/.venvs/br-claim-repro/bin/activate
-bash examples/auditable_claim_record/run_end_to_end.sh
+bash reproducibility/tutorials/auditable_claim_record/run_end_to_end.sh
 ```
 
 The shell script does **not** create or activate an environment. It installs

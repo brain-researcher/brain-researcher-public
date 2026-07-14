@@ -14,10 +14,10 @@ same tool from the starter prompt there. It needs a reachable MCP server:
 
     # against a hosted server
     BR_MCP_HTTP_URL=https://<host>/mcp BR_MCP_TOKEN=... \
-        python drive_from_language.py
+        python reproducibility/tutorials/auditable_claim_record/drive_from_language.py
 
     # or a local one: scripts/mcp/start_http_local.sh first, then
-    python drive_from_language.py
+    python reproducibility/tutorials/auditable_claim_record/drive_from_language.py
 
 The full lenient-vs-conservative sensitivity sweep is what can flag a claim
 threshold-fragile. It is a second, deliberately conservative verify pass, so a
@@ -26,10 +26,10 @@ the ``kg_verify`` backend, which re-queries the graph per bar). Two ways to run
 it without the caveat:
 
     # (a) run the sweep off the interactive path (start + poll), recommended:
-    python drive_from_language.py --full --async
+    python reproducibility/tutorials/auditable_claim_record/drive_from_language.py --full --async
 
     # (b) run it synchronously (fine for the fast nimare backend):
-    python drive_from_language.py --full
+    python reproducibility/tutorials/auditable_claim_record/drive_from_language.py --full
 
 Without ``--full`` the verdict ships with a loud "robustness unknown" caveat.
 ``--strictness`` picks the *reported* evidence bar (lenient / balanced /
@@ -37,8 +37,8 @@ conservative); with ``--full`` the sweep is always measured against a strictly
 more conservative bar than the reported one (and is a no-op when you already
 report the most conservative bar).
 
-    python drive_from_language.py --strictness conservative --full --async
-    python drive_from_language.py --from-file verdict.json   # offline: summarize a saved payload
+    python reproducibility/tutorials/auditable_claim_record/drive_from_language.py --strictness conservative --full --async
+    python reproducibility/tutorials/auditable_claim_record/drive_from_language.py --from-file verdict.json
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ from typing import Any
 _TERMINAL_STATUSES = {"succeeded", "failed", "cancelled", "canceled", "error"}
 
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = HERE.parents[1]
+REPO_ROOT = HERE.parents[2]
 CALL_TOOL = REPO_ROOT / "scripts" / "mcp" / "call_http_tool.py"
 
 DEFAULT_CLAIM = (

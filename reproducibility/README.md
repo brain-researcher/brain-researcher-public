@@ -1,9 +1,8 @@
-# Brain Researcher — Reproducibility Packs
+# Brain Researcher — Reproducibility
 
-This directory ships **self-verifying reproduction packs** for recorded Brain
-Researcher results. A reviewer can confirm that the shipped artifacts are the
-exact bytes named by a manifest and, when the required data and runnable scripts
-are available, re-run the analysis.
+This directory is the single home for Brain Researcher reproducibility
+materials. It contains **self-verifying packs** for recorded results under
+`packs/` and runnable teaching examples under `tutorials/`.
 
 Each pack under `packs/<id>/` carries a `manifest.json`, a
 `provenance_card.md`, and a pack-specific `README.md`. Optional directories such
@@ -17,12 +16,12 @@ on the pack type.
 | Check a recorded result or schema snapshot | `reproducibility/packs/<id>/` | A manifest-backed pack accepted by `reproducibility/verify.py`. |
 | Re-run the public A1 result | [`packs/bounded_autoresearch_a1/`](packs/bounded_autoresearch_a1/) | A real recorded-result pack with public-data scripts plus deeper HCP-gated steps. |
 | Inspect the FitLins pack format | [`packs/fitlins_multiverse_yeo17/`](packs/fitlins_multiverse_yeo17/) | A synthetic schema exemplar. It is verifiable but is not a shipped real-data rerun. |
-| Learn how an auditable claim record is generated | [`../examples/auditable_claim_record/`](../examples/auditable_claim_record/) | A runnable tutorial that emits claim-card JSON. It is an example, **not** a manifest-backed pack. |
+| Learn how an auditable claim record is generated | [`tutorials/auditable_claim_record/`](tutorials/auditable_claim_record/) | A runnable tutorial that emits claim-card JSON. It is **not** a manifest-backed pack. |
 
-The two top-level folders are therefore intentionally different:
-`reproducibility/` contains immutable, checksummed audit packages, while
-`examples/` contains teaching and integration examples. The auditable-claim
-example has no `manifest.json`, so passing it to `verify.py` returns exit code 2.
+Within this one reproducibility umbrella, `packs/` contains immutable,
+checksummed audit packages and `tutorials/` contains runnable teaching examples.
+The auditable-claim tutorial has no `manifest.json`, so passing it to `verify.py`
+returns exit code 2.
 
 ## Working directory convention
 

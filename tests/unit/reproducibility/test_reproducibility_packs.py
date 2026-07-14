@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import runpy
 import subprocess
 import sys
 from pathlib import Path
@@ -13,11 +14,29 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[3]
 REPRO_ROOT = REPO_ROOT / "reproducibility"
 PACKS = sorted(path for path in (REPRO_ROOT / "packs").iterdir() if path.is_dir())
+CLAIM_TUTORIAL = REPRO_ROOT / "tutorials" / "auditable_claim_record"
 
 
 def test_reproducibility_packs_exist() -> None:
     assert PACKS, "no reproducibility packs are shipped"
     assert (REPRO_ROOT / "verify.py").is_file()
+
+
+def test_auditable_claim_tutorial_is_colocated() -> None:
+    assert CLAIM_TUTORIAL.is_dir()
+    assert not (REPO_ROOT / "examples" / "auditable_claim_record").exists()
+    assert not (CLAIM_TUTORIAL / "manifest.json").exists()
+
+    driver = runpy.run_path(str(CLAIM_TUTORIAL / "drive_from_language.py"))
+    assert driver["REPO_ROOT"] == REPO_ROOT
+    assert driver["CALL_TOOL"] == REPO_ROOT / "scripts" / "mcp" / "call_http_tool.py"
+    assert driver["CALL_TOOL"].is_file()
+
+    generator = (
+        REPO_ROOT / "scripts" / "autoresearch" / "run_auditable_claim_demo.py"
+    ).read_text(encoding="utf-8")
+    assert '"cd brain-researcher-public"' in generator
+    assert '"python -m pip install -e . nimare nilearn"' in generator
 
 
 @pytest.mark.parametrize("pack_dir", PACKS, ids=lambda path: path.name)
