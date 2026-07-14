@@ -88,7 +88,8 @@ For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the
 | KG configs and schemas | `configs/br-kg/`, `scripts/kg/schema.cypher` | Public-safe schema/config references for KG shape and local test setup; not KG dumps. |
 | Review layer | `src/brain_researcher/services/review/`, `configs/review_rules.yaml`, `docs/appendices/07_appendix_G_review.md` | Scientific/code review rules, review bundles, and documented review boundaries. |
 | Shared public Python namespace | `src/brain_researcher/br/` | Stable imports such as `br.retry`, `br.provenance`, `br.artifact`, `br.http`, and `br.redaction`. |
-| Reproducibility packs | `reproducibility/` | Public-safe, checksum-verifiable packs for reviewer-facing audit records and rerun templates. |
+| Reproducibility | `reproducibility/` | Public-safe packs and runnable tutorials for inspecting or generating auditable records. |
+| Worked claim-record tutorial | `reproducibility/tutorials/auditable_claim_record/` | Runnable tutorial that generates claim-card JSON. It is not a manifest-backed reproducibility pack. |
 | Docs and appendices | `docs/` | Operations, MCP docs, release notes, appendices, use cases, and public-surface explanations. |
 | Tests | `tests/` | Unit, integration, architecture, contract, and browser/e2e checks. |
 
@@ -247,7 +248,8 @@ The main Helm chart renders 26 Kubernetes resources cleanly; the Istio overlay s
 | `contracts/` | OSS API stability surface: `VERSION`, `br-tool-contract.schema.json`, `tools/*.json` (10 stable-tier tool schemas) |
 | `configs/` | Tool catalogs, mappings, taxonomy, and public runtime defaults |
 | `docs/` | MCP docs, appendices, use cases, release notes, and contributor-facing docs |
-| `reproducibility/` | Public-safe packs with manifests, provenance cards, and `verify.py` for checksum verification |
+| `reproducibility/` | Public-safe reproducibility materials: checksum-backed `packs/` and runnable `tutorials/` |
+| `reproducibility/tutorials/auditable_claim_record/` | Worked generator tutorial; no pack manifest and no `verify.py` contract |
 | `tests/` | Unit + integration + contracts (Pact) + e2e (Playwright) |
 | `infrastructure/` | docker-compose, Helm chart, K8s manifests, monitoring, nginx, haproxy |
 | `scripts/` | ETL, analysis, build, validation, and focused maintenance utilities |

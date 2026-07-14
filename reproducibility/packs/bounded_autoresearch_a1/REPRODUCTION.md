@@ -6,45 +6,64 @@ data staged under the governed A1 root (`a1_governed_root:`).
 Three steps were re-run on the current stack against the governed data:
 **(1)** rebuild the residualised-cognition target, **(2)** chain that rebuilt target
 through the frozen §5.1 Path-B predictive check, and **(3)** re-run a seed subset of
-the family-block permutation null. Step 1 reproduces to machine epsilon; steps 2 and
-3 reproduce the published predictive numbers and the null draws **exactly**.
+the family-block permutation null. Step 1 reproduces to machine epsilon; step 2
+reproduces the published predictive numbers exactly; step 3 reproduces the checked
+null draws **exactly**.
+
+## Working directory and environment
+
+Unless a block explicitly says otherwise, every command below runs from the
+**repository root**. From anywhere inside the clone:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+```
+
+The public headline path is tested with Python 3.11. Create or activate an
+isolated environment before running it; `run_end_to_end.sh` installs its light
+dependencies into the active interpreter. The deeper commands require files you
+stage under your own HCP data-use terms and intentionally write rebuilt output
+outside the checkout.
 
 ---
 
 ## Run it yourself
 
 This pack ships the runnable scripts (`scripts/`), the row-indexed target and
-manifests, and the frozen result artifacts. What is *not* in git is the ~937 MB
-functional-connectivity feature set (too large) and any HCP-controlled row — see
-the data-access boundary below.
+manifests, and the frozen result artifacts. What is *not* in git is the
+approximately 1.0 GB extracted functional-connectivity feature set and any
+HCP-controlled row — see the data-access boundary below.
 
 ### Data-access boundary
 
 | Input | Access | Needed for |
 |---|---|---|
-| Liu FC-pyspi per-term features (`--terms-dir`) | **Public** — GitHub release asset, fetched by `scripts/fetch_fc_features.py` (repackaged from OSF [75je2](https://osf.io/75je2); `tar.gz sha256 ac3d0f369ea99e0f7587a2bb144664a3a2ea490e7ebfafac1ecf22bf14e811f5`) | the prediction (all steps) |
-| Residualised target CSV | **Shipped** (`artifacts/…residualised_cognition.csv`, row-indexed, de-identified) | the prediction (recovery) |
-| HCP-YA behavior export | **HCP Open Access** (click-through Data Use Terms) | rebuilding the target (step 1) and the §5.1 cheap check |
+| Liu FC-pyspi per-term features (`--terms-dir`) | **Public** — approximately 835 MB GitHub release archive and 1.0 GB after extraction, fetched by `reproducibility/packs/bounded_autoresearch_a1/scripts/fetch_fc_features.py` (repackaged from OSF [75je2](https://osf.io/75je2); `tar.gz sha256 ac3d0f369ea99e0f7587a2bb144664a3a2ea490e7ebfafac1ecf22bf14e811f5`) | the prediction (all steps) |
+| Residualised target CSV | **Shipped** (`reproducibility/packs/bounded_autoresearch_a1/artifacts/liu_component_behavior_residualised_cognition.csv`, row-indexed, de-identified) | the prediction (recovery) |
+| Subject-keyed `liu_component_behavior.csv` for the exact 326-subject FC intersection | **Governed derived input, not shipped** — the public projection module records the method, but the subject IDs and a builder for this exact intersection are not public | rebuilding the target (step 1) and the §5.1 cheap check |
+| HCP-YA behavior export | **HCP Open Access** (click-through Data Use Terms) | IQ/covariate columns for rebuilding the target (step 1) and the §5.1 cheap check |
 | HCP-YA `Family_ID` | **HCP Restricted** (application) | the family-block confirmatory null (step 3) |
 
 ### The headline result reproduces on public data alone (no HCP account)
 
-**One command, from scratch** (light env → public FC features → frozen evaluator,
-with a built-in check that the numbers did not drift):
+After cloning and activating an isolated environment, run this one command
+(public FC features → frozen evaluator → built-in result check):
 
 ```bash
+python3.11 -m venv ~/.venvs/br-a1-repro
+source ~/.venvs/br-a1-repro/bin/activate
 bash reproducibility/packs/bounded_autoresearch_a1/run_end_to_end.sh
 ```
 
-Or the two underlying steps, from the pack root — fetch the public FC features,
-then run the frozen predictor over the shipped residualised target:
+Or run the two underlying steps from the repository root:
 
 ```bash
-python scripts/fetch_fc_features.py     # downloads + sha256-checks + unpacks to inputs/
-python scripts/run_prediction.py        # -> ICA_Cognition r ≈ 0.183, aggregate ≈ 0.151
+python -m pip install numpy pandas h5py scikit-learn
+python reproducibility/packs/bounded_autoresearch_a1/scripts/fetch_fc_features.py
+python reproducibility/packs/bounded_autoresearch_a1/scripts/run_prediction.py
 ```
 
-`fetch_fc_features.py` pulls the ~937 MB per-term features from the GitHub release
+`fetch_fc_features.py` downloads the approximately 835 MB archive from the GitHub release
 (`a1-fc-features-v1`; verified against `tar.gz sha256 ac3d0f36…`) into `inputs/`
 (git-ignored). `run_prediction.py` then reads that directory plus the shipped
 `artifacts/` target CSV and `manifests/` — no flags needed, no HCP account. This
@@ -54,20 +73,33 @@ controlled data. (To use your own copy of the features, pass
 
 ### Deeper provenance (needs your own HCP-YA export)
 
-The three audited steps below rebuild the target from HCP behavior and re-run the
-confirmatory null. Stage your HCP-YA data (Open Access; `Family_ID` needs
-Restricted), then point the scripts at it:
+HCP behavior alone is **not enough** to rerun the first two audited steps. You
+must also have the subject-keyed `liu_component_behavior.csv` for the exact
+326-subject FC/behavior intersection. The public projection module documents
+the mathematical reconstruction, but the pack intentionally omits those subject
+identifiers and does not ship a command that recreates that exact intersection.
+For users who already have both governed inputs, the command template is below.
+The family-block null additionally needs a governed workspace and a
+`Family_ID`-derived exchangeability manifest. Set paths explicitly so the
+commands do not overwrite the published pack:
 
 ```bash
+export A1_HCP_DIR=/absolute/path/to/staged-hcp
+export A1_REBUILD_DIR=/tmp/a1_rebuilt
+
 # step 1 — rebuild the (subject-keyed) target from HCP Open Access behavior
-python scripts/build_residualised_target.py --behavior-dir /path/to/hcp \
+python reproducibility/packs/bounded_autoresearch_a1/scripts/build_residualised_target.py \
+  --behavior-dir "$A1_HCP_DIR" \
   --component-csv liu_component_behavior.csv --hcp-csv HCP_YA_subjects.csv \
-  --out-dir /tmp/a1_rebuilt
+  --out-dir "$A1_REBUILD_DIR"
 # step 2 — §5.1 within-fold cheap check (needs the subject-keyed target + HCP covariates)
-python scripts/run_residualised_cheap_check.py --resid-csv /tmp/a1_rebuilt/…residualised_cognition.csv \
-  --hcp-csv /path/to/hcp/HCP_YA_subjects.csv
+python reproducibility/packs/bounded_autoresearch_a1/scripts/run_residualised_cheap_check.py \
+  --resid-csv "$A1_REBUILD_DIR/liu_component_behavior_residualised_cognition.csv" \
+  --hcp-csv "$A1_HCP_DIR/HCP_YA_subjects.csv"
 ```
 
+Step 2 also requires the public FC features fetched by the headline path. It
+writes `reproducibility/packs/bounded_autoresearch_a1/scripts/residualised_cheap_check.json`.
 The exact numbers those steps must reproduce are recorded below.
 
 ---
@@ -75,8 +107,14 @@ The exact numbers those steps must reproduce are recorded below.
 ## Step 1 — rebuild the residualised target
 
 ### Command
-```
-python scripts/build_residualised_target.py --behavior-dir <staged HCP-YA dir>
+```bash
+export A1_HCP_DIR=/absolute/path/to/staged-hcp
+export A1_REBUILD_DIR=/tmp/a1_rebuilt
+python reproducibility/packs/bounded_autoresearch_a1/scripts/build_residualised_target.py \
+  --behavior-dir "$A1_HCP_DIR" \
+  --component-csv liu_component_behavior.csv \
+  --hcp-csv HCP_YA_subjects.csv \
+  --out-dir "$A1_REBUILD_DIR"
 ```
 Fits `ICA_Cognition ~ 1 + PMAT24_A_CR + ListSort_Unadj + ReadEng_Unadj` on the 326
 HCP-YA Liu-intersection subjects and residualises the cognition target.
@@ -93,8 +131,7 @@ The public-safe source route for these inputs is now recorded in
 `artifacts/liu_source_provenance_summary.json`. In brief:
 
 - The Liu FC-pyspi assets were obtained from the upstream OSF project
-  `https://osf.io/75je2` using the project entrypoint
-  `scripts/analysis/fc_benchmarking/setup_liu_fc_pyspi.py`. The recorded OSF
+  `https://osf.io/75je2`. The recorded OSF
   manifest has `sha256:fb19a74beebb826c337d31f0937414813d2a9ff797d219014a8ecc10ce0f0736`,
   vendor commit `6617f0f6ba7e00c94a7ce59032b92e1f268eb27f`, 1308 raw files,
   and 23 derivative files.
@@ -107,6 +144,11 @@ The public-safe source route for these inputs is now recorded in
 - The target manifest labels this line `reconstructed_not_paper_exact`: it is a
   reconstructed benchmark target, not a direct redistribution of paper-exact
   subject-level component weights.
+
+The public module is a Python API, not a complete CLI for this pack, and the
+de-identified pack cannot recover the exact 326-subject intersection by itself.
+Consequently, Step 1 is independently rerunnable only by a user who already has
+an equivalent governed subject binding and derived component table.
 
 The public pack deliberately omits raw HCP rows, raw FC files, subject IDs,
 credentials, and absolute local paths. Those omissions are privacy/data-use
@@ -135,9 +177,7 @@ checksum. The governed checksum remains recorded in
 
 **Verdict: reproduced within numerical tolerance.** For numerical pipelines this
 is the honest bar — bit-for-bit equivalence modulo floating-point non-determinism,
-not byte-identical output — matching the reproducibility-audit convention
-(`benchmarks/reproducibility_audit_examples/README.md`: equivalence within
-tolerance, not byte-identical). `manifest.json` sha256 still gates artifact
+not byte-identical output. `manifest.json` sha256 still gates artifact
 INTEGRITY (the shipped bytes are the recorded bytes); this record documents a live
 re-run REPRODUCING the science.
 
@@ -150,14 +190,19 @@ summarized above.
 ## Step 2 — §5.1 predictive check, chained from the rebuilt target (EXACT)
 
 ### Command
-```
-python scripts/run_residualised_cheap_check.py --resid-csv <subject-keyed target> --hcp-csv <HCP-YA export>
+```bash
+export A1_HCP_DIR=/absolute/path/to/staged-hcp
+export A1_REBUILD_DIR=/tmp/a1_rebuilt
+python reproducibility/packs/bounded_autoresearch_a1/scripts/run_residualised_cheap_check.py \
+  --resid-csv "$A1_REBUILD_DIR/liu_component_behavior_residualised_cognition.csv" \
+  --hcp-csv "$A1_HCP_DIR/HCP_YA_subjects.csv"
 ```
 Takes the **freshly-rebuilt** target from step 1 and re-fits the frozen Path-B FC
 predictor over the 10-fold manifest, then within-fold-residualises against
 {Age, Gender, Handedness, BMI, Acquisition(one-hot), PMAT24, ListSort, ReadEng}.
-Predictor inputs: `liu_fc_pyspi_osf/.../schaefer100x7_resave_clean_terms` (152 term
-feature files, 4950 edges each), 326 subjects, 5 ICA components.
+Predictor inputs: `liu_fc_pyspi_osf/.../schaefer100x7_resave_clean_terms` (76 term
+matrices plus 76 metadata sidecars; 4950 edges per matrix), 326 subjects, 5 ICA
+components.
 
 ### Result — EXACT reproduction
 | quantity | recorded | re-run | Δ |
@@ -181,20 +226,29 @@ through predictive check — on the current stack against the original governed 
 
 ## Step 3 — family-block permutation null (seed subset, EXACT)
 
+This is a record of the governed rerun, **not a command that works from a bare
+public clone**. It requires HCP Restricted `Family_ID`, the frozen governed
+workspace, and its derived exchangeability manifest. Those inputs cannot be
+redistributed. After constructing equivalent inputs under your own agreement,
+the command shape is:
+
 ### Command
-```
+```bash
+export A1_WORKSPACE=/absolute/path/to/intelligence_residualised_cognition
+export A1_EXCHANGEABILITY_MANIFEST=/absolute/path/to/hcp_exchangeability_manifest.json
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 \
 python scripts/autoresearch/fc/liu_confirmatory_permutation.py \
-  --workspace <intelligence_residualised_cognition> --null-mode family_block \
-  --exchangeability-manifest <manifests/hcp_exchangeability_manifest.json> \
+  --workspace "$A1_WORKSPACE" --null-mode family_block \
+  --exchangeability-manifest "$A1_EXCHANGEABILITY_MANIFEST" \
   --n-perm 1000 --start-seed 1 --max-new 30
-# OMP/MKL/OPENBLAS/NUMEXPR threads = 1 (single-thread BLAS)
 ```
 The published null is **1000** Family_ID-block permutations: within each fixed
 training fold, whole family blocks are shuffled among same-size blocks (test labels
 never permuted), each permutation seeded by
 `np.random.default_rng(seed·1e6 + fold_id)`. Every permutation is thus a
-**deterministic function of its seed**, so re-running a seed subset and matching it
-bit-for-bit proves every seed 1..1000 reproduces.
+**deterministic function of its seed**. Re-running seeds 1..30 and matching them
+bit-for-bit validates deterministic replay for that subset; it does not validate the
+970 seeds that were not re-run.
 
 ### Result — EXACT reproduction
 | check | recorded | re-run | Δ |
@@ -207,15 +261,15 @@ pooled/fold-mean + per-fold r) reproduce exactly; zero mismatches. Evidence:
 `reproduction/rerun_20260708_null_seeds_1_30.jsonl` (the 30 fresh permutation
 records) plus the field-wise verdict summarized here.
 
-**Because each seed is deterministic, the recorded 1000-permutation null follows by
-construction** — the published significance is therefore reproduced:
-`+1 p = 0.000999` (0/1000 permutations ≥ observed), permutation z = 5.744, null mean
-−0.00205 / sd 0.0266. Re-running all 1000 seeds is ~30 min single-thread; the 30-seed
-subset here is the proof-of-determinism, not a cost cap.
+The published full-null summary is `+1 p = 0.000999` (0/1000 permutations ≥
+observed), permutation z = 5.744, null mean −0.00205 / sd 0.0266. Those values
+remain the **recorded result**: this rerun checked seeds 1..30 only and therefore did
+not independently reproduce the full 1000-permutation significance calculation.
+Re-running all 1000 seeds is ~30 min single-thread.
 
 ---
 
-**Overall verdict:** A1 re-runs end-to-end on the current stack against the original
-governed data — target (machine-epsilon), §5.1 predictive check (exact), and the
-family-block permutation null (exact per-seed) — confirming both the effect and its
-significance reproduce.
+**Overall verdict:** against the original governed data, the target reproduced to
+machine epsilon and the §5.1 predictive check reproduced exactly. Seeds 1..30 of the
+family-block null also matched exactly, validating that subset's replay path. The
+complete 1000-permutation null and its significance were not re-run here.

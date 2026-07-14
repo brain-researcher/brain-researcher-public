@@ -15,7 +15,21 @@ The discipline is structural: the commitment card is sealed and hash-verified
 is detectable. The agent frames the claim and drives the tools; it cannot make
 the record self-consistent after seeing the evidence.
 
-## Run the language step as one command
+## Working directory and prerequisites
+
+Every shell command below runs from the **repository root** unless stated
+otherwise. From anywhere inside the clone:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+```
+
+This agentic path requires a reachable Brain Researcher MCP. It is separate from
+the no-MCP light path in `README.md`. The driver makes a call sequence, not one
+remote call: it checks `server_info`, then calls `neuroclaim_compile`; the async
+path additionally starts and polls a background compile.
+
+## Run the language step
 
 [`drive_from_language.py`](drive_from_language.py) is the scripted realization of
 the compile step below: it takes the claim as natural language, calls
@@ -24,26 +38,40 @@ verdict with its named-uncertainty vector and re-runnable query.
 
 ```bash
 # needs a reachable MCP (hosted BR_MCP_HTTP_URL + BR_MCP_TOKEN, or a local server)
-python examples/auditable_claim_record/drive_from_language.py
-python examples/auditable_claim_record/drive_from_language.py --full          # + sensitivity sweep
-python examples/auditable_claim_record/drive_from_language.py --full --async  # sweep off the interactive path (start + poll)
-python examples/auditable_claim_record/drive_from_language.py --strictness conservative --full --async
+python reproducibility/tutorials/auditable_claim_record/drive_from_language.py --full --async
+```
+
+That is the recommended full sensitivity run. For a faster connectivity and
+compile smoke without the sensitivity sweep, omit `--full --async`; the returned
+verdict then carries a robustness-unknown caveat. To report the conservative bar:
+
+```bash
+python reproducibility/tutorials/auditable_claim_record/drive_from_language.py \
+  --strictness conservative --full --async
 ```
 
 `--full` adds the mandatory lenient-vs-conservative sweep (a second, conservative
 verify pass). Because that pass is a whole extra evidence query, `--async` routes
 it through `neuroclaim_compile_start` + polling so it never blocks on an
 interactive MCP timeout — the driver prints one status line per poll.
-`--strictness` selects the *reported* bar; the sweep is always measured against a
-strictly more conservative bar than the one you report.
+`--strictness` selects the *reported* bar. The sweep measures a stricter bar when
+one exists; `conservative` is already the strictest profile, so its additional
+sweep is a no-op.
 
 A coding agent would drive the same tools conversationally from the starter
 prompt at the bottom of this file. The steps below are what that call sequence is.
 
 ## Connect the MCP
 
-See [`../../docs/mcp.md`](../../docs/mcp.md). For Claude Code against a hosted
-server, `.mcp.json`:
+See [`../../../docs/mcp.md`](../../../docs/mcp.md). For Claude Code against a hosted
+server, export the runtime variables in your shell:
+
+```bash
+export BR_MCP_HTTP_URL=https://your-host.example/mcp
+export BR_MCP_TOKEN=your-token-from-the-service
+```
+
+For Claude Code's persistent configuration, the equivalent `.mcp.json` is:
 
 ```jsonc
 { "mcpServers": { "brain-researcher": {
@@ -53,7 +81,28 @@ server, `.mcp.json`:
                "Accept": "application/json, text/event-stream" } } } }
 ```
 
-Or run locally: `scripts/mcp/start_http_local.sh`. Sanity-check with `server_info`.
+For a local MCP using the NiMARE backend, install the current clone and NiMARE,
+stage the public corpus, bind that corpus in the server environment, and then
+start the server in terminal A:
+
+```bash
+python -m pip install -e . nimare nilearn
+python scripts/data/download_neurosynth_data.py
+python scripts/data/convert_neurosynth.py
+export BR_NEUROCLAIM_CORPUS="$PWD/data/neurosynth_nimare/neurosynth_dataset_v7.pkl"
+bash scripts/mcp/start_http_local.sh
+```
+
+Open terminal B anywhere inside the same clone, activate the same environment,
+return to the repository root, and run the driver. Its default URL is
+`http://127.0.0.1:7000/mcp`:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+python reproducibility/tutorials/auditable_claim_record/drive_from_language.py --full --async
+```
+
+Sanity-check the connection with `server_info`. Never commit a bearer token.
 
 ## The episode, step by step (each step ↔ the MCP tool that makes it typed)
 
@@ -93,8 +142,10 @@ nimare default reproduces `supported_within_scope` (see `README.md`).
 this folder (`4871ea43…`, status **`weakened`**) is the **NeuroLang reference
 path**: its probabilistic-Datalog evidence bar, doubled by the conservative
 sweep, flags the claim threshold-fragile. The **default light path**
-(`backend="nimare"`, a set-membership contrast over the same corpus — *not* a
-NiMARE CBMA) returns **`supported_within_scope`**. Both are honest verdicts of the
+(`backend="nimare"`) returns **`supported_within_scope`**. Its automatically
+resolved forward term query uses NiMARE MKDAChi2; the specificity and network
+contrasts use coordinate-set arithmetic rather than a single CBMA. Both are
+honest verdicts of the
 same claim under different evidence models; the point of the record is the
 *machinery* (sealed commitment, named uncertainty kept as its own vector, a
 mandatory sweep), not one magic status. `README.md` states this same split.

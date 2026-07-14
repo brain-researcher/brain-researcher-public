@@ -1,17 +1,17 @@
 {
   "schema_version": "br.reproducibility_pack_manifest.v1",
   "pack_id": "bounded_autoresearch_a1",
-  "artifact_count": 20,
+  "artifact_count": 22,
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:8b16955ede0401ea549dae5e67ecbbc50f0efacd1e8c48df758d3f31900ff79a",
-      "size_bytes": 6014
+      "sha256": "sha256:0f3d738dedcdc673853e05cef40b0737d9eacd70b84a3fb78ad268edfb23a039",
+      "size_bytes": 7970
     },
     {
       "path": "REPRODUCTION.md",
-      "sha256": "sha256:7903cc2fe5357a0762fb988ef864851fd51a38f7ddf22e0388ee38b1c54c4d82",
-      "size_bytes": 10670
+      "sha256": "sha256:5c3a71eadf95de97f778f78f338d8af29b3c299b703b742a3b9bc737967c15d7",
+      "size_bytes": 14006
     },
     {
       "path": "provenance_card.md",
@@ -89,9 +89,19 @@
       "size_bytes": 4213
     },
     {
+      "path": "run_end_to_end.sh",
+      "sha256": "sha256:7a10c319248b6f021c08c553e118c98aa540abf79be384ccf52870e23d2352f6",
+      "size_bytes": 2241
+    },
+    {
       "path": "AGENTIC_REPRODUCTION.md",
-      "sha256": "sha256:2c333515f7f199a66d84a60ff3b382a67a498859d15e71dde9e482dad00e760a",
-      "size_bytes": 7141
+      "sha256": "sha256:a8b9e2d2c7b13a97b4a5a537c40975e1daea1908cacd339cbffc8e4f05075805",
+      "size_bytes": 10664
+    },
+    {
+      "path": "drive_from_language.py",
+      "sha256": "sha256:00ef231a4fbee2130a5e3fc9baa81f5ecd0631aa488da247331ee52e0bf1288e",
+      "size_bytes": 7641
     },
     {
       "path": "artifacts/agentic_kg_hypothesis_demo.json",

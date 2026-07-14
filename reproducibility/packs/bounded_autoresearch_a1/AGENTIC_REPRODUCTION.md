@@ -7,6 +7,35 @@ natural language**, through the Brain Researcher MCP. This is the M1 claim of th
 case report — the discipline is an architectural property of the loop, not of the
 agent's good intentions.
 
+The shipped `drive_from_language.py` reproduces only the **KG-as-prior
+precondition** as a typed MCP call. The complete multi-turn search loop is an
+agent-driven procedure described below; it is not packaged as one deterministic
+command and it requires additional run persistence before `run_bundle_get`,
+`run_scorecard`, or `run_compare` can inspect a `run_id`.
+
+## Working directory and scratch copy
+
+Commands in this guide run from the **repository root** unless a block says
+otherwise. From anywhere inside the clone:
+
+```bash
+export BR_PUBLIC_ROOT="$(git rev-parse --show-toplevel)"
+cd "$BR_PUBLIC_ROOT"
+```
+
+The published pack is manifest-pinned. Do not edit its `scripts/predict.py` in
+place and then expect `verify.py` to pass. For a search experiment, copy the pack
+to an untracked scratch directory and let the agent work there:
+
+```bash
+export A1_WORK_DIR="$(mktemp -d /tmp/bounded-autoresearch-a1.XXXXXX)"
+cp -a reproducibility/packs/bounded_autoresearch_a1/. "$A1_WORK_DIR/"
+cd "$A1_WORK_DIR"
+```
+
+The driver commands below use the immutable published copy, so return to the
+repository root first.
+
 ## The division of labour (what the MCP does vs what the agent does)
 
 The deployed MCP hands external agents a machine-readable loop profile; fetch it
@@ -31,6 +60,7 @@ natural-language query it surfaces falsifiable connectivity→behavior leads and
 prints what the literature check let survive versus vetoed / downranked.
 
 ```bash
+cd "$BR_PUBLIC_ROOT"
 # needs a reachable MCP (hosted BR_MCP_HTTP_URL + BR_MCP_TOKEN, or a local server)
 python reproducibility/packs/bounded_autoresearch_a1/drive_from_language.py
 # offline, against the captured demo call:
@@ -47,6 +77,11 @@ same-family downrank, literature veto). The full loop is the starter prompt belo
 See [`docs/mcp.md`](../../../docs/mcp.md) for the full connection guide. In brief,
 for Claude Code against a hosted server:
 
+```bash
+export BR_MCP_HTTP_URL=https://your-host.example/mcp
+export BR_MCP_TOKEN=your-token-from-the-service
+```
+
 ```jsonc
 // .mcp.json
 { "mcpServers": { "brain-researcher": {
@@ -56,22 +91,50 @@ for Claude Code against a hosted server:
                "Accept": "application/json, text/event-stream" } } } }
 ```
 
-Or run it locally: `scripts/mcp/start_http_local.sh` (token via
-`scripts/mcp/resolve_br_mcp_token.sh`). Sanity-check with the `server_info` tool.
+The live KG step needs a populated BR-KG plus its literature-verification
+backend. A bare public clone does not contain that graph. Prefer the hosted MCP;
+otherwise use a local deployment whose KG has already been populated. Merely
+starting an empty local server is a transport smoke, not an A1 KG reproduction.
+
+For an already configured local deployment, use its full project environment,
+not the A1 light environment. From the repository root, start the server in
+terminal A:
+
+```bash
+python -m pip install -e .
+bash scripts/mcp/start_http_local.sh
+```
+
+Open terminal B anywhere inside the same clone, activate the same environment,
+recompute the root for that shell, and run the driver. It defaults to
+`http://127.0.0.1:7000/mcp` and uses the repository token resolver when
+available:
+
+```bash
+export BR_PUBLIC_ROOT="$(git rev-parse --show-toplevel)"
+cd "$BR_PUBLIC_ROOT"
+python reproducibility/packs/bounded_autoresearch_a1/drive_from_language.py
+```
+
+Sanity-check the connected MCP with `server_info` before relying on any other
+tool. Without populated KG data, use the shipped `--from-file` command above to
+inspect and validate the captured public demo instead. Never paste a token into
+a committed file.
 
 ## The loop, step by step (each A1 step ↔ the MCP tool that makes it a typed action)
 
 | A1 step | What the agent does, in language | MCP tool(s) |
 |---|---|---|
 | Surface a hypothesis | Ask the KG which connectivity statistic is linked to the target trait in the literature; keep only those that survive literature verification | `kg_search_nodes` → `kg_hypothesis_workflow` |
-| Propose a pipeline edit | Read the experiments ledger, edit `scripts/predict.py` (a pyspi statistic, a feature filter, a model family, a hyperparameter) | *(agent-side; MCP does not touch code)* |
-| Evaluate under the frozen protocol | Get the run recipe, run `run_prediction.py` over the shipped target + fetched FC features | `get_execution_recipe`; then `run_bundle_get` |
+| Propose a pipeline edit | In the scratch copy, read the experiments ledger and edit `scripts/predict.py` (a pyspi statistic, a feature filter, a model family, a hyperparameter) | *(agent-side; MCP does not touch code)* |
+| Evaluate under the frozen protocol | Get a recipe and run `run_prediction.py` over the shipped target + fetched FC features. A direct local invocation returns JSON but does not itself create a persisted MCP `run_id`. | `get_execution_recipe`; `run_bundle_get` only after a governed run is persisted |
 | Score / compare vs baseline | Normalize the result; keep or discard | `run_scorecard`, `run_compare` |
 | Cheap-check → kill / redesign | Apply the cheap-in-house check; if a branch fails its retention bar, convert it into a covariate-aware redesign | `run_scorecard` + `scientific_review` family |
 | Freeze + confirmatory null | Freeze the predictor; run the family-block / max-T / max-over-pipelines nulls | `get_execution_recipe` + review (needs HCP Restricted `Family_ID`) |
 | Review gate | Decide accept / spawn sequel thread / reject | `request_scientific_review`, `run_scientific_review` |
 
-Data: the FC features come from `scripts/fetch_fc_features.py` (public); the
+Data: in the scratch pack, the FC features come from
+`scripts/fetch_fc_features.py` (public); the
 headline redesign→recovery loop runs on public data. Rebuilding the target and
 the confirmatory null need staged HCP data (see `REPRODUCTION.md`).
 
@@ -121,8 +184,9 @@ at [`artifacts/agentic_kg_hypothesis_demo.json`](artifacts/agentic_kg_hypothesis
 
 > You are driving the Brain Researcher external-coding loop to reproduce the
 > bounded_autoresearch_a1 case. First call `loop_profile_get`
-> (`external_coding_v1`) and follow its call order. Working directory is this
-> pack. Run `scripts/fetch_fc_features.py` once to stage the public FC features.
+> (`external_coding_v1`) and follow its call order. Work only in the scratch copy
+> of the pack, not the manifest-pinned published directory. Run
+> `scripts/fetch_fc_features.py` once to stage the public FC features.
 > Treat `scripts/run_prediction.py` as the immutable evaluator and
 > `scripts/predict.py` as the only file you may edit. Loop: (1) use
 > `kg_hypothesis_workflow` to surface a connectivity-statistic→behavior lead and

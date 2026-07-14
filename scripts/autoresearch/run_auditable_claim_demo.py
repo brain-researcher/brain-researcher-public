@@ -9,7 +9,8 @@ The default backend is **NiMARE** (``pip install nimare nilearn`` -- standard
 scientific-Python, no second interpreter). NeuroLang is an optional *reference*
 engine (``--backend neurolang``) that reproduces the exact committed reference
 card; it is not required and must not be installed with ``pip install neurolang``
-(see ``examples/auditable_claim_record/README.md`` for its isolated-venv recipe).
+(see ``reproducibility/tutorials/auditable_claim_record/README.md`` for its
+isolated-venv recipe).
 
 Inputs:
   --corpus: NiMARE Neurosynth dataset pickle. Defaults to BR_NEUROCLAIM_CORPUS or
@@ -514,8 +515,15 @@ def _markdown(bundle: dict[str, Any]) -> str:
             "Local light path -- standard scientific-Python only (NiMARE is the "
             "default backend; you do NOT need the full Brain Researcher platform):",
             "",
+            "Run every command from the public repository root, not from this "
+            "generated output directory:",
+            "",
             "```bash",
-            "pip install nimare nilearn",
+            "git clone https://github.com/brain-researcher/brain-researcher-public.git",
+            "cd brain-researcher-public",
+            "python3.11 -m venv ~/.venvs/br-claim-repro",
+            "source ~/.venvs/br-claim-repro/bin/activate",
+            "python -m pip install -e . nimare nilearn",
             "python scripts/data/download_neurosynth_data.py",
             "python scripts/data/convert_neurosynth.py",
             "python scripts/autoresearch/run_auditable_claim_demo.py "
@@ -523,17 +531,18 @@ def _markdown(bundle: dict[str, Any]) -> str:
             "  --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl",
             "```",
             "",
-            "Or the language-driven path through the Brain Researcher MCP (no local "
-            "install -- one call to the hosted server returns the gated verdict):",
+            "Or, from the same repository root, use the language-driven path "
+            "through the Brain Researcher MCP. A short hosted call sequence returns "
+            "the gated verdict without starting local Brain Researcher services:",
             "",
             "```bash",
-            "python examples/auditable_claim_record/drive_from_language.py",
+            "python reproducibility/tutorials/auditable_claim_record/drive_from_language.py",
             "```",
             "",
             "NeuroLang is an optional *reference* engine only -- do NOT "
             "`pip install neurolang` (it is not installable from PyPI). The venv "
             "recipe, only if you want to regenerate that exact reference card, is in "
-            "`examples/auditable_claim_record/README.md`.",
+            "`reproducibility/tutorials/auditable_claim_record/README.md`.",
             "",
         ]
     )

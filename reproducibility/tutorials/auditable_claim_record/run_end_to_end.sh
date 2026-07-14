@@ -7,12 +7,12 @@
 # the full Brain Researcher platform. It fails loudly if the result drifts, so a
 # green run means every link in the chain held.
 #
-#   bash run_end_to_end.sh [OUTPUT_DIR]
+#   bash reproducibility/tutorials/auditable_claim_record/run_end_to_end.sh [OUTPUT_DIR]
 #
 # For the language-driven (agent + MCP) path, see drive_from_language.py.
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$REPO_ROOT"
 OUT="${1:-/tmp/auditable_claim_e2e}"
 EXPECT_STATUS="${BR_E2E_EXPECT_STATUS:-supported_within_scope}"
@@ -23,7 +23,22 @@ echo "   claim: ${CLAIM}"
 echo "   scope: Neurosynth v7 / fMRI / 'attention' as the allowed rival explanation"
 
 echo "== [2/4] environment (light — not the full platform) =="
-python -m pip install --quiet --disable-pip-version-check nimare nilearn
+python -m pip install --quiet --disable-pip-version-check -e . nimare nilearn
+python - "${REPO_ROOT}" <<'PY'
+from pathlib import Path
+import sys
+
+import brain_researcher
+
+repo_src = (Path(sys.argv[1]) / "src").resolve()
+module_path = Path(brain_researcher.__file__).resolve()
+if not module_path.is_relative_to(repo_src):
+    raise SystemExit(
+        "brain_researcher resolved outside this clone: "
+        f"{module_path} (expected under {repo_src})"
+    )
+print(f"   brain_researcher import: {module_path}")
+PY
 
 echo "== [3/4] public corpus: download -> convert =="
 python scripts/data/download_neurosynth_data.py
@@ -43,6 +58,7 @@ import sys
 out, expect = sys.argv[1], sys.argv[2]
 card = json.load(open(f"{out}/claim_card.json"))
 verdicts = json.load(open(f"{out}/evidence_verdicts.json"))
+readme = open(f"{out}/README.md").read()
 
 status = card.get("status")
 fwd = verdicts.get("forward_default", {})
@@ -56,6 +72,13 @@ assert n_studies and n_studies > 0, "evidence did not run (no corpus studies sco
 for key in ("forward_default", "forward_strict", "specificity_excluding_rivals",
             "network_coactivation"):
     assert key in verdicts, f"missing evidence verdict: {key}"
+for snippet in (
+    "Run every command from the public repository root",
+    "cd brain-researcher-public",
+    "python -m pip install -e . nimare nilearn",
+    "reproducibility/tutorials/auditable_claim_record/drive_from_language.py",
+):
+    assert snippet in readme, f"generated README missing runnable instruction: {snippet}"
 print("   OK: claim -> grounded evidence -> sealed claim record, end to end")
 PY
 
