@@ -5,6 +5,22 @@ This repository includes public-safe reproducibility packs under
 who want to inspect the audit record behind a Brain Researcher result without
 access to private runtime logs or governed datasets.
 
+Do not confuse those packs with
+[`examples/auditable_claim_record/`](../examples/auditable_claim_record/). The
+example is a runnable tutorial that emits claim-card JSON; it has no pack
+manifest and is not accepted by `reproducibility/verify.py`. The similar
+`run_end_to_end.sh` and `AGENTIC_REPRODUCTION.md` filenames describe parallel
+user journeys, not the same artifact contract.
+
+## Working Directory
+
+Commands in this page run from the **repository root**. From anywhere inside the
+clone:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+```
+
 ## What A Pack Proves
 
 Each pack has:
@@ -17,7 +33,8 @@ Each pack has:
 Run:
 
 ```bash
-python reproducibility/verify.py reproducibility/packs/<id>
+python reproducibility/verify.py reproducibility/packs/bounded_autoresearch_a1
+python reproducibility/verify.py reproducibility/packs/fitlins_multiverse_yeo17
 ```
 
 Exit code `0` means the shipped bytes match the manifest. It does not by itself
@@ -27,15 +44,16 @@ prove that an LLM rerun will be byte-identical.
 
 | Pack | Status | Boundary |
 |---|---|---|
-| `bounded_autoresearch_a1` | Real recorded result | Checksum-verifiable artifacts for the HCP-YA bounded-autoresearch A1 result. Full rerun is data-gated because HCP-YA behavior rows are not redistributed; the public pack includes a redacted Liu/Tian source-provenance summary with OSF node `75je2`, key checksums, component-reconstruction caveats, and the `reconstructed_not_paper_exact` boundary. |
-| `fitlins_multiverse_yeo17` | Synthetic schema exemplar | Shows the run-bundle and multiverse layout. It is a format template, not a real-data result; statmap entries are `schema_only`. |
+| `bounded_autoresearch_a1` | Real recorded result | Checksum-verifiable artifacts plus a public-data headline rerun. Deeper reconstruction is governed-data-gated: HCP-YA rows, the exact 326-subject FC/behavior binding, and its subject-keyed derived component table are not redistributed. The pack includes a redacted Liu/Tian source-provenance summary with OSF node `75je2`, key checksums, component-reconstruction caveats, and the `reconstructed_not_paper_exact` boundary. |
+| `fitlins_multiverse_yeo17` | Synthetic schema exemplar | Shows the run-bundle and multiverse layout. It is a format template, not a real-data result; statmap entries are `schema_only`, and its historical params do not form a current end-to-end rerun contract. |
 
 ## Reproduce From Language (Claude Code / Codex + MCP)
 
-Beyond re-running the frozen scripts, each worked case can be reproduced the way
-the platform actually produces it — a coding agent driving the loop from natural
-language through the MCP. These guides map each step to the typed MCP tool that
-makes it a verifiable action, and include a paste-ready starter prompt:
+The real A1 pack and the separate auditable-claim example each include an
+agentic guide. These describe how a coding agent drives typed MCP steps from
+natural language. They are not both packs, and recipe/validation calls do not by
+themselves prove that an analysis executed. Each guide states which part is a
+runnable driver and which part remains a multi-step handoff:
 
 | Case | Shape | Agentic guide |
 |---|---|---|

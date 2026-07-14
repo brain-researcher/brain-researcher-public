@@ -6,6 +6,18 @@ file lists where to obtain that data, and — for completeness — the data sour
 for the other cases referenced in the manuscript, some of which are
 controlled-access and are therefore not redistributed here.
 
+This file belongs to the worked example under `examples/`; it is not a pack
+manifest. The formal checksum packs and their data boundaries are documented in
+[`../../reproducibility/`](../../reproducibility/).
+
+## Working directory
+
+Commands below run from the **repository root**. From anywhere inside the clone:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+```
+
 ## Neurosynth — used by *this* example (public, no account required)
 
 The working-memory claim is computed over the Neurosynth v7 coordinate corpus.
@@ -14,11 +26,19 @@ The working-memory claim is computed over the Neurosynth v7 coordinate corpus.
 - Raw data repository: https://github.com/neurosynth/neurosynth-data
 - One-call fetch via NiMARE: `nimare.extract.fetch_neurosynth`
   (https://nimare.readthedocs.io/)
-- Helper scripts in this repository (run from the repo root):
+- Helper scripts in this repository:
   - `scripts/data/download_neurosynth_data.py` — downloads the Neurosynth v7
     release into `data/neurosynth_nimare/neurosynth_v7/`
   - `scripts/data/convert_neurosynth.py` — converts it into the term-annotated
     NiMARE dataset `data/neurosynth_nimare/neurosynth_dataset_v7.pkl`
+
+  Run them from the repository root after installing the light-path environment
+  from `README.md`:
+
+  ```bash
+  python scripts/data/download_neurosynth_data.py
+  python scripts/data/convert_neurosynth.py
+  ```
 - Point the generator at that pickle with
   `--corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl` (or set
   `$BR_NEUROCLAIM_CORPUS`). With no argument the generator falls back to
@@ -36,6 +56,9 @@ HCP-YA is governed data: raw subject rows, subject identifiers, and raw FC files
 are **not** redistributed in this repository. Stage them yourself under your own
 data-use terms; the reproducibility pack documents the checksum-bound local
 input contract that keeps raw rows and identifiers out of the exported bundle.
+The HCP export alone does not recreate the A1 deeper rerun: the exact
+326-subject FC/behavior intersection and its subject-keyed derived component
+table are also governed inputs and are not shipped.
 
 ## Liu et al. (2025) functional-connectivity benchmark
 

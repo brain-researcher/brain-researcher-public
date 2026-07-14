@@ -8,21 +8,56 @@ re-run. The redesign→recovery headline (`ICA_Cognition` fold-mean r ≈ 0.183)
 reproduces on **public data alone** — see the "Run it yourself" section of
 [`REPRODUCTION.md`](REPRODUCTION.md).
 
-## Quickstart
+This is a formal reproducibility pack: `manifest.json` and
+`provenance_card.md` define its audit boundary. For a tutorial that generates an
+auditable claim record but is not a checksum pack, see
+[`../../../examples/auditable_claim_record/`](../../../examples/auditable_claim_record/).
 
-No HCP account needed. Reproduces `ICA_Cognition` fold-mean r ≈ 0.183 in ~8 s:
+## Working directory
+
+Every shell command in this README is written for the **repository root**, not
+this pack directory. After cloning, `cd brain-researcher-public`. If you are
+already anywhere inside the clone, run:
 
 ```bash
-pip install numpy pandas h5py scikit-learn
-
-git clone https://github.com/brain-researcher/brain-researcher-public
-cd brain-researcher-public/reproducibility/packs/bounded_autoresearch_a1
-
-python scripts/fetch_fc_features.py   # download + sha256-verify FC features (~937 MB) -> inputs/
-python scripts/run_prediction.py      # -> ICA_Cognition r ≈ 0.183, aggregate ≈ 0.151
+cd "$(git rev-parse --show-toplevel)"
 ```
 
-Optional integrity check: `python ../../verify.py .` (checksums match).
+## Quickstart: public-data rerun
+
+No HCP account or MCP server is needed. The release download is approximately
+835 MB and occupies about 1.0 GB after extraction; the prediction itself takes
+about 8 seconds after the feature files are staged.
+For a new clone, create an isolated environment and run:
+
+```bash
+git clone https://github.com/brain-researcher/brain-researcher-public.git
+cd brain-researcher-public
+python3.11 -m venv ~/.venvs/br-a1-repro
+source ~/.venvs/br-a1-repro/bin/activate
+bash reproducibility/packs/bounded_autoresearch_a1/run_end_to_end.sh
+```
+
+`run_end_to_end.sh` installs `numpy`, `pandas`, `h5py`, and `scikit-learn` into
+the active environment; downloads and checksum-verifies the public FC features;
+runs the frozen predictor; and checks `ICA_Cognition` fold-mean r ≈ 0.183 and
+aggregate r ≈ 0.151. Its default result JSON is
+`/tmp/a1_e2e_result.json` (override with `BR_A1_E2E_RESULT`).
+
+To run the two analysis steps manually, still from the repository root:
+
+```bash
+python -m pip install numpy pandas h5py scikit-learn
+python reproducibility/packs/bounded_autoresearch_a1/scripts/fetch_fc_features.py
+python reproducibility/packs/bounded_autoresearch_a1/scripts/run_prediction.py
+```
+
+Verify the committed pack separately with:
+
+```bash
+python reproducibility/verify.py reproducibility/packs/bounded_autoresearch_a1
+```
+
 The deeper, HCP-gated steps are in [`REPRODUCTION.md`](REPRODUCTION.md). To
 reproduce A1 the way it was produced — a coding agent driving the loop from
 language through the MCP — see [`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md).
@@ -47,22 +82,27 @@ language through the MCP — see [`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTIO
 - `provenance_card.md` — execution envelope + provenance (Appendix F).
 
 ## Verify
+
+From the repository root:
+
 ```bash
 python reproducibility/verify.py reproducibility/packs/bounded_autoresearch_a1
 ```
 Exit 0 = the shipped artifacts match the recorded checksums.
 
-## Re-run — REPRODUCED 2026-07-08 (end-to-end)
-This pack was **re-run end-to-end on the current stack** (see `REPRODUCTION.md`):
+## Re-run — target and predictive check reproduced 2026-07-08
+This pack was **re-run through the predictive check on the current stack** (see
+`REPRODUCTION.md`):
 **Step 1** rebuilds the residualised target — same inputs (sha256-proven), OLS
 betas / R² / residual_std reproduce to ~1e-15 (machine epsilon; CSV differs only in
 last-ULP float formatting). **Step 2** chains that rebuilt target through the frozen
-§5.1 Path-B predictive check (152 FC term features, 10 folds, 326 subjects) and
+§5.1 Path-B predictive check (76 FC terms, 10 folds, 326 subjects) and
 reproduces the published predictive numbers **exactly** — all 117 numeric fields,
-max |Δ| = 0.0. **Step 3** re-runs a 30-seed subset of the 1000-permutation
-family-block null: all 1830 fields reproduce exactly (max |Δ| = 0.0), and since each
-seed is deterministic the published significance (`+1 p = 0.000999`, z = 5.744)
-follows by construction. Re-run summary: `REPRODUCTION.md`; permutation records:
+max |Δ| = 0.0. **Step 3** spot-checks seeds 1–30 of the recorded 1000-permutation
+family-block null: all 1830 checked fields reproduce exactly (max |Δ| = 0.0). The
+remaining 970 seeds were not re-run, so the published full-null significance
+(`+1 p = 0.000999`, z = 5.744) remains a recorded result rather than an independently
+reproduced result. Re-run summary: `REPRODUCTION.md`; permutation records:
 `reproduction/rerun_20260708_null_seeds_1_30.jsonl`.
 
 The upstream inputs live under the governed A1 data root and are **not** in this
@@ -83,17 +123,26 @@ repo. This pack now exposes the public-safe source route in
 - The five Liu/Tian component targets are reconstructed from the paper mapping
   and published demixing matrix, not copied from released subject-level paper
   weights. The target manifest therefore labels the line
-  `reconstructed_not_paper_exact`.
+  `reconstructed_not_paper_exact`. The exact 326-subject FC/behavior
+  intersection and subject-keyed derived component table are governed inputs;
+  their identifiers are not shipped in this public pack.
 
 To reproduce yourself (full recipe + data-access boundary in `REPRODUCTION.md`):
-1. **Public headline** — `python scripts/fetch_fc_features.py` (downloads the
-   Liu FC-pyspi per-term features from the GitHub release, sha256-checked, into
-   git-ignored `inputs/`), then `python scripts/run_prediction.py`. Reproduces
-   `ICA_Cognition` r ≈ 0.183 / aggregate ≈ 0.151 with no HCP account.
+
+1. **Public headline** — run
+   `reproducibility/packs/bounded_autoresearch_a1/run_end_to_end.sh` from the
+   repository root. It downloads the Liu FC-pyspi per-term features from the
+   GitHub release into the pack's git-ignored `inputs/`, verifies the archive,
+   and reproduces `ICA_Cognition` r ≈ 0.183 / aggregate ≈ 0.151 with no HCP
+   account.
 2. **Deeper provenance** — to rebuild the target and re-run the §5.1 check, stage
-   your own HCP-YA behavior (Open Access) and run `scripts/build_residualised_target.py`
-   then `scripts/run_residualised_cheap_check.py`. The family-block confirmatory
-   null additionally needs HCP Restricted `Family_ID`.
+   your own HCP-YA behavior **and** supply the governed, subject-keyed
+   `liu_component_behavior.csv` for the exact 326-subject FC intersection. The
+   public module documents the projection method, but this pack does not ship
+   the subject identifiers or a public builder for that exact intersection.
+   Follow the input template in `REPRODUCTION.md`. The family-block confirmatory
+   null additionally needs HCP Restricted `Family_ID` and its derived
+   exchangeability manifest.
 3. Re-verify shipped bytes with `verify.py`; compare re-run outputs using the
    tolerances documented in `REPRODUCTION.md`.
 

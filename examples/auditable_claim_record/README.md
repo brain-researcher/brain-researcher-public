@@ -14,6 +14,26 @@ NeuroMark episode in the paper) produce the *same* record, but their cards
 cannot be shipped alongside the restricted data; this public example is the
 stand-in you can point to.
 
+This directory is a **worked tutorial**, not a formal reproducibility pack. It
+has no `manifest.json` or `provenance_card.md`, and
+`reproducibility/verify.py` does not accept it. Manifest-backed result and schema
+packs live under [`../../reproducibility/`](../../reproducibility/); the folder
+split is intentional even though both surfaces include similarly named rerun
+guides.
+
+## Working directory
+
+Unless a block explicitly says otherwise, run every command below from the
+**repository root**, the directory containing `pyproject.toml`, `examples/`, and
+`scripts/`. From anywhere inside the clone:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+```
+
+In these commands, `python` and `python -m pip` refer to the same active conda
+environment or virtual environment.
+
 ## What the claim was
 
 > Working-memory-labeled Neurosynth studies show dlPFC activation and dlPFC-IPS
@@ -58,20 +78,31 @@ the paper only walks through the same schema field by field.
 ## Reproduce it yourself
 
 This example runs on public Neurosynth data — no account or data-use agreement.
-You do **not** need the full Brain Researcher platform: the generator, the two
-data scripts, and a small evidence backend in this repository are all it takes.
+You do **not** need to start the Brain Researcher services or MCP. The run does
+need the Python package from this clone; the script installs it in editable mode
+along with the light NiMARE dependencies.
 
-**One command, from scratch** (environment → public corpus → executed evidence →
-sealed record, with a built-in check that the result did not drift):
+For a new clone, this is the complete light path tested with Python 3.11:
 
 ```bash
+git clone https://github.com/brain-researcher/brain-researcher-public.git
+cd brain-researcher-public
+python3.11 -m venv ~/.venvs/br-claim-repro
+source ~/.venvs/br-claim-repro/bin/activate
 bash examples/auditable_claim_record/run_end_to_end.sh
 ```
 
+The shell script does **not** create or activate an environment. It installs
+`brain_researcher`, NiMARE, and Nilearn into the environment that is already
+active; downloads and converts Neurosynth under
+`data/neurosynth_nimare/`; writes the generated record to
+`/tmp/auditable_claim_e2e` by default; and asserts the expected status and
+evidence fields. Pass a different output directory as its first argument.
+
 To reproduce it the way the platform produces it — a coding agent driving the
 sealed claim episode **from language** through the MCP — run
-[`drive_from_language.py`](drive_from_language.py) (one MCP call, gates the claim
-and returns the verdict with its named uncertainty) or follow the full episode in
+[`drive_from_language.py`](drive_from_language.py) (a small MCP call sequence:
+`server_info`, then compile or start-and-poll) or follow the full episode in
 [`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md).
 
 The rest of this section is the same chain, step by step. There are two evidence
@@ -84,12 +115,12 @@ reference engine that produced the exact sealed card committed in this folder.
 Runs in-process against the public Neurosynth coordinate/term corpus. No second
 interpreter, no pinned legacy dependencies.
 
-1. Install the backend into any Python 3.10+ environment:
+1. Install this clone and the backend into an isolated Python 3.10+ environment
+   (tested with Python 3.11), from the repository root:
    ```bash
-   pip install nimare nilearn "numpy>=1.24"
+   python -m pip install -e . nimare nilearn "numpy>=1.24"
    ```
-2. Download and convert the public Neurosynth v7 corpus (run from the repo
-   root):
+2. Download and convert the public Neurosynth v7 corpus:
    ```bash
    python scripts/data/download_neurosynth_data.py   # -> data/neurosynth_nimare/neurosynth_v7/
    python scripts/data/convert_neurosynth.py         # -> data/neurosynth_nimare/neurosynth_dataset_v7.pkl
@@ -119,9 +150,10 @@ evidence profile, and the specificity and co-activation checks pass. Each verdic
 in `evidence_verdicts.json` carries its real numbers — study counts, the reverse-
 inference statistic, the specificity and co-activation lifts — and a
 `reproducible_query` you can re-run. Forward inference uses NiMARE's MKDAChi2
-estimator; the specificity and network queries are coordinate set arithmetic over
-the corpus (each verdict says so in its `warnings`), because those compositional
-contrasts are not expressible as a single NiMARE CBMA.
+estimator when the term resolves automatically. The specificity and network
+queries use coordinate-set arithmetic over the corpus (each verdict identifies
+its inference path), because those compositional contrasts are not expressible
+as a single NiMARE CBMA.
 
 ### Reference path (NeuroLang) — reproduces the exact committed card
 

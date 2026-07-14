@@ -23,7 +23,22 @@ echo "   claim: ${CLAIM}"
 echo "   scope: Neurosynth v7 / fMRI / 'attention' as the allowed rival explanation"
 
 echo "== [2/4] environment (light — not the full platform) =="
-python -m pip install --quiet --disable-pip-version-check nimare nilearn
+python -m pip install --quiet --disable-pip-version-check -e . nimare nilearn
+python - "${REPO_ROOT}" <<'PY'
+from pathlib import Path
+import sys
+
+import brain_researcher
+
+repo_src = (Path(sys.argv[1]) / "src").resolve()
+module_path = Path(brain_researcher.__file__).resolve()
+if not module_path.is_relative_to(repo_src):
+    raise SystemExit(
+        "brain_researcher resolved outside this clone: "
+        f"{module_path} (expected under {repo_src})"
+    )
+print(f"   brain_researcher import: {module_path}")
+PY
 
 echo "== [3/4] public corpus: download -> convert =="
 python scripts/data/download_neurosynth_data.py
