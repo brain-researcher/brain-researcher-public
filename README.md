@@ -4,7 +4,14 @@
 
 **Brain Researcher is a workspace-centric infrastructure for auditable AI-assisted neuroimaging.** It turns research questions into bounded episodes that connect evidence, admissible analysis choices, tool/recipe selection, provenance, and review verdicts. This public repository ships the open code, MCP contracts, service stack, Web UI, docs, and public-safe helpers; private benchmark corpora, Neo4j graph contents, internal run artifacts, and site-specific launchers are not included.
 
-Use it through MCP from Claude Code, Codex, Cursor, or another MCP client. For setup guides, MCP client configuration, skills, AGENTS templates, demos, and evaluation rubrics, see [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit).
+## Choose your path
+
+| Goal | Start here | What to expect |
+|---|---|---|
+| Reproduce a public example | [`reproducibility/`](reproducibility/) | Verify committed snapshots or run the public-data examples. MCP is not required. |
+| Use Brain Researcher through Claude Code, Codex, Cursor, or another MCP client | [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit) | MCP client setup, skills, AGENTS templates, demos, and evaluation rubrics. |
+| Run the browser stack locally | [Quick start (local Docker)](#quick-start-local-docker) | Neo4j, Redis, BR-KG, agent, and Web UI. The default Compose stack does not start the MCP server. |
+| Develop the Python CLI or MCP server | [Install as a Python package](#install-as-a-python-package) | Editable install plus the `brain-researcher` / `br` commands. |
 
 ## Understand Brain Researcher
 
@@ -91,7 +98,7 @@ For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the
 | Reproducibility | `reproducibility/` | Public-safe packs and runnable tutorials for inspecting or generating auditable records. |
 | Worked claim-record tutorial | `reproducibility/auditable_claim_record/` | Runnable tutorial that generates claim-card JSON. It is not a manifest-backed reproducibility pack. |
 | Docs and appendices | `docs/` | Operations, MCP docs, release notes, appendices, use cases, and public-surface explanations. |
-| Tests | `tests/` | Unit, integration, architecture, contract, and browser/e2e checks. |
+| Tests | `tests/` | Unit, BR-KG, architecture, contract, behavior, and performance checks. Web/browser checks live under `apps/web-ui/tests/`. |
 
 ---
 
@@ -114,12 +121,11 @@ $EDITOR .env
 docker compose up -d
 
 # 3. Verify: the init job exits 0 and runtime services become healthy.
-docker compose ps
+docker compose ps --all
 # → init-local-dirs (Exited 0)
 # → neo4j, redis, br-kg, agent, web-ui   (Status: healthy)
 
-# 4. Open the web UI.
-xdg-open http://localhost:3000   # or just navigate in your browser
+# 4. Open http://localhost:3000 in your browser.
 ```
 
 To build and start every compose service, including the optional orchestrator:
@@ -127,7 +133,7 @@ To build and start every compose service, including the optional orchestrator:
 ```bash
 docker compose --profile worker build
 docker compose --profile worker up -d
-docker compose --profile worker ps
+docker compose --profile worker ps --all
 # → init-local-dirs (Exited 0)
 # → neo4j, redis, br-kg, agent, orchestrator, web-ui
 ```
@@ -200,20 +206,33 @@ authorized to use.
 
 ## Install as a Python package
 
-The MCP server + CLI live under `src/brain_researcher/` and can be installed from the repo root:
+The MCP server + CLI live under `src/brain_researcher/`. From the repository
+root, create an isolated Python 3.10–3.12 environment and install the supported
+full CLI/development dependency set:
 
 ```bash
-pip install -e ".[all]"
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[all]"
 brain-researcher --help
 ```
 
-Core CLI surfaces (`br` is a short alias; on systems where `br` is shadowed, use `brain-researcher`):
+The `all` extra is intentionally heavy: it includes BR-KG, agent,
+neuroimaging, UI, notebook, and development dependencies. If you only want to
+run the public reproducibility examples, use their isolated setup commands
+instead of installing this full stack.
+
+Core CLI surfaces (`br` is a short alias; on systems where `br` is shadowed,
+use `brain-researcher`):
 
 ```bash
-brain-researcher chat                            # interactive chat with the agent
-brain-researcher serve agent | kg | mcp | web    # individual services
-brain-researcher db init                         # initialize databases
-brain-researcher data load-openneuro --dataset ds000114
+brain-researcher chat             # interactive chat; requires an LLM provider key
+brain-researcher serve agent      # one foreground service per terminal
+brain-researcher serve kg
+brain-researcher serve mcp
+brain-researcher serve web
+brain-researcher db --help        # inspect database commands and prerequisites
+brain-researcher data --help      # inspect the currently implemented data commands
 ```
 
 For HPC / SLURM usage, see [`docs/hpc.md`](docs/hpc.md). For the contract layer that governs which tool names are stable across releases, see [`docs/contract-tiers.md`](docs/contract-tiers.md) and inspect `contracts/tools/*.json`.
@@ -225,9 +244,12 @@ For HPC / SLURM usage, see [`docs/hpc.md`](docs/hpc.md). For the contract layer 
 Two deployment paths under [`infrastructure/k8s/`](infrastructure/k8s/):
 
 ```bash
-# Helm chart (recommended)
+# Helm chart (recommended): copy, edit, render, inspect, then apply.
+cp infrastructure/k8s/helm/brain-researcher/values.yaml /tmp/brain-researcher-values.yaml
+$EDITOR /tmp/brain-researcher-values.yaml
 helm template brain-researcher infrastructure/k8s/helm/brain-researcher/ \
-  -f your-values.yaml | kubectl apply -f -
+  -f /tmp/brain-researcher-values.yaml > /tmp/brain-researcher-rendered.yaml
+kubectl apply -f /tmp/brain-researcher-rendered.yaml
 
 # Or raw manifests
 kubectl apply -f infrastructure/k8s/manifests/
@@ -250,7 +272,7 @@ The main Helm chart renders 26 Kubernetes resources cleanly; the Istio overlay s
 | `docs/` | MCP docs, appendices, use cases, release notes, and contributor-facing docs |
 | `reproducibility/` | Public-safe reproducibility packs and runnable tutorials, stored together by example name |
 | `reproducibility/auditable_claim_record/` | Worked generator tutorial; no pack manifest and no `verify.py` contract |
-| `tests/` | Unit + integration + contracts (Pact) + e2e (Playwright) |
+| `tests/` | Python unit, BR-KG, architecture, contract, behavior, and performance checks |
 | `infrastructure/` | docker-compose, Helm chart, K8s manifests, monitoring, nginx, haproxy |
 | `scripts/` | ETL, analysis, build, validation, and focused maintenance utilities |
 
