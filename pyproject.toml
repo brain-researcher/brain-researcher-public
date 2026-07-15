@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "brain_researcher"
-version = "0.0"
+version = "0.1.0"
 description = "MRI Research Assistant and BR-KG services for neuroimaging analysis and knowledge graph exploration"
 readme = "README.md"
 license = {text = "MIT"}
@@ -14,7 +14,7 @@ authors = [
 maintainers = [
     {name = "Brain Researcher Team"}
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11,<3.12"
 keywords = ["neuroimaging", "fmri", "neuroscience", "knowledge-graph", "mri", "brain-research"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -22,9 +22,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
     "Topic :: Scientific/Engineering :: Information Analysis",
@@ -47,7 +45,7 @@ dependencies = [
     # Configuration and validation
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
-    "mcp>=1.12.0",
+    "PyYAML>=6,<7",
     "python-dotenv>=1.0.0",
     # Keep this CLI stack aligned with environment.yml and openneuro-py.
     "click>=8.2.1",
@@ -71,12 +69,17 @@ dependencies = [
     # Logging
     "structlog>=23.0.0",
     "rich>=13.0.0",
-
-    # MCP (Model Context Protocol)
-    "mcp>=1.12.0",
 ]
 
 [project.optional-dependencies]
+mcp = [
+    # The current MCP server composes agent routing and review surfaces at
+    # import time, so its supported install profile must include those real
+    # dependencies rather than pretending to be a lightweight protocol shim.
+    "brain_researcher[agent]",
+    "mcp>=1.12.0",
+]
+
 br-kg = [
     # Neuroimaging
     "nibabel>=5.3.0",
@@ -147,7 +150,8 @@ br-kg = [
     # Additional neuroimaging tools
     "cognitiveatlas>=0.1.11",
     "PyMARE>=0.0.10",
-    "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git",
+    # Immutable v1.2 source ref; exact VCS refs keep lock refreshes reproducible.
+    "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git@28fe10f575e1c1f7a6ef5303ea03dd5bb0cd7ce6",
 
     # Additional utilities
     "supervisor>=4.2.1",
@@ -188,7 +192,9 @@ optical = [
 
 optical_realtime = [
     # Replay-first realtime optical stack
-    "caiman>=1.11.0",
+    # Flatiron CaImAn is not the unrelated ``caiman`` package on PyPI.
+    # v1.11.0: https://github.com/flatironinstitute/CaImAn/releases/tag/v1.11.0
+    "caiman @ git+https://github.com/flatironinstitute/CaImAn.git@a30d1b1bce481704deb7d92bafb93641ef044a6e",
     "suite2p>=0.14.6",
     "websockets>=12.0",
 ]
@@ -335,7 +341,7 @@ dev = [
 ]
 
 all = [
-    "brain_researcher[br-kg,agent,ui,notebook,dev]"
+    "brain_researcher[mcp,br-kg,agent,ui,notebook,dev]"
 ]
 docs = [
     "mkdocs>=1.5.0",
@@ -356,17 +362,17 @@ docs = [
 [project.scripts]
 brain-researcher = "brain_researcher.cli.main:app"
 br = "brain_researcher.cli.main:app"  # Short alias
-brain-researcher-mcp = "brain_researcher.services.mcp.server:main"
+brain-researcher-mcp = "brain_researcher.services.mcp.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["brain_researcher*"]
-namespaces = false
+namespaces = true
 exclude = ["tests*", "htmlcov*", "*_env*", "migration*"]
 
 [tool.black]
 line-length = 88
-target-version = ['py310', 'py311', 'py312']
+target-version = ['py311']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -397,7 +403,7 @@ line_length = 88
 skip_glob = ["*_env/*", "migrations/*"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
@@ -453,7 +459,7 @@ watcher_on_save = "autorun"
 
 [tool.ruff]
 line-length = 88
-target-version = "py310"
+target-version = "py311"
 exclude = [
     ".bzr",
     ".direnv",

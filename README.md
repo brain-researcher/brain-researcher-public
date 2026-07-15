@@ -207,20 +207,21 @@ authorized to use.
 ## Install as a Python package
 
 The MCP server + CLI live under `src/brain_researcher/`. From the repository
-root, create an isolated Python 3.10–3.12 environment and install the supported
-full CLI/development dependency set:
+root, create an isolated Python 3.11 environment and install the base package:
 
 ```bash
-python3 -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[all]"
+python -m pip install -e .
 brain-researcher --help
+brain-researcher-mcp --help
 ```
 
-The `all` extra is intentionally heavy: it includes BR-KG, agent,
-neuroimaging, UI, notebook, and development dependencies. If you only want to
-run the public reproducibility examples, use their isolated setup commands
-instead of installing this full stack.
+Install only the runtime profile you need: `.[mcp]`, `.[agent]`, or `.[br-kg]`.
+The `.[all]` contributor profile is intentionally heavy: it includes MCP,
+BR-KG, agent, neuroimaging, UI, notebook, and development dependencies. If you
+only want to run the public reproducibility examples, use their isolated setup
+commands instead of installing this full stack.
 
 Core CLI surfaces (`br` is a short alias; on systems where `br` is shadowed,
 use `brain-researcher`):
