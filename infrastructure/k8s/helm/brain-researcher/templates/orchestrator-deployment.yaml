@@ -36,8 +36,8 @@ spec:
       {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
       containers:
         - name: orchestrator
-          image: "{{ .Values.global.imageRegistry }}/orchestrator:{{ .Values.orchestrator.imageTag | default .Values.global.imageTag }}"
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          image: {{ include "brain-researcher.image" (dict "registry" .Values.global.imageRegistry "repository" .Values.orchestrator.image.repository "tag" (.Values.orchestrator.imageTag | default .Values.global.imageTag | default .Values.orchestrator.image.tag)) | quote }}
+          imagePullPolicy: {{ .Values.orchestrator.image.pullPolicy | default .Values.global.imagePullPolicy }}
           ports:
             - name: http
               containerPort: 3001
@@ -72,7 +72,7 @@ spec:
             - name: BR_MARIMO_RUNTIME_NAMESPACE
               value: {{ (default .Values.namespaces.core .Values.orchestrator.marimoRuntime.namespace) | quote }}
             - name: BR_MARIMO_RUNTIME_IMAGE
-              value: {{ printf "%s/%s:%s" .Values.global.imageRegistry (.Values.orchestrator.marimoRuntime.imageRepository | default "marimo-singleuser") (.Values.orchestrator.marimoRuntime.imageTag | default .Values.global.imageTag) | quote }}
+              value: {{ include "brain-researcher.image" (dict "registry" .Values.global.imageRegistry "repository" .Values.orchestrator.marimoRuntime.imageRepository "tag" (.Values.global.imageTag | default .Values.orchestrator.marimoRuntime.imageTag)) | quote }}
             - name: BR_MARIMO_RUNTIME_IMAGE_PULL_POLICY
               value: {{ (default .Values.global.imagePullPolicy .Values.orchestrator.marimoRuntime.imagePullPolicy) | quote }}
             - name: BR_MARIMO_RUNTIME_INTERNAL_URL_TEMPLATE
@@ -116,13 +116,13 @@ spec:
             {{- end }}
           envFrom:
             - secretRef:
-                name: {{ include "brain-researcher.fullname" . }}-database-credentials
+                name: {{ include "brain-researcher.databaseCredentials.secretName" . }}
                 optional: true
             - secretRef:
-                name: {{ include "brain-researcher.fullname" . }}-external-services
+                name: {{ include "brain-researcher.externalServices.secretName" . }}
                 optional: true
             - secretRef:
-                name: {{ include "brain-researcher.fullname" . }}-mcp-auth
+                name: {{ include "brain-researcher.mcpAuth.secretName" . }}
                 optional: true
           volumeMounts:
             - name: config

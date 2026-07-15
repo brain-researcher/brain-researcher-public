@@ -41,14 +41,16 @@ def test_glm_multiverse_web_preset_uses_canonical_runtime_name():
 
 
 def test_glm_multiverse_deployment_allowlists_use_canonical_runtime_name():
-    for relpath in (
-        "infrastructure/deployment/gcp/values.prod.yaml",
-        "infrastructure/deployment/gce_k3s/values.prod.yaml",
-        "infrastructure/k8s/manifests/05-statefulsets.yaml",
+    manifest = Path("infrastructure/k8s/manifests/05-statefulsets.yaml")
+    text = manifest.read_text()
+    assert "glm_multiverse.run" not in text
+    assert "glm_multiverse" in text
+
+    for missing_overlay in (
+        Path("infrastructure/deployment/gcp/values.prod.yaml"),
+        Path("infrastructure/deployment/gce_k3s/values.prod.yaml"),
     ):
-        text = Path(relpath).read_text()
-        assert "glm_multiverse.run" not in text, relpath
-        assert "glm_multiverse" in text, relpath
+        assert not missing_overlay.exists(), missing_overlay
 
 
 def test_public_exposed_tools_whitelist_uses_canonical_runtime_ids():

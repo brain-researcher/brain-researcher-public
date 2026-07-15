@@ -9,7 +9,11 @@ global:
 
   # Image registry settings
   imageRegistry: ""
-  imageTag: latest
+  # Optional shared tag selected ahead of each component's structured image.tag,
+  # including for Marimo. Deprecated per-component imageTag fields retain higher
+  # precedence for compatibility. Leave empty to use fixed component preview tags.
+  # The project does not publish or support a production image set for this chart.
+  imageTag: ""
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   # - name: myregistrykey
@@ -38,8 +42,8 @@ global:
   tolerations: []
   affinity: {}
 
-  # Environment (development, staging, production)
-  environment: production
+  # This chart is an experimental rendering scaffold, not a production target.
+  environment: development
 
 # Namespace configuration
 namespaces:
@@ -100,13 +104,14 @@ orchestrator:
   enabled: true
   replicaCount: 1
 
-  # Optional per-service image tag override (defaults to global.imageTag when empty).
+  # Deprecated compatibility override. When non-empty, this takes precedence
+  # over image.tag.
   imageTag: ""
 
   image:
     repository: brain-researcher/orchestrator
-    tag: latest
-    pullPolicy: IfNotPresent
+    tag: "0.1.0-oss-preview"
+    pullPolicy: ""
 
   service:
     type: ClusterIP
@@ -149,14 +154,14 @@ orchestrator:
   # setting either:
   # - BR_STUDIO_JUPYTER_BASE_URL: fixed base URL for a single runtime target
   # - BR_STUDIO_JUPYTER_BASE_URL_TEMPLATE: template such as
-  #   https://hub.${PUBLIC_HOSTNAME}/user/{jupyter_user_name_url}
+  #   https://hub.example.org/user/{jupyter_user_name_url}
   # Together with BR_STUDIO_JUPYTER_TOKEN (or BR_JUPYTER_TOKEN), the
   # orchestrator can talk to the bound Neurodesk/Jupyter server directly.
   marimoRuntime:
     provisioner: "noop"
     namespace: ""
-    imageRepository: "marimo-singleuser"
-    imageTag: ""
+    imageRepository: "brain-researcher/marimo-singleuser"
+    imageTag: "0.1.0-oss-preview"
     imagePullPolicy: ""
     publicUrlTemplate: ""
     ingressClassName: ""
@@ -178,13 +183,14 @@ agent:
   enabled: true
   replicaCount: 2
 
-  # Optional per-service image tag override (defaults to global.imageTag when empty).
+  # Deprecated compatibility override. When non-empty, this takes precedence
+  # over image.tag.
   imageTag: ""
 
   image:
     repository: brain-researcher/agent
-    tag: latest
-    pullPolicy: IfNotPresent
+    tag: "0.1.0-oss-preview"
+    pullPolicy: ""
 
   # Optional command/args override (use for ASGI/WS entrypoint)
   command: []
@@ -311,7 +317,8 @@ agent:
 br-kg:
   enabled: true
   replicaCount: 1  # StatefulSet
-  # Override tag for BR-KG image; defaults to global.imageTag if unset.
+  # Deprecated compatibility override. When non-empty, this takes precedence
+  # over image.tag.
   imageTag: ""
 
   # Optional reverse-proxy path prefix for BR-KG when mounted behind an ingress path
@@ -342,8 +349,8 @@ br-kg:
 
   image:
     repository: brain-researcher/br-kg
-    tag: latest
-    pullPolicy: IfNotPresent
+    tag: "0.1.0-oss-preview"
+    pullPolicy: ""
 
   service:
     type: ClusterIP
@@ -406,12 +413,13 @@ br-kg:
 
 # NICLIP service configuration
 niclip:
-  enabled: true
+  # No NICLIP deployment template or published image contract is provided.
+  enabled: false
   replicaCount: 1
 
   image:
     repository: brain-researcher/niclip
-    tag: latest
+    tag: "0.1.0-oss-preview"
     pullPolicy: IfNotPresent
 
   service:
@@ -490,8 +498,14 @@ mcp:
       maxUnavailable: 1
       maxSurge: 1
 
-  # Optional per-service image tag override (defaults to global.imageTag when empty).
+  # Deprecated compatibility override. When non-empty, this takes precedence
+  # over image.tag.
   imageTag: ""
+
+  image:
+    repository: brain-researcher/mcp
+    tag: "0.1.0-oss-preview"
+    pullPolicy: ""
 
   # Mount path for the HTTP MCP transport. If you route MCP behind an ingress
   # path prefix (e.g. `/mcp`), keep this as `/mcp`. If you serve MCP on a
@@ -560,13 +574,14 @@ webUi:
   enabled: true
   replicaCount: 2
 
-  # Optional per-service image tag override (defaults to global.imageTag when empty).
+  # Deprecated compatibility override. When non-empty, this takes precedence
+  # over image.tag.
   imageTag: ""
 
   image:
     repository: brain-researcher/web-ui
-    tag: latest
-    pullPolicy: IfNotPresent
+    tag: "0.1.0-oss-preview"
+    pullPolicy: ""
 
   service:
     type: ClusterIP
@@ -609,8 +624,8 @@ webUi:
     - name: HYPOTHESIS_STORE_POSTGRES_URL
       valueFrom:
         secretKeyRef:
-          name: "{{ include \"brain-researcher.fullname\" . }}-external-services"
-          key: HYPOTHESIS_STORE_POSTGRES_URL
+          name: "{{ .Values.secrets.externalServices.existingSecret }}"
+          key: "{{ .Values.secrets.externalServices.keys.hypothesisStorePostgresUrl }}"
           optional: true
     - name: HYPOTHESIS_SESSION_TTL_SEC
       value: "2592000"
@@ -674,6 +689,10 @@ postgres:
 
   exporter:
     enabled: true
+    image:
+      repository: prometheuscommunity/postgres-exporter
+      tag: "v0.15.0"
+      pullPolicy: IfNotPresent
     resources:
       requests:
         memory: "64Mi"
@@ -695,6 +714,8 @@ neo4j:
     user: "neo4j"
     existingSecret: "br-neo4j-password-k8s"
     passwordKey: "password"
+    requiredKeys:
+      - password
   persistence:
     storageClass: "brain-researcher-standard"
     size: 10Gi
@@ -744,6 +765,10 @@ redis:
 
   exporter:
     enabled: true
+    image:
+      repository: oliver006/redis_exporter
+      tag: "v1.62.0"
+      pullPolicy: IfNotPresent
     resources:
       requests:
         memory: "64Mi"
@@ -763,7 +788,7 @@ prometheus:
 
   image:
     repository: prom/prometheus
-    tag: "latest"
+    tag: "v2.53.0"
     pullPolicy: IfNotPresent
 
   service:
@@ -802,7 +827,7 @@ grafana:
 
   image:
     repository: grafana/grafana
-    tag: "latest"
+    tag: "11.1.0"
     pullPolicy: IfNotPresent
 
   service:
@@ -867,7 +892,7 @@ ingress:
             port: 8000
 
   tls:
-    - secretName: brain-researcher-tls
+    - secretName: "{{ .Values.secrets.tlsCertificates.existingSecret }}"
       hosts:
         - brain-researcher.local
         - api.brain-researcher.local
@@ -958,55 +983,50 @@ networkPolicies:
     - name: "monitoring-scraping"
       enabled: true
 
-# Secrets configuration (values should be provided via external secret management)
+# Existing Secret contract. This chart never renders Secret resources and does
+# not accept secret values in values.yaml. Operators performing their own static
+# evaluation must pre-create every Secret they enable with the listed keys.
 secrets:
   llmApiKeys:
-    create: true
-    data: {}
-    # openaiApiKey: ""
-    # anthropicApiKey: ""
-    # deepseekApiKey: ""
+    existingSecret: "br-llm-api-keys-k8s"
+    requiredKeys: []
 
   databaseCredentials:
-    create: true
-    data: {}
-    # postgresUser: "brain_researcher"
-    # postgresPassword: ""
-    # postgresDb: "brain_researcher"
-    # redisPassword: ""
+    existingSecret: "br-database-credentials-k8s"
+    keys:
+      postgresPassword: POSTGRES_PASSWORD
+      postgresUrl: POSTGRES_URL
+    requiredKeys:
+      - POSTGRES_PASSWORD
+      - POSTGRES_URL
 
   jwtSecrets:
-    create: true
-    data: {}
-    # jwtSecretKey: ""
-    # jwtRefreshSecret: ""
-    # sessionSecret: ""
+    existingSecret: "br-jwt-secrets-k8s"
+    requiredKeys: []
 
   tlsCertificates:
-    create: false  # Managed by cert-manager
+    existingSecret: "brain-researcher-tls"
+    requiredKeys:
+      - tls.crt
+      - tls.key
 
   oauthCredentials:
-    create: true
-    data: {}
-    # googleClientId: ""
-    # googleClientSecret: ""
-    # githubClientId: ""
-    # githubClientSecret: ""
+    existingSecret: "br-oauth-credentials-k8s"
+    requiredKeys: []
 
   externalServices:
-    create: true
-    data: {}
-    # supabaseUrl: ""
-    # supabaseAnonKey: ""
-    # nextPublicSupabaseUrl: ""
-    # nextPublicSupabaseAnonKey: ""
-    # supabaseOauthProviders: "google,github"
-    # nextPublicSupabaseOauthProviders: "google,github"
-    # supabaseJwksUrl: ""
-    # supabaseJwtIssuer: ""
-    # supabaseJwtAudience: "authenticated"
-    # awsAccessKeyId: ""
-    # awsSecretAccessKey: ""
+    existingSecret: "br-external-services-k8s"
+    keys:
+      nextauthSecret: NEXTAUTH_SECRET
+      hypothesisStorePostgresUrl: HYPOTHESIS_STORE_POSTGRES_URL
+    requiredKeys: []
+    optionalKeys:
+      - NEXTAUTH_SECRET
+      - HYPOTHESIS_STORE_POSTGRES_URL
+
+  mcpAuth:
+    existingSecret: "br-mcp-auth-k8s"
+    requiredKeys: []
 
 # Cert-manager configuration
 certManager:
@@ -1074,28 +1094,6 @@ testing:
 
   # Mock external services
   mockExternalServices: false
-
-# Backup and disaster recovery
-backup:
-  enabled: false
-
-  # Backup schedule (cron format)
-  schedule: "0 2 * * *"  # Daily at 2 AM
-
-  # Retention policy
-  retention:
-    daily: 7
-    weekly: 4
-    monthly: 12
-
-  # Backup destinations
-  destinations:
-    s3:
-      enabled: false
-      bucket: ""
-      region: ""
-      accessKeyId: ""
-      secretAccessKey: ""
 
 # Scaling and performance settings
 scaling:

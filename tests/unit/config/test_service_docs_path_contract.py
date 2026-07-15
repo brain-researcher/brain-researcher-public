@@ -8,7 +8,7 @@ REQUIRED_SUBSTRINGS = {
     "apps/web-ui/README-real-pipeline.md": ("cd apps/web-ui",),
     "apps/web-ui/INTEGRATION.md": (
         "`apps/web-ui/.env.local`",
-        "cd apps/web-ui",
+        "npm --prefix apps/web-ui run dev",
     ),
     "apps/web-ui/TESTING_3D_VIEWER.md": (
         "br serve agent",
@@ -18,8 +18,14 @@ REQUIRED_SUBSTRINGS = {
         "http://localhost:3000/api/demo/peaks/",
         "http://localhost:3000/api/demo/real-evidence/",
     ),
-    "apps/web-ui/CLOUDFLARE_DEPLOYMENT.md": ("Root directory: apps/web-ui",),
-    "apps/web-ui/STORYBOOK_SETUP.md": ("apps/web-ui/",),
+    "apps/web-ui/CLOUDFLARE_DEPLOYMENT.md": (
+        "Status: experimental and not verified.",
+        "Root directory: apps/web-ui",
+    ),
+    "apps/web-ui/STORYBOOK_SETUP.md": (
+        "Build a local static preview",
+        "storybook-static/ under apps/web-ui",
+    ),
     "apps/web-ui/CHART_COMPONENTS_DEMO.md": (
         "cd apps/web-ui",
         "npm run dev -- --port 3002",
@@ -40,8 +46,13 @@ FORBIDDEN_SUBSTRINGS = {
     ),
     "apps/web-ui/CLOUDFLARE_DEPLOYMENT.md": (
         "Root directory: brain_researcher/services/web_ui",
+        "wrangler pages deploy",
     ),
-    "apps/web-ui/STORYBOOK_SETUP.md": ("brain_researcher/services/web_ui/",),
+    "apps/web-ui/STORYBOOK_SETUP.md": (
+        "brain_researcher/services/web_ui/",
+        "Automated deployment via GitHub Actions",
+        "## Production Deployment",
+    ),
     "apps/web-ui/CHART_COMPONENTS_DEMO.md": (
         "/app/brain_researcher/brain_researcher/services/web_ui",
     ),

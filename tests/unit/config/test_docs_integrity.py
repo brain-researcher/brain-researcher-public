@@ -23,7 +23,7 @@ ROOT_DOCS = (
 )
 CANONICAL_ENTRY_DOCS = ROOT_DOCS[-3:]
 HISTORICAL_SNAPSHOTS = (
-    REPO_ROOT / "DEPLOYMENT.md",
+    REPO_ROOT / "docs" / "archive" / "deployment" / "README.md",
     REPO_ROOT / "apps" / "web-ui" / "IMPLEMENTATION_SUMMARY.md",
     REPO_ROOT / "apps" / "web-ui" / "TESTING_3D_VIEWER.md",
     REPO_ROOT / "infrastructure" / "deployment" / "gcp" / "GKE_QUICKSTART.md",

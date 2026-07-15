@@ -98,7 +98,7 @@ For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the
 | Reproducibility | `reproducibility/` | Public-safe packs and runnable tutorials for inspecting or generating auditable records. |
 | Worked claim-record tutorial | `reproducibility/auditable_claim_record/` | Runnable tutorial that generates claim-card JSON. It is not a manifest-backed reproducibility pack. |
 | Autoresearch scripts | [`scripts/autoresearch/README.md`](scripts/autoresearch/README.md) | Status and input boundaries for runnable helpers, experimental workers, and historical campaign scripts. |
-| Deployment notes | [`infrastructure/deployment/README.md`](infrastructure/deployment/README.md) | Canonical status page for deployment-specific and historical infrastructure paths. |
+| Local deployment and infrastructure status | [`DEPLOYMENT.md`](DEPLOYMENT.md) and [`infrastructure/deployment/README.md`](infrastructure/deployment/README.md) | Supported local Compose instructions plus the canonical status matrix for experimental and historical assets. |
 | Docs and appendices | `docs/` | Operations, MCP docs, release notes, appendices, use cases, and public-surface explanations. |
 | Tests | `tests/` | Unit, BR-KG, architecture, contract, behavior, and performance checks. Web/browser checks live under `apps/web-ui/tests/`. |
 
@@ -115,26 +115,37 @@ orchestrator worker is optional and can be added with the `worker` profile.
 git clone https://github.com/brain-researcher/brain-researcher-public.git
 cd brain-researcher-public
 
-# 1. Set required env vars (at least: NEO4J_PASSWORD, JWT_SECRET_KEY, NEXTAUTH_SECRET, one LLM API key).
+# 1. Set required secrets, one LLM API key, and a matching DEFAULT_LLM_MODEL.
 cp .env.example .env
 # Edit .env and replace the required placeholders before continuing.
 
-# 2. Start the default stack.
-docker compose up -d
+# 2. Validate the Compose model.
+PUBLIC_HOSTNAME=localhost docker compose --env-file .env config --quiet
 
-# 3. Verify: the init job exits 0 and runtime services become healthy.
+# 3. Build and start the default stack, then wait for health checks.
+docker compose up -d --build --wait --wait-timeout 300
+
+# 4. Verify: the init job exits 0 and runtime services are healthy.
 docker compose ps --all
 # → init-local-dirs (Exited 0)
 # → neo4j, redis, br-kg, agent, web-ui   (Status: healthy)
 
-# 4. Open http://localhost:3000 in your browser.
+# 5. Check the Agent, BR-KG, and Web UI HTTP surfaces.
+bash scripts/smoke/health_smoke.sh
+
+# 6. Open http://localhost:3000 in your browser.
+```
+
+Stop the local stack without deleting its volumes:
+
+```bash
+docker compose down
 ```
 
 To build and start every compose service, including the optional orchestrator:
 
 ```bash
-docker compose --profile worker build
-docker compose --profile worker up -d
+docker compose --profile worker up -d --build --wait --wait-timeout 300
 docker compose --profile worker ps --all
 # → init-local-dirs (Exited 0)
 # → neo4j, redis, br-kg, agent, orchestrator, web-ui
@@ -145,7 +156,17 @@ docker compose --profile worker ps --all
 ```bash
 BR_NEO4J_HTTP_PORT=7484 BR_NEO4J_BOLT_PORT=7697 BR_KG_PORT=5010 \
   AGENT_PORT=8010 ORCHESTRATOR_PORT=3011 WEB_UI_PORT=3010 \
-  docker compose -p brpub up -d
+  docker compose -p brpub up -d --build --wait --wait-timeout 300
+docker compose -p brpub ps --all
+BASE_AGENT=http://localhost:8010 BASE_NKG=http://localhost:5010 \
+  BASE_UI=http://localhost:3010 bash scripts/smoke/health_smoke.sh
+```
+
+Open <http://localhost:3010> for this alternate-port stack. When finished,
+stop the same Compose project without deleting its volumes:
+
+```bash
+docker compose -p brpub down
 ```
 
 **Minimal env vars** (see [`docs/ENVIRONMENT_SETUP.md`](docs/ENVIRONMENT_SETUP.md) for full reference):
@@ -156,12 +177,13 @@ BR_NEO4J_HTTP_PORT=7484 BR_NEO4J_BOLT_PORT=7697 BR_KG_PORT=5010 \
 | `JWT_SECRET_KEY` | service auth signing | ≥ 32 chars |
 | `NEXTAUTH_SECRET` | web UI session signing | ≥ 32 chars |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `DEEPSEEK_API_KEY` | BR runtime LLM access (any one) | Directly read by the default runtime |
+| `DEFAULT_LLM_MODEL` | agent model selection | Must name a model served by the provider key you set |
 | `ZAI_API_KEY` / `OPENROUTER_API_KEY` | Optional external/coding-agent access | For GLM/OpenRouter/opencode-style clients or gateways |
 
 Generate local service secrets:
 
 ```bash
-python - <<'PY'
+python3 - <<'PY'
 import secrets
 
 print("NEO4J_PASSWORD=" + secrets.token_urlsafe(24))
@@ -170,8 +192,9 @@ print("NEXTAUTH_SECRET=" + secrets.token_urlsafe(48))
 PY
 ```
 
-Then paste those values into `.env` and add one LLM provider key. Official key
-pages:
+Then paste those values into `.env`, add one LLM provider key, and set
+`DEFAULT_LLM_MODEL` to a model served by that provider. Matching examples are
+in [`docs/ENVIRONMENT_SETUP.md`](docs/ENVIRONMENT_SETUP.md). Official key pages:
 
 - Gemini: <https://aistudio.google.com/app/apikey>
 - OpenAI: <https://platform.openai.com/api-keys>
@@ -252,22 +275,25 @@ The Helm chart and raw manifests under
 [`infrastructure/k8s/`](infrastructure/k8s/) are incomplete operator assets, not
 apply-ready deployment paths:
 
+Run these inspection commands from the repository root with Helm installed:
+
 ```bash
 # Helm chart (experimental/incomplete): render for syntax inspection only.
 cp infrastructure/k8s/helm/brain-researcher/values.yaml /tmp/brain-researcher-values.yaml
 helm template brain-researcher infrastructure/k8s/helm/brain-researcher/ \
   -f /tmp/brain-researcher-values.yaml > /tmp/brain-researcher-rendered.yaml
-rg '^[[:space:]]*image:' /tmp/brain-researcher-rendered.yaml | sort -u
+grep -E '^[[:space:]]*image:' /tmp/brain-researcher-rendered.yaml | sort -u
 
 # The raw manifests are templates, not apply-ready deployment files.
 grep -RInE 'your-|<[^>]+>|bcrypt-hash' infrastructure/k8s/manifests/
 ```
 
 Do **not** apply the current Helm output to a cluster. Although `helm template`
-produces YAML, the default values render invalid leading-slash image references
-such as `/agent:latest`, `/br-kg:latest`, `/orchestrator:latest`, and
-`/web-ui:latest`. The chart's image and secret semantics require deployment
-hardening before this can become a runnable path.
+produces deterministic image references with fixed preview tags, the project
+does not publish or support the corresponding application images. The chart
+also emits no `Secret` resources and expects operator-supplied secret names and
+keys. Rendering validates the static contract only; it does not prove that the
+workloads can be pulled, started, secured, or kept healthy.
 
 Do **not** run `kubectl apply -f infrastructure/k8s/manifests/` on the public
 directory as shipped. It contains placeholder credentials, TLS material, and
@@ -276,7 +302,9 @@ If you maintain a raw-manifest deployment, copy the templates into a private
 deployment workspace, replace secrets through your secret-management workflow,
 verify the required CRDs, review a server-side dry run or diff against the
 intended cluster, and only then apply the reviewed files.
-The Istio overlay subchart is also experimental.
+The retained raw Istio manifests under `infrastructure/k8s/istio/` are also
+experimental templates; the unsupported secondary Istio chart and install
+helpers were removed from the active tree.
 
 ---
 

@@ -46,8 +46,8 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "brain-researcher.fullname" . }}-database-credentials
-                  key: POSTGRES_PASSWORD
+                  name: {{ include "brain-researcher.databaseCredentials.secretName" . }}
+                  key: {{ .Values.secrets.databaseCredentials.keys.postgresPassword | quote }}
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
           volumeMounts:
@@ -59,7 +59,8 @@ spec:
           resources:
             {{- toYaml .Values.postgres.resources | nindent 12 }}
         - name: metrics
-          image: prometheuscommunity/postgres-exporter:latest
+          image: {{ include "brain-researcher.image" (dict "registry" "" "repository" .Values.postgres.exporter.image.repository "tag" .Values.postgres.exporter.image.tag) | quote }}
+          imagePullPolicy: {{ .Values.postgres.exporter.image.pullPolicy }}
           ports:
             - name: metrics
               containerPort: 9187
@@ -67,8 +68,8 @@ spec:
             - name: DATA_SOURCE_NAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "brain-researcher.fullname" . }}-database-credentials
-                  key: POSTGRES_URL
+                  name: {{ include "brain-researcher.databaseCredentials.secretName" . }}
+                  key: {{ .Values.secrets.databaseCredentials.keys.postgresUrl | quote }}
       volumes:
         - name: config
           configMap:

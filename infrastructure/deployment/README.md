@@ -1,41 +1,76 @@
-# Deployment assets
+# Deployment asset status
 
-This directory contains deployment notes and operator artifacts with different
-support levels. It does not provide a verified one-command production deploy.
+This page defines the support boundary for public deployment documentation and
+shipped infrastructure assets. The only **supported** deployment path is the
+root Docker Compose stack for local development. Files it directly consumes are
+part of that local path; every other deployment asset is experimental or
+historical even when it is not named individually below. No public production
+deployment is supported.
 
-| Surface | Status | Boundary |
+| Surface | Status | Verifiable boundary |
 |---|---|---|
-| [Root Docker Compose entrypoint](../../README.md#quick-start-local-docker) | **active local starting point** | Compose is the maintained local stack; runtime credentials and optional profiles may still be required. |
-| [Helm chart](../k8s/helm/brain-researcher/) | **experimental/incomplete** | `helm template` is currently a syntax/render inspection only. Default values produce invalid leading-slash images such as `/agent:latest`, and the image and secret semantics are not deployment-ready. Do not apply the rendered output to a cluster. |
-| [`gce_k3s/QUICKSTART.md`](gce_k3s/QUICKSTART.md) | **experimental/incomplete** | Requires GCP, registry, DNS, cluster, and secret setup. Its checked-in command only renders operator-supplied image values for inspection; it does not install a deployment. |
-| [`gcp/GKE_QUICKSTART.md`](gcp/GKE_QUICKSTART.md) | **historical** | Despite its directory name, it describes an older GCE VM plus k3s path. Do not treat it as a current GKE contract. |
-| [`blue_green.sh`](blue_green.sh) | **experimental** | Stateful operator helper for pre-existing Swarm or Kubernetes services. It can change live traffic and writes deployment state; it is not a default release command. |
-| `conda/` and `docker/` helper assets | **historical/operator-specific** | Support files for earlier deployment work, not complete deployment recipes. |
-| Any real cloud or cluster rollout | **private-input-required** | Requires operator-owned credentials, registry/image tags, DNS, secrets, storage choices, policy review, and a deployment-specific values file. None are shipped preconfigured. |
+| [Root local guide](../../DEPLOYMENT.md) and [`docker-compose.yml`](../../docker-compose.yml) | **active** | Local development only. Validate with Compose, start locally, and run the shipped health smoke. |
+| [`docker-compose.prod.yml`](../../docker-compose.prod.yml), Compose overrides, and their Nginx, HAProxy, PgBouncer, and database configuration | **experimental** | Operator-specific static assets. They are not a supported production target or a published-image contract. |
+| [Main Helm chart](../k8s/helm/brain-researcher/) and raw Kubernetes manifests, including [Istio templates](../k8s/istio/) | **experimental** | `helm lint` and `helm template` for the linked chart are static inspection only. No cluster apply, image availability, storage, ingress, or secret provisioning is verified. |
+| [Monitoring configuration](../monitoring/) | **experimental** | Static dashboards, rules, and Compose configuration only. The unverified startup helper was removed; this is not a second supported local stack. |
+| [JupyterHub design values](../jupyterhub/) and [OpenNeuro add-on](../k8s/addons/) | **experimental** | Static operator sketches only. No pinned upstream chart, published workspace image, credential contract, or cluster execution has been verified. |
+| Legacy CDN/CloudFront assets under `src/brain_researcher/infrastructure/cdn/` | **experimental** | Unreferenced static design assets. No AWS target, Terraform state, image/runtime contract, or apply workflow is supported. |
+| [`restart_services_with_niclip.sh`](../../scripts/services/restart_services_with_niclip.sh) | **experimental** | Destructive local service-control helper retained for later script inventory. It is not the supported deployment path and must be reviewed before use. |
+| [`gce_k3s/QUICKSTART.md`](gce_k3s/QUICKSTART.md) | **experimental** | Render-only chart inspection. It does not create a VM, cluster, namespace, secret, or release. |
+| [`gcp/GKE_QUICKSTART.md`](gcp/GKE_QUICKSTART.md) | **historical** | Tombstone for an older VM-plus-k3s document that was stored under a misleading GKE path. It is not an active quickstart. |
+| [Cloudflare note](../../apps/web-ui/CLOUDFLARE_DEPLOYMENT.md) | **experimental** | Records an unverified hosting idea and a local Web build check, not a hosted deployment recipe. |
+| [Deployment archive index](../../docs/archive/deployment/README.md) | **historical** | Links exact Git snapshots for removed production, HPC, load-balancing, and traffic-switching material. |
+| Retired autoscaling, Cloudflare automation, host Nginx setup, and Istio install/chart helpers | **historical** | Removed from the active tree because they mutated external systems or failed static validation without a supported target. Exact snapshots are in the archive index. |
+| Any real cloud or cluster rollout | **private-input-required** | An operator must supply reviewed infrastructure, immutable images, credentials, DNS, TLS, storage, secrets, observability, backup, rollback, and an explicit rollout target outside this public contract. |
 
-## Working directory
+## Local Compose contract
 
-Run repository-relative validation from the repository root:
+Follow the root [local deployment guide](../../DEPLOYMENT.md). The key
+validation and health commands, run from the repository root, are:
 
 ```bash
-cd "$(git rev-parse --show-toplevel)"
-PUBLIC_HOSTNAME=localhost docker compose --env-file .env.example config --quiet
+# Fresh checkout only; preserve an existing local secret file.
+test -e .env || cp .env.example .env
+```
+
+Before continuing, edit `.env`, replace the required placeholders, and keep the
+file out of version control. Then validate and start the stack:
+
+```bash
+PUBLIC_HOSTNAME=localhost docker compose --env-file .env config --quiet
+docker compose up -d --build --wait --wait-timeout 300
+docker compose ps --all
+bash scripts/smoke/health_smoke.sh
+```
+
+If a service is not healthy, inspect its logs:
+
+```bash
+docker compose logs --tail=200
+```
+
+When finished, stop the stack without deleting its volumes:
+
+```bash
+docker compose down
+```
+
+A successful Compose parse does not validate credentials or runtime health; a
+successful health smoke does not establish production readiness.
+
+## Static Helm inspection
+
+Run the following commands from the repository root with Helm installed. They
+do not install or apply resources:
+
+```bash
+helm lint infrastructure/k8s/helm/brain-researcher
 helm template brain-researcher infrastructure/k8s/helm/brain-researcher \
-  -f infrastructure/k8s/helm/brain-researcher/values.yaml \
+  --namespace brain-researcher-core \
   > /tmp/brain-researcher-rendered.yaml
 ```
 
-These commands validate local configuration/rendering only. They do not build or
-publish images, create cloud resources, change DNS, create secrets, or apply
-anything to a cluster. A successful Helm render does not make the chart
-apply-ready: inspect the output and expect the current defaults to contain
-invalid images such as `/agent:latest` until the chart's image and secret
-semantics are repaired.
-
-## Operational boundary
-
-Copy deployment values into a private operator workspace, replace every
-placeholder through your secret-management process, inspect the rendered output,
-and use the exact commit/image tag intended for the rollout. The root
-[`DEPLOYMENT.md`](../../DEPLOYMENT.md) is retained as a historical guide and is
-not the current executable contract.
+Review the rendered images, namespaces, storage, ingress, service accounts, and
+all `existingSecret` references. The chart expects deployment-specific secrets
+to be pre-created; this repository does not supply their values. Rendering is a
+syntax and semantics inspection gate, never execution authority.

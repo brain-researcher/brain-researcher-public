@@ -1,7 +1,9 @@
+name: brain-researcher
+
 services:
   init-local-dirs:
     image: alpine:3.20
-    container_name: brain-researcher-init-local-dirs
+    container_name: ${COMPOSE_PROJECT_NAME:-brain-researcher}-init-local-dirs
     command:
       - sh
       - -c
@@ -15,7 +17,7 @@ services:
 
   neo4j:
     image: neo4j:5.20
-    container_name: brain-researcher-neo4j
+    container_name: ${COMPOSE_PROJECT_NAME:-brain-researcher}-neo4j
     ports:
       - "${BR_NEO4J_BOLT_PORT:-7687}:7687"
       - "${BR_NEO4J_HTTP_PORT:-7474}:7474"
@@ -40,12 +42,12 @@ services:
     build:
       context: .
       target: br-kg
-    container_name: brain-researcher-br-kg
+    container_name: ${COMPOSE_PROJECT_NAME:-brain-researcher}-br-kg
     depends_on:
       init-local-dirs:
         condition: service_completed_successfully
       neo4j:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "${BR_KG_PORT:-5000}:5000"
     volumes:
@@ -75,14 +77,14 @@ services:
     build:
       context: .
       target: agent
-    container_name: brain-researcher-agent
+    container_name: ${COMPOSE_PROJECT_NAME:-brain-researcher}-agent
     depends_on:
       init-local-dirs:
         condition: service_completed_successfully
       br-kg:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "${AGENT_PORT:-8000}:8000"
     volumes:
@@ -119,12 +121,15 @@ services:
     build:
       context: .
       dockerfile: infrastructure/docker/Dockerfile.orchestrator
-    container_name: brain-researcher-orchestrator
+    container_name: ${COMPOSE_PROJECT_NAME:-brain-researcher}-orchestrator
     profiles: [ "worker" ] # start with `docker compose --profile worker up`
     depends_on:
-      - agent
-      - br-kg
-      - redis
+      agent:
+        condition: service_healthy
+      br-kg:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "${ORCHESTRATOR_PORT:-3001}:3001"
     environment:
@@ -146,10 +151,12 @@ services:
     build:
       context: .
       dockerfile: apps/web-ui/Dockerfile
-    container_name: brain-researcher-web-ui
+    container_name: ${COMPOSE_PROJECT_NAME:-brain-researcher}-web-ui
     depends_on:
-      - agent
-      - br-kg
+      agent:
+        condition: service_healthy
+      br-kg:
+        condition: service_healthy
     ports:
       - "${WEB_UI_PORT:-3000}:3000"
     volumes:
@@ -184,7 +191,7 @@ services:
   # Redis for Agent State Management (optional)
   redis:
     image: redis:7-alpine
-    container_name: brain-researcher-redis
+    container_name: ${COMPOSE_PROJECT_NAME:-brain-researcher}-redis
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -200,4 +207,4 @@ volumes:
     # Network configuration (optional, for isolation)
 networks:
   default:
-    name: brain-researcher
+    name: ${COMPOSE_PROJECT_NAME:-brain-researcher}

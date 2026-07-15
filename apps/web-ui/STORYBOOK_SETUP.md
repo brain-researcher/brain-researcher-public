@@ -7,7 +7,7 @@ This document provides setup instructions and usage guidelines for the Brain Res
 ### Prerequisites
 - Node.js 20
 - npm 10
-- Brain Researcher UI project setup
+- A local clone of this repository
 
 ### Installation
 Dependencies are already included in package.json. Install them with:
@@ -19,11 +19,18 @@ npm --prefix apps/web-ui ci
 
 ### Running Storybook
 
+Choose one command. The development server remains in the foreground until you
+stop it with `Ctrl-C`:
+
 ```bash
 # Development mode
 npm --prefix apps/web-ui run storybook
+```
 
-# Build for production
+Or build a static preview without starting the development server:
+
+```bash
+# Build a local static preview
 npm --prefix apps/web-ui run build-storybook
 ```
 
@@ -60,7 +67,7 @@ apps/web-ui/
 - **Interactive Examples**: All component variants with live controls
 - **Props Documentation**: Auto-generated from TypeScript interfaces  
 - **Usage Examples**: Real-world scenarios for scientific contexts
-- **Accessibility Testing**: Built-in a11y addon for compliance checking
+- **Accessibility Testing**: Built-in a11y addon for automated checks
 
 ### 2. Design System Documentation
 - **Design Tokens**: Colors, typography, spacing scales
@@ -83,7 +90,7 @@ apps/web-ui/
 - **@storybook/addon-viewport**: Responsive design testing
 
 ### Accessibility & Quality
-- **@storybook/addon-a11y**: Accessibility compliance checking
+- **@storybook/addon-a11y**: Automated accessibility checks and guidance
 - **@storybook/addon-interactions**: User interaction testing
 
 ## Component Story Structure
@@ -166,15 +173,15 @@ export const Variant: Story = {
 ## Accessibility Documentation
 
 ### Testing Features
-- **Automatic Scanning**: axe-core integration for WCAG compliance
-- **Keyboard Navigation**: Tab order and shortcut testing
-- **Screen Reader Support**: ARIA attributes and semantic markup
+- **Automatic Scanning**: axe-core checks for detectable accessibility issues
+- **Keyboard Navigation Guidance**: Manual tab-order and shortcut checks
+- **Screen Reader Guidance**: Examples using ARIA attributes and semantic markup
 - **Color Contrast**: Automatic contrast ratio validation
 
 ### Implementation Guidelines
-- All components include accessibility examples
+- Some component stories include explicit accessibility examples
 - Scientific data visualization accessibility patterns
-- Mobile touch target compliance
+- Mobile touch-target guidance
 - Reduced motion support
 
 ## Customization
@@ -220,7 +227,8 @@ viewport: {
 1. **Create Component**: Build your React component with TypeScript
 2. **Write Stories**: Create comprehensive stories showing all variants
 3. **Document Usage**: Include scientific context and best practices  
-4. **Test Accessibility**: Verify WCAG compliance with built-in tools
+4. **Test Accessibility**: Combine automated checks with manual keyboard and
+   screen-reader testing. The addon is not a complete WCAG audit.
 5. **Update Guidelines**: Add patterns to best practices documentation
 
 ### Story Best Practices
@@ -262,22 +270,21 @@ export const AccessibilityFeatures: Story = {
 };
 ```
 
-## Production Deployment
+## Local Static Build
+
+The repository can generate static Storybook files for local inspection. It
+does not ship or verify an automatic Storybook deployment workflow.
 
 ### Build Process
 ```bash
 # Generate static Storybook site
 npm --prefix apps/web-ui run build-storybook
 
-# Output directory: storybook-static/
-# Deploy to any static hosting service
+# Local output directory: storybook-static/ under apps/web-ui
 ```
 
-### Integration Options
-- **GitHub Pages**: Automated deployment via GitHub Actions
-- **Netlify**: Drag and drop deployment or git integration  
-- **Vercel**: Zero-configuration deployment
-- **Internal Hosting**: Self-hosted documentation portal
+Building the directory does not publish it. Any hosting target needs a separate
+operator-owned configuration, security review, and rendered-page verification.
 
 ## Maintenance
 
@@ -288,8 +295,8 @@ npm --prefix apps/web-ui run build-storybook
 - **Dependency Updates**: Keep Storybook and addons current
 
 ### Monitoring
-- Check build status in CI/CD pipeline
-- Monitor accessibility compliance scores
+- Check build status when a CI pipeline is configured
+- Review and resolve accessibility findings
 - Review user feedback on component usage
 - Track documentation page views and engagement
 
@@ -323,6 +330,6 @@ npm --prefix apps/web-ui run storybook
 ### Getting Help
 
 - **Storybook Documentation**: https://storybook.js.org/docs
-- **Accessibility Guidelines**: See `stories/guidelines/Accessibility.mdx`
+- **Accessibility Guidelines**: See [`src/stories/guidelines/Accessibility.mdx`](src/stories/guidelines/Accessibility.mdx)
 - **Component Examples**: Browse existing stories for patterns
-- **Team Support**: Contact the development team for component-specific questions
+- **Public Support**: Open a [docs/setup issue](https://github.com/brain-researcher/brain-researcher-public/issues/new?template=05-docs-setup.yml)

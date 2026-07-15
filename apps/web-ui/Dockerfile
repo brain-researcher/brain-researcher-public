@@ -5,7 +5,7 @@ WORKDIR /app
 ENV NEXT_OUTPUT_TRACING_ROOT=/app
 
 # Copy package files (build context is repo root)
-COPY apps/web-ui/package*.json ./
+COPY apps/web-ui/package*.json apps/web-ui/.npmrc ./
 # Copy build-time scripts needed by npm postinstall hooks
 COPY apps/web-ui/scripts/ ./scripts/
 
