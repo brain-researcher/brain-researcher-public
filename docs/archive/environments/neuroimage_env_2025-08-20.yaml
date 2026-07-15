@@ -1,3 +1,10 @@
+# HISTORICAL SNAPSHOT — unsupported as a current install contract.
+# Archived on: 2026-07-15
+# Content last updated: 2025-08-20
+# Archived from public commit: 8081642b110bca43c9f9a8cd3d056aa86b7497a3
+# Current environments are the repository-root `environment.yml` and
+# `environment.brain_researcher.yml`.
+#
 # Neuroimaging Environment Setup
 #
 # ## Purpose

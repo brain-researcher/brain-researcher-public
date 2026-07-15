@@ -19,126 +19,145 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from brain_researcher.cli.lazy import LazyTyperSpec, lazy_typer_group
 from brain_researcher.config.paths import get_repo_root
 from brain_researcher.core.utils.env_loader import ensure_env_loaded
 
 ensure_env_loaded()
 
+_LAZY_COMMAND_SPECS = {
+    "codegen": LazyTyperSpec(
+        "brain_researcher.cli.codegen",
+        "Direct coding agent entrypoint (code_agent).",
+        extra="agent",
+    ),
+    "agent": LazyTyperSpec(
+        "brain_researcher.cli.commands.agent_commands",
+        "Agent planning and execution",
+        extra="agent",
+    ),
+    "budget": LazyTyperSpec(
+        "brain_researcher.cli.commands.budget_commands",
+        "LLM budget and usage tracking",
+        extra="agent",
+    ),
+    "cache": LazyTyperSpec(
+        "brain_researcher.cli.commands.cache_commands",
+        "Cache management commands (P2.5)",
+    ),
+    "chat": LazyTyperSpec(
+        "brain_researcher.cli.commands.chat_commands",
+        "Chat with Agent (research & coding) P1 UX",
+    ),
+    "files": LazyTyperSpec(
+        "brain_researcher.cli.commands.files_commands",
+        "Upload/list/download files via Agent",
+    ),
+    "datasets": LazyTyperSpec(
+        "brain_researcher.cli.commands.datasets_commands",
+        "Dataset search/detail via Agent",
+    ),
+    "threads": LazyTyperSpec(
+        "brain_researcher.cli.commands.threads_commands",
+        "Thread utilities",
+    ),
+    "auth": LazyTyperSpec(
+        "brain_researcher.cli.commands.auth_commands",
+        "Store/show Agent bearer token for CLI",
+    ),
+    "db": LazyTyperSpec(
+        "brain_researcher.cli.commands.db_commands",
+        "Database management commands",
+        extra="br-kg",
+    ),
+    "data": LazyTyperSpec(
+        "brain_researcher.cli.commands.data_commands",
+        "Data ingestion commands",
+        extra="br-kg",
+    ),
+    "gabriel": LazyTyperSpec(
+        "brain_researcher.cli.commands.gabriel_commands",
+        "GABRIEL pipeline commands",
+        extra="br-kg",
+    ),
+    "query": LazyTyperSpec(
+        "brain_researcher.cli.commands.query_commands",
+        "Query and search commands",
+        extra="br-kg",
+    ),
+    "niclip": LazyTyperSpec(
+        "brain_researcher.cli.commands.niclip_commands",
+        "NICLIP neuroimaging analysis commands",
+        extra="br-kg",
+    ),
+    "br-kg-ingest": LazyTyperSpec(
+        "brain_researcher.cli.commands.br_kg_ingest",
+        "BR-KG ingestion commands",
+        extra="br-kg",
+    ),
+    "br-kg": LazyTyperSpec(
+        "brain_researcher.cli.commands.br_kg_ingest",
+        "BR-KG graph commands",
+        attribute="br_kg_app",
+        extra="br-kg",
+    ),
+    "runs": LazyTyperSpec(
+        "brain_researcher.cli.commands.runs_commands",
+        "Job and run inspection",
+    ),
+    "sessions": LazyTyperSpec(
+        "brain_researcher.cli.commands.sessions_commands",
+        "Remote session and Slack bridge helpers",
+    ),
+    "service": LazyTyperSpec(
+        "brain_researcher.cli.commands.service_commands",
+        "Service management commands",
+    ),
+    "migrate": LazyTyperSpec(
+        "brain_researcher.cli.commands.migration_commands",
+        "Database migration commands",
+        extra="br-kg",
+    ),
+    "line": LazyTyperSpec(
+        "brain_researcher.cli.commands.line_commands",
+        "Line-based autoresearch workspace commands",
+        extra="agent",
+    ),
+    "copilot": LazyTyperSpec(
+        "brain_researcher.cli.commands.copilot_commands",
+        "Copilot assistance commands",
+        extra="agent",
+    ),
+    "tools": LazyTyperSpec(
+        "brain_researcher.cli.commands.tool_commands",
+        "Neuroimaging tools commands",
+        extra="agent",
+    ),
+    "config": LazyTyperSpec(
+        "brain_researcher.cli.commands.config_commands",
+        "Configuration management commands",
+    ),
+    "traces": LazyTyperSpec(
+        "brain_researcher.cli.commands.traces_commands",
+        "Trace export commands",
+        extra="agent",
+    ),
+    "notebook": LazyTyperSpec(
+        "brain_researcher.cli.commands.notebook_commands",
+        "Marimo notebook launcher",
+        extra="notebook",
+    ),
+}
+
 app = typer.Typer(
     name="brain-researcher",
+    cls=lazy_typer_group(_LAZY_COMMAND_SPECS),
     help="Brain Researcher - Neuroimaging Analysis Platform",
     add_completion=False,
+    no_args_is_help=True,
     rich_markup_mode="rich",
 )
 console = Console()
-try:
-    from brain_researcher.cli.codegen import app as codegen_app
-
-    app.add_typer(codegen_app, name="codegen")
-except Exception:
-    codegen_app = None  # optional subcommand
-
-_skip_heavy = os.environ.get("BR_SKIP_HEAVY_COMMANDS", "0").lower() in {
-    "1",
-    "true",
-    "yes",
-}
-
-if not _skip_heavy:
-    # Import sub-command groups only when needed to avoid heavy deps during chat boot.
-    from .commands import (
-        agent_commands,
-        br_kg_ingest,
-        budget_commands,
-        cache_commands,
-        chat_commands,
-        config_commands,
-        copilot_commands,
-        data_commands,
-        datasets_commands,
-        db_commands,
-        gabriel_commands,
-        line_commands,
-        migration_commands,
-        niclip_commands,
-        query_commands,
-        runs_commands,
-        service_commands,
-        sessions_commands,
-        threads_commands,
-        tool_commands,
-        traces_commands,
-    )
-
-    # Add sub-command groups
-    app.add_typer(agent_commands.app, name="agent", help="Agent planning and execution")
-    app.add_typer(
-        budget_commands.app, name="budget", help="LLM budget and usage tracking"
-    )
-    app.add_typer(
-        cache_commands.app, name="cache", help="Cache management commands (P2.5)"
-    )
-    app.add_typer(
-        chat_commands.app, name="chat", help="Chat with Agent (research & coding) P1 UX"
-    )
-    from .commands import files_commands
-
-    app.add_typer(
-        files_commands.app, name="files", help="Upload/list/download files via Agent"
-    )
-    app.add_typer(
-        datasets_commands.app, name="datasets", help="Dataset search/detail via Agent"
-    )
-    app.add_typer(threads_commands.app, name="threads", help="Thread utilities")
-    from .commands import auth_commands
-
-    app.add_typer(
-        auth_commands.app, name="auth", help="Store/show Agent bearer token for CLI"
-    )
-    app.add_typer(db_commands.app, name="db", help="Database management commands")
-    app.add_typer(data_commands.app, name="data", help="Data ingestion commands")
-    app.add_typer(
-        gabriel_commands.app, name="gabriel", help="GABRIEL pipeline commands"
-    )
-    app.add_typer(query_commands.app, name="query", help="Query and search commands")
-    app.add_typer(
-        niclip_commands.app, name="niclip", help="NICLIP neuroimaging analysis commands"
-    )
-    app.add_typer(
-        br_kg_ingest.app, name="br-kg-ingest", help="BR-KG ingestion commands"
-    )
-    app.add_typer(br_kg_ingest.br_kg_app, name="br-kg", help="BR-KG graph commands")
-    app.add_typer(runs_commands.app, name="runs", help="Job and run inspection")
-    app.add_typer(
-        sessions_commands.app,
-        name="sessions",
-        help="Remote session and Slack bridge helpers",
-    )
-    app.add_typer(
-        service_commands.app, name="service", help="Service management commands"
-    )
-    app.add_typer(
-        migration_commands.app, name="migrate", help="Database migration commands"
-    )
-    app.add_typer(
-        line_commands.app,
-        name="line",
-        help="Line-based autoresearch workspace commands",
-    )
-    app.add_typer(
-        copilot_commands.app, name="copilot", help="Copilot assistance commands"
-    )
-    app.add_typer(tool_commands.app, name="tools", help="Neuroimaging tools commands")
-    app.add_typer(
-        config_commands.app, name="config", help="Configuration management commands"
-    )
-    app.add_typer(traces_commands.app, name="traces", help="Trace export commands")
-
-    from .commands import notebook_commands
-
-    app.add_typer(
-        notebook_commands.app, name="notebook", help="Marimo notebook launcher"
-    )
 
 
 # Global state for verbose mode
@@ -402,7 +421,7 @@ def _spawn_warmup(model: str | None) -> None:
     threading.Thread(target=_warm, daemon=True).start()
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
@@ -410,12 +429,24 @@ def main(
     config: Path | None = typer.Option(
         None, "--config", "-c", help="Configuration file path"
     ),
+    show_version: bool = typer.Option(
+        False,
+        "--version",
+        help="Show the Brain Researcher version and exit",
+        is_eager=True,
+    ),
 ):
     """
     Brain Researcher - Unified CLI for neuroimaging analysis.
 
     Use 'brain-researcher COMMAND --help' for more information on each command.
     """
+    if show_version:
+        from brain_researcher import __version__
+
+        console.print(f"Brain Researcher v{__version__}")
+        raise typer.Exit()
+
     state.verbose = verbose
 
     if verbose:

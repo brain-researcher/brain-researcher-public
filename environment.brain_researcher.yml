@@ -1,4 +1,3 @@
-name: brain_researcher
 # Canonical Brain Researcher execution runtime environment.
 # Used for: notebook cell execution (Jupyter kernel), CLI analysis scripts, batch jobs.
 # NOT used for: MCP services, orchestrator, web-ui — those run in their own envs.
@@ -13,6 +12,7 @@ name: brain_researcher
 # Local setup:  bash scripts/setup/setup_local_runtime.sh
 # GCP setup:    bake this file into the singleuser Docker image
 #               (see docs/OPERATIONS.md)
+name: brain_researcher
 channels:
   - conda-forge
   - defaults

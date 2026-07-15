@@ -1,10 +1,39 @@
-#!/bin/bash
-# Quick activation script for Brain Researcher environment
+#!/usr/bin/env bash
+# Quick activation script for the Brain Researcher scientific runtime.
+# Source this file from any directory:
+#   source /path/to/brain-researcher-public/activate.sh
 
-eval "$(conda shell.bash hook)"
-conda activate brain_researcher
-export PYTHONPATH="${BRAIN_RESEARCHER_HOME}/projects/brain_researcher:${PYTHONPATH}"
-cd "${BRAIN_RESEARCHER_HOME}/projects/brain_researcher"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONDA_ENV="${BR_CONDA_ENV:-brain_researcher}"
+
+if ! command -v conda >/dev/null 2>&1; then
+  echo "conda is required to activate ${CONDA_ENV}." >&2
+  return 1 2>/dev/null || exit 1
+fi
+
+if ! CONDA_BASE="$(conda info --base 2>/dev/null)"; then
+  echo "Could not determine the Conda installation root." >&2
+  return 1 2>/dev/null || exit 1
+fi
+CONDA_SH="${CONDA_BASE}/etc/profile.d/conda.sh"
+if [ ! -r "${CONDA_SH}" ]; then
+  echo "Conda activation script is not readable: ${CONDA_SH}" >&2
+  return 1 2>/dev/null || exit 1
+fi
+# shellcheck disable=SC1091
+if ! source "${CONDA_SH}"; then
+  echo "Failed to initialize Conda from ${CONDA_SH}." >&2
+  return 1 2>/dev/null || exit 1
+fi
+if ! conda activate "${CONDA_ENV}"; then
+  echo "Failed to activate Conda environment '${CONDA_ENV}'." >&2
+  return 1 2>/dev/null || exit 1
+fi
+export PYTHONPATH="${REPO_ROOT}/src${PYTHONPATH:+:${PYTHONPATH}}"
+if ! cd "${REPO_ROOT}"; then
+  echo "Could not enter repository root: ${REPO_ROOT}" >&2
+  return 1 2>/dev/null || exit 1
+fi
 
 # Ensure MNE/Numba imports work inside the sandboxed environment.
 export NUMBA_DISABLE_CACHING="${NUMBA_DISABLE_CACHING:-1}"
@@ -44,5 +73,5 @@ fi
 # Optional threading control
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}"
 
-echo "Brain Researcher environment activated!"
+echo "Brain Researcher environment '${CONDA_ENV}' activated at ${REPO_ROOT}."
 echo "Run 'br --help' to get started."
