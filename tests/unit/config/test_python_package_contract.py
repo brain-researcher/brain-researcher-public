@@ -46,6 +46,7 @@ def test_distribution_version_and_namespace_discovery_contract() -> None:
 def test_mcp_extra_matches_current_heavy_server_composition() -> None:
     extras = _project_metadata()["optional-dependencies"]
 
+    assert extras["build"] == ["setuptools>=61,<84", "wheel>=0.41,<0.48"]
     assert "brain_researcher[agent]" in extras["mcp"]
     assert "mcp>=1.12.0" in extras["mcp"]
 
@@ -72,3 +73,4 @@ def test_root_install_instructions_match_python_and_cli_contract() -> None:
     assert "python3.11 -m venv .venv" in readme
     assert "brain-researcher --help" in readme
     assert "brain-researcher-mcp --help" in readme
+    assert "requirements/locks/README.md" in readme

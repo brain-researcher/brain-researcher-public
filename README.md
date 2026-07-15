@@ -223,6 +223,9 @@ BR-KG, agent, neuroimaging, UI, notebook, and development dependencies. If you
 only want to run the public reproducibility examples, use their isolated setup
 commands instead of installing this full stack.
 
+For exact tested versions, profile mappings, regeneration commands, and the
+fresh-venv smoke, see [`requirements/locks/README.md`](requirements/locks/README.md).
+
 Core CLI surfaces (`br` is a short alias; on systems where `br` is shadowed,
 use `brain-researcher`):
 

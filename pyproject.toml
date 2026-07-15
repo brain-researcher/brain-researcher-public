@@ -72,6 +72,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+build = [
+    # Used by the tracked clean-install locks before editable installation.
+    "setuptools>=61,<84",
+    "wheel>=0.41,<0.48",
+]
+
 mcp = [
     # The current MCP server composes agent routing and review surfaces at
     # import time, so its supported install profile must include those real
@@ -341,7 +347,7 @@ dev = [
 ]
 
 all = [
-    "brain_researcher[mcp,br-kg,agent,ui,notebook,dev]"
+    "brain_researcher[build,mcp,br-kg,agent,ui,notebook,dev]"
 ]
 docs = [
     "mkdocs>=1.5.0",
@@ -369,6 +375,9 @@ where = ["src"]
 include = ["brain_researcher*"]
 namespaces = true
 exclude = ["tests*", "htmlcov*", "*_env*", "migration*"]
+
+[tool.uv]
+required-version = "==0.9.21"
 
 [tool.black]
 line-length = 88

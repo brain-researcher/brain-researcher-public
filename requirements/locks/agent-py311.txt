@@ -1,0 +1,1027 @@
+acres==0.5.0
+    # via
+    #   bidsschematools
+    #   templateflow
+adapters==1.3.0
+    # via neurovlm
+aiofile==3.11.1
+    # via py-key-value-aio
+aiofiles==24.1.0
+    # via
+    #   brain-researcher
+    #   openneuro-py
+aiohappyeyeballs==2.7.1
+    # via aiohttp
+aiohttp==3.14.1
+    # via
+    #   brain-researcher
+    #   langchain-community
+    #   torch-geometric
+aiosignal==1.4.0
+    # via aiohttp
+aiosqlite==0.22.1
+    # via brain-researcher
+annotated-doc==0.0.4
+    # via
+    #   fastapi
+    #   typer
+annotated-types==0.7.0
+    # via pydantic
+anthropic==0.116.0
+    # via langchain-anthropic
+anyio==4.14.2
+    # via
+    #   anthropic
+    #   google-genai
+    #   httpx
+    #   langsmith
+    #   mcp
+    #   openai
+    #   py-key-value-aio
+    #   sse-starlette
+    #   starlette
+    #   watchfiles
+async-timeout==5.0.1 ; python_full_version < '3.11.3'
+    # via redis
+attrs==26.1.0
+    # via
+    #   aiohttp
+    #   cyclopts
+    #   jsonschema
+    #   jsonschema-path
+    #   referencing
+authlib==1.7.2
+    # via fastmcp-slim
+autoreject==0.4.4
+    # via brain-researcher
+backports-tarfile==1.2.0
+    # via jaraco-context
+beartype==0.22.9
+    # via py-key-value-aio
+bids-validator==1.14.7.post0
+    # via pybids
+bidsschematools==1.2.4
+    # via
+    #   bids-validator
+    #   pybids
+biopython==1.87
+    # via brain-researcher
+blinker==1.9.0
+    # via flask
+bracex==3.0
+    # via wcmatch
+cachetools==7.1.4
+    # via py-key-value-aio
+caio==0.9.25
+    # via aiofile
+certifi==2026.6.17
+    # via
+    #   brain-researcher
+    #   httpcore
+    #   httpx
+    #   netcdf4
+    #   requests
+cffi==2.1.0 ; platform_python_implementation != 'PyPy'
+    # via cryptography
+cftime==1.6.5
+    # via netcdf4
+charset-normalizer==3.4.9
+    # via
+    #   brain-researcher
+    #   requests
+click==8.4.2
+    # via
+    #   bidsschematools
+    #   brain-researcher
+    #   deepxiv-sdk
+    #   flask
+    #   pybids
+    #   uvicorn
+cognitiveatlas==0.1.11
+    # via nimare
+colorama==0.4.6 ; sys_platform == 'win32'
+    # via
+    #   click
+    #   tqdm
+    #   typer
+contourpy==1.3.3
+    # via matplotlib
+cryptography==49.0.0
+    # via
+    #   authlib
+    #   google-auth
+    #   joserfc
+    #   pyjwt
+    #   python-jose
+    #   secretstorage
+cuda-bindings==13.3.1 ; sys_platform == 'linux'
+    # via torch
+cuda-pathfinder==1.5.6 ; sys_platform == 'linux'
+    # via cuda-bindings
+cuda-toolkit==13.0.3.0 ; sys_platform == 'linux'
+    # via torch
+cycler==0.12.1
+    # via matplotlib
+cyclopts==4.21.0
+    # via fastmcp-slim
+decorator==5.3.1
+    # via mne
+deepxiv-sdk==0.3.1
+    # via brain-researcher
+distro==1.9.0
+    # via
+    #   anthropic
+    #   google-genai
+    #   langsmith
+    #   openai
+dnspython==2.8.0
+    # via email-validator
+docopt==0.6.2
+    # via num2words
+docstring-parser==0.18.0
+    # via
+    #   anthropic
+    #   cyclopts
+ecdsa==0.19.2
+    # via python-jose
+email-validator==2.3.0
+    # via pydantic
+exceptiongroup==1.3.1
+    # via fastmcp-slim
+faiss-cpu==1.14.3
+    # via brain-researcher
+fakeredis==2.36.2
+    # via brain-researcher
+fastapi==0.139.0
+    # via brain-researcher
+fastmcp==3.4.0
+    # via sequential-thinking-mcp
+fastmcp-slim==3.4.0
+    # via fastmcp
+filelock==3.29.7
+    # via
+    #   huggingface-hub
+    #   torch
+    #   transformers
+filetype==1.2.0
+    # via langchain-google-genai
+flask==3.1.3
+    # via
+    #   brain-researcher
+    #   flask-cors
+flask-cors==6.0.5
+    # via brain-researcher
+fonttools==4.63.0
+    # via matplotlib
+formulaic==1.2.2
+    # via pybids
+frozendict==2.4.7
+    # via pybids
+frozenlist==1.8.0
+    # via
+    #   aiohttp
+    #   aiosignal
+fsspec==2026.6.0
+    # via
+    #   huggingface-hub
+    #   torch
+    #   torch-geometric
+    #   universal-pathlib
+fuzzywuzzy==0.18.0
+    # via nimare
+google-ai-generativelanguage==0.6.15
+    # via google-generativeai
+google-api-core==2.31.0
+    # via
+    #   google-ai-generativelanguage
+    #   google-api-python-client
+    #   google-generativeai
+google-api-python-client==2.198.0
+    # via google-generativeai
+google-auth==2.56.0
+    # via
+    #   google-ai-generativelanguage
+    #   google-api-core
+    #   google-api-python-client
+    #   google-auth-httplib2
+    #   google-genai
+    #   google-generativeai
+google-auth-httplib2==0.4.0
+    # via google-api-python-client
+google-genai==2.8.0
+    # via
+    #   brain-researcher
+    #   langchain-google-genai
+google-generativeai==0.8.6
+    # via brain-researcher
+googleapis-common-protos==1.75.0
+    # via
+    #   google-api-core
+    #   grpcio-status
+greenlet==3.5.3 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
+    # via sqlalchemy
+griffelib==2.1.0
+    # via fastmcp-slim
+grpcio==1.82.1
+    # via
+    #   google-api-core
+    #   grpcio-status
+grpcio-status==1.71.2
+    # via google-api-core
+gunicorn==26.0.0
+    # via brain-researcher
+h11==0.16.0
+    # via
+    #   httpcore
+    #   uvicorn
+h5io==0.2.5
+    # via mne
+h5py==3.16.0
+    # via
+    #   h5io
+    #   pymatreader
+hf-xet==1.5.1 ; platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
+    # via huggingface-hub
+httpcore==1.0.9
+    # via httpx
+httplib2==0.32.0
+    # via
+    #   google-api-python-client
+    #   google-auth-httplib2
+httpx==0.28.1
+    # via
+    #   anthropic
+    #   brain-researcher
+    #   fastmcp-slim
+    #   google-genai
+    #   langgraph-sdk
+    #   langsmith
+    #   mcp
+    #   openai
+    #   openneuro-py
+httpx-sse==0.4.3
+    # via
+    #   langchain-community
+    #   mcp
+huggingface-hub==0.36.2
+    # via
+    #   neurovlm
+    #   sentence-transformers
+    #   tokenizers
+    #   transformers
+idna==3.18
+    # via
+    #   anyio
+    #   brain-researcher
+    #   email-validator
+    #   httpx
+    #   requests
+    #   yarl
+importlib-metadata==9.0.0
+    # via keyring
+importlib-resources==7.1.0
+    # via nibabel
+interface-meta==2.0.1
+    # via formulaic
+itsdangerous==2.2.0
+    # via flask
+jaraco-classes==3.4.0
+    # via keyring
+jaraco-context==6.1.2
+    # via keyring
+jaraco-functools==4.6.0
+    # via keyring
+jeepney==0.9.0 ; sys_platform == 'linux'
+    # via
+    #   keyring
+    #   secretstorage
+jinja2==3.1.6
+    # via
+    #   brain-researcher
+    #   flask
+    #   mne
+    #   nilearn
+    #   nimare
+    #   torch
+    #   torch-geometric
+jiter==0.16.0
+    # via
+    #   anthropic
+    #   openai
+joblib==1.5.3
+    # via
+    #   autoreject
+    #   nilearn
+    #   nimare
+    #   scikit-learn
+joserfc==1.7.3
+    # via
+    #   authlib
+    #   fastmcp-slim
+jsonpatch==1.33
+    # via langchain-core
+jsonpointer==3.1.1
+    # via jsonpatch
+jsonref==1.1.0
+    # via fastmcp-slim
+jsonschema==4.26.0
+    # via mcp
+jsonschema-path==0.5.0
+    # via fastmcp-slim
+jsonschema-specifications==2025.9.1
+    # via jsonschema
+keyring==25.7.0
+    # via py-key-value-aio
+kiwisolver==1.5.0
+    # via matplotlib
+langchain==1.3.13
+    # via brain-researcher
+langchain-anthropic==1.4.8
+    # via brain-researcher
+langchain-classic==1.0.8
+    # via langchain-community
+langchain-community==0.4.2
+    # via brain-researcher
+langchain-core==1.4.9
+    # via
+    #   brain-researcher
+    #   langchain
+    #   langchain-anthropic
+    #   langchain-classic
+    #   langchain-community
+    #   langchain-google-genai
+    #   langchain-openai
+    #   langchain-text-splitters
+    #   langgraph
+    #   langgraph-checkpoint
+    #   langgraph-prebuilt
+    #   langgraph-sdk
+langchain-google-genai==4.2.7
+    # via brain-researcher
+langchain-openai==1.3.5
+    # via brain-researcher
+langchain-protocol==0.0.18
+    # via
+    #   langchain-core
+    #   langgraph-sdk
+langchain-text-splitters==1.1.2
+    # via langchain-classic
+langgraph==1.2.9
+    # via
+    #   brain-researcher
+    #   langchain
+langgraph-checkpoint==4.1.1
+    # via
+    #   langgraph
+    #   langgraph-prebuilt
+langgraph-prebuilt==1.1.0
+    # via langgraph
+langgraph-sdk==0.4.2
+    # via langgraph
+langsmith==0.10.5
+    # via
+    #   langchain-classic
+    #   langchain-community
+    #   langchain-core
+lazy-imports==1.2.0
+    # via neurostore-sdk
+lazy-loader==0.5
+    # via mne
+lightgbm==4.6.0
+    # via brain-researcher
+llvmlite==0.48.0
+    # via numba
+markdown-it-py==4.2.0
+    # via rich
+markupsafe==3.0.3
+    # via
+    #   brain-researcher
+    #   flask
+    #   jinja2
+    #   werkzeug
+matplotlib==3.11.0
+    # via
+    #   autoreject
+    #   brain-researcher
+    #   mne
+    #   neuromaps
+    #   nimare
+    #   seaborn
+mcp==1.28.1
+    # via fastmcp-slim
+mdurl==0.1.2
+    # via markdown-it-py
+mne==1.12.1
+    # via
+    #   autoreject
+    #   brain-researcher
+    #   mne-connectivity
+mne-connectivity==0.8.1
+    # via brain-researcher
+more-itertools==11.1.0
+    # via
+    #   jaraco-classes
+    #   jaraco-functools
+mpmath==1.3.0
+    # via sympy
+multidict==6.7.1
+    # via
+    #   aiohttp
+    #   yarl
+narwhals==2.24.0
+    # via
+    #   formulaic
+    #   plotly
+    #   scikit-learn
+neo4j==6.2.0
+    # via brain-researcher
+netcdf4==1.7.4
+    # via mne-connectivity
+networkx==3.6.1
+    # via
+    #   brain-researcher
+    #   torch
+neuromaps==0.0.7
+    # via brain-researcher
+neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git@28fe10f575e1c1f7a6ef5303ea03dd5bb0cd7ce6
+    # via nimare
+neurovlm==0.0.3
+    # via brain-researcher
+nibabel==5.4.2
+    # via
+    #   brain-researcher
+    #   neuromaps
+    #   neurovlm
+    #   nilearn
+    #   nimare
+    #   pybids
+nilearn==0.13.1
+    # via
+    #   brain-researcher
+    #   neuromaps
+    #   neurovlm
+    #   nimare
+nimare==0.20.0
+    # via brain-researcher
+num2words==0.5.14
+    # via pybids
+numba==0.66.0
+    # via
+    #   brain-researcher
+    #   nimare
+    #   sparse
+numpy==2.4.6
+    # via
+    #   autoreject
+    #   biopython
+    #   brain-researcher
+    #   cftime
+    #   cognitiveatlas
+    #   contourpy
+    #   faiss-cpu
+    #   formulaic
+    #   h5io
+    #   h5py
+    #   langchain-community
+    #   lightgbm
+    #   matplotlib
+    #   mne
+    #   mne-connectivity
+    #   netcdf4
+    #   neuromaps
+    #   neurovlm
+    #   nibabel
+    #   nilearn
+    #   nimare
+    #   numba
+    #   pandas
+    #   patsy
+    #   pybids
+    #   pymare
+    #   pymatreader
+    #   pytorch-tabnet
+    #   ridgeplot
+    #   scikit-learn
+    #   scipy
+    #   seaborn
+    #   sentence-transformers
+    #   sparse
+    #   statsmodels
+    #   torch-geometric
+    #   transformers
+    #   xarray
+    #   xgboost
+nvidia-cublas==13.1.1.3 ; sys_platform == 'linux'
+    # via
+    #   cuda-toolkit
+    #   nvidia-cudnn-cu13
+    #   nvidia-cusolver
+nvidia-cuda-cupti==13.0.85 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-cuda-nvrtc==13.0.88 ; sys_platform == 'linux'
+    # via
+    #   cuda-toolkit
+    #   nvidia-cublas
+nvidia-cuda-runtime==13.0.96 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-cudnn-cu13==9.20.0.48 ; sys_platform == 'linux'
+    # via torch
+nvidia-cufft==12.0.0.61 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-cufile==1.15.1.6 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-curand==10.4.0.35 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-cusolver==12.0.4.66 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-cusparse==12.6.3.3 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via
+    #   cuda-toolkit
+    #   nvidia-cusolver
+nvidia-cusparselt-cu13==0.8.1 ; sys_platform == 'linux'
+    # via torch
+nvidia-nccl-cu12==2.30.7 ; sys_platform == 'linux'
+    # via xgboost
+nvidia-nccl-cu13==2.29.7 ; sys_platform == 'linux'
+    # via torch
+nvidia-nvjitlink==13.3.33 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via
+    #   cuda-toolkit
+    #   nvidia-cufft
+    #   nvidia-cusolver
+    #   nvidia-cusparse
+nvidia-nvshmem-cu13==3.4.5 ; sys_platform == 'linux'
+    # via torch
+nvidia-nvtx==13.0.85 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+openai==2.45.0
+    # via langchain-openai
+openapi-pydantic==0.5.1
+    # via fastmcp-slim
+openneuro-py==2026.7.0
+    # via brain-researcher
+opentelemetry-api==1.43.0
+    # via fastmcp-slim
+orjson==3.11.9
+    # via
+    #   langgraph-sdk
+    #   langsmith
+ormsgpack==1.12.2
+    # via langgraph-checkpoint
+packaging==26.2
+    # via
+    #   adapters
+    #   faiss-cpu
+    #   fastmcp-slim
+    #   gunicorn
+    #   huggingface-hub
+    #   langchain-core
+    #   langsmith
+    #   lazy-loader
+    #   matplotlib
+    #   mne
+    #   nibabel
+    #   nilearn
+    #   plotly
+    #   pooch
+    #   statsmodels
+    #   transformers
+    #   wheel
+    #   xarray
+pandas==2.3.3
+    # via
+    #   brain-researcher
+    #   cognitiveatlas
+    #   formulaic
+    #   mne-connectivity
+    #   neurovlm
+    #   nilearn
+    #   nimare
+    #   pybids
+    #   pymare
+    #   seaborn
+    #   statsmodels
+    #   xarray
+pathable==0.6.0
+    # via jsonschema-path
+pathlib-abc==0.5.2
+    # via universal-pathlib
+patsy==1.0.2
+    # via
+    #   nimare
+    #   statsmodels
+pillow==11.3.0
+    # via matplotlib
+platformdirs==4.10.0
+    # via
+    #   fastmcp-slim
+    #   openneuro-py
+    #   pooch
+    #   templateflow
+plotly==6.9.0
+    # via
+    #   nimare
+    #   ridgeplot
+pooch==1.9.0
+    # via mne
+prometheus-client==0.25.0
+    # via brain-researcher
+propcache==0.5.2
+    # via
+    #   aiohttp
+    #   yarl
+proto-plus==1.28.1
+    # via
+    #   google-ai-generativelanguage
+    #   google-api-core
+protobuf==5.29.6
+    # via
+    #   google-ai-generativelanguage
+    #   google-api-core
+    #   google-generativeai
+    #   googleapis-common-protos
+    #   grpcio-status
+    #   proto-plus
+psutil==7.2.2
+    # via
+    #   brain-researcher
+    #   torch-geometric
+py-key-value-aio==0.4.5
+    # via fastmcp-slim
+pyarrow==25.0.0
+    # via neurovlm
+pyasn1==0.6.4
+    # via
+    #   pyasn1-modules
+    #   python-jose
+    #   rsa
+pyasn1-modules==0.4.2
+    # via google-auth
+pybids==0.22.0
+    # via templateflow
+pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
+    # via cffi
+pydantic==2.12.3
+    # via
+    #   anthropic
+    #   brain-researcher
+    #   fastapi
+    #   fastmcp-slim
+    #   google-genai
+    #   google-generativeai
+    #   langchain
+    #   langchain-anthropic
+    #   langchain-classic
+    #   langchain-core
+    #   langchain-google-genai
+    #   langgraph
+    #   langsmith
+    #   mcp
+    #   neurostore-sdk
+    #   openai
+    #   openapi-pydantic
+    #   openneuro-py
+    #   pydantic-settings
+pydantic-core==2.41.4
+    # via pydantic
+pydantic-settings==2.14.2
+    # via
+    #   brain-researcher
+    #   fastmcp-slim
+    #   langchain-community
+    #   mcp
+pygments==2.20.0
+    # via
+    #   rich
+    #   rich-rst
+pyjwt==2.13.0
+    # via mcp
+pymare==0.0.10
+    # via nimare
+pymatreader==1.2.3
+    # via mne
+pyparsing==3.3.2
+    # via
+    #   httplib2
+    #   matplotlib
+    #   torch-geometric
+pyperclip==1.11.0
+    # via fastmcp-slim
+python-dateutil==2.9.0.post0
+    # via
+    #   matplotlib
+    #   neurostore-sdk
+    #   pandas
+python-dotenv==1.2.2
+    # via
+    #   brain-researcher
+    #   deepxiv-sdk
+    #   fastmcp-slim
+    #   pydantic-settings
+python-jose==3.5.0
+    # via brain-researcher
+python-multipart==0.0.32
+    # via
+    #   fastmcp-slim
+    #   mcp
+pytorch-tabnet==4.1.0
+    # via brain-researcher
+pytz==2026.2
+    # via
+    #   neo4j
+    #   pandas
+pywin32==312 ; sys_platform == 'win32'
+    # via mcp
+pywin32-ctypes==0.2.3 ; sys_platform == 'win32'
+    # via keyring
+pyyaml==6.0.3
+    # via
+    #   bidsschematools
+    #   brain-researcher
+    #   fastmcp-slim
+    #   huggingface-hub
+    #   jsonschema-path
+    #   langchain-classic
+    #   langchain-community
+    #   langchain-core
+    #   nimare
+    #   transformers
+rapidfuzz==3.14.5
+    # via brain-researcher
+redis==8.0.1
+    # via
+    #   brain-researcher
+    #   fakeredis
+referencing==0.37.0
+    # via
+    #   jsonschema
+    #   jsonschema-path
+    #   jsonschema-specifications
+regex==2026.7.10
+    # via
+    #   tiktoken
+    #   transformers
+requests==2.34.2
+    # via
+    #   brain-researcher
+    #   deepxiv-sdk
+    #   google-api-core
+    #   google-auth
+    #   google-genai
+    #   huggingface-hub
+    #   langchain-classic
+    #   langchain-community
+    #   langsmith
+    #   nilearn
+    #   nimare
+    #   pooch
+    #   requests-toolbelt
+    #   templateflow
+    #   tiktoken
+    #   torch-geometric
+    #   transformers
+requests-toolbelt==1.0.0
+    # via langsmith
+rich==15.0.0
+    # via
+    #   brain-researcher
+    #   cyclopts
+    #   fastmcp-slim
+    #   rich-rst
+    #   typer
+rich-rst==2.1.0
+    # via cyclopts
+ridgeplot==0.6.0
+    # via nimare
+rpds-py==2026.6.3
+    # via
+    #   jsonschema
+    #   referencing
+rsa==4.9.1
+    # via python-jose
+safetensors==0.8.0
+    # via
+    #   neurovlm
+    #   transformers
+scikit-learn==1.9.0
+    # via
+    #   autoreject
+    #   brain-researcher
+    #   mne-connectivity
+    #   neuromaps
+    #   nilearn
+    #   nimare
+    #   pytorch-tabnet
+    #   sentence-transformers
+scipy==1.17.1
+    # via
+    #   autoreject
+    #   formulaic
+    #   lightgbm
+    #   mne
+    #   mne-connectivity
+    #   neuromaps
+    #   nilearn
+    #   nimare
+    #   pybids
+    #   pymare
+    #   pymatreader
+    #   pytorch-tabnet
+    #   scikit-learn
+    #   sentence-transformers
+    #   statsmodels
+    #   xgboost
+seaborn==0.13.2
+    # via brain-researcher
+secretstorage==3.5.0 ; sys_platform == 'linux'
+    # via keyring
+sentence-transformers==5.6.0
+    # via brain-researcher
+sequential-thinking-mcp==0.10.2
+    # via brain-researcher
+setuptools==83.0.0
+    # via
+    #   brain-researcher
+    #   torch
+shellingham==1.5.4
+    # via typer
+six==1.17.0
+    # via
+    #   ecdsa
+    #   python-dateutil
+sniffio==1.3.1
+    # via
+    #   anthropic
+    #   google-genai
+    #   langsmith
+    #   openai
+sortedcontainers==2.4.0
+    # via fakeredis
+sparse==0.19.0
+    # via nimare
+sqlalchemy==1.4.54
+    # via
+    #   langchain-classic
+    #   langchain-community
+    #   pybids
+sse-starlette==3.4.5
+    # via mcp
+starlette==0.52.1
+    # via
+    #   fastapi
+    #   mcp
+    #   sse-starlette
+statsmodels==0.14.6
+    # via
+    #   nimare
+    #   ridgeplot
+structlog==26.1.0
+    # via brain-researcher
+sympy==1.14.0
+    # via
+    #   pymare
+    #   torch
+templateflow==25.1.2
+    # via brain-researcher
+tenacity==9.1.4
+    # via
+    #   google-genai
+    #   langchain-community
+    #   langchain-core
+threadpoolctl==3.6.0
+    # via scikit-learn
+tiktoken==0.13.0
+    # via langchain-openai
+tokenizers==0.22.2
+    # via transformers
+torch==2.13.0
+    # via
+    #   neurovlm
+    #   pytorch-tabnet
+    #   sentence-transformers
+torch-geometric==2.8.0
+    # via brain-researcher
+tqdm==4.68.4
+    # via
+    #   google-generativeai
+    #   huggingface-hub
+    #   mne
+    #   mne-connectivity
+    #   nimare
+    #   openai
+    #   openneuro-py
+    #   pytorch-tabnet
+    #   sentence-transformers
+    #   templateflow
+    #   torch-geometric
+    #   transformers
+transformers==4.57.6
+    # via
+    #   adapters
+    #   neurovlm
+    #   sentence-transformers
+triton==3.7.1 ; sys_platform == 'linux'
+    # via torch
+truststore==0.10.4
+    # via openneuro-py
+typer==0.26.8
+    # via
+    #   brain-researcher
+    #   openneuro-py
+typing-extensions==4.16.0
+    # via
+    #   aiohttp
+    #   aiosignal
+    #   anthropic
+    #   anyio
+    #   exceptiongroup
+    #   fastapi
+    #   fastmcp-slim
+    #   formulaic
+    #   google-genai
+    #   google-generativeai
+    #   grpcio
+    #   huggingface-hub
+    #   langchain-core
+    #   langchain-protocol
+    #   langsmith
+    #   mcp
+    #   neurostore-sdk
+    #   nibabel
+    #   openai
+    #   opentelemetry-api
+    #   py-key-value-aio
+    #   pydantic
+    #   pydantic-core
+    #   referencing
+    #   ridgeplot
+    #   sentence-transformers
+    #   starlette
+    #   torch
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via
+    #   fastapi
+    #   mcp
+    #   pydantic
+    #   pydantic-settings
+tzdata==2026.3
+    # via pandas
+uncalled-for==0.3.2
+    # via fastmcp-slim
+universal-pathlib==0.3.10
+    # via pybids
+uritemplate==4.2.0
+    # via google-api-python-client
+urllib3==2.7.0
+    # via
+    #   brain-researcher
+    #   neurostore-sdk
+    #   requests
+uuid-utils==0.17.0
+    # via
+    #   langchain-core
+    #   langsmith
+uvicorn==0.51.0
+    # via
+    #   brain-researcher
+    #   fastmcp-slim
+    #   mcp
+watchfiles==1.2.0
+    # via fastmcp-slim
+wcmatch==11.0
+    # via openneuro-py
+websockets==15.0.1
+    # via
+    #   fastmcp-slim
+    #   google-genai
+    #   langgraph-sdk
+    #   langsmith
+werkzeug==3.1.8
+    # via
+    #   brain-researcher
+    #   flask
+    #   flask-cors
+wheel==0.47.0
+    # via brain-researcher
+wrapt==2.2.2
+    # via
+    #   formulaic
+    #   pymare
+xarray==2026.7.0
+    # via mne-connectivity
+xgboost==3.2.0
+    # via brain-researcher
+xmltodict==1.0.4
+    # via pymatreader
+xxhash==3.8.1
+    # via
+    #   langgraph
+    #   langsmith
+    #   torch-geometric
+yarl==1.24.2
+    # via aiohttp
+zipp==4.1.0
+    # via importlib-metadata
+zstandard==0.25.0
+    # via langsmith

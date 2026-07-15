@@ -1,0 +1,1958 @@
+a2wsgi==1.10.10
+    # via apache-airflow-core
+acres==0.5.0
+    # via
+    #   bidsschematools
+    #   templateflow
+adapters==1.3.0
+    # via neurovlm
+aiofile==3.11.1
+    # via py-key-value-aio
+aiofiles==24.1.0
+    # via
+    #   brain-researcher
+    #   gradio
+    #   openneuro-py
+aiohappyeyeballs==2.7.1
+    # via aiohttp
+aiohttp==3.14.1
+    # via
+    #   brain-researcher
+    #   langchain-community
+    #   litellm
+    #   torch-geometric
+aiosignal==1.4.0
+    # via aiohttp
+aiosmtplib==5.1.2
+    # via apache-airflow-providers-smtp
+aiosqlite==0.22.1
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+alembic==1.18.5
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+annotated-doc==0.0.4
+    # via
+    #   fastapi
+    #   typer
+annotated-types==0.7.0
+    # via pydantic
+anthropic==0.116.0
+    # via
+    #   langchain-anthropic
+    #   notebook-intelligence
+anyio==4.14.2
+    # via
+    #   anthropic
+    #   claude-agent-sdk
+    #   google-genai
+    #   gradio
+    #   httpx
+    #   httpx2
+    #   jupyter-server
+    #   langsmith
+    #   mcp
+    #   openai
+    #   py-key-value-aio
+    #   sse-starlette
+    #   starlette
+    #   watchfiles
+apache-airflow==3.1.0
+    # via
+    #   apache-airflow-providers-common-compat
+    #   apache-airflow-providers-common-io
+    #   apache-airflow-providers-common-sql
+    #   apache-airflow-providers-smtp
+    #   apache-airflow-providers-standard
+    #   brain-researcher
+apache-airflow-core==3.1.0
+    # via
+    #   apache-airflow
+    #   apache-airflow-task-sdk
+apache-airflow-providers-common-compat==1.16.0
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-providers-common-io
+    #   apache-airflow-providers-common-sql
+    #   apache-airflow-providers-smtp
+    #   apache-airflow-providers-standard
+apache-airflow-providers-common-io==1.8.0
+    # via apache-airflow-core
+apache-airflow-providers-common-sql==2.0.2
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+apache-airflow-providers-smtp==3.0.2
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+apache-airflow-providers-standard==1.16.0
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+apache-airflow-task-sdk==1.1.0
+    # via
+    #   apache-airflow
+    #   apache-airflow-core
+argcomplete==3.7.0
+    # via apache-airflow-core
+argon2-cffi==25.1.0
+    # via jupyter-server
+argon2-cffi-bindings==25.1.0
+    # via argon2-cffi
+arrow==1.4.0
+    # via isoduration
+asgiref==3.12.1
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-providers-common-compat
+    #   apache-airflow-task-sdk
+ast-serialize==0.6.0
+    # via mypy
+async-timeout==5.0.1 ; python_full_version < '3.11.3'
+    # via redis
+attrs==26.1.0
+    # via
+    #   aiohttp
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   cyclopts
+    #   jsonschema
+    #   jsonschema-path
+    #   outcome
+    #   referencing
+    #   svcs
+authlib==1.7.2
+    # via fastmcp-slim
+autoreject==0.4.4
+    # via brain-researcher
+babel==2.18.0
+    # via mkdocs-material
+backports-tarfile==1.2.0
+    # via jaraco-context
+backrefs==7.0
+    # via mkdocs-material
+bcrypt==5.0.0
+    # via passlib
+beartype==0.22.9
+    # via py-key-value-aio
+beautifulsoup4==4.15.0
+    # via
+    #   brain-researcher
+    #   nbconvert
+bids-validator==1.14.7.post0
+    # via pybids
+bidsschematools==1.2.4
+    # via
+    #   bids-validator
+    #   pybids
+biopython==1.87
+    # via brain-researcher
+black==26.5.1
+    # via brain-researcher
+bleach==6.4.0
+    # via nbconvert
+blinker==1.9.0
+    # via flask
+blis==1.3.3
+    # via thinc
+bracex==3.0
+    # via wcmatch
+brotli==1.2.0
+    # via
+    #   fonttools
+    #   gradio
+brotlicffi==1.2.0.1 ; platform_python_implementation != 'CPython'
+    # via fonttools
+cachetools==7.1.4
+    # via py-key-value-aio
+cadwyn==7.1.0
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+caio==0.9.25
+    # via aiofile
+catalogue==2.0.10
+    # via
+    #   spacy
+    #   srsly
+    #   thinc
+certifi==2026.6.17
+    # via
+    #   brain-researcher
+    #   httpcore
+    #   httpx
+    #   netcdf4
+    #   py2neo
+    #   requests
+cffi==2.1.0
+    # via
+    #   argon2-cffi-bindings
+    #   brotlicffi
+    #   cryptography
+    #   pyzmq
+    #   weasyprint
+cfgv==3.5.0
+    # via pre-commit
+cftime==1.6.5
+    # via netcdf4
+charset-normalizer==3.4.9
+    # via
+    #   brain-researcher
+    #   reportlab
+    #   requests
+claude-agent-sdk==0.2.119
+    # via
+    #   brain-researcher
+    #   notebook-intelligence
+click==8.4.2
+    # via
+    #   bidsschematools
+    #   black
+    #   brain-researcher
+    #   deepxiv-sdk
+    #   flask
+    #   litellm
+    #   marimo
+    #   mkdocs
+    #   pybids
+    #   rich-toolkit
+    #   uvicorn
+cloudpathlib==0.24.0
+    # via weasel
+cognitiveatlas==0.1.11
+    # via
+    #   brain-researcher
+    #   nimare
+colorama==0.4.6
+    # via
+    #   click
+    #   colorlog
+    #   mkdocs
+    #   mkdocs-material
+    #   pytest
+    #   tqdm
+    #   typer
+    #   wasabi
+colorlog==6.10.1
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+confection==1.3.3
+    # via
+    #   spacy
+    #   thinc
+    #   weasel
+contourpy==1.3.3
+    # via matplotlib
+coverage==7.15.1
+    # via
+    #   brain-researcher
+    #   pytest-cov
+cron-descriptor==2.1.0
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+croniter==6.2.4
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+cryptography==49.0.0
+    # via
+    #   apache-airflow-core
+    #   authlib
+    #   google-auth
+    #   joserfc
+    #   notebook-intelligence
+    #   pyjwt
+    #   python-jose
+    #   secretstorage
+cssselect2==0.9.0
+    # via weasyprint
+cuda-bindings==13.3.1 ; sys_platform == 'linux'
+    # via torch
+cuda-pathfinder==1.5.6 ; sys_platform == 'linux'
+    # via cuda-bindings
+cuda-toolkit==13.0.3.0 ; sys_platform == 'linux'
+    # via torch
+cycler==0.12.1
+    # via matplotlib
+cyclopts==4.21.0
+    # via fastmcp-slim
+cymem==2.0.13
+    # via
+    #   preshed
+    #   spacy
+    #   thinc
+dash==4.4.0
+    # via
+    #   brain-researcher
+    #   dash-cytoscape
+dash-cytoscape==1.0.2
+    # via brain-researcher
+decorator==5.3.1
+    # via mne
+deepxiv-sdk==0.3.1
+    # via brain-researcher
+defusedxml==0.7.1
+    # via
+    #   fpdf2
+    #   nbconvert
+deprecated==1.3.1
+    # via apache-airflow-core
+dill==0.4.1
+    # via apache-airflow-core
+distlib==0.4.3
+    # via virtualenv
+distro==1.9.0
+    # via
+    #   anthropic
+    #   google-genai
+    #   langsmith
+    #   openai
+dnspython==2.8.0
+    # via email-validator
+docopt==0.6.2
+    # via num2words
+docstring-parser==0.18.0
+    # via
+    #   anthropic
+    #   cyclopts
+docutils==0.23
+    # via marimo
+ecdsa==0.19.2
+    # via python-jose
+email-validator==2.3.0
+    # via
+    #   fastapi
+    #   pydantic
+exceptiongroup==1.3.1
+    # via fastmcp-slim
+execnet==2.1.2
+    # via pytest-xdist
+faiss-cpu==1.14.3
+    # via brain-researcher
+fakeredis==2.36.2
+    # via brain-researcher
+fastapi==0.139.0
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+    #   cadwyn
+    #   gradio
+fastapi-cli==0.0.29
+    # via fastapi
+fastjsonschema==2.21.2
+    # via nbformat
+fastmcp==3.4.0
+    # via
+    #   notebook-intelligence
+    #   sequential-thinking-mcp
+fastmcp-slim==3.4.0
+    # via fastmcp
+fastuuid==0.14.0
+    # via litellm
+ffmpy==1.0.0
+    # via gradio
+filelock==3.29.7
+    # via
+    #   huggingface-hub
+    #   python-discovery
+    #   torch
+    #   transformers
+    #   virtualenv
+filetype==1.2.0
+    # via langchain-google-genai
+flake8==7.3.0
+    # via brain-researcher
+flask==3.1.3
+    # via
+    #   brain-researcher
+    #   dash
+    #   flask-cors
+flask-cors==6.0.5
+    # via brain-researcher
+fonttools==4.63.0
+    # via
+    #   fpdf2
+    #   matplotlib
+    #   weasyprint
+formulaic==1.2.2
+    # via pybids
+fpdf2==2.8.7
+    # via brain-researcher
+fqdn==1.5.1
+    # via jsonschema
+frozendict==2.4.7
+    # via pybids
+frozenlist==1.8.0
+    # via
+    #   aiohttp
+    #   aiosignal
+fsspec==2026.6.0
+    # via
+    #   apache-airflow-task-sdk
+    #   gradio-client
+    #   huggingface-hub
+    #   torch
+    #   torch-geometric
+    #   universal-pathlib
+fuzy-jon==0.1.0
+    # via notebook-intelligence
+fuzzywuzzy==0.18.0
+    # via
+    #   brain-researcher
+    #   nimare
+genai-prices==0.0.71
+    # via pydantic-ai-slim
+ghp-import==2.1.0
+    # via mkdocs
+google-ai-generativelanguage==0.6.15
+    # via google-generativeai
+google-api-core==2.31.0
+    # via
+    #   google-ai-generativelanguage
+    #   google-api-python-client
+    #   google-generativeai
+google-api-python-client==2.198.0
+    # via google-generativeai
+google-auth==2.56.0
+    # via
+    #   google-ai-generativelanguage
+    #   google-api-core
+    #   google-api-python-client
+    #   google-auth-httplib2
+    #   google-genai
+    #   google-generativeai
+google-auth-httplib2==0.4.0
+    # via google-api-python-client
+google-genai==2.8.0
+    # via
+    #   brain-researcher
+    #   langchain-google-genai
+google-generativeai==0.8.6
+    # via brain-researcher
+googleapis-common-protos==1.75.0
+    # via
+    #   google-api-core
+    #   grpcio-status
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+gradio==5.50.0
+    # via brain-researcher
+gradio-client==1.14.0
+    # via gradio
+greenback==1.3.0
+    # via apache-airflow-task-sdk
+greenlet==3.5.3
+    # via
+    #   greenback
+    #   sqlalchemy
+griffelib==2.1.0
+    # via
+    #   fastmcp-slim
+    #   mkdocstrings-python
+    #   pydantic-ai-slim
+groovy==0.1.2
+    # via gradio
+grpcio==1.82.1
+    # via
+    #   google-api-core
+    #   grpcio-status
+    #   opentelemetry-exporter-otlp-proto-grpc
+grpcio-status==1.71.2
+    # via google-api-core
+gunicorn==26.0.0
+    # via brain-researcher
+h11==0.16.0
+    # via
+    #   httpcore
+    #   httpcore2
+    #   uvicorn
+h5io==0.2.5
+    # via mne
+h5py==3.16.0
+    # via
+    #   h5io
+    #   pymatreader
+hf-xet==1.5.1 ; platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
+    # via huggingface-hub
+httpcore==1.0.9
+    # via httpx
+httpcore2==2.7.0
+    # via httpx2
+httplib2==0.32.0
+    # via
+    #   google-api-python-client
+    #   google-auth-httplib2
+httptools==0.8.0
+    # via uvicorn
+httpx==0.28.1
+    # via
+    #   anthropic
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   brain-researcher
+    #   fastapi
+    #   fastmcp-slim
+    #   google-genai
+    #   gradio
+    #   gradio-client
+    #   langgraph-sdk
+    #   langsmith
+    #   litellm
+    #   mcp
+    #   ollama
+    #   openai
+    #   openneuro-py
+    #   pydantic-ai-slim
+    #   pydantic-graph
+    #   safehttpx
+    #   weasel
+httpx-sse==0.4.3
+    # via
+    #   langchain-community
+    #   mcp
+httpx2==2.7.0
+    # via genai-prices
+huggingface-hub==0.36.2
+    # via
+    #   gradio
+    #   gradio-client
+    #   neurovlm
+    #   sentence-transformers
+    #   tokenizers
+    #   transformers
+hypothesis==6.156.6
+    # via brain-researcher
+identify==2.6.19
+    # via pre-commit
+idna==3.18
+    # via
+    #   anyio
+    #   brain-researcher
+    #   email-validator
+    #   httpx
+    #   httpx2
+    #   jsonschema
+    #   requests
+    #   yarl
+importlib-metadata==9.0.0
+    # via
+    #   apache-airflow-core
+    #   dash
+    #   keyring
+    #   litellm
+importlib-resources==7.1.0
+    # via nibabel
+iniconfig==2.3.0
+    # via pytest
+interchange==2021.0.4
+    # via
+    #   brain-researcher
+    #   py2neo
+interface-meta==2.0.1
+    # via formulaic
+isoduration==20.11.0
+    # via jsonschema
+isort==8.0.1
+    # via brain-researcher
+itsdangerous==2.2.0
+    # via
+    #   apache-airflow-core
+    #   flask
+    #   marimo
+janus==2.0.0
+    # via dash
+jaraco-classes==3.4.0
+    # via keyring
+jaraco-context==6.1.2
+    # via keyring
+jaraco-functools==4.6.0
+    # via keyring
+jedi==0.19.2
+    # via marimo
+jeepney==0.9.0 ; sys_platform == 'linux'
+    # via
+    #   keyring
+    #   secretstorage
+jinja2==3.1.6
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   brain-researcher
+    #   cadwyn
+    #   fastapi
+    #   flask
+    #   gradio
+    #   jupyter-server
+    #   litellm
+    #   mkdocs
+    #   mkdocs-material
+    #   mkdocstrings
+    #   mne
+    #   nbconvert
+    #   nilearn
+    #   nimare
+    #   spacy
+    #   torch
+    #   torch-geometric
+jiter==0.16.0
+    # via
+    #   anthropic
+    #   openai
+joblib==1.5.3
+    # via
+    #   autoreject
+    #   brain-researcher
+    #   nilearn
+    #   nimare
+    #   scikit-learn
+joserfc==1.7.3
+    # via
+    #   authlib
+    #   fastmcp-slim
+json5==0.15.0
+    # via fuzy-jon
+jsonpatch==1.33
+    # via langchain-core
+jsonpointer==3.1.1
+    # via
+    #   jsonpatch
+    #   jsonschema
+jsonref==1.1.0
+    # via fastmcp-slim
+jsonschema==4.26.0
+    # via
+    #   apache-airflow-core
+    #   jupyter-events
+    #   litellm
+    #   mcp
+    #   nbformat
+jsonschema-path==0.5.0
+    # via fastmcp-slim
+jsonschema-specifications==2025.9.1
+    # via jsonschema
+jupyter-client==8.9.1
+    # via
+    #   jupyter-server
+    #   nbclient
+jupyter-core==5.9.1
+    # via
+    #   jupyter-client
+    #   jupyter-server
+    #   nbclient
+    #   nbconvert
+    #   nbformat
+jupyter-events==0.12.1
+    # via jupyter-server
+jupyter-server==2.20.0
+    # via notebook-intelligence
+jupyter-server-terminals==0.5.4
+    # via jupyter-server
+jupyterlab-pygments==0.3.0
+    # via nbconvert
+keyring==25.7.0
+    # via py-key-value-aio
+kiwisolver==1.5.0
+    # via matplotlib
+langchain==1.3.13
+    # via brain-researcher
+langchain-anthropic==1.4.8
+    # via brain-researcher
+langchain-classic==1.0.8
+    # via langchain-community
+langchain-community==0.4.2
+    # via brain-researcher
+langchain-core==1.4.9
+    # via
+    #   brain-researcher
+    #   langchain
+    #   langchain-anthropic
+    #   langchain-classic
+    #   langchain-community
+    #   langchain-google-genai
+    #   langchain-openai
+    #   langchain-text-splitters
+    #   langgraph
+    #   langgraph-checkpoint
+    #   langgraph-prebuilt
+    #   langgraph-sdk
+langchain-google-genai==4.2.7
+    # via brain-researcher
+langchain-openai==1.3.5
+    # via brain-researcher
+langchain-protocol==0.0.18
+    # via
+    #   langchain-core
+    #   langgraph-sdk
+langchain-text-splitters==1.1.2
+    # via langchain-classic
+langgraph==1.2.9
+    # via
+    #   brain-researcher
+    #   langchain
+langgraph-checkpoint==4.1.1
+    # via
+    #   langgraph
+    #   langgraph-prebuilt
+langgraph-prebuilt==1.1.0
+    # via langgraph
+langgraph-sdk==0.4.2
+    # via langgraph
+langsmith==0.10.5
+    # via
+    #   langchain-classic
+    #   langchain-community
+    #   langchain-core
+lark==1.3.1
+    # via rfc3987-syntax
+lazy-imports==1.2.0
+    # via neurostore-sdk
+lazy-loader==0.5
+    # via mne
+lazy-object-proxy==1.12.0
+    # via apache-airflow-core
+libcst==1.8.6
+    # via apache-airflow-core
+librt==0.13.0 ; platform_python_implementation != 'PyPy'
+    # via mypy
+lightgbm==4.6.0
+    # via brain-researcher
+linkify-it-py==2.1.0
+    # via apache-airflow-core
+litellm==1.83.0
+    # via notebook-intelligence
+llvmlite==0.48.0
+    # via numba
+lockfile==0.12.2
+    # via
+    #   apache-airflow-core
+    #   python-daemon
+logfire-api==4.37.0
+    # via pydantic-graph
+loro==1.13.1 ; sys_platform != 'android' and sys_platform != 'emscripten'
+    # via marimo
+mako==1.3.12
+    # via alembic
+marimo==0.23.14
+    # via brain-researcher
+markdown==3.10.2
+    # via
+    #   marimo
+    #   mkdocs
+    #   mkdocs-autorefs
+    #   mkdocs-material
+    #   mkdocstrings
+    #   pymdown-extensions
+markdown-it-py==4.2.0
+    # via rich
+markupsafe==3.0.3
+    # via
+    #   brain-researcher
+    #   flask
+    #   gradio
+    #   jinja2
+    #   mako
+    #   mkdocs
+    #   mkdocs-autorefs
+    #   mkdocstrings
+    #   nbconvert
+    #   werkzeug
+matplotlib==3.11.0
+    # via
+    #   autoreject
+    #   brain-researcher
+    #   mne
+    #   neuromaps
+    #   nimare
+    #   seaborn
+mccabe==0.7.0
+    # via flake8
+mcp==1.28.1
+    # via
+    #   brain-researcher
+    #   claude-agent-sdk
+    #   fastmcp-slim
+mdurl==0.1.2
+    # via markdown-it-py
+mergedeep==1.3.4
+    # via
+    #   mkdocs
+    #   mkdocs-get-deps
+methodtools==0.4.7
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-providers-common-sql
+    #   apache-airflow-task-sdk
+mistune==3.3.3
+    # via nbconvert
+mkdocs==1.6.1
+    # via
+    #   brain-researcher
+    #   mkdocs-autorefs
+    #   mkdocs-material
+    #   mkdocstrings
+mkdocs-autorefs==1.4.4
+    # via
+    #   mkdocstrings
+    #   mkdocstrings-python
+mkdocs-get-deps==0.2.2
+    # via mkdocs
+mkdocs-material==9.7.6
+    # via brain-researcher
+mkdocs-material-extensions==1.3.1
+    # via mkdocs-material
+mkdocstrings==1.0.6
+    # via
+    #   brain-researcher
+    #   mkdocstrings-python
+mkdocstrings-python==2.0.5
+    # via brain-researcher
+mne==1.12.1
+    # via
+    #   autoreject
+    #   brain-researcher
+    #   mne-connectivity
+mne-connectivity==0.8.1
+    # via brain-researcher
+monotonic==1.6
+    # via py2neo
+more-itertools==11.1.0
+    # via
+    #   apache-airflow-providers-common-sql
+    #   jaraco-classes
+    #   jaraco-functools
+mpmath==1.3.0
+    # via sympy
+msgspec==0.21.1
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   marimo
+multidict==6.7.1
+    # via
+    #   aiohttp
+    #   yarl
+murmurhash==1.0.15
+    # via
+    #   preshed
+    #   spacy
+    #   thinc
+mypy==2.3.0
+    # via brain-researcher
+mypy-extensions==1.1.0
+    # via
+    #   black
+    #   mypy
+narwhals==2.24.0
+    # via
+    #   formulaic
+    #   marimo
+    #   plotly
+    #   scikit-learn
+natsort==8.4.0
+    # via apache-airflow
+nbclient==0.11.0
+    # via nbconvert
+nbconvert==7.17.1
+    # via jupyter-server
+nbformat==5.10.4
+    # via
+    #   brain-researcher
+    #   jupyter-server
+    #   nbclient
+    #   nbconvert
+neo4j==6.2.0
+    # via brain-researcher
+nest-asyncio==1.6.0
+    # via dash
+netcdf4==1.7.4
+    # via mne-connectivity
+networkx==3.6.1
+    # via
+    #   brain-researcher
+    #   torch
+neuromaps==0.0.7
+    # via brain-researcher
+neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git@28fe10f575e1c1f7a6ef5303ea03dd5bb0cd7ce6
+    # via
+    #   brain-researcher
+    #   nimare
+neurovlm==0.0.3
+    # via brain-researcher
+nibabel==5.4.2
+    # via
+    #   brain-researcher
+    #   neuromaps
+    #   neurovlm
+    #   nilearn
+    #   nimare
+    #   pybids
+    #   pyneurovault
+nilearn==0.13.1
+    # via
+    #   brain-researcher
+    #   neuromaps
+    #   neurovlm
+    #   nimare
+    #   pyneurovault
+nimare==0.20.0
+    # via brain-researcher
+nodeenv==1.10.0
+    # via pre-commit
+notebook-intelligence==4.8.0
+    # via brain-researcher
+num2words==0.5.14
+    # via pybids
+numba==0.66.0
+    # via
+    #   brain-researcher
+    #   nimare
+    #   sparse
+numpy==2.4.6
+    # via
+    #   autoreject
+    #   biopython
+    #   blis
+    #   brain-researcher
+    #   cftime
+    #   cognitiveatlas
+    #   contourpy
+    #   faiss-cpu
+    #   formulaic
+    #   gradio
+    #   h5io
+    #   h5py
+    #   langchain-community
+    #   lightgbm
+    #   matplotlib
+    #   mne
+    #   mne-connectivity
+    #   netcdf4
+    #   neuromaps
+    #   neurovlm
+    #   nibabel
+    #   nilearn
+    #   nimare
+    #   numba
+    #   pandas
+    #   patsy
+    #   pybids
+    #   pymare
+    #   pymatreader
+    #   pytorch-tabnet
+    #   ridgeplot
+    #   scikit-learn
+    #   scipy
+    #   seaborn
+    #   sentence-transformers
+    #   spacy
+    #   sparse
+    #   statsmodels
+    #   thinc
+    #   torch-geometric
+    #   transformers
+    #   xarray
+    #   xgboost
+nvidia-cublas==13.1.1.3 ; sys_platform == 'linux'
+    # via
+    #   cuda-toolkit
+    #   nvidia-cudnn-cu13
+    #   nvidia-cusolver
+nvidia-cuda-cupti==13.0.85 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-cuda-nvrtc==13.0.88 ; sys_platform == 'linux'
+    # via
+    #   cuda-toolkit
+    #   nvidia-cublas
+nvidia-cuda-runtime==13.0.96 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-cudnn-cu13==9.20.0.48 ; sys_platform == 'linux'
+    # via torch
+nvidia-cufft==12.0.0.61 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-cufile==1.15.1.6 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-curand==10.4.0.35 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-cusolver==12.0.4.66 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+nvidia-cusparse==12.6.3.3 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via
+    #   cuda-toolkit
+    #   nvidia-cusolver
+nvidia-cusparselt-cu13==0.8.1 ; sys_platform == 'linux'
+    # via torch
+nvidia-nccl-cu12==2.30.7 ; sys_platform == 'linux'
+    # via xgboost
+nvidia-nccl-cu13==2.29.7 ; sys_platform == 'linux'
+    # via torch
+nvidia-nvjitlink==13.3.33 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via
+    #   cuda-toolkit
+    #   nvidia-cufft
+    #   nvidia-cusolver
+    #   nvidia-cusparse
+nvidia-nvshmem-cu13==3.4.5 ; sys_platform == 'linux'
+    # via torch
+nvidia-nvtx==13.0.85 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
+    # via cuda-toolkit
+ollama==0.6.2
+    # via notebook-intelligence
+openai==2.45.0
+    # via
+    #   langchain-openai
+    #   litellm
+    #   notebook-intelligence
+openapi-pydantic==0.5.1
+    # via fastmcp-slim
+openneuro-py==2026.7.0
+    # via brain-researcher
+opentelemetry-api==1.43.0
+    # via
+    #   apache-airflow-core
+    #   fastmcp-slim
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+    #   pydantic-ai-slim
+opentelemetry-exporter-otlp==1.43.0
+    # via apache-airflow-core
+opentelemetry-exporter-otlp-proto-common==1.43.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-grpc==1.43.0
+    # via opentelemetry-exporter-otlp
+opentelemetry-exporter-otlp-proto-http==1.43.0
+    # via opentelemetry-exporter-otlp
+opentelemetry-proto==1.43.0
+    # via
+    #   apache-airflow-core
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-sdk==1.43.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-semantic-conventions==0.64b0
+    # via opentelemetry-sdk
+orjson==3.11.9
+    # via
+    #   gradio
+    #   langgraph-sdk
+    #   langsmith
+ormsgpack==1.12.2
+    # via langgraph-checkpoint
+outcome==1.3.0.post0
+    # via greenback
+overrides==7.7.0
+    # via jupyter-server
+packaging==26.2
+    # via
+    #   adapters
+    #   apache-airflow-core
+    #   black
+    #   faiss-cpu
+    #   fastmcp-slim
+    #   gradio
+    #   gradio-client
+    #   gunicorn
+    #   huggingface-hub
+    #   jupyter-events
+    #   jupyter-server
+    #   langchain-core
+    #   langsmith
+    #   lazy-loader
+    #   marimo
+    #   matplotlib
+    #   mkdocs
+    #   mne
+    #   nbconvert
+    #   nibabel
+    #   nilearn
+    #   plotly
+    #   pooch
+    #   py2neo
+    #   pytest
+    #   spacy
+    #   statsmodels
+    #   thinc
+    #   transformers
+    #   weasel
+    #   wheel
+    #   xarray
+paginate==0.5.7
+    # via mkdocs-material
+pandas==2.3.3
+    # via
+    #   brain-researcher
+    #   cognitiveatlas
+    #   formulaic
+    #   gradio
+    #   mne-connectivity
+    #   neurovlm
+    #   nilearn
+    #   nimare
+    #   pybids
+    #   pymare
+    #   pyneurovault
+    #   seaborn
+    #   statsmodels
+    #   xarray
+pandocfilters==1.5.1
+    # via nbconvert
+pansi==2024.11.0
+    # via py2neo
+parso==0.8.7
+    # via jedi
+passlib==1.7.4
+    # via brain-researcher
+pathable==0.6.0
+    # via jsonschema-path
+pathlib-abc==0.5.2
+    # via universal-pathlib
+pathspec==1.1.1
+    # via
+    #   apache-airflow-core
+    #   black
+    #   mkdocs
+    #   mypy
+patsy==1.0.2
+    # via
+    #   nimare
+    #   statsmodels
+pendulum==3.2.0
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   brain-researcher
+pillow==11.3.0
+    # via
+    #   brain-researcher
+    #   fpdf2
+    #   gradio
+    #   matplotlib
+    #   pansi
+    #   reportlab
+    #   weasyprint
+platformdirs==4.10.0
+    # via
+    #   black
+    #   fastmcp-slim
+    #   jupyter-core
+    #   mkdocs-get-deps
+    #   openneuro-py
+    #   pooch
+    #   python-discovery
+    #   templateflow
+    #   virtualenv
+plotly==6.9.0
+    # via
+    #   brain-researcher
+    #   dash
+    #   nimare
+    #   ridgeplot
+pluggy==1.6.0
+    # via
+    #   apache-airflow-core
+    #   pytest
+    #   pytest-cov
+pooch==1.9.0
+    # via mne
+pre-commit==4.6.0
+    # via brain-researcher
+preshed==3.0.13
+    # via
+    #   spacy
+    #   thinc
+prometheus-client==0.25.0
+    # via
+    #   brain-researcher
+    #   jupyter-server
+promise==2.3
+    # via brain-researcher
+propcache==0.5.2
+    # via
+    #   aiohttp
+    #   yarl
+proto-plus==1.28.1
+    # via
+    #   google-ai-generativelanguage
+    #   google-api-core
+protobuf==5.29.6
+    # via
+    #   google-ai-generativelanguage
+    #   google-api-core
+    #   google-generativeai
+    #   googleapis-common-protos
+    #   grpcio-status
+    #   opentelemetry-proto
+    #   proto-plus
+psutil==7.2.2
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   brain-researcher
+    #   marimo
+    #   torch-geometric
+psycopg2-binary==2.9.12
+    # via brain-researcher
+ptyprocess==0.7.0 ; os_name != 'nt'
+    # via terminado
+py-key-value-aio==0.4.5
+    # via fastmcp-slim
+py2neo==2021.2.4
+    # via brain-researcher
+pyarrow==25.0.0
+    # via neurovlm
+pyasn1==0.6.4
+    # via
+    #   pyasn1-modules
+    #   python-jose
+    #   rsa
+pyasn1-modules==0.4.2
+    # via google-auth
+pybids==0.22.0
+    # via templateflow
+pycodestyle==2.14.0
+    # via flake8
+pycparser==3.0 ; implementation_name != 'PyPy'
+    # via cffi
+pydantic==2.12.3
+    # via
+    #   anthropic
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   brain-researcher
+    #   cadwyn
+    #   dash
+    #   fastapi
+    #   fastmcp-slim
+    #   genai-prices
+    #   google-genai
+    #   google-generativeai
+    #   gradio
+    #   langchain
+    #   langchain-anthropic
+    #   langchain-classic
+    #   langchain-core
+    #   langchain-google-genai
+    #   langgraph
+    #   langsmith
+    #   litellm
+    #   mcp
+    #   neurostore-sdk
+    #   ollama
+    #   openai
+    #   openapi-pydantic
+    #   openneuro-py
+    #   pydantic-ai-slim
+    #   pydantic-extra-types
+    #   pydantic-graph
+    #   pydantic-settings
+    #   retryhttp
+    #   spacy
+    #   thinc
+    #   weasel
+pydantic-ai-slim==2.10.0
+    # via brain-researcher
+pydantic-core==2.41.4
+    # via pydantic
+pydantic-extra-types==2.11.1
+    # via fastapi
+pydantic-graph==2.10.0
+    # via pydantic-ai-slim
+pydantic-settings==2.14.2
+    # via
+    #   brain-researcher
+    #   fastapi
+    #   fastmcp-slim
+    #   langchain-community
+    #   mcp
+pydub==0.25.1
+    # via gradio
+pydyf==0.12.1
+    # via weasyprint
+pyflakes==3.4.0
+    # via flake8
+pygments==2.20.0
+    # via
+    #   apache-airflow-core
+    #   marimo
+    #   mkdocs-material
+    #   nbconvert
+    #   py2neo
+    #   pytest
+    #   rich
+    #   rich-rst
+pygtrie==2.5.0
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+pyjwt==2.13.0
+    # via
+    #   apache-airflow-core
+    #   mcp
+pymare==0.0.10
+    # via
+    #   brain-researcher
+    #   nimare
+pymatreader==1.2.3
+    # via mne
+pymdown-extensions==10.21.3
+    # via
+    #   marimo
+    #   mkdocs-material
+    #   mkdocstrings
+pyneurovault==0.1.3
+    # via brain-researcher
+pyparsing==3.3.2
+    # via
+    #   httplib2
+    #   matplotlib
+    #   rdflib
+    #   torch-geometric
+pypdf2==3.0.1
+    # via brain-researcher
+pyperclip==1.11.0
+    # via fastmcp-slim
+pyphen==0.17.2
+    # via weasyprint
+pytest==9.1.1
+    # via
+    #   brain-researcher
+    #   pytest-asyncio
+    #   pytest-cov
+    #   pytest-mock
+    #   pytest-timeout
+    #   pytest-xdist
+pytest-asyncio==1.4.0
+    # via brain-researcher
+pytest-cov==7.1.0
+    # via brain-researcher
+pytest-mock==3.15.1
+    # via brain-researcher
+pytest-timeout==2.4.0
+    # via brain-researcher
+pytest-xdist==3.8.0
+    # via brain-researcher
+python-daemon==3.1.2
+    # via apache-airflow-core
+python-dateutil==2.9.0.post0
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   arrow
+    #   croniter
+    #   ghp-import
+    #   jupyter-client
+    #   matplotlib
+    #   neurostore-sdk
+    #   pandas
+    #   pendulum
+python-discovery==1.4.4
+    # via virtualenv
+python-dotenv==1.2.2
+    # via
+    #   brain-researcher
+    #   deepxiv-sdk
+    #   fastmcp-slim
+    #   litellm
+    #   pydantic-settings
+    #   uvicorn
+python-jose==3.5.0
+    # via brain-researcher
+python-json-logger==4.1.0
+    # via jupyter-events
+python-multipart==0.0.32
+    # via
+    #   fastapi
+    #   fastmcp-slim
+    #   gradio
+    #   marimo
+    #   mcp
+python-slugify==8.0.4
+    # via apache-airflow-core
+pytokens==0.4.1
+    # via black
+pytorch-tabnet==4.1.0
+    # via brain-researcher
+pytz==2026.2
+    # via
+    #   interchange
+    #   neo4j
+    #   pandas
+pywin32==312 ; sys_platform == 'win32'
+    # via mcp
+pywin32-ctypes==0.2.3 ; sys_platform == 'win32'
+    # via keyring
+pywinpty==3.0.5 ; os_name == 'nt'
+    # via
+    #   jupyter-server
+    #   jupyter-server-terminals
+    #   terminado
+pyyaml==6.0.3
+    # via
+    #   bidsschematools
+    #   brain-researcher
+    #   fastmcp-slim
+    #   gradio
+    #   huggingface-hub
+    #   jsonschema-path
+    #   jupyter-events
+    #   langchain-classic
+    #   langchain-community
+    #   langchain-core
+    #   libcst
+    #   marimo
+    #   mkdocs
+    #   mkdocs-get-deps
+    #   nimare
+    #   pre-commit
+    #   pymdown-extensions
+    #   pyyaml-env-tag
+    #   responses
+    #   transformers
+    #   uvicorn
+pyyaml-env-tag==1.1
+    # via mkdocs
+pyzmq==27.1.0
+    # via
+    #   jupyter-client
+    #   jupyter-server
+    #   marimo
+rapidfuzz==3.14.5
+    # via brain-researcher
+rdflib==7.6.0
+    # via
+    #   brain-researcher
+    #   sparqlwrapper
+redis==8.0.1
+    # via
+    #   brain-researcher
+    #   fakeredis
+referencing==0.37.0
+    # via
+    #   jsonschema
+    #   jsonschema-path
+    #   jsonschema-specifications
+    #   jupyter-events
+regex==2026.7.10
+    # via
+    #   tiktoken
+    #   transformers
+reportlab==4.5.1
+    # via brain-researcher
+requests==2.34.2
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   brain-researcher
+    #   dash
+    #   deepxiv-sdk
+    #   google-api-core
+    #   google-auth
+    #   google-genai
+    #   huggingface-hub
+    #   langchain-classic
+    #   langchain-community
+    #   langsmith
+    #   mkdocs-material
+    #   nilearn
+    #   nimare
+    #   opentelemetry-exporter-otlp-proto-http
+    #   pooch
+    #   requests-toolbelt
+    #   responses
+    #   spacy
+    #   templateflow
+    #   tiktoken
+    #   torch-geometric
+    #   transformers
+requests-toolbelt==1.0.0
+    # via langsmith
+responses==0.26.2
+    # via brain-researcher
+retryhttp==1.5.0
+    # via apache-airflow-task-sdk
+retrying==1.4.2
+    # via dash
+rfc3339-validator==0.1.4
+    # via
+    #   jsonschema
+    #   jupyter-events
+rfc3986-validator==0.1.1
+    # via
+    #   jsonschema
+    #   jupyter-events
+rfc3987-syntax==1.1.0
+    # via jsonschema
+rich==15.0.0
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+    #   cyclopts
+    #   fastmcp-slim
+    #   rich-argparse
+    #   rich-rst
+    #   rich-toolkit
+    #   typer
+rich-argparse==1.8.0
+    # via apache-airflow-core
+rich-rst==2.1.0
+    # via cyclopts
+rich-toolkit==0.20.3
+    # via fastapi-cli
+ridgeplot==0.6.0
+    # via
+    #   brain-researcher
+    #   nimare
+rpds-py==2026.6.3
+    # via
+    #   jsonschema
+    #   referencing
+rsa==4.9.1
+    # via python-jose
+ruff==0.15.21
+    # via
+    #   brain-researcher
+    #   gradio
+safehttpx==0.1.7
+    # via gradio
+safetensors==0.8.0
+    # via
+    #   neurovlm
+    #   transformers
+scikit-learn==1.9.0
+    # via
+    #   autoreject
+    #   brain-researcher
+    #   mne-connectivity
+    #   neuromaps
+    #   nilearn
+    #   nimare
+    #   pytorch-tabnet
+    #   sentence-transformers
+scipy==1.17.1
+    # via
+    #   autoreject
+    #   brain-researcher
+    #   formulaic
+    #   lightgbm
+    #   mne
+    #   mne-connectivity
+    #   neuromaps
+    #   nilearn
+    #   nimare
+    #   pybids
+    #   pymare
+    #   pymatreader
+    #   pytorch-tabnet
+    #   scikit-learn
+    #   sentence-transformers
+    #   statsmodels
+    #   xgboost
+seaborn==0.13.2
+    # via brain-researcher
+secretstorage==3.5.0 ; sys_platform == 'linux'
+    # via keyring
+semantic-version==2.10.0
+    # via gradio
+send2trash==2.1.0
+    # via jupyter-server
+sentence-transformers==5.6.0
+    # via brain-researcher
+sequential-thinking-mcp==0.10.2
+    # via brain-researcher
+setproctitle==1.3.7
+    # via apache-airflow-core
+setuptools==83.0.0
+    # via
+    #   brain-researcher
+    #   dash
+    #   spacy
+    #   thinc
+    #   torch
+shellingham==1.5.4
+    # via typer
+six==1.17.0
+    # via
+    #   ecdsa
+    #   interchange
+    #   promise
+    #   py2neo
+    #   python-dateutil
+    #   rfc3339-validator
+    #   wirerope
+smart-open==8.0.0
+    # via weasel
+sniffio==1.3.1
+    # via
+    #   anthropic
+    #   claude-agent-sdk
+    #   google-genai
+    #   greenback
+    #   langsmith
+    #   openai
+sortedcontainers==2.4.0
+    # via
+    #   fakeredis
+    #   hypothesis
+soupsieve==2.8.4
+    # via beautifulsoup4
+spacy==3.8.14
+    # via brain-researcher
+spacy-legacy==3.0.12
+    # via spacy
+spacy-loggers==1.0.5
+    # via spacy
+sparqlwrapper==2.0.0
+    # via brain-researcher
+sparse==0.19.0
+    # via
+    #   brain-researcher
+    #   nimare
+sqlalchemy==1.4.54
+    # via
+    #   alembic
+    #   apache-airflow-core
+    #   brain-researcher
+    #   langchain-classic
+    #   langchain-community
+    #   pybids
+    #   sqlalchemy-jsonfield
+    #   sqlalchemy-utils
+sqlalchemy-jsonfield==1.0.3
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+sqlalchemy-utils==0.42.1
+    # via
+    #   apache-airflow-core
+    #   brain-researcher
+sqlparse==0.5.5
+    # via apache-airflow-providers-common-sql
+srsly==2.5.3
+    # via
+    #   spacy
+    #   thinc
+    #   weasel
+sse-starlette==3.4.5
+    # via mcp
+sseclient-py==1.9.0
+    # via notebook-intelligence
+starlette==0.52.1
+    # via
+    #   apache-airflow-core
+    #   cadwyn
+    #   fastapi
+    #   gradio
+    #   marimo
+    #   mcp
+    #   sse-starlette
+statsmodels==0.14.6
+    # via
+    #   brain-researcher
+    #   nimare
+    #   ridgeplot
+structlog==26.1.0
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   brain-researcher
+supervisor==4.3.0
+    # via brain-researcher
+svcs==26.1.0
+    # via apache-airflow-core
+sympy==1.14.0
+    # via
+    #   pymare
+    #   torch
+tabulate==0.10.0
+    # via apache-airflow-core
+templateflow==25.1.2
+    # via brain-researcher
+tenacity==9.1.4
+    # via
+    #   apache-airflow-core
+    #   apache-airflow-task-sdk
+    #   google-genai
+    #   langchain-community
+    #   langchain-core
+    #   retryhttp
+termcolor==3.3.0
+    # via apache-airflow-core
+terminado==0.18.1
+    # via
+    #   jupyter-server
+    #   jupyter-server-terminals
+text-unidecode==1.3
+    # via python-slugify
+thinc==8.3.13
+    # via spacy
+threadpoolctl==3.6.0
+    # via scikit-learn
+tiktoken==0.13.0
+    # via
+    #   langchain-openai
+    #   litellm
+    #   notebook-intelligence
+tinycss2==1.5.1
+    # via
+    #   bleach
+    #   cssselect2
+    #   weasyprint
+tinyhtml5==2.1.0
+    # via weasyprint
+tokenizers==0.22.2
+    # via
+    #   litellm
+    #   transformers
+tomli==2.4.1 ; python_full_version <= '3.11'
+    # via coverage
+tomlkit==0.13.3
+    # via
+    #   brain-researcher
+    #   gradio
+    #   marimo
+torch==2.13.0
+    # via
+    #   neurovlm
+    #   pytorch-tabnet
+    #   sentence-transformers
+torch-geometric==2.8.0
+    # via brain-researcher
+tornado==6.5.7
+    # via
+    #   jupyter-client
+    #   jupyter-server
+    #   terminado
+tqdm==4.68.4
+    # via
+    #   brain-researcher
+    #   google-generativeai
+    #   huggingface-hub
+    #   mne
+    #   mne-connectivity
+    #   nimare
+    #   openai
+    #   openneuro-py
+    #   pytorch-tabnet
+    #   sentence-transformers
+    #   spacy
+    #   templateflow
+    #   torch-geometric
+    #   transformers
+traitlets==5.15.1
+    # via
+    #   jupyter-client
+    #   jupyter-core
+    #   jupyter-events
+    #   jupyter-server
+    #   nbclient
+    #   nbconvert
+    #   nbformat
+transformers==4.57.6
+    # via
+    #   adapters
+    #   neurovlm
+    #   sentence-transformers
+triton==3.7.1 ; sys_platform == 'linux'
+    # via torch
+truststore==0.10.4
+    # via
+    #   httpcore2
+    #   httpx2
+    #   openneuro-py
+typer==0.26.8
+    # via
+    #   brain-researcher
+    #   fastapi-cli
+    #   gradio
+    #   openneuro-py
+    #   spacy
+    #   weasel
+types-requests==2.33.0.20260712
+    # via apache-airflow-task-sdk
+typing-extensions==4.16.0
+    # via
+    #   aiohttp
+    #   aiosignal
+    #   alembic
+    #   anthropic
+    #   anyio
+    #   apache-airflow-core
+    #   beautifulsoup4
+    #   cadwyn
+    #   cron-descriptor
+    #   dash
+    #   exceptiongroup
+    #   fastapi
+    #   fastmcp-slim
+    #   formulaic
+    #   google-genai
+    #   google-generativeai
+    #   gradio
+    #   gradio-client
+    #   grpcio
+    #   httpx2
+    #   huggingface-hub
+    #   jupyter-client
+    #   langchain-core
+    #   langchain-protocol
+    #   langsmith
+    #   mcp
+    #   mypy
+    #   neurostore-sdk
+    #   nibabel
+    #   openai
+    #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+    #   py-key-value-aio
+    #   pydantic
+    #   pydantic-core
+    #   pydantic-extra-types
+    #   pytest-asyncio
+    #   referencing
+    #   rich-toolkit
+    #   ridgeplot
+    #   sentence-transformers
+    #   starlette
+    #   svcs
+    #   torch
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via
+    #   cadwyn
+    #   fastapi
+    #   mcp
+    #   pydantic
+    #   pydantic-ai-slim
+    #   pydantic-graph
+    #   pydantic-settings
+tzdata==2026.3
+    # via
+    #   arrow
+    #   pandas
+    #   pendulum
+uc-micro-py==2.0.0
+    # via linkify-it-py
+uncalled-for==0.3.2
+    # via fastmcp-slim
+universal-pathlib==0.3.10
+    # via
+    #   apache-airflow-core
+    #   pybids
+uri-template==1.3.0
+    # via jsonschema
+uritemplate==4.2.0
+    # via google-api-python-client
+urllib3==2.7.0
+    # via
+    #   brain-researcher
+    #   neurostore-sdk
+    #   py2neo
+    #   requests
+    #   responses
+    #   types-requests
+uuid-utils==0.17.0
+    # via
+    #   langchain-core
+    #   langsmith
+uuid6==2025.0.1
+    # via apache-airflow-core
+uvicorn==0.51.0
+    # via
+    #   brain-researcher
+    #   fastapi
+    #   fastapi-cli
+    #   fastmcp-slim
+    #   gradio
+    #   marimo
+    #   mcp
+uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'
+    # via uvicorn
+virtualenv==21.6.1
+    # via pre-commit
+wasabi==1.1.3
+    # via
+    #   spacy
+    #   thinc
+    #   weasel
+watchdog==6.0.0
+    # via mkdocs
+watchfiles==1.2.0
+    # via
+    #   fastmcp-slim
+    #   uvicorn
+wcmatch==11.0
+    # via openneuro-py
+weasel==1.0.0
+    # via spacy
+weasyprint==69.0
+    # via brain-researcher
+webcolors==25.10.0
+    # via jsonschema
+webencodings==0.5.1
+    # via
+    #   bleach
+    #   cssselect2
+    #   tinycss2
+    #   tinyhtml5
+websocket-client==1.9.0
+    # via
+    #   brain-researcher
+    #   jupyter-server
+websockets==15.0.1
+    # via
+    #   fastmcp-slim
+    #   google-genai
+    #   gradio-client
+    #   langgraph-sdk
+    #   langsmith
+    #   marimo
+    #   uvicorn
+werkzeug==3.1.8
+    # via
+    #   brain-researcher
+    #   dash
+    #   flask
+    #   flask-cors
+wheel==0.47.0
+    # via brain-researcher
+wirerope==1.0.0
+    # via methodtools
+wrapt==2.2.2
+    # via
+    #   deprecated
+    #   formulaic
+    #   pymare
+    #   smart-open
+xarray==2026.7.0
+    # via mne-connectivity
+xgboost==3.2.0
+    # via brain-researcher
+xmltodict==1.0.4
+    # via pymatreader
+xxhash==3.8.1
+    # via
+    #   langgraph
+    #   langsmith
+    #   torch-geometric
+yarl==1.24.2
+    # via aiohttp
+zipp==4.1.0
+    # via importlib-metadata
+zopfli==0.4.3
+    # via fonttools
+zstandard==0.25.0
+    # via langsmith
