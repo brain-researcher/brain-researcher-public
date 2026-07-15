@@ -20,17 +20,36 @@ cd "$(git rev-parse --show-toplevel)"
 ```
 
 The public headline path is tested with Python 3.11. Create or activate an
-isolated environment before running it; `run_end_to_end.sh` installs its light
-dependencies into the active interpreter. The deeper commands require files you
-stage under your own HCP data-use terms and intentionally write rebuilt output
-outside the checkout.
+isolated environment before running it; `run_end_to_end.sh` installs the exact
+light dependencies in `requirements-py311.lock` into the active interpreter.
+The deeper commands require files you stage under your own HCP data-use terms
+and intentionally write rebuilt output outside the checkout.
+
+### Evaluator source closure
+
+Two harness identities must not be conflated:
+
+- the recorded governed results bind `run.py` to
+  `sha256:3fe2eea1c1e20ab7e7630ac87e7b6e2b7cd5a2786a5351e8b410930f062962a1`;
+- the public light path runs `scripts/run_prediction.py`, a distinct
+  manifest-pinned port with repo-relative/configurable paths, a CLI, and
+  explicit public-source provenance metadata.
+
+The recorded and public predictor source is byte-identical at
+`sha256:380cbb505a2e541ca10bfbfcf2711c952e5a6b1beeaf18246af71ce6891e017a`.
+The public evaluator port is not presented as the original governed harness,
+and this pack does not claim a formal semantic-equivalence proof. Its evidence
+is an executable output check: when the public inputs are staged,
+`run_end_to_end.sh` must recover the recorded headline values. See
+`artifacts/evaluator_source_closure.json` for the machine-readable binding.
 
 ---
 
 ## Run it yourself
 
-This pack ships the runnable scripts (`scripts/`), the row-indexed target and
-manifests, and the frozen result artifacts. What is *not* in git is the
+This pack ships the runnable public port (`scripts/run_prediction.py`), the
+byte-identical recorded predictor (`scripts/predict.py`), the row-indexed target
+and manifests, and the recorded result artifacts. What is *not* in git is the
 approximately 1.0 GB extracted functional-connectivity feature set and any
 HCP-controlled row — see the data-access boundary below.
 
@@ -47,7 +66,8 @@ HCP-controlled row — see the data-access boundary below.
 ### The headline result reproduces on public data alone (no HCP account)
 
 After cloning and activating an isolated environment, run this one command
-(public FC features → frozen evaluator → built-in result check):
+(locked environment → public FC features → public evaluator port → built-in
+result check):
 
 ```bash
 python3.11 -m venv ~/.venvs/br-a1-repro
@@ -58,7 +78,8 @@ bash reproducibility/bounded_autoresearch_a1/run_end_to_end.sh
 Or run the two underlying steps from the repository root:
 
 ```bash
-python -m pip install numpy pandas h5py scikit-learn
+python -m pip install --requirement \
+  reproducibility/bounded_autoresearch_a1/requirements-py311.lock
 python reproducibility/bounded_autoresearch_a1/scripts/fetch_fc_features.py
 python reproducibility/bounded_autoresearch_a1/scripts/run_prediction.py
 ```
@@ -67,8 +88,9 @@ python reproducibility/bounded_autoresearch_a1/scripts/run_prediction.py
 (`a1-fc-features-v1`; verified against `tar.gz sha256 ac3d0f36…`) into `inputs/`
 (git-ignored). `run_prediction.py` then reads that directory plus the shipped
 `artifacts/` target CSV and `manifests/` — no flags needed, no HCP account. This
-is the redesign→recovery half of the self-evolving loop, reproducible with zero
-controlled data. (To use your own copy of the features, pass
+is the redesign→recovery half of the self-evolving loop, rerunnable with zero
+controlled data under the public evaluator port. (To use your own copy of the
+features, pass
 `--terms-dir <dir>` / `$A1_TERMS_DIR`.)
 
 ### Deeper provenance (needs your own HCP-YA export)

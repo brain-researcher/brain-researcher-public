@@ -1,0 +1,28 @@
+{
+  "schema_version": "br.a1_evaluator_source_closure.v1",
+  "recorded_governed_run": {
+    "harness_filename": "run.py",
+    "harness_sha256": "3fe2eea1c1e20ab7e7630ac87e7b6e2b7cd5a2786a5351e8b410930f062962a1",
+    "source_shipped_in_public_pack": false,
+    "result_bindings": [
+      "artifacts/residualised_target_summary.json:harness_sha256",
+      "artifacts/family_block_null_summary.json:frozen_pipeline.run_py_sha256"
+    ]
+  },
+  "public_light_rerun": {
+    "evaluator_path": "scripts/run_prediction.py",
+    "evaluator_sha256": "dc0e2468f98ae56ed0d795a5f9385e024b50ea69d020b958027a28e4b212cc15",
+    "role": "ported_public_evaluator",
+    "relationship_to_recorded_harness": "The public file ports input paths to pack-relative or explicit CLI/env paths, adds a CLI, and emits explicit public-source provenance metadata. It is not byte-identical to the governed harness, and this pack does not claim a formal semantic-equivalence proof.",
+    "evidence_boundary": "A successful run_end_to_end.sh execution checks the recorded headline values under this public port; it does not make this file the original governed harness."
+  },
+  "predictor": {
+    "public_path": "scripts/predict.py",
+    "sha256": "380cbb505a2e541ca10bfbfcf2711c952e5a6b1beeaf18246af71ce6891e017a",
+    "byte_identical_to_recorded_governed_predictor": true
+  },
+  "environment": {
+    "python": "3.11",
+    "lock_path": "requirements-py311.lock"
+  }
+}

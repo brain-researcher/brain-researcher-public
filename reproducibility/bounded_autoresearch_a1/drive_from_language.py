@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Agentic path: the KG-as-prior step of the A1 loop, driven from language via MCP.
 
-The deterministic sibling ``run_end_to_end.sh`` runs the frozen evaluator and
-reproduces the headline number. The A1 loop's *language-driven* precondition is
+The deterministic sibling ``run_end_to_end.sh`` runs the manifest-pinned public
+evaluator port and checks the headline number. The A1 loop's *language-driven*
+precondition is
 the KG hypothesis step: from a natural-language query the deployed Brain
 Researcher MCP surfaces falsifiable connectivity->behavior leads and vetoes /
 downranks the ones the literature contradicts (``kg_hypothesis_workflow``). This
 driver runs exactly that step and prints what survived and what was rejected.
 
-The full loop (edit ``predict.py`` -> run the frozen evaluator -> score) is
-agent-driven and its search path is non-deterministic by design; see
+The full loop (edit ``predict.py`` -> run the fixed public evaluator port ->
+score) is agent-driven and its search path is non-deterministic by design; see
 ``AGENTIC_REPRODUCTION.md`` for the starter prompt a coding agent would follow.
 This entry verifies the one typed step that is a single MCP call.
 

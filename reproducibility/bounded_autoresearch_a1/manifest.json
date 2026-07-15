@@ -1,22 +1,27 @@
 {
   "schema_version": "br.reproducibility_pack_manifest.v1",
   "pack_id": "bounded_autoresearch_a1",
-  "artifact_count": 22,
+  "artifact_count": 24,
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:d6930678df3eaadd2879185953ce4b1a4dd63ac40398bf2beee147b980a1917c",
-      "size_bytes": 6708
+      "sha256": "sha256:9ac547cdf281733b36bbab65fb5bc72d5da624b1fc2a14f83235c1552477b9a8",
+      "size_bytes": 8045
     },
     {
       "path": "REPRODUCTION.md",
-      "sha256": "sha256:7e511bb95ad9893a291e1b10a33bcd4a4d03fed50ed40609829edbada1e7973c",
-      "size_bytes": 14074
+      "sha256": "sha256:46502146c799c06543206986eb1780ccd80fa9feee8adf7953285531a4372d2a",
+      "size_bytes": 15198
     },
     {
       "path": "provenance_card.md",
-      "sha256": "sha256:2226a28f68493c8e4c47f0b4f51030a66a6e79ac0942f7f2a96917e144ae1822",
-      "size_bytes": 2211
+      "sha256": "sha256:e9ed9b351c39e4611c9486fdda6e635adb977e7e0cd109b8527e6626ee0c7214",
+      "size_bytes": 2788
+    },
+    {
+      "path": "requirements-py311.lock",
+      "sha256": "sha256:f6df5de263197f3df4788886c5428a64e5bad28acfa44b6fe928095a0086edba",
+      "size_bytes": 556
     },
     {
       "path": "artifacts/liu_component_behavior_residualised_cognition.csv",
@@ -32,6 +37,11 @@
       "path": "artifacts/liu_source_provenance_summary.json",
       "sha256": "sha256:0da03cd092a4ed9e04f18527f7766fa1633f0e9013b40a9234e413437dae4da2",
       "size_bytes": 8610
+    },
+    {
+      "path": "artifacts/evaluator_source_closure.json",
+      "sha256": "sha256:9a563a7b33468542fc95187c7ba55fb08c0ca419ca2ca42ad04e07d5d3d45d69",
+      "size_bytes": 1433
     },
     {
       "path": "artifacts/family_block_null_summary.json",
@@ -75,8 +85,8 @@
     },
     {
       "path": "scripts/run_prediction.py",
-      "sha256": "sha256:c424d54185bc6886eeafbfbdb3343d4ebd3d640b98e2172daff67e4c6611b930",
-      "size_bytes": 17831
+      "sha256": "sha256:dc0e2468f98ae56ed0d795a5f9385e024b50ea69d020b958027a28e4b212cc15",
+      "size_bytes": 18640
     },
     {
       "path": "scripts/run_residualised_cheap_check.py",
@@ -90,18 +100,18 @@
     },
     {
       "path": "run_end_to_end.sh",
-      "sha256": "sha256:7a10c319248b6f021c08c553e118c98aa540abf79be384ccf52870e23d2352f6",
-      "size_bytes": 2241
+      "sha256": "sha256:7d9861c7dfb9ec47db5e27b0216f4197eda72c2b4f80faf8193b6a2e170fc939",
+      "size_bytes": 2518
     },
     {
       "path": "AGENTIC_REPRODUCTION.md",
-      "sha256": "sha256:d11889a6356efdcf89993f76408117ce1cdf6a262cd5f001a44cb7fae65968fa",
-      "size_bytes": 10631
+      "sha256": "sha256:9df976989195fb3e82aa939baf4873d5730e12a49589f6da20c526da222ef2c8",
+      "size_bytes": 10944
     },
     {
       "path": "drive_from_language.py",
-      "sha256": "sha256:a4663e007b8f1a6a3321fb70c42ba776f6cca947e8c1d74446585b62ed7cc95b",
-      "size_bytes": 7641
+      "sha256": "sha256:e4e09b99cf531db062afe9c269d96f3f50c5bb4154767f81a9e6bd715842dc9a",
+      "size_bytes": 7669
     },
     {
       "path": "artifacts/agentic_kg_hypothesis_demo.json",
@@ -110,8 +120,8 @@
     },
     {
       "path": "artifacts/agentic_loop_turn_demo.json",
-      "sha256": "sha256:8228852f12daa10b7806b8fed879e5de4b48a17de48490046118377b201cc677",
-      "size_bytes": 2798
+      "sha256": "sha256:07eef240c3f9cd9c2fb5e9a6c61bb7a43a21333eb466fe9f27bf8f4d1a00b17f",
+      "size_bytes": 3121
     }
   ]
 }

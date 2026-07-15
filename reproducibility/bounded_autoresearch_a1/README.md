@@ -1,8 +1,11 @@
 # Pack: bounded_autoresearch_a1 (recorded result)
 
 This is a manifest-backed pack for the A1 bounded-autoresearch result. It
-records an HCP-YA component-to-behavior residualised-cognition target, a frozen
-functional-connectivity predictor, and a family-block exchangeability null.
+records an HCP-YA component-to-behavior residualised-cognition target, the
+governed harness and predictor identities used for the recorded result, and a
+family-block exchangeability null. The public headline command uses a
+manifest-pinned **public evaluator port**, not the byte-identical historical
+governed harness.
 
 The public checkout can reproduce the headline predictor result. It cannot, by
 itself, rebuild the subject-keyed target or rerun the full family-block null.
@@ -12,7 +15,7 @@ itself, rebuild the subject-keyed target or rerun the full family-block null.
 | Goal | Command or starting point | Boundary |
 |---|---|---|
 | Check the committed bytes | `python reproducibility/verify.py reproducibility/bounded_autoresearch_a1` | Standard-library checksum verification; runs no analysis |
-| Reproduce the public headline | `bash reproducibility/bounded_autoresearch_a1/run_end_to_end.sh` | Downloads public FC features and runs the frozen predictor; no HCP account or MCP needed |
+| Reproduce the public headline | `bash reproducibility/bounded_autoresearch_a1/run_end_to_end.sh` | Installs the Python 3.11 lock, downloads public FC features, and runs the public evaluator port with the recorded predictor; no HCP account or MCP needed |
 | Understand the governed rerun | [`REPRODUCTION.md`](REPRODUCTION.md) | Separates the public path from target rebuilding and family-block steps that need user-staged HCP inputs |
 | Inspect the language-driven agent path | [`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md) | Optional MCP episode; not required for checksum verification or the public headline |
 
@@ -31,7 +34,7 @@ No Brain Researcher installation is required:
 python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
 ```
 
-Exit code 0 means all 22 manifest entries match their recorded checksums. This
+Exit code 0 means every manifest entry matches its recorded checksum. This
 proves the integrity of the committed snapshot; it does not rerun the predictor
 or the scientific analysis.
 
@@ -54,11 +57,12 @@ bash reproducibility/bounded_autoresearch_a1/run_end_to_end.sh
 
 The shell script:
 
-1. installs `numpy`, `pandas`, `h5py`, and `scikit-learn` into the active
-   environment;
+1. requires Python 3.11 and installs the exact light-path packages recorded in
+   `requirements-py311.lock` into the active environment;
 2. downloads and checksum-verifies the public, de-identified FC feature archive
    unless all 76 term files are already present;
-3. runs the frozen predictor against the shipped row-indexed target; and
+3. runs the manifest-pinned public evaluator port with the recorded predictor
+   against the shipped row-indexed target; and
 4. fails unless it recovers `ICA_Cognition` fold-mean r near `0.183158` and
    aggregate mean r near `0.150847`.
 
@@ -68,7 +72,8 @@ The default fresh result is `/tmp/a1_e2e_result.json`. Set
 To run the download and prediction separately:
 
 ```bash
-python -m pip install numpy pandas h5py scikit-learn
+python -m pip install --requirement \
+  reproducibility/bounded_autoresearch_a1/requirements-py311.lock
 python reproducibility/bounded_autoresearch_a1/scripts/fetch_fc_features.py
 python reproducibility/bounded_autoresearch_a1/scripts/run_prediction.py
 ```
@@ -76,6 +81,22 @@ python reproducibility/bounded_autoresearch_a1/scripts/run_prediction.py
 This public path reproduces the redesign-to-recovery predictor headline. It
 uses the shipped de-identified target and therefore does **not** independently
 rebuild that target from subject-keyed HCP behavior.
+
+## Evaluator source boundary
+
+The recorded governed results bind the historical `run.py` harness to
+`sha256:3fe2eea1…` and the predictor to `sha256:380cbb50…`. The shipped
+`scripts/predict.py` is byte-identical to that recorded predictor. The shipped
+`scripts/run_prediction.py` has a different checksum because it is a public
+port with repo-relative/configurable paths, a CLI, and explicit public-source
+provenance metadata.
+
+The pack does **not** call the public port the original frozen harness and does
+not claim a formal semantic-equivalence proof. A successful public headline run
+is direct evidence that the port recovers the recorded output values on the
+public inputs. It is not evidence that the two harness files are byte-identical.
+The machine-readable binding is
+`artifacts/evaluator_source_closure.json`.
 
 ## Data-access boundary
 
@@ -113,10 +134,12 @@ commands, comparisons, and tolerances are in
 
 - `manifest.json`: checksum boundary for every manifest-listed artifact
 - `provenance_card.md`: recorded execution and provenance envelope
+- `requirements-py311.lock`: exact tested light-path Python environment
 - `artifacts/`: public-safe target, summaries, rerun checks, and agentic examples
 - `manifests/`: frozen fold and component-target manifests used by the predictor
 - `scripts/fetch_fc_features.py`: public release download, checksum, and extract
-- `scripts/run_prediction.py` and `scripts/predict.py`: public frozen predictor
+- `scripts/run_prediction.py`: manifest-pinned public evaluator port
+- `scripts/predict.py`: predictor byte-identical to the recorded governed copy
 - `scripts/build_residualised_target.py` and
   `scripts/run_residualised_cheap_check.py`: deeper steps requiring governed
   inputs described above
