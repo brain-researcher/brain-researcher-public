@@ -5,31 +5,26 @@ This document provides setup instructions and usage guidelines for the Brain Res
 ## Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
-- npm or yarn package manager
+- Node.js 20
+- npm 10
 - Brain Researcher UI project setup
 
 ### Installation
 Dependencies are already included in package.json. Install them with:
 
 ```bash
-npm install
-# or
-yarn install
+cd "$(git rev-parse --show-toplevel)"
+npm --prefix apps/web-ui ci
 ```
 
 ### Running Storybook
 
 ```bash
 # Development mode
-npm run storybook
-# or
-yarn storybook
+npm --prefix apps/web-ui run storybook
 
 # Build for production
-npm run build-storybook
-# or  
-yarn build-storybook
+npm --prefix apps/web-ui run build-storybook
 ```
 
 The development server will start on `http://localhost:6006`
@@ -272,7 +267,7 @@ export const AccessibilityFeatures: Story = {
 ### Build Process
 ```bash
 # Generate static Storybook site
-npm run build-storybook
+npm --prefix apps/web-ui run build-storybook
 
 # Output directory: storybook-static/
 # Deploy to any static hosting service
@@ -304,10 +299,9 @@ npm run build-storybook
 
 **Storybook won't start:**
 ```bash
-# Clear cache and reinstall
-rm -rf node_modules .next
-npm install
-npm run storybook
+# Reinstall exactly from the npm lock, then retry
+npm --prefix apps/web-ui ci
+npm --prefix apps/web-ui run storybook
 ```
 
 **CSS not loading:**

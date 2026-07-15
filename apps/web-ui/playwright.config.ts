@@ -120,7 +120,8 @@ export default defineConfig({
   webServer: shouldStartWebServer
     ? {
         // Avoid ENOSPC when inotify watcher limits are low (common in CI/containers).
-        command: 'WATCHPACK_POLLING=true npm run dev:3002',
+        command:
+          'NEXTAUTH_SECRET=br-playwright-local-secret JWT_SECRET_KEY=br-playwright-local-secret NEXTAUTH_URL=http://localhost:3002 WATCHPACK_POLLING=true npm run dev:3002',
         url: localBaseUrl,
         // Keep default stable for PRD gate runs; opt-in reuse via PW_REUSE_SERVER=1.
         reuseExistingServer,

@@ -42,15 +42,19 @@ vi.mock('@/hooks/use-copilot', () => ({ useCopilot: () => ({ toggleCopilot: vi.f
 vi.mock('@/hooks/use-aria-live', () => ({ useAriaLive: () => ({ announceLoading: vi.fn(), announceComplete: vi.fn(), announceError: vi.fn() }) }))
 vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: vi.fn() }) }))
 vi.mock('@/lib/websocket-manager', () => ({ useWebSocket: () => ({ isConnected: false, disconnect: vi.fn() }) }))
-vi.mock('@/lib/service-endpoints', () => ({
-  serviceEndpoints: {
-    useProxy: true,
-    orchestrator: (path: string) => path,
-    orchestratorApi: (path: string) => path,
-    agent: (path: string) => path,
-    kg: (path: string) => path,
-  },
-}))
+vi.mock('@/lib/service-endpoints', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/service-endpoints')>()
+  return {
+    ...actual,
+    serviceEndpoints: {
+      useProxy: true,
+      orchestrator: (path: string) => path,
+      orchestratorApi: (path: string) => path,
+      agent: (path: string) => path,
+      kg: (path: string) => path,
+    },
+  }
+})
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),

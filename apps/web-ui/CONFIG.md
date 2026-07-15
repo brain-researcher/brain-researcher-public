@@ -13,16 +13,27 @@ services in development and production.
 
 ## Quick Start
 
-1. Copy the example configuration:
-   ```bash
-   cp .env.example .env.local
-   ```
-2. Edit `.env.local` only if you need non-default ports, hosts, or external
-   services.
-3. Restart the development server:
-   ```bash
-   npm run dev
-   ```
+UI-only install, dev, unit-test, and build commands need no env file. From the
+repository root:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+npm --prefix apps/web-ui ci
+npm --prefix apps/web-ui run dev
+```
+
+Only create a Web override file when changing the default hosts, ports, or
+routing mode:
+
+```bash
+cp apps/web-ui/.env.example apps/web-ui/.env.local
+```
+
+The repository-root `.env.example` is the authoritative full-stack template;
+copy it to the root `.env` when running shared services or protected/auth flows.
+The Web `.env.example` contains optional standalone routing overrides only.
+Real-pipeline E2E uses `apps/web-ui/.env.test.template` in addition to the shared
+root secrets and staged inputs documented in `README-real-pipeline.md`.
 
 ## Default Model
 
@@ -51,10 +62,10 @@ Use the proxy model for local development and most deployments.
 NEXT_PUBLIC_USE_API_PROXY=true
 AGENT_PORT=8000
 ORCHESTRATOR_PORT=3001
-KG_PORT=5000
+BR_KG_PORT=5000
 AGENT_HOST=localhost
 ORCHESTRATOR_HOST=localhost
-KG_HOST=localhost
+BR_KG_HOST=localhost
 ```
 
 **When to use:** almost always. This is the default browser-safe setup.
@@ -81,7 +92,7 @@ should not proxy browser traffic.
 |--------------|--------------|----------------------|-------------|
 | Agent        | 8000         | `AGENT_PORT`         | Chat, files, datasets, threads, legacy runs |
 | Orchestrator | 3001         | `ORCHESTRATOR_PORT`  | `/run`, jobs, analyses, credits, notifications |
-| BR-KG       | 5000         | `KG_PORT`            | Knowledge graph API |
+| BR-KG       | 5000         | `BR_KG_PORT`         | Knowledge graph API |
 | NICLIP       | 8001         | `NICLIP_PORT`        | Image embedding service |
 | Web UI       | 3000         | `WEB_UI_PORT`        | Frontend dev server |
 
@@ -108,7 +119,8 @@ unless you explicitly opt out.
 No configuration is required beyond running the services:
 
 ```bash
-npm run dev
+cd "$(git rev-parse --show-toplevel)"
+npm --prefix apps/web-ui run dev
 ```
 
 The browser uses same-origin routes. The Web UI forwards to local Agent,
@@ -122,7 +134,7 @@ If one of the default service ports is already in use:
 # .env.local
 AGENT_PORT=8004
 ORCHESTRATOR_PORT=3004
-KG_PORT=5004
+BR_KG_PORT=5004
 ```
 
 You usually do not need to set matching `NEXT_PUBLIC_*` variables if proxy mode
@@ -134,10 +146,10 @@ stays enabled.
 # .env.local
 AGENT_HOST=agent
 ORCHESTRATOR_HOST=orchestrator
-KG_HOST=kg
+BR_KG_HOST=br-kg
 AGENT_PORT=8000
 ORCHESTRATOR_PORT=3001
-KG_PORT=5000
+BR_KG_PORT=5000
 ```
 
 The browser still talks to the Web UI. The Web UI talks to the service
@@ -205,19 +217,18 @@ helpers under `src/lib/server/*`.
 | `BR_KG_URL` | none | Explicit internal BR-KG base URL |
 | `AGENT_HOST` / `AGENT_PORT` | `localhost` / `8000` | Agent service location |
 | `ORCHESTRATOR_HOST` / `ORCHESTRATOR_PORT` | `localhost` / `3001` | Orchestrator service location |
-| `KG_HOST` / `KG_PORT` | `localhost` / `5000` | BR-KG service location |
+| `BR_KG_HOST` / `BR_KG_PORT` | `localhost` / `5000` | BR-KG service location |
 
 ### Compatibility Variables
 
 These still work, but they are legacy compatibility inputs rather than the
 preferred configuration surface:
 
-- `ORCHESTRATOR_URL`
-- `ORCHESTRATOR_API_URL`
-- `BR_KG_URL`
-- `NEXT_PUBLIC_BR_KG_API`
-- `BR_KG_HOST`
-- `BR_KG_PORT`
+- `AGENT_BASE_URL` and `AGENT_URL`
+- `ORCHESTRATOR_BASE_URL`, `ORCHESTRATOR_API`, `ORCHESTRATOR_URL`, and
+  `ORCHESTRATOR_API_URL`
+- `KG_BASE_URL`, `BR_KG_BASE_URL`, `KG_URL`, `KG_API`, and `BR_KG_API`
+- `KG_HOST` and `KG_PORT`
 
 `NEXT_PUBLIC_AGENT_URL` is no longer part of the supported browser/runtime
 contract. Use `NEXT_PUBLIC_AGENT_API` instead when you intentionally disable
@@ -254,7 +265,7 @@ proxy mode.
 
 ```bash
 WEB_UI_PORT=3002
-npm run dev -- -p 3002
+npm --prefix apps/web-ui run dev -- -p 3002
 ```
 
 ## Validation

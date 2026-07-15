@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-const BASE = process.env.E2E_BASE_URL || process.env.BASE_URL || 'http://localhost:3000'
+const BASE = process.env.E2E_BASE_URL || process.env.BASE_URL || 'http://localhost:3002'
 const ORCH =
   process.env.E2E_ORCH_URL ||
   process.env.BR_ORCHESTRATOR_URL ||

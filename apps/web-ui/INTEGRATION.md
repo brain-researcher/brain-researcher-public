@@ -67,7 +67,9 @@ Next.js Web UI (port 3000)
 
 ## Environment Configuration
 
-Set these in `apps/web-ui/.env.local` (or your secrets manager):
+The default localhost topology needs no Web env file. If you need different
+downstream addresses, copy `apps/web-ui/.env.example` to
+`apps/web-ui/.env.local` and override only the relevant values:
 
 ```env
 NEXT_PUBLIC_USE_API_PROXY=true
@@ -93,8 +95,10 @@ Notes:
   Orchestrator is not reachable through `ORCHESTRATOR_HOST` / `ORCHESTRATOR_PORT`.
 - The canonical dev topology is split services; do not derive Orchestrator from
   Agent or legacy compatibility mounts.
-- Keep NextAuth secrets alongside the above; API routes forward auth headers to
-  downstream services.
+- The repository-root `.env.example` is the authoritative full-stack template.
+  Protected/authenticated flows need `JWT_SECRET_KEY` or `NEXTAUTH_SECRET`
+  shared by the Web UI and backing services; do not create divergent secrets in
+  multiple env files.
 
 ## Running the Full Stack (dev)
 
@@ -107,9 +111,9 @@ br serve kg --host 0.0.0.0 --port 5000
 
 2) Start Web UI:
 ```bash
-cd apps/web-ui
-npm install        # first time
-npm run dev        # or: pnpm dev / br serve web
+cd "$(git rev-parse --show-toplevel)"
+npm --prefix apps/web-ui ci
+npm --prefix apps/web-ui run dev
 ```
 
 3) Quick health smoke:

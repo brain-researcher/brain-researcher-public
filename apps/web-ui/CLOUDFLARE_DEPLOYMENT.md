@@ -129,7 +129,7 @@ The `.cloudflare/deployment-config.json` file has been created with:
 ## Troubleshooting
 
 ### If build fails:
-1. Check Node version compatibility (use Node 18)
+1. Check Node version compatibility (use Node 20)
 2. Ensure all dependencies are in package.json
 3. Check for hardcoded localhost URLs
 

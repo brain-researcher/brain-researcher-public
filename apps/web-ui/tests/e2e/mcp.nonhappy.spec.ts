@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import { test, expect } from '@playwright/test'
 
-const BASE = process.env.E2E_BASE_URL || process.env.BASE_URL || 'http://localhost:3000'
+const BASE = process.env.E2E_BASE_URL || process.env.BASE_URL || 'http://localhost:3002'
 
 test.describe.configure({ mode: 'serial', timeout: 90_000 })
 

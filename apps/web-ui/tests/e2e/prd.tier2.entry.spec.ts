@@ -645,7 +645,7 @@ test('Tier2: Share Modal generates a link and share page is read-only (mocked)',
   const browser = context.browser()
   if (!browser) throw new Error('Playwright context is missing a browser instance')
 
-  const baseURL = process.env.E2E_BASE_URL || process.env.BASE_URL || 'http://localhost:3000'
+  const baseURL = process.env.E2E_BASE_URL || process.env.BASE_URL || 'http://localhost:3002'
   const unauthContext = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } })
   const unauthPage = await unauthContext.newPage()
   await stubCommon(unauthPage)

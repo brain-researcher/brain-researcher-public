@@ -30,8 +30,8 @@ describe('hypothesis workflow helpers', () => {
   })
 
   it('exposes stable pattern catalog for methodology templates', () => {
-    expect(HYPOTHESIS_DIRECTION_PATTERNS).toHaveLength(11)
     const ids = new Set(HYPOTHESIS_DIRECTION_PATTERNS.map((item) => item.id))
+    expect(ids.size).toBe(HYPOTHESIS_DIRECTION_PATTERNS.length)
     expect(ids).toContain('bridge_disconnected_claims')
     expect(ids).toContain('collapse_methodological_bottleneck')
     expect(ids).toContain('resolve_contradiction_loop')
@@ -43,6 +43,10 @@ describe('hypothesis workflow helpers', () => {
     expect(ids).toContain('parcellation_dependence')
     expect(ids).toContain('motion_confound_underreporting')
     expect(ids).toContain('minimum_discriminating_test')
+    expect(ids).toContain('structural_leverage_bridge')
+    expect(ids).toContain('contradiction_motif_disambiguation')
+    expect(ids).toContain('controlled_ood_hypothesis')
+    expect(ids).toContain('topology_shift_guardrail')
   })
 
   it('marks candidates draft when no external evidence is available', () => {
