@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -112,7 +113,67 @@ def test_downloader_main_returns_nonzero_on_any_failure(
         "ensure_file",
         lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("offline")),
     )
+    (tmp_path / module.MANIFEST_FILENAME).write_text("stale")
+    (tmp_path / f"{module.MANIFEST_FILENAME}.part").write_text("partial")
     assert module.main(["--target-dir", str(tmp_path)]) == 1
+    assert not (tmp_path / module.MANIFEST_FILENAME).exists()
+    assert not (tmp_path / f"{module.MANIFEST_FILENAME}.part").exists()
+
+
+def test_downloader_manifest_pins_release_license_and_file_contract() -> None:
+    module = _load_script(
+        "download_neurosynth_manifest_test", "scripts/data/download_neurosynth_data.py"
+    )
+
+    manifest = module.source_manifest()
+
+    assert manifest["release_version"] == "0.7"
+    assert manifest["source_commit"] == module.SOURCE_COMMIT
+    assert module.SOURCE_COMMIT in manifest["base_url"]
+    assert manifest["license"] == {
+        "spdx": "ODbL-1.0",
+        "url": f"{manifest['base_url']}LICENSE.txt",
+    }
+    assert manifest["output_directory"] == "."
+    assert manifest["files"] == [
+        {
+            "filename": spec.filename,
+            "size_bytes": spec.size_bytes,
+            "sha256": spec.sha256,
+            "url": spec.url,
+        }
+        for spec in module.SOURCE_FILES
+    ]
+
+
+def test_downloader_check_only_uses_no_download_and_rewrites_manifest(
+    tmp_path: Path, monkeypatch
+) -> None:
+    module = _load_script(
+        "download_neurosynth_check_test", "scripts/data/download_neurosynth_data.py"
+    )
+    content = b"verified source"
+    spec = _spec(module, content)
+    monkeypatch.setattr(module, "SOURCE_FILES", (spec,))
+    monkeypatch.setattr(
+        module,
+        "ensure_file",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("--check-only must not download")
+        ),
+    )
+    (tmp_path / spec.filename).write_bytes(content)
+
+    assert module.main(["--target-dir", str(tmp_path), "--check-only"]) == 0
+    manifest = json.loads((tmp_path / module.MANIFEST_FILENAME).read_text())
+    assert manifest["files"] == [
+        {
+            "filename": spec.filename,
+            "size_bytes": spec.size_bytes,
+            "sha256": spec.sha256,
+            "url": spec.url,
+        }
+    ]
 
 
 def _write_converter_inputs(module, root: Path) -> None:

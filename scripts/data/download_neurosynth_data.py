@@ -5,19 +5,24 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
 import requests
 
 SOURCE_COMMIT = "209c33cd009d0b069398a802198b41b9c488b9b7"
+DATASET_VERSION = "0.7"
 BASE_URL = (
     "https://raw.githubusercontent.com/neurosynth/neurosynth-data/" f"{SOURCE_COMMIT}/"
 )
+LICENSE_SPDX = "ODbL-1.0"
+LICENSE_URL = BASE_URL + "LICENSE.txt"
+MANIFEST_FILENAME = "source_manifest.json"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TARGET_DIR = REPO_ROOT / "data" / "neurosynth_nimare" / "neurosynth_v7"
 
@@ -55,6 +60,46 @@ SOURCE_FILES = (
         "71c1858c5eb1bcc79854198bbca234569731efdc382c6205a9e46495379614af",
     ),
 )
+
+
+def source_manifest() -> dict[str, Any]:
+    """Return deterministic provenance for the only supported source bundle."""
+    return {
+        "schema_version": "brain-researcher.neurosynth-source-manifest.v1",
+        "dataset": "Neurosynth",
+        "release_version": DATASET_VERSION,
+        "source_commit": SOURCE_COMMIT,
+        "base_url": BASE_URL,
+        "license": {
+            "spdx": LICENSE_SPDX,
+            "url": LICENSE_URL,
+        },
+        "output_directory": ".",
+        "files": [
+            {
+                **asdict(spec),
+                "url": spec.url,
+            }
+            for spec in SOURCE_FILES
+        ],
+    }
+
+
+def write_manifest(target_dir: Path) -> Path:
+    """Publish the source manifest atomically after every asset verifies."""
+    manifest_path = target_dir / MANIFEST_FILENAME
+    partial_path = manifest_path.with_name(manifest_path.name + ".part")
+    partial_path.unlink(missing_ok=True)
+    try:
+        partial_path.write_text(
+            json.dumps(source_manifest(), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(partial_path, manifest_path)
+    except Exception:
+        partial_path.unlink(missing_ok=True)
+        raise
+    return manifest_path
 
 
 def _sha256(path: Path) -> str:
@@ -136,21 +181,46 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=TARGET_DIR,
         help="Destination for the four pinned Neurosynth files.",
     )
+    parser.add_argument(
+        "--check-only",
+        action="store_true",
+        help="Verify the pinned files without making network requests.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     target_dir = args.target_dir.expanduser().resolve()
+    manifest_path = target_dir / MANIFEST_FILENAME
+    partial_manifest_path = manifest_path.with_name(manifest_path.name + ".part")
     try:
         target_dir.mkdir(parents=True, exist_ok=True)
+        # A manifest is valid only when every current file passes both checks.
+        # Remove prior provenance before verification so a failed run cannot
+        # leave a stale success record behind.
+        manifest_path.unlink(missing_ok=True)
+        partial_manifest_path.unlink(missing_ok=True)
         for spec in SOURCE_FILES:
-            outcome = ensure_file(spec, target_dir)
+            if args.check_only:
+                valid, reason = verify_file(target_dir / spec.filename, spec)
+                if not valid:
+                    raise ValueError(f"{spec.filename} failed verification: {reason}")
+                outcome = "verified existing file"
+            else:
+                outcome = ensure_file(spec, target_dir)
             print(f"{spec.filename}: {outcome}")
+        write_manifest(target_dir)
     except Exception as exc:
+        manifest_path.unlink(missing_ok=True)
+        partial_manifest_path.unlink(missing_ok=True)
         print(f"Neurosynth download failed: {exc}", file=sys.stderr)
         return 1
-    print(f"Verified Neurosynth v0.7 source commit {SOURCE_COMMIT} in {target_dir}")
+    print(
+        f"Verified Neurosynth v{DATASET_VERSION} source commit {SOURCE_COMMIT} "
+        f"under {LICENSE_SPDX} in {target_dir}"
+    )
+    print(f"Source manifest: {manifest_path}")
     return 0
 
 

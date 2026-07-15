@@ -93,7 +93,10 @@ def _load_dataset():
     if not os.path.exists(dataset_path):
         error_msg = (
             f"Neurosynth dataset not found at {dataset_path}\n"
-            "Please run: python cli/neurosynth_fetch.py\n"
+            "Please run the canonical source step from the repository root: "
+            "python scripts/data/download_neurosynth_data.py\n"
+            "Then follow reproducibility/auditable_claim_record/README.md "
+            "to build the NiMARE dataset pickle.\n"
             "Or set NEUROSYNTH_DATASET_PATH environment variable"
         )
         raise FileNotFoundError(error_msg)

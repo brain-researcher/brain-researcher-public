@@ -170,7 +170,7 @@ def _events_for_item(tribe_model: Any, item: dict[str, Any]) -> Any:
     if key == "text_path":
         return tribe_model.get_events_dataframe(text_path=value)
     raise ValueError(
-        "inline text extraction is intentionally not implemented here; stage text to text_path first"
+        "inline text input is unsupported; stage the content to text_path first"
     )
 
 
@@ -462,6 +462,11 @@ def extract_features(args: argparse.Namespace) -> dict[str, Any]:
                 }
             )
 
+    if not item_rows:
+        raise RuntimeError(
+            f"feature extraction failed for all {len(selected_items)} selected items"
+        )
+
     feature_manifest_rows: list[dict[str, Any]] = []
     for feature_id, vectors in sorted(feature_vectors_by_id.items()):
         if not vectors:
@@ -479,6 +484,9 @@ def extract_features(args: argparse.Namespace) -> dict[str, Any]:
                 "item_row_indices": feature_row_indices_by_id[feature_id],
             }
         )
+
+    if not feature_manifest_rows:
+        raise RuntimeError("feature extraction produced no verified feature matrices")
 
     _write_jsonl(item_rows_path, item_rows)
     _write_jsonl(rows_path, feature_rows)

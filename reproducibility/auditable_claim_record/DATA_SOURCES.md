@@ -26,11 +26,12 @@ The working-memory claim is computed over the Neurosynth v7 coordinate corpus.
 - Raw data repository: https://github.com/neurosynth/neurosynth-data
 - Pinned source commit:
   `209c33cd009d0b069398a802198b41b9c488b9b7`
-- One-call fetch via NiMARE: `nimare.extract.fetch_neurosynth`
-  (https://nimare.readthedocs.io/)
+- Upstream license: [ODC Open Database License 1.0
+  (ODbL-1.0)](https://raw.githubusercontent.com/neurosynth/neurosynth-data/209c33cd009d0b069398a802198b41b9c488b9b7/LICENSE.txt)
 - Helper scripts in this repository:
-  - `scripts/data/download_neurosynth_data.py` — downloads the Neurosynth v7
-    release into `data/neurosynth_nimare/neurosynth_v7/`
+  - `scripts/data/download_neurosynth_data.py` — the only authoritative
+    downloader; downloads the Neurosynth v7 release into
+    `data/neurosynth_nimare/neurosynth_v7/`
   - `scripts/data/convert_neurosynth.py` — converts it into the term-annotated
     NiMARE dataset `data/neurosynth_nimare/neurosynth_dataset_v7.pkl`
 
@@ -43,9 +44,19 @@ The working-memory claim is computed over the Neurosynth v7 coordinate corpus.
   ```
   The downloader verifies the expected byte size and SHA-256 of all four files,
   including files already present locally. A download or checksum failure exits
-  nonzero and never publishes a partial file. The converter also exits nonzero
-  on any failure and removes the canonical output before a rerun, so an older
-  pickle cannot be mistaken for a newly converted result.
+  nonzero, removes stale provenance, and never publishes a partial file. Only
+  after all files verify does it atomically write
+  `data/neurosynth_nimare/neurosynth_v7/source_manifest.json`, which records the
+  pinned URLs, commit, release, license, sizes, and hashes. Recheck an existing
+  bundle without network access with:
+
+  ```bash
+  python scripts/data/download_neurosynth_data.py --check-only
+  ```
+
+  The converter also exits nonzero on any failure and removes the canonical
+  output before a rerun, so an older pickle cannot be mistaken for a newly
+  converted result.
 
   | source file | bytes | SHA-256 |
   | --- | ---: | --- |
