@@ -5,13 +5,13 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:3be6c140f972d3e538cc7a6ecf03b24f1c081f43d525511b37b9d5bacd1d71bd",
-      "size_bytes": 7908
+      "sha256": "sha256:d6930678df3eaadd2879185953ce4b1a4dd63ac40398bf2beee147b980a1917c",
+      "size_bytes": 6708
     },
     {
       "path": "REPRODUCTION.md",
-      "sha256": "sha256:f72a9f3d3115bd76a558506587a2604fc095c20c9545d44e403d36cecbc25cb0",
-      "size_bytes": 13946
+      "sha256": "sha256:7e511bb95ad9893a291e1b10a33bcd4a4d03fed50ed40609829edbada1e7973c",
+      "size_bytes": 14074
     },
     {
       "path": "provenance_card.md",
@@ -80,8 +80,8 @@
     },
     {
       "path": "scripts/run_residualised_cheap_check.py",
-      "sha256": "sha256:184a2bf9fe318c9f39f49cd5fa5d286c59bc67488ac2645ae81010f36a34aacd",
-      "size_bytes": 7746
+      "sha256": "sha256:7aeeebfd064aa49470aa310c854992e544c61e884597d530ab1a9ae57a239f25",
+      "size_bytes": 8113
     },
     {
       "path": "scripts/fetch_fc_features.py",

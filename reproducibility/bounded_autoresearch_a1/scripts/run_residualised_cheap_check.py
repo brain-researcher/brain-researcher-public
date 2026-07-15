@@ -123,6 +123,17 @@ def main() -> int:
         required=not os.environ.get("A1_HCP_CSV"),
         help="Staged HCP-YA subjects CSV ($A1_HCP_CSV).",
     )
+    ap.add_argument(
+        "--output-json",
+        default=os.environ.get(
+            "A1_CHEAP_CHECK_OUTPUT",
+            str(HERE / "residualised_cheap_check.json"),
+        ),
+        help=(
+            "Output JSON path (default: $A1_CHEAP_CHECK_OUTPUT or the pack's "
+            "scripts directory)."
+        ),
+    )
     args = ap.parse_args()
     global RESID_CSV, HCP_CSV
     RESID_CSV = Path(args.resid_csv)
@@ -201,7 +212,8 @@ def main() -> int:
         ),
         "wall_time_sec": round(time.time() - t0, 3),
     }
-    out_path = HERE / "residualised_cheap_check.json"
+    out_path = Path(args.output_json)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(out, indent=2))
     print(
         json.dumps(

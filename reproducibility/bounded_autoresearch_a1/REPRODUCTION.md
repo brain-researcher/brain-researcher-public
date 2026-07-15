@@ -95,11 +95,13 @@ python reproducibility/bounded_autoresearch_a1/scripts/build_residualised_target
 # step 2 — §5.1 within-fold cheap check (needs the subject-keyed target + HCP covariates)
 python reproducibility/bounded_autoresearch_a1/scripts/run_residualised_cheap_check.py \
   --resid-csv "$A1_REBUILD_DIR/liu_component_behavior_residualised_cognition.csv" \
-  --hcp-csv "$A1_HCP_DIR/HCP_YA_subjects.csv"
+  --hcp-csv "$A1_HCP_DIR/HCP_YA_subjects.csv" \
+  --output-json "$A1_REBUILD_DIR/residualised_cheap_check.json"
 ```
 
 Step 2 also requires the public FC features fetched by the headline path. It
-writes `reproducibility/bounded_autoresearch_a1/scripts/residualised_cheap_check.json`.
+writes `$A1_REBUILD_DIR/residualised_cheap_check.json`, outside the committed
+pack.
 The exact numbers those steps must reproduce are recorded below.
 
 ---
@@ -195,7 +197,8 @@ export A1_HCP_DIR=/absolute/path/to/staged-hcp
 export A1_REBUILD_DIR=/tmp/a1_rebuilt
 python reproducibility/bounded_autoresearch_a1/scripts/run_residualised_cheap_check.py \
   --resid-csv "$A1_REBUILD_DIR/liu_component_behavior_residualised_cognition.csv" \
-  --hcp-csv "$A1_HCP_DIR/HCP_YA_subjects.csv"
+  --hcp-csv "$A1_HCP_DIR/HCP_YA_subjects.csv" \
+  --output-json "$A1_REBUILD_DIR/residualised_cheap_check.json"
 ```
 Takes the **freshly-rebuilt** target from step 1 and re-fits the frozen Path-B FC
 predictor over the 10-fold manifest, then within-fold-residualises against

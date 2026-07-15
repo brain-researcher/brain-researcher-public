@@ -182,7 +182,7 @@ queries use coordinate-set arithmetic over the corpus (each verdict identifies
 its inference path), because those compositional contrasts are not expressible
 as a single NiMARE CBMA.
 
-### Reference path (NeuroLang) — reproduces the exact committed card
+### Reference path (NeuroLang): engine behind the committed card
 
 The committed `claim_card.json` / `commitment_card.json` / `evidence_verdicts.json`
 (status **`weakened`**, hash `4871ea43…`) were produced by the out-of-process
