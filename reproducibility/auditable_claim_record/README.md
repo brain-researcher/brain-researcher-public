@@ -20,6 +20,18 @@ has no `manifest.json` or `provenance_card.md`, and
 packs live alongside it in [`../`](../); the presence of `manifest.json`
 distinguishes those packs from this tutorial.
 
+## Choose the path you want
+
+| Goal | Use this path | Result |
+|---|---|---|
+| Inspect the sealed reference example | Open `claim_card.json`, then `evidence_verdicts.json` and `commitment_card.json` | Reads the committed NeuroLang snapshot; runs no code |
+| Generate a fresh claim record from public data | Run `run_end_to_end.sh` | Writes four new files under an output directory; the default NiMARE result is `supported_within_scope` |
+| Ask a running MCP to compile the claim from language | Run `drive_from_language.py` | Prints and checks a gated MCP report; it does **not** write the four-file tutorial record |
+
+If your goal is a set of files you can open and compare, start with
+`run_end_to_end.sh`. The MCP driver demonstrates the language-to-verdict call
+path, not record export.
+
 ## Working directory
 
 Unless a block explicitly says otherwise, run every command below from the
@@ -50,7 +62,7 @@ the example on the default **NiMARE** backend lands `supported_within_scope`
 instead, because that engine clears the strict bar; see
 [Reproduce it yourself](#reproduce-it-yourself) for why both are faithful.)
 
-## The three files
+## The three committed reference files
 
 | File | What it is |
 |------|------------|
@@ -71,7 +83,7 @@ there:
 - `scope_boundary` — Neurosynth v7, fMRI, NeuroLang probabilistic-Datalog workflow family
 - `next_required_evidence` — what would be needed to promote it (independent-dataset replication; no causal language from coordinate meta-analysis; a pipeline-level multiverse before binding a dataset-specific contrast)
 
-That is the whole record — there is nothing hidden behind it. The appendix in
+That is the whole committed reference record. The appendix in
 the paper only walks through the same schema field by field.
 
 ## Reproduce it yourself
@@ -98,11 +110,27 @@ active; downloads and converts Neurosynth under
 `/tmp/auditable_claim_e2e` by default; and asserts the expected status and
 evidence fields. Pass a different output directory as its first argument.
 
-To reproduce it the way the platform produces it — a coding agent driving the
-sealed claim episode **from language** through the MCP — run
-[`drive_from_language.py`](drive_from_language.py) (a small MCP call sequence:
-`server_info`, then compile or start-and-poll) or follow the full episode in
-[`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md).
+A fresh run writes this exact top-level shape:
+
+```text
+<output-dir>/
+├── README.md
+├── claim_card.json
+├── demo_bundle.json
+└── evidence_verdicts.json
+```
+
+It does not write a standalone `commitment_card.json`. The fresh commitment is
+nested at `demo_bundle.json` → `calibration.commitment_card`, and its hash is
+referenced by the fresh claim card. The standalone `commitment_card.json` in
+this tutorial belongs to the committed reference snapshot.
+
+To exercise the platform's language-driven compile path, run
+[`drive_from_language.py`](drive_from_language.py) against a reachable MCP. It
+calls `server_info`, then compile or start-and-poll, and prints the gated report
+to stdout. It does not create `claim_card.json`, `evidence_verdicts.json`,
+`demo_bundle.json`, or `README.md`. Follow
+[`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md) for that MCP episode.
 
 The rest of this section is the same chain, step by step. There are two evidence
 backends. The **NiMARE backend is the default** and the
