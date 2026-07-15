@@ -1,10 +1,10 @@
 # Brain Researcher — Reproducibility
 
 This directory is the single home for Brain Researcher reproducibility
-materials. Self-verifying packs and runnable teaching examples are stored
+materials. Manifest-backed packs and runnable teaching examples are stored
 together here by example name.
 
-Each self-verifying pack carries a `manifest.json`, a
+Each manifest-backed pack carries a `manifest.json`, a
 `provenance_card.md`, and a pack-specific `README.md`. Optional directories such
 as `run/`, `source/`, `artifacts/`, `reproduction/`, or `execution_pack/` depend
 on the pack type.
@@ -55,23 +55,35 @@ python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
 ```
 
 `verify.py` uses only the Python standard library. It re-hashes each manifest
-artifact and prints a JSON report. Exit code **0** means all shipped,
-checksum-bearing files match; **1** means a mismatch or missing file; **2** means
-the path is not a verifiable pack. `schema_only` entries are reported
-`indeterminate` because their bytes are intentionally not shipped.
+artifact and prints three separate status fields:
 
-Checksum verification proves the integrity of the committed snapshot. It does
-**not** execute an analysis. If a pack actually contains
+- `integrity_verified`: `true` only when every manifest entry is available and
+  matches its checksum; `false` for a mismatch or missing file; `null` if any
+  entry cannot be checked;
+- `executed`: whether a runnable execution pack records a completed analysis;
+- `scientifically_reproduced`: whether that execution pack records a completed
+  scientific reproduction with matching produced artifacts.
+
+Exit code **0** means the requested verification completed successfully; **1**
+means a mismatch or failed execution; **2** means verification is incomplete or
+unavailable. Therefore, a manifest with any `schema_only`, oversized, or
+unreadable entry reports `integrity_verified: null` and exits 2. The deprecated
+`reproduced` field remains as an alias for `scientifically_reproduced`; it is
+never set by manifest hashing alone.
+
+A complete checksum-verification result proves the integrity of the committed
+snapshot. It does **not** execute an analysis. If a pack actually contains
 `execution_pack/run_pack.py` and `execution_pack/expected_artifacts.json`,
-`verify.py` instead delegates to that runnable pack and compares produced output
-against expected checksums.
+`verify.py` instead delegates to that runnable pack. A scientific-reproduction
+success then requires the runner to record completed execution, matching
+produced artifacts, and a successful scientific comparison.
 
 ## Current packs and their rerun boundary
 
 | id | kind | What you can do from this clone |
 |---|---|---|
 | `bounded_autoresearch_a1` | real recorded result | Verify the snapshot and reproduce the public-data headline with its shipped script. Deeper reconstruction additionally needs governed derived inputs and subject bindings that are not shipped. |
-| `fitlins_multiverse_yeo17` | synthetic schema exemplar | Verify the shipped specs and summary. There is no real BIDS dataset, statmap payload, or ready-to-run execution pack in this directory. |
+| `fitlins_multiverse_yeo17` | synthetic schema exemplar | Check seven shipped specs/summary files; two unshipped statmap keys remain indeterminate, so complete integrity and scientific reproduction are not claimed. There is no real BIDS dataset or execution pack. |
 
 For the public A1 rerun, first activate an isolated environment, then run this
 from the repository root:

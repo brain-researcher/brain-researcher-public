@@ -4,6 +4,11 @@
   "artifact_count": 9,
   "pack_type": "schema_exemplar",
   "synthetic": true,
+  "verification_boundary": {
+    "byte_integrity": "partial_two_schema_only_entries",
+    "analysis_execution": "not_executed",
+    "scientific_reproduction": "not_claimed"
+  },
   "notes": [
     "This pack is a synthetic schema exemplar, not a real-data result.",
     "Statmap NIfTI entries are provenance keys only; bytes are intentionally not shipped."
@@ -11,8 +16,8 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:d6e6ae05a42f57a74639b5a7e8f977b09ffc5b630935e60e910002544aae74a9",
-      "size_bytes": 4033
+      "sha256": "sha256:14037a8a5f058416be33be9c3e7b9be072f19ee49a49bd1b7b1354e3f199fd3f",
+      "size_bytes": 4375
     },
     {
       "path": "provenance_card.md",

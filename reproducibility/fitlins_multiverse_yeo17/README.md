@@ -9,7 +9,7 @@ it is not a real scientific result and is not runnable end to end as shipped.
 
 | Goal | Use this | Result |
 |---|---|---|
-| Check the committed fixture | `python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17` | Verifies seven shipped files and reports two unshipped statmap keys as `indeterminate` |
+| Check the committed fixture | `python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17` | Matches seven shipped files; two unshipped statmap keys keep complete integrity indeterminate (exit 2) |
 | Inspect the bundle shape | Open `run/run.json`, `run/analysis_bundle.json`, and `source/specs/` | Shows the historical synthetic records only |
 | Run a real FitLins multiverse | Do not start from this fixture's params | Supply a real BIDS dataset, current specs, runtime, and scientific comparison criterion |
 
@@ -31,11 +31,16 @@ cd "$(git rev-parse --show-toplevel)"
 python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
 ```
 
-Exit code 0 means the seven checksum-bearing files match. The verifier also
-reports two `schema_only` statmap paths as `indeterminate`; their paths are
-provenance keys in the bundle, but their NIfTI bytes were intentionally never
-included. This command checks the committed snapshot and does not execute
-FitLins.
+The report shows seven `match` rows and two `schema_only` rows as
+`indeterminate`. Because those NIfTI bytes were intentionally never included,
+the overall result is `integrity_verified: null` and exit code 2 rather than a
+complete-integrity success. It also reports `executed: false` and
+`scientifically_reproduced: false`: this command checks the available fixture
+bytes and does not execute FitLins.
+
+Exit 2 is expected for this partial synthetic fixture. It means verification is
+incomplete, not that one of the seven shipped files mismatched. A changed or
+missing shipped file instead reports `integrity_verified: false` and exits 1.
 
 ## What is shipped
 
