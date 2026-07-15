@@ -1,5 +1,13 @@
 # BR-KG Implementation Summary
 
+<!-- docs-status: historical -->
+
+> **Historical snapshot; not current verification.** The last public-history
+> commit touching this file was 2026-06-02 (`ba5c18fc`). Some paths, test counts,
+> and implementation claims below refer to files that are not present in the
+> current public tree. Inspect the current BR-KG source and run current focused
+> tests before treating any item as implemented or verified.
+
 ## Overview
 This document summarizes the three major features implemented for the BR-KG system:
 

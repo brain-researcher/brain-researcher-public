@@ -22,11 +22,28 @@ plugins:
 # Navigation
 nav:
   - Home: index-simple.md
+  - Environment: ENVIRONMENT_SETUP.md
   - MCP: mcp.md
   - Operations: OPERATIONS.md
+  - Reproducibility: reproducibility_packs.md
+  - Contracts: contract-tiers.md
+  - HPC: hpc.md
+  - Tool Contribution: how-to-add-tool.md
+  - Appendices:
+      - Overview: appendices/00_index.md
+      - Episode Control Plane: appendices/01_appendix_A_episode_control_plane.md
+      - Evidence Bundle: appendices/02_appendix_B_evidence_bundle.md
+      - Dataset Resource: appendices/03_appendix_C_dataset_resource.md
+      - Tool Registry: appendices/04_appendix_D_tool_registry.md
+      - Constraint Commitment: appendices/05_appendix_E_constraint_commitment.md
+      - Run Bundle Provenance: appendices/06_appendix_F_run_bundle_provenance.md
+      - Review: appendices/07_appendix_G_review.md
+      - Memory: appendices/08_appendix_H_memory.md
+      - Operational Mode: appendices/09_appendix_I_operational_mode.md
+      - Evaluation: appendices/10_appendix_J_evaluation.md
   - Use Cases:
       - BR-KG Plot Probe: use_cases/br_kg_plot_probe_20260502/SUMMARY.md
-      - Bounded Autoresearch: use_cases/bounded_autoresearch_a1_2026-04-30/BOUNDED_AUTORESEARCH_CASE_REPORT.md
+      - Historical A1 Report: use_cases/bounded_autoresearch_a1_2026-04-30/BOUNDED_AUTORESEARCH_CASE_REPORT.md
 
 # Extensions
 markdown_extensions:

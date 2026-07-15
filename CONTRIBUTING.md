@@ -55,9 +55,9 @@ Neo4j passwords.
 ```bash
 git clone https://github.com/brain-researcher/brain-researcher-public.git
 cd brain-researcher-public
-python -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
-pip install -e .[all,dev]
+python -m pip install -e ".[all]"
 cp .env.example .env
 ```
 
@@ -93,7 +93,7 @@ Examples:
 ```bash
 python -m py_compile path/to/changed_file.py
 python -m pytest tests/unit -x
-python -m mkdocs build -f mkdocs-simple.yml --quiet
+bash scripts/dev/docs_manager.sh check
 git diff --check
 ```
 

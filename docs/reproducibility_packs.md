@@ -1,12 +1,12 @@
 # Reproducibility Packs
 
 This repository includes public-safe reproducibility packs under
-[`reproducibility/`](../reproducibility/). They are meant for reviewers and users
+[`reproducibility/`](https://github.com/brain-researcher/brain-researcher-public/tree/main/reproducibility). They are meant for reviewers and users
 who want to inspect the audit record behind a Brain Researcher result without
 access to private runtime logs or governed datasets.
 
 The same reproducibility directory also contains
-[`reproducibility/auditable_claim_record/`](../reproducibility/auditable_claim_record/).
+[`reproducibility/auditable_claim_record/`](https://github.com/brain-researcher/brain-researcher-public/tree/main/reproducibility/auditable_claim_record).
 That runnable tutorial emits claim-card JSON; it has no pack manifest and is not
 accepted by `reproducibility/verify.py`. The similar
 `run_end_to_end.sh` and `AGENTIC_REPRODUCTION.md` filenames describe parallel
@@ -57,8 +57,8 @@ runnable driver and which part remains a multi-step handoff:
 
 | Case | Shape | Agentic guide |
 |---|---|---|
-| Bounded autoresearch A1 | Multi-turn feature/pipeline **search** loop (edit `predict.py` → frozen evaluator → score/compare → cheap-check → freeze → confirmatory null) | [`reproducibility/bounded_autoresearch_a1/AGENTIC_REPRODUCTION.md`](../reproducibility/bounded_autoresearch_a1/AGENTIC_REPRODUCTION.md) |
-| Auditable claim record | Single sealed **claim episode** (commit-before-observe → graded evidence → adjudicate → emit card) | [`reproducibility/auditable_claim_record/AGENTIC_REPRODUCTION.md`](../reproducibility/auditable_claim_record/AGENTIC_REPRODUCTION.md) |
+| Bounded autoresearch A1 | Multi-turn feature/pipeline **search** loop (edit `predict.py` → frozen evaluator → score/compare → cheap-check → freeze → confirmatory null) | [A1 agentic guide](https://github.com/brain-researcher/brain-researcher-public/blob/main/reproducibility/bounded_autoresearch_a1/AGENTIC_REPRODUCTION.md) |
+| Auditable claim record | Single sealed **claim episode** (commit-before-observe → graded evidence → adjudicate → emit card) | [Claim-record agentic guide](https://github.com/brain-researcher/brain-researcher-public/blob/main/reproducibility/auditable_claim_record/AGENTIC_REPRODUCTION.md) |
 
 Honest scope: an agent's *search path* is non-deterministic, so a rerun
 reproduces the **discipline** (commit-before-observe, frozen evaluator,

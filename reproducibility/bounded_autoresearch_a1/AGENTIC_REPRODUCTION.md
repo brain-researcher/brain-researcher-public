@@ -104,7 +104,7 @@ not the A1 light environment. From the repository root, start the server in
 terminal A:
 
 ```bash
-python -m pip install -e .
+python -m pip install -e ".[mcp]"
 bash scripts/mcp/start_http_local.sh
 ```
 

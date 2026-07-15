@@ -1,5 +1,16 @@
 # Calibrated rs-FC Prediction of HCP Behavioral Components
 
+<!-- docs-status: historical -->
+
+> **Historical, non-rerunnable report snapshot.** This report is dated
+> 2026-04-28; the last public-history commit touching it was 2026-06-03
+> (`3dc46151`). The public export does not include its private analysis workspace,
+> figure files, complete ledgers, or governed subject-level inputs. Use the
+> [current public A1 reproducibility pack](https://github.com/brain-researcher/brain-researcher-public/tree/main/reproducibility/bounded_autoresearch_a1)
+> for checksum verification and the supported public-data rerun. This document
+> preserves historical narrative only and is not evidence that the full campaign
+> can be rerun from this checkout.
+
 ## A Bounded-Search Case Study with Frozen-Pipeline Inference
 
 Date: 2026-04-28
@@ -30,7 +41,7 @@ Quantitatively, the frozen predictor was supported in aggregate (r = 0.190, fami
 
 **Boundary of claim.** The evidence supporting H1–H5 is internal to HCP-YA / Schaefer-100×7 / no-GSR features. No subject/run-aligned external-cohort fMRI is in the workspace; H1's stronger external-cohort prediction (P1) was deferred when the §5.1 fast in-house check (P2) failed and the post-hoc P4 anatomical-specificity test also failed; the in-house A1 redesign supports the intelligence-residualised successor claim H1' (r = 0.183, family-block p = 0.001 raw / p = 0.005 max-T) but is itself within-cohort, not external replication; the remaining external-cohort predictions of H2–H5 are stated for future experiments rather than as already-observed results. The headline results are reported as "supported at the 1000-permutation plus-one floor" (p ≤ 1/1001), not at exact p < 0.001 precision; tighter resolution is left to the next campaign. M1's empirical content rides on cross-campaign replication, not on this campaign alone, and the post-hoc connectome attribution maps are diagnostic of distributed model usage (high inter-fold parcel-level stability that is anatomically nonspecific) rather than evidence of biomarker structure.
 
-![Figure 1. Graphical abstract: an adaptive multivariate analysis pipeline is converted into a frozen predictor, evaluated under family-aware exchangeability and a max-over-pipelines post-selection null, and a knowledge-graph-suggested follow-up hypothesis is tested by the same null.](figures/nanobanana_fig01_graphical_abstract.png)
+**Figure 1 (not included in this public snapshot).** Graphical abstract: an adaptive multivariate analysis pipeline is converted into a frozen predictor, evaluated under family-aware exchangeability and a max-over-pipelines post-selection null, and a knowledge-graph-suggested follow-up hypothesis is tested by the same null.
 
 ## Abbreviations
 
@@ -80,7 +91,7 @@ The contribution is primarily methodological: M1 (§4.1) names a five-rule disci
 
 Multivariate connectivity-based prediction of HCP behaviour has a substantial literature; the closest reference for the targets used here is Liu et al. (2025), who derived the five ICA-derived behavioural composites and reported reference per-component fold-mean and best-fold thresholds across pipeline choices. The methodological framing of post-selection correction in adaptive analyses draws on the broader replicability literature in BWAS (Marek et al. 2022; Spisak et al. 2023) and the multivariate-feature-stability literature (Tian & Zalesky 2021). Autonomous discovery loops applied to brain-encoding settings are most directly comparable to the TRIBE stimulus-discovery campaign (d'Ascoli et al. 2025), with which this report is paired for cross-campaign falsification. Other autoresearch-style systems for ML / mathematics (Lu et al. 2024; Romera-Paredes et al. 2024) target different problem classes and do not exercise the cheap-check-before-expensive-compute discipline rule that is central to M1.
 
-![Figure 2. Evidence flow: search reward is filtered through frozen-pipeline inference, post-selection correction, and falsification of a knowledge-graph-suggested lead into retained, near-threshold, and downgraded per-component verdicts.](figures/v3/fig02_evidence_flow_alluvial_v3.png)
+**Figure 2 (not included in this public snapshot).** Evidence flow: search reward is filtered through frozen-pipeline inference, post-selection correction, and falsification of a knowledge-graph-suggested lead into retained, near-threshold, and downgraded per-component verdicts.
 
 ## 2. Methods
 
@@ -227,7 +238,7 @@ Results are presented from the headline confirmatory analysis (frozen pipeline p
 
 The frozen Path B predictor reached aggregate fold-mean r = 0.189933 (n = 326, 10 folds) and exceeded the family-block exchangeability null at the plus-one floor: p = 0.000999, permutation z = 7.08, null mean = −0.0021, null SD = 0.0271. Per-component support under max-T family-wise correction was heterogeneous: Cognition r = 0.379 (p = 0.000999), TobaccoUse r = 0.264 (p = 0.000999), PersonalityEmotion r = 0.157 (p = 0.018), MentalHealth r = 0.130 (p = 0.048, near-threshold), IllicitDrugUse r = 0.020 (p = 0.878, unsupported). The true best single-fold correlations were Cognition 0.472 (fold 5), TobaccoUse 0.466 (fold 3), PersonalityEmotion 0.398 (fold 0), MentalHealth 0.269 (fold 8), and IllicitDrugUse 0.377 (fold 6), so the matched best-vs-best comparison is 5/5 against Liu's `ref_best_r`. These values are diagnostic fold extrema only; the inferential endpoint remains fold-mean r with family-block and post-selection correction. Implied fold-mean R² ceilings were approximately 0.143, 0.070, 0.025, 0.017, and effectively zero respectively.
 
-![Figure 3. Frozen-pipeline component evidence (family-block null): observed fold-mean r, true best single-fold r diagnostics, bootstrap intervals, Liu reference thresholds, max-T p-values, variance-explained ceilings, and per-component verdicts.](figures/v3/fig03_component_forest_scorecard_v3.png)
+**Figure 3 (not included in this public snapshot).** Frozen-pipeline component evidence (family-block null): observed fold-mean r, true best single-fold r diagnostics, bootstrap intervals, Liu reference thresholds, max-T p-values, variance-explained ceilings, and per-component verdicts.
 
 ### 3.2 Post-selection inference over the materially tried pipeline family
 
@@ -237,13 +248,13 @@ The family-block null tests the frozen predictor; it does not correct for the se
 
 The same permutation machinery rejected a tempting follow-up. Under the narrow HKG definition introduced in §2.12, one KG lead was promoted to same-null validation: wPLI / IllicitDrugUse. The knowledge-graph-grounded thread surfaced this biologically plausible hypothesis with parent-claim fold-mean r = 0.046. It was selected because it was runnable, newly positive relative to a downgraded component, and therefore represented the strongest KG-driven overclaim risk. A 1000-permutation null returned p = 0.1998 with 199 of 1000 permutations ≥ observed; the lead was therefore killed rather than reported as a biomarker-like discovery. Figure 4 panel B is not just a kill: it is a kill produced by the same null distribution that supports panels A and C.
 
-![Figure 4. Permutation triplet: (A) frozen aggregate vs the family-block null is supported, (B) the knowledge-graph-suggested wPLI / IllicitDrugUse hypothesis is rejected by the same plus-one estimator, and (C) the family-max aggregate vs the max-over-pipelines null is supported under post-selection correction.](figures/v3/fig04_permutation_triplet_v3.png)
+**Figure 4 (not included in this public snapshot).** Permutation triplet: (A) frozen aggregate vs the family-block null is supported, (B) the knowledge-graph-suggested wPLI / IllicitDrugUse hypothesis is rejected by the same plus-one estimator, and (C) the family-max aggregate vs the max-over-pipelines null is supported under post-selection correction.
 
 ### 3.4 Sensitivity to fold reconstruction and demographic confounds
 
 The strict-family fold reconstruction shifted the aggregate by −0.001 and did not flip any verdict. Within-fold residualisation against {Age, Gender, Handedness, BMI} reduced every component effect, with relative drops Cognition 7.3%, TobaccoUse 7.4%, PersonalityEmotion 5.7%, MentalHealth 22.7%, IllicitDrugUse 19.3%; the aggregate dropped 8.7%. The demographic effect is therefore not specific to MentalHealth: it is a uniform monotonic loss whose consequence depends on where each component sits relative to its inferential threshold. Supra-threshold components (Cognition, TobaccoUse, PersonalityEmotion) lose effect but stay above their family-block thresholds; near-threshold components (MentalHealth at family-block p = 0.048, IllicitDrugUse with p = 0.878) move and become further weakened.
 
-![Figure 5. Per-component support summary across exploratory reward, frozen-pipeline inference, sensitivity, post-selection correction, and external validation. Green: passes the present internal standard; orange: positive but caveated; red: rejected/downgraded; grey: not completed at report freeze.](figures/v3/fig05_support_boundary_matrix_v3.png)
+**Figure 5 (not included in this public snapshot).** Per-component support summary across exploratory reward, frozen-pipeline inference, sensitivity, post-selection correction, and external validation. Green: passes the historical internal standard; orange: positive but caveated; red: rejected/downgraded; grey: not completed at report freeze.
 
 ### 3.5 Post-hoc connectome interpretability
 
@@ -486,13 +497,13 @@ The editable public report is `BOUNDED_AUTORESEARCH_CASE_REPORT.md`. LaTeX/PDF b
 
 The supplementary figures document process evidence (the parent search-thread trajectory and the autoresearch trajectory schematic), a single connectome diagnostic plate that combines the frozen Path B edge-attribution maps, the Schaefer-7 network-pair summaries, and the metric-family / distributedness diagnostics, and the system-architecture diagram. Each figure carries its own legend below the caption in the rendered PDF.
 
-![Supplementary Figure S1. Parent-search-thread trajectory: aggregate and component-level reward progress with action markers and the Path A to Path B transition.](figures/figS1_parent_trajectory_narrative.png)
+**Supplementary Figure S1 (not included in this public snapshot).** Parent-search-thread trajectory: aggregate and component-level reward progress with action markers and the Path A to Path B transition.
 
-![Supplementary Figure S2. Connectome diagnostic plate: signed edge attribution matrices (top), Schaefer-7 network-pair attribution heatmaps (middle), and metric-family contribution and top-edge concentration diagnostics (bottom). Top-20 edges account for 1.4–2.1% of attribution mass per component; inverse-Simpson effective edge counts are in the thousands.](figures/interpretability/figS_connectome_plate.png)
+**Supplementary Figure S2 (not included in this public snapshot).** Connectome diagnostic plate: signed edge attribution matrices (top), Schaefer-7 network-pair attribution heatmaps (middle), and metric-family contribution and top-edge concentration diagnostics (bottom). Top-20 edges account for 1.4–2.1% of attribution mass per component; inverse-Simpson effective edge counts are in the thousands.
 
-![Supplementary Figure S3. Autoresearch trajectory: historical search breadth, the authoritative branch leading to the frozen predictor, and the support boundary at report freeze.](figures/fig02_true_autoresearch_trajectory.png)
+**Supplementary Figure S3 (not included in this public snapshot).** Autoresearch trajectory: historical search breadth, the authoritative branch leading to the frozen predictor, and the support boundary at report freeze.
 
-![Supplementary Figure S4. System architecture: coding agent, evaluation harness, scientific-review layer, and knowledge-graph layer that surfaces candidate connectivity statistics as logged hypotheses.](figures/figS4_br_system_architecture.png)
+**Supplementary Figure S4 (not included in this public snapshot).** System architecture: coding agent, evaluation harness, scientific-review layer, and knowledge-graph layer that surfaces candidate connectivity statistics as logged hypotheses.
 
 ## Provenance
 

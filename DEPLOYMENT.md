@@ -1,5 +1,14 @@
 # Brain Researcher Production Deployment Guide
 
+<!-- docs-status: historical -->
+
+> **Unsupported historical guide; do not use as the current deployment
+> contract.** The last public-history commit touching this file was 2026-06-04
+> (`b4b9ad61`). Several helper scripts and CI workflows named below are not
+> shipped in the current public tree. Start with the current
+> [deployment asset status](infrastructure/deployment/README.md) and inspect the
+> root README before performing any operator-controlled rollout.
+
 This guide provides comprehensive instructions for deploying Brain Researcher in a production environment.
 
 ## Table of Contents
@@ -9,8 +18,8 @@ This guide provides comprehensive instructions for deploying Brain Researcher in
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
 - [Deployment Methods](#deployment-methods)
-- [Monitoring & Health Checks](#monitoring--health-checks)
-- [Backup & Recovery](#backup--recovery)
+- [Monitoring & Health Checks](#monitoring-health-checks)
+- [Backup & Recovery](#backup-recovery)
 - [Troubleshooting](#troubleshooting)
 - [Security Considerations](#security-considerations)
 

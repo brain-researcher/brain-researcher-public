@@ -1,7 +1,13 @@
 # GCE + k3s Quickstart (single node)
 
-This guide deploys **Brain Researcher** to a **single-node k3s** cluster running on a
-**GCE VM**.
+> **Status: experimental/incomplete.** This is operator reference material, not
+> a verified production deployment path. An earlier environment-specific
+> overlay is absent: **not shipped:** `infrastructure/deployment/gce_k3s/values.prod.yaml`.
+> Section 7 therefore renders the base chart for inspection only; it does not
+> install or apply resources.
+
+This guide sketches the operator steps for a **single-node k3s** cluster on a
+**GCE VM**. It is not a complete deployment recipe in the current public tree.
 
 ## 0) Prereqs
 
@@ -172,28 +178,34 @@ docker build -t ${IMAGE_REGISTRY}/mcp:${TAG} -f infrastructure/docker/Dockerfile
 docker push ${IMAGE_REGISTRY}/mcp:${TAG}
 ```
 
-## 7) Deploy (Helm)
+## 7) Render for inspection (Helm)
+
+The command below validates only that Helm can render the checked-in chart with
+explicit operator values. It does not validate image availability, secrets,
+storage, ingress, or service health. Do not pass this output to `kubectl apply`
+or replace `helm template` with `helm upgrade` until a deployment-specific
+values file and the remaining chart semantics have been reviewed.
 
 ```bash
 export DOMAIN="brain-researcher.example.com"
 
-helm upgrade --install brain-researcher infrastructure/k8s/helm/brain-researcher \
-  -n brain-researcher-core --create-namespace \
-  -f infrastructure/deployment/gce_k3s/values.prod.yaml \
+helm template brain-researcher infrastructure/k8s/helm/brain-researcher \
+  --namespace brain-researcher-core \
   --set global.domain="${DOMAIN}" \
   --set global.imageRegistry="${IMAGE_REGISTRY}" \
-  --set global.imageTag="${TAG}"
+  --set global.imageTag="${TAG}" \
+  > /tmp/brain-researcher-rendered.yaml
 ```
 
-## 8) Verify
+## 8) Inspect the render
 
 ```bash
-kubectl -n brain-researcher-core get pods
-kubectl -n brain-researcher-core get ingress
+grep -n '^kind:' /tmp/brain-researcher-rendered.yaml
+grep -n 'image:' /tmp/brain-researcher-rendered.yaml
 ```
 
-If your k3s install includes Traefik, it will manage the Ingress. Point your DNS
-`A` record at the VM public IP.
+These checks only make the rendered object and image references visible for
+manual review. They do not prove that the chart is safe to install.
 
 ## 9) Widen Traefik websocket timeouts (hosted Marimo)
 

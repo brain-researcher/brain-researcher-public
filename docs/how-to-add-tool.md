@@ -79,6 +79,7 @@ PRs must not introduce new cross-boundary violations beyond the ratchet in
 ruff check src/ tests/
 mypy src/brain_researcher --ignore-missing-imports
 pytest tests/unit/tools/test_my_new_tool.py -x
-pytest tests/contracts -x                               # if stable-tier
+pytest --confcutdir=tests/unit \
+  tests/unit/mcp/test_mcp_contract_papercuts.py -x      # if stable-tier
 python scripts/oss/extract_tool_contracts.py --check    # if stable-tier
 ```

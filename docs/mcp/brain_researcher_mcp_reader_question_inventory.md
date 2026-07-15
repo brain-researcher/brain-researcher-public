@@ -1,5 +1,12 @@
 # Brain Researcher MCP Reader-Question Inventory
 
+<!-- docs-status: historical -->
+
+> **Historical snapshot (2026-06-03).** This inventory records an earlier MCP
+> surface and includes counts and internal paths that have since changed or are
+> not shipped publicly. It is retained for provenance, not as setup guidance.
+> Use `docs/mcp.md`, `server_info`, and `tool_search` for the current surface.
+
 Generated: 2026-05-04
 
 This is the MCP counterpart to the BR-KG reader-question inventory. It is

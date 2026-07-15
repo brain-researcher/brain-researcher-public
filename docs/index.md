@@ -15,10 +15,11 @@ Brain Researcher is an OSS-preview neuroimaging research assistant with a recipe
 ## Release And Review
 
 - [BR-KG plot probe](use_cases/br_kg_plot_probe_20260502/SUMMARY.md) - bounded public summary and retained figures.
-- [Bounded autoresearch case report](use_cases/bounded_autoresearch_a1_2026-04-30/BOUNDED_AUTORESEARCH_CASE_REPORT.md) - public markdown report.
+- [Reproducibility packs](reproducibility_packs.md) - runnable and inspectable public examples with explicit evidence boundaries.
+- [Historical bounded-autoresearch report](use_cases/bounded_autoresearch_a1_2026-04-30/BOUNDED_AUTORESEARCH_CASE_REPORT.md) - dated, non-rerunnable narrative snapshot; start from the A1 pack instead.
 
 ## Support
 
 - [GitHub Issues](https://github.com/brain-researcher/brain-researcher-public/issues)
-- [Contributing](../CONTRIBUTING.md)
-- [Security](../SECURITY.md)
+- [Contributing](https://github.com/brain-researcher/brain-researcher-public/blob/main/CONTRIBUTING.md)
+- [Security](https://github.com/brain-researcher/brain-researcher-public/blob/main/SECURITY.md)

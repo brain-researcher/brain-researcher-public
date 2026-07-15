@@ -1,5 +1,13 @@
 # DERIVED_FROM Relationship Implementation Summary
 
+<!-- docs-status: historical -->
+
+> **Historical implementation snapshot; not current verification.** The last
+> public-history commit touching this file was 2026-06-02 (`ba5c18fc`). Paths,
+> test counts, and passing claims below describe that export and may not match
+> the current tree. Inspect the current BR-KG source and focused tests before
+> relying on them.
+
 ## Overview
 This document summarizes the implementation of the Enhanced NeuroVault Loader that creates DERIVED_FROM relationships between NeuroVault statistical maps and existing Contrast nodes in the BR-KG system.
 

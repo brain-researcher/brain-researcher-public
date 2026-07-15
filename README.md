@@ -81,7 +81,7 @@ For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the
 
 | Area | Start here | What to expect |
 |---|---|---|
-| Web UI | `apps/web-ui/src/` | Next.js app code for chat, Studio-style views, demos, and browser-facing workflows. |
+| Web UI | [`apps/web-ui/README.md`](apps/web-ui/README.md) | Canonical frontend entrypoint, status boundaries, and links to the Next.js app and tests. |
 | UI config, messages, assets | `apps/web-ui/next.config*.js`, `apps/web-ui/messages/`, `apps/web-ui/public/` | Frontend configuration, locale files, service workers, and public browser assets. |
 | CLI entrypoints | `src/brain_researcher/cli/` | Typer commands behind `brain-researcher` / `br`, including service startup commands. |
 | Agent runtime | `src/brain_researcher/services/agent/` | Agent planner, router, backends, execution helpers, logging, subagents, and state utilities. |
@@ -97,6 +97,8 @@ For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the
 | Shared public Python namespace | `src/brain_researcher/br/` | Stable imports such as `br.retry`, `br.provenance`, `br.artifact`, `br.http`, and `br.redaction`. |
 | Reproducibility | `reproducibility/` | Public-safe packs and runnable tutorials for inspecting or generating auditable records. |
 | Worked claim-record tutorial | `reproducibility/auditable_claim_record/` | Runnable tutorial that generates claim-card JSON. It is not a manifest-backed reproducibility pack. |
+| Autoresearch scripts | [`scripts/autoresearch/README.md`](scripts/autoresearch/README.md) | Status and input boundaries for runnable helpers, experimental workers, and historical campaign scripts. |
+| Deployment notes | [`infrastructure/deployment/README.md`](infrastructure/deployment/README.md) | Canonical status page for deployment-specific and historical infrastructure paths. |
 | Docs and appendices | `docs/` | Operations, MCP docs, release notes, appendices, use cases, and public-surface explanations. |
 | Tests | `tests/` | Unit, BR-KG, architecture, contract, behavior, and performance checks. Web/browser checks live under `apps/web-ui/tests/`. |
 
@@ -226,8 +228,9 @@ commands instead of installing this full stack.
 For exact tested versions, profile mappings, regeneration commands, and the
 fresh-venv smoke, see [`requirements/locks/README.md`](requirements/locks/README.md).
 
-Core CLI surfaces (`br` is a short alias; on systems where `br` is shadowed,
-use `brain-researcher`):
+Core CLI surfaces (`br` is a short alias). If another installation shadows
+both console-script names, use `python -m brain_researcher.cli.main` from the
+activated, installed environment:
 
 ```bash
 brain-researcher chat             # interactive chat; requires an LLM provider key
@@ -243,21 +246,28 @@ For HPC / SLURM usage, see [`docs/hpc.md`](docs/hpc.md). For the contract layer 
 
 ---
 
-## Kubernetes / Helm
+## Kubernetes / Helm (experimental)
 
-Two deployment paths under [`infrastructure/k8s/`](infrastructure/k8s/):
+The Helm chart and raw manifests under
+[`infrastructure/k8s/`](infrastructure/k8s/) are incomplete operator assets, not
+apply-ready deployment paths:
 
 ```bash
-# Helm chart (recommended): copy, edit, render, inspect, then apply.
+# Helm chart (experimental/incomplete): render for syntax inspection only.
 cp infrastructure/k8s/helm/brain-researcher/values.yaml /tmp/brain-researcher-values.yaml
-# Edit /tmp/brain-researcher-values.yaml for your cluster before continuing.
 helm template brain-researcher infrastructure/k8s/helm/brain-researcher/ \
   -f /tmp/brain-researcher-values.yaml > /tmp/brain-researcher-rendered.yaml
-kubectl apply -f /tmp/brain-researcher-rendered.yaml
+rg '^[[:space:]]*image:' /tmp/brain-researcher-rendered.yaml | sort -u
 
 # The raw manifests are templates, not apply-ready deployment files.
 grep -RInE 'your-|<[^>]+>|bcrypt-hash' infrastructure/k8s/manifests/
 ```
+
+Do **not** apply the current Helm output to a cluster. Although `helm template`
+produces YAML, the default values render invalid leading-slash image references
+such as `/agent:latest`, `/br-kg:latest`, `/orchestrator:latest`, and
+`/web-ui:latest`. The chart's image and secret semantics require deployment
+hardening before this can become a runnable path.
 
 Do **not** run `kubectl apply -f infrastructure/k8s/manifests/` on the public
 directory as shipped. It contains placeholder credentials, TLS material, and
@@ -266,29 +276,21 @@ If you maintain a raw-manifest deployment, copy the templates into a private
 deployment workspace, replace secrets through your secret-management workflow,
 verify the required CRDs, review a server-side dry run or diff against the
 intended cluster, and only then apply the reviewed files.
-
-The main Helm chart renders 26 Kubernetes resources cleanly; the Istio overlay
-subchart is experimental, so inspect its chart values and templates before use.
+The Istio overlay subchart is also experimental.
 
 ---
 
-## What's in the repo
-
-| Directory | Purpose |
-|---|---|
-| `src/brain_researcher/` | Python package: CLI, core, services (agent / MCP / BR-KG / orchestrator), semantics, autoresearch |
-| `src/brain_researcher/br/` | Stable re-export namespace: `br.retry`, `br.provenance`, `br.artifact`, `br.http`, `br.redaction` |
-| `apps/web-ui/` | Next.js 14 frontend (chat, studio, demo replay, KG explorer) |
-| `contracts/` | OSS API stability surface: `VERSION`, `br-tool-contract.schema.json`, `tools/*.json` (10 stable-tier tool schemas) |
-| `configs/` | Tool catalogs, mappings, taxonomy, and public runtime defaults |
-| `docs/` | MCP docs, appendices, use cases, release notes, and contributor-facing docs |
-| `reproducibility/` | Public-safe reproducibility packs and runnable tutorials, stored together by example name |
-| `reproducibility/auditable_claim_record/` | Worked generator tutorial; no pack manifest and no `verify.py` contract |
-| `tests/` | Python unit, BR-KG, architecture, contract, behavior, and performance checks |
-| `infrastructure/` | docker-compose, Helm chart, K8s manifests, monitoring, nginx, haproxy |
-| `scripts/` | ETL, analysis, build, validation, and focused maintenance utilities |
-
-For the current import-boundary ratchet, see [`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py) and [`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt). For public audit artifacts, start with [`docs/reproducibility_packs.md`](docs/reproducibility_packs.md) and [`reproducibility/README.md`](reproducibility/README.md) — including the "Reproduce From Language" guides for driving each worked case from natural language with Claude Code / Codex + MCP. For the agent-kit (skills + AGENTS templates + adapters + demos + eval rubrics), see the companion repo [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit).
+The table above is the maintained repository map. For the current
+import-boundary ratchet, see
+[`tests/architecture/test_import_boundaries.py`](tests/architecture/test_import_boundaries.py)
+and
+[`tests/architecture/services_layer_baseline.txt`](tests/architecture/services_layer_baseline.txt).
+For public audit artifacts, start with
+[`docs/reproducibility_packs.md`](docs/reproducibility_packs.md) and
+[`reproducibility/README.md`](reproducibility/README.md). Agent skills,
+templates, demos, adapters, and eval rubrics remain in the companion
+[`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit)
+repository.
 
 ---
 
