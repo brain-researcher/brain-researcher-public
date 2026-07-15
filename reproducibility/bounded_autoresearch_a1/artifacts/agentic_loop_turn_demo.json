@@ -1,9 +1,11 @@
 {
   "schema_version": "br.a1_agentic_loop_turn_demo.v1",
-  "what_this_is": "One captured turn of the external-coding loop run over THIS pack on public FC features: edit the editable predictor -> the frozen evaluator re-scores -> compare. It shows the loop is launchable from the pack and that the evaluator is deterministic (a score change comes only from a predictor edit, tracked by predict_sha256). See AGENTIC_REPRODUCTION.md.",
+  "what_this_is": "One captured turn of the external-coding loop run over THIS pack on public FC features: edit the editable predictor -> the fixed public evaluator port re-scores -> compare. It shows the loop is launchable from the pack and that the captured evaluator runs are deterministic under the recorded environment (a score change comes only from a predictor edit, tracked by predict_sha256). See AGENTIC_REPRODUCTION.md.",
   "provenance": {
     "captured_on": "2026-07-10",
-    "evaluator": "scripts/run_prediction.py (immutable frozen evaluator; 10-fold CV, seed 42, no confound regression)",
+    "evaluator": "scripts/run_prediction.py (manifest-pinned public evaluator port; 10-fold CV, seed 42, no confound regression)",
+    "recorded_governed_harness_sha256": "3fe2eea1c1e20ab7e7630ac87e7b6e2b7cd5a2786a5351e8b410930f062962a1",
+    "source_boundary": "The public evaluator is a port, not the byte-identical original governed harness; see evaluator_source_closure.json.",
     "editable_surface": "scripts/predict.py (the only file the agent may edit)",
     "terms_dir": "Liu FC-pyspi per-term features from OSF 75je2 (the public GitHub release fetched by scripts/fetch_fc_features.py)",
     "reproduce_this_turn": [
@@ -18,7 +20,7 @@
     "predict_sha256_prefix": "380cbb505a2e",
     "run_1": { "ICA_Cognition_fold_mean_r": 0.183158, "aggregate_mean_r": 0.150847 },
     "run_2": { "ICA_Cognition_fold_mean_r": 0.183158, "aggregate_mean_r": 0.150847 },
-    "determinism": "run_1 == run_2 (identical predict_sha256, identical scores). The frozen evaluator is deterministic.",
+    "determinism": "run_1 == run_2 (identical predict_sha256, identical scores) under the captured public-port environment.",
     "matches_published": "ICA_Cognition 0.183158 equals the recorded value in artifacts/residualised_cheap_check.json"
   },
   "agent_edit_turn": {
@@ -28,8 +30,8 @@
     "delta_vs_baseline": { "ICA_Cognition_fold_mean_r": 0.010996, "aggregate_mean_r": 0.002199 }
   },
   "reading": [
-    "The evaluator is deterministic: the baseline is bit-reproducible (same predict_sha256 -> same scores), and equals the published number.",
+    "The captured public-port baseline is repeatable (same predict_sha256 -> same scores) and equals the recorded number.",
     "The result is 'not identical' ONLY because the predictor was edited: predict_sha256 changed (380cbb -> 60e83b) and the score moved accordingly. Every predict.py scores identically; the evaluator records which predictor produced each score.",
-    "Non-determinism in an agentic reproduction lives in the agent's *choice of edits* (the search trajectory), never in the evaluator. This is exactly the M1 claim: the discipline and the frozen confirmatory numbers reproduce; the trajectory need not."
+    "Non-determinism in this captured agentic turn lives in the agent's choice of edits (the search trajectory), while the public evaluator port is held fixed. This supports the loop-discipline demonstration; it is not a source-equivalence claim for the governed harness."
   ]
 }

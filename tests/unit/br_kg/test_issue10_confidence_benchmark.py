@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-MODULE_PATH = ROOT / "scripts" / "br_kg" / "issue10_confidence_benchmark.py"
+MODULE_PATH = ROOT / "scripts" / "br-kg" / "issue10_confidence_benchmark.py"
 SPEC = importlib.util.spec_from_file_location(
     "issue10_confidence_benchmark", MODULE_PATH
 )

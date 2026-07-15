@@ -22,11 +22,11 @@ def _legacy_abs_root_script_path(script_name: str) -> str:
 
 
 REQUIRED_SUBSTRINGS = {
-    "docs/catalog_README.md": (
-        "src/brain_researcher/services/shared/planner/models.py",
-        "../src/brain_researcher/services/agent/planner/catalog_loader.py",
+    "configs/catalog/README.md": (
+        "../../src/brain_researcher/services/shared/planner/models.py",
+        "../../src/brain_researcher/services/agent/planner/catalog_loader.py",
     ),
-    "scripts/ci/generate_resources_schema.py": (
+    "scripts/maintenance/generate_resources_schema.py": (
         "src/brain_researcher/services/shared/planner/models.py",
     ),
     "scripts/tools/generate_capabilities_from_agent_tools.py": (
@@ -57,11 +57,11 @@ REQUIRED_SUBSTRINGS = {
 }
 
 FORBIDDEN_SUBSTRINGS = {
-    "docs/catalog_README.md": (
+    "configs/catalog/README.md": (
         "`brain_researcher/services/shared/planner/models.py`",
         "../brain_researcher/services/agent/planner/catalog_loader.py",
     ),
-    "scripts/ci/generate_resources_schema.py": (
+    "scripts/maintenance/generate_resources_schema.py": (
         "`brain_researcher/services/shared/planner/models.py`",
     ),
     "scripts/tools/generate_capabilities_from_agent_tools.py": (

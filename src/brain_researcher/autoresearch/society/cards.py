@@ -166,16 +166,34 @@ class FalsifierBatterySpec(BaseModel):
     version: str = "v1"
 
 
+class EvidenceEngineRefV1(BaseModel):
+    """Versioned evidence engine identity sealed with a commitment.
+
+    ``adapter`` names the Brain Researcher integration surface separately from
+    the upstream engine package.  All fields are part of the commitment hash
+    whenever this optional reference is present.  It remains optional so
+    historical ``commitment-card-v1`` records created before this field was
+    introduced continue to verify byte-for-byte.
+    """
+
+    model_config = ConfigDict(frozen=True)
+    name: str
+    version: str
+    adapter: str | None = None
+
+
 class CommitmentCardV1(BaseModel):
     """Rules locked BEFORE the pipeline produces any result (spec section 5).
 
     Frozen after construction. The ``commitment_hash`` covers the lockable
     content (everything except the hash, the lock timestamp, and ``extra``),
-    including the frozen falsifier ``rubric_refs`` AND the typed ``falsifier_battery`` —
-    so any post-hoc change to the claim, scope, success criteria, attack rubrics, or the
-    required-axis battery (axes / thresholds / cost order / data requirements / fail-closed
-    policy) is detectable. A battery placed in ``extra`` would NOT be hash-covered; it must be
-    this typed field.
+    including the frozen falsifier ``rubric_refs``, optional ``evidence_engine``,
+    AND the typed ``falsifier_battery`` — so any post-hoc change to the claim,
+    scope, success criteria, attack rubric content hashes, engine identity, or
+    the required-axis battery (axes / thresholds / cost order / data
+    requirements / fail-closed policy) is detectable. A battery or engine
+    identity placed in ``extra`` would NOT be hash-covered; it must use the
+    typed field.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -193,6 +211,7 @@ class CommitmentCardV1(BaseModel):
     attack_strategies: list[str] = Field(default_factory=list)
     # strategy -> {"path": <frozen rubric file>, "hash": <sha256 of its text>}
     rubric_refs: dict[str, dict[str, str]] = Field(default_factory=dict)
+    evidence_engine: EvidenceEngineRefV1 | None = None
     # The pre-registered required-verdict battery (typed, hash-covered). None = no required
     # battery for this claim class (the conductor then never refuses on coverage).
     falsifier_battery: FalsifierBatterySpec | None = None
@@ -201,8 +220,20 @@ class CommitmentCardV1(BaseModel):
     extra: dict[str, Any] = Field(default_factory=dict)
 
     def lockable_content(self) -> dict[str, Any]:
-        """The content the ``commitment_hash`` is computed over."""
-        return self.model_dump(exclude={"commitment_hash", "locked_at", "extra"})
+        """Return the stable content covered by ``commitment_hash``.
+
+        ``locked_at`` records when sealing happened, not what was sealed, so it
+        is deliberately excluded. ``extra`` is also explicitly non-contractual.
+        Fields absent from a deserialized historical payload are omitted from
+        its legacy hash shape. New cards created by ``lock_commitment`` set the
+        typed fields explicitly, including ``None`` when no battery/engine is
+        committed, so their presence is itself covered by the digest.
+        """
+        content = self.model_dump(exclude={"commitment_hash", "locked_at", "extra"})
+        for later_v1_field in ("falsifier_battery", "evidence_engine"):
+            if later_v1_field not in self.model_fields_set:
+                content.pop(later_v1_field, None)
+        return content
 
     def verify_hash(self) -> bool:
         """True iff the recorded hash still matches the lockable content."""
@@ -248,6 +279,7 @@ def lock_commitment(
     attack_strategies: list[str],
     rubric_refs: dict[str, dict[str, str]],
     falsifier_battery: FalsifierBatterySpec | None = None,
+    evidence_engine: EvidenceEngineRefV1 | None = None,
 ) -> CommitmentCardV1:
     """Build and freeze a ``CommitmentCardV1`` from a claim spec.
 
@@ -256,6 +288,8 @@ def lock_commitment(
     hash and lock time is returned. Calling ``verify_hash()`` on the result is True.
     The ``falsifier_battery`` (when given) is a typed, hash-covered field — so the required
     axes / thresholds / cost order cannot be quietly swapped after the result is seen.
+    ``evidence_engine`` is also hash-covered when supplied. ``locked_at`` is a
+    sealing audit timestamp and intentionally does not affect the digest.
     """
     draft = CommitmentCardV1(
         commitment_id=f"commit:{claim.claim_id}",
@@ -269,6 +303,7 @@ def lock_commitment(
         confirmatory=claim.confirmatory,
         attack_strategies=list(attack_strategies),
         rubric_refs=rubric_refs,
+        evidence_engine=evidence_engine,
         falsifier_battery=falsifier_battery,
         commitment_hash="__pending__",
         locked_at="__pending__",

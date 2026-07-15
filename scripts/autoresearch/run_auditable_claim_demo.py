@@ -7,10 +7,10 @@ Markdown summary under ``docs/results/`` by default.
 
 The default backend is **NiMARE** (``pip install nimare nilearn`` -- standard
 scientific-Python, no second interpreter). NeuroLang is an optional *reference*
-engine (``--backend neurolang``) that reproduces the exact committed reference
-card; it is not required and must not be installed with ``pip install neurolang``
-(see ``reproducibility/auditable_claim_record/README.md`` for its
-isolated-venv recipe).
+engine (``--backend neurolang``) behind the committed reference card; it is not
+required and must not be installed with ``pip install neurolang``. The public
+checkout does not currently ship a verified NeuroLang bootstrap recipe; see
+``reproducibility/auditable_claim_record/README.md`` for that boundary.
 
 Inputs:
   --corpus: NiMARE Neurosynth dataset pickle. Defaults to BR_NEUROCLAIM_CORPUS or
@@ -23,6 +23,7 @@ Inputs:
     ``~/.venvs/neurolang-py312/bin/python``.
 
 Outputs:
+  commitment_card.json (persisted before the first evidence query)
   evidence_verdicts.json
   claim_card.json
   demo_bundle.json
@@ -33,8 +34,10 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
 import os
+import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -48,6 +51,8 @@ from brain_researcher.autoresearch.society.cards import (
     ClaimCardV1,
     ClaimSpecV1,
     ClaimStatusV1,
+    CommitmentCardV1,
+    EvidenceEngineRefV1,
     ScopeBoundaryV1,
     lock_commitment,
 )
@@ -68,6 +73,13 @@ from brain_researcher.autoresearch.society.multiverse import CeilingResult
 
 DEFAULT_CORPUS = "~/.nimare/neurosynth/neurosynth_terms_dataset.pkl.gz"
 DEFAULT_CASE_KEY = "working_memory"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+RUBRIC_ROOT = REPO_ROOT / "reproducibility" / "auditable_claim_record" / "rubrics"
+RUBRIC_PATHS = {
+    "strict_evidence_profile": RUBRIC_ROOT / "strict_evidence_profile.md",
+    "compositional_specificity": RUBRIC_ROOT / "compositional_specificity.md",
+    "network_coactivation": RUBRIC_ROOT / "network_coactivation.md",
+}
 
 
 @dataclass(frozen=True)
@@ -244,6 +256,73 @@ def _file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _portable_path_ref(path: Path, *, repo_root: Path = REPO_ROOT) -> dict[str, str]:
+    """Describe a path without persisting a machine- or clone-specific prefix."""
+    resolved = path.expanduser().resolve()
+    try:
+        portable = resolved.relative_to(repo_root.expanduser().resolve()).as_posix()
+        kind = "repo_relative"
+    except ValueError:
+        portable = resolved.name
+        kind = "external_basename"
+    return {"kind": kind, "path": portable}
+
+
+def _rubric_refs(
+    *,
+    rubric_paths: dict[str, Path] = RUBRIC_PATHS,
+    repo_root: Path = REPO_ROOT,
+) -> dict[str, dict[str, str]]:
+    """Build clone-stable references to the exact rubric content being sealed."""
+    refs: dict[str, dict[str, str]] = {}
+    for strategy, path in rubric_paths.items():
+        path_ref = _portable_path_ref(path, repo_root=repo_root)
+        if path_ref["kind"] != "repo_relative":
+            raise ValueError(f"rubric must live inside the repository: {path}")
+        refs[strategy] = {
+            "path": path_ref["path"],
+            "hash": _file_sha256(path),
+        }
+    return refs
+
+
+def _evidence_engine_ref(
+    backend_name: str, *, venv_python: str | None
+) -> EvidenceEngineRefV1:
+    """Resolve the exact evidence engine before any evidence query runs."""
+    if backend_name == "nimare":
+        return EvidenceEngineRefV1(
+            name="nimare",
+            version=importlib.metadata.version("nimare"),
+            adapter="brain_researcher.autoresearch.society.evidence_backend.NimareBackend",
+        )
+
+    backend = NeuroLangBackend(corpus=None, venv_python=venv_python)
+    proc = subprocess.run(
+        [
+            backend._venv_python,
+            "-c",
+            "import neurolang; print(neurolang.__version__)",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    version = proc.stdout.strip()
+    if proc.returncode != 0 or not version:
+        detail = proc.stderr.strip()[:300] or f"exit {proc.returncode}"
+        raise RuntimeError(
+            "cannot seal NeuroLang engine identity before evidence execution: "
+            f"{detail}"
+        )
+    return EvidenceEngineRefV1(
+        name="neurolang",
+        version=version,
+        adapter="brain_researcher.autoresearch.society.evidence_backend.NeuroLangBackend",
+    )
+
+
 def build_demo_inputs(case: DemoCase = WORKING_MEMORY_CASE) -> DemoInputs:
     scope = ScopeBoundaryV1(
         modality="fMRI",
@@ -309,7 +388,7 @@ def build_calibrated_claim_card(
     hypothesis: HypothesisSpecV1,
     evidence: dict[str, EvidenceVerdict],
     evidence_bundle_refs: list[str],
-    commitment_rubric_refs: dict[str, dict[str, str]],
+    commitment: CommitmentCardV1,
     case: DemoCase = WORKING_MEMORY_CASE,
 ) -> tuple[ClaimCardV1, dict[str, Any]]:
     """Compose NeuroLang evidence axes into a Society ClaimCard.
@@ -318,15 +397,8 @@ def build_calibrated_claim_card(
     ``CeilingResult`` + ``compose_ceilings`` law and records every axis in
     ``ClaimCardV1.extra['calibration']``.
     """
-    commitment = lock_commitment(
-        claim,
-        attack_strategies=[
-            "strict_evidence_profile",
-            "compositional_specificity",
-            "network_coactivation",
-        ],
-        rubric_refs=commitment_rubric_refs,
-    )
+    if commitment.claim_id != claim.claim_id or not commitment.verify_hash():
+        raise ValueError("commitment does not match the claim or its sealed content")
     axes = [
         claim_structure_ceiling(claim),
         reasoning_mode_ceiling(hypothesis),
@@ -523,7 +595,8 @@ def _markdown(bundle: dict[str, Any]) -> str:
             "cd brain-researcher-public",
             "python3.11 -m venv ~/.venvs/br-claim-repro",
             "source ~/.venvs/br-claim-repro/bin/activate",
-            "python -m pip install -e . nimare nilearn",
+            "python -m pip install -c reproducibility/auditable_claim_record/constraints-py311.txt "
+            "-e . nimare nilearn",
             "python scripts/data/download_neurosynth_data.py",
             "python scripts/data/convert_neurosynth.py",
             "python scripts/autoresearch/run_auditable_claim_demo.py "
@@ -540,9 +613,10 @@ def _markdown(bundle: dict[str, Any]) -> str:
             "```",
             "",
             "NeuroLang is an optional *reference* engine only -- do NOT "
-            "`pip install neurolang` (it is not installable from PyPI). The venv "
-            "recipe, only if you want to regenerate that exact reference card, is in "
-            "`reproducibility/auditable_claim_record/README.md`.",
+            "`pip install neurolang` (it is not installable from PyPI). The "
+            "public checkout does not currently ship a verified installation "
+            "recipe; see `reproducibility/auditable_claim_record/README.md` for "
+            "that boundary.",
             "",
         ]
     )
@@ -557,6 +631,28 @@ def run_demo(
     backend_name: str = "neurolang",
 ) -> dict[str, Any]:
     inputs = build_demo_inputs(case)
+    engine_ref = _evidence_engine_ref(backend_name, venv_python=venv_python)
+    rubric_refs = _rubric_refs()
+    commitment = lock_commitment(
+        inputs.claim,
+        attack_strategies=list(RUBRIC_PATHS),
+        rubric_refs=rubric_refs,
+        evidence_engine=engine_ref,
+    )
+
+    # Persist the sealed pre-observation contract before the first evidence
+    # query. If execution later fails, this card remains an honest record of
+    # what was committed rather than being synthesized after seeing results.
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for post_observation_name in (
+        "claim_card.json",
+        "evidence_verdicts.json",
+        "demo_bundle.json",
+        "README.md",
+    ):
+        (output_dir / post_observation_name).unlink(missing_ok=True)
+    _json_dump(output_dir / "commitment_card.json", _model_dump(commitment))
+
     evidence = run_neurolang_evidence(
         corpus_path=corpus_path,
         venv_python=venv_python,
@@ -564,27 +660,12 @@ def run_demo(
         backend_name=backend_name,
     )
     evidence_json = {name: _model_dump(verdict) for name, verdict in evidence.items()}
-    script_path = Path(__file__).resolve()
-    rubric_refs = {
-        "strict_evidence_profile": {
-            "path": str(script_path),
-            "hash": _file_sha256(script_path),
-        },
-        "compositional_specificity": {
-            "path": str(script_path),
-            "hash": _file_sha256(script_path),
-        },
-        "network_coactivation": {
-            "path": str(script_path),
-            "hash": _file_sha256(script_path),
-        },
-    }
     claim_card, calibration = build_calibrated_claim_card(
         claim=inputs.claim,
         hypothesis=inputs.hypothesis,
         evidence=evidence,
         evidence_bundle_refs=["evidence_verdicts.json"],
-        commitment_rubric_refs=rubric_refs,
+        commitment=commitment,
         case=case,
     )
     bundle = {
@@ -592,14 +673,16 @@ def run_demo(
         "case_key": case.key,
         "title": case.title,
         "generated_at": _utc_now(),
-        "corpus_path": str(corpus_path),
+        "corpus_ref": {
+            **_portable_path_ref(corpus_path),
+            "sha256": _file_sha256(corpus_path),
+        },
         "claim_spec": _model_dump(inputs.claim),
         "hypothesis_spec": _model_dump(inputs.hypothesis),
         "evidence_verdicts": evidence_json,
         "calibration": calibration,
         "claim_card": _model_dump(claim_card),
     }
-    output_dir.mkdir(parents=True, exist_ok=True)
     _json_dump(output_dir / "evidence_verdicts.json", evidence_json)
     _json_dump(output_dir / "claim_card.json", bundle["claim_card"])
     _json_dump(output_dir / "demo_bundle.json", bundle)

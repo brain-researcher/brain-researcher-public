@@ -1,0 +1,8 @@
+# Direct inputs for the supported Python 3.11 light-path environment.
+# Regenerate constraints-py311.txt from the repository root with:
+# uv pip compile pyproject.toml reproducibility/auditable_claim_record/requirements-py311.in \
+#   --python-version 3.11 --no-emit-package brain-researcher \
+#   --output-file reproducibility/auditable_claim_record/constraints-py311.txt
+
+nimare==0.6.1
+nilearn==0.12.1

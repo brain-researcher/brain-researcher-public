@@ -1,34 +1,51 @@
-# Pack: bounded_autoresearch_a1 — recorded result
+# Pack: bounded_autoresearch_a1 (recorded result)
 
-A **real** bounded-autoresearch (A1) result: an HCP-YA component↔behavior
-residualised-cognition target plus a family-block exchangeability null. This pack
-ships checksum-verifiable public artifacts, the runnable scripts (`scripts/`) and
-manifests (`manifests/`), and the governed-output checksums needed to audit a
-re-run. The redesign→recovery headline (`ICA_Cognition` fold-mean r ≈ 0.183)
-reproduces on **public data alone** — see the "Run it yourself" section of
-[`REPRODUCTION.md`](REPRODUCTION.md).
+This is a manifest-backed pack for the A1 bounded-autoresearch result. It
+records an HCP-YA component-to-behavior residualised-cognition target, the
+governed harness and predictor identities used for the recorded result, and a
+family-block exchangeability null. The public headline command uses a
+manifest-pinned **public evaluator port**, not the byte-identical historical
+governed harness.
 
-This is a formal reproducibility pack: `manifest.json` and
-`provenance_card.md` define its audit boundary. For a tutorial that generates an
-auditable claim record but is not a checksum pack, see
-[`../auditable_claim_record/`](../auditable_claim_record/).
+The public checkout can reproduce the headline predictor result. It cannot, by
+itself, rebuild the subject-keyed target or rerun the full family-block null.
 
-## Working directory
+## Choose what you want to do
 
-Every shell command in this README is written for the **repository root**, not
-this pack directory. After cloning, `cd brain-researcher-public`. If you are
-already anywhere inside the clone, run:
+| Goal | Command or starting point | Boundary |
+|---|---|---|
+| Check the committed bytes | `python reproducibility/verify.py reproducibility/bounded_autoresearch_a1` | Standard-library checksum verification; runs no analysis |
+| Reproduce the public headline | `bash reproducibility/bounded_autoresearch_a1/run_end_to_end.sh` | Installs the Python 3.11 lock, downloads public FC features, and runs the public evaluator port with the recorded predictor; no HCP account or MCP needed |
+| Understand the governed rerun | [`REPRODUCTION.md`](REPRODUCTION.md) | Separates the public path from target rebuilding and family-block steps that need user-staged HCP inputs |
+| Inspect the language-driven agent path | [`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md) | Optional MCP episode; not required for checksum verification or the public headline |
+
+Run commands from the **repository root**, the directory containing
+`pyproject.toml` and `reproducibility/`. From anywhere inside the clone:
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
 ```
 
-## Quickstart: public-data rerun
+## 1. Verify the shipped snapshot
 
-No HCP account or MCP server is needed. The release download is approximately
-835 MB and occupies about 1.0 GB after extraction; the prediction itself takes
-about 8 seconds after the feature files are staged.
-For a new clone, create an isolated environment and run:
+No Brain Researcher installation is required:
+
+```bash
+python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
+```
+
+Exit code 0 means every manifest entry matches its recorded checksum. This
+proves the integrity of the committed snapshot; it does not rerun the predictor
+or the scientific analysis.
+
+## 2. Reproduce the public headline
+
+The first run downloads an approximately 835 MB release archive and uses about
+1.0 GB after extraction. The feature files are written under the pack's
+git-ignored `inputs/` directory. After staging, the prediction itself takes only
+seconds on the reference machine.
+
+For a new clone, use an isolated Python 3.11 environment:
 
 ```bash
 git clone https://github.com/brain-researcher/brain-researcher-public.git
@@ -38,116 +55,103 @@ source ~/.venvs/br-a1-repro/bin/activate
 bash reproducibility/bounded_autoresearch_a1/run_end_to_end.sh
 ```
 
-`run_end_to_end.sh` installs `numpy`, `pandas`, `h5py`, and `scikit-learn` into
-the active environment; downloads and checksum-verifies the public FC features;
-runs the frozen predictor; and checks `ICA_Cognition` fold-mean r ≈ 0.183 and
-aggregate r ≈ 0.151. Its default result JSON is
-`/tmp/a1_e2e_result.json` (override with `BR_A1_E2E_RESULT`).
+The shell script:
 
-To run the two analysis steps manually, still from the repository root:
+1. requires Python 3.11 and installs the exact light-path packages recorded in
+   `requirements-py311.lock` into the active environment;
+2. downloads and checksum-verifies the public, de-identified FC feature archive
+   unless all 76 term files are already present;
+3. runs the manifest-pinned public evaluator port with the recorded predictor
+   against the shipped row-indexed target; and
+4. fails unless it recovers `ICA_Cognition` fold-mean r near `0.183158` and
+   aggregate mean r near `0.150847`.
+
+The default fresh result is `/tmp/a1_e2e_result.json`. Set
+`BR_A1_E2E_RESULT=/another/path/result.json` before running to change it.
+
+To run the download and prediction separately:
 
 ```bash
-python -m pip install numpy pandas h5py scikit-learn
+python -m pip install --requirement \
+  reproducibility/bounded_autoresearch_a1/requirements-py311.lock
 python reproducibility/bounded_autoresearch_a1/scripts/fetch_fc_features.py
 python reproducibility/bounded_autoresearch_a1/scripts/run_prediction.py
 ```
 
-Verify the committed pack separately with:
+This public path reproduces the redesign-to-recovery predictor headline. It
+uses the shipped de-identified target and therefore does **not** independently
+rebuild that target from subject-keyed HCP behavior.
 
-```bash
-python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
-```
+## Evaluator source boundary
 
-The deeper, HCP-gated steps are in [`REPRODUCTION.md`](REPRODUCTION.md). To
-reproduce A1 the way it was produced — a coding agent driving the loop from
-language through the MCP — see [`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md).
+The recorded governed results bind the historical `run.py` harness to
+`sha256:3fe2eea1…` and the predictor to `sha256:380cbb50…`. The shipped
+`scripts/predict.py` is byte-identical to that recorded predictor. The shipped
+`scripts/run_prediction.py` has a different checksum because it is a public
+port with repo-relative/configurable paths, a CLI, and explicit public-source
+provenance metadata.
 
-## Contents
-- `artifacts/liu_component_behavior_residualised_cognition.csv` — row-indexed
-  public copy of the residualised target values. The governed run output had an
-  HCP `Subject` column; this public copy removes subject identifiers.
-- `artifacts/residualised_target_provenance.json` — inputs + method provenance.
-- `artifacts/liu_source_provenance_summary.json` — public-safe Liu/Tian + HCP-YA
-  source-data provenance: OSF node/checksums, component reconstruction record,
-  target-manifest comparability rules, and redaction boundary.
-- `artifacts/family_block_null_summary.json` — exchangeability (family-block) null summary.
-- `artifacts/residualised_cheap_check.json`, `residualised_target_summary.json` — checks/summary.
-- `scripts/` — runnable, parameterized scripts: `run_prediction.py` (frozen
-  Path-B predictor over the shipped target; reproduces the recovery on public
-  data), `predict.py` (the predictor), `build_residualised_target.py` and
-  `run_residualised_cheap_check.py` (deeper-provenance steps needing staged HCP).
-- `manifests/` — row-indexed `fold_manifest.json` and the component reference
-  manifest consumed by `run_prediction.py`.
-- `manifest.json` — every artifact + its recorded `sha256`.
-- `provenance_card.md` — execution envelope + provenance (Appendix F).
+The pack does **not** call the public port the original frozen harness and does
+not claim a formal semantic-equivalence proof. A successful public headline run
+is direct evidence that the port recovers the recorded output values on the
+public inputs. It is not evidence that the two harness files are byte-identical.
+The machine-readable binding is
+`artifacts/evaluator_source_closure.json`.
 
-## Verify
+## Data-access boundary
 
-From the repository root:
+| Input | Public checkout status | Needed for |
+|---|---|---|
+| Liu FC-pyspi per-term features | Public release fetched by `scripts/fetch_fc_features.py`; not stored in Git | Public predictor rerun |
+| Row-indexed residualised target | Shipped under `artifacts/`; HCP subject identifiers removed | Public predictor rerun |
+| Subject-keyed `liu_component_behavior.csv` for the exact 326-subject intersection | Governed derived input; not shipped, and no public command recreates that exact binding | Rebuilding the target and the deeper predictive check |
+| HCP-YA behavior export | User-staged under HCP Data Use Terms | Rebuilding the target and the deeper predictive check |
+| HCP-YA `Family_ID` and derived exchangeability manifest | Restricted/governed; not shipped | Family-block confirmatory null |
 
-```bash
-python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
-```
-Exit 0 = the shipped artifacts match the recorded checksums.
+HCP behavior alone is not enough for the deeper path. You also need an
+equivalent subject-keyed component table for the exact FC/behavior intersection.
+Use the command templates and output-location safeguards in
+[`REPRODUCTION.md`](REPRODUCTION.md); the documented commands pass explicit
+output paths outside the committed pack.
 
-## Re-run — target and predictive check reproduced 2026-07-08
-This pack was **re-run through the predictive check on the current stack** (see
-`REPRODUCTION.md`):
-**Step 1** rebuilds the residualised target — same inputs (sha256-proven), OLS
-betas / R² / residual_std reproduce to ~1e-15 (machine epsilon; CSV differs only in
-last-ULP float formatting). **Step 2** chains that rebuilt target through the frozen
-§5.1 Path-B predictive check (76 FC terms, 10 folds, 326 subjects) and
-reproduces the published predictive numbers **exactly** — all 117 numeric fields,
-max |Δ| = 0.0. **Step 3** spot-checks seeds 1–30 of the recorded 1000-permutation
-family-block null: all 1830 checked fields reproduce exactly (max |Δ| = 0.0). The
-remaining 970 seeds were not re-run, so the published full-null significance
-(`+1 p = 0.000999`, z = 5.744) remains a recorded result rather than an independently
-reproduced result. Re-run summary: `REPRODUCTION.md`; permutation records:
+## What the 2026-07-08 rerun established
+
+Against the original governed inputs:
+
+- target reconstruction matched the recorded estimates to machine precision;
+- the chained Path-B predictive check matched all 117 compared numeric fields
+  exactly; and
+- permutation seeds 1 through 30 matched all 1,830 checked fields exactly.
+
+The remaining 970 of the recorded 1,000 permutations were **not** rerun. The
+published full-null significance (`+1 p = 0.000999`, z = 5.744) therefore remains
+a recorded result rather than a fully independently reproduced result. Detailed
+commands, comparisons, and tolerances are in
+[`REPRODUCTION.md`](REPRODUCTION.md); the seed-subset output is
 `reproduction/rerun_20260708_null_seeds_1_30.jsonl`.
 
-The upstream inputs live under the governed A1 data root and are **not** in this
-repo. This pack now exposes the public-safe source route in
-`artifacts/liu_source_provenance_summary.json`:
+## What is in the pack
 
-- Liu FC-pyspi assets were staged from OSF node `75je2`
-  (`https://osf.io/75je2`) via `scripts/analysis/fc_benchmarking/setup_liu_fc_pyspi.py`;
-  the recorded manifest is `liu_fc_pyspi_osf_manifest.json`
-  (`sha256:fb19a74beebb826c337d31f0937414813d2a9ff797d219014a8ecc10ce0f0736`).
-- HCP-YA behavior rows must be staged by the user under HCP Data Use Terms. Raw
-  subject rows, subject identifiers, raw FC files, credentials, and local
-  absolute paths are not redistributed.
-- The governed residualised-target output checksum remains recorded in
-  `artifacts/residualised_target_provenance.json`; the shipped CSV is a
-  row-indexed public copy with the same target values and no HCP `Subject`
-  identifiers.
-- The five Liu/Tian component targets are reconstructed from the paper mapping
-  and published demixing matrix, not copied from released subject-level paper
-  weights. The target manifest therefore labels the line
-  `reconstructed_not_paper_exact`. The exact 326-subject FC/behavior
-  intersection and subject-keyed derived component table are governed inputs;
-  their identifiers are not shipped in this public pack.
+- `manifest.json`: checksum boundary for every manifest-listed artifact
+- `provenance_card.md`: recorded execution and provenance envelope
+- `requirements-py311.lock`: exact tested light-path Python environment
+- `artifacts/`: public-safe target, summaries, rerun checks, and agentic examples
+- `manifests/`: frozen fold and component-target manifests used by the predictor
+- `scripts/fetch_fc_features.py`: public release download, checksum, and extract
+- `scripts/run_prediction.py`: manifest-pinned public evaluator port
+- `scripts/predict.py`: predictor byte-identical to the recorded governed copy
+- `scripts/build_residualised_target.py` and
+  `scripts/run_residualised_cheap_check.py`: deeper steps requiring governed
+  inputs described above
+- `run_end_to_end.sh`: one-command public headline rerun
+- `REPRODUCTION.md`: full data boundary and governed rerun record
 
-To reproduce yourself (full recipe + data-access boundary in `REPRODUCTION.md`):
+`artifacts/liu_source_provenance_summary.json` records that the original
+governed authoring workflow used OSF node `75je2` and historically names
+`scripts/analysis/fc_benchmarking/setup_liu_fc_pyspi.py`. That authoring script
+is **not shipped in this public checkout**. Public users should use this pack's
+`scripts/fetch_fc_features.py`; it fetches the de-identified release and does not
+reconstruct the governed subject intersection.
 
-1. **Public headline** — run
-   `reproducibility/bounded_autoresearch_a1/run_end_to_end.sh` from the
-   repository root. It downloads the Liu FC-pyspi per-term features from the
-   GitHub release into the pack's git-ignored `inputs/`, verifies the archive,
-   and reproduces `ICA_Cognition` r ≈ 0.183 / aggregate ≈ 0.151 with no HCP
-   account.
-2. **Deeper provenance** — to rebuild the target and re-run the §5.1 check, stage
-   your own HCP-YA behavior **and** supply the governed, subject-keyed
-   `liu_component_behavior.csv` for the exact 326-subject FC intersection. The
-   public module documents the projection method, but this pack does not ship
-   the subject identifiers or a public builder for that exact intersection.
-   Follow the input template in `REPRODUCTION.md`. The family-block confirmatory
-   null additionally needs HCP Restricted `Family_ID` and its derived
-   exchangeability manifest.
-3. Re-verify shipped bytes with `verify.py`; compare re-run outputs using the
-   tolerances documented in `REPRODUCTION.md`.
-
-Because the pipeline residualises real behavioral data, exact re-runs are expected
-to reproduce within tolerance (documented per the reproducibility-audit convention),
-not necessarily byte-identical.
-
-Source: `docs/use_cases/bounded_autoresearch_a1_2026-04-30/`.
+The broader source narrative remains available under
+[`docs/use_cases/bounded_autoresearch_a1_2026-04-30/`](../../docs/use_cases/bounded_autoresearch_a1_2026-04-30/).

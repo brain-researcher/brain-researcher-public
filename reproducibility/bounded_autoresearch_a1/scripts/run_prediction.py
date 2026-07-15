@@ -1,6 +1,10 @@
-"""Immutable evaluation harness for the Liu-component autoresearch loop.
+"""Public evaluator port for the Liu-component autoresearch loop.
 
-The agent MUST NOT edit this file. Its SHA256 is pinned by verify.py.
+This file ports the recorded governed ``run.py`` to repo-relative, configurable
+paths and a small CLI. It is not byte-identical to that historical harness and
+is not presented as its original source. Within this pack snapshot, consumers
+should treat this file as manifest-pinned and should edit only ``predict.py`` in
+an untracked scratch copy.
 
 Responsibilities
 ----------------
@@ -89,6 +93,9 @@ COMPONENT_ORDER = [
     "ICA_MentalHealth",
 ]
 WALL_TIME_BUDGET_SEC = 300
+HISTORICAL_GOVERNED_HARNESS_SHA256 = (
+    "3fe2eea1c1e20ab7e7630ac87e7b6e2b7cd5a2786a5351e8b410930f062962a1"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -380,8 +387,17 @@ def main() -> int:
     signal.alarm(WALL_TIME_BUDGET_SEC)
 
     result: dict[str, Any] = {
-        "harness": "run.py",
+        "harness": "scripts/run_prediction.py",
         "harness_sha256": _sha256(Path(__file__)),
+        "harness_role": "public_port",
+        "historical_governed_harness_sha256": (
+            HISTORICAL_GOVERNED_HARNESS_SHA256
+        ),
+        "source_relationship": (
+            "ported for public paths, CLI, and provenance metadata; byte "
+            "identity and semantic equivalence to the governed harness are "
+            "not claimed"
+        ),
         "data_spec": {
             "n_subjects": N_SUBJECTS,
             "n_rois": N_ROIS,
@@ -429,7 +445,8 @@ def main() -> int:
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description=(
-            "Re-run the frozen Path-B predictor over the shipped residualised "
+            "Run the public port of the recorded Path-B evaluation protocol "
+            "over the shipped residualised "
             "Cognition target and reproduce the A1 recovery numbers "
             "(ICA_Cognition fold-mean r ~= 0.183, aggregate ~= 0.151). "
             "The target CSV, fold manifest and component manifest ship in this "

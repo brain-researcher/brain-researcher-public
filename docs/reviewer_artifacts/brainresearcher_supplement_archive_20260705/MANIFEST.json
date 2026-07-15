@@ -6,8 +6,8 @@
   "files": [
     {
       "path": "README.md",
-      "size_bytes": 2838,
-      "sha256": "207f4353fa6d640c7d9c342182587bc6b0c9aed3621873911132a675b8acdb16"
+      "size_bytes": 3818,
+      "sha256": "3e37b5f1ee84d58f714d8d951eaf6b5c8a54c445ab1f1cf398d395eb384d27ca"
     },
     {
       "path": "appendix_ledgers/appendix_a_episode_control_plane_card.tex",
@@ -126,8 +126,8 @@
     },
     {
       "path": "supplement_crosswalk.md",
-      "size_bytes": 4379,
-      "sha256": "d21fce37bb6b4dec132ed851a4e79c48d11080eda501bdf046d9728fe6d509f8"
+      "size_bytes": 4395,
+      "sha256": "468bb7290ee50ac2c1eb79815dd2d5bbdfdadb76f229bc3d6c167b0aa5b61c3c"
     }
   ]
 }

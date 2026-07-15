@@ -1,0 +1,19 @@
+# Exact light-path environment validated with CPython 3.11 on Linux.
+#
+# Install from the pack directory with:
+#   python -m pip install --requirement requirements-py311.lock
+#
+# This lock covers the direct packages used by the public evaluator port and
+# their Python-level transitive dependencies. System libraries and wheel build
+# provenance remain outside this text lock.
+h5py==3.15.1
+joblib==1.5.2
+numpy==1.26.4
+pandas==1.5.3
+python-dateutil==2.9.0.post0
+pytz==2025.2
+scikit-learn==1.7.2
+scipy==1.14.1
+six==1.17.0
+threadpoolctl==3.6.0
+tzdata==2025.2

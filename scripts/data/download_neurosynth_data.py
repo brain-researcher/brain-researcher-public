@@ -1,120 +1,158 @@
 #!/usr/bin/env python3.11
-"""Script to download Neurosynth v0.7 data files."""
+"""Download and verify the pinned public Neurosynth v0.7 source files."""
 
+from __future__ import annotations
+
+import argparse
+import hashlib
 import os
+import sys
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import requests
-from tqdm import tqdm  # For progress bar, ensure it's in requirements or handle absence
 
-# Neurosynth v7 data lives at the ROOT of the neurosynth/neurosynth-data repo
-# (the files are named ``data-neurosynth_version-7_*``; there is no ``data/``
-# subdirectory). Pinned to a real commit for reproducibility.
-BASE_URL = "https://raw.githubusercontent.com/neurosynth/neurosynth-data/209c33cd009d0b069398a802198b41b9c488b9b7/"
-
-# Each file is fetched from ``BASE_URL + <filename>`` and saved under that same
-# filename (the repo path and the local name are identical).
-_V7_FILES = (
-    "data-neurosynth_version-7_coordinates.tsv.gz",
-    "data-neurosynth_version-7_metadata.tsv.gz",
-    "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz",
-    "data-neurosynth_version-7_vocab-terms_vocabulary.txt",
+SOURCE_COMMIT = "209c33cd009d0b069398a802198b41b9c488b9b7"
+BASE_URL = (
+    "https://raw.githubusercontent.com/neurosynth/neurosynth-data/" f"{SOURCE_COMMIT}/"
 )
-FILES_TO_DOWNLOAD = {name: BASE_URL + name for name in _V7_FILES}
-
-# Project root is assumed to be the parent directory of this script's location if placed in mri_assistant/scripts
-# Or adjust as needed if script is placed elsewhere.
-# For this execution, let's assume the script will be run from the project root or that the path is relative to it.
-TARGET_DIR = os.path.join("data", "neurosynth_nimare", "neurosynth_v7")
+REPO_ROOT = Path(__file__).resolve().parents[2]
+TARGET_DIR = REPO_ROOT / "data" / "neurosynth_nimare" / "neurosynth_v7"
 
 
-def download_file(url, target_path):
-    """Downloads a file from a URL to a target path with a progress bar."""
+@dataclass(frozen=True)
+class SourceFile:
+    filename: str
+    size_bytes: int
+    sha256: str
+
+    @property
+    def url(self) -> str:
+        return BASE_URL + self.filename
+
+
+SOURCE_FILES = (
+    SourceFile(
+        "data-neurosynth_version-7_coordinates.tsv.gz",
+        3_587_167,
+        "17135be3e08a0ab045896c77217e8463086543a0817d52a6a88c8e32c1161616",
+    ),
+    SourceFile(
+        "data-neurosynth_version-7_metadata.tsv.gz",
+        1_175_486,
+        "8acde7de2a14ee2a12b406e50a8805e83288b0bc78924ddb36879d496dfb757b",
+    ),
+    SourceFile(
+        "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz",
+        9_896_293,
+        "1b3359eebcbc8557340583788b3855031ea21361e87c265cb8fc540d9b6c4edd",
+    ),
+    SourceFile(
+        "data-neurosynth_version-7_vocab-terms_vocabulary.txt",
+        33_799,
+        "71c1858c5eb1bcc79854198bbca234569731efdc382c6205a9e46495379614af",
+    ),
+)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify_file(path: Path, spec: SourceFile) -> tuple[bool, str]:
+    """Verify both expected byte size and SHA-256 for one source asset."""
+    if not path.is_file():
+        return False, "missing"
+    actual_size = path.stat().st_size
+    if actual_size != spec.size_bytes:
+        return False, f"size {actual_size} != {spec.size_bytes}"
+    actual_hash = _sha256(path)
+    if actual_hash != spec.sha256:
+        return False, f"sha256 {actual_hash} != {spec.sha256}"
+    return True, "verified"
+
+
+def download_file(
+    spec: SourceFile,
+    target_path: Path,
+    *,
+    request_get: Callable[..., Any] = requests.get,
+) -> None:
+    """Download to a temporary file, verify it, then publish atomically."""
+    partial_path = target_path.with_name(target_path.name + ".part")
+    partial_path.unlink(missing_ok=True)
+    response = None
     try:
-        response = requests.get(url, stream=True, timeout=30)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        total_size = int(response.headers.get("content-length", 0))
-
-        with (
-            open(target_path, "wb") as f,
-            tqdm(
-                desc=os.path.basename(target_path),
-                total=total_size,
-                unit="iB",
-                unit_scale=True,
-                unit_divisor=1024,
-            ) as bar,
-        ):
-            for chunk in response.iter_content(chunk_size=8192):
-                size = f.write(chunk)
-                bar.update(size)
-        print(f"Successfully downloaded {os.path.basename(target_path)}")
-        return True
-    except requests.exceptions.RequestException as e:
-        print(f"Error downloading {url}: {e}")
-        return False
-    except Exception as e:
-        print(f"An unexpected error occurred while downloading {url}: {e}")
-        return False
+        response = request_get(spec.url, stream=True, timeout=30)
+        response.raise_for_status()
+        with partial_path.open("wb") as stream:
+            for chunk in response.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    stream.write(chunk)
+        valid, reason = verify_file(partial_path, spec)
+        if not valid:
+            raise ValueError(f"downloaded file failed verification: {reason}")
+        os.replace(partial_path, target_path)
+    except Exception:
+        partial_path.unlink(missing_ok=True)
+        raise
+    finally:
+        if response is not None:
+            response.close()
 
 
-def main():
-    """Main function to create directory and download files."""
-    print(f"Target directory for Neurosynth data: {os.path.abspath(TARGET_DIR)}")
+def ensure_file(
+    spec: SourceFile,
+    target_dir: Path,
+    *,
+    request_get: Callable[..., Any] = requests.get,
+) -> str:
+    """Reuse only a verified file; otherwise replace it with a verified download."""
+    target_path = target_dir / spec.filename
+    valid, reason = verify_file(target_path, spec)
+    if valid:
+        return "verified existing file"
+    if target_path.exists():
+        target_path.unlink()
+    download_file(spec, target_path, request_get=request_get)
+    valid, reason = verify_file(target_path, spec)
+    if not valid:
+        target_path.unlink(missing_ok=True)
+        raise ValueError(f"published file failed verification: {reason}")
+    return "downloaded and verified"
 
-    if not os.path.exists(TARGET_DIR):
-        try:
-            os.makedirs(TARGET_DIR)
-            print(f"Created directory: {TARGET_DIR}")
-        except OSError as e:
-            print(f"Error creating directory {TARGET_DIR}: {e}")
-            return
 
-    all_successful = True
-    for filename, url in FILES_TO_DOWNLOAD.items():
-        target_file_path = os.path.join(TARGET_DIR, filename)
-        if os.path.exists(target_file_path):
-            print(f"File {filename} already exists. Skipping download.")
-            continue
-        print(f"Downloading {filename} from {url}...")
-        if not download_file(url, target_file_path):
-            all_successful = False
-            print(
-                f"Failed to download {filename}. Please check the URL or your network connection."
-            )
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--target-dir",
+        type=Path,
+        default=TARGET_DIR,
+        help="Destination for the four pinned Neurosynth files.",
+    )
+    return parser.parse_args(argv)
 
-    if all_successful:
-        print(
-            "\nAll Neurosynth v0.7 data files downloaded (or already existed) successfully."
-        )
-    else:
-        print("\nSome files failed to download. Please review the errors above.")
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    target_dir = args.target_dir.expanduser().resolve()
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+        for spec in SOURCE_FILES:
+            outcome = ensure_file(spec, target_dir)
+            print(f"{spec.filename}: {outcome}")
+    except Exception as exc:
+        print(f"Neurosynth download failed: {exc}", file=sys.stderr)
+        return 1
+    print(f"Verified Neurosynth v0.7 source commit {SOURCE_COMMIT} in {target_dir}")
+    return 0
 
 
 if __name__ == "__main__":
-    # Ensure tqdm is available or provide a fallback
-    try:
-        from tqdm import tqdm
-    except ImportError:
-        print("tqdm library not found. Progress bars will not be shown.")
-
-        # Basic fallback for tqdm if not installed
-        class tqdm:
-            def __init__(self, *args, **kwargs):
-                self.iterable = args[0] if args else None
-                self.desc = kwargs.get("desc", "")
-                print(f"Starting: {self.desc}")
-
-            def __iter__(self):
-                return iter(self.iterable)
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *args):
-                print(f"Finished: {self.desc}")
-                return False
-
-            def update(self, n=1):
-                pass  # No progress update without tqdm
-
-    main()
+    raise SystemExit(main())

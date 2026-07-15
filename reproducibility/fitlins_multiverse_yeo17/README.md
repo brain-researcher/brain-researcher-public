@@ -1,72 +1,104 @@
-# Pack: fitlins_multiverse_yeo17 — schema exemplar (SYNTHETIC)
+# Pack: fitlins_multiverse_yeo17 (synthetic schema fixture)
 
-This pack shows the run-bundle and multiverse-spec **structure** for a FitLins
-Yeo-17 analysis. It is a small, synthetic, checksum-verifiable format example.
-It is **not** a real-data result and is **not runnable end to end as shipped**.
+This manifest-backed directory preserves a **historical synthetic bundle
+shape** for a FitLins Yeo-17 multiverse. It contains no real BIDS dataset and no
+NIfTI statmap bytes. It is useful for inspecting and testing the pack format;
+it is not a real scientific result and is not runnable end to end as shipped.
 
-Use this pack when you want to inspect the expected file layout. Use
-[`../bounded_autoresearch_a1/`](../bounded_autoresearch_a1/) when you want a
-public-data result with an actual rerun command. The worked claim-record tutorial
-under [`../auditable_claim_record/`](../auditable_claim_record/)
-is a different contract under the same reproducibility umbrella: it generates
-claim-card JSON and is not a manifest-backed pack.
+## Choose what you want to do
 
-## Working directory
+| Goal | Use this | Result |
+|---|---|---|
+| Check the committed fixture | `python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17` | Matches seven shipped files; two unshipped statmap keys keep complete integrity indeterminate (exit 2) |
+| Inspect the bundle shape | Open `run/run.json`, `run/analysis_bundle.json`, and `source/specs/` | Shows the historical synthetic records only |
+| Run a real FitLins multiverse | Do not start from this fixture's params | Supply a real BIDS dataset, current specs, runtime, and scientific comparison criterion |
 
-Run the command below from the **repository root**. From anywhere inside the
-clone:
+For a public-data result with an actual rerun command, use
+[`../bounded_autoresearch_a1/`](../bounded_autoresearch_a1/). For a tutorial
+that generates claim-card JSON, use
+[`../auditable_claim_record/`](../auditable_claim_record/).
+
+Run commands from the **repository root**, the directory containing
+`pyproject.toml` and `reproducibility/`. From anywhere inside the clone:
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
 ```
 
-## What is shipped
-
-- `run/run.json` — a historical synthetic step record naming
-  `fitlins.run_multiverse` and example params.
-- `run/analysis_bundle.json` — an `analysis-bundle-v1` record with a file
-  manifest. Statmap entries are provenance keys only; their NIfTI bytes are not
-  shipped.
-- `source/specs/*.json` — synthetic multiverse specifications and manifest.
-- `source/fitlins/yeo17_summary.csv` — a small synthetic summary table.
-- `manifest.json` — checksums for shipped files; missing statmap payloads are
-  marked `schema_only`.
-
-## Verify the shipped snapshot
-
-From the repository root:
+## Verify the fixture
 
 ```bash
 python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
 ```
 
-Exit code 0 means the seven shipped files match their checksums. The two
-`schema_only` statmap entries appear as `indeterminate`; that is expected because
-the NIfTI payloads are not part of this synthetic pack. This command checks the
-snapshot and does not run FitLins.
+The report shows seven `match` rows and two `schema_only` rows as
+`indeterminate`. Because those NIfTI bytes were intentionally never included,
+the overall result is `integrity_verified: null` and exit code 2 rather than a
+complete-integrity success. It also reports `executed: false` and
+`scientifically_reproduced: false`: this command checks the available fixture
+bytes and does not execute FitLins.
 
-## Why there is no rerun command
+Exit 2 is expected for this partial synthetic fixture. It means verification is
+incomplete, not that one of the seven shipped files mismatched. A changed or
+missing shipped file instead reports `integrity_verified: false` and exits 1.
 
-An end-to-end FitLins rerun would need all of the following, none of which is
-fully bound by this pack:
+## What is shipped
 
-1. a real BIDS dataset and its local `bids_root`;
-2. a valid `study_id` and task whose conditions match the model;
-3. current multiverse spec paths;
-4. a FitLins runtime and an output directory; and
-5. real expected statmaps or a scientific equivalence criterion.
+- `run/run.json`: historical synthetic step record naming
+  `fitlins.run_multiverse`
+- `run/analysis_bundle.json`: `analysis-bundle-v1` fixture whose two statmaps
+  are path/checksum examples, not downloadable files
+- `source/specs/*.json`: synthetic multiverse spec and manifest fixtures
+- `source/fitlins/yeo17_summary.csv`: synthetic summary table
+- `manifest.json`: seven checksummed entries plus two `schema_only` paths
+- `provenance_card.md`: provenance boundary for this synthetic fixture
 
-The params in `run/run.json` use an older synthetic shape
-(`dataset_id`, `output_dir`, `multiverse_run_id`, and `bids_model`). The public
-`fitlins.run_multiverse` contract shipped in this repository revision instead
-requires `study_id`, `task`, `bids_root`, and `multiverse_specs`. Do **not** pass
-the recorded params unchanged to `get_execution_recipe` and describe the result
-as a reproduction.
+## Why the recorded params are not a rerun recipe
 
-After you supply and validate the real inputs, MCP
+`run/run.json` records an older example shape:
+
+```text
+dataset_id
+output_dir
+multiverse_run_id
+bids_model
+```
+
+The current `fitlins.run_multiverse` model in
+[`fitlins_tool.py`](../../src/brain_researcher/services/tools/fitlins_tool.py)
+instead requires:
+
+```text
+study_id
+task
+bids_root
+multiverse_specs
+```
+
+It also accepts optional `derivatives_root`, `output_root`, participant filters,
+runtime settings, and `execute`. Its safe default is `execute=false`, which
+returns planned commands rather than running FitLins.
+
+An honest real rerun therefore needs all of the following:
+
+1. a real BIDS dataset and executor-visible `bids_root`;
+2. a valid `study_id` and task whose events match the model;
+3. current multiverse spec files;
+4. a working FitLins runtime and writable output location;
+5. `execute=true` only after reviewing the planned commands; and
+6. real expected outputs or a stated scientific equivalence criterion.
+
+This fixture supplies none of those runtime bindings. Do not pass its historical
+params unchanged to a current tool and describe the result as a reproduction.
+
+## Optional MCP handoff
+
+After you provide and validate real inputs,
 `get_execution_recipe(tool_id="fitlins.run_multiverse", params=...)` can return
-a local Python recipe. That call produces a recipe only; it does not execute the
-analysis. When a connected hosted/deployed MCP exposes
-`run_export_pack(run_id=...)`, that tool applies only after a real run has
-already been persisted; it is not a way to run this static schema exemplar and
-should not be assumed available in a bare local checkout.
+a local/container/cluster recipe when that tool is exposed by the connected MCP.
+The recipe is a planning handoff; it does not execute the analysis.
+
+Some hosted deployments may also expose `run_export_pack(run_id=...)`. That
+exports a pack from an **already persisted run**. This static fixture has no such
+live `run_id`, and a bare local checkout should not be assumed to expose that
+deployment-only export surface.

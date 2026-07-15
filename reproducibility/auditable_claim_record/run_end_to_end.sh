@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# End-to-end, from scratch, deterministic (no MCP):
+# End-to-end, from scratch, pinned-input and version-constrained (no MCP):
 #   a natural-language claim  ->  environment  ->  public corpus  ->  executed
 #   evidence  ->  a sealed, auditable claim record.
 #
@@ -23,7 +23,18 @@ echo "   claim: ${CLAIM}"
 echo "   scope: Neurosynth v7 / fMRI / 'attention' as the allowed rival explanation"
 
 echo "== [2/4] environment (light — not the full platform) =="
-python -m pip install --quiet --disable-pip-version-check -e . nimare nilearn
+python - <<'PY'
+import sys
+
+if sys.version_info[:2] != (3, 11):
+    raise SystemExit(
+        "This locked light path requires Python 3.11; got "
+        f"{sys.version_info.major}.{sys.version_info.minor}"
+    )
+PY
+python -m pip install --quiet --disable-pip-version-check \
+  -c reproducibility/auditable_claim_record/constraints-py311.txt \
+  -e . nimare nilearn
 python - "${REPO_ROOT}" <<'PY'
 from pathlib import Path
 import sys
@@ -54,10 +65,13 @@ echo "== verify the chain actually fired =="
 python - "${OUT}" "${EXPECT_STATUS}" <<'PY'
 import json
 import sys
+from pathlib import Path
 
 out, expect = sys.argv[1], sys.argv[2]
 card = json.load(open(f"{out}/claim_card.json"))
+commitment = json.load(open(f"{out}/commitment_card.json"))
 verdicts = json.load(open(f"{out}/evidence_verdicts.json"))
+bundle = json.load(open(f"{out}/demo_bundle.json"))
 readme = open(f"{out}/README.md").read()
 
 status = card.get("status")
@@ -68,6 +82,17 @@ print(f"   status = {status}")
 print(f"   forward_default n_studies = {n_studies}")
 
 assert status == expect, f"status drifted: got {status!r}, expected {expect!r}"
+assert card["commitment_hash"] == commitment["commitment_hash"]
+assert commitment["evidence_engine"]["name"] == "nimare"
+assert commitment["evidence_engine"]["version"]
+assert all(
+    not ref["path"].startswith("/")
+    for ref in commitment["rubric_refs"].values()
+), "rubric paths must be clone-stable repository-relative references"
+assert bundle["corpus_ref"]["sha256"], "corpus identity was not recorded"
+assert str(Path.cwd().resolve()) not in json.dumps(bundle), (
+    "output bundle leaked the absolute clone path"
+)
 assert n_studies and n_studies > 0, "evidence did not run (no corpus studies scored)"
 for key in ("forward_default", "forward_strict", "specificity_excluding_rivals",
             "network_coactivation"):
@@ -75,7 +100,7 @@ for key in ("forward_default", "forward_strict", "specificity_excluding_rivals",
 for snippet in (
     "Run every command from the public repository root",
     "cd brain-researcher-public",
-    "python -m pip install -e . nimare nilearn",
+    "constraints-py311.txt",
     "reproducibility/auditable_claim_record/drive_from_language.py",
 ):
     assert snippet in readme, f"generated README missing runnable instruction: {snippet}"
@@ -83,4 +108,4 @@ print("   OK: claim -> grounded evidence -> sealed claim record, end to end")
 PY
 
 echo "== done =="
-echo "   record: ${OUT}/claim_card.json  (+ evidence_verdicts.json, demo_bundle.json)"
+echo "   record: ${OUT}/commitment_card.json  (+ claim_card.json, evidence_verdicts.json, demo_bundle.json)"

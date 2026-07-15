@@ -1,7 +1,8 @@
 # Agentic reproduction — drive A1 from language with Claude Code / Codex + MCP
 
-`REPRODUCTION.md` reproduces the A1 **numbers** by running the frozen scripts.
-This file reproduces A1 the way it was actually produced: a coding agent
+`REPRODUCTION.md` reruns the A1 public headline through the manifest-pinned
+public evaluator port and recorded predictor. This file describes A1 the way it
+was produced: a coding agent
 (Claude Code, occasionally Codex) driving the loop **one turn at a time from
 natural language**, through the Brain Researcher MCP. This is the M1 claim of the
 case report — the discipline is an architectural property of the loop, not of the
@@ -33,7 +34,7 @@ cp -a reproducibility/bounded_autoresearch_a1/. "$A1_WORK_DIR/"
 cd "$A1_WORK_DIR"
 ```
 
-The driver commands below use the immutable published copy, so return to the
+The driver commands below use the manifest-pinned published copy, so return to the
 repository root first.
 
 ## The division of labour (what the MCP does vs what the agent does)
@@ -44,9 +45,11 @@ first with `loop_profile_get` (`profile_id="external_coding_v1"`). In short:
 - **The agent owns code mutation.** It edits only `scripts/predict.py` (the
   editable predictor). The MCP **never writes code into the repo**.
 - **The MCP owns discovery, recipes, observation, comparison, KG, and review.**
-  `scripts/run_prediction.py` is the SHA-pinnable *immutable evaluator* — the
-  agent cannot edit it, mock the folds, or peek at fold assignments before
-  scoring.
+  `scripts/run_prediction.py` is the SHA-pinnable *public evaluator port* held
+  fixed during a scratch-loop experiment — the agent cannot edit it, mock the
+  folds, or peek at fold assignments before scoring. It is not the
+  byte-identical historical governed `run.py`; see
+  `artifacts/evaluator_source_closure.json`.
 
 Recommended call order (from the profile):
 `loop_profile_get → tool_search → tool_get → get_execution_recipe →
@@ -127,7 +130,7 @@ a committed file.
 |---|---|---|
 | Surface a hypothesis | Ask the KG which connectivity statistic is linked to the target trait in the literature; keep only those that survive literature verification | `kg_search_nodes` → `kg_hypothesis_workflow` |
 | Propose a pipeline edit | In the scratch copy, read the experiments ledger and edit `scripts/predict.py` (a pyspi statistic, a feature filter, a model family, a hyperparameter) | *(agent-side; MCP does not touch code)* |
-| Evaluate under the frozen protocol | Get a recipe and run `run_prediction.py` over the shipped target + fetched FC features. A direct local invocation returns JSON but does not itself create a persisted MCP `run_id`. | `get_execution_recipe`; `run_bundle_get` only after a governed run is persisted |
+| Evaluate under the recorded protocol | Get a recipe and run the public `run_prediction.py` port over the shipped target + fetched FC features. A direct local invocation returns JSON but does not itself create a persisted MCP `run_id`. | `get_execution_recipe`; `run_bundle_get` only after a governed run is persisted |
 | Score / compare vs baseline | Normalize the result; keep or discard | `run_scorecard`, `run_compare` |
 | Cheap-check → kill / redesign | Apply the cheap-in-house check; if a branch fails its retention bar, convert it into a covariate-aware redesign | `run_scorecard` + `scientific_review` family |
 | Freeze + confirmatory null | Freeze the predictor; run the family-block / max-T / max-over-pipelines nulls | `get_execution_recipe` + review (needs HCP Restricted `Family_ID`) |
@@ -142,14 +145,16 @@ the confirmatory null need staged HCP data (see `REPRODUCTION.md`).
 
 The **search path is not deterministic** — a fresh agent re-derives its own
 sequence of `predict.py` edits and may not retrace the exact same trajectory.
-What reproduces is (a) the **discipline** (commit-before-observe, frozen
-evaluator, cheap-check-before-expensive-compute, literature-vetoed hypotheses),
+What is rerunnable is (a) the **discipline** (commit-before-observe, a
+manifest-pinned evaluator port, cheap-check-before-expensive-compute,
+literature-vetoed hypotheses),
 and (b) once you freeze the *same* predictor, the **confirmatory numbers**
 (`ICA_Cognition` fold-mean r ≈ 0.183, aggregate ≈ 0.151). That the trajectory
 varies while the discipline holds *is* the M1 claim.
 
-The evaluator itself is **deterministic**, so "not identical" never comes from
-drift: a captured loop turn
+The captured public evaluator runs are **deterministic under the recorded light
+environment**, so the captured "not identical" result is not evaluator drift: a
+loop turn
 ([`artifacts/agentic_loop_turn_demo.json`](artifacts/agentic_loop_turn_demo.json))
 shows the shipped predictor scoring `ICA_Cognition` r = 0.183158 on two
 back-to-back runs (identical `predict_sha256`, equal to the published number),
@@ -187,7 +192,7 @@ at [`artifacts/agentic_kg_hypothesis_demo.json`](artifacts/agentic_kg_hypothesis
 > (`external_coding_v1`) and follow its call order. Work only in the scratch copy
 > of the pack, not the manifest-pinned published directory. Run
 > `scripts/fetch_fc_features.py` once to stage the public FC features.
-> Treat `scripts/run_prediction.py` as the immutable evaluator and
+> Treat `scripts/run_prediction.py` as the manifest-pinned public evaluator port and
 > `scripts/predict.py` as the only file you may edit. Loop: (1) use
 > `kg_hypothesis_workflow` to surface a connectivity-statistic→behavior lead and
 > keep only literature-survived ones; (2) edit `predict.py` to materialise one

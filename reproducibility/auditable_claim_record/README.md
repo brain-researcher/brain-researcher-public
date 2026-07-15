@@ -20,6 +20,18 @@ has no `manifest.json` or `provenance_card.md`, and
 packs live alongside it in [`../`](../); the presence of `manifest.json`
 distinguishes those packs from this tutorial.
 
+## Choose the path you want
+
+| Goal | Use this path | Result |
+|---|---|---|
+| Inspect the sealed reference example | Open `claim_card.json`, then `evidence_verdicts.json` and `commitment_card.json` | Reads the committed NeuroLang snapshot; runs no code |
+| Generate a fresh claim record from public data | Run `run_end_to_end.sh` | Writes four new files under an output directory; the default NiMARE result is `supported_within_scope` |
+| Ask a running MCP to compile the claim from language | Run `drive_from_language.py` | Prints and checks a gated MCP report; it does **not** write the four-file tutorial record |
+
+If your goal is a set of files you can open and compare, start with
+`run_end_to_end.sh`. The MCP driver demonstrates the language-to-verdict call
+path, not record export.
+
 ## Working directory
 
 Unless a block explicitly says otherwise, run every command below from the
@@ -50,7 +62,7 @@ the example on the default **NiMARE** backend lands `supported_within_scope`
 instead, because that engine clears the strict bar; see
 [Reproduce it yourself](#reproduce-it-yourself) for why both are faithful.)
 
-## The three files
+## The three committed reference files
 
 | File | What it is |
 |------|------------|
@@ -71,7 +83,7 @@ there:
 - `scope_boundary` — Neurosynth v7, fMRI, NeuroLang probabilistic-Datalog workflow family
 - `next_required_evidence` — what would be needed to promote it (independent-dataset replication; no causal language from coordinate meta-analysis; a pipeline-level multiverse before binding a dataset-specific contrast)
 
-That is the whole record — there is nothing hidden behind it. The appendix in
+That is the whole committed reference record. The appendix in
 the paper only walks through the same schema field by field.
 
 ## Reproduce it yourself
@@ -91,18 +103,37 @@ source ~/.venvs/br-claim-repro/bin/activate
 bash reproducibility/auditable_claim_record/run_end_to_end.sh
 ```
 
-The shell script does **not** create or activate an environment. It installs
-`brain_researcher`, NiMARE, and Nilearn into the environment that is already
-active; downloads and converts Neurosynth under
+The shell script does **not** create or activate an environment. It requires
+Python 3.11 and installs `brain_researcher`, NiMARE, and Nilearn using the
+checked-in [`constraints-py311.txt`](constraints-py311.txt); downloads and
+converts Neurosynth under
 `data/neurosynth_nimare/`; writes the generated record to
 `/tmp/auditable_claim_e2e` by default; and asserts the expected status and
 evidence fields. Pass a different output directory as its first argument.
 
-To reproduce it the way the platform produces it — a coding agent driving the
-sealed claim episode **from language** through the MCP — run
-[`drive_from_language.py`](drive_from_language.py) (a small MCP call sequence:
-`server_info`, then compile or start-and-poll) or follow the full episode in
-[`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md).
+A fresh run writes this exact top-level shape:
+
+```text
+<output-dir>/
+├── README.md
+├── claim_card.json
+├── commitment_card.json
+├── demo_bundle.json
+└── evidence_verdicts.json
+```
+
+The generator writes `commitment_card.json` **before** it performs the first
+evidence query. The same card is nested at `demo_bundle.json` →
+`calibration.commitment_card`, and its hash is referenced by the fresh claim
+card. If evidence execution fails, the pre-observation commitment remains as a
+record of what was sealed; no claim card is fabricated.
+
+To exercise the platform's language-driven compile path, run
+[`drive_from_language.py`](drive_from_language.py) against a reachable MCP. It
+calls `server_info`, then compile or start-and-poll, and prints the gated report
+to stdout. It does not create `claim_card.json`, `evidence_verdicts.json`,
+`demo_bundle.json`, or `README.md`. Follow
+[`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTION.md) for that MCP episode.
 
 The rest of this section is the same chain, step by step. There are two evidence
 backends. The **NiMARE backend is the default** and the
@@ -112,12 +143,14 @@ reference engine that produced the exact sealed card committed in this folder.
 ### Light path (default: NiMARE)
 
 Runs in-process against the public Neurosynth coordinate/term corpus. No second
-interpreter, no pinned legacy dependencies.
+interpreter or legacy environment is required.
 
-1. Install this clone and the backend into an isolated Python 3.10+ environment
-   (tested with Python 3.11), from the repository root:
+1. Install this clone and the backend into an isolated Python 3.11 environment,
+   from the repository root:
    ```bash
-   python -m pip install -e . nimare nilearn "numpy>=1.24"
+   python -m pip install \
+     -c reproducibility/auditable_claim_record/constraints-py311.txt \
+     -e . nimare nilearn
    ```
 2. Download and convert the public Neurosynth v7 corpus:
    ```bash
@@ -136,12 +169,10 @@ interpreter, no pinned legacy dependencies.
    inhibition association does not clear the evidence bar), so you can see the
    record faithfully report a *non*-supported claim.
 
-The generator seals the commitment card, runs the four graded evidence queries
-(forward association under two profiles, specificity against the rival term, and
-region co-activation), and writes `claim_card.json`, `evidence_verdicts.json`,
-`demo_bundle.json`, and a `README.md` to the output directory. The standalone
-`commitment_card.json` shipped in this folder is `demo_bundle.json`'s
-`calibration.commitment_card`.
+The generator seals and writes the commitment card, then runs the four graded
+evidence queries (forward association under two profiles, specificity against
+the rival term, and region co-activation). On success it also writes
+`claim_card.json`, `evidence_verdicts.json`, `demo_bundle.json`, and `README.md`.
 
 On the NiMARE backend the working-memory claim lands **`supported_within_scope`**:
 the dlPFC association clears the bar under *both* the default and the strict
@@ -154,60 +185,49 @@ queries use coordinate-set arithmetic over the corpus (each verdict identifies
 its inference path), because those compositional contrasts are not expressible
 as a single NiMARE CBMA.
 
-### Reference path (NeuroLang) — reproduces the exact committed card
+### Reference path (NeuroLang): engine behind the committed card
 
 The committed `claim_card.json` / `commitment_card.json` / `evidence_verdicts.json`
 (status **`weakened`**, hash `4871ea43…`) were produced by the out-of-process
 NeuroLang probabilistic-Datalog engine. That engine finds the same dlPFC
 association but rules it *threshold-fragile* under the strict profile, which is
-why the reference card is `weakened` rather than `supported_within_scope`. If you
-want to regenerate that exact card family, use the NeuroLang backend.
+why the reference card is `weakened` rather than `supported_within_scope`.
 
-NeuroLang pins older dependencies, so it lives in its own virtualenv. The install
-that works today (the released `neurolang` does not cap NumPy/SciPy, and its
-current versions break the alpha) is:
+This is a **historical reference path, not a current clean-checkout recipe**.
+As of 2026-07-14, `neurolang` has no installable PyPI
+distribution, and this public repository does not pin a verified external
+source commit and lockfile for the authoring engine. A bare
+`pip install neurolang` therefore fails. The committed JSON remains fully
+inspectable, but its NeuroLang engine cannot currently be rebuilt from this
+public checkout alone.
 
-```bash
-python3.11 -m venv ~/.venvs/neurolang
-~/.venvs/neurolang/bin/pip install "numpy<2" "scipy<1.13" neurolang
-```
-
-- The `"numpy<2" "scipy<1.13"` pins are required: a bare `pip install neurolang`
-  pulls NumPy 2.x (removes `np.sctypes`) and SciPy ≥1.13 (removes
-  `scipy.linalg.kron`), and NeuroLang's import fails on both.
-- NeuroLang needs `pysdd`. On Linux it installs from a manylinux wheel; on macOS
-  there is no wheel, so `pip` compiles it — you need a C toolchain (Xcode command
-  line tools) for the NeuroLang path on a Mac. The NiMARE light path above has no
-  such requirement.
-
-Then point the generator at that interpreter and select the backend:
-
-```bash
-BR_NEUROLANG_PYTHON=~/.venvs/neurolang/bin/python \
-python scripts/autoresearch/run_auditable_claim_demo.py \
-  --case working_memory --backend neurolang \
-  --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl \
-  --output-dir /tmp/wm_neurolang
-```
+Use the NiMARE light path above for the supported public rerun. A future
+NeuroLang recipe should only be added after the repository ships a fixed source
+reference, compatible dependency lock, and a tested bootstrap command.
 
 ### What "reproduces" means here
 
 A fresh run reproduces the **finding** and an **internally-consistent record**,
-not a byte-identical file. On the NeuroLang reference path the claim ends
-`weakened`, the same five checks pass and the same `strict-evidence-profile`
-check fails; on the NiMARE light path it ends `supported_within_scope` because
-that engine clears the strict bar. Both are faithful records of what their engine
-found — the point of the artifact is that the status, the surviving/failing
-checks, and their evidence are all right there to inspect, whichever backend you
-run.
+not a byte-identical file. The recorded NeuroLang reference ended `weakened`,
+with the same five checks passing and the same `strict-evidence-profile` check
+failing. The currently supported NiMARE light path ends
+`supported_within_scope` because that engine clears the strict bar. Both records
+faithfully expose what their engine found; only the NiMARE path is presently a
+turnkey public rerun.
 
-The `commitment_hash` is sealed per run (it covers a `locked_at` timestamp and
-the exact engine version), so any fresh run — even on the NeuroLang backend —
-produces a *different* hash from the frozen `4871ea43…` snapshot committed here,
-while still matching between its own commitment and claim cards. That is
-expected: the committed files are one sealed instance. The reproducible
-invariants are the finding, the surviving/failing checks, and the intra-run hash
-match — not the hash value.
+For newly generated cards, `commitment_hash` covers the claim, scope, criteria,
+attack strategies, the SHA-256 of each checked-in rubric, and the evidence
+engine name/version/adapter. It intentionally excludes `locked_at`: the
+timestamp records when sealing happened, not what was sealed. Therefore the
+same committed content has the same hash in two clone locations, while changing
+the engine version or rubric content changes the hash.
+
+The frozen `4871ea43…` NeuroLang snapshot predates the typed
+`evidence_engine` field. Its engine/version remains inspectable in
+`evidence_verdicts.json`, but was not hash-covered in that historical card. A
+new NiMARE run also has a different evidence model and therefore is not expected
+to reuse the historical hash. The required invariant is that each fresh claim
+card matches its own pre-observation commitment.
 
 ## Data
 

@@ -2,6 +2,13 @@
 
 ## F.2 Execution envelope
 - Target runtime: python (bounded-autoresearch A1)
+- Public light runtime: CPython 3.11 with exact packages in
+  `requirements-py311.lock`.
+- Evaluator boundary: recorded governed `run.py` is bound to
+  `sha256:3fe2eea1…`; the public light command runs the distinct,
+  manifest-pinned `scripts/run_prediction.py` port. Formal semantic equivalence
+  is not claimed. The recorded predictor is shipped byte-identically at
+  `sha256:380cbb50…`. See `artifacts/evaluator_source_closure.json`.
 - Method / provenance: see `artifacts/residualised_target_provenance.json`
   (source_files, residualisation method, exchangeability family-block design).
 - Source-data route: see `artifacts/liu_source_provenance_summary.json`
@@ -12,6 +19,7 @@
 ## F.8 Expected vs produced artifacts
 | Artifact | Path | Checksum |
 |---|---|---|
+| evaluator_source_closure.json | `artifacts/evaluator_source_closure.json` | public/governed harness identity boundary; see manifest |
 | liu_component_behavior_residualised_cognition.csv | `artifacts/liu_component_behavior_residualised_cognition.csv` | public redacted checksum; see manifest |
 | residualised_target_provenance.json | `artifacts/residualised_target_provenance.json` | `sha256:7f5e88ad46231541…` |
 | liu_source_provenance_summary.json | `artifacts/liu_source_provenance_summary.json` | `sha256:0da03cd092a4ed9e…` |
