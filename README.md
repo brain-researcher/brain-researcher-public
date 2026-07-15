@@ -115,7 +115,7 @@ cd brain-researcher-public
 
 # 1. Set required env vars (at least: NEO4J_PASSWORD, JWT_SECRET_KEY, NEXTAUTH_SECRET, one LLM API key).
 cp .env.example .env
-$EDITOR .env
+# Edit .env and replace the required placeholders before continuing.
 
 # 2. Start the default stack.
 docker compose up -d
@@ -246,17 +246,25 @@ Two deployment paths under [`infrastructure/k8s/`](infrastructure/k8s/):
 ```bash
 # Helm chart (recommended): copy, edit, render, inspect, then apply.
 cp infrastructure/k8s/helm/brain-researcher/values.yaml /tmp/brain-researcher-values.yaml
-$EDITOR /tmp/brain-researcher-values.yaml
+# Edit /tmp/brain-researcher-values.yaml for your cluster before continuing.
 helm template brain-researcher infrastructure/k8s/helm/brain-researcher/ \
   -f /tmp/brain-researcher-values.yaml > /tmp/brain-researcher-rendered.yaml
 kubectl apply -f /tmp/brain-researcher-rendered.yaml
 
-# Or raw manifests
-kubectl apply -f infrastructure/k8s/manifests/
-# (Istio overlay resources require Istio CRDs; see infrastructure/k8s/helm/brain-researcher-istio/)
+# The raw manifests are templates, not apply-ready deployment files.
+grep -RInE 'your-|<[^>]+>|bcrypt-hash' infrastructure/k8s/manifests/
 ```
 
-The main Helm chart renders 26 Kubernetes resources cleanly; the Istio overlay subchart is experimental, so inspect its chart values and templates before use.
+Do **not** run `kubectl apply -f infrastructure/k8s/manifests/` on the public
+directory as shipped. It contains placeholder credentials, TLS material, and
+basic-auth data, and some resources require cluster CRDs such as cert-manager.
+If you maintain a raw-manifest deployment, copy the templates into a private
+deployment workspace, replace secrets through your secret-management workflow,
+verify the required CRDs, review a server-side dry run or diff against the
+intended cluster, and only then apply the reviewed files.
+
+The main Helm chart renders 26 Kubernetes resources cleanly; the Istio overlay
+subchart is experimental, so inspect its chart values and templates before use.
 
 ---
 

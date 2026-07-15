@@ -188,54 +188,36 @@ The committed `claim_card.json` / `commitment_card.json` / `evidence_verdicts.js
 (status **`weakened`**, hash `4871ea43…`) were produced by the out-of-process
 NeuroLang probabilistic-Datalog engine. That engine finds the same dlPFC
 association but rules it *threshold-fragile* under the strict profile, which is
-why the reference card is `weakened` rather than `supported_within_scope`. If you
-want to regenerate that exact card family, use the NeuroLang backend.
+why the reference card is `weakened` rather than `supported_within_scope`.
 
-NeuroLang pins older dependencies, so it lives in its own virtualenv. The install
-that works today (the released `neurolang` does not cap NumPy/SciPy, and its
-current versions break the alpha) is:
+This is a **historical reference path, not a current clean-checkout recipe**.
+As of 2026-07-14, `neurolang` has no installable PyPI
+distribution, and this public repository does not pin a verified external
+source commit and lockfile for the authoring engine. A bare
+`pip install neurolang` therefore fails. The committed JSON remains fully
+inspectable, but its NeuroLang engine cannot currently be rebuilt from this
+public checkout alone.
 
-```bash
-python3.11 -m venv ~/.venvs/neurolang
-~/.venvs/neurolang/bin/pip install "numpy<2" "scipy<1.13" neurolang
-```
-
-- The `"numpy<2" "scipy<1.13"` pins are required: a bare `pip install neurolang`
-  pulls NumPy 2.x (removes `np.sctypes`) and SciPy ≥1.13 (removes
-  `scipy.linalg.kron`), and NeuroLang's import fails on both.
-- NeuroLang needs `pysdd`. On Linux it installs from a manylinux wheel; on macOS
-  there is no wheel, so `pip` compiles it — you need a C toolchain (Xcode command
-  line tools) for the NeuroLang path on a Mac. The NiMARE light path above has no
-  such requirement.
-
-Then point the generator at that interpreter and select the backend:
-
-```bash
-BR_NEUROLANG_PYTHON=~/.venvs/neurolang/bin/python \
-python scripts/autoresearch/run_auditable_claim_demo.py \
-  --case working_memory --backend neurolang \
-  --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl \
-  --output-dir /tmp/wm_neurolang
-```
+Use the NiMARE light path above for the supported public rerun. A future
+NeuroLang recipe should only be added after the repository ships a fixed source
+reference, compatible dependency lock, and a tested bootstrap command.
 
 ### What "reproduces" means here
 
 A fresh run reproduces the **finding** and an **internally-consistent record**,
-not a byte-identical file. On the NeuroLang reference path the claim ends
-`weakened`, the same five checks pass and the same `strict-evidence-profile`
-check fails; on the NiMARE light path it ends `supported_within_scope` because
-that engine clears the strict bar. Both are faithful records of what their engine
-found — the point of the artifact is that the status, the surviving/failing
-checks, and their evidence are all right there to inspect, whichever backend you
-run.
+not a byte-identical file. The recorded NeuroLang reference ended `weakened`,
+with the same five checks passing and the same `strict-evidence-profile` check
+failing. The currently supported NiMARE light path ends
+`supported_within_scope` because that engine clears the strict bar. Both records
+faithfully expose what their engine found; only the NiMARE path is presently a
+turnkey public rerun.
 
 The `commitment_hash` is sealed per run (it covers a `locked_at` timestamp and
-the exact engine version), so any fresh run — even on the NeuroLang backend —
-produces a *different* hash from the frozen `4871ea43…` snapshot committed here,
-while still matching between its own commitment and claim cards. That is
-expected: the committed files are one sealed instance. The reproducible
-invariants are the finding, the surviving/failing checks, and the intra-run hash
-match — not the hash value.
+the exact engine version), so a fresh supported run produces a *different* hash
+from the frozen `4871ea43…` snapshot committed here while still matching between
+its own commitment and claim cards. That is expected: the committed files are
+one sealed instance. The reproducible invariants are the finding,
+surviving/failing checks, and intra-run hash match, not the hash value.
 
 ## Data
 

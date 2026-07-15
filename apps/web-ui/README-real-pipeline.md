@@ -112,12 +112,12 @@ whose paths are visible inside the execution environment. For example, a
 containerized executor might use:
 
 ```bash
-BR_TEST_PARAMS_JSON='{"img":"/app/data/path/to/preprocessed_bold.nii.gz","output_dir":"/app/data/agent_outputs/e2e-real"}'
+export BR_TEST_PARAMS_JSON='{"img":"/app/data/path/to/preprocessed_bold.nii.gz","output_dir":"/app/data/agent_outputs/e2e-real"}'
 ```
 
-The whole JSON value must be quoted. Replace the example paths with real staged
-inputs; do not assume the default `ds:openneuro:ds000001` catalog record provides
-those files.
+The whole JSON value must be quoted and exported so Playwright receives it.
+Replace the example paths with real staged inputs; do not assume the default
+`ds:openneuro:ds000001` catalog record provides those files.
 
 ## What success proves
 

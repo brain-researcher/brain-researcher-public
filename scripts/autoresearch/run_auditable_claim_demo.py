@@ -7,10 +7,10 @@ Markdown summary under ``docs/results/`` by default.
 
 The default backend is **NiMARE** (``pip install nimare nilearn`` -- standard
 scientific-Python, no second interpreter). NeuroLang is an optional *reference*
-engine (``--backend neurolang``) that reproduces the exact committed reference
-card; it is not required and must not be installed with ``pip install neurolang``
-(see ``reproducibility/auditable_claim_record/README.md`` for its
-isolated-venv recipe).
+engine (``--backend neurolang``) behind the committed reference card; it is not
+required and must not be installed with ``pip install neurolang``. The public
+checkout does not currently ship a verified NeuroLang bootstrap recipe; see
+``reproducibility/auditable_claim_record/README.md`` for that boundary.
 
 Inputs:
   --corpus: NiMARE Neurosynth dataset pickle. Defaults to BR_NEUROCLAIM_CORPUS or
@@ -540,9 +540,10 @@ def _markdown(bundle: dict[str, Any]) -> str:
             "```",
             "",
             "NeuroLang is an optional *reference* engine only -- do NOT "
-            "`pip install neurolang` (it is not installable from PyPI). The venv "
-            "recipe, only if you want to regenerate that exact reference card, is in "
-            "`reproducibility/auditable_claim_record/README.md`.",
+            "`pip install neurolang` (it is not installable from PyPI). The "
+            "public checkout does not currently ship a verified installation "
+            "recipe; see `reproducibility/auditable_claim_record/README.md` for "
+            "that boundary.",
             "",
         ]
     )

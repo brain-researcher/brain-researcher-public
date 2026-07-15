@@ -134,9 +134,12 @@ commitment card's). The `commitment_hash` *value* is sealed per run (it covers a
 timestamp + the engine version), so a fresh run differs from the frozen
 `4871ea43…` snapshot here — expected, not a failure (same caveat as `README.md`).
 
-Verified end to end: running the generator with the NeuroLang backend on the
-public corpus reproduces `status=weakened` with matching intra-run hashes; the
-nimare default reproduces `supported_within_scope` (see `README.md`).
+The committed authoring run recorded `status=weakened` with matching intra-run
+hashes on the NeuroLang backend; the current public NiMARE path reproduces
+`supported_within_scope`. This public checkout does not presently ship a pinned,
+working NeuroLang installation recipe, so treat the first statement as recorded
+authoring validation rather than a turnkey clean-checkout rerun (see
+`README.md`).
 
 **Backend ⇒ status (read this before comparing outputs).** The frozen record in
 this folder (`4871ea43…`, status **`weakened`**) is the **NeuroLang reference
