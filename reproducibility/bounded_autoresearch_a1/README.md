@@ -11,7 +11,7 @@ reproduces on **public data alone** — see the "Run it yourself" section of
 This is a formal reproducibility pack: `manifest.json` and
 `provenance_card.md` define its audit boundary. For a tutorial that generates an
 auditable claim record but is not a checksum pack, see
-[`../../tutorials/auditable_claim_record/`](../../tutorials/auditable_claim_record/).
+[`../auditable_claim_record/`](../auditable_claim_record/).
 
 ## Working directory
 
@@ -35,7 +35,7 @@ git clone https://github.com/brain-researcher/brain-researcher-public.git
 cd brain-researcher-public
 python3.11 -m venv ~/.venvs/br-a1-repro
 source ~/.venvs/br-a1-repro/bin/activate
-bash reproducibility/packs/bounded_autoresearch_a1/run_end_to_end.sh
+bash reproducibility/bounded_autoresearch_a1/run_end_to_end.sh
 ```
 
 `run_end_to_end.sh` installs `numpy`, `pandas`, `h5py`, and `scikit-learn` into
@@ -48,14 +48,14 @@ To run the two analysis steps manually, still from the repository root:
 
 ```bash
 python -m pip install numpy pandas h5py scikit-learn
-python reproducibility/packs/bounded_autoresearch_a1/scripts/fetch_fc_features.py
-python reproducibility/packs/bounded_autoresearch_a1/scripts/run_prediction.py
+python reproducibility/bounded_autoresearch_a1/scripts/fetch_fc_features.py
+python reproducibility/bounded_autoresearch_a1/scripts/run_prediction.py
 ```
 
 Verify the committed pack separately with:
 
 ```bash
-python reproducibility/verify.py reproducibility/packs/bounded_autoresearch_a1
+python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
 ```
 
 The deeper, HCP-gated steps are in [`REPRODUCTION.md`](REPRODUCTION.md). To
@@ -86,7 +86,7 @@ language through the MCP — see [`AGENTIC_REPRODUCTION.md`](AGENTIC_REPRODUCTIO
 From the repository root:
 
 ```bash
-python reproducibility/verify.py reproducibility/packs/bounded_autoresearch_a1
+python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
 ```
 Exit 0 = the shipped artifacts match the recorded checksums.
 
@@ -130,7 +130,7 @@ repo. This pack now exposes the public-safe source route in
 To reproduce yourself (full recipe + data-access boundary in `REPRODUCTION.md`):
 
 1. **Public headline** — run
-   `reproducibility/packs/bounded_autoresearch_a1/run_end_to_end.sh` from the
+   `reproducibility/bounded_autoresearch_a1/run_end_to_end.sh` from the
    repository root. It downloads the Liu FC-pyspi per-term features from the
    GitHub release into the pack's git-ignored `inputs/`, verifies the archive,
    and reproduces `ICA_Cognition` r ≈ 0.183 / aggregate ≈ 0.151 with no HCP

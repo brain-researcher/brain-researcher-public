@@ -43,7 +43,7 @@ import pandas as pd
 # Paths (pinned by step0_findings.md)
 # ---------------------------------------------------------------------------
 HERE = Path(__file__).resolve().parent
-PACK_ROOT = HERE.parent  # reproducibility/packs/bounded_autoresearch_a1/
+PACK_ROOT = HERE.parent  # reproducibility/bounded_autoresearch_a1/
 
 # Paths are pack-relative by default and overridable by environment variable or
 # CLI flag (see the __main__ block). The only input NOT shipped in the pack is

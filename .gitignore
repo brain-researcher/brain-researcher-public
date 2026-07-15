@@ -230,7 +230,7 @@ model_weights/
 !configs/chat_scenarios.json
 !configs/hypothesis/*.json
 !.devin/wiki.json
-!reproducibility/tutorials/auditable_claim_record/*.json
+!reproducibility/auditable_claim_record/*.json
 !docs/results/case1_neuromark_schizophrenia_multiverse/claim_card.json
 !docs/results/case1_neuromark_schizophrenia_multiverse/evidence_verdicts.json
 !docs/proposals/KG_CFS_ADJACENCY_GRAPH_VERIFICATION.json
@@ -255,9 +255,9 @@ model_weights/
 !docs/use_cases/**/*.pdf
 !reproducibility/
 !reproducibility/**
-!reproducibility/packs/**/*.csv
-!reproducibility/packs/**/*.json
-!reproducibility/packs/**/*.jsonl
+!reproducibility/**/*.csv
+!reproducibility/**/*.json
+!reproducibility/**/*.jsonl
 !configs/schemas/brain_researcher_case_package.schema.json
 !contracts/**/*.json
 !contracts/*.json

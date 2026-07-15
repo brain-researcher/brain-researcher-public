@@ -17,8 +17,8 @@ stand-in you can point to.
 This directory is a **worked tutorial**, not a formal reproducibility pack. It
 has no `manifest.json` or `provenance_card.md`, and
 `reproducibility/verify.py` does not accept it. Manifest-backed result and schema
-packs live alongside it under [`../../packs/`](../../packs/): `packs/` and
-`tutorials/` are two contracts within the same reproducibility umbrella.
+packs live alongside it in [`../`](../); the presence of `manifest.json`
+distinguishes those packs from this tutorial.
 
 ## Working directory
 
@@ -88,7 +88,7 @@ git clone https://github.com/brain-researcher/brain-researcher-public.git
 cd brain-researcher-public
 python3.11 -m venv ~/.venvs/br-claim-repro
 source ~/.venvs/br-claim-repro/bin/activate
-bash reproducibility/tutorials/auditable_claim_record/run_end_to_end.sh
+bash reproducibility/auditable_claim_record/run_end_to_end.sh
 ```
 
 The shell script does **not** create or activate an environment. It installs

@@ -11,8 +11,8 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:c8f14c3d1a5515678be1f83ef0dbf7d831b1b552de2e2ceab177c396ffd7a7e4",
-      "size_bytes": 3170
+      "sha256": "sha256:d54683e19af4519b5859064cdb0f79d27fc8fb029df61c766b0190a765f4e505",
+      "size_bytes": 3138
     },
     {
       "path": "provenance_card.md",

@@ -38,7 +38,7 @@ verdict with its named-uncertainty vector and re-runnable query.
 
 ```bash
 # needs a reachable MCP (hosted BR_MCP_HTTP_URL + BR_MCP_TOKEN, or a local server)
-python reproducibility/tutorials/auditable_claim_record/drive_from_language.py --full --async
+python reproducibility/auditable_claim_record/drive_from_language.py --full --async
 ```
 
 That is the recommended full sensitivity run. For a faster connectivity and
@@ -46,7 +46,7 @@ compile smoke without the sensitivity sweep, omit `--full --async`; the returned
 verdict then carries a robustness-unknown caveat. To report the conservative bar:
 
 ```bash
-python reproducibility/tutorials/auditable_claim_record/drive_from_language.py \
+python reproducibility/auditable_claim_record/drive_from_language.py \
   --strictness conservative --full --async
 ```
 
@@ -63,7 +63,7 @@ prompt at the bottom of this file. The steps below are what that call sequence i
 
 ## Connect the MCP
 
-See [`../../../docs/mcp.md`](../../../docs/mcp.md). For Claude Code against a hosted
+See [`../../docs/mcp.md`](../../docs/mcp.md). For Claude Code against a hosted
 server, export the runtime variables in your shell:
 
 ```bash
@@ -99,7 +99,7 @@ return to the repository root, and run the driver. Its default URL is
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
-python reproducibility/tutorials/auditable_claim_record/drive_from_language.py --full --async
+python reproducibility/auditable_claim_record/drive_from_language.py --full --async
 ```
 
 Sanity-check the connection with `server_info`. Never commit a bearer token.

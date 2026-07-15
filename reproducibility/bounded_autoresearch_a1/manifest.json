@@ -5,13 +5,13 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:0f3d738dedcdc673853e05cef40b0737d9eacd70b84a3fb78ad268edfb23a039",
-      "size_bytes": 7970
+      "sha256": "sha256:3be6c140f972d3e538cc7a6ecf03b24f1c081f43d525511b37b9d5bacd1d71bd",
+      "size_bytes": 7908
     },
     {
       "path": "REPRODUCTION.md",
-      "sha256": "sha256:5c3a71eadf95de97f778f78f338d8af29b3c299b703b742a3b9bc737967c15d7",
-      "size_bytes": 14006
+      "sha256": "sha256:f72a9f3d3115bd76a558506587a2604fc095c20c9545d44e403d36cecbc25cb0",
+      "size_bytes": 13946
     },
     {
       "path": "provenance_card.md",
@@ -75,8 +75,8 @@
     },
     {
       "path": "scripts/run_prediction.py",
-      "sha256": "sha256:dc256faa848b5426a0c649f61a4dce9a0e91b438876148d5865c5b524547ef35",
-      "size_bytes": 17837
+      "sha256": "sha256:c424d54185bc6886eeafbfbdb3343d4ebd3d640b98e2172daff67e4c6611b930",
+      "size_bytes": 17831
     },
     {
       "path": "scripts/run_residualised_cheap_check.py",
@@ -95,12 +95,12 @@
     },
     {
       "path": "AGENTIC_REPRODUCTION.md",
-      "sha256": "sha256:a8b9e2d2c7b13a97b4a5a537c40975e1daea1908cacd339cbffc8e4f05075805",
-      "size_bytes": 10664
+      "sha256": "sha256:d11889a6356efdcf89993f76408117ce1cdf6a262cd5f001a44cb7fae65968fa",
+      "size_bytes": 10631
     },
     {
       "path": "drive_from_language.py",
-      "sha256": "sha256:00ef231a4fbee2130a5e3fc9baa81f5ecd0631aa488da247331ee52e0bf1288e",
+      "sha256": "sha256:a4663e007b8f1a6a3321fb70c42ba776f6cca947e8c1d74446585b62ed7cc95b",
       "size_bytes": 7641
     },
     {

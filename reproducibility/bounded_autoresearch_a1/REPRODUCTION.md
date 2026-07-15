@@ -38,8 +38,8 @@ HCP-controlled row — see the data-access boundary below.
 
 | Input | Access | Needed for |
 |---|---|---|
-| Liu FC-pyspi per-term features (`--terms-dir`) | **Public** — approximately 835 MB GitHub release archive and 1.0 GB after extraction, fetched by `reproducibility/packs/bounded_autoresearch_a1/scripts/fetch_fc_features.py` (repackaged from OSF [75je2](https://osf.io/75je2); `tar.gz sha256 ac3d0f369ea99e0f7587a2bb144664a3a2ea490e7ebfafac1ecf22bf14e811f5`) | the prediction (all steps) |
-| Residualised target CSV | **Shipped** (`reproducibility/packs/bounded_autoresearch_a1/artifacts/liu_component_behavior_residualised_cognition.csv`, row-indexed, de-identified) | the prediction (recovery) |
+| Liu FC-pyspi per-term features (`--terms-dir`) | **Public** — approximately 835 MB GitHub release archive and 1.0 GB after extraction, fetched by `reproducibility/bounded_autoresearch_a1/scripts/fetch_fc_features.py` (repackaged from OSF [75je2](https://osf.io/75je2); `tar.gz sha256 ac3d0f369ea99e0f7587a2bb144664a3a2ea490e7ebfafac1ecf22bf14e811f5`) | the prediction (all steps) |
+| Residualised target CSV | **Shipped** (`reproducibility/bounded_autoresearch_a1/artifacts/liu_component_behavior_residualised_cognition.csv`, row-indexed, de-identified) | the prediction (recovery) |
 | Subject-keyed `liu_component_behavior.csv` for the exact 326-subject FC intersection | **Governed derived input, not shipped** — the public projection module records the method, but the subject IDs and a builder for this exact intersection are not public | rebuilding the target (step 1) and the §5.1 cheap check |
 | HCP-YA behavior export | **HCP Open Access** (click-through Data Use Terms) | IQ/covariate columns for rebuilding the target (step 1) and the §5.1 cheap check |
 | HCP-YA `Family_ID` | **HCP Restricted** (application) | the family-block confirmatory null (step 3) |
@@ -52,15 +52,15 @@ After cloning and activating an isolated environment, run this one command
 ```bash
 python3.11 -m venv ~/.venvs/br-a1-repro
 source ~/.venvs/br-a1-repro/bin/activate
-bash reproducibility/packs/bounded_autoresearch_a1/run_end_to_end.sh
+bash reproducibility/bounded_autoresearch_a1/run_end_to_end.sh
 ```
 
 Or run the two underlying steps from the repository root:
 
 ```bash
 python -m pip install numpy pandas h5py scikit-learn
-python reproducibility/packs/bounded_autoresearch_a1/scripts/fetch_fc_features.py
-python reproducibility/packs/bounded_autoresearch_a1/scripts/run_prediction.py
+python reproducibility/bounded_autoresearch_a1/scripts/fetch_fc_features.py
+python reproducibility/bounded_autoresearch_a1/scripts/run_prediction.py
 ```
 
 `fetch_fc_features.py` downloads the approximately 835 MB archive from the GitHub release
@@ -88,18 +88,18 @@ export A1_HCP_DIR=/absolute/path/to/staged-hcp
 export A1_REBUILD_DIR=/tmp/a1_rebuilt
 
 # step 1 — rebuild the (subject-keyed) target from HCP Open Access behavior
-python reproducibility/packs/bounded_autoresearch_a1/scripts/build_residualised_target.py \
+python reproducibility/bounded_autoresearch_a1/scripts/build_residualised_target.py \
   --behavior-dir "$A1_HCP_DIR" \
   --component-csv liu_component_behavior.csv --hcp-csv HCP_YA_subjects.csv \
   --out-dir "$A1_REBUILD_DIR"
 # step 2 — §5.1 within-fold cheap check (needs the subject-keyed target + HCP covariates)
-python reproducibility/packs/bounded_autoresearch_a1/scripts/run_residualised_cheap_check.py \
+python reproducibility/bounded_autoresearch_a1/scripts/run_residualised_cheap_check.py \
   --resid-csv "$A1_REBUILD_DIR/liu_component_behavior_residualised_cognition.csv" \
   --hcp-csv "$A1_HCP_DIR/HCP_YA_subjects.csv"
 ```
 
 Step 2 also requires the public FC features fetched by the headline path. It
-writes `reproducibility/packs/bounded_autoresearch_a1/scripts/residualised_cheap_check.json`.
+writes `reproducibility/bounded_autoresearch_a1/scripts/residualised_cheap_check.json`.
 The exact numbers those steps must reproduce are recorded below.
 
 ---
@@ -110,7 +110,7 @@ The exact numbers those steps must reproduce are recorded below.
 ```bash
 export A1_HCP_DIR=/absolute/path/to/staged-hcp
 export A1_REBUILD_DIR=/tmp/a1_rebuilt
-python reproducibility/packs/bounded_autoresearch_a1/scripts/build_residualised_target.py \
+python reproducibility/bounded_autoresearch_a1/scripts/build_residualised_target.py \
   --behavior-dir "$A1_HCP_DIR" \
   --component-csv liu_component_behavior.csv \
   --hcp-csv HCP_YA_subjects.csv \
@@ -193,7 +193,7 @@ summarized above.
 ```bash
 export A1_HCP_DIR=/absolute/path/to/staged-hcp
 export A1_REBUILD_DIR=/tmp/a1_rebuilt
-python reproducibility/packs/bounded_autoresearch_a1/scripts/run_residualised_cheap_check.py \
+python reproducibility/bounded_autoresearch_a1/scripts/run_residualised_cheap_check.py \
   --resid-csv "$A1_REBUILD_DIR/liu_component_behavior_residualised_cognition.csv" \
   --hcp-csv "$A1_HCP_DIR/HCP_YA_subjects.csv"
 ```

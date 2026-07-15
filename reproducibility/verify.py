@@ -127,7 +127,9 @@ def verify_pack(pack_dir: Path) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Verify a reproducibility pack.")
-    ap.add_argument("pack_dir", help="Path to a reproducibility/packs/<id> dir")
+    ap.add_argument(
+        "pack_dir", help="Path to a manifest-backed reproducibility/<id> directory"
+    )
     args = ap.parse_args(argv)
     pack = Path(args.pack_dir)
     if not pack.is_dir():

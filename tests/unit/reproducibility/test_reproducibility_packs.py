@@ -10,16 +10,25 @@ from pathlib import Path
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[3]
 REPRO_ROOT = REPO_ROOT / "reproducibility"
-PACKS = sorted(path for path in (REPRO_ROOT / "packs").iterdir() if path.is_dir())
-CLAIM_TUTORIAL = REPRO_ROOT / "tutorials" / "auditable_claim_record"
+PACKS = sorted(
+    path
+    for path in REPRO_ROOT.iterdir()
+    if path.is_dir() and (path / "manifest.json").is_file()
+)
+A1_PACK = REPRO_ROOT / "bounded_autoresearch_a1"
+CLAIM_TUTORIAL = REPRO_ROOT / "auditable_claim_record"
 
 
 def test_reproducibility_packs_exist() -> None:
-    assert PACKS, "no reproducibility packs are shipped"
+    assert {path.name for path in PACKS} == {
+        "bounded_autoresearch_a1",
+        "fitlins_multiverse_yeo17",
+    }
     assert (REPRO_ROOT / "verify.py").is_file()
+    assert not (REPRO_ROOT / "packs").exists()
+    assert not (REPRO_ROOT / "tutorials").exists()
 
 
 def test_auditable_claim_tutorial_is_colocated() -> None:
@@ -27,16 +36,21 @@ def test_auditable_claim_tutorial_is_colocated() -> None:
     assert not (REPO_ROOT / "examples" / "auditable_claim_record").exists()
     assert not (CLAIM_TUTORIAL / "manifest.json").exists()
 
-    driver = runpy.run_path(str(CLAIM_TUTORIAL / "drive_from_language.py"))
-    assert driver["REPO_ROOT"] == REPO_ROOT
-    assert driver["CALL_TOOL"] == REPO_ROOT / "scripts" / "mcp" / "call_http_tool.py"
-    assert driver["CALL_TOOL"].is_file()
-
     generator = (
         REPO_ROOT / "scripts" / "autoresearch" / "run_auditable_claim_demo.py"
     ).read_text(encoding="utf-8")
     assert '"cd brain-researcher-public"' in generator
     assert '"python -m pip install -e . nimare nilearn"' in generator
+
+
+@pytest.mark.parametrize(
+    "example_dir", [A1_PACK, CLAIM_TUTORIAL], ids=lambda path: path.name
+)
+def test_agentic_driver_resolves_repository_root(example_dir: Path) -> None:
+    driver = runpy.run_path(str(example_dir / "drive_from_language.py"))
+    assert driver["REPO_ROOT"] == REPO_ROOT
+    assert driver["CALL_TOOL"] == REPO_ROOT / "scripts" / "mcp" / "call_http_tool.py"
+    assert driver["CALL_TOOL"].is_file()
 
 
 @pytest.mark.parametrize("pack_dir", PACKS, ids=lambda path: path.name)
