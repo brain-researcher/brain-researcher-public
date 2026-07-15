@@ -29,7 +29,7 @@ to an untracked scratch directory and let the agent work there:
 
 ```bash
 export A1_WORK_DIR="$(mktemp -d /tmp/bounded-autoresearch-a1.XXXXXX)"
-cp -a reproducibility/packs/bounded_autoresearch_a1/. "$A1_WORK_DIR/"
+cp -a reproducibility/bounded_autoresearch_a1/. "$A1_WORK_DIR/"
 cd "$A1_WORK_DIR"
 ```
 
@@ -62,10 +62,10 @@ prints what the literature check let survive versus vetoed / downranked.
 ```bash
 cd "$BR_PUBLIC_ROOT"
 # needs a reachable MCP (hosted BR_MCP_HTTP_URL + BR_MCP_TOKEN, or a local server)
-python reproducibility/packs/bounded_autoresearch_a1/drive_from_language.py
+python reproducibility/bounded_autoresearch_a1/drive_from_language.py
 # offline, against the captured demo call:
-python reproducibility/packs/bounded_autoresearch_a1/drive_from_language.py \
-  --from-file reproducibility/packs/bounded_autoresearch_a1/artifacts/agentic_kg_hypothesis_demo.json
+python reproducibility/bounded_autoresearch_a1/drive_from_language.py \
+  --from-file reproducibility/bounded_autoresearch_a1/artifacts/agentic_kg_hypothesis_demo.json
 ```
 
 Sampling + verification are budget-bounded and non-deterministic; what is
@@ -74,7 +74,7 @@ same-family downrank, literature veto). The full loop is the starter prompt belo
 
 ## Connect the MCP
 
-See [`docs/mcp.md`](../../../docs/mcp.md) for the full connection guide. In brief,
+See [`docs/mcp.md`](../../docs/mcp.md) for the full connection guide. In brief,
 for Claude Code against a hosted server:
 
 ```bash
@@ -113,7 +113,7 @@ available:
 ```bash
 export BR_PUBLIC_ROOT="$(git rev-parse --show-toplevel)"
 cd "$BR_PUBLIC_ROOT"
-python reproducibility/packs/bounded_autoresearch_a1/drive_from_language.py
+python reproducibility/bounded_autoresearch_a1/drive_from_language.py
 ```
 
 Sanity-check the connected MCP with `server_info` before relying on any other

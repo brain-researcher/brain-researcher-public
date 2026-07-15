@@ -7,12 +7,12 @@
 # the full Brain Researcher platform. It fails loudly if the result drifts, so a
 # green run means every link in the chain held.
 #
-#   bash reproducibility/tutorials/auditable_claim_record/run_end_to_end.sh [OUTPUT_DIR]
+#   bash reproducibility/auditable_claim_record/run_end_to_end.sh [OUTPUT_DIR]
 #
 # For the language-driven (agent + MCP) path, see drive_from_language.py.
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 OUT="${1:-/tmp/auditable_claim_e2e}"
 EXPECT_STATUS="${BR_E2E_EXPECT_STATUS:-supported_within_scope}"
@@ -76,7 +76,7 @@ for snippet in (
     "Run every command from the public repository root",
     "cd brain-researcher-public",
     "python -m pip install -e . nimare nilearn",
-    "reproducibility/tutorials/auditable_claim_record/drive_from_language.py",
+    "reproducibility/auditable_claim_record/drive_from_language.py",
 ):
     assert snippet in readme, f"generated README missing runnable instruction: {snippet}"
 print("   OK: claim -> grounded evidence -> sealed claim record, end to end")

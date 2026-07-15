@@ -6,9 +6,9 @@ file lists where to obtain that data, and — for completeness — the data sour
 for the other cases referenced in the manuscript, some of which are
 controlled-access and are therefore not redistributed here.
 
-This file belongs to the worked example under `reproducibility/tutorials/`; it
-is not a pack manifest. The formal checksum packs and their data boundaries are
-documented in [`../../packs/`](../../packs/).
+This file belongs to the worked example under `reproducibility/`; it is not a
+pack manifest. The formal checksum packs and their data boundaries are
+documented alongside it in [`../`](../).
 
 ## Working directory
 

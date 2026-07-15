@@ -1,10 +1,10 @@
 # Brain Researcher — Reproducibility
 
 This directory is the single home for Brain Researcher reproducibility
-materials. It contains **self-verifying packs** for recorded results under
-`packs/` and runnable teaching examples under `tutorials/`.
+materials. Self-verifying packs and runnable teaching examples are stored
+together here by example name.
 
-Each pack under `packs/<id>/` carries a `manifest.json`, a
+Each self-verifying pack carries a `manifest.json`, a
 `provenance_card.md`, and a pack-specific `README.md`. Optional directories such
 as `run/`, `source/`, `artifacts/`, `reproduction/`, or `execution_pack/` depend
 on the pack type.
@@ -13,15 +13,15 @@ on the pack type.
 
 | Goal | Start here | What it is |
 |---|---|---|
-| Check a recorded result or schema snapshot | `reproducibility/packs/<id>/` | A manifest-backed pack accepted by `reproducibility/verify.py`. |
-| Re-run the public A1 result | [`packs/bounded_autoresearch_a1/`](packs/bounded_autoresearch_a1/) | A real recorded-result pack with public-data scripts plus deeper HCP-gated steps. |
-| Inspect the FitLins pack format | [`packs/fitlins_multiverse_yeo17/`](packs/fitlins_multiverse_yeo17/) | A synthetic schema exemplar. It is verifiable but is not a shipped real-data rerun. |
-| Learn how an auditable claim record is generated | [`tutorials/auditable_claim_record/`](tutorials/auditable_claim_record/) | A runnable tutorial that emits claim-card JSON. It is **not** a manifest-backed pack. |
+| Check a recorded result or schema snapshot | `reproducibility/<id>/` with a `manifest.json` | A manifest-backed pack accepted by `reproducibility/verify.py`. |
+| Re-run the public A1 result | [`bounded_autoresearch_a1/`](bounded_autoresearch_a1/) | A real recorded-result pack with public-data scripts plus deeper HCP-gated steps. |
+| Inspect the FitLins pack format | [`fitlins_multiverse_yeo17/`](fitlins_multiverse_yeo17/) | A synthetic schema exemplar. It is verifiable but is not a shipped real-data rerun. |
+| Learn how an auditable claim record is generated | [`auditable_claim_record/`](auditable_claim_record/) | A runnable tutorial that emits claim-card JSON. It is **not** a manifest-backed pack. |
 
-Within this one reproducibility umbrella, `packs/` contains immutable,
-checksummed audit packages and `tutorials/` contains runnable teaching examples.
-The auditable-claim tutorial has no `manifest.json`, so passing it to `verify.py`
-returns exit code 2.
+The directory type is determined by its contents, not by another navigation
+level: a directory with `manifest.json` is a verifiable pack; the
+auditable-claim tutorial has no manifest, so passing it to `verify.py` returns
+exit code 2.
 
 ## Working directory convention
 
@@ -50,8 +50,8 @@ active conda environment or virtual environment.
 From the repository root:
 
 ```bash
-python reproducibility/verify.py reproducibility/packs/bounded_autoresearch_a1
-python reproducibility/verify.py reproducibility/packs/fitlins_multiverse_yeo17
+python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
+python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
 ```
 
 `verify.py` uses only the Python standard library. It re-hashes each manifest
@@ -79,13 +79,13 @@ from the repository root:
 ```bash
 python3.11 -m venv ~/.venvs/br-a1-repro
 source ~/.venvs/br-a1-repro/bin/activate
-bash reproducibility/packs/bounded_autoresearch_a1/run_end_to_end.sh
+bash reproducibility/bounded_autoresearch_a1/run_end_to_end.sh
 ```
 
 The script installs its light Python dependencies into the active environment,
 downloads the public FC feature archive, verifies its checksum, runs the frozen
 predictor, and checks the expected result. It does not use MCP or HCP-controlled
-data. See the [pack README](packs/bounded_autoresearch_a1/README.md) for download
+data. See the [pack README](bounded_autoresearch_a1/README.md) for download
 size, outputs, and the separately data-gated steps.
 
 ## MCP recipes are optional
