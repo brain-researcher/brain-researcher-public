@@ -38,7 +38,7 @@ class EnhancedNiCLIPLoader:
     def __init__(
         self,
         db: Neo4jGraphDB,
-        niclip_data_path: str = "/data/ECoG-foundation-model/mnndl_temp/niclip",
+        niclip_data_path: str = "/app/data/niclip",
         model_name: str = "BrainGPT-7B-v0.2",
         section: str = "abstract",
         use_model_weights: bool = True,
@@ -609,8 +609,8 @@ def main():
     )
     parser.add_argument(
         "--niclip-path",
-        default="/data/ECoG-foundation-model/mnndl_temp/niclip",
-        help="Path to NiCLIP data directory",
+        required=True,
+        help="Path to NiCLIP data directory (or the /app/data/niclip container mount)",
     )
     parser.add_argument(
         "--model",

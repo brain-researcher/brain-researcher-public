@@ -235,9 +235,9 @@ def load(
         ..., "--db", "-d", help="Path to BR-KG database", exists=True
     ),
     niclip_path: Path = typer.Option(
-        Path("/data/ECoG-foundation-model/mnndl_temp/niclip"),
+        ...,
         "--data-path",
-        help="Path to NICLIP data directory",
+        help="Path to NICLIP data directory (for containers, usually /app/data/niclip)",
     ),
     model: str = typer.Option(
         "BrainGPT-7B-v0.2",
@@ -327,10 +327,10 @@ def load(
 @app.command()
 def info(
     niclip_path: Path = typer.Option(
-        Path("/data/ECoG-foundation-model/mnndl_temp/niclip"),
+        ...,
         "--data-path",
         "-d",
-        help="Path to NICLIP data directory",
+        help="Path to NICLIP data directory (for containers, usually /app/data/niclip)",
     ),
 ):
     """Display information about available NICLIP data."""

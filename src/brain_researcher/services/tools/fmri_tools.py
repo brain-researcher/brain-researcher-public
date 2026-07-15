@@ -838,8 +838,9 @@ class ContrastAnalysisTool(NeuroToolWrapper):
 
     def get_tool_description(self) -> str:
         return (
-            "Analyze fMRI contrast maps to identify significant clusters, "
-            "extract peak coordinates, and generate cognitive interpretations."
+            "Summarize descriptive suprathreshold connected components in an "
+            "explicit fMRI z-map. This tool does not perform inferential significance "
+            "testing, anatomical labeling, or cognitive interpretation."
         )
 
     def get_args_schema(self):
@@ -853,124 +854,102 @@ class ContrastAnalysisTool(NeuroToolWrapper):
         coordinates: list[list[float]] | None = None,
     ) -> ToolResult:
         """Analyze a contrast map."""
-        try:
-            import os
-            import pathlib
-
-            # Check if real GLM data directory exists
-            glm_base_path = pathlib.Path(
-                "/data/ECoG-foundation-model/mnndl_temp/brain_researcher/llm_cognitive_function/data/z_statmap"
+        requested_path = str(z_map_path or "").strip()
+        if not requested_path:
+            return ToolResult(
+                status="error",
+                error="Contrast analysis requires an explicit z-map path.",
+                metadata={
+                    "tool": "contrast_analysis",
+                    "error_category": "data",
+                    "recovery_suggestions": [
+                        "Provide z_map_path pointing to an existing NIfTI file"
+                    ],
+                },
             )
 
-            # Try to use provided path first, then check GLM directory
-            use_mock = True
-            actual_z_map_path = z_map_path
+        z_map = Path(requested_path).expanduser()
+        if not z_map.is_file():
+            return ToolResult(
+                status="error",
+                error=f"Z-map file not found: {requested_path}",
+                metadata={
+                    "tool": "contrast_analysis",
+                    "error_category": "data",
+                    "z_map": requested_path,
+                    "recovery_suggestions": [
+                        "Provide z_map_path pointing to an existing NIfTI file"
+                    ],
+                },
+            )
 
-            if z_map_path and os.path.exists(z_map_path):
-                use_mock = False
-                actual_z_map_path = z_map_path
-            elif glm_base_path.exists():
-                # Try to find matching file in GLM directory
-                # Extract dataset and contrast info from path or name
-                if "ds" in z_map_path.lower():
-                    # Try to parse dataset ID
-                    import re
+        if not (z_map.name.endswith(".nii") or z_map.name.endswith(".nii.gz")):
+            return ToolResult(
+                status="error",
+                error=f"Z-map must be a NIfTI file (.nii or .nii.gz): {requested_path}",
+                metadata={
+                    "tool": "contrast_analysis",
+                    "error_category": "data",
+                    "z_map": requested_path,
+                },
+            )
 
-                    dataset_match = re.search(r"ds\d+", z_map_path.lower())
-                    if dataset_match:
-                        dataset_id = dataset_match.group()
-                        # Look for matching files
-                        for task_dir in glm_base_path.glob(
-                            f"{dataset_id}/task-*/node-dataLevel"
-                        ):
-                            for contrast_file in task_dir.glob(
-                                "contrast-*_stat-z_statmap.nii.gz"
-                            ):
-                                if contrast_name.lower() in str(contrast_file).lower():
-                                    actual_z_map_path = str(contrast_file)
-                                    use_mock = False
-                                    self.logger.info(
-                                        f"Found real GLM file: {actual_z_map_path}"
-                                    )
-                                    break
-                            if not use_mock:
-                                break
+        try:
+            import tempfile
 
-                # If still no match, try ds000001 balloon analog risk task
-                if use_mock and contrast_name:
-                    balloon_task_dir = (
-                        glm_base_path
-                        / "ds000001/task-balloonanalogrisktask/node-dataLevel"
-                    )
-                    if balloon_task_dir.exists():
-                        # Map common contrast names to actual files
-                        contrast_mapping = {
-                            "pumps": "contrast-pumps_stat-z_statmap.nii.gz",
-                            "explode": "contrast-explodepara_stat-z_statmap.nii.gz",
-                            "cash": "contrast-cashpara_stat-z_statmap.nii.gz",
-                            "control": "contrast-controlpara_stat-z_statmap.nii.gz",
-                            "allpumps": "contrast-allpumps_stat-z_statmap.nii.gz",
-                            "rt": "contrast-rt_stat-z_statmap.nii.gz",
-                        }
+            import nibabel as nib
 
-                        # Try exact match first
-                        for key, filename in contrast_mapping.items():
-                            if key in contrast_name.lower():
-                                contrast_file = balloon_task_dir / filename
-                                if contrast_file.exists():
-                                    actual_z_map_path = str(contrast_file)
-                                    use_mock = False
-                                    self.logger.info(
-                                        f"Using balloon task GLM file: {actual_z_map_path}"
-                                    )
-                                    break
+            from brain_researcher.core.analysis.contrast_analysis import (
+                ContrastAnalyzer,
+            )
 
-            if use_mock:
-                self.logger.info(
-                    f"Using mock mode for contrast analysis: {contrast_name}"
+            resolved_z_map = z_map.resolve()
+            self.logger.info("Analyzing contrast %s from %s", contrast_name, z_map)
+
+            # ContrastAnalyzer currently creates its output directory eagerly. Use a
+            # temporary directory because this tool returns data rather than a report.
+            with tempfile.TemporaryDirectory(prefix="br-contrast-analysis-") as tmp_dir:
+                analyzer = ContrastAnalyzer(output_dir=tmp_dir)
+                raw_clusters = analyzer._get_significant_clusters(
+                    resolved_z_map, threshold=3.0, min_size=5
                 )
-            else:
-                # Try to import contrast analysis functionality
-                try:
-                    from brain_researcher.core.analysis.contrast_analysis import (
-                        ContrastAnalyzer,
-                    )
 
-                    ContrastAnalyzer()
-                except ImportError:
-                    self.logger.warning(
-                        "ContrastAnalyzer not available, using mock mode"
-                    )
-                    use_mock = True
-
-            self.logger.info(f"Analyzing contrast: {contrast_name}")
-
-            # In real implementation, would analyze the z-map
-            # Mock results for demonstration
-            mock_clusters = [
+            significant_clusters = [
                 {
-                    "peak_coordinate": [-42, -22, 54],
-                    "cluster_size": 125,
-                    "peak_z": 5.2,
-                    "region": "Left Primary Motor Cortex",
-                },
-                {
-                    "peak_coordinate": [42, -22, 54],
-                    "cluster_size": 98,
-                    "peak_z": 4.8,
-                    "region": "Right Primary Motor Cortex",
-                },
+                    "peak_coordinate": cluster["peak_coords"],
+                    "coordinate_space": "voxel",
+                    "cluster_size": cluster["size"],
+                    "peak_z": cluster["peak_value"],
+                    "center_of_mass_voxel": cluster["center_of_mass"],
+                }
+                for cluster in raw_clusters
             ]
 
-            # If specific coordinates provided, analyze those
             if coordinates:
+                image = nib.load(str(resolved_z_map))
+                image_data = np.asarray(image.get_fdata())
+                inverse_affine = np.linalg.inv(image.affine)
                 coordinate_results = []
                 for coord in coordinates:
+                    if len(coord) != 3:
+                        raise ValueError(
+                            "Each coordinate must contain exactly three values"
+                        )
+                    voxel_float = nib.affines.apply_affine(inverse_affine, coord)
+                    voxel = tuple(int(round(value)) for value in voxel_float)
+                    in_bounds = all(
+                        0 <= value < image_data.shape[index]
+                        for index, value in enumerate(voxel)
+                    )
                     coordinate_results.append(
                         {
                             "coordinate": coord,
-                            "z_value": 3.5,  # Mock value
-                            "region": "Motor cortex",  # Mock region
+                            "coordinate_space": "world",
+                            "voxel_index": list(voxel),
+                            "in_bounds": in_bounds,
+                            "z_value": (
+                                float(image_data[voxel]) if in_bounds else None
+                            ),
                         }
                     )
             else:
@@ -980,17 +959,35 @@ class ContrastAnalysisTool(NeuroToolWrapper):
                 status="success",
                 data={
                     "contrast_name": contrast_name,
-                    "significant_clusters": mock_clusters,
-                    "n_clusters": len(mock_clusters),
+                    "task_description": task_description,
+                    "suprathreshold_clusters": significant_clusters,
+                    # Compatibility alias. These components are descriptive, not an
+                    # inferential claim of statistical significance.
+                    "significant_clusters": significant_clusters,
+                    "n_clusters": len(significant_clusters),
                     "coordinate_analysis": coordinate_results,
-                    "cognitive_interpretation": f"Analysis of {contrast_name} reveals significant activation in motor regions",
-                    "z_map_used": actual_z_map_path if not use_mock else None,
+                    "z_map_used": str(resolved_z_map),
                 },
                 metadata={
                     "tool": "contrast_analysis",
-                    "z_map": actual_z_map_path,
-                    "mock_mode": use_mock,
-                    "real_data_available": not use_mock,
+                    "z_map": str(resolved_z_map),
+                    "mock_mode": False,
+                    "real_data_available": True,
+                    "cluster_threshold": 3.0,
+                    "threshold_rule": "absolute_z_greater_than_or_equal",
+                    "minimum_cluster_size": 5,
+                    "cluster_semantics": "descriptive_suprathreshold_components",
+                    "inferential_significance": False,
+                    "multiple_comparisons_correction": None,
+                    "anatomical_labeling": False,
+                    "cognitive_interpretation": False,
+                    "coordinate_spaces": {
+                        "cluster_peaks": "voxel_index",
+                        "requested_coordinates": "world",
+                    },
+                    "compatibility_fields": {
+                        "significant_clusters": "alias_of_suprathreshold_clusters"
+                    },
                 },
             )
 
@@ -1006,12 +1003,12 @@ class ContrastAnalysisTool(NeuroToolWrapper):
                 ],
             }
 
-            if "FileNotFoundError" in type(e).__name__:
+            if isinstance(e, FileNotFoundError):
                 metadata["error_category"] = "data"
-                metadata["recovery_suggestions"][
-                    0
-                ] = f"The file '{z_map_path}' was not found"
-            elif "ImportError" in type(e).__name__:
+                metadata["recovery_suggestions"][0] = (
+                    f"The file '{requested_path}' was not found"
+                )
+            elif isinstance(e, ImportError):
                 metadata["error_category"] = "configuration"
                 metadata["recovery_suggestions"] = [
                     "The contrast analysis module may not be installed",

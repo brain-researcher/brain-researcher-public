@@ -578,7 +578,7 @@ Database Statistics:
 
 def load_vocab_list_from_niclip_json(db: BRKGGraphDB, vocab_list_path: str):
     """Load a vocab list from a JSON file"""
-    # e.g. /data/ECoG-foundation-model/mnndl_temp/niclip/osf_data/dsj56/osfstorage/osfstorage/data/cognitive_atlas
+    # The caller supplies the exported NiCLIP vocabulary JSON path.
     with open(vocab_list_path) as f:
         vocab_list = json.load(f)
 
@@ -589,9 +589,20 @@ def load_vocab_list_from_niclip_json(db: BRKGGraphDB, vocab_list_path: str):
 def main():
     """Main batch loading workflow"""
 
-    # Configuration
-    db_path = "/data/ECoG-foundation-model/mnndl_temp/brain_researcher/data/br-kg/db/br_kg_full.db"
-    openneuro_dir = "/data/ECoG-foundation-model/mnndl_temp/brain_researcher/llm_cogitive_function/openneuro_glmfitlins"
+    db_path = os.environ.get("BR_KG_DB_PATH", "").strip()
+    openneuro_dir = os.environ.get("OPENNEURO_GLM_ROOT", "").strip()
+    missing = [
+        name
+        for name, value in (
+            ("BR_KG_DB_PATH", db_path),
+            ("OPENNEURO_GLM_ROOT", openneuro_dir),
+        )
+        if not value
+    ]
+    if missing:
+        raise RuntimeError(
+            "Missing required path configuration: " + ", ".join(missing)
+        )
 
     # Ensure directories exist
     Path("logs").mkdir(parents=True, exist_ok=True)

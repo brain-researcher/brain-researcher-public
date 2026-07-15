@@ -6,6 +6,7 @@ from brain_researcher.autoresearch.artifact_schema import (
     canonical_line_root,
     canonicalize_line_path,
     legacy_line_root,
+    remote_alias_line_roots,
     resolve_line_paths,
 )
 
@@ -43,3 +44,13 @@ def test_resolve_discovery_paths_tracks_closed_loop_ledgers(tmp_path: Path) -> N
     assert len(paths.scored_ledgers) == 3
     assert paths.scored_ledgers[1].name == "tribe_kg_call_log.jsonl"
     assert paths.scored_ledgers[2].name == "tribe_surprises.jsonl"
+
+
+def test_remote_alias_roots_require_explicit_configuration(monkeypatch) -> None:
+    monkeypatch.delenv("BR_REMOTE_ALIAS_ROOTS", raising=False)
+    assert remote_alias_line_roots("discovery") == ()
+
+    monkeypatch.setenv("BR_REMOTE_ALIAS_ROOTS", "/srv/legacy:/mnt/archive")
+    aliases = remote_alias_line_roots("discovery")
+    assert Path("/srv/legacy/tribe_encoding").resolve() in aliases
+    assert Path("/mnt/archive/research/discovery").resolve() in aliases

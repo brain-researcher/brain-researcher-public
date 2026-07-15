@@ -13,6 +13,7 @@ Key functionalities:
 """
 
 import logging
+import os
 
 # Import brain-decoder utilities
 import sys
@@ -23,13 +24,13 @@ import numpy as np
 import pandas as pd
 import torch
 
-# Add brain-decoder to path - try multiple locations
-_brain_decoder_paths = [
-    Path(__file__).parent.parent.parent.parent.parent / "external" / "brain-decoder",
-    Path(
-        "/data/ECoG-foundation-model/mnndl_temp/brain_researcher/external/brain-decoder"
-    ),
-]
+# Add brain-decoder to path from an explicit override or this checkout.
+_brain_decoder_paths = []
+if _configured_brain_decoder := os.environ.get("BRAIN_DECODER_PATH"):
+    _brain_decoder_paths.append(Path(_configured_brain_decoder))
+_brain_decoder_paths.append(
+    Path(__file__).parent.parent.parent.parent.parent / "external" / "brain-decoder"
+)
 
 for _path in _brain_decoder_paths:
     if _path.exists():

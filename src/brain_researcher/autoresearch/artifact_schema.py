@@ -116,13 +116,9 @@ def legacy_line_root(line_id: LineId, *, data_root: Path | str | None = None) ->
 
 def remote_alias_line_roots(line_id: LineId) -> tuple[Path, ...]:
     spec = line_spec(line_id)
-    # Default: /home/ubuntu (generic cloud-VM dev convention).
-    # Override with BR_REMOTE_ALIAS_ROOTS=path1:path2:... for additional roots.
+    # Remote aliases are migration inputs and must be configured explicitly.
     alias_bases_env = os.environ.get("BR_REMOTE_ALIAS_ROOTS", "").strip()
-    if alias_bases_env:
-        alias_bases = [b.strip() for b in alias_bases_env.split(":") if b.strip()]
-    else:
-        alias_bases = ["/home/ubuntu"]
+    alias_bases = [b.strip() for b in alias_bases_env.split(":") if b.strip()]
     roots: list[Path] = []
     for base in alias_bases:
         base_path = Path(base)

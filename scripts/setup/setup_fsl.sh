@@ -12,14 +12,16 @@ echo -e "${BLUE}=== FSL Environment Setup (Containerized) ===${NC}"
 echo ""
 
 # Set up Neurocommand environment for FSL
-export NEUROCOMMAND_ROOT="/data/ECoG-foundation-model/mnndl_temp/brain_researcher/external/neurocommand"
-export SINGULARITY_BINDPATH="${NEUROCOMMAND_ROOT},/data/ECoG-foundation-model/mnndl_temp/brain_researcher"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="${BRAIN_RESEARCHER_ROOT:-$(cd "${SCRIPT_DIR}/../.." && pwd)}"
+export NEUROCOMMAND_ROOT="${NEUROCOMMAND_ROOT:-${PROJECT_ROOT}/external/neurocommand}"
+export SINGULARITY_BINDPATH="${NEUROCOMMAND_ROOT},${PROJECT_ROOT}"
 
 # Initialize Lmod
 source /usr/share/lmod/lmod/init/bash
 
 # Add Neurocommand modules to path
-module use ${NEUROCOMMAND_ROOT}/local/containers/modules/
+module use "${NEUROCOMMAND_ROOT}/local/containers/modules/"
 
 # Load FSL module
 module load fsl/6.0.7.16
@@ -42,4 +44,4 @@ echo "  melodic -help   # ICA analysis"
 echo "  randomise -help # Statistical analysis"
 echo ""
 echo -e "${BLUE}Note: This uses the containerized FSL from Neurocommand${NC}"
-echo "For local FSL installation, use the original setup script." 
+echo "For local FSL installation, use the original setup script."

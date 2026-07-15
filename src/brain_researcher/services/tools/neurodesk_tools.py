@@ -7,7 +7,7 @@ Complete setup guide for the **official Neurodesk approach**: module system with
 
 ```bash
 # Environment loads automatically via .bashrc
-# Or manually: source ~/projects/brain_researcher/scripts/setup/setup_neurocommand_modules.sh
+# Or, from the repository root: source scripts/setup/setup_neurocommand_modules.sh
 
 # List available tools
 module avail                    # All modules
@@ -63,8 +63,8 @@ export SINGULARITY_BINDPATH="${APPTAINER_BINDPATH}"  # Identical!
 ```
 
 ### 2. **Working Directory Fix**
-Project directory bound at same path inside containers:
-- ✅ FSL works from `/home/user/projects/brain_researcher/`
+Project directory bound at the same path inside containers:
+- ✅ Set `BRAIN_RESEARCHER_ROOT` to the checkout before loading the setup script
 - ✅ No more "failed to set working directory" errors
 
 ### 3. **Modules.sh Silencer**
@@ -168,7 +168,7 @@ module load conn               ✓ Available
 **Problem**: `MODULEPATH is not set` or `module avail` fails
 **Solution**: Reload the environment
 ```bash
-source ~/projects/brain_researcher/scripts/setup/setup_neurocommand_modules.sh
+source scripts/setup/setup_neurocommand_modules.sh
 module avail  # Should now work
 ```
 
@@ -197,7 +197,7 @@ module load fsl/6.0.3         # Use specific version
 
 ```bash
 echo $APPTAINER_BINDPATH
-# Should show: /home/user/projects/brain_researcher:/home/user/projects/brain_researcher
+# Should show the configured checkout path on both sides of the bind
 ```
 
 ### Module System Errors
@@ -226,8 +226,9 @@ source scripts/neurodesk-hybrid.sh  # Reload environment
 The environment is automatically loaded via .bashrc:
 ```bash
 # Neurodesk/Neurocommand Hybrid Setup
-if [ -f "$HOME/projects/brain_researcher/scripts/neurodesk-hybrid.sh" ]; then
-    source "$HOME/projects/brain_researcher/scripts/neurodesk-hybrid.sh"
+export BRAIN_RESEARCHER_ROOT="/path/to/brain_researcher"
+if [ -f "$BRAIN_RESEARCHER_ROOT/scripts/neurodesk-hybrid.sh" ]; then
+    source "$BRAIN_RESEARCHER_ROOT/scripts/neurodesk-hybrid.sh"
 fi
 ```
 
@@ -295,7 +296,7 @@ module whatis fmriprep        # Brief description
 ## File Structure
 
 ```
-~/projects/brain_researcher/
+brain_researcher/
 ├── docs/
 │   ├── NEURODESK_SETUP.md            # This guide (updated)
 │   └── archive/                      # Old documentation

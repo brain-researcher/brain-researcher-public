@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Neurodesk Module Setup - Official Linux/HPC Approach
 # 
 # Architecture:
@@ -12,8 +12,9 @@
 #   ✓ Unified bind paths (no conflicts)
 #   ✓ Module system integration (standard commands)
 
-# Set paths
-PROJECT_ROOT="$HOME/projects/brain_researcher"
+# Resolve the checkout being sourced; BRAIN_RESEARCHER_ROOT remains an explicit override.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="${BRAIN_RESEARCHER_ROOT:-$(cd "${SCRIPT_DIR}/../.." && pwd)}"
 LOCAL_MODULES="${PROJECT_ROOT}/external/neurocommand/neurocommand-repo/local/containers/modules"
 
 # Create modules.sh override for silent containers (if not exists)

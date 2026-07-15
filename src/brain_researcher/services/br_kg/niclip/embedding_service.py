@@ -461,8 +461,8 @@ def main():
     parser = argparse.ArgumentParser(description="NICLIP Embedding Service")
     parser.add_argument(
         "--niclip-path",
-        default="/data/ECoG-foundation-model/mnndl_temp/niclip",
-        help="Path to NICLIP data",
+        required=True,
+        help="Path to NICLIP data directory",
     )
     parser.add_argument(
         "--query", default="working memory", help="Query term to search for"

@@ -216,7 +216,6 @@ class NiCLIPCoordinateMapper:
             [
                 default_atlas_output_root() / "niclip",
                 Path("/data/niclip"),
-                Path("/data/ECoG-foundation-model/mnndl_temp/niclip"),
                 get_data_root() / "niclip",
             ]
         )
@@ -231,8 +230,8 @@ class NiCLIPCoordinateMapper:
                 return candidate
 
         raise FileNotFoundError(
-            "NiCLIP data path not found. Checked explicit path, env paths, /data defaults, "
-            "and repository fallback."
+            "NiCLIP data path not found. Checked explicit path, env paths, the /data "
+            "container mount, and the repository data directory."
         )
 
     @staticmethod

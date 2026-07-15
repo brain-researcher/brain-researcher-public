@@ -6,22 +6,27 @@ echo "Testing Docker in Fresh Environment"
 echo "=========================================="
 echo ""
 
-# 定义测试目录
-TEST_DIR="/data/ECoG-foundation-model/mnndl_temp/docker_test_brain_researcher"
+# Resolve the checkout from this script and keep the disposable copy outside it.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+TEST_DIR="${BR_DOCKER_FRESH_TEST_DIR:-}"
+if [[ -z "${TEST_DIR}" ]]; then
+  TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/br-docker-fresh.XXXXXX")"
+fi
 
 # 创建测试环境
 echo "1. Creating fresh test environment..."
-rm -rf $TEST_DIR
-mkdir -p $TEST_DIR
+rm -rf "${TEST_DIR}"
+mkdir -p "${TEST_DIR}"
 
 # 复制项目文件
 echo "2. Copying project files..."
-cd /data/ECoG-foundation-model/mnndl_temp/brain_researcher
-tar cf - . | (cd $TEST_DIR && tar xf -)
-cd $TEST_DIR
+cd "${REPO_ROOT}"
+tar cf - . | (cd "${TEST_DIR}" && tar xf -)
+cd "${TEST_DIR}"
 ls -la | head -10  # 显示复制的文件
 
-cd $TEST_DIR
+cd "${TEST_DIR}"
 
 # 确保没有 Python 环境
 echo "3. Verifying no local Python environment..."

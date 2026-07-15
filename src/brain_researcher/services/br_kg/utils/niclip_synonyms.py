@@ -283,7 +283,7 @@ def main():
     parser.add_argument(
         "--niclip-dir",
         type=str,
-        default="/data/ECoG-foundation-model/mnndl_temp/niclip/osf_data/dsj56/osfstorage/osfstorage",
+        required=True,
         help="Path to NiCLIP OSF data directory",
     )
     parser.add_argument(
