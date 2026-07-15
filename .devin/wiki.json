@@ -92,7 +92,7 @@
     {
       "title": "Tool Catalog, Recipes, and Public Evaluation Harnesses",
       "paths": [
-        "docs/catalog_README.md",
+        "configs/catalog/README.md",
         "docs/how-to-add-tool.md",
         "configs/catalog",
         "configs/tools_catalog.json",

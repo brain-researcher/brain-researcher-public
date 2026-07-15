@@ -316,7 +316,7 @@ class TestResourceTypeValidation:
             yaml.dump(test_capabilities, f)
 
         # Import and test the validator function directly
-        from scripts.ci.validate_capabilities import validate_resource_types
+        from scripts.maintenance.validate_capabilities import validate_resource_types
 
         # Should fail because "invalid_resource_type_xyz" is not in resources.schema.json
         success, errors = validate_resource_types(test_file)
@@ -362,7 +362,7 @@ class TestResourceTypeValidation:
             yaml.dump(test_capabilities, f)
 
         # Import and test the validator function directly
-        from scripts.ci.validate_capabilities import validate_resource_types
+        from scripts.maintenance.validate_capabilities import validate_resource_types
 
         # Should pass because all resource types are valid
         success, errors = validate_resource_types(test_file)

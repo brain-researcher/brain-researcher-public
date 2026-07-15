@@ -90,7 +90,7 @@ For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the
 | MCP server | `src/brain_researcher/services/mcp/server.py`, `src/brain_researcher/services/mcp/routers/` | MCP tool exposure, route grouping, planning/review/run/artifact adapters, and compatibility wrappers. |
 | Stable contracts | `contracts/`, `docs/mcp_tools.schema.json`, `docs/contract-tiers.md` | Versioned public tool schemas and the policy for stable, experimental, and deprecated MCP surfaces. |
 | Tool implementations | `src/brain_researcher/services/tools/` | Python tool wrappers for neuroimaging workflows, dataset utilities, KG bridge tools, visualization, and execution recipes. |
-| Tool metadata/catalogs | `configs/tools_catalog_overrides.yaml`, `configs/catalog/`, `scripts/tools/` | Declarative tool metadata, family mappings, capability overlays, and catalog validation/generation helpers. |
+| Tool metadata/catalogs | [Catalog guide](configs/catalog/README.md), `configs/tools_catalog_overrides.yaml`, `scripts/tools/` | Declarative tool metadata, family mappings, capability overlays, and catalog validation/generation helpers. |
 | BR-KG service code | `src/brain_researcher/services/br_kg/` | Neo4j-backed API, graph/query/ETL/schema code. The compiled graph data itself is private. |
 | KG configs and schemas | `configs/br-kg/`, `scripts/kg/schema.cypher` | Public-safe schema/config references for KG shape and local test setup; not KG dumps. |
 | Review layer | `src/brain_researcher/services/review/`, `configs/review_rules.yaml`, `docs/appendices/07_appendix_G_review.md` | Scientific/code review rules, review bundles, and documented review boundaries. |

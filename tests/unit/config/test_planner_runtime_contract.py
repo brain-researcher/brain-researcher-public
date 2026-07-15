@@ -25,7 +25,7 @@ def test_active_planner_runtime_surfaces_are_catalog_only() -> None:
     assert 'if mode not in ["legacy", "catalog"]' not in orchestrator
     assert "Planner mode: 'legacy' or 'catalog'" not in orchestrator
     assert "Planner mode: 'legacy' for template-based" not in models
-    assert 'mode: Optional[Literal["catalog"]]' in models
+    assert 'mode: Literal["catalog"] | None' in models
 
 
 def test_catalog_loader_retains_internal_legacy_merge_compatibility() -> None:
@@ -40,7 +40,7 @@ def test_catalog_loader_retains_internal_legacy_merge_compatibility() -> None:
 
 
 def test_active_planner_docs_no_longer_advertise_legacy_runtime_mode() -> None:
-    catalog_readme = _read("docs/catalog_README.md")
+    catalog_readme = _read("configs/catalog/README.md")
 
     assert "default: `legacy`" not in catalog_readme
     assert "BR_PLANNER_SOURCE=legacy" not in catalog_readme
