@@ -29,14 +29,14 @@ case "${1:-help}" in
 
     unit-br-kg|br-kg)
         echo -e "${BLUE}Running BR-KG unit shard...${NC}"
-        "$PYTHON_BIN" -m pytest tests/unit/br-kg/ -v --tb=short
+        "$PYTHON_BIN" -m pytest tests/unit/br_kg/ -v --tb=short
         ;;
 
     unit-all-shards)
         echo -e "${BLUE}Running default unit shard...${NC}"
         "$PYTHON_BIN" -m pytest tests/unit/ -v --tb=short
         echo -e "${BLUE}Running BR-KG unit shard...${NC}"
-        "$PYTHON_BIN" -m pytest tests/unit/br-kg/ -v --tb=short
+        "$PYTHON_BIN" -m pytest tests/unit/br_kg/ -v --tb=short
         ;;
 
     unit-pr-smoke)
@@ -54,21 +54,6 @@ case "${1:-help}" in
     architecture)
         echo -e "${BLUE}Running architecture boundary tests...${NC}"
         PYTHONDONTWRITEBYTECODE=1 "$PYTHON_BIN" -m pytest -q tests/architecture/test_import_boundaries.py -p no:cacheprovider
-        ;;
-
-    integration)
-        echo -e "${BLUE}Running integration tests...${NC}"
-        "$PYTHON_BIN" -m pytest tests/integration/ -v --tb=short
-        ;;
-
-    integration-pr-smoke)
-        echo -e "${BLUE}Running PR integration smoke shard...${NC}"
-        "$PYTHON_BIN" -m pytest -q \
-            tests/integration/test_legacy_demo_guards.py \
-            tests/integration/orchestrator/test_job_routes_with_jobstore.py \
-            tests/integration/test_plan_tool_preservation.py::test_mcp_plan_preserves_tool_ids \
-            tests/integration/test_plan_tool_preservation.py::test_observation_records_executed_tools \
-            --tb=short
         ;;
 
     fast)
@@ -94,7 +79,11 @@ case "${1:-help}" in
 
     markers)
         echo -e "${BLUE}Available test markers:${NC}"
-        grep "^    " pytest.ini | grep ":" || echo "See pytest.ini for marker definitions"
+        awk '
+            /^markers =/ { in_markers = 1; next }
+            in_markers && /^[^[:space:]]/ { exit }
+            in_markers { sub(/^[[:space:]]+/, "  "); print }
+        ' pytest.ini
         ;;
 
     collect)
@@ -109,14 +98,14 @@ case "${1:-help}" in
 
     collect-br-kg)
         echo -e "${BLUE}Collecting BR-KG unit shard (dry run)...${NC}"
-        "$PYTHON_BIN" -m pytest --collect-only -q tests/unit/br-kg/
+        "$PYTHON_BIN" -m pytest --collect-only -q tests/unit/br_kg/
         ;;
 
     collect-all-shards)
         echo -e "${BLUE}Collecting default unit shard (dry run)...${NC}"
         "$PYTHON_BIN" -m pytest --collect-only -q tests/unit/
         echo -e "${BLUE}Collecting BR-KG unit shard (dry run)...${NC}"
-        "$PYTHON_BIN" -m pytest --collect-only -q tests/unit/br-kg/
+        "$PYTHON_BIN" -m pytest --collect-only -q tests/unit/br_kg/
         ;;
 
     collect-architecture)
@@ -129,25 +118,23 @@ case "${1:-help}" in
         "$PYTHON_BIN" -m pytest -v --tb=short
         ;;
 
-    help|*)
+    help)
         echo -e "${YELLOW}Usage: $0 [command]${NC}"
         echo ""
         echo "Commands:"
         echo "  unit               - Run default unit shard (excludes BR-KG via pytest.ini)"
-        echo "  unit-br-kg       - Run BR-KG unit shard"
-        echo "  br-kg            - Alias for unit-br-kg"
+        echo "  unit-br-kg         - Run BR-KG unit shard"
+        echo "  br-kg              - Alias for unit-br-kg"
         echo "  unit-all-shards    - Run default unit shard, then BR-KG unit shard"
         echo "  unit-pr-smoke      - Run fast PR smoke tests for active contracts"
         echo "  architecture       - Run architecture boundary tests"
-        echo "  integration        - Run integration tests (may require services)"
-        echo "  integration-pr-smoke - Run fast PR integration smoke tests"
         echo "  fast               - Run fast tests (default, excludes slow/e2e/realdata)"
         echo "  coverage           - Run default pytest selection with coverage report"
         echo "  specific           - Run specific test file (requires path as 2nd arg)"
         echo "  markers            - Show available test markers"
         echo "  collect            - List default pytest selection without running"
         echo "  collect-unit       - Collect default unit shard without running"
-        echo "  collect-br-kg    - Collect BR-KG unit shard without running"
+        echo "  collect-br-kg      - Collect BR-KG unit shard without running"
         echo "  collect-all-shards - Collect default unit shard, then BR-KG unit shard"
         echo "  collect-architecture - Collect architecture tests without running"
         echo "  all                - Run default-discovered tests honored by pytest.ini"
@@ -157,7 +144,14 @@ case "${1:-help}" in
         echo "  tests/run_tests.sh unit-all-shards"
         echo "  tests/run_tests.sh architecture"
         echo "  tests/run_tests.sh collect-all-shards"
-        echo "  tests/run_tests.sh specific tests/unit/br-kg/test_node_matcher.py"
+        echo "  tests/run_tests.sh specific tests/unit/br_kg/test_node_matcher.py"
+        exit 0
+        ;;
+
+    *)
+        echo -e "${RED}Unknown command: $1${NC}" >&2
+        echo "Run '$0 help' to list supported commands." >&2
+        exit 2
         ;;
 esac
 

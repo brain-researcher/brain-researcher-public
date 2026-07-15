@@ -1,249 +1,182 @@
-# Brain Researcher Test Suite
+# Brain Researcher test suite
 
-## Quick Start
+## Working directory and environment
+
+Run the commands in this guide from the **repository root**, the directory that
+contains `pyproject.toml` and `tests/`:
 
 ```bash
-# From project root or tests directory:
+cd "$(git rev-parse --show-toplevel)"
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[all]"
+```
+
+`all` includes the test tools plus the optional service and scientific
+dependencies imported by the broad unit shards. For a narrowly scoped test
+that does not import those surfaces, `python -m pip install -e ".[dev]"` is a
+lighter alternative.
+
+The shell runner uses `python3` by default. Set `PYTHON_BIN` when the active
+interpreter has another name:
+
+```bash
+PYTHON_BIN=python ./tests/run_tests.sh help
+```
+
+If you are already inside `tests/`, invoke the same runner as
+`./run_tests.sh <command>` instead of adding another `tests/` prefix.
+
+## Quick start
+
+```bash
+# Show only the commands that exist in the current public tree.
 ./tests/run_tests.sh help
 
-# Run fast unit tests (recommended for development)
+# Run the default unit shard. pytest.ini excludes tests/unit/br_kg here.
 ./tests/run_tests.sh unit
 
-# Run both unit shards used by CI
-./tests/run_tests.sh unit-all-shards
-
-# Run architecture import-boundary ratchets
-./tests/run_tests.sh architecture
-
-# Collect both unit shards without executing tests
-./tests/run_tests.sh collect-all-shards
-
-# Run all fast tests (default behavior)
-./tests/run_tests.sh fast
-
-# Run tests with coverage report
-./tests/run_tests.sh coverage
-```
-
-## Test Categories
-
-### Unit Tests
-The default unit shard is fast, isolated coverage that does not require external
-services. BR-KG unit tests are intentionally kept as an explicit shard instead
-of being hidden inside recursive `tests/unit` collection.
-```bash
-./tests/run_tests.sh unit
-```
-
-### BR-KG Unit Shard
-Specific unit tests for the Knowledge Graph service:
-```bash
+# Run the BR-KG unit shard explicitly.
 ./tests/run_tests.sh unit-br-kg
-# or
-./tests/run_tests.sh br-kg
-```
 
-### All Unit Shards
-Run the default unit shard followed by the explicit BR-KG shard:
-```bash
+# Run both unit shards in sequence.
 ./tests/run_tests.sh unit-all-shards
-```
 
-### Architecture Tests
-Static architecture ratchets protect import boundaries that are being cleaned up
-incrementally. The current ratchet prevents new `core -> services` imports while
-allowing existing baseline removals.
-```bash
+# Check the import-boundary ratchet.
 ./tests/run_tests.sh architecture
-```
 
-### Collection Checks
-Collect tests without executing them:
-```bash
-./tests/run_tests.sh collect-unit
-./tests/run_tests.sh collect-br-kg
-./tests/run_tests.sh collect-all-shards
-./tests/run_tests.sh collect-architecture
-```
-
-### Integration Tests
-Tests that may require running services (BR-KG, Redis, etc.):
-```bash
-./tests/run_tests.sh integration
-```
-
-### PR Integration Smoke
-Fast integration contract shard used by CI for PR/push gating:
-```bash
-./tests/run_tests.sh integration-pr-smoke
-```
-
-### Fast Tests (Default)
-Runs tests excluding markers: `slow`, `e2e`, `realdata`
-```bash
-./tests/run_tests.sh fast
-```
-
-### All Tests
-Run the default pytest-discovered selection honored by `pytest.ini`:
-```bash
-./tests/run_tests.sh all
-```
-
-## Test Markers
-
-Available markers (from `pytest.ini`):
-- `unit` - Fast, isolated unit tests
-- `integration` - Tests requiring external services
-- `slow` - Tests taking > 10 seconds
-- `e2e` - End-to-end browser or multi-service tests
-- `realdata` - Tests requiring large/open datasets
-- `network` - Tests hitting external services
-- `performance` - Performance benchmarking tests
-- `requires_api` - Requires external API access
-- `requires_gpu` - Requires GPU for computation
-
-Real API smoke tests (example: Deep Research Interactions in `tests/integration/mcp/test_google_deep_research_interactions.py`)
-require `BR_REAL_DEEP_RESEARCH=1` and `GOOGLE_API_KEY` or `GEMINI_API_KEY`.
-Google File Search smoke test in `tests/integration/mcp/test_google_file_search_smoke.py`
-requires `BR_REAL_FILE_SEARCH=1` and `GOOGLE_API_KEY` or `GEMINI_API_KEY`.
-Optional: `BR_GOOGLE_FILE_SEARCH_STORE` or `GOOGLE_FILE_SEARCH_STORE` to attach a file search store.
-NiCLIP engine smoke test: set `BR_REAL_NICLIP=1` and `NICLIP_DATA_PATH` (or `NICLIP_EMBEDDINGS_PATH`).
-NiCLIP CLI smoke test: same envs; requires `br` (or `brain-researcher`) on PATH.
-
-### Data-dependent unit tests (opt-in)
-Some unit tests require external datasets or local vocab files and are skipped by default:
-
-- **Allen Brain API loader** (`tests/unit/ingestion/test_allen_loader.py`)
-  - Enable with: `BR_RUN_ALLEN_API_TESTS=1`
-  - Uses the live Allen Brain API and local cache under `/tmp/allen_cache`.
-- **HCP loader** (`tests/unit/ingestion/test_hcp_loader.py`)
-  - Enable with: `BR_RUN_HCP_TESTS=1`
-  - Expects real HCP input files unless you explicitly pass `demo_mode=True`.
-- **NiCLIP scorer vocabulary** (`tests/unit/knowledge/scoring/test_niclip_scorer.py`)
-  - Enable by ensuring vocab files exist under `NICLIP_DATA_PATH` (or default `data/niclip`),
-    or force-run with `BR_RUN_NICLIP_UNIT_TESTS=1`.
-  - Tests that require vocab will skip if files are missing and the force flag is not set.
-
-## Running Specific Tests
-
-```bash
-# Run a specific test file
-./tests/run_tests.sh specific tests/unit/br-kg/test_node_matcher.py
-
-# Run a specific test function
-./tests/run_tests.sh specific tests/unit/br-kg/test_node_matcher.py::test_exact_match_task
-
-# Run tests matching a pattern
-python3 -m pytest -k "br-kg and match" -v
-```
-
-## Coverage Reports
-
-Generate HTML coverage report:
-```bash
-./tests/run_tests.sh coverage
-# Report saved to: htmlcov/index.html
-```
-
-## Direct pytest Usage
-
-You can also use pytest directly:
-```bash
-# Run with specific markers
-python3 -m pytest -m "unit and not slow" -v
-
-# Run with coverage
-python3 -m pytest --cov=brain_researcher --cov-report=term-missing
-
-# Run specific test with detailed output
-python3 -m pytest tests/unit/br-kg/test_node_matcher.py -vv --tb=long
-
-# List all available tests
-python3 -m pytest --collect-only
-
-# Collect both active unit shards
+# Collect both unit shards without executing them.
 ./tests/run_tests.sh collect-all-shards
 ```
 
-## Test Structure
+## Supported runner commands
 
+| Command | What it does |
+|---|---|
+| `unit` | Runs `tests/unit/`, excluding `tests/unit/br_kg/` through `pytest.ini`. |
+| `unit-br-kg` / `br-kg` | Runs `tests/unit/br_kg/`. |
+| `unit-all-shards` | Runs the default unit shard, then the BR-KG shard. |
+| `unit-pr-smoke` | Runs the small active-contract unit smoke selection. |
+| `architecture` | Runs `tests/architecture/test_import_boundaries.py`. |
+| `fast` | Runs the default discovered tests excluding `slow`, `e2e`, and `realdata`. |
+| `coverage` | Runs the default selection and writes `htmlcov/index.html`. |
+| `specific PATH` | Runs one pytest file or node id. |
+| `markers` | Prints marker declarations from `pytest.ini`. |
+| `collect`, `collect-unit`, `collect-br-kg`, `collect-all-shards`, `collect-architecture` | Collects the corresponding selection without running it. |
+| `all` | Runs the default pytest-discovered selection governed by `pytest.ini`. |
+
+The public tree currently has no dedicated `tests/integration/` shard, so this
+runner does not advertise an `integration` command. Add a real public shard and
+its prerequisites before restoring that entry point.
+
+## Run a specific test
+
+```bash
+./tests/run_tests.sh specific tests/unit/br_kg/test_node_matcher.py
+python -m pytest \
+  tests/unit/br_kg/test_node_matcher.py::TestUnifiedNodeMatcher::test_exact_match_task \
+  -v
+python -m pytest -k "node_matcher and exact" -v
 ```
+
+## Test markers
+
+The full marker list lives in `pytest.ini` and is printed by
+`./tests/run_tests.sh markers`. Common markers include:
+
+- `unit`: fast, isolated unit coverage
+- `integration`: tests that require multiple components or services
+- `slow`: tests taking more than about 10 seconds
+- `e2e`: browser or multi-service tests
+- `realdata`: tests requiring large or external datasets
+- `network`: tests that contact external services
+- `performance`: performance and benchmark checks
+- `requires_api`: tests requiring an external API
+- `requires_gpu`: tests requiring a GPU
+
+Markers describe individual tests; they do not imply that a same-named
+top-level directory or runner command exists.
+
+## Data-dependent unit tests
+
+These files contain data-dependent cases that are skipped by default. Some have
+a usable opt-in path; others still need public fixture wiring:
+
+- `tests/unit/ingestion/test_allen_loader.py`
+  - set `BR_RUN_ALLEN_API_TESTS=1`
+  - contacts the live Allen Brain API and normally caches under
+    `~/.cache/brain_researcher/`
+- `tests/unit/ingestion/test_hcp_loader.py`
+  - is skipped by default and is not currently a runnable public-data smoke:
+    setting `BR_RUN_HCP_TESTS=1` does not provide its required HCP file paths
+- `tests/unit/knowledge/scoring/test_niclip_scorer.py`
+  - provide `NICLIP_DATA_PATH`, or unskip the opt-in cases with
+    `BR_RUN_NICLIP_UNIT_TESTS=1`
+
+Never place credentials in a command or tracked fixture. Load required values
+from your local environment.
+
+## Direct pytest usage
+
+```bash
+# Run the default marker selection from pytest.ini.
+python -m pytest
+
+# Collect without execution; use this instead of a hardcoded test count.
+python -m pytest --collect-only
+
+# Run one marker selection.
+python -m pytest -m "unit and not slow" -v
+
+# Generate terminal coverage output.
+python -m pytest --cov=brain_researcher --cov-report=term-missing
+```
+
+Test counts change frequently. Treat the current collection output, not a number
+copied into this README, as the authoritative inventory.
+
+## Repository test layout
+
+```text
 tests/
-├── run_tests.sh           # Main test runner script
-├── architecture/          # Static import-boundary ratchets
-├── unit/                  # Default unit shard (fast, isolated)
-│   ├── br-kg/          # Explicit BR-KG unit shard
-│   ├── agent/            # Agent service tests
-│   └── ...
-├── integration/          # Integration tests (requires services)
-├── e2e/                  # End-to-end tests
-├── fixtures/             # Test fixtures and data
-├── conftest.py          # Pytest configuration
-└── README_TESTING.md    # This file
+├── architecture/        # Static import-boundary checks
+├── unit/                # Default unit shard
+│   └── br_kg/           # Explicit BR-KG unit shard
+├── cli/                 # CLI-focused checks
+├── eval/                # Evaluation harness checks
+├── fixtures/            # Public test fixtures
+├── performance/         # Performance checks
+├── tools/               # Tool-level checks
+├── run_tests.sh         # Supported shell runner
+└── README_TESTING.md    # This guide
 ```
 
-## Current Status
-
-- **Default unit shard**: `9384/9399` collected, `15` deselected, `4` skipped
-- **BR-KG unit shard**: `1146/1148` collected, `2` deselected
-- **Architecture shard**: `2` collected
-- **Unit collection errors**: 0 in the two explicit unit shards
-- **Test Framework**: pytest 8.4.1
-- **Coverage Tool**: pytest-cov
-- **Timeout**: 300s per test
-
-## Continuous Integration
-
-Tests are configured to run automatically via:
-- Default markers exclude slow tests: `-m "not slow and not e2e and not realdata"`
-- CI runs both unit shards: `tests/unit/` and `tests/unit/br-kg/`
-- CI runs architecture boundary tests on Python 3.11
-- Timeout set to 300s per test
-- Verbose output with `--strict-markers`
+Browser tests for the Next.js application live under `apps/web-ui/tests/` and
+use the scripts in `apps/web-ui/package.json`.
 
 ## Troubleshooting
 
-### Import Errors
-If you see import errors, ensure you're in the project root:
-```bash
-cd ${BRAIN_RESEARCHER_HOME}/projects/brain_researcher
-python3 -m pytest
-```
+### Import errors
 
-### Missing Dependencies
-Install test dependencies:
-```bash
-pip install -e ".[test]"
-# or
-pip install pytest pytest-cov pytest-asyncio pytest-mock
-```
-
-### Service Dependencies
-Some integration tests require services to be running:
-```bash
-# Start BR-KG service
-br serve kg --port 5000
-
-# Start Redis (if needed)
-redis-server --daemonize yes
-```
-
-## Examples
+Confirm the repository root and active interpreter before debugging the test:
 
 ```bash
-# Daily development workflow
-./tests/run_tests.sh unit              # Quick default unit sanity check
-./tests/run_tests.sh collect-all-shards # Verify both unit shards collect
-./tests/run_tests.sh architecture      # Check import-boundary ratchets
-
-# Before committing
-./tests/run_tests.sh unit-all-shards   # Run both active unit shards
-
-# Before PR
-./tests/run_tests.sh coverage    # Check coverage
-./tests/run_tests.sh integration # Verify integrations
-
-# Debugging a specific test
-./tests/run_tests.sh specific tests/unit/br-kg/test_node_matcher.py::test_exact_match_task
+cd "$(git rev-parse --show-toplevel)"
+which python
+python -c "import brain_researcher; print(brain_researcher.__file__)"
 ```
+
+This repository has optional scientific and service dependencies. If a focused
+test still fails during collection, report the exact missing module separately
+from the behavior under test.
+
+### Service-dependent tests
+
+Start only the services named by the test. For example:
+
+```bash
+brain-researcher serve kg --port 5000
+```
+
+Do not infer that a service is required merely from a marker name; inspect the
+test's skip condition and fixture first.
