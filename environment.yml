@@ -1,4 +1,11 @@
-name: brain_researcher
+# Active role: full contributor/developer bootstrap.
+#
+# Use this environment for tests, documentation, and work across the supported
+# core, MCP, agent, BR-KG, UI, notebook, and development profiles. Specialized
+# modality extras remain separate. The smaller Studio/scientific runtime is defined in
+# environment.brain_researcher.yml. Historical neuroimaging setup notes live
+# under docs/archive/environments/ and are not current install contracts.
+name: brain_researcher-dev
 channels:
   - conda-forge
   - defaults

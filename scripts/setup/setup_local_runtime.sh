@@ -33,11 +33,19 @@ echo "    Repo: $REPO_ROOT"
 echo "    Port: $PORT"
 echo ""
 
-# Step 1: Create conda env
-echo "==> Creating conda environment brain_researcher ..."
-conda env create \
-  -f "$REPO_ROOT/environment.brain_researcher.yml" \
-  --force
+cd "$REPO_ROOT"
+
+# Step 1: Create the env once, or update the existing env explicitly.
+if conda env list | awk 'NF && $1 !~ /^#/ {print $1}' | grep -Fxq brain_researcher; then
+  echo "==> Updating conda environment brain_researcher ..."
+  conda env update \
+    -n brain_researcher \
+    -f "$REPO_ROOT/environment.brain_researcher.yml" \
+    --prune
+else
+  echo "==> Creating conda environment brain_researcher ..."
+  conda env create -f "$REPO_ROOT/environment.brain_researcher.yml"
+fi
 echo "    Done."
 echo ""
 
@@ -51,21 +59,10 @@ conda run -n brain_researcher \
 echo "    Kernel registered."
 echo ""
 
-# Step 3: Verify core imports
-echo "==> Smoke-testing Python runtime ..."
-conda run -n brain_researcher python - <<'EOF'
-import sys
-failed = []
-for pkg in ["nibabel", "nilearn", "numpy", "scipy"]:
-    try:
-        __import__(pkg)
-    except ImportError as e:
-        failed.append(f"{pkg}: {e}")
-if failed:
-    for f in failed: print(f"  FAIL: {f}")
-    sys.exit(1)
-print("  nibabel, nilearn, numpy, scipy — ok")
-EOF
+# Step 3: Verify the declared runtime profile and CLI entrypoints.
+echo "==> Verifying Python runtime ..."
+conda run -n brain_researcher \
+  python "$REPO_ROOT/scripts/setup/verify_environment.py" --profile agent
 echo ""
 
 if [[ "$START_SERVER" == "false" ]]; then
