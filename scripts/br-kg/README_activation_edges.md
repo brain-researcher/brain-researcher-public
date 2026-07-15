@@ -1,110 +1,136 @@
-# Create Activation Edges Script
+# Create `ACTIVATES` edges from coordinate evidence
 
-## Overview
+`create_activation_edges.py` reads coordinate evidence from BR-KG's Neo4j
+database and creates missing `ACTIVATES` relationships from `Task` or `Concept`
+nodes to `BrainRegion` nodes.
 
-The `create_activation_edges.py` script aggregates coordinate evidence from neuroscience studies to create ACTIVATES relationships between tasks/concepts and brain regions. It implements a threshold-based approach where relationships are only created when sufficient coordinate evidence exists.
+The script is a database maintenance command. A normal run writes to Neo4j;
+`--dry-run` performs the reads and reports what would be created without writing
+relationships.
 
-## Algorithm
+Run every command below from the **repository root**, the directory containing
+`pyproject.toml` and `scripts/`.
 
-1. **Evidence Collection**: For each Task or Concept node:
-   - Find connected Publications via STUDIES/MENTIONS_CONCEPT relationships
-   - For each Publication, find associated Coordinates via HAS_COORDINATE
-   - For each Coordinate, find the BrainRegion via LOCATED_IN
-   - Aggregate coordinates by task/concept and brain region
+## Prerequisites
 
-2. **Edge Creation**: For each task/concept-region pair:
-   - Count the number of supporting coordinates
-   - If count >= threshold, create an ACTIVATES relationship
-   - Store evidence count, confidence score, and sample coordinate IDs
+1. Install the Python package using the
+   [root setup guide](../../README.md#install-as-a-python-package).
+2. Start or select the Neo4j database you intend to inspect.
+3. Put its connection settings in your untracked root `.env`:
+   `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, and optionally
+   `NEO4J_DATABASE`.
+4. Confirm that this is the intended database before running without
+   `--dry-run`. The command does not create a backup.
 
-## Usage
-
-```bash
-# NeoKG is Neo4j-only. Configure connection via env vars:
-export NEO4J_URI="bolt://localhost:7687"
-export NEO4J_USER="neo4j"
-export NEO4J_PASSWORD="***"
-export NEO4J_DATABASE="neo4j"
-
-python scripts/br-kg/create_activation_edges.py [options]
-```
-
-### Options
-
-- `--threshold N`: Minimum coordinate evidence required (default: 5)
-- `--dry-run`: Preview edges without creating them
-- `--verbose`: Enable verbose logging
-
-### Examples
+Load the environment into the current shell:
 
 ```bash
-# Create edges with default threshold
-python scripts/br-kg/create_activation_edges.py
+cd "$(git rev-parse --show-toplevel)"
+set -a
+source .env
+set +a
 
-# Preview what would be created with threshold of 10
-python scripts/br-kg/create_activation_edges.py --threshold 10 --dry-run
-
-# Run with verbose output
-python scripts/br-kg/create_activation_edges.py --verbose
+python scripts/br-kg/create_activation_edges.py --help
 ```
 
-## Database Requirements
+The command requires `NEO4J_URI` and `NEO4J_PASSWORD`. `NEO4J_USER` defaults to
+`neo4j`; Neo4j chooses its default database when `NEO4J_DATABASE` is unset.
 
-The script expects the following node types and relationships:
+## Recommended sequence
 
-### Node Types
-- `Task`: Cognitive tasks (e.g., n-back, stroop)
-- `Concept`: Cognitive concepts (e.g., working memory, attention)
-- `Study`: Research publications
-- `Coordinate`: Brain activation coordinates
-- `BrainRegion`: Anatomical brain regions
+Preview first:
 
-### Relationship Types
-- `STUDIES`: Study -> Concept/Task
-- `MENTIONS_CONCEPT`: Study -> Concept
-- `HAS_COORDINATE`: Study -> Coordinate
-- `LOCATED_IN`: Coordinate -> BrainRegion
-- `ACTIVATES`: Task/Concept -> BrainRegion (created by this script)
-
-## ACTIVATES Edge Properties
-
-Created edges include the following properties:
-
-- `evidence_count`: Number of supporting coordinates
-- `coordinate_ids`: Sample of coordinate IDs (up to 10)
-- `confidence`: Confidence score (0-1) based on evidence count
-- `method`: Always "coordinate_aggregation"
-- `threshold`: The threshold used when creating the edge
-
-## Example Output
-
+```bash
+python scripts/br-kg/create_activation_edges.py \
+  --threshold 5 \
+  --dry-run \
+  --verbose
 ```
-Processing Concept nodes...
-Found 50 Concept nodes to process
-Evidence collection complete: 35 Concept nodes have coordinate evidence
-Creating ACTIVATES edges with threshold=5
-  - Edges created: 42
-  - Skipped (below threshold): 23
-  - Skipped (already exists): 8
 
-Processing Task nodes...
-Found 30 Task nodes to process
-Evidence collection complete: 25 Task nodes have coordinate evidence
-Creating ACTIVATES edges with threshold=5
-  - Edges created: 31
-  - Skipped (below threshold): 15
-  - Skipped (already exists): 5
+Inspect the reported candidates and errors. In dry-run output,
+`edges_created` means “edges that would be created”; no relationships are
+written.
 
+When the preview is correct, run the mutation explicitly:
+
+```bash
+python scripts/br-kg/create_activation_edges.py --threshold 5
+```
+
+Available options:
+
+- `--threshold N`: require at least `N` distinct supporting coordinates;
+  default `5`
+- `--dry-run`: collect and count evidence without writing relationships
+- `--verbose`: enable debug logging
+
+The optional positional `db_path` shown by `--help` is deprecated and ignored.
+Connection details always come from the `NEO4J_*` environment variables.
+
+## Required graph shape
+
+The validation step requires all of these labels:
+
+- `Task`
+- `Concept`
+- `Coordinate`
+- `BrainRegion`
+- at least one of `Study` or `Publication`
+
+Evidence is collected along these directed paths:
+
+```text
+(Study|Publication)-[:STUDIES|MENTIONS_CONCEPT]->(Task|Concept)
+(Study|Publication)-[:HAS_COORDINATE]->(Coordinate)
+(Coordinate)-[:LOCATED_IN]->(BrainRegion)
+```
+
+Missing expected relationship types are reported as warnings because a
+partially loaded database may legitimately have no rows for one type. If no
+coordinate evidence is found, that label produces no candidate edges.
+
+## Edge behavior
+
+For each `(Task|Concept, BrainRegion)` pair, the script de-duplicates coordinate
+IDs and applies the threshold. It skips an `ACTIVATES` relationship that already
+exists; it does not update or replace that edge.
+
+New relationships contain:
+
+- `evidence_count`: number of distinct supporting coordinates
+- `coordinate_ids`: up to 10 supporting coordinate IDs
+- `confidence`: `min(evidence_count / 10, 1.0)`
+- `method`: `coordinate_aggregation`
+- `threshold`: threshold used for this run
+
+## Illustrative output
+
+Exact counts depend on the selected database. A run ends with a summary shaped
+like this:
+
+```text
+SUMMARY
 Total edges created: 73
+Total skipped (threshold): 38
+Total skipped (exists): 13
+Total errors: 0
+Database growth: 12000 -> 12073 relationships
 ```
 
-## Testing
+These numbers are examples, not expected values for a fresh checkout or another
+Neo4j database.
 
-Run the test suite:
+## Test without Neo4j
+
+The focused unit test uses an in-memory graph helper and does not connect to the
+configured Neo4j database:
 
 ```bash
-python tests/unit/br-kg/test_create_activation_edges.py
+python -m pytest -q -p no:cacheprovider \
+  --confcutdir=tests/unit/br_kg \
+  tests/unit/br_kg/test_create_activation_edges.py
 ```
 
-The unit test above is the maintained executable example for setting up test
-data and running the helpers programmatically.
+Passing this unit test checks threshold, dry-run, existing-edge, and empty-graph
+behavior. It does not prove that a particular Neo4j database has the required
+data or credentials.
