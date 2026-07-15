@@ -1,460 +1,132 @@
-# Brain Researcher Production Deployment Guide
+# Local deployment guide
 
-<!-- docs-status: historical -->
+> **Support boundary: local development only.** The public repository supports
+> the root Docker Compose stack as a local development and evaluation surface.
+> It does not ship a supported production, cloud, cluster, image-publishing,
+> rollout, backup, or rollback contract.
 
-> **Unsupported historical guide; do not use as the current deployment
-> contract.** The last public-history commit touching this file was 2026-06-04
-> (`b4b9ad61`). Several helper scripts and CI workflows named below are not
-> shipped in the current public tree. Start with the current
-> [deployment asset status](infrastructure/deployment/README.md) and inspect the
-> root README before performing any operator-controlled rollout.
-
-This guide provides comprehensive instructions for deploying Brain Researcher in a production environment.
-
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [Deployment Methods](#deployment-methods)
-- [Monitoring & Health Checks](#monitoring-health-checks)
-- [Backup & Recovery](#backup-recovery)
-- [Troubleshooting](#troubleshooting)
-- [Security Considerations](#security-considerations)
-
-## Architecture Overview
-
-Brain Researcher follows a microservices architecture with the following components:
-
-```
-┌─────────────────┐
-│   Nginx         │
-│   (Ports 80/443)│
-└─────────────────┘
-          │
-          ├──────────────▶ Orchestrator (3001)
-          ├──────────────▶ Agent Service (8000)
-          ├──────────────▶ BR-KG API (5000)
-          └──────────────▶ Web UI (3000)
-
-Agent Service ───────────▶ Redis (6379)
-BR-KG API ─────────────▶ Neo4j (7474 / 7687)
-```
+For the support level of every deployment-related asset, see the
+[deployment status matrix](infrastructure/deployment/README.md).
 
 ## Prerequisites
 
-### System Requirements
+- Docker Engine with Docker Compose v2 (`docker compose`)
+- `curl` for the shipped HTTP health smoke
+- enough local disk and memory to build and run the services
+- one supported LLM provider key and its matching model name
+- local secrets for Neo4j and Web authentication
 
-- **OS**: Linux (Ubuntu 20.04+ or CentOS 8+)
-- **RAM**: Minimum 8GB, Recommended 16GB+
-- **CPU**: Minimum 4 cores, Recommended 8+ cores
-- **Storage**: Minimum 50GB free space, Recommended 100GB+ (SSD preferred)
-- **Network**: Reliable internet connection for AI model APIs
+Run every command below from the repository root:
 
-### Required Software
-
-1. **Docker & Docker Compose**
-   ```bash
-   # Install Docker
-   curl -fsSL https://get.docker.com -o get-docker.sh
-   sudo sh get-docker.sh
-
-   # Install Docker Compose
-   sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-   sudo chmod +x /usr/local/bin/docker-compose
-   ```
-
-2. **Git LFS** (for large model files)
-   ```bash
-   sudo apt-get install git-lfs  # Ubuntu/Debian
-   # or
-   sudo yum install git-lfs      # CentOS/RHEL
-   ```
-
-3. **Basic utilities**
-   ```bash
-   sudo apt-get install curl jq htop
-   ```
-
-### API Keys Required
-
-- **OpenAI API Key** (required for LLM functionality)
-- **Anthropic API Key** (optional, for Claude models)
-- **DeepSeek API Key** (optional, for alternative models)
-
-## Quick Start
-
-### 1. Clone Repository
 ```bash
-git clone https://github.com/brain-researcher/brain-researcher-public.git
-cd brain-researcher-public
+cd "$(git rev-parse --show-toplevel)"
 ```
 
-### 2. Configure Environment
+## 1. Create the local environment file
+
+The root [`.env.example`](.env.example) is the only general environment
+template for this stack.
+
+Run the copy command only in a fresh checkout. If `.env` already exists, keep
+it and update the required values instead; `cp` would overwrite it.
+
 ```bash
-# Copy and customize environment variables
 cp .env.example .env
-nano .env  # Edit with your configuration
 ```
 
-### 3. Deploy with Script
-```bash
-# Production deployment
-./scripts/deployment/deploy.sh --backup --environment production
+Edit `.env` and replace the required placeholders. At minimum, set
+`NEO4J_PASSWORD`, `JWT_SECRET_KEY`, `NEXTAUTH_SECRET`, and one supported LLM
+provider key. Also set `DEFAULT_LLM_MODEL` to a model served by that provider;
+the [environment guide](docs/ENVIRONMENT_SETUP.md) gives matching examples.
+Keep `.env` local and never commit credentials.
 
-# Or step by step
-./scripts/deployment/deploy.sh --help
-```
-
-### 4. Verify Deployment
-```bash
-# Check service health
-./scripts/deployment/health_check.sh
-
-# View service status
-docker-compose -f docker-compose.prod.yml ps
-```
-
-## Configuration
-
-### Environment Variables
-
-Key configuration variables in `.env`:
+## 2. Validate the Compose model
 
 ```bash
-# === Required ===
-OPENAI_API_KEY=your_openai_api_key_here
-JWT_SECRET=your_secure_jwt_secret_32_chars_min
-
-# === Database ===
-POSTGRES_PASSWORD=secure_password
-REDIS_PASSWORD=secure_redis_password
-
-# === Domain (Production) ===
-DOMAIN=yourdomain.com
-SSL_EMAIL=admin@yourdomain.com
-CORS_ORIGINS=https://yourdomain.com
-
-# === Performance ===
-BR_KG_MEMORY_LIMIT=3g
-AGENT_MEMORY_LIMIT=4g
-WEB_CONCURRENCY=4
+PUBLIC_HOSTNAME=localhost docker compose --env-file .env config --quiet
 ```
 
-### Service Configuration
+This checks Compose interpolation and structure. It does not build images,
+start containers, test credentials, or prove that the services will become
+healthy.
 
-#### Nginx Routing (Production Compose)
-Edit `infrastructure/nginx/brain-researcher-compose.conf` for:
-- SSL/TLS certificates
-- Domain configuration
-- Load balancing
-- Security headers
-
-Current `docker-compose.prod.yml` mounts this file directly; it does not run a
-separate `api-gateway` container.
-
-#### Historical Standalone API Gateway
-No standalone API Gateway config or Docker image is shipped in the public tree.
-The current production path is Nginx plus split services. The legacy Python
-package remains importable for compatibility experiments, but those experiments
-must provide their own local config outside the release archive.
-
-## Deployment Methods
-
-### Method 1: Automated Script (Recommended)
+## 3. Start the local stack
 
 ```bash
-# Full production deployment with backup
-./scripts/deployment/deploy.sh \
-  --backup \
-  --environment production \
-  --compose-file docker-compose.prod.yml
-
-# Staging deployment
-./scripts/deployment/deploy.sh \
-  --environment staging \
-  --compose-file docker-compose.yml
+docker compose up -d --build --wait --wait-timeout 300
 ```
 
-### Method 2: Manual Docker Compose
+The default stack contains Neo4j, Redis, BR-KG, the agent, and the Web UI. It
+does not start the optional orchestrator worker or the MCP server.
+
+Inspect every container, including the one-shot directory initializer:
 
 ```bash
-# Start production stack
-docker-compose -f docker-compose.prod.yml up -d
-
-# Check logs
-docker-compose -f docker-compose.prod.yml logs -f
-
-# Stop stack
-docker-compose -f docker-compose.prod.yml down
+docker compose ps --all
 ```
 
-### Method 3: CI/CD Pipeline
+The expected steady state is:
 
-The included GitHub Actions workflow (`.github/workflows/ci.yml`) provides:
-- Automated testing
-- Docker image building
-- Security scanning
-- Automated deployment to staging/production
+- `init-local-dirs` exited with status 0;
+- `neo4j`, `redis`, `br-kg`, `agent`, and `web-ui` are healthy;
+- the Web UI is available at <http://localhost:3000>.
 
-## Monitoring & Health Checks
-
-### Health Check Script
+If a service does not become healthy, inspect the resolved configuration and
+logs before changing anything:
 
 ```bash
-# Check all services once
-./scripts/deployment/health_check.sh
-
-# Continuous monitoring
-./scripts/deployment/health_check.sh --continuous --interval 30
-
-# JSON output for monitoring systems
-./scripts/deployment/health_check.sh --json
+docker compose config
+docker compose logs --tail=200
 ```
 
-### Monitoring Stack
-
-Current `docker-compose.prod.yml` exposes service health endpoints, but it does
-not bundle Prometheus or Grafana by default.
-
-Health endpoints:
-- Nginx ingress: http://localhost/health
-- Orchestrator: http://localhost:3001/health
-- Agent: http://localhost:8000/health
-- BR-KG: http://localhost:5000/health
-- Web UI: http://localhost:3000/api/health
-
-### Key Metrics to Monitor
-
-- Request latency and throughput
-- Error rates per service
-- Memory and CPU usage
-- Database connection pool status
-- Queue depths and processing times
-
-## Backup & Recovery
-
-### Automated Backups
-
-The deployment script creates backups of:
-- BR-KG database
-- Configuration files
-- Environment settings
-- Docker Compose configurations
+## 4. Run the shipped health smoke
 
 ```bash
-# Create manual backup
-./scripts/deployment/deploy.sh --backup
-
-# List available backups
-./scripts/deployment/rollback.sh --list
-
-# Restore from backup
-./scripts/deployment/rollback.sh --backup /path/to/backup.tar.gz
+bash scripts/smoke/health_smoke.sh
 ```
 
-### Backup Strategy
+The smoke checks the local Agent, BR-KG, and Web UI endpoints and exits nonzero
+if one cannot be reached. A passing smoke proves only that these local HTTP
+surfaces responded at that moment. It is not a scientific workflow test or a
+production-readiness check.
 
-- **Frequency**: Daily automated backups
-- **Retention**: 30 days (configurable)
-- **Location**: `/var/backups/brain-researcher/`
-- **Format**: Compressed tar archives with metadata
-
-## Rollback Procedures
-
-### Automatic Rollback
-
-Failed deployments automatically trigger rollback:
+## 5. Stop the local stack
 
 ```bash
-# Manual rollback to latest backup
-./scripts/deployment/rollback.sh
-
-# Rollback to specific backup
-./scripts/deployment/rollback.sh --backup backup_20240101_120000.tar.gz
-
-# Dry run (preview changes)
-./scripts/deployment/rollback.sh --dry-run
+docker compose down
 ```
 
-### Emergency Procedures
+Docker volumes remain unless an operator explicitly removes them. Do not add
+`--volumes` unless deleting local state is intentional.
 
-1. **Service Down**: Restart individual services
-   ```bash
-   docker-compose -f docker-compose.prod.yml restart service-name
-   ```
+## Optional orchestrator worker
 
-2. **Database Issues**: Restore from backup
-   ```bash
-   ./scripts/deployment/rollback.sh --force
-   ```
-
-3. **Complete System Failure**: Full rollback
-   ```bash
-   ./scripts/deployment/rollback.sh --force --skip-health
-   ```
-
-## SSL/TLS Configuration
-
-### Let's Encrypt (Recommended)
+The `worker` profile adds the orchestrator to the local stack:
 
 ```bash
-# Install certbot
-sudo apt-get install certbot
-
-# Get certificates
-sudo certbot certonly --standalone -d yourdomain.com
-
-# Update infrastructure/nginx/brain-researcher-compose.conf with certificate paths
-# Restart nginx
-docker-compose -f docker-compose.prod.yml restart nginx
+docker compose --profile worker up -d --build --wait --wait-timeout 300
+docker compose --profile worker ps --all
 ```
 
-### Custom Certificates
-
-1. Place certificates in `ssl/` directory:
-   ```
-   ssl/
-   ├── brain-researcher.crt
-   ├── brain-researcher.key
-   └── ca-bundle.crt
-   ```
-
-2. Update `infrastructure/nginx/brain-researcher-compose.conf` with correct paths
-3. Restart services
-
-## Troubleshooting
-
-### Common Issues
-
-#### Services Won't Start
-
-1. Check Docker daemon:
-   ```bash
-   sudo systemctl status docker
-   ```
-
-2. Check ports availability:
-   ```bash
-   sudo netstat -tlnp | grep -E ':(80|443|3000|3001|5000|6379|7474|7687|8000)'
-   ```
-
-3. Check logs:
-   ```bash
-   docker-compose -f docker-compose.prod.yml logs service-name
-   ```
-
-#### Database Connection Issues
-
-1. Check Neo4j data and the optional GLM FitLins SQLite cache:
-   ```bash
-   ls -la data/neo4j/
-   ls -la data/br-kg/db/
-   ```
-
-2. Test database connectivity:
-   ```bash
-   docker-compose -f docker-compose.prod.yml exec neo4j \
-     cypher-shell -a bolt://localhost:7687 -u neo4j -p "$NEO4J_PASSWORD" 'RETURN 1'
-   ```
-
-#### Performance Issues
-
-1. Check resource usage:
-   ```bash
-   docker stats
-   htop
-   ```
-
-2. Check disk space:
-   ```bash
-   df -h
-   ```
-
-3. Check service health and ingress routing:
-   ```bash
-   curl http://localhost/health
-   curl http://localhost:3001/health
-   curl http://localhost:8000/health
-   curl http://localhost:5000/health
-   ```
-
-### Log Files
-
-- **Deployment**: `/var/log/brain-researcher/deploy_*.log`
-- **Health Checks**: `/var/log/brain-researcher/health_check.log`
-- **Services**: Access via `docker-compose logs`
-
-### Getting Help
-
-1. Check the logs first
-2. Run health checks to identify failing services
-3. Review configuration files for errors
-4. Check GitHub issues for similar problems
-
-## Security Considerations
-
-### Production Security Checklist
-
-- [ ] Change all default passwords
-- [ ] Configure firewall rules
-- [ ] Enable SSL/TLS encryption
-- [ ] Set up proper CORS origins
-- [ ] Configure rate limiting
-- [ ] Enable security headers in Nginx
-- [ ] Regularly update Docker images
-- [ ] Monitor security logs
-- [ ] Backup encryption
-- [ ] Network segmentation
-
-### Firewall Configuration
+Stop it with the same profile selection:
 
 ```bash
-# Allow essential ports
-sudo ufw allow 22     # SSH
-sudo ufw allow 80     # HTTP
-sudo ufw allow 443    # HTTPS
-sudo ufw enable
+docker compose --profile worker down
 ```
 
-### Regular Maintenance
+This remains a local development surface.
 
-- Update Docker images monthly
-- Review and rotate API keys quarterly
-- Monitor security advisories
-- Test backup/restore procedures
-- Review access logs weekly
+## What this repository does not promise
 
-## Performance Tuning
+The public tree has no verified production target, published image set, fixed
+release-image tag, cloud account setup, DNS/TLS workflow, persistent storage
+policy, secret-manager integration, zero-downtime rollout, backup procedure, or
+rollback procedure. Files such as `docker-compose.prod.yml`, the Kubernetes
+manifests, and the Helm chart are inspection or operator-specific assets; do
+not interpret their presence as an apply-ready production system.
 
-### Resource Optimization
-
-1. **Memory Settings**
-   ```bash
-   # In .env file
-   BR_KG_MEMORY_LIMIT=4g    # Increase for large datasets
-   AGENT_MEMORY_LIMIT=6g      # Increase for complex models
-   ```
-
-2. **CPU Optimization**
-   ```bash
-   WEB_CONCURRENCY=8          # Match CPU cores
-   GUNICORN_WORKERS=4         # CPU cores / 2
-   ```
-
-3. **Database Tuning**
-   - Enable WAL mode for SQLite
-   - Configure Redis memory policy
-   - Optimize query patterns
-
-### Scaling Considerations
-
-- **Horizontal Scaling**: Use Docker Swarm or Kubernetes
-- **Load Balancing**: Configure multiple instances behind Nginx
-- **Database Scaling**: Consider PostgreSQL for large deployments
-- **Caching**: Implement Redis caching strategies
-
----
-
-For additional support, please refer to the project documentation or open an issue on GitHub.
+The superseded production-oriented document is preserved only in Git history:
+[view the exact pre-rewrite snapshot](https://github.com/brain-researcher/brain-researcher-public/blob/d2d889a238b47d6b4409723223d6832693d298f6/DEPLOYMENT.md).
+The [deployment archive index](docs/archive/deployment/README.md) records the
+other removed or downgraded assets without republishing unsafe commands as
+active instructions.

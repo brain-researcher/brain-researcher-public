@@ -14,10 +14,8 @@
 # the default generic-api-key / stripe-access-token / curl-auth-header rules
 # flag in test fixtures, docs, and placeholders.
 #
-# A real Cloudflare API token was previously hardcoded in
-# infrastructure/cloudflare/*.py — removed and moved to environment variables
-# (CLOUDFLARE_API_TOKEN). Do NOT add a blanket allowlist for that path; only
-# the placeholder docs below are exempt.
+# Retired provider automation and any credentials it once used stay out of the
+# active tree. Do not add blanket path allowlists for deployment helpers.
 
 [extend]
 useDefault = true
@@ -39,7 +37,6 @@ paths = [
   '''\.env\.example$''',
   '''REDACTION_POLICY\.md$''',
   '''scripts/oss/EXTRACT_PUBLIC_KG\.md$''',
-  '''infrastructure/cloudflare/README\.md$''',
   '''tests/.*''',
   '''src/brain_researcher/services/telemetry/example_usage\.py$''',
 ]

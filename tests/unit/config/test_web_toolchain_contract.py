@@ -34,6 +34,24 @@ def test_web_package_manager_and_lock_are_single_source() -> None:
     assert "pnpm-lock.yaml" not in wiki_config
 
 
+def test_storybook_clean_build_inputs_are_reproducible() -> None:
+    package = _package_json()
+    lock = json.loads((WEB_ROOT / "package-lock.json").read_text(encoding="utf-8"))
+
+    assert package["devDependencies"]["ajv"] == "8.17.1"
+    assert lock["packages"]["node_modules/ajv"]["version"] == "8.17.1"
+    assert lock["packages"]["node_modules/ajv-keywords"]["peerDependencies"] == {
+        "ajv": "^8.8.2"
+    }
+
+    preview = (WEB_ROOT / ".storybook" / "preview.tsx").read_text(encoding="utf-8")
+    assert "../src/app/globals.css" in preview
+    assert "../src/app/[locale]/globals.css" not in preview
+    assert "/storybook-static/" in (WEB_ROOT / ".gitignore").read_text(
+        encoding="utf-8"
+    )
+
+
 def test_web_dockerfiles_use_node_20_and_lockfile_installs() -> None:
     root_dockerfile = (REPO_ROOT / "Dockerfile").read_text(encoding="utf-8")
     web_dockerfile = (WEB_ROOT / "Dockerfile").read_text(encoding="utf-8")
@@ -93,6 +111,13 @@ def test_web_docs_and_scripts_use_the_npm_contract() -> None:
 
     cloudflare = (WEB_ROOT / "CLOUDFLARE_DEPLOYMENT.md").read_text(encoding="utf-8")
     assert "use Node 20" in cloudflare
+    assert "Status: experimental and not verified." in cloudflare
+    assert "wrangler pages deploy" not in cloudflare
+
+    storybook = (WEB_ROOT / "STORYBOOK_SETUP.md").read_text(encoding="utf-8")
+    assert "Build a local static preview" in storybook
+    assert "Automated deployment via GitHub Actions" not in storybook
+    assert "## Production Deployment" not in storybook
 
     config = (WEB_ROOT / "CONFIG.md").read_text(encoding="utf-8")
     compatibility = config.split("### Compatibility Variables", maxsplit=1)[1]

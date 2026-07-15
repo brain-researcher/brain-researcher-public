@@ -40,8 +40,8 @@ spec:
       {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
       containers:
         - name: br-kg
-          image: "{{ .Values.global.imageRegistry }}/br-kg:{{ $brKg.imageTag | default .Values.global.imageTag }}"
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          image: {{ include "brain-researcher.image" (dict "registry" .Values.global.imageRegistry "repository" $brKg.image.repository "tag" ($brKg.imageTag | default .Values.global.imageTag | default $brKg.image.tag)) | quote }}
+          imagePullPolicy: {{ $brKg.image.pullPolicy | default .Values.global.imagePullPolicy }}
           ports:
             - name: http
               containerPort: 5000

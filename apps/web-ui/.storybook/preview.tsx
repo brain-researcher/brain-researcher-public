@@ -1,7 +1,7 @@
 import type { Preview } from '@storybook/react';
 import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import '../src/app/[locale]/globals.css';
+import '../src/app/globals.css';
 import '../src/styles/responsive.css';
 
 const queryClient = new QueryClient({

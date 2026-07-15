@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import yaml
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 ACTIVE_REQUIRED_SUBSTRINGS = {
@@ -72,10 +74,6 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
         "server br-kg-4 br-kg:5000",
         "use_backend web_ui_backend if is_api",
     ),
-    "infrastructure/autoscaling/autoscaler.py": (
-        "'name': 'agent'",
-        "'name': 'web-ui'",
-    ),
     "Dockerfile": (
         "uvicorn brain_researcher.services.agent.asgi:app",
         "FROM base AS br-kg",
@@ -111,14 +109,6 @@ ACTIVE_REQUIRED_SUBSTRINGS = {
         "context: ../..",
         "target: br-kg",
         "target: agent",
-    ),
-    "infrastructure/deployment/gce_k3s/QUICKSTART.md": (
-        "infrastructure/docker/Dockerfile.agent",
-        "infrastructure/docker/Dockerfile.orchestrator",
-        "infrastructure/docker/Dockerfile.mcp",
-    ),
-    "infrastructure/deployment/gcp/GKE_QUICKSTART.md": (
-        "infrastructure/docker/Dockerfile.orchestrator",
     ),
 }
 
@@ -188,14 +178,6 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
         "../services/br_kg",
         "../services/agent",
     ),
-    "infrastructure/deployment/gce_k3s/QUICKSTART.md": (
-        "-f docker/Dockerfile.agent",
-        "-f docker/Dockerfile.mcp",
-        "-f src/brain_researcher/services/orchestrator/Dockerfile",
-    ),
-    "infrastructure/deployment/gcp/GKE_QUICKSTART.md": (
-        "src/brain_researcher/services/orchestrator/Dockerfile",
-    ),
     "Dockerfile": (
         "EXPOSE 5000 8050",
         "brain_researcher.services.gateway.asgi_app:app",
@@ -223,7 +205,6 @@ ACTIVE_FORBIDDEN_SUBSTRINGS = {
         "NEXT_PUBLIC_DEV_ORCH_COMPAT",
     ),
     "infrastructure/docker/Dockerfile.agent": ("web_service_langgraph",),
-    "infrastructure/autoscaling/autoscaler.py": ("'name': 'api-gateway'",),
 }
 
 LEGACY_REQUIRED_SUBSTRINGS = {}
@@ -252,3 +233,38 @@ def test_legacy_runtime_scaffolding_is_explicitly_marked() -> None:
         text = (REPO_ROOT / relpath).read_text(encoding="utf-8")
         for needle in needles:
             assert needle in text, f"Missing legacy marker in {relpath}: {needle}"
+
+
+def test_compose_waits_for_dependency_health_before_starting_consumers() -> None:
+    compose = yaml.safe_load((REPO_ROOT / "docker-compose.yml").read_text())
+    services = compose["services"]
+
+    expected_conditions = {
+        "br-kg": {"init-local-dirs": "service_completed_successfully", "neo4j": "service_healthy"},
+        "agent": {
+            "init-local-dirs": "service_completed_successfully",
+            "br-kg": "service_healthy",
+            "redis": "service_healthy",
+        },
+        "web-ui": {"agent": "service_healthy", "br-kg": "service_healthy"},
+        "orchestrator": {
+            "agent": "service_healthy",
+            "br-kg": "service_healthy",
+            "redis": "service_healthy",
+        },
+    }
+
+    for service_name, dependencies in expected_conditions.items():
+        actual = services[service_name]["depends_on"]
+        for dependency_name, expected_condition in dependencies.items():
+            assert actual[dependency_name]["condition"] == expected_condition
+
+
+def test_compose_project_name_isolates_container_and_network_names() -> None:
+    compose = yaml.safe_load((REPO_ROOT / "docker-compose.yml").read_text())
+
+    assert compose["name"] == "brain-researcher"
+    project_prefix = "${COMPOSE_PROJECT_NAME:-brain-researcher}"
+    for service_name, service in compose["services"].items():
+        assert service["container_name"] == f"{project_prefix}-{service_name}"
+    assert compose["networks"]["default"]["name"] == project_prefix

@@ -36,8 +36,8 @@ spec:
       {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
       containers:
         - name: web-ui
-          image: "{{ .Values.global.imageRegistry }}/web-ui:{{ .Values.webUi.imageTag | default .Values.global.imageTag }}"
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          image: {{ include "brain-researcher.image" (dict "registry" .Values.global.imageRegistry "repository" .Values.webUi.image.repository "tag" (.Values.webUi.imageTag | default .Values.global.imageTag | default .Values.webUi.image.tag)) | quote }}
+          imagePullPolicy: {{ .Values.webUi.image.pullPolicy | default .Values.global.imagePullPolicy }}
           ports:
             - name: http
               containerPort: 3000
@@ -60,7 +60,7 @@ spec:
             {{- end }}
           envFrom:
             - secretRef:
-                name: {{ include "brain-researcher.fullname" . }}-external-services
+                name: {{ include "brain-researcher.externalServices.secretName" . }}
                 optional: true
           resources:
             {{- toYaml .Values.webUi.resources | nindent 12 }}

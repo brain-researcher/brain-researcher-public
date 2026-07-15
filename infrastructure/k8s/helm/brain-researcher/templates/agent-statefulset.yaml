@@ -33,8 +33,8 @@ spec:
       {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
       containers:
         - name: agent
-          image: "{{ .Values.global.imageRegistry }}/agent:{{ .Values.agent.imageTag | default .Values.global.imageTag }}"
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          image: {{ include "brain-researcher.image" (dict "registry" .Values.global.imageRegistry "repository" .Values.agent.image.repository "tag" (.Values.agent.imageTag | default .Values.global.imageTag | default .Values.agent.image.tag)) | quote }}
+          imagePullPolicy: {{ .Values.agent.image.pullPolicy | default .Values.global.imagePullPolicy }}
           {{- if .Values.agent.apptainerSecurityContext.enabled }}
           securityContext:
             privileged: {{ .Values.agent.apptainerSecurityContext.privileged }}
@@ -125,10 +125,10 @@ spec:
             {{- end }}
           envFrom:
             - secretRef:
-                name: {{ include "brain-researcher.fullname" . }}-llm-api-keys
+                name: {{ include "brain-researcher.llmApiKeys.secretName" . }}
                 optional: true
             - secretRef:
-                name: {{ include "brain-researcher.fullname" . }}-external-services
+                name: {{ include "brain-researcher.externalServices.secretName" . }}
                 optional: true
           volumeMounts:
             - name: session-storage

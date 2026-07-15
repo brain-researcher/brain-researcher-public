@@ -5,6 +5,7 @@
 
 # testing
 /coverage
+/storybook-static/
 
 # next.js
 /.next/

@@ -44,6 +44,21 @@ app.kubernetes.io/part-of: brain-researcher-platform
 {{- end }}
 
 {{/*
+Build an image reference without introducing a leading slash when no registry
+is configured. Callers must provide repository and tag explicitly.
+*/}}
+{{- define "brain-researcher.image" -}}
+{{- $registry := trimSuffix "/" (default "" .registry) -}}
+{{- $repository := required "image.repository is required" .repository -}}
+{{- $tag := required "image.tag is required" .tag -}}
+{{- if $registry -}}
+{{- printf "%s/%s:%s" $registry $repository $tag -}}
+{{- else -}}
+{{- printf "%s:%s" $repository $tag -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "brain-researcher.selectorLabels" -}}
@@ -51,12 +66,9 @@ app.kubernetes.io/name: {{ include "brain-researcher.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{/*
-Component labels for specific services
-*/}}
-{{- define "${PUBLIC_HOSTNAME}ponentLabels" -}}
-{{- $component := . -}}
-app.kubernetes.io/component: {{ $component }}
+{{/* Component label for a service or namespace. */}}
+{{- define "brain-researcher.componentLabels" -}}
+app.kubernetes.io/component: {{ . }}
 {{- end }}
 
 {{/*
@@ -258,15 +270,15 @@ Generate ConfigMap names
 Generate Secret names
 */}}
 {{- define "brain-researcher.llmApiKeys.secretName" -}}
-{{- printf "%s-llm-api-keys" (include "brain-researcher.fullname" .) }}
+{{- required "secrets.llmApiKeys.existingSecret is required" .Values.secrets.llmApiKeys.existingSecret }}
 {{- end }}
 
 {{- define "brain-researcher.databaseCredentials.secretName" -}}
-{{- printf "%s-database-credentials" (include "brain-researcher.fullname" .) }}
+{{- required "secrets.databaseCredentials.existingSecret is required" .Values.secrets.databaseCredentials.existingSecret }}
 {{- end }}
 
 {{- define "brain-researcher.jwtSecrets.secretName" -}}
-{{- printf "%s-jwt-secrets" (include "brain-researcher.fullname" .) }}
+{{- required "secrets.jwtSecrets.existingSecret is required" .Values.secrets.jwtSecrets.existingSecret }}
 {{- end }}
 
 {{- define "brain-researcher.tlsCertificates.secretName" -}}
@@ -274,7 +286,7 @@ Generate Secret names
 {{- end }}
 
 {{- define "brain-researcher.oauthCredentials.secretName" -}}
-{{- printf "%s-oauth-credentials" (include "brain-researcher.fullname" .) }}
+{{- required "secrets.oauthCredentials.existingSecret is required" .Values.secrets.oauthCredentials.existingSecret }}
 {{- end }}
 
 {{- define "brain-researcher.monitoringCredentials.secretName" -}}
@@ -282,7 +294,11 @@ Generate Secret names
 {{- end }}
 
 {{- define "brain-researcher.externalServices.secretName" -}}
-{{- printf "%s-external-services" (include "brain-researcher.fullname" .) }}
+{{- required "secrets.externalServices.existingSecret is required" .Values.secrets.externalServices.existingSecret }}
+{{- end }}
+
+{{- define "brain-researcher.mcpAuth.secretName" -}}
+{{- required "secrets.mcpAuth.existingSecret is required" .Values.secrets.mcpAuth.existingSecret }}
 {{- end }}
 
 {{/*

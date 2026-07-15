@@ -48,7 +48,8 @@ spec:
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
         - name: metrics
-          image: oliver006/redis_exporter:latest
+          image: {{ include "brain-researcher.image" (dict "registry" "" "repository" .Values.redis.exporter.image.repository "tag" .Values.redis.exporter.image.tag) | quote }}
+          imagePullPolicy: {{ .Values.redis.exporter.image.pullPolicy }}
           ports:
             - name: metrics
               containerPort: 9121

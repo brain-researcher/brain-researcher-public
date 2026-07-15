@@ -39,8 +39,8 @@ spec:
       {{- include "brain-researcher.imagePullSecrets" . | nindent 6 }}
       containers:
         - name: mcp
-          image: "{{ .Values.global.imageRegistry }}/mcp:{{ .Values.mcp.imageTag | default .Values.global.imageTag }}"
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          image: {{ include "brain-researcher.image" (dict "registry" .Values.global.imageRegistry "repository" .Values.mcp.image.repository "tag" (.Values.mcp.imageTag | default .Values.global.imageTag | default .Values.mcp.image.tag)) | quote }}
+          imagePullPolicy: {{ .Values.mcp.image.pullPolicy | default .Values.global.imagePullPolicy }}
           ports:
             - name: http
               containerPort: 7000
@@ -84,8 +84,8 @@ spec:
             - name: JWT_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "brain-researcher.fullname" . }}-external-services
-                  key: NEXTAUTH_SECRET
+                  name: {{ include "brain-researcher.externalServices.secretName" . }}
+                  key: {{ .Values.secrets.externalServices.keys.nextauthSecret }}
                   optional: true
             {{- if .Values.mcp.extraEnv }}
             {{- tpl (toYaml .Values.mcp.extraEnv) $ | nindent 12 }}
@@ -98,16 +98,16 @@ spec:
             {{- end }}
           envFrom:
             - secretRef:
-                name: {{ include "brain-researcher.fullname" . }}-database-credentials
+                name: {{ include "brain-researcher.databaseCredentials.secretName" . }}
                 optional: true
             - secretRef:
-                name: {{ include "brain-researcher.fullname" . }}-llm-api-keys
+                name: {{ include "brain-researcher.llmApiKeys.secretName" . }}
                 optional: true
             - secretRef:
-                name: {{ include "brain-researcher.fullname" . }}-external-services
+                name: {{ include "brain-researcher.externalServices.secretName" . }}
                 optional: true
             - secretRef:
-                name: {{ include "brain-researcher.fullname" . }}-mcp-auth
+                name: {{ include "brain-researcher.mcpAuth.secretName" . }}
                 optional: true
           volumeMounts:
             {{- if .Values.jobStore.enabled }}
