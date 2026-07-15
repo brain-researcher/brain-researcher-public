@@ -4,7 +4,7 @@
 FROM node:20-alpine AS node-builder
 WORKDIR /app
 COPY apps/web-ui/package.json apps/web-ui/package-lock.json ./
-RUN npm install
+RUN npm ci --include=dev --ignore-scripts
 COPY apps/web-ui ./
 # Build Next.js app (requires some fake env vars to pass validation during build)
 ENV NEXT_PUBLIC_AGENT_URL=http://localhost:8000
@@ -106,6 +106,8 @@ RUN micromamba create -y -n brain_researcher -f /tmp/agent-env.yml && \
 FROM base AS agent
 
 # Install runtime deps for Apptainer execution.
+# bids-validator is a pinned global CLI, not a lockfile-backed project install,
+# so its global installation intentionally remains outside the npm ci workflow.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nodejs \
     npm \
@@ -171,6 +173,8 @@ FROM base AS mcp
 # MCP shares the agent-facing orchestration/tool surface, but behavior-task
 # execution is delegated to the agent runtime instead of running psyflow
 # locally inside the MCP container.
+# bids-validator is a pinned global CLI, not a lockfile-backed project install,
+# so its global installation intentionally remains outside the npm ci workflow.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nodejs \
     npm \
@@ -205,7 +209,7 @@ WORKDIR /app
 
 # Install production dependencies only
 COPY --chown=node:node apps/web-ui/package.json apps/web-ui/package-lock.json ./
-RUN npm install --production
+RUN npm ci --omit=dev --ignore-scripts
 
 # Copy built artifacts from builder
 COPY --from=node-builder --chown=node:node /app/.next ./.next

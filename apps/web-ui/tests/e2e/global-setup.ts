@@ -10,7 +10,7 @@ async function globalSetup(config: FullConfig) {
     process.env.E2E_BASE_URL ||
     process.env.BASE_URL ||
     (config.projects[0]?.use?.baseURL as string | undefined) ||
-    'http://localhost:3000'
+    'http://localhost:3002'
 
   const email =
     process.env.E2E_DEV_EMAIL ||

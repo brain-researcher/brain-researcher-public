@@ -85,15 +85,19 @@ vi.mock('@/lib/visualizations', () => ({
   fetchWorkflowGraph,
   fetchBrainMaps,
 }))
-vi.mock('@/lib/service-endpoints', () => ({
-  serviceEndpoints: {
-    useProxy: true,
-    orchestrator: (path: string) => path,
-    orchestratorApi: (path: string) => path,
-    agent: (path: string) => path,
-    kg: (path: string) => path,
-  },
-}))
+vi.mock('@/lib/service-endpoints', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/service-endpoints')>()
+  return {
+    ...actual,
+    serviceEndpoints: {
+      useProxy: true,
+      orchestrator: (path: string) => path,
+      orchestratorApi: (path: string) => path,
+      agent: (path: string) => path,
+      kg: (path: string) => path,
+    },
+  }
+})
 vi.mock('@/lib/api', () => ({
   openSSE: () => ({
     addEventListener: vi.fn(),

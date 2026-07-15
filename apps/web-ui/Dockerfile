@@ -1,5 +1,5 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 ENV NEXT_OUTPUT_TRACING_ROOT=/app
@@ -11,7 +11,7 @@ COPY apps/web-ui/scripts/ ./scripts/
 
 # Install dependencies deterministically for the build without running
 # app-level postinstall hooks before the full source tree is present.
-RUN npm install --include=dev --ignore-scripts
+RUN npm ci --include=dev --ignore-scripts
 
 # Copy application code (build context is repo root)
 COPY apps/web-ui/ .
@@ -64,7 +64,7 @@ ENV BR_KG_PORT=${BR_KG_PORT}
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
@@ -89,10 +89,10 @@ USER nextjs
 EXPOSE 3000
 
 # Set environment to production
-ENV NODE_ENV production
-ENV PORT 3000
-ENV HOSTNAME 0.0.0.0
-ENV PROJECT_ROOT /app
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+ENV PROJECT_ROOT=/app
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

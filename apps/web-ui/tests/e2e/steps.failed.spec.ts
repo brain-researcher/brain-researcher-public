@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test'
 // It validates the API contract consumed by the evidence rail. UI auth is
 // covered separately because CI uses bearer auth instead of a NextAuth session.
 
-const BASE = process.env.E2E_BASE_URL || 'http://localhost:3000'
+const BASE = process.env.E2E_BASE_URL || 'http://localhost:3002'
 const AUTH_TOKEN = process.env.E2E_AUTH_TOKEN || ''
 const AUTH_HEADERS = AUTH_TOKEN ? { authorization: `Bearer ${AUTH_TOKEN}` } : {}
 

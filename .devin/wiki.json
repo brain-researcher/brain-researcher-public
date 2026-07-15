@@ -165,7 +165,6 @@
     "apps/web-ui/out/**",
     "apps/web-ui/coverage/**",
     "apps/web-ui/package-lock.json",
-    "apps/web-ui/pnpm-lock.yaml",
     "site/**",
     "build/**",
     "dist/**",

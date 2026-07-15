@@ -2,6 +2,11 @@
   "name": "brain-researcher",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "npm@10.8.2",
+  "engines": {
+    "node": ">=20 <21",
+    "npm": ">=10 <11"
+  },
   "scripts": {
     "sync:monaco": "node scripts/sync-monaco-assets.mjs",
     "predev": "npm run sync:monaco && node scripts/repair-next-dev-cache.mjs",
@@ -10,8 +15,6 @@
     "prebuild": "npm run sync:monaco",
     "build": "next build",
     "start": "next start",
-    "export": "next export",
-    "deploy:ssr": "bash deploy-ssr.sh",
     "build:cloudflare": "npm run build && npx @cloudflare/next-on-pages",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
@@ -20,6 +23,8 @@
     "test": "vitest --run",
     "test:watch": "vitest",
     "e2e": "node scripts/run-playwright.mjs test tests/e2e/chat.e2e.spec.ts --reporter=line",
+    "e2e:list": "node scripts/run-playwright.mjs test --list",
+    "e2e:smoke": "node scripts/run-playwright.mjs test tests/e2e/health.endpoint.spec.ts --reporter=line",
     "e2e:routes": "node scripts/run-playwright.mjs test tests/e2e/routes.spec.ts --reporter=line",
     "e2e:prd": "node scripts/run-playwright.mjs test tests/e2e/prd.auth-routing.spec.ts tests/e2e/prd.keyflows.spec.ts tests/e2e/prd.tier1.core.spec.ts tests/e2e/prd.tier2.entry.spec.ts tests/e2e/prd.tier3.polish.spec.ts tests/e2e/prd.planned.workflow-execution.spec.ts --workers=1 --reporter=line",
     "e2e:real": "node scripts/run-playwright.mjs test --config=playwright.config.real-pipeline.ts --reporter=line",
@@ -70,7 +75,7 @@
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "js-yaml": "^4.1.1",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.344.0",
     "monaco-editor": "^0.55.1",

@@ -50,7 +50,6 @@ describe('API Routes: hypothesis workflow helpers', () => {
           constraints: 'Allow public datasets.',
           research_question: 'When does working memory alter fronto-parietal activation?',
         },
-        count: 8,
       }),
     })
 

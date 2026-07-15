@@ -5,6 +5,8 @@ This is the shortest path to run the real coding agent end-to-end and know what 
 ## 1) Start the services
 
 ```bash
+cd "$(git rev-parse --show-toplevel)"
+
 # Agent (non-smoke)
 FLASK_APP=brain_researcher.services.agent.web_service \
 SMOKE_TEST_MODE=0 \
@@ -15,9 +17,8 @@ CODE_AGENT_MODEL_HINT=gemini-2.5-flash \
 flask run -p 8000
 
 # Web UI
-cd apps/web-ui
-corepack pnpm install --ignore-scripts
-corepack pnpm dev  # http://localhost:3000
+npm --prefix apps/web-ui ci
+npm --prefix apps/web-ui run dev  # http://localhost:3000
 ```
 
 ## 2) Three workflows to try
