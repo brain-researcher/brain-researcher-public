@@ -1,5 +1,13 @@
 # 3D Brain Viewer Testing Guide
 
+<!-- docs-status: historical -->
+
+> **Historical manual-test snapshot; not a current test gate.** The last
+> public-history commit touching this file was 2026-05-28 (`9e86e308`). The
+> referenced Pact test is not shipped, and the retained Playwright viewer spec
+> is currently skipped. Use [README.md](README.md) and current test discovery
+> for the supported Web UI checks.
+
 This document provides manual testing procedures for the 3D Brain Viewer (UI-044) implementation.
 
 ## Prerequisites

@@ -274,4 +274,4 @@ To verify your configuration:
 ## See Also
 
 - [Next.js Environment Variables](https://nextjs.org/docs/app/building-your-application/configuring/environment-variables)
-- [Brain Researcher Architecture](../../docs/architecture.md)
+- [Brain Researcher architecture overview](../../README.md#architecture-high-level)

@@ -64,13 +64,13 @@ Important policy anchors:
 Install Brain Researcher so the `brain-researcher-mcp` entrypoint is available:
 
 ```bash
-pip install -e .
+python -m pip install -e ".[mcp]"
 ```
 
 Or, for the full stack (recommended for contributors):
 
 ```bash
-pip install -e ".[all]"
+python -m pip install -e ".[all]"
 ```
 
 ## Run the server (stdio)
@@ -87,26 +87,14 @@ Fallback:
 python -m brain_researcher.services.mcp.server
 ```
 
-## Run via Docker (stdio)
+## Docker boundary
 
-If you want to run the MCP server in Docker (to avoid local Python env setup),
-prefer running the container with your host UID/GID and redirecting cache dirs
-to a bind-mounted writable location.
-
-This repo ships a small wrapper script:
-
-```bash
-scripts/ops/mcp_docker_stdio.sh
-```
-
-It runs `docker run --rm -i` (no TTY) so Claude/Codex can speak MCP over stdio,
-and mounts:
-
-- `<repo>/artifacts` -> `/app/artifacts`
-- `<repo>/data` -> `/app/data`
-- `<repo>/tmp` -> `/app/tmp`
-
-You can override paths and image name via env vars (see the script header).
+The public repository includes an MCP Dockerfile for deployment work, but it
+does not ship a supported Docker-stdio wrapper or a ready-made HTTP client
+template. The verified local client path in this guide is the Python 3.11
+`.[mcp]` install above. Treat container and hosted HTTP setup as
+deployment-specific until its image, mounts, auth, and health checks have been
+validated for your target.
 
 ## Neo4j configuration (KG tools)
 
@@ -848,52 +836,13 @@ _agent_directive.research_logging:
    infer from tool/error/retry traces
 ```
 
-This works best when paired with the repo-local rules already present in
-[`CLAUDE.md`](../CLAUDE.md).
-
-### Claude Code + Docker wrapper (stdio)
-
-```bash
-claude mcp add-json brain-researcher-docker '{
-  "type":"stdio",
-  "command":"scripts/ops/mcp_docker_stdio.sh",
-  "env":{
-    "BR_MCP_ALLOW_NETWORK":"0"
-  }
-}'
-```
+This works best when paired with the canonical repo-local rules in
+[`AGENTS.md`](https://github.com/brain-researcher/brain-researcher-public/blob/main/AGENTS.md).
 
 ## Example: Claude Code (HTTP)
 
-Template config lives at:
-
-- `configs/claude/mcp.http.template.json.tmpl`
-
-### Repo-local run (`--mcp-config`) without persisting token
-
-```bash
-BR_MCP_TOKEN="$(scripts/mcp/resolve_br_mcp_token.sh)"
-MCP_CFG="$(mktemp /tmp/brain-researcher-http-mcp.XXXXXX.json)"
-python - "${BR_MCP_TOKEN}" "${MCP_CFG}" <<'PY'
-import json
-import sys
-
-token = sys.argv[1]
-out_path = sys.argv[2]
-cfg = json.load(open("configs/claude/mcp.http.template.json.tmpl", encoding="utf-8"))
-cfg["mcpServers"]["brain-researcher-http"]["headers"]["Authorization"] = f"Bearer {token}"
-with open(out_path, "w", encoding="utf-8") as f:
-    json.dump(cfg, f, indent=2)
-PY
-
-claude -p \
-  --strict-mcp-config \
-  --mcp-config "${MCP_CFG}" \
-  --permission-mode bypassPermissions \
-  "Use brain-researcher-http MCP and call server_info."
-```
-
-### User-global registration (`claude mcp add-json`)
+No HTTP config template is shipped. Register the verified endpoint explicitly
+after starting and health-checking your local HTTP MCP service:
 
 ```bash
 TOKEN="$(scripts/mcp/resolve_br_mcp_token.sh)"
@@ -938,12 +887,6 @@ _agent_directive.research_logging:
 
 This is intentionally narrower than a full repo policy. It only teaches Codex
 how to honor the BR directive contract at response time.
-
-### Codex CLI + Docker wrapper (stdio)
-
-```bash
-codex mcp add brain-researcher-docker -- scripts/ops/mcp_docker_stdio.sh
-```
 
 ## Tool examples (tested)
 

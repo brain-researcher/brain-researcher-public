@@ -1,5 +1,14 @@
 # Appendix D. Tool Registry and Specification Ledger Card
 
+<!-- docs-status: historical -->
+
+> **Historical snapshot (2026-06-03).** Counts, module paths, test paths,
+> Docker wrappers, client templates, run roots, and policy defaults below were
+> captured from an earlier internal surface. They are not current public
+> runtime claims. Use `server_info`, `tool_search`, the shipped
+> `docs/mcp_tools.schema.json`, and paths that exist in the checked-out commit
+> for current facts. Part 2 remains a fillable historical ledger template.
+
 This appendix has two parts.
 
 - **Part 1 — BR-MCP System Data Card.** System-level description of the MCP server that brokers all tool discovery, execution recipes, and admin execution. Documents the public surface (87 decorated tools), capability families, runtime boundaries, compute/control graph, neuroimaging tooling routing, execution backends, the LLM↔MCP decision split, storage and policy gates, access patterns, and downstream workflow roles. Re-issue when the MCP version or surface tiering changes.

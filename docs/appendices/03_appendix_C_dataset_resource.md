@@ -1,5 +1,13 @@
 # Appendix C. Dataset / Resource Card
 
+<!-- docs-status: historical -->
+
+> **Historical snapshot (2026-06-03).** This appendix preserves a dataset-card
+> design and references source files that are not all shipped in the current
+> public tree. It is not a current inventory or a runnable data-loading guide.
+> Verify present resources through the repository and live MCP
+> `dataset_get_resources` surface before relying on a path below.
+
 This appendix has two parts.
 
 - **Part 1 — BR Dataset / Resource System Catalog.** System-level reference for the dataset and resource substrate that Brain Researcher draws on. Covers the resource-type contract, source ingestion modes, the curated public-dataset catalog, the on-disk layout, access classes, license patterns, mount conventions, and the readiness vocabulary used in per-episode cards. Re-issue when `configs/tool_resources.yaml`, `configs/br-kg/ingestion_modes.yaml`, or `configs/datasets/public_datasets_manual_annotation.csv` changes materially.

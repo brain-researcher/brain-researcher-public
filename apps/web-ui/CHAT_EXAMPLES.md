@@ -324,6 +324,6 @@ If you encounter issues or need assistance:
 - Type "help" for general guidance
 - Ask "What can you do?" for capability overview
 - Request "Show me an example" for demonstration
-- Check the [documentation](../README.md) for detailed information
+- Check the [Web UI documentation](README.md) for current setup and boundaries
 
 Happy analyzing! 🧠🔬

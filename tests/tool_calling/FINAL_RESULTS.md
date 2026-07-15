@@ -1,5 +1,14 @@
 # Final Tool Calling Test Results - With Real NiCLIP Data
 
+<!-- docs-status: historical -->
+
+> **Historical result snapshot; not current verification.** These results were
+> recorded on 2025-10-08, and the last public-history commit touching this file
+> was 2026-06-03 (`db7adf34`). They describe one local service/model/data setup,
+> include failed calls, and do not establish current production readiness or
+> scientific validity. Re-run the current test surface against the intended
+> deployment before citing a present-tense result.
+
 **Test Date**: 2025-10-08
 **Configuration**: NiCLIP data successfully loaded
 **Agent**: http://localhost:8000 (with NICLIP_DATA_PATH set)

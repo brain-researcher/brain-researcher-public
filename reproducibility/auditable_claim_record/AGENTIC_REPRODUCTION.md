@@ -88,7 +88,7 @@ start the server in terminal A:
 ```bash
 python -m pip install \
   -c reproducibility/auditable_claim_record/constraints-py311.txt \
-  -e . nimare nilearn
+  -e ".[mcp]" nimare nilearn
 python scripts/data/download_neurosynth_data.py
 python scripts/data/convert_neurosynth.py
 export BR_NEUROCLAIM_CORPUS="$PWD/data/neurosynth_nimare/neurosynth_dataset_v7.pkl"

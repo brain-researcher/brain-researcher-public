@@ -7,7 +7,7 @@ contains `pyproject.toml` and `tests/`:
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
-python3 -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[all]"
 ```
@@ -17,11 +17,11 @@ dependencies imported by the broad unit shards. For a narrowly scoped test
 that does not import those surfaces, `python -m pip install -e ".[dev]"` is a
 lighter alternative.
 
-The shell runner uses `python3` by default. Set `PYTHON_BIN` when the active
-interpreter has another name:
+The supported environment is Python 3.11. Once that environment is active,
+set `PYTHON_BIN` only when you need to select its interpreter explicitly:
 
 ```bash
-PYTHON_BIN=python ./tests/run_tests.sh help
+PYTHON_BIN=python3.11 ./tests/run_tests.sh help
 ```
 
 If you are already inside `tests/`, invoke the same runner as

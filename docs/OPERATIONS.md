@@ -10,7 +10,8 @@ file focused on the academic-audience intro. This page consolidates:
 - Docker stack usage
 - Troubleshooting
 
-For a quick `docker compose up` onboarding flow, see the root [README](../README.md).
+For a quick `docker compose up` onboarding flow, see the
+[root README](https://github.com/brain-researcher/brain-researcher-public#quick-start-local-docker).
 For HPC / SLURM use, see [`hpc.md`](hpc.md).
 
 ---
@@ -74,33 +75,79 @@ Release attachment.
 
 ## CLI command reference
 
+Run this from an activated, installed Python 3.11 environment:
+
 ```bash
-# Database management
-br db init                              # initialize databases
-br db status                            # check status
-br db optimize                          # rebuild indexes
-
-# Data ingestion
-br data load-pubmed --input file.json
-br data load-openneuro --dataset ds000001
-br ingest openneuro ds000001
-
-# Query and search
-br query search "motor cortex"
-br query cypher "MATCH (n:BrainRegion) RETURN n LIMIT 10"
-br query stats
-
-# Analysis
-br analyze contrast --data scan.nii.gz --output results.json
-br analyze statistical --data study/ --params '{"threshold": 0.05}'
-
-# Interactive chat
-br chat
-br chat --model gpt-4
-
-# Demo case studies (5 bundled)
-br demo run case1
+brain-researcher --help
 ```
+
+`br` is the short alias. If another program shadows it, first use the canonical
+`brain-researcher` executable. If both console-script names resolve to another
+installation, use `python -m brain_researcher.cli.main --help` from the
+activated, installed environment. The command inventory below is synchronized
+with the real root help by `tests/unit/config/test_operations_cli_contract.py`.
+
+Status meanings:
+
+- `active`: implemented public entrypoint; runtime credentials or services may
+  still be required.
+- `experimental`: implemented but not a stable public compatibility promise.
+- `private-input-required`: implemented, but meaningful full-data use needs a
+  graph, dataset, model, or credentials not shipped in this repository.
+- `preview-only`: visible for compatibility but deliberately exits nonzero and
+  performs no analysis or ingestion.
+
+<!-- root-cli-commands:start -->
+| Command | Status | Root-help purpose |
+| --- | --- | --- |
+| `version` | active | Show the installed version. |
+| `chat-llm` | experimental | Single-turn unified LLM route. |
+| `chat` | active | Interactive agent chat. |
+| `code` | experimental | Coding-focused chat shortcut. |
+| `act` | experimental | Plan and execute tools with run bundles. |
+| `ask` | active | Single-turn prompt mode. |
+| `serve` | active | Start one local service. |
+| `analyze` | preview-only | Placeholder; does not execute analysis. |
+| `ingest` | preview-only | Placeholder; does not ingest data. |
+| `test` | experimental | Legacy quality-runner entrypoint. |
+| `codegen` | experimental | Direct coding-agent entrypoint. |
+| `agent` | experimental | Agent planning and execution commands. |
+| `budget` | experimental | LLM budget and usage tracking. |
+| `cache` | experimental | Cache management commands. |
+| `files` | experimental | Agent file-transfer commands. |
+| `datasets` | experimental | Agent dataset search and detail. |
+| `threads` | experimental | Thread utilities. |
+| `auth` | experimental | Agent bearer-token storage. |
+| `db` | private-input-required | Database management. |
+| `data` | private-input-required | Implemented data-ingestion commands. |
+| `gabriel` | private-input-required | GABRIEL pipeline commands. |
+| `query` | private-input-required | BR-KG query and search. |
+| `niclip` | private-input-required | NiCLIP analysis commands. |
+| `br-kg-ingest` | private-input-required | BR-KG ingestion commands. |
+| `br-kg` | private-input-required | BR-KG graph commands. |
+| `runs` | experimental | Job and run inspection. |
+| `sessions` | experimental | Remote-session and Slack helpers. |
+| `service` | experimental | Service management commands. |
+| `migrate` | private-input-required | Database migrations. |
+| `line` | experimental | Line-based autoresearch workspaces. |
+| `copilot` | experimental | Copilot assistance commands. |
+| `tools` | experimental | Neuroimaging tool commands. |
+| `config` | active | Configuration management. |
+| `traces` | experimental | Trace export. |
+| `notebook` | experimental | Marimo notebook launcher. |
+<!-- root-cli-commands:end -->
+
+Inspect a command before supplying credentials or data:
+
+```bash
+brain-researcher serve --help
+brain-researcher data --help
+brain-researcher tools --help
+```
+
+Runnable public examples live under
+[`reproducibility/`](https://github.com/brain-researcher/brain-researcher-public/tree/main/reproducibility),
+not under a `demo` CLI command.
 
 ---
 
@@ -196,11 +243,8 @@ docker compose up -d
 # Include the optional orchestrator worker
 docker compose --profile worker up -d
 
-# Or use the helper script
-./scripts/docker_manager.sh start
-
-# Check status
-./scripts/docker_manager.sh status
+# Check the real Compose state
+docker compose --profile worker ps --all
 ```
 
 Compose runs `init-local-dirs` as a one-shot setup job before the Python
@@ -220,13 +264,14 @@ services. It creates writable `data/agent_outputs/`, `data/br-kg/`, and
 ## Testing
 
 ```bash
-pytest                                  # full suite
-pytest --cov=brain_researcher           # with coverage
-pytest tests/unit/                      # unit only
-pytest tests/integration/               # integration only
+pytest --confcutdir=tests/unit tests/unit/  # isolated unit shard
+pytest tests/architecture/                 # import and architecture contracts
 ```
 
-E2E browser tests (Playwright) live under `apps/web-ui/tests/e2e/`.
+The public tree has no `tests/integration/` directory. See
+[`tests/README_TESTING.md`](https://github.com/brain-researcher/brain-researcher-public/blob/main/tests/README_TESTING.md)
+for the current shard map. E2E browser tests live under
+`apps/web-ui/tests/e2e/`.
 
 ---
 

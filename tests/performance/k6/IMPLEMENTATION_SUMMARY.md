@@ -1,5 +1,14 @@
 # Performance Testing Suite (TEST-004) - Implementation Summary
 
+<!-- docs-status: historical -->
+
+> **Historical snapshot; not current verification.** The last public-history
+> commit touching this file was 2026-06-02 (`ba5c18fc`). The file inventory,
+> completion checkmarks, CI claims, and production-readiness statements below
+> describe an earlier implementation state and are not a current performance
+> gate. Verify the files that are actually present and run the intended scenario
+> against a controlled target before making a performance claim.
+
 ## 🎯 Objectives Completed
 
 ✅ **K6 Framework Setup**: Complete K6 testing infrastructure in `/tests/performance/k6/`

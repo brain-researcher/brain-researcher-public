@@ -1,5 +1,13 @@
 # Brain Researcher UI Implementation Summary
 
+<!-- docs-status: historical -->
+
+> **Historical snapshot; not current verification.** The last public-history
+> commit touching this file was 2026-05-28 (`9e86e308`). Paths, feature claims,
+> checkmarks, and production-readiness statements below may no longer match the
+> current Web UI. Use [README.md](README.md), the current source, and current test
+> results for present status.
+
 ## Overview
 
 This document summarizes the implementation of high-priority UI features for the Brain Researcher platform, focusing on the authentication UI and real analysis views.

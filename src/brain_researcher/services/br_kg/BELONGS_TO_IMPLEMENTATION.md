@@ -1,5 +1,13 @@
 # BELONGS_TO Relationship Implementation Summary
 
+<!-- docs-status: historical -->
+
+> **Historical implementation snapshot; not current verification.** The last
+> public-history commit touching this file was 2026-06-02 (`ba5c18fc`). Paths,
+> test counts, and passing claims below describe that export and may not match
+> the current tree. Inspect the current BR-KG source and focused tests before
+> relying on them.
+
 ## Overview
 This document summarizes the implementation of the BELONGS_TO relationship feature that links contrasts to their associated publications in the BR-KG system.
 

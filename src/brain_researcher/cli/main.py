@@ -1242,11 +1242,12 @@ def analyze(
         None, "--output", "-o", help="Output path for results"
     ),
 ):
-    """Run neuroimaging analysis tasks."""
-    console.print(f"Running analysis task: {task}")
-
-    # TODO: Import and run analysis tools
-    console.print("[yellow]Analysis tools not yet migrated to new structure[/yellow]")
+    """Preview-only placeholder; does not execute neuroimaging analysis."""
+    console.print(
+        f"[yellow]The analyze placeholder does not execute task {task!r}. "
+        "Use `brain-researcher tools --help` or an MCP execution recipe.[/yellow]"
+    )
+    raise typer.Exit(code=2)
 
 
 @app.command()
@@ -1257,11 +1258,12 @@ def ingest(
     path: str = typer.Argument(..., help="Path or ID to ingest from"),
     output: str | None = typer.Option(None, "--output", "-o", help="Output directory"),
 ):
-    """Ingest neuroimaging data from various sources."""
-    console.print(f"Ingesting data from {source}: {path}")
-
-    # TODO: Import and run ingestion tools
-    console.print("[yellow]Ingestion tools not yet migrated to new structure[/yellow]")
+    """Preview-only placeholder; does not ingest neuroimaging data."""
+    console.print(
+        f"[yellow]The ingest placeholder does not ingest {source!r} input {path!r}. "
+        "Use `brain-researcher data --help` for implemented commands.[/yellow]"
+    )
+    raise typer.Exit(code=2)
 
 
 @app.command()

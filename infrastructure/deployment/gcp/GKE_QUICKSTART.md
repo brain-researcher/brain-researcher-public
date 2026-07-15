@@ -1,5 +1,14 @@
 # GCE + k3s Production Deployment
 
+<!-- docs-status: historical -->
+
+> **Historical operator snapshot; not a current GKE or production contract.**
+> The last public-history commit touching this file was 2026-06-04
+> (`b4b9ad61`). Despite its directory name, this document describes a GCE VM
+> running k3s and refers to an overlay that is not shipped. Start from
+> [the deployment asset map](../README.md) and inspect the current chart before
+> planning any deployment.
+
 This guide deploys **Brain Researcher** to a **GCE VM** running **k3s**, using **Docker Hub** public images and **Let's Encrypt** TLS via cert-manager.
 
 ## Prerequisites

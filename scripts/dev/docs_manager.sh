@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Documentation management script
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -29,7 +29,7 @@ print_error() {
 check_mkdocs() {
     if ! command -v mkdocs &> /dev/null; then
         print_error "MkDocs is not installed!"
-        echo "Install with: pip install -e '.[docs]'"
+        echo "Install with: python -m pip install -e '.[docs,dev]'"
         exit 1
     fi
 }
@@ -38,18 +38,40 @@ check_mkdocs() {
 install_deps() {
     print_status "Installing documentation dependencies..."
     cd "$PROJECT_ROOT"
-    pip install -e ".[docs]"
+    python -m pip install -e ".[docs,dev]"
     print_status "Dependencies installed successfully!"
+}
+
+# Build both supported configurations strictly and never write a tracked or
+# persistent site/ directory. Failed output is retained under /tmp for review.
+build_strict_variants() {
+    check_mkdocs
+    cd "$PROJECT_ROOT"
+
+    local output_root
+    output_root="$(mktemp -d "${TMPDIR:-/tmp}/brain-researcher-docs.XXXXXX")"
+    print_status "Building full and simple documentation in $output_root"
+
+    if ! mkdocs build --strict --clean -f mkdocs.yml -d "$output_root/full"; then
+        print_error "Full documentation build failed; output retained at $output_root/full"
+        return 1
+    fi
+    if ! mkdocs build --strict --clean -f mkdocs-simple.yml -d "$output_root/simple"; then
+        print_error "Simple documentation build failed; output retained at $output_root/simple"
+        return 1
+    fi
+
+    rm -rf "$output_root"
+    print_status "Both strict documentation builds passed."
 }
 
 # Function to build documentation
 build_docs() {
     check_mkdocs
-    print_status "Building documentation..."
     cd "$PROJECT_ROOT"
-    mkdocs build --clean
-    print_status "Documentation built successfully!"
-    print_status "Output directory: $PROJECT_ROOT/site/"
+    print_status "Building the full documentation site strictly..."
+    mkdocs build --strict --clean -f mkdocs.yml
+    print_status "Documentation built at $PROJECT_ROOT/site/"
 }
 
 # Function to serve documentation locally
@@ -89,7 +111,7 @@ deploy_docs() {
 
 # Function to create a new documentation page
 new_page() {
-    local path=$1
+    local path="${1:-}"
     if [ -z "$path" ]; then
         print_error "Please provide a path for the new page"
         echo "Usage: $0 new path/to/page.md"
@@ -146,22 +168,14 @@ EOF
 # Function to check documentation
 check_docs() {
     check_mkdocs
-    print_status "Checking documentation..."
+    print_status "Checking documentation links, images, code paths, and navigation..."
     cd "$PROJECT_ROOT"
-
-    # Build docs in strict mode
-    if mkdocs build --strict --quiet; then
-        print_status "Documentation check passed!"
-    else
-        print_error "Documentation check failed!"
-        exit 1
-    fi
-
-    # Check for broken links (if linkchecker is installed)
-    if command -v linkchecker &> /dev/null; then
-        print_status "Checking for broken links..."
-        linkchecker "$PROJECT_ROOT/site/" --no-warnings
-    fi
+    python -m pytest -q \
+        --confcutdir=tests/unit/config \
+        -p no:cacheprovider \
+        tests/unit/config/test_docs_integrity.py
+    build_strict_variants
+    print_status "Documentation integrity check passed!"
 }
 
 # Function to show usage
@@ -179,7 +193,7 @@ usage() {
 }
 
 # Main script logic
-case "$1" in
+case "${1:-help}" in
     install)
         install_deps
         ;;
@@ -193,7 +207,7 @@ case "$1" in
         deploy_docs
         ;;
     new)
-        new_page "$2"
+        new_page "${2:-}"
         ;;
     check)
         check_docs

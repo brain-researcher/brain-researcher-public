@@ -147,11 +147,13 @@ commands, comparisons, and tolerances are in
 - `REPRODUCTION.md`: full data boundary and governed rerun record
 
 `artifacts/liu_source_provenance_summary.json` records that the original
-governed authoring workflow used OSF node `75je2` and historically names
-`scripts/analysis/fc_benchmarking/setup_liu_fc_pyspi.py`. That authoring script
-is **not shipped in this public checkout**. Public users should use this pack's
-`scripts/fetch_fc_features.py`; it fetches the de-identified release and does not
-reconstruct the governed subject intersection.
+governed authoring workflow used OSF node `75je2` and a private authoring script:
+
+- **Not shipped:** `scripts/analysis/fc_benchmarking/setup_liu_fc_pyspi.py`
+
+Public users should use this pack's `scripts/fetch_fc_features.py`; it fetches
+the de-identified release and does not reconstruct the governed subject
+intersection.
 
 The broader source narrative remains available under
 [`docs/use_cases/bounded_autoresearch_a1_2026-04-30/`](../../docs/use_cases/bounded_autoresearch_a1_2026-04-30/).
