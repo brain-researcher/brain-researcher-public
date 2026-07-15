@@ -24,6 +24,8 @@ The working-memory claim is computed over the Neurosynth v7 coordinate corpus.
 
 - Project site: https://neurosynth.org
 - Raw data repository: https://github.com/neurosynth/neurosynth-data
+- Pinned source commit:
+  `209c33cd009d0b069398a802198b41b9c488b9b7`
 - One-call fetch via NiMARE: `nimare.extract.fetch_neurosynth`
   (https://nimare.readthedocs.io/)
 - Helper scripts in this repository:
@@ -39,6 +41,18 @@ The working-memory claim is computed over the Neurosynth v7 coordinate corpus.
   python scripts/data/download_neurosynth_data.py
   python scripts/data/convert_neurosynth.py
   ```
+  The downloader verifies the expected byte size and SHA-256 of all four files,
+  including files already present locally. A download or checksum failure exits
+  nonzero and never publishes a partial file. The converter also exits nonzero
+  on any failure and removes the canonical output before a rerun, so an older
+  pickle cannot be mistaken for a newly converted result.
+
+  | source file | bytes | SHA-256 |
+  | --- | ---: | --- |
+  | `data-neurosynth_version-7_coordinates.tsv.gz` | 3,587,167 | `17135be3e08a0ab045896c77217e8463086543a0817d52a6a88c8e32c1161616` |
+  | `data-neurosynth_version-7_metadata.tsv.gz` | 1,175,486 | `8acde7de2a14ee2a12b406e50a8805e83288b0bc78924ddb36879d496dfb757b` |
+  | `data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz` | 9,896,293 | `1b3359eebcbc8557340583788b3855031ea21361e87c265cb8fc540d9b6c4edd` |
+  | `data-neurosynth_version-7_vocab-terms_vocabulary.txt` | 33,799 | `71c1858c5eb1bcc79854198bbca234569731efdc382c6205a9e46495379614af` |
 - Point the generator at that pickle with
   `--corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl` (or set
   `$BR_NEUROCLAIM_CORPUS`). With no argument the generator falls back to

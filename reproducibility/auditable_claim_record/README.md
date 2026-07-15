@@ -103,9 +103,10 @@ source ~/.venvs/br-claim-repro/bin/activate
 bash reproducibility/auditable_claim_record/run_end_to_end.sh
 ```
 
-The shell script does **not** create or activate an environment. It installs
-`brain_researcher`, NiMARE, and Nilearn into the environment that is already
-active; downloads and converts Neurosynth under
+The shell script does **not** create or activate an environment. It requires
+Python 3.11 and installs `brain_researcher`, NiMARE, and Nilearn using the
+checked-in [`constraints-py311.txt`](constraints-py311.txt); downloads and
+converts Neurosynth under
 `data/neurosynth_nimare/`; writes the generated record to
 `/tmp/auditable_claim_e2e` by default; and asserts the expected status and
 evidence fields. Pass a different output directory as its first argument.
@@ -116,14 +117,16 @@ A fresh run writes this exact top-level shape:
 <output-dir>/
 ├── README.md
 ├── claim_card.json
+├── commitment_card.json
 ├── demo_bundle.json
 └── evidence_verdicts.json
 ```
 
-It does not write a standalone `commitment_card.json`. The fresh commitment is
-nested at `demo_bundle.json` → `calibration.commitment_card`, and its hash is
-referenced by the fresh claim card. The standalone `commitment_card.json` in
-this tutorial belongs to the committed reference snapshot.
+The generator writes `commitment_card.json` **before** it performs the first
+evidence query. The same card is nested at `demo_bundle.json` →
+`calibration.commitment_card`, and its hash is referenced by the fresh claim
+card. If evidence execution fails, the pre-observation commitment remains as a
+record of what was sealed; no claim card is fabricated.
 
 To exercise the platform's language-driven compile path, run
 [`drive_from_language.py`](drive_from_language.py) against a reachable MCP. It
@@ -140,12 +143,14 @@ reference engine that produced the exact sealed card committed in this folder.
 ### Light path (default: NiMARE)
 
 Runs in-process against the public Neurosynth coordinate/term corpus. No second
-interpreter, no pinned legacy dependencies.
+interpreter or legacy environment is required.
 
-1. Install this clone and the backend into an isolated Python 3.10+ environment
-   (tested with Python 3.11), from the repository root:
+1. Install this clone and the backend into an isolated Python 3.11 environment,
+   from the repository root:
    ```bash
-   python -m pip install -e . nimare nilearn "numpy>=1.24"
+   python -m pip install \
+     -c reproducibility/auditable_claim_record/constraints-py311.txt \
+     -e . nimare nilearn
    ```
 2. Download and convert the public Neurosynth v7 corpus:
    ```bash
@@ -164,12 +169,10 @@ interpreter, no pinned legacy dependencies.
    inhibition association does not clear the evidence bar), so you can see the
    record faithfully report a *non*-supported claim.
 
-The generator seals the commitment card, runs the four graded evidence queries
-(forward association under two profiles, specificity against the rival term, and
-region co-activation), and writes `claim_card.json`, `evidence_verdicts.json`,
-`demo_bundle.json`, and a `README.md` to the output directory. The standalone
-`commitment_card.json` shipped in this folder is `demo_bundle.json`'s
-`calibration.commitment_card`.
+The generator seals and writes the commitment card, then runs the four graded
+evidence queries (forward association under two profiles, specificity against
+the rival term, and region co-activation). On success it also writes
+`claim_card.json`, `evidence_verdicts.json`, `demo_bundle.json`, and `README.md`.
 
 On the NiMARE backend the working-memory claim lands **`supported_within_scope`**:
 the dlPFC association clears the bar under *both* the default and the strict
@@ -212,12 +215,19 @@ failing. The currently supported NiMARE light path ends
 faithfully expose what their engine found; only the NiMARE path is presently a
 turnkey public rerun.
 
-The `commitment_hash` is sealed per run (it covers a `locked_at` timestamp and
-the exact engine version), so a fresh supported run produces a *different* hash
-from the frozen `4871ea43…` snapshot committed here while still matching between
-its own commitment and claim cards. That is expected: the committed files are
-one sealed instance. The reproducible invariants are the finding,
-surviving/failing checks, and intra-run hash match, not the hash value.
+For newly generated cards, `commitment_hash` covers the claim, scope, criteria,
+attack strategies, the SHA-256 of each checked-in rubric, and the evidence
+engine name/version/adapter. It intentionally excludes `locked_at`: the
+timestamp records when sealing happened, not what was sealed. Therefore the
+same committed content has the same hash in two clone locations, while changing
+the engine version or rubric content changes the hash.
+
+The frozen `4871ea43…` NeuroLang snapshot predates the typed
+`evidence_engine` field. Its engine/version remains inspectable in
+`evidence_verdicts.json`, but was not hash-covered in that historical card. A
+new NiMARE run also has a different evidence model and therefore is not expected
+to reuse the historical hash. The required invariant is that each fresh claim
+card matches its own pre-observation commitment.
 
 ## Data
 

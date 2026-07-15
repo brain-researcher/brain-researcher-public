@@ -56,7 +56,8 @@ def test_auditable_claim_tutorial_is_colocated() -> None:
         REPO_ROOT / "scripts" / "autoresearch" / "run_auditable_claim_demo.py"
     ).read_text(encoding="utf-8")
     assert '"cd brain-researcher-public"' in generator
-    assert '"python -m pip install -e . nimare nilearn"' in generator
+    assert "constraints-py311.txt" in generator
+    assert (CLAIM_TUTORIAL / "constraints-py311.txt").is_file()
 
 
 @pytest.mark.parametrize(

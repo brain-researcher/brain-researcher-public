@@ -86,7 +86,9 @@ stage the public corpus, bind that corpus in the server environment, and then
 start the server in terminal A:
 
 ```bash
-python -m pip install -e . nimare nilearn
+python -m pip install \
+  -c reproducibility/auditable_claim_record/constraints-py311.txt \
+  -e . nimare nilearn
 python scripts/data/download_neurosynth_data.py
 python scripts/data/convert_neurosynth.py
 export BR_NEUROCLAIM_CORPUS="$PWD/data/neurosynth_nimare/neurosynth_dataset_v7.pkl"
@@ -117,8 +119,9 @@ Sanity-check the connection with `server_info`. Never commit a bearer token.
 | Report / review gate | Gate the claim through the evidence kernel; escalate if needed | `report_claim_evidence_check`, `request_scientific_review` |
 
 The one-shot realization of exactly this episode is the shipped generator,
-`scripts/autoresearch/run_auditable_claim_demo.py` (it seals via `lock_commitment`,
-runs the graded queries, and emits `claim_card.json` / `evidence_verdicts.json` /
+`scripts/autoresearch/run_auditable_claim_demo.py` (it seals and persists
+`commitment_card.json` before the first evidence query, then runs the graded
+queries and emits `claim_card.json` / `evidence_verdicts.json` /
 `demo_bundle.json`). The agentic path calls the same machinery through typed MCP
 tools instead of one script.
 
@@ -130,9 +133,12 @@ per evidence model** — the NeuroLang reference path lands `weakened` (five
 surviving checks + the single failing `strict-evidence-profile` check), the
 nimare light default lands `supported_within_scope` — plus the **internal
 consistency** that holds either way (the claim card's `commitment_hash` equals the
-commitment card's). The `commitment_hash` *value* is sealed per run (it covers a
-timestamp + the engine version), so a fresh run differs from the frozen
-`4871ea43…` snapshot here — expected, not a failure (same caveat as `README.md`).
+commitment card's). New cards hash the engine name/version/adapter and exact
+rubric content hashes, but deliberately exclude `locked_at`; the timestamp says
+when sealing occurred, not what was sealed. Clone location therefore does not
+change the hash. The frozen `4871ea43…` reference predates the typed engine field,
+so its NeuroLang version is inspectable in the evidence file but is not part of
+that historical commitment hash (same boundary as `README.md`).
 
 The committed authoring run recorded `status=weakened` with matching intra-run
 hashes on the NeuroLang backend; the current public NiMARE path reproduces

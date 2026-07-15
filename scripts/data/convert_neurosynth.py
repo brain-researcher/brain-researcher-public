@@ -1,95 +1,110 @@
 #!/usr/bin/env python3.11
-"""Script to convert downloaded Neurosynth v7 data to a NiMARE Dataset object."""
+"""Convert verified Neurosynth v0.7 inputs into one NiMARE Dataset pickle."""
 
-import os
+from __future__ import annotations
+
+import argparse
 import logging
-from nimare import io
+import os
+from pathlib import Path
+from typing import Any
 
-# Setup logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-# --- Define relative paths ---
-# Assume this script is in project_root/scripts/convert_neurosynth.py
-# Or that it's run from the project root and paths are relative to CWD.
-# For robustness, let's define paths relative to the script's location if it's moved into the project.
-# If the script is run from the project root, these relative paths will also work.
-
-# Determine project root assuming the script is in a 'scripts' subdirectory of the project root
-# If the script is run from the project root itself, this logic might need adjustment or paths can be simpler.
-# For now, let's assume the script will be placed in `mri_assistant/scripts/`
-
-# Get the directory of the current script
-# script_dir = os.path.dirname(os.path.abspath(__file__))
-# project_root = os.path.dirname(script_dir) # Assumes script is in a 'scripts' subdir
-
-# Simpler approach: Define paths relative to the current working directory
-# This requires the script to be run from the project root directory.
-project_root = os.getcwd()  # Assumes script is run from project root
-
-data_sub_dir = os.path.join("data", "neurosynth_nimare", "neurosynth_v7")
-output_sub_dir = os.path.join("data", "neurosynth_nimare")
-
-# Define paths for Neurosynth v7 data relative to project root
-data_dir = os.path.join(project_root, data_sub_dir)
-coords_file = os.path.join(data_dir, "data-neurosynth_version-7_coordinates.tsv.gz")
-metadata_file = os.path.join(data_dir, "data-neurosynth_version-7_metadata.tsv.gz")
-features_file = os.path.join(
-    data_dir,
-    "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz",
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_DATA_DIR = REPO_ROOT / "data" / "neurosynth_nimare" / "neurosynth_v7"
+DEFAULT_OUTPUT = REPO_ROOT / "data" / "neurosynth_nimare" / "neurosynth_dataset_v7.pkl"
+COORDINATES = "data-neurosynth_version-7_coordinates.tsv.gz"
+METADATA = "data-neurosynth_version-7_metadata.tsv.gz"
+FEATURES = (
+    "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
 )
-vocabulary_file = os.path.join(
-    data_dir, "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
-)
-output_file = os.path.join(project_root, output_sub_dir, "neurosynth_dataset_v7.pkl")
+VOCABULARY = "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
 
-logger.info(f"Starting conversion of Neurosynth v7 data...")
-logger.info(f"Project root (assumed): {project_root}")
-logger.info(f"Coordinates file: {coords_file}")
-logger.info(f"Metadata file: {metadata_file}")
-logger.info(f"Features file: {features_file}")
-logger.info(f"Vocabulary file: {vocabulary_file}")
-logger.info(f"Output file: {output_file}")
 
-# Check if input files exist
-missing_files = []
-for f in [coords_file, metadata_file, features_file, vocabulary_file]:
-    if not os.path.exists(f):
-        missing_files.append(f)
+def convert_dataset(
+    data_dir: Path,
+    output_file: Path,
+    *,
+    io_module: Any | None = None,
+) -> None:
+    """Convert inputs and publish the new pickle only after a complete save.
 
-if missing_files:
-    logger.error(f"Missing input files: {', '.join(missing_files)}")
-    logger.error(
-        f"Please ensure these files are in {os.path.abspath(data_dir)} and the script is run from the project root."
+    The canonical output is removed before validation/conversion starts. This
+    deliberately prevents a failed rerun from leaving an older pickle at the
+    documented output path where it could be mistaken for the new result.
+    """
+    data_dir = data_dir.expanduser().resolve()
+    output_file = output_file.expanduser().resolve()
+    partial_file = output_file.with_name(
+        f".{output_file.stem}.incomplete{output_file.suffix}"
     )
-    exit(1)
+    output_file.unlink(missing_ok=True)
+    partial_file.unlink(missing_ok=True)
 
-# Ensure output directory exists
-output_dir_for_pkl = os.path.dirname(output_file)
-if not os.path.exists(output_dir_for_pkl):
+    inputs = {
+        "coordinates": data_dir / COORDINATES,
+        "metadata": data_dir / METADATA,
+        "features": data_dir / FEATURES,
+        "vocabulary": data_dir / VOCABULARY,
+    }
+    missing = [str(path) for path in inputs.values() if not path.is_file()]
+    if missing:
+        raise FileNotFoundError("missing Neurosynth inputs: " + ", ".join(missing))
+
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    if io_module is None:
+        from nimare import io as io_module
+
     try:
-        os.makedirs(output_dir_for_pkl)
-        logger.info(f"Created output directory: {output_dir_for_pkl}")
-    except OSError as e:
-        logger.error(f"Error creating output directory {output_dir_for_pkl}: {e}")
-        exit(1)
+        dataset = io_module.convert_neurosynth_to_dataset(
+            coordinates_file=str(inputs["coordinates"]),
+            metadata_file=str(inputs["metadata"]),
+            annotations_files={
+                "features": str(inputs["features"]),
+                "vocabulary": str(inputs["vocabulary"]),
+            },
+        )
+        dataset.save(str(partial_file))
+        if not partial_file.is_file() or partial_file.stat().st_size == 0:
+            raise RuntimeError("NiMARE did not write a non-empty dataset pickle")
+        os.replace(partial_file, output_file)
+    except Exception:
+        partial_file.unlink(missing_ok=True)
+        output_file.unlink(missing_ok=True)
+        raise
 
-try:
-    annotations = {"features": features_file, "vocabulary": vocabulary_file}
 
-    logger.info("Calling nimare.io.convert_neurosynth_to_dataset...")
-    dataset = io.convert_neurosynth_to_dataset(
-        coordinates_file=coords_file,
-        metadata_file=metadata_file,
-        annotations_files=annotations,
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=DEFAULT_DATA_DIR,
+        help="Directory containing the four verified Neurosynth v0.7 files.",
     )
-    logger.info("Conversion successful. Dataset object created.")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT,
+        help="Canonical NiMARE Dataset pickle to replace on success.",
+    )
+    return parser.parse_args(argv)
 
-    logger.info(f"Saving Dataset object to: {output_file}")
-    dataset.save(output_file)
-    logger.info(f"Neurosynth data successfully converted and saved to: {output_file}")
 
-except Exception as e:
-    logger.exception("Error converting Neurosynth data.")
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    try:
+        convert_dataset(args.data_dir, args.output)
+    except Exception:
+        logger.exception("Neurosynth conversion failed; no canonical output was kept")
+        return 1
+    logger.info("Neurosynth dataset written and verified non-empty: %s", args.output)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
