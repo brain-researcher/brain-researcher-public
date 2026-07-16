@@ -5,19 +5,17 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
-def test_legacy_agent_langgraph_owner_lives_under_legacy_package() -> None:
-    legacy_path = REPO_ROOT / "src/brain_researcher/legacy/agent/web_service_langgraph.py"
-    shim_path = REPO_ROOT / "src/brain_researcher/services/agent/web_service_langgraph.py"
+def test_removed_agent_langgraph_entrypoints_stay_removed() -> None:
+    canonical_path = REPO_ROOT / "src/brain_researcher/services/agent/web_service.py"
+    removed_paths = (
+        REPO_ROOT / "src/brain_researcher/legacy/agent/web_service_langgraph.py",
+        REPO_ROOT / "src/brain_researcher/services/agent/web_service_langgraph.py",
+    )
 
-    assert legacy_path.exists()
-    assert not shim_path.exists()
-
-    legacy_text = legacy_path.read_text(encoding="utf-8")
-
-    assert "Legacy LangGraph compatibility entrypoint" in legacy_text
-    assert "brain_researcher.services.agent.web_service import app, print_exposed_tools" in legacy_text
-    assert "def main() -> None:" in legacy_text
-    assert "logger.info(" in legacy_text
+    assert canonical_path.is_file()
+    assert "app.run(" in canonical_path.read_text(encoding="utf-8")
+    for path in removed_paths:
+        assert not path.exists(), f"Removed agent entrypoint returned: {path}"
 
 
 def test_agent_docker_runtime_uses_canonical_web_service_entrypoint() -> None:

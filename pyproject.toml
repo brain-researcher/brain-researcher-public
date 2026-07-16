@@ -309,6 +309,27 @@ agent = [
     "deepxiv-sdk>=0.2.4",
 ]
 
+ci = [
+    # Lightweight PR checks plus the complete strict-docs plugin stack.
+    "brain_researcher[docs]",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.10.0",
+    "pytest-timeout>=2.1.0",
+    "tomlkit>=0.13.0",
+]
+
+ci-services = [
+    # Focused hosted service/downloader tests without the full agent ML stack.
+    "brain_researcher[ci]",
+    "openneuro-py>=2026.3.0",
+    "neuromaps>=0.0.5",
+    "nilearn>=0.10.0",
+    "langchain-anthropic>=0.0.1",
+    "langchain-openai>=0.0.5",
+    "fastapi>=0.104.0",
+]
+
 dev = [
     # Testing
     "pytest>=7.4.0",
@@ -426,19 +447,6 @@ warn_no_return = true
 warn_unreachable = true
 strict_equality = true
 ignore_missing_imports = true
-
-[tool.pytest.ini_options]
-minversion = "7.0"
-addopts = "-ra -q --strict-markers"
-testpaths = ["tests"]
-python_files = "test_*.py"
-python_classes = "Test*"
-python_functions = "test_*"
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-]
 
 [tool.coverage.run]
 branch = true

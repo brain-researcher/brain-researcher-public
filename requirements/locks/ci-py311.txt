@@ -1,0 +1,284 @@
+aiohappyeyeballs==2.7.1
+    # via aiohttp
+aiohttp==3.14.1
+    # via brain-researcher
+aiosignal==1.4.0
+    # via aiohttp
+annotated-doc==0.0.4
+    # via typer
+annotated-types==0.7.0
+    # via pydantic
+anyio==4.14.2
+    # via httpx
+attrs==26.1.0
+    # via aiohttp
+babel==2.18.0
+    # via
+    #   mkdocs-git-revision-date-localized-plugin
+    #   mkdocs-material
+backrefs==7.0
+    # via mkdocs-material
+blinker==1.9.0
+    # via flask
+certifi==2026.6.17
+    # via
+    #   brain-researcher
+    #   httpcore
+    #   httpx
+    #   requests
+charset-normalizer==3.4.9
+    # via
+    #   brain-researcher
+    #   requests
+click==8.4.2
+    # via
+    #   brain-researcher
+    #   flask
+    #   mkdocs
+colorama==0.4.6
+    # via
+    #   click
+    #   mkdocs
+    #   mkdocs-material
+    #   pytest
+    #   typer
+flask==3.1.3
+    # via
+    #   brain-researcher
+    #   flask-cors
+flask-cors==6.0.5
+    # via brain-researcher
+frozenlist==1.8.0
+    # via
+    #   aiohttp
+    #   aiosignal
+ghp-import==2.1.0
+    # via mkdocs
+gitdb==4.0.12
+    # via gitpython
+gitpython==3.1.51
+    # via mkdocs-git-revision-date-localized-plugin
+griffelib==2.1.0
+    # via mkdocstrings-python
+gunicorn==26.0.0
+    # via brain-researcher
+h11==0.16.0
+    # via httpcore
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via brain-researcher
+idna==3.18
+    # via
+    #   anyio
+    #   brain-researcher
+    #   httpx
+    #   requests
+    #   yarl
+iniconfig==2.3.0
+    # via pytest
+itsdangerous==2.2.0
+    # via flask
+jinja2==3.1.6
+    # via
+    #   brain-researcher
+    #   flask
+    #   mike
+    #   mkdocs
+    #   mkdocs-material
+    #   mkdocstrings
+markdown==3.10.2
+    # via
+    #   mkdocs
+    #   mkdocs-autorefs
+    #   mkdocs-material
+    #   mkdocstrings
+    #   pymdown-extensions
+markdown-it-py==4.2.0
+    # via rich
+markupsafe==3.0.3
+    # via
+    #   brain-researcher
+    #   flask
+    #   jinja2
+    #   mkdocs
+    #   mkdocs-autorefs
+    #   mkdocstrings
+    #   werkzeug
+mdurl==0.1.2
+    # via markdown-it-py
+mergedeep==1.3.4
+    # via
+    #   mkdocs
+    #   mkdocs-get-deps
+mike==2.2.0
+    # via brain-researcher
+mkdocs==1.6.1
+    # via
+    #   brain-researcher
+    #   mike
+    #   mkdocs-autorefs
+    #   mkdocs-git-revision-date-localized-plugin
+    #   mkdocs-material
+    #   mkdocstrings
+mkdocs-autorefs==1.4.4
+    # via
+    #   brain-researcher
+    #   mkdocstrings
+    #   mkdocstrings-python
+mkdocs-get-deps==0.2.2
+    # via mkdocs
+mkdocs-git-revision-date-localized-plugin==1.5.3
+    # via brain-researcher
+mkdocs-material==9.7.6
+    # via brain-researcher
+mkdocs-material-extensions==1.3.1
+    # via mkdocs-material
+mkdocstrings==1.0.6
+    # via
+    #   brain-researcher
+    #   mkdocstrings-python
+mkdocstrings-python==2.0.5
+    # via mkdocstrings
+multidict==6.7.1
+    # via
+    #   aiohttp
+    #   yarl
+networkx==3.6.1
+    # via brain-researcher
+numpy==2.4.6
+    # via
+    #   brain-researcher
+    #   pandas
+packaging==26.2
+    # via
+    #   gunicorn
+    #   mkdocs
+    #   pytest
+    #   wheel
+paginate==0.5.7
+    # via mkdocs-material
+pandas==2.3.3
+    # via brain-researcher
+pathspec==1.1.1
+    # via mkdocs
+platformdirs==4.10.0
+    # via mkdocs-get-deps
+pluggy==1.6.0
+    # via pytest
+propcache==0.5.2
+    # via
+    #   aiohttp
+    #   yarl
+psutil==7.2.2
+    # via brain-researcher
+pydantic==2.12.3
+    # via
+    #   brain-researcher
+    #   pydantic-settings
+pydantic-core==2.41.4
+    # via pydantic
+pydantic-settings==2.14.2
+    # via brain-researcher
+pygments==2.20.0
+    # via
+    #   mkdocs-material
+    #   pytest
+    #   rich
+pymdown-extensions==10.21.3
+    # via
+    #   brain-researcher
+    #   mkdocs-material
+    #   mkdocstrings
+pyparsing==3.3.2
+    # via mike
+pytest==9.1.1
+    # via
+    #   brain-researcher
+    #   pytest-asyncio
+    #   pytest-mock
+    #   pytest-timeout
+pytest-asyncio==1.4.0
+    # via brain-researcher
+pytest-mock==3.15.1
+    # via brain-researcher
+pytest-timeout==2.4.0
+    # via brain-researcher
+python-dateutil==2.9.0.post0
+    # via
+    #   ghp-import
+    #   pandas
+python-dotenv==1.2.2
+    # via
+    #   brain-researcher
+    #   pydantic-settings
+pytz==2026.2
+    # via pandas
+pyyaml==6.0.3
+    # via
+    #   brain-researcher
+    #   mike
+    #   mkdocs
+    #   mkdocs-get-deps
+    #   pymdown-extensions
+    #   pyyaml-env-tag
+pyyaml-env-tag==1.1
+    # via
+    #   mike
+    #   mkdocs
+requests==2.34.2
+    # via
+    #   brain-researcher
+    #   mkdocs-material
+rich==15.0.0
+    # via
+    #   brain-researcher
+    #   typer
+setuptools==83.0.0
+    # via brain-researcher
+shellingham==1.5.4
+    # via typer
+six==1.17.0
+    # via python-dateutil
+smmap==5.0.3
+    # via gitdb
+structlog==26.1.0
+    # via brain-researcher
+tomlkit==0.13.3
+    # via brain-researcher
+typer==0.26.8
+    # via brain-researcher
+typing-extensions==4.16.0
+    # via
+    #   aiohttp
+    #   aiosignal
+    #   anyio
+    #   pydantic
+    #   pydantic-core
+    #   pytest-asyncio
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via
+    #   pydantic
+    #   pydantic-settings
+tzdata==2026.3
+    # via
+    #   mkdocs-git-revision-date-localized-plugin
+    #   pandas
+urllib3==2.7.0
+    # via
+    #   brain-researcher
+    #   requests
+verspec==0.1.0
+    # via mike
+watchdog==6.0.0
+    # via mkdocs
+werkzeug==3.1.8
+    # via
+    #   brain-researcher
+    #   flask
+    #   flask-cors
+wheel==0.47.0
+    # via brain-researcher
+yarl==1.24.2
+    # via aiohttp

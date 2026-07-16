@@ -6,13 +6,14 @@ set -euo pipefail
 # runtime config contract currently uses the clone's repo-level configs/ tree.
 #
 # Inputs:
-#   One profile: core, mcp, agent, br-kg, dev, or all (default: core).
+#   One profile: core, mcp, agent, br-kg, ci, ci-services, dev, or all (default: core).
 # Outputs:
 #   Fresh venvs below BR_CLEAN_INSTALL_ROOT and one log per profile.
 # Environment:
 #   BR_CLEAN_INSTALL_PYTHON: Python 3.11 interpreter (default: python).
 #   BR_CLEAN_INSTALL_ROOT: venv/log root (default: $TMPDIR/brain-researcher-clean-install).
 #   BR_CLEAN_INSTALL_LOG_DIR: persistent log directory override.
+#   BR_CLEAN_INSTALL_PIP_CACHE_DIR: reusable pip cache (default: $BR_CLEAN_INSTALL_ROOT/pip-cache).
 # Logs:
 #   $BR_CLEAN_INSTALL_LOG_DIR/<profile>.log, plus mirrored stdout/stderr.
 
@@ -21,18 +22,21 @@ REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 PYTHON_BIN="${BR_CLEAN_INSTALL_PYTHON:-python}"
 SMOKE_ROOT="${BR_CLEAN_INSTALL_ROOT:-${TMPDIR:-/tmp}/brain-researcher-clean-install}"
 LOG_DIR="${BR_CLEAN_INSTALL_LOG_DIR:-${SMOKE_ROOT}/logs}"
+PIP_CACHE_DIR="${BR_CLEAN_INSTALL_PIP_CACHE_DIR:-${SMOKE_ROOT}/pip-cache}"
 
-PROFILES=(core mcp agent br-kg dev)
+PROFILES=(core mcp agent br-kg ci ci-services dev)
 declare -A EXTRAS=(
   [core]=""
   [mcp]="mcp"
   [agent]="agent"
   [br-kg]="br-kg"
+  [ci]="ci"
+  [ci-services]="ci-services"
   [dev]="all"
 )
 
 usage() {
-  echo "Usage: scripts/setup/smoke_clean_install.sh [core|mcp|agent|br-kg|dev|all]"
+  echo "Usage: scripts/setup/smoke_clean_install.sh [core|mcp|agent|br-kg|ci|ci-services|dev|all]"
 }
 
 requested="${1:-core}"
@@ -41,7 +45,7 @@ if [[ $# -gt 1 ]]; then
   exit 2
 fi
 case "${requested}" in
-  core|mcp|agent|br-kg|dev|all) ;;
+  core|mcp|agent|br-kg|ci|ci-services|dev|all) ;;
   -h|--help) usage; exit 0 ;;
   *) usage >&2; exit 2 ;;
 esac
@@ -83,7 +87,7 @@ smoke_profile_inner() (
     "${venv_dir}/home/.cache" \
     "${venv_dir}/home/.config" \
     "${venv_dir}/tmp" \
-    "${SMOKE_ROOT}/pip-cache"
+    "${PIP_CACHE_DIR}"
 
   run_clean() {
     local -a clean_env=(
@@ -101,7 +105,7 @@ smoke_profile_inner() (
       GIT_CONFIG_NOSYSTEM=1
       GIT_TERMINAL_PROMPT=0
       NO_COLOR=1
-      PIP_CACHE_DIR="${SMOKE_ROOT}/pip-cache"
+      PIP_CACHE_DIR="${PIP_CACHE_DIR}"
       PIP_CONFIG_FILE=/dev/null
       PIP_DISABLE_PIP_VERSION_CHECK=1
       PIP_NO_INPUT=1
@@ -145,8 +149,13 @@ PY
   run_clean "${venv_dir}/bin/brain-researcher" --version
   run_clean "${venv_dir}/bin/brain-researcher-mcp" --help >/dev/null
   run_clean "${venv_dir}/bin/brain-researcher-mcp" --version
+  local verify_profile="${profile}"
+  if [[ "${profile}" == "ci" || "${profile}" == "ci-services" ]]; then
+    # verify_environment.py owns runtime profiles; CI adds test/docs tools to core.
+    verify_profile="core"
+  fi
   run_clean "${venv_dir}/bin/python" "${REPO_ROOT}/scripts/setup/verify_environment.py" \
-    --profile "${profile}"
+    --profile "${verify_profile}"
 
   case "${profile}" in
     core)
@@ -174,6 +183,27 @@ PY
       ;;
     br-kg)
       run_clean "${venv_dir}/bin/brain-researcher" br-kg --help >/dev/null
+      ;;
+    ci)
+      run_clean "${venv_dir}/bin/python" -m pytest --version
+      run_clean "${venv_dir}/bin/python" -m mkdocs --version
+      ;;
+    ci-services)
+      run_clean "${venv_dir}/bin/python" - <<'PY'
+from importlib.util import find_spec
+
+import fastapi
+import langchain_anthropic
+import langchain_openai
+import neuromaps
+import nilearn
+import openneuro
+import pytest
+
+assert find_spec("torch") is None
+assert find_spec("nvidia") is None
+print("ci-services imports: PASS")
+PY
       ;;
     dev)
       run_clean "${venv_dir}/bin/brain-researcher" agent --help >/dev/null

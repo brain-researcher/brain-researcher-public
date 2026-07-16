@@ -5,8 +5,8 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:9ac547cdf281733b36bbab65fb5bc72d5da624b1fc2a14f83235c1552477b9a8",
-      "size_bytes": 8045
+      "sha256": "sha256:1859880577b30d87f54bc05926243a9cad688c06e784c97524628197655f19c5",
+      "size_bytes": 8008
     },
     {
       "path": "REPRODUCTION.md",
@@ -105,8 +105,8 @@
     },
     {
       "path": "AGENTIC_REPRODUCTION.md",
-      "sha256": "sha256:9df976989195fb3e82aa939baf4873d5730e12a49589f6da20c526da222ef2c8",
-      "size_bytes": 10944
+      "sha256": "sha256:baf7eefe33c348ebcbc85fe0166293c44e41ab1d565c6632067dc228f29d35c3",
+      "size_bytes": 10951
     },
     {
       "path": "drive_from_language.py",

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Rebuild or verify the five supported Python 3.11 dependency exports.
+# Rebuild or verify the seven supported Python 3.11 dependency exports.
 #
 # Inputs:
 #   pyproject.toml and uv.lock at the repository root.
 # Outputs:
-#   uv.lock and requirements/locks/{core,mcp,agent,br-kg,dev}-py311.txt.
+#   uv.lock and requirements/locks/{core,mcp,agent,br-kg,ci,ci-services,dev}-py311.txt.
 # Environment:
 #   UV_BIN overrides the uv executable (default: uv).
 #   BR_LOCK_PYTHON overrides the Python 3.11 interpreter (default: python).
@@ -21,12 +21,14 @@ LOCK_DIR="${REPO_ROOT}/requirements/locks"
 UV_BIN="${UV_BIN:-uv}"
 PYTHON_BIN="${BR_LOCK_PYTHON:-python}"
 
-PROFILES=(core mcp agent br-kg dev)
+PROFILES=(core mcp agent br-kg ci ci-services dev)
 declare -A EXTRAS=(
   [core]=""
   [mcp]="mcp"
   [agent]="agent"
   [br-kg]="br-kg"
+  [ci]="ci"
+  [ci-services]="ci-services"
   [dev]="all"
 )
 
@@ -34,7 +36,7 @@ usage() {
   cat <<'EOF'
 Usage: scripts/setup/refresh_locks.sh [--check|--upgrade]
 
-With no option, preserve the currently locked versions and regenerate the five
+With no option, preserve the currently locked versions and regenerate the seven
 requirements exports. --upgrade intentionally refreshes all versions. --check
 is read-only and fails if uv.lock or any tracked export is stale.
 EOF
@@ -124,4 +126,4 @@ for profile in "${PROFILES[@]}"; do
   export_profile "${profile}" "${LOCK_DIR}/${profile}-py311.txt"
 done
 
-echo "updated uv.lock and five Python 3.11 requirement exports"
+echo "updated uv.lock and seven Python 3.11 requirement exports"

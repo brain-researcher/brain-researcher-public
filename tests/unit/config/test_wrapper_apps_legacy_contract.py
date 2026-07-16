@@ -4,23 +4,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
-REQUIRED_SUBSTRINGS = {
-    "apps/README.md": ("`web-ui/`: active Next.js web application",),
-}
-
-FORBIDDEN_SUBSTRINGS = {
-    "apps/README.md": (
-        "`agent/`: legacy module-wrapper shim for the Agent service",
-        "`orchestrator/`: legacy module-wrapper shim for the Orchestrator service",
-        "`br_kg/`: legacy module-wrapper shim for the BR-KG service",
-        "`mcp/`: legacy module-wrapper shim for the MCP service",
-        "`agent/`: Agent service wrapper and docs",
-        "`orchestrator/`: Orchestrator service wrapper and docs",
-        "`br_kg/`: BR-KG service wrapper and docs",
-        "`mcp/`: MCP service wrapper and docs",
-    ),
-}
-
 REMOVED_WRAPPER_FILES = (
     "apps/agent/README.md",
     "apps/agent/main.py",
@@ -39,22 +22,16 @@ REMOVED_WRAPPER_DIRS = (
 )
 
 
-def test_apps_tree_only_advertises_web_ui_as_active_app() -> None:
-    for relpath, required in REQUIRED_SUBSTRINGS.items():
-        text = (REPO_ROOT / relpath).read_text(encoding="utf-8")
-        for needle in required:
-            assert (
-                needle in text
-            ), f"Missing expected wrapper-app text in {relpath}: {needle}"
+def test_apps_tree_only_contains_web_ui_as_an_application_directory() -> None:
+    apps_root = REPO_ROOT / "apps"
+    app_directories = {path.name for path in apps_root.iterdir() if path.is_dir()}
+
+    assert app_directories == {"web-ui"}
+    assert (apps_root / "web-ui/package.json").is_file()
 
 
-def test_wrapper_apps_do_not_read_as_active_entrypoints() -> None:
-    for relpath, forbidden in FORBIDDEN_SUBSTRINGS.items():
-        text = (REPO_ROOT / relpath).read_text(encoding="utf-8")
-        for needle in forbidden:
-            assert (
-                needle not in text
-            ), f"Found stale wrapper-app text in {relpath}: {needle}"
+def test_removed_apps_index_is_not_required_as_runtime_documentation() -> None:
+    assert not (REPO_ROOT / "apps/README.md").exists()
 
 
 def test_wrapper_app_files_are_removed_from_tracked_surface() -> None:

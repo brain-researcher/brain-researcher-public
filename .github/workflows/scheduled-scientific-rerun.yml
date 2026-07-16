@@ -1,0 +1,123 @@
+name: Scheduled scientific rerun
+
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rerun-public-pack:
+    name: Rerun ${{ matrix.pack_id }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        pack_id:
+          - bounded_autoresearch_a1
+          - auditable_claim_record
+
+    steps:
+      - name: Check out the source commit
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Prepare the evidence directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_root="${RUNNER_TEMP}/scientific-rerun/${{ matrix.pack_id }}"
+          mkdir -p "${run_root}/environment" "${run_root}/raw_outputs"
+          printf 'RUN_ROOT=%s\n' "${run_root}" >> "${GITHUB_ENV}"
+          git rev-parse HEAD > "${run_root}/source-commit.txt"
+
+      - name: Execute the real public pack
+        id: execute
+        shell: bash
+        run: |
+          set +e
+          case "${{ matrix.pack_id }}" in
+            bounded_autoresearch_a1)
+              BR_A1_E2E_RESULT="${RUN_ROOT}/raw_outputs/result.json" \
+                bash reproducibility/bounded_autoresearch_a1/run_end_to_end.sh \
+                > "${RUN_ROOT}/stdout.log" \
+                2> "${RUN_ROOT}/stderr.log"
+              ;;
+            auditable_claim_record)
+              bash reproducibility/auditable_claim_record/run_end_to_end.sh \
+                "${RUN_ROOT}/raw_outputs/record" \
+                > "${RUN_ROOT}/stdout.log" \
+                2> "${RUN_ROOT}/stderr.log"
+              ;;
+            *)
+              printf 'unsupported pack: %s\n' "${{ matrix.pack_id }}" \
+                > "${RUN_ROOT}/stderr.log"
+              status=2
+              printf '%s\n' "${status}" > "${RUN_ROOT}/exit-code.txt"
+              printf 'exit_code=%s\n' "${status}" >> "${GITHUB_OUTPUT}"
+              exit 0
+              ;;
+          esac
+          status=$?
+          set -e
+          printf '%s\n' "${status}" > "${RUN_ROOT}/exit-code.txt"
+          printf 'exit_code=%s\n' "${status}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build the evidence report
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set +e
+          python -m pip freeze --all | LC_ALL=C sort \
+            > "${RUN_ROOT}/environment/pip-freeze.txt"
+          freeze_status=${PIPESTATUS[0]}
+          if [[ "${freeze_status}" -ne 0 ]]; then
+            rm -f "${RUN_ROOT}/environment/pip-freeze.txt"
+          fi
+
+          execution_status="$(cat "${RUN_ROOT}/exit-code.txt" 2>/dev/null || printf '255')"
+          source_commit="$(cat "${RUN_ROOT}/source-commit.txt" 2>/dev/null || printf 'missing')"
+          python scripts/ci/build_scientific_rerun_report.py \
+            --pack-id "${{ matrix.pack_id }}" \
+            --repo-root "${GITHUB_WORKSPACE}" \
+            --artifact-dir "${RUN_ROOT}" \
+            --raw-output-dir "${RUN_ROOT}/raw_outputs" \
+            --stdout "${RUN_ROOT}/stdout.log" \
+            --stderr "${RUN_ROOT}/stderr.log" \
+            --exit-code "${execution_status}" \
+            --source-commit "${source_commit}" \
+            --pip-freeze "${RUN_ROOT}/environment/pip-freeze.txt"
+          report_status=$?
+          printf '%s\n' "${report_status}" > "${RUN_ROOT}/report-builder-exit-code.txt"
+          exit 0
+
+      - name: Upload the small evidence bundle
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: scientific-rerun-${{ matrix.pack_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.RUN_ROOT }}
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 9
+
+      - name: Propagate the saved rerun status
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          execution_status="$(cat "${RUN_ROOT}/exit-code.txt" 2>/dev/null || printf '255')"
+          report_status="$(cat "${RUN_ROOT}/report-builder-exit-code.txt" 2>/dev/null || printf '1')"
+          if [[ "${execution_status}" -ne 0 ]]; then
+            exit "${execution_status}"
+          fi
+          exit "${report_status}"
