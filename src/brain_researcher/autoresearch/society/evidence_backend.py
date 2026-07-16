@@ -1421,7 +1421,9 @@ def resolve_backend(
             try:
                 from .corpus import load_neurosynth_corpus
 
-                corpus = load_neurosynth_corpus(cache)
+                corpus = load_neurosynth_corpus(
+                    cache, data_dir=os.environ.get("BR_NEUROCLAIM_SOURCE_DIR")
+                )
             except Exception as exc:
                 logger.warning("neuroclaim: corpus load failed (%s); falling back", exc)
         backend: ProbabilisticEvidenceBackend = NeuroLangBackend(corpus=corpus)
@@ -1440,7 +1442,9 @@ def resolve_backend(
             try:
                 from .corpus import load_neurosynth_corpus
 
-                corpus = load_neurosynth_corpus(cache)
+                corpus = load_neurosynth_corpus(
+                    cache, data_dir=os.environ.get("BR_NEUROCLAIM_SOURCE_DIR")
+                )
             except Exception as exc:
                 logger.warning("neuroclaim: corpus load failed (%s); falling back", exc)
         nimare_backend: ProbabilisticEvidenceBackend = NimareBackend(corpus=corpus)

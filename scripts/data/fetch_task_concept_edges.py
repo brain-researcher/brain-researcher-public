@@ -1,9 +1,14 @@
-import requests
+"""[experimental] Fetch a live Cognitive Atlas task/concept edge snapshot."""
+
+import argparse
 import json
 import pathlib
 from time import sleep
 
+import requests
+
 BASE = "https://www.cognitiveatlas.org/api/v-alpha"
+DOWNLOAD_STATUS = "experimental"
 
 
 def fetch_all_tasks():
@@ -20,6 +25,12 @@ def get_task_concepts(task_id):
 
 
 def main():
+    argparse.ArgumentParser(
+        description=(
+            "[experimental] Fetch live Cognitive Atlas v-alpha task/concept "
+            "edges; per-task failures are skipped."
+        )
+    ).parse_args()
     all_tasks = fetch_all_tasks()
     edges = []
     for i, task_id in enumerate(all_tasks):

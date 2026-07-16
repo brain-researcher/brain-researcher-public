@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download a selective DMCC raw subset from OpenNeuro.
+"""[experimental] Download a selective DMCC raw subset from OpenNeuro.
 
 This script keeps the DMCC task-fMRI path lightweight by downloading only the
 participants, tasks, and file types needed for GLM validation or follow-on
@@ -15,6 +15,8 @@ import subprocess
 from pathlib import Path
 
 import openneuro
+
+DOWNLOAD_STATUS = "experimental"
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -115,7 +117,10 @@ def _download_s3_file(s3_relpath: str, target_root: Path) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Download a selective DMCC raw BOLD subset from OpenNeuro."
+        description=(
+            "[experimental] Download a selective DMCC raw BOLD subset from "
+            "OpenNeuro; output integrity is not hash-pinned."
+        )
     )
     parser.add_argument(
         "--selector-root",

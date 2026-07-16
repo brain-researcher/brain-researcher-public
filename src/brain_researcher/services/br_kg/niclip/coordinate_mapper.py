@@ -16,7 +16,7 @@ import nibabel as nib
 
 from brain_researcher.config.paths import get_data_root
 from brain_researcher.core.analysis.neurosynth_integration import (
-    _build_activation_map_from_coordinates,
+    _build_coordinate_density_map,
 )
 from brain_researcher.services.br_kg.etl.mappers.niclip_task_mapper import (
     NiCLIPTaskMapper,
@@ -216,7 +216,6 @@ class NiCLIPCoordinateMapper:
             [
                 default_atlas_output_root() / "niclip",
                 Path("/data/niclip"),
-                Path("/data/ECoG-foundation-model/mnndl_temp/niclip"),
                 get_data_root() / "niclip",
             ]
         )
@@ -231,8 +230,8 @@ class NiCLIPCoordinateMapper:
                 return candidate
 
         raise FileNotFoundError(
-            "NiCLIP data path not found. Checked explicit path, env paths, /data defaults, "
-            "and repository fallback."
+            "NiCLIP data path not found. Checked explicit path, env paths, the /data "
+            "container mount, and the repository data directory."
         )
 
     @staticmethod
@@ -355,11 +354,11 @@ class NiCLIPCoordinateMapper:
         return normalized
 
     @staticmethod
-    def _save_activation_map(
+    def _save_coordinate_sphere_map(
         coordinate: tuple[float, float, float], radius_mm: float
     ) -> str:
-        image = _build_activation_map_from_coordinates(
-            [coordinate], radius_mm=radius_mm
+        image = _build_coordinate_density_map(
+            [coordinate], radius_mm=radius_mm, threshold_count=1.0
         )
         with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as handle:
             path = handle.name
@@ -492,7 +491,7 @@ class NiCLIPCoordinateMapper:
             nifti_path: Optional[str] = None
             used_backend: Optional[str] = None
             try:
-                nifti_path = self._save_activation_map(coord, radius_mm)
+                nifti_path = self._save_coordinate_sphere_map(coord, radius_mm)
                 task_predictions: list[tuple[str, float]] = []
                 full_error = None
 

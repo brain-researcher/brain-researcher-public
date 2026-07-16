@@ -14,7 +14,8 @@ checkout does not currently ship a verified NeuroLang bootstrap recipe; see
 
 Inputs:
   --corpus: NiMARE Neurosynth dataset pickle. Defaults to BR_NEUROCLAIM_CORPUS or
-    ``~/.nimare/neurosynth/neurosynth_terms_dataset.pkl.gz``.
+    ``data/neurosynth_nimare/neurosynth_dataset_v7.pkl``.
+  --source-dir: verified pinned raw bundle associated with ``--corpus``.
   --case: demo case to run. Defaults to ``working_memory``.
   --backend: ``nimare`` (default, light) or ``neurolang`` (optional reference).
   --output-dir: output directory. Defaults to the selected case's result folder.
@@ -39,7 +40,7 @@ import json
 import os
 import subprocess
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -70,8 +71,15 @@ from brain_researcher.autoresearch.society.hypotheses import (
     reasoning_mode_ceiling,
 )
 from brain_researcher.autoresearch.society.multiverse import CeilingResult
+from brain_researcher.core.datasets.neurosynth_source import (
+    DEFAULT_DATASET_PICKLE,
+    DEFAULT_SOURCE_DIR,
+    MANIFEST_FILENAME,
+    converted_provenance_path,
+    verify_converted_dataset,
+)
 
-DEFAULT_CORPUS = "~/.nimare/neurosynth/neurosynth_terms_dataset.pkl.gz"
+DEFAULT_CORPUS = str(DEFAULT_DATASET_PICKLE)
 DEFAULT_CASE_KEY = "working_memory"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RUBRIC_ROOT = REPO_ROOT / "reproducibility" / "auditable_claim_record" / "rubrics"
@@ -238,7 +246,7 @@ class DemoInputs:
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _json_dump(path: Path, payload: Any) -> None:
@@ -494,11 +502,12 @@ def build_calibrated_claim_card(
 def run_neurolang_evidence(
     *,
     corpus_path: Path,
+    source_dir: Path = DEFAULT_SOURCE_DIR,
     venv_python: str | None,
     case: DemoCase = WORKING_MEMORY_CASE,
     backend_name: str = "neurolang",
 ) -> dict[str, EvidenceVerdict]:
-    corpus = load_neurosynth_corpus(str(corpus_path))
+    corpus = load_neurosynth_corpus(str(corpus_path), data_dir=str(source_dir))
     backend: NeuroLangBackend | NimareBackend
     if backend_name == "nimare":
         backend = NimareBackend(corpus=corpus)
@@ -601,8 +610,12 @@ def _markdown(bundle: dict[str, Any]) -> str:
             "python scripts/data/convert_neurosynth.py",
             "python scripts/autoresearch/run_auditable_claim_demo.py "
             f"--case {bundle['case_key']} \\",
-            "  --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl",
+            "  --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl \\",
+            "  --source-dir data/neurosynth_nimare/neurosynth_v7",
             "```",
+            "",
+            "The generator verifies the raw source manifest and the converted "
+            "pickle provenance sidecar before querying evidence.",
             "",
             "Or, from the same repository root, use the language-driven path "
             "through the Brain Researcher MCP. A short hosted call sequence returns "
@@ -625,11 +638,16 @@ def _markdown(bundle: dict[str, Any]) -> str:
 def run_demo(
     *,
     corpus_path: Path,
+    source_dir: Path = DEFAULT_SOURCE_DIR,
     output_dir: Path,
     venv_python: str | None,
     case: DemoCase = WORKING_MEMORY_CASE,
     backend_name: str = "neurolang",
 ) -> dict[str, Any]:
+    source_dir = source_dir.expanduser().resolve()
+    converted_provenance = verify_converted_dataset(corpus_path, source_dir)
+    source_manifest_path = source_dir / MANIFEST_FILENAME
+    provenance_path = converted_provenance_path(corpus_path)
     inputs = build_demo_inputs(case)
     engine_ref = _evidence_engine_ref(backend_name, venv_python=venv_python)
     rubric_refs = _rubric_refs()
@@ -655,6 +673,7 @@ def run_demo(
 
     evidence = run_neurolang_evidence(
         corpus_path=corpus_path,
+        source_dir=source_dir,
         venv_python=venv_python,
         case=case,
         backend_name=backend_name,
@@ -676,6 +695,14 @@ def run_demo(
         "corpus_ref": {
             **_portable_path_ref(corpus_path),
             "sha256": _file_sha256(corpus_path),
+            "verified_source": {
+                "manifest": _portable_path_ref(source_manifest_path),
+                "manifest_sha256": _file_sha256(source_manifest_path),
+                "source_snapshot": converted_provenance["source_snapshot"],
+                "source_commit": converted_provenance["source_commit"],
+                "converted_provenance": _portable_path_ref(provenance_path),
+                "converted_provenance_sha256": _file_sha256(provenance_path),
+            },
         },
         "claim_spec": _model_dump(inputs.claim),
         "hypothesis_spec": _model_dump(inputs.hypothesis),
@@ -704,6 +731,14 @@ def parse_args() -> argparse.Namespace:
         help="Path to the NiMARE Neurosynth dataset pickle.",
     )
     parser.add_argument(
+        "--source-dir",
+        default=os.environ.get("BR_NEUROCLAIM_SOURCE_DIR", str(DEFAULT_SOURCE_DIR)),
+        help=(
+            "Directory containing the pinned Neurosynth raw files and "
+            "source_manifest.json associated with --corpus."
+        ),
+    )
+    parser.add_argument(
         "--output-dir",
         default=None,
         help="Directory for demo JSON/Markdown artifacts. Defaults to the case output directory.",
@@ -730,6 +765,7 @@ def main() -> None:
     args = parse_args()
     case = CASES[args.case]
     corpus_path = Path(os.path.expanduser(args.corpus)).resolve()
+    source_dir = Path(os.path.expanduser(args.source_dir)).resolve()
     if not corpus_path.exists():
         raise SystemExit(
             f"Neurosynth corpus not found: {corpus_path}. Set BR_NEUROCLAIM_CORPUS or pass --corpus."
@@ -737,6 +773,7 @@ def main() -> None:
     output_dir = Path(args.output_dir or case.output_dir)
     bundle = run_demo(
         corpus_path=corpus_path,
+        source_dir=source_dir,
         output_dir=output_dir,
         venv_python=args.venv_python,
         case=case,

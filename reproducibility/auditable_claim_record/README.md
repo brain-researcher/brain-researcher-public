@@ -107,7 +107,8 @@ The shell script does **not** create or activate an environment. It requires
 Python 3.11 and installs `brain_researcher`, NiMARE, and Nilearn using the
 checked-in [`constraints-py311.txt`](constraints-py311.txt); downloads and
 converts Neurosynth under
-`data/neurosynth_nimare/`; writes the generated record to
+`data/neurosynth_nimare/`; writes both the NiMARE pickle and its checksum-bound
+provenance sidecar; writes the generated record to
 `/tmp/auditable_claim_e2e` by default; and asserts the expected status and
 evidence fields. Pass a different output directory as its first argument.
 
@@ -155,7 +156,7 @@ interpreter or legacy environment is required.
 2. Download and convert the public Neurosynth v7 corpus:
    ```bash
    python scripts/data/download_neurosynth_data.py   # -> data/neurosynth_nimare/neurosynth_v7/
-   python scripts/data/convert_neurosynth.py         # -> data/neurosynth_nimare/neurosynth_dataset_v7.pkl
+   python scripts/data/convert_neurosynth.py         # -> .pkl + .pkl.provenance.json
    ```
 3. Run the generator (NiMARE is the default backend, so `--backend` is optional):
    ```bash
@@ -164,6 +165,13 @@ interpreter or legacy environment is required.
      --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl \
      --output-dir /tmp/wm_demo
    ```
+   Before loading the pickle, the generator verifies the four raw files, their
+   exact `source_manifest.json`, the pickle checksum, and
+   `neurosynth_dataset_v7.pkl.provenance.json`, which binds that checksum to the
+   pinned raw manifest. A missing or mismatched sidecar fails before evidence is
+   queried. If you pass a non-default `--corpus`, also pass its associated
+   verified raw bundle with `--source-dir`; an arbitrary pickle is not accepted
+   merely because another source directory verifies.
    A second case, `--case response_inhibition_boundary`, is also included; it is
    a deliberate boundary case that lands `unresolved` (the ACC / response-
    inhibition association does not clear the evidence bar), so you can see the

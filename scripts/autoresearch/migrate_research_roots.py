@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Migrate predictive/discovery line roots under /data/brain_researcher/research."""
+"""Migrate predictive/discovery line roots under an explicit data root."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Literal
 
 from brain_researcher.autoresearch.artifact_schema import (
-    DEFAULT_DATA_ROOT,
     LINE_SPECS,
     canonical_line_root,
     legacy_line_root,
@@ -159,7 +158,12 @@ def apply_actions(actions: list[MigrationAction]) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
+    parser.add_argument(
+        "--data-root",
+        type=Path,
+        required=True,
+        help="Data root containing the predictive and discovery line directories.",
+    )
     parser.add_argument("--apply", action="store_true", help="Apply the migration instead of printing the plan.")
     parser.add_argument("--json", action="store_true", help="Emit JSON instead of human-readable text.")
     return parser

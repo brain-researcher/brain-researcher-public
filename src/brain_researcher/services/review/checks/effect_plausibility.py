@@ -73,16 +73,19 @@ def _effect_size_summary(payload: dict[str, Any]) -> dict[str, float] | None:
 def meta_analytic_spatial_plausibility_check(
     bundle: CodeReviewBundle,
 ) -> ReviewFinding | None:
-    """Flag very low spatial agreement with a task-conditioned meta-analytic prior.
+    """Flag low exploratory agreement with a descriptive density reference.
 
-    This is intentionally conservative: low agreement does not prove a result is
-    wrong, but it is a useful review signal that the finding may be mislabeled,
-    method-dependent, or genuinely novel.
+    The function name is retained for routing compatibility. This comparison is
+    not a meta-analytic validation and low agreement does not prove a result is
+    wrong.
     """
 
-    corr = bundle.stats_metrics.get("meta_analytic_spatial_corr")
-    term = str(bundle.stats_metrics.get("meta_analytic_term") or "task prior")
-    voxels = bundle.stats_metrics.get("meta_analytic_voxels_compared")
+    corr = bundle.stats_metrics.get("neurosynth_density_spatial_corr")
+    term = str(bundle.stats_metrics.get("neurosynth_density_term") or "task term")
+    voxels = bundle.stats_metrics.get("neurosynth_density_voxels_compared")
+    semantics = bundle.stats_metrics.get("neurosynth_density_semantics")
+    if semantics != "descriptive_coordinate_density":
+        return None
 
     try:
         corr_f = float(corr)
@@ -101,16 +104,18 @@ def meta_analytic_spatial_plausibility_check(
         pass
 
     return ReviewFinding(
-        rule_id="REVIEW_META_ANALYTIC_SPATIAL_PLAUSIBILITY_LOW",
+        rule_id="REVIEW_NEUROSYNTH_DENSITY_SPATIAL_CORRESPONDENCE_LOW",
         severity="warn",
         message=(
-            f"Observed statistical map has low spatial correlation with the "
-            f"meta-analytic prior for '{term}' (r={corr_f:.2f}){voxels_msg}."
+            "Observed map has low exploratory spatial correlation with the "
+            f"descriptive Neurosynth coordinate-density map for '{term}' "
+            f"(r={corr_f:.2f}){voxels_msg}. This is not an inferential "
+            "meta-analysis or validation test."
         ),
         suggested_fix=(
             "Verify task labeling, contrast definition, and map orientation/space. "
-            "If the result is intentionally novel or exploratory, report that the "
-            "finding departs from the literature prior."
+            "If reported, label this comparison exploratory and avoid treating the "
+            "density map as a literature prior or significance test."
         ),
     )
 

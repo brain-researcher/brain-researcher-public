@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download the Yeo/Buckner GSP population-average functional connectivity seed maps."""
+"""[historical] Download Yeo/Buckner GSP functional-connectivity seed maps."""
 # THIS FILE IS NOT AVAILABLE OR NOT USED IN THE PROJECT
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ import requests
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 LOGGER = logging.getLogger("download_yeo_gsp_fc")
+DOWNLOAD_STATUS = "historical"
 
 # Canonical public location for the tarball (mirrors welcome via --url)
 DEFAULT_URL = "https://surfer.nmr.mgh.harvard.edu/ftp/data/yeo_fsaverage/Yeo_Buckner_GSP_FC_maps.tgz"

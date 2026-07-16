@@ -26,13 +26,15 @@ The working-memory claim is computed over the Neurosynth v7 coordinate corpus.
 - Raw data repository: https://github.com/neurosynth/neurosynth-data
 - Pinned source commit:
   `209c33cd009d0b069398a802198b41b9c488b9b7`
-- One-call fetch via NiMARE: `nimare.extract.fetch_neurosynth`
-  (https://nimare.readthedocs.io/)
+- Upstream license: [ODC Open Database License 1.0
+  (ODbL-1.0)](https://raw.githubusercontent.com/neurosynth/neurosynth-data/209c33cd009d0b069398a802198b41b9c488b9b7/LICENSE.txt)
 - Helper scripts in this repository:
-  - `scripts/data/download_neurosynth_data.py` — downloads the Neurosynth v7
-    release into `data/neurosynth_nimare/neurosynth_v7/`
+  - `scripts/data/download_neurosynth_data.py` — the only authoritative
+    downloader; downloads the Neurosynth version-7 snapshot pinned to the
+    commit above into `data/neurosynth_nimare/neurosynth_v7/`
   - `scripts/data/convert_neurosynth.py` — converts it into the term-annotated
-    NiMARE dataset `data/neurosynth_nimare/neurosynth_dataset_v7.pkl`
+    NiMARE dataset `data/neurosynth_nimare/neurosynth_dataset_v7.pkl` and the
+    binding sidecar `neurosynth_dataset_v7.pkl.provenance.json`
 
   Run them from the repository root after installing the light-path environment
   from `README.md`:
@@ -43,9 +45,24 @@ The working-memory claim is computed over the Neurosynth v7 coordinate corpus.
   ```
   The downloader verifies the expected byte size and SHA-256 of all four files,
   including files already present locally. A download or checksum failure exits
-  nonzero and never publishes a partial file. The converter also exits nonzero
-  on any failure and removes the canonical output before a rerun, so an older
-  pickle cannot be mistaken for a newly converted result.
+  nonzero, removes stale provenance, and never publishes a partial file. Only
+  after all files verify does it atomically write
+  `data/neurosynth_nimare/neurosynth_v7/source_manifest.json`, which records the
+  pinned URLs, commit, source snapshot, license, sizes, and hashes. Recheck an existing
+  bundle without network access with:
+
+  ```bash
+  python scripts/data/download_neurosynth_data.py --check-only
+  ```
+
+  `--check-only` is read-only: it requires the exact existing manifest and all
+  four verified files. It does not create, delete, or rewrite anything.
+
+  The converter first re-verifies that exact source bundle. It then atomically
+  publishes the pickle and a clone-independent provenance sidecar recording the
+  pickle filename, size, SHA-256, source-manifest SHA-256, source commit, and
+  source snapshot. It exits nonzero and removes both outputs on any failure, so an older
+  or tampered pickle cannot be mistaken for a newly converted result.
 
   | source file | bytes | SHA-256 |
   | --- | ---: | --- |
@@ -55,8 +72,10 @@ The working-memory claim is computed over the Neurosynth v7 coordinate corpus.
   | `data-neurosynth_version-7_vocab-terms_vocabulary.txt` | 33,799 | `71c1858c5eb1bcc79854198bbca234569731efdc382c6205a9e46495379614af` |
 - Point the generator at that pickle with
   `--corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl` (or set
-  `$BR_NEUROCLAIM_CORPUS`). With no argument the generator falls back to
-  `~/.nimare/neurosynth/neurosynth_terms_dataset.pkl.gz`.
+  `$BR_NEUROCLAIM_CORPUS`). With no argument the generator uses that same
+  repository-local canonical pickle. A custom corpus must be accompanied by
+  its verified raw bundle via `--source-dir` or `$BR_NEUROCLAIM_SOURCE_DIR`;
+  the matching provenance sidecar is mandatory.
 
 ## HCP Young Adult (WU-Minn) — used by the reproducibility pack (controlled access)
 

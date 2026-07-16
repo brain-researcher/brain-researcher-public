@@ -587,7 +587,7 @@ schema:
 # Database Configuration (Neo4j only)
 graph_neo4j_uri: "bolt://localhost:7687"
 graph_neo4j_user: "neo4j"
-graph_neo4j_password: "password"
+graph_neo4j_password: ""
 max_database_size: "1TB"  # Logical graph size budget
 
 # Memory Configuration (ingestion/cache tuning)

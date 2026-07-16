@@ -261,13 +261,22 @@ def _extract_3d_map_data(path: Path) -> tuple[Any, Any] | tuple[None, None]:
 
 
 def _extract_meta_analytic_spatial_metrics(run_dir: Path) -> dict[str, Any]:
-    """Compare an observed stat/effect map to a task-conditioned Neurosynth prior."""
+    """Compare a map to a descriptive Neurosynth coordinate-density reference.
+
+    The function name is retained for internal compatibility. The populated
+    metric names deliberately do not call this reference a meta-analysis or
+    literature prior.
+    """
     task = _first_string_from_run_steps(run_dir, _TASK_KEYS)
     term = _meta_analytic_term_for_task(task)
     defaults = {
-        "meta_analytic_term": term,
+        "meta_analytic_term": None,
         "meta_analytic_spatial_corr": None,
         "meta_analytic_voxels_compared": None,
+        "neurosynth_density_term": term,
+        "neurosynth_density_spatial_corr": None,
+        "neurosynth_density_voxels_compared": None,
+        "neurosynth_density_semantics": "descriptive_coordinate_density",
     }
     if term is None:
         return defaults
@@ -304,19 +313,31 @@ def _extract_meta_analytic_spatial_metrics(run_dir: Path) -> dict[str, Any]:
         )
 
         payload = get_neurosynth_mapping(term)
-        activation_maps = (
-            payload.get("activation_maps") if isinstance(payload, dict) else None
+        density_maps = (
+            payload.get("coordinate_density_maps")
+            if isinstance(payload, dict)
+            else None
         )
-        if not activation_maps:
+        if not density_maps:
             return defaults
-        reference_img = activation_maps[0]
-        reference_resampled = image.resample_to_img(
-            reference_img,
-            result_img,
-            interpolation="continuous",
-            force_resample=True,
-            copy_header=True,
-        )
+        if payload.get("analysis_semantics") != "descriptive_coordinate_density":
+            return defaults
+        reference_img = density_maps[0]
+        try:
+            reference_resampled = image.resample_to_img(
+                reference_img,
+                result_img,
+                interpolation="continuous",
+                force_resample=True,
+                copy_header=True,
+            )
+        except TypeError:
+            # Nilearn <0.10 does not expose force_resample/copy_header.
+            reference_resampled = image.resample_to_img(
+                reference_img,
+                result_img,
+                interpolation="continuous",
+            )
         reference_data = np.asarray(reference_resampled.get_fdata(), dtype=float)
         if reference_data.ndim == 4:
             reference_data = reference_data[..., 0]
@@ -335,9 +356,9 @@ def _extract_meta_analytic_spatial_metrics(run_dir: Path) -> dict[str, Any]:
         if not np.isfinite(corr):
             return defaults
         return {
-            "meta_analytic_term": term,
-            "meta_analytic_spatial_corr": round(corr, 4),
-            "meta_analytic_voxels_compared": n_voxels,
+            **defaults,
+            "neurosynth_density_spatial_corr": round(corr, 4),
+            "neurosynth_density_voxels_compared": n_voxels,
         }
     except Exception:
         return defaults

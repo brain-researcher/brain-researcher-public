@@ -26,7 +26,6 @@ IGNORED_EMBEDDED_PATH_PREFIXES = (
     Path("/lib"),
     Path("/lib64"),
     Path("/opt"),
-    Path("/home/ubuntu/miniconda3"),
     *(
         Path(p)
         for p in os.environ.get("BR_EXTRA_RESTRICTED_PATHS", "").split(":")
@@ -110,7 +109,14 @@ def _is_under_any_root(path: Path, allowed_roots: tuple[Path, ...]) -> bool:
 
 
 def _is_ignored_runtime_path(path: Path) -> bool:
-    return _is_under_any_root(path, IGNORED_EMBEDDED_PATH_PREFIXES)
+    configured_roots: list[Path] = []
+    if conda_prefix := os.environ.get("CONDA_PREFIX", "").strip():
+        configured_roots.append(Path(conda_prefix).expanduser().resolve())
+    if conda_exe := os.environ.get("CONDA_EXE", "").strip():
+        configured_roots.append(Path(conda_exe).expanduser().resolve().parent.parent)
+    return _is_under_any_root(
+        path, (*IGNORED_EMBEDDED_PATH_PREFIXES, *configured_roots)
+    )
 
 
 def _dedupe_roots(roots: Iterable[Path]) -> tuple[Path, ...]:

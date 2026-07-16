@@ -35,6 +35,8 @@ services:
       - '7474:7474'
     environment:
       - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:?set NEO4J_PASSWORD}
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:?set NEO4J_PASSWORD}
       - NEO4J_dbms_memory_pagecache_size=512M
       - NEO4J_dbms_memory_heap_initial__size=512M
       - NEO4J_dbms_memory_heap_max__size=1G
@@ -43,8 +45,11 @@ services:
     restart: unless-stopped
     healthcheck:
       test:
-        - CMD-SHELL
-        - cypher-shell -a bolt://localhost:7687 -u neo4j -p ${NEO4J_PASSWORD:?set NEO4J_PASSWORD} 'RETURN 1'
+        - CMD
+        - cypher-shell
+        - -a
+        - bolt://localhost:7687
+        - RETURN 1
       interval: 30s
       timeout: 10s
       retries: 5

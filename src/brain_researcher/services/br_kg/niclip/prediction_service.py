@@ -29,7 +29,7 @@ Check if the service is running and healthy.
   "status": "healthy",
   "model_loaded": true,
   "embedding_service_loaded": true,
-  "niclip_data_path": "/data/ECoG-foundation-model/mnndl_temp/niclip",
+  "niclip_data_path": "/app/data/niclip",
   "timestamp": "2024-01-15T10:30:00"
 }
 ```
@@ -348,7 +348,7 @@ Error responses include a detail message:
 
 ## Environment Variables
 
-- `NICLIP_DATA_PATH`: Path to NICLIP data directory (default: `/data/ECoG-foundation-model/mnndl_temp/niclip`)
+- `NICLIP_DATA_PATH`: Path to NICLIP data directory (container default: `/app/data/niclip`)
 - `NICLIP_PORT`: Service port (default: 8001)
 - `NICLIP_HOST`: Service host (default: 0.0.0.0)
 """
@@ -395,7 +395,7 @@ DEFAULT_MODEL_NAME = "BrainGPT-7B-v0.2"
 DEFAULT_SECTION = "abstract"
 NICLIP_DATA_PATH = os.environ.get(
     "NICLIP_EMBEDDINGS_PATH",
-    os.environ.get("NICLIP_DATA_PATH", "/data/ECoG-foundation-model/mnndl_temp/niclip"),
+    os.environ.get("NICLIP_DATA_PATH", "/app/data/niclip"),
 )
 NICLIP_MODEL_DIR = os.environ.get("NICLIP_MODEL_DIR")
 NICLIP_MODEL_PATH = os.environ.get("NICLIP_MODEL_PATH")

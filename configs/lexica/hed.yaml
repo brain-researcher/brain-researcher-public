@@ -289,14 +289,19 @@ temporal_order:
   tags:
   - Perception, Temporal-order
   - Perception, Temporal-order, TOJ
+  - Timing, TOJ
+  - Timing, Simultaneity
   - Temporal-order-judgment
   - TOJ
+  - temporal-order-judgment
 
 masking:
   tags:
   - Perception, Masking
   - Perception, Masking, Metacontrast
+  - Masking
   - masking
+  - backward-masking
   - metacontrast-masking
 
 crowding:
@@ -651,12 +656,6 @@ synchronization:
   - Timing, Continuation
   - synchronization
   - temporal-synchronization
-
-temporal_order:
-  tags:
-  - Timing, TOJ
-  - Timing, Simultaneity
-  - temporal-order-judgment
 
 foreperiod:
   tags:
@@ -1018,12 +1017,6 @@ priming:
   - Priming
   - priming
   - semantic-priming
-
-masking:
-  tags:
-  - Masking
-  - masking
-  - backward-masking
 
 interference:
   tags:

@@ -713,10 +713,6 @@ anchors:
     min_score: 0.85
     min_margin: 0.0
     allow_multi: false
-  accept:
-    min_score: 0.85
-    min_margin: 0.0
-    allow_multi: false
 - family_id: onvoc_0000524
   onvoc_uri: ONVOC_0000524
   label: Species
@@ -1498,7 +1494,6 @@ anchors:
     min_score: 0.85
     min_margin: 0.0
     allow_multi: false
-  seed_tasks: []
   seed_tasks:
   - slug: reversal-learning
   - slug: reversal-learning-task

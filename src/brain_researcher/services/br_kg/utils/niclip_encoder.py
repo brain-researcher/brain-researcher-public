@@ -20,7 +20,7 @@ class NiCLIPTextEncoder:
 
     def __init__(
         self,
-        niclip_data_path: str = "/data/ECoG-foundation-model/mnndl_temp/niclip/osf_data/dsj56/osfstorage/osfstorage/data",
+        niclip_data_path: str,
     ):
         """
         Initialize NiCLIP encoder with pre-computed embeddings.

@@ -355,12 +355,9 @@ class RelationshipBuilder:
                     if "id" in study:
                         relevant_study_ids.add(study["id"])
 
-            # If no studies found, return sample coordinates for demonstration
             if not relevant_study_ids:
-                logger.warning(
-                    f"No studies found for concept '{concept}', using sample data"
-                )
-                return self._generate_sample_foci(concept)
+                logger.warning("No Neurosynth studies found for concept %r", concept)
+                return pd.DataFrame()
 
             # Filter coordinates by relevant studies
             if "id" in coordinates.columns:
@@ -375,7 +372,7 @@ class RelationshipBuilder:
 
         except Exception as e:
             logger.error(f"Error filtering foci by concept: {e}")
-            return self._generate_sample_foci(concept)
+            return pd.DataFrame()
 
     def _filter_foci_by_region(
         self, coordinates: pd.DataFrame, region: str
@@ -461,7 +458,7 @@ class RelationshipBuilder:
 
         except Exception as e:
             logger.error(f"Error filtering by region: {e}")
-            return coordinates
+            return pd.DataFrame()
 
     def _generate_sample_foci(self, concept: str) -> pd.DataFrame:
         """Generate sample foci for demonstration purposes"""
@@ -490,7 +487,14 @@ class RelationshipBuilder:
         study_ids = [f"sample_study_{i//5 + 1}" for i in range(n_foci)]
 
         return pd.DataFrame(
-            {"x": x_coords, "y": y_coords, "z": z_coords, "study_id": study_ids}
+            {
+                "x": x_coords,
+                "y": y_coords,
+                "z": z_coords,
+                "study_id": study_ids,
+                "source": "synthetic_neurosynth_demo",
+                "synthetic": True,
+            }
         )
 
     def _get_or_create_concept_node(self, concept: str) -> tuple[str, dict] | None:

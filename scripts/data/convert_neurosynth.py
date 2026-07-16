@@ -1,5 +1,5 @@
 #!/usr/bin/env python3.11
-"""Convert verified Neurosynth v0.7 inputs into one NiMARE Dataset pickle."""
+"""Convert a verified Neurosynth version-7 snapshot to a NiMARE Dataset pickle."""
 
 from __future__ import annotations
 
@@ -9,20 +9,30 @@ import os
 from pathlib import Path
 from typing import Any
 
+from brain_researcher.core.datasets.neurosynth_source import (
+    COORDINATES_FILENAME,
+    DEFAULT_DATASET_PICKLE,
+    DEFAULT_SOURCE_DIR,
+    FEATURES_FILENAME,
+    METADATA_FILENAME,
+    SOURCE_FILES,
+    VOCABULARY_FILENAME,
+    converted_provenance_path,
+    publish_converted_dataset_provenance,
+    verify_source_bundle,
+)
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DATA_DIR = REPO_ROOT / "data" / "neurosynth_nimare" / "neurosynth_v7"
-DEFAULT_OUTPUT = REPO_ROOT / "data" / "neurosynth_nimare" / "neurosynth_dataset_v7.pkl"
-COORDINATES = "data-neurosynth_version-7_coordinates.tsv.gz"
-METADATA = "data-neurosynth_version-7_metadata.tsv.gz"
-FEATURES = (
-    "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
-)
-VOCABULARY = "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
+DEFAULT_DATA_DIR = DEFAULT_SOURCE_DIR
+DEFAULT_OUTPUT = DEFAULT_DATASET_PICKLE
+COORDINATES = COORDINATES_FILENAME
+METADATA = METADATA_FILENAME
+FEATURES = FEATURES_FILENAME
+VOCABULARY = VOCABULARY_FILENAME
 
 
 def convert_dataset(
@@ -42,8 +52,14 @@ def convert_dataset(
     partial_file = output_file.with_name(
         f".{output_file.stem}.incomplete{output_file.suffix}"
     )
+    provenance_file = converted_provenance_path(output_file)
+    partial_provenance_file = provenance_file.with_name(provenance_file.name + ".part")
     output_file.unlink(missing_ok=True)
     partial_file.unlink(missing_ok=True)
+    provenance_file.unlink(missing_ok=True)
+    partial_provenance_file.unlink(missing_ok=True)
+
+    verify_source_bundle(data_dir, source_files=SOURCE_FILES)
 
     inputs = {
         "coordinates": data_dir / COORDINATES,
@@ -51,10 +67,6 @@ def convert_dataset(
         "features": data_dir / FEATURES,
         "vocabulary": data_dir / VOCABULARY,
     }
-    missing = [str(path) for path in inputs.values() if not path.is_file()]
-    if missing:
-        raise FileNotFoundError("missing Neurosynth inputs: " + ", ".join(missing))
-
     output_file.parent.mkdir(parents=True, exist_ok=True)
     if io_module is None:
         from nimare import io as io_module
@@ -72,9 +84,14 @@ def convert_dataset(
         if not partial_file.is_file() or partial_file.stat().st_size == 0:
             raise RuntimeError("NiMARE did not write a non-empty dataset pickle")
         os.replace(partial_file, output_file)
+        publish_converted_dataset_provenance(
+            output_file, data_dir, source_files=SOURCE_FILES
+        )
     except Exception:
         partial_file.unlink(missing_ok=True)
         output_file.unlink(missing_ok=True)
+        provenance_file.unlink(missing_ok=True)
+        partial_provenance_file.unlink(missing_ok=True)
         raise
 
 
@@ -84,7 +101,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--data-dir",
         type=Path,
         default=DEFAULT_DATA_DIR,
-        help="Directory containing the four verified Neurosynth v0.7 files.",
+        help="Directory containing the four verified Neurosynth version-7 files.",
     )
     parser.add_argument(
         "--output",
@@ -102,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     except Exception:
         logger.exception("Neurosynth conversion failed; no canonical output was kept")
         return 1
-    logger.info("Neurosynth dataset written and verified non-empty: %s", args.output)
+    logger.info("Neurosynth dataset and provenance sidecar written: %s", args.output)
     return 0
 
 

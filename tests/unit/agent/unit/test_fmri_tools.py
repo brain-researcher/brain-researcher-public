@@ -5,6 +5,8 @@ Unit tests for fMRI tool wrappers.
 import json
 from unittest.mock import Mock, patch
 
+import nibabel as nib
+import numpy as np
 import pytest
 
 from brain_researcher.services.tools.fmri_tools import (
@@ -243,75 +245,162 @@ class TestEncodingModelTool:
 class TestContrastAnalysisTool:
     """Test contrast analysis tool wrapper."""
 
+    @staticmethod
+    def _write_z_map(tmp_path, affine=None):
+        data = np.zeros((8, 8, 8), dtype=float)
+        data[2:4, 2:4, 2:4] = 5.0
+        data[2, 2, 2] = 7.0
+        z_map = tmp_path / "motor_zmap.nii.gz"
+        nib.save(
+            nib.Nifti1Image(data, affine if affine is not None else np.eye(4)), z_map
+        )
+        return z_map
+
     def test_tool_properties(self):
         """Test tool name and description."""
         tool = ContrastAnalysisTool()
         assert tool.get_tool_name() == "contrast_analysis"
-        assert "contrast maps" in tool.get_tool_description()
+        assert "descriptive suprathreshold" in tool.get_tool_description()
+        assert (
+            "does not perform inferential significance" in tool.get_tool_description()
+        )
         assert tool.get_args_schema() == ContrastAnalysisArgs
+        coordinate_description = ContrastAnalysisArgs.model_json_schema()["properties"][
+            "coordinates"
+        ]["description"]
+        assert "world coordinates in millimeters" in coordinate_description
+        assert "input z-map NIfTI affine" in coordinate_description
+        assert "not voxel indices" in coordinate_description
+        assert "MNI" not in coordinate_description
 
-    @patch("brain_researcher.core.analysis.contrast_analysis.ContrastAnalyzer")
-    def test_successful_contrast_analysis(self, mock_analyzer_class):
-        """Test successful contrast analysis."""
-        mock_analyzer = Mock()
-        mock_analyzer_class.return_value = mock_analyzer
-
+    def test_successful_contrast_analysis_uses_explicit_map(self, tmp_path):
+        """An existing z-map is analyzed instead of replaced with demo data."""
+        z_map = self._write_z_map(tmp_path)
         tool = ContrastAnalysisTool()
         result = tool.run(
-            z_map_path="/data/contrasts/motor_zmap.nii.gz",
+            z_map_path=str(z_map),
             contrast_name="motor_vs_rest",
             task_description="Finger tapping task",
         )
 
         assert result["status"] == "success"
         assert result["data"]["contrast_name"] == "motor_vs_rest"
-        assert len(result["data"]["significant_clusters"]) == 2
-        assert result["data"]["n_clusters"] == 2
+        assert result["data"]["task_description"] == "Finger tapping task"
+        assert result["data"]["n_clusters"] == 1
+        assert result["data"]["z_map_used"] == str(z_map.resolve())
+        assert result["metadata"]["mock_mode"] is False
+        assert result["metadata"]["real_data_available"] is True
+        assert (
+            result["metadata"]["cluster_semantics"]
+            == "descriptive_suprathreshold_components"
+        )
+        assert result["metadata"]["inferential_significance"] is False
+        assert result["metadata"]["multiple_comparisons_correction"] is None
+        assert result["metadata"]["cluster_connectivity"] == 26
+        assert result["metadata"]["opposite_signs_connected"] is False
+        assert result["metadata"]["anatomical_labeling"] is False
+        assert result["metadata"]["cognitive_interpretation"] is False
+        assert (
+            result["data"]["suprathreshold_clusters"]
+            == result["data"]["significant_clusters"]
+        )
+        assert "cognitive_interpretation" not in result["data"]
 
-        # Check cluster data
         cluster = result["data"]["significant_clusters"][0]
-        assert "peak_coordinate" in cluster
-        assert "cluster_size" in cluster
-        assert "peak_z" in cluster
-        assert "region" in cluster
+        assert cluster["peak_coordinate"] == [2, 2, 2]
+        assert cluster["coordinate_space"] == "voxel"
+        assert cluster["cluster_size"] == 8
+        assert cluster["sign"] == "positive"
+        assert cluster["peak_z"] == 7.0
+        assert "region" not in cluster
 
-    @patch("brain_researcher.core.analysis.contrast_analysis.ContrastAnalyzer")
-    def test_contrast_analysis_with_coordinates(self, mock_analyzer_class):
-        """Test contrast analysis with specific coordinates."""
-        mock_analyzer = Mock()
-        mock_analyzer_class.return_value = mock_analyzer
-
+    def test_contrast_analysis_samples_real_coordinate_value(self, tmp_path):
+        """Coordinate analysis reads the supplied map rather than fixed values."""
+        z_map = self._write_z_map(tmp_path)
         tool = ContrastAnalysisTool()
         result = tool.run(
-            z_map_path="/data/contrasts/visual_zmap.nii.gz",
+            z_map_path=str(z_map),
             contrast_name="visual_vs_baseline",
-            coordinates=[[-20, -80, 10], [20, -80, 10]],
+            coordinates=[[2.0, 2.0, 2.0], [20.0, 20.0, 20.0]],
         )
 
         assert result["status"] == "success"
-        assert result["data"]["coordinate_analysis"] is not None
-        assert len(result["data"]["coordinate_analysis"]) == 2
+        coordinate_results = result["data"]["coordinate_analysis"]
+        assert coordinate_results[0] == {
+            "coordinate": [2.0, 2.0, 2.0],
+            "coordinate_space": "world",
+            "voxel_index": [2, 2, 2],
+            "in_bounds": True,
+            "z_value": 7.0,
+        }
+        assert coordinate_results[1]["in_bounds"] is False
+        assert coordinate_results[1]["z_value"] is None
 
-        # Check coordinate analysis
-        coord_result = result["data"]["coordinate_analysis"][0]
-        assert coord_result["coordinate"] == [-20, -80, 10]
-        assert "z_value" in coord_result
-        assert "region" in coord_result
+    def test_coordinate_sampling_uses_nonidentity_input_affine(self, tmp_path):
+        """World coordinates are mapped through the supplied image affine."""
+        affine = np.array(
+            [
+                [2.0, 0.0, 0.0, 10.0],
+                [0.0, 2.0, 0.0, -10.0],
+                [0.0, 0.0, 2.0, 5.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+        z_map = self._write_z_map(tmp_path, affine=affine)
 
-    def test_contrast_analysis_error(self):
-        """Test error handling in contrast analysis."""
+        result = ContrastAnalysisTool().run(
+            z_map_path=str(z_map),
+            contrast_name="visual_vs_baseline",
+            coordinates=[[14.0, -6.0, 9.0]],
+        )
+
+        assert result["status"] == "success"
+        assert result["data"]["coordinate_analysis"] == [
+            {
+                "coordinate": [14.0, -6.0, 9.0],
+                "coordinate_space": "world",
+                "voxel_index": [2, 2, 2],
+                "in_bounds": True,
+                "z_value": 7.0,
+            }
+        ]
+        assert result["metadata"]["coordinate_spaces"]["requested_coordinates"] == (
+            "world_coordinates_mm_defined_by_input_z_map_affine"
+        )
+
+    def test_missing_z_map_fails_closed_without_dataset_fallback(self, tmp_path):
+        """A missing input cannot resolve to a private dataset or demo result."""
+        missing = tmp_path / "ds000001" / "contrast-pumps_stat-z_statmap.nii.gz"
+        tool = ContrastAnalysisTool()
+        result = tool.run(z_map_path=str(missing), contrast_name="pumps")
+
+        assert result["status"] == "error"
+        assert result["data"] is None
+        assert result["error"] == f"Z-map file not found: {missing}"
+        assert result["metadata"]["error_category"] == "data"
+        assert "significant_clusters" not in result
+
+    def test_empty_z_map_path_fails_closed(self):
+        tool = ContrastAnalysisTool()
+        result = tool.run(z_map_path="", contrast_name="motor_vs_rest")
+
+        assert result["status"] == "error"
+        assert result["data"] is None
+        assert "requires an explicit z-map path" in result["error"]
+
+    def test_missing_analysis_dependency_fails_closed(self, tmp_path):
+        z_map = self._write_z_map(tmp_path)
+        tool = ContrastAnalysisTool()
         with patch(
-            "brain_researcher.core.analysis.contrast_analysis.ContrastAnalyzer"
-        ) as mock_analyzer:
-            mock_analyzer.side_effect = Exception("File not found")
+            "brain_researcher.core.analysis.contrast_analysis.ContrastAnalyzer._get_significant_clusters",
+            side_effect=ImportError("scipy unavailable"),
+        ):
+            result = tool.run(z_map_path=str(z_map), contrast_name="motor_vs_rest")
 
-            tool = ContrastAnalysisTool()
-            result = tool.run(
-                z_map_path="/nonexistent/file.nii.gz", contrast_name="test"
-            )
-
-            assert result["status"] == "error"
-            assert "File not found" in result["error"]
+        assert result["status"] == "error"
+        assert result["data"] is None
+        assert result["metadata"]["error_category"] == "configuration"
+        assert "scipy unavailable" in result["error"]
 
 
 class TestBrainSimilarityTool:
@@ -443,18 +532,15 @@ class TestIntegrationScenarios:
     """Test realistic integration scenarios with fMRI tools."""
 
     @patch.object(GLMAnalysisTool, "_run")
-    @patch("brain_researcher.core.analysis.contrast_analysis.ContrastAnalyzer")
-    def test_glm_to_contrast_pipeline(self, mock_analyzer_class, mock_api_class):
+    def test_glm_to_contrast_pipeline(self, mock_api_class, tmp_path):
         """Test pipeline from GLM analysis to contrast interpretation."""
-        # Setup mocks
-        mock_api = Mock()
-        mock_api.run_analysis.return_value = {
-            "motor_vs_rest": "/data/results/motor_zmap.nii.gz"
-        }
-        mock_api_class.return_value = mock_api
-
-        mock_analyzer = Mock()
-        mock_analyzer_class.return_value = mock_analyzer
+        z_map = TestContrastAnalysisTool._write_z_map(tmp_path)
+        mock_api_class.return_value = ToolResult(
+            status="success",
+            data={
+                "contrasts": {"motor_vs_rest": {"z_map": str(z_map)}},
+            },
+        )
 
         # Run GLM analysis
         glm_tool = GLMAnalysisTool()

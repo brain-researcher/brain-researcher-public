@@ -33,10 +33,11 @@ set -euo pipefail
 # useful as a monitoring loop today while the handler pieces are landed.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-: "${DISCOVERY_PROJECT_ROOT:=/data/brain_researcher/research/discovery/project}"
-: "${BRAIN_RESEARCHER_ROOT:=/home/ubuntu/brain_researcher}"
-: "${CONDA_SH:=/home/ubuntu/miniconda3/etc/profile.d/conda.sh}"
+: "${DISCOVERY_PROJECT_ROOT:?Set DISCOVERY_PROJECT_ROOT to the external discovery project}"
+: "${BRAIN_RESEARCHER_ROOT:=${REPO_ROOT}}"
+: "${CONDA_SH:?Set CONDA_SH to the conda activation script}"
 : "${CONDA_ENV:=brain_researcher}"
 : "${STATE_ROOT:=${DISCOVERY_PROJECT_ROOT}/artifacts/autoresearch/discovery_live_watchdog}"
 : "${LOG_DIR:=${STATE_ROOT}/logs}"

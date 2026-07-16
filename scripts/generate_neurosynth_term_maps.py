@@ -1,20 +1,29 @@
 import argparse
-import os
 from pathlib import Path
-
-import numpy as np
-import nibabel as nib
 
 from nimare.dataset import Dataset
 from nimare.decode.continuous import CorrelationDecoder
+
+from brain_researcher.core.datasets.neurosynth_source import (
+    DEFAULT_DATASET_PICKLE,
+    DEFAULT_SOURCE_DIR,
+    verify_converted_dataset,
+)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Generate term maps from NiMARE/Neurosynth dataset")
     parser.add_argument(
         "--dataset",
-        default=None,
-        help="Path to NiMARE Dataset (.pkl or .pkl.gz). If omitted, we auto-pick the first existing among pkl -> pkl.gz in data/neurosynth_nimare/",
+        type=Path,
+        default=DEFAULT_DATASET_PICKLE,
+        help="Path to the converted NiMARE Dataset pickle.",
+    )
+    parser.add_argument(
+        "--source-dir",
+        type=Path,
+        default=DEFAULT_SOURCE_DIR,
+        help="Directory containing the verified pinned raw source bundle.",
     )
     parser.add_argument("--outdir", default="data/neurosynth/statmaps", help="Output directory for NIfTI maps")
     parser.add_argument("--top", type=int, default=50, help="Top N terms by study_count to generate")
@@ -22,19 +31,8 @@ def main():
     parser.add_argument("--force", action="store_true", help="Overwrite existing maps")
     args = parser.parse_args()
 
-    if args.dataset:
-        dset_path = Path(args.dataset)
-        if not dset_path.exists():
-            raise FileNotFoundError(f"Dataset not found: {dset_path}")
-    else:
-        # Auto-select between pkl and pkl.gz in the standard location
-        candidates = [
-            Path("data/neurosynth_nimare/neurosynth_dataset_v7.pkl"),
-            Path("data/neurosynth_nimare/neurosynth_dataset_v7.pkl.gz"),
-        ]
-        dset_path = next((p for p in candidates if p.exists()), None)
-        if dset_path is None:
-            raise FileNotFoundError("No Neurosynth dataset found (pkl or pkl.gz) under data/neurosynth_nimare/. Provide --dataset explicitly.")
+    dset_path = args.dataset.expanduser().resolve()
+    verify_converted_dataset(dset_path, args.source_dir)
 
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)

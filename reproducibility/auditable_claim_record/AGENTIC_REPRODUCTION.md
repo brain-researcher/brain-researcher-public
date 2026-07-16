@@ -92,8 +92,15 @@ python -m pip install \
 python scripts/data/download_neurosynth_data.py
 python scripts/data/convert_neurosynth.py
 export BR_NEUROCLAIM_CORPUS="$PWD/data/neurosynth_nimare/neurosynth_dataset_v7.pkl"
+export BR_NEUROCLAIM_SOURCE_DIR="$PWD/data/neurosynth_nimare/neurosynth_v7"
 bash scripts/mcp/start_http_local.sh
 ```
+
+The conversion creates
+`neurosynth_dataset_v7.pkl.provenance.json`. Local loaders verify that sidecar,
+the pickle checksum, and the pinned raw `source_manifest.json` before accepting
+the corpus. There is no `~/.nimare` fallback and an arbitrary pickle plus an
+unrelated valid source directory is rejected.
 
 Open terminal B anywhere inside the same clone, activate the same environment,
 return to the repository root, and run the driver. Its default URL is

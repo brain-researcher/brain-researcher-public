@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Fetch PMC Open Access full text (XML→text) via pubget.
+"""[experimental] Fetch PMC Open Access full text (XML→text) via pubget.
 
 This is a thin wrapper around `pubget run` that:
   - loads `.env` so `NCBI_API_KEY` is picked up without putting it on the CLI
@@ -14,7 +14,10 @@ from __future__ import annotations
 import argparse
 import os
 import subprocess
+import sys
 from pathlib import Path
+
+DOWNLOAD_STATUS = "experimental"
 
 
 def _repo_root() -> Path:
@@ -32,7 +35,7 @@ def _load_dotenv() -> None:
     load_dotenv(root / ".env.local", override=False)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     _load_dotenv()
 
     root = _repo_root()
@@ -40,7 +43,12 @@ def main() -> int:
     default_out = root / "data/pubget"
     default_logs = root / "logs/pubget"
 
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(
+        description=(
+            "[experimental] Fetch a live PMC OA query via pubget. "
+            "This wrapper does not create a pinned provenance manifest."
+        )
+    )
     ap.add_argument(
         "--query-file",
         type=Path,
@@ -77,7 +85,7 @@ def main() -> int:
         default=default_logs,
         help="Directory to store pubget log files.",
     )
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     if not args.query_file.exists():
         raise SystemExit(f"Query file not found: {args.query_file}")
@@ -106,14 +114,13 @@ def main() -> int:
     ]
 
     proc = subprocess.run(cmd, check=False)
-    if proc.returncode not in (0, 1):
-        raise SystemExit(proc.returncode)
-    if proc.returncode == 1:
+    if proc.returncode != 0:
         print(
-            "Note: pubget exited with status 1 (typically means download incomplete "
-            "because you limited --n-docs, or some batches failed). Re-run the same "
-            "command to resume missing batches."
+            f"pubget exited with status {proc.returncode}; the fetch is incomplete "
+            "or failed. Re-run the same command to resume missing batches.",
+            file=sys.stderr,
         )
+        return proc.returncode
     print(f"Done. Output: {args.out_dir / args.alias}")
     return 0
 

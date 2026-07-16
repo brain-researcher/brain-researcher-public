@@ -3,21 +3,18 @@
 
 The figure is intentionally schematic: it shows the true research trajectory
 as a compact evidence map rather than a generic agent loop.
+
+Run from the repository root and pass an explicit output directory:
+``python scripts/generate_fig84_true_trajectory.py --output-dir /path/to/figures``.
 """
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
-import textwrap
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch
-
-
-ROOT = Path("/data/brain_researcher/research/predictive/project")
-OUT_PNG = ROOT / "figures" / "fig02_true_autoresearch_trajectory.png"
-OUT_PDF = ROOT / "figures" / "fig02_true_autoresearch_trajectory.pdf"
-
 
 COLORS = {
     "blue": "#1f77b4",
@@ -38,7 +35,7 @@ COLORS = {
 
 
 def add_track(ax, points, *, color, lw=4.0, zorder=1, dashed=False):
-    xs, ys = zip(*points)
+    xs, ys = zip(*points, strict=True)
     ax.plot(
         xs,
         ys,
@@ -176,6 +173,18 @@ def add_pill(ax, x, y, text, *, width=1.18):
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        help="Directory in which to write the PNG and PDF figure files.",
+    )
+    args = parser.parse_args()
+    output_dir = args.output_dir.expanduser().resolve()
+    output_png = output_dir / "fig02_true_autoresearch_trajectory.png"
+    output_pdf = output_dir / "fig02_true_autoresearch_trajectory.pdf"
+
     plt.rcParams.update(
         {
             "font.family": "DejaVu Sans",
@@ -473,11 +482,11 @@ def main() -> None:
         ax.plot([x, x], [axis_y - 0.04, axis_y + 0.04], color="#999999", lw=1.0)
         ax.text(x, axis_y - 0.09, label, ha="center", va="top", fontsize=7.3, color="#555555")
 
-    OUT_PNG.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT_PNG, dpi=300, bbox_inches="tight", pad_inches=0.05)
-    fig.savefig(OUT_PDF, bbox_inches="tight", pad_inches=0.05)
-    print(OUT_PNG)
-    print(OUT_PDF)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_png, dpi=300, bbox_inches="tight", pad_inches=0.05)
+    fig.savefig(output_pdf, bbox_inches="tight", pad_inches=0.05)
+    print(output_png)
+    print(output_pdf)
 
 
 if __name__ == "__main__":

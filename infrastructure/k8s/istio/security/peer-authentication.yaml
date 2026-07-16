@@ -79,8 +79,6 @@ spec:
   portLevelMtls:
     3000:  # Main UI port
       mode: STRICT
-    3000:  # Development port
-      mode: PERMISSIVE
     9092:  # Metrics port
       mode: PERMISSIVE
 

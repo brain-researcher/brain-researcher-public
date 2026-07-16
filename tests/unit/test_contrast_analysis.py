@@ -99,11 +99,16 @@ class TestContrastAnalyzer(unittest.TestCase):
         for cluster in clusters:
             self.assertIn("index", cluster)
             self.assertIn("size", cluster)
+            self.assertIn("sign", cluster)
             self.assertIn("peak_value", cluster)
             self.assertIn("peak_coords", cluster)
             self.assertIn("center_of_mass", cluster)
             self.assertEqual(cluster["size"], 8)  # Both clusters are 8 voxels
             self.assertGreaterEqual(abs(cluster["peak_value"]), 6.0)
+
+        self.assertEqual(
+            {cluster["sign"] for cluster in clusters}, {"positive", "negative"}
+        )
 
         # Test with high threshold - should exclude all clusters
         clusters_high = self.analyzer._get_significant_clusters(
@@ -116,6 +121,26 @@ class TestContrastAnalyzer(unittest.TestCase):
             z_map_path, threshold=3.0, min_size=1
         )
         self.assertEqual(len(clusters_small), 3)
+
+    def test_adjacent_opposite_signs_are_separate_components(self):
+        """26-connectivity must not merge adjacent positive and negative voxels."""
+        data = np.zeros((6, 6, 6), dtype=float)
+        data[1:3, 1:3, 1:3] = 5.0
+        data[3:5, 1:3, 1:3] = -6.0
+        z_map_path = "test_reports/opposite_signs.nii.gz"
+        nib.save(nib.Nifti1Image(data, np.eye(4)), z_map_path)
+
+        clusters = self.analyzer._get_significant_clusters(
+            z_map_path, threshold=3.0, min_size=5
+        )
+
+        self.assertEqual(len(clusters), 2)
+        self.assertEqual([cluster["index"] for cluster in clusters], [1, 2])
+        self.assertEqual(
+            [cluster["sign"] for cluster in clusters], ["negative", "positive"]
+        )
+        self.assertEqual([cluster["size"] for cluster in clusters], [8, 8])
+        self.assertEqual([cluster["peak_value"] for cluster in clusters], [-6.0, 5.0])
 
     def tearDown(self):
         """Clean up test files"""

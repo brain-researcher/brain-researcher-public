@@ -21,44 +21,45 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'br-kg')\gexec
 -- Connect to main database
 \c brain_researcher;
 
--- Create application users with appropriate permissions
+-- Create permission roles without login credentials. Operators may grant LOGIN
+-- and set credentials through their private secret-management workflow.
 DO $$
 BEGIN
     -- Read-only user for analytics
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'readonly') THEN
-        CREATE ROLE readonly WITH LOGIN PASSWORD 'readonly_pass_change_me';
+        CREATE ROLE readonly NOLOGIN;
     END IF;
 
     -- Analytics user with more permissions
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'analytics') THEN
-        CREATE ROLE analytics WITH LOGIN PASSWORD 'analytics_pass_change_me';
+        CREATE ROLE analytics NOLOGIN;
     END IF;
 
     -- Batch processing user
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'batch_user') THEN
-        CREATE ROLE batch_user WITH LOGIN PASSWORD 'batch_pass_change_me';
+        CREATE ROLE batch_user NOLOGIN;
     END IF;
 
     -- Service-specific users
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'orchestrator_user') THEN
-        CREATE ROLE orchestrator_user WITH LOGIN PASSWORD 'orchestrator_pass_change_me';
+        CREATE ROLE orchestrator_user NOLOGIN;
     END IF;
 
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'br_kg_user') THEN
-        CREATE ROLE br_kg_user WITH LOGIN PASSWORD 'br_kg_pass_change_me';
+        CREATE ROLE br_kg_user NOLOGIN;
     END IF;
 
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'agent_user') THEN
-        CREATE ROLE agent_user WITH LOGIN PASSWORD 'agent_pass_change_me';
+        CREATE ROLE agent_user NOLOGIN;
     END IF;
 
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'webui_user') THEN
-        CREATE ROLE webui_user WITH LOGIN PASSWORD 'webui_pass_change_me';
+        CREATE ROLE webui_user NOLOGIN;
     END IF;
 
     -- Monitoring user
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'grafana') THEN
-        CREATE ROLE grafana WITH LOGIN PASSWORD 'grafana_pass_change_me';
+        CREATE ROLE grafana NOLOGIN;
     END IF;
 END
 $$;
@@ -460,7 +461,7 @@ BEGIN
     RAISE NOTICE 'Users created: readonly, analytics, batch_user, service users';
     RAISE NOTICE 'Remember to:';
     RAISE NOTICE '1. Change default passwords in production';
-    RAISE NOTICE '2. Configure PgBouncer userlist.txt with proper password hashes';
+    RAISE NOTICE '2. Configure a private PgBouncer auth file and role credentials';
     RAISE NOTICE '3. Set up monitoring and alerting';
     RAISE NOTICE '4. Review and adjust PostgreSQL configuration';
 END $$;

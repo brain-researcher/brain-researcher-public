@@ -102,6 +102,7 @@ data:
         }
     }
 
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -115,7 +116,7 @@ data:
     # Orchestrator Service Configuration
     import os
 
-class Config:
+    class Config:
         # Server configuration
         HOST = "0.0.0.0"
         PORT = 3001
@@ -129,8 +130,8 @@ class Config:
         # Redis configuration
         REDIS_URL = os.getenv("REDIS_URL", "redis://redis-service:6379/0")
 
-        # Database configuration
-        POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql://brain_researcher:password@postgres-service:5432/brain_researcher")
+        # Required at runtime; the public manifest intentionally has no default.
+        POSTGRES_URL = os.environ["POSTGRES_URL"]
 
         # CORS configuration
         CORS_ORIGINS = [

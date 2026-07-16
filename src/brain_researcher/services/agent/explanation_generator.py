@@ -222,15 +222,23 @@ class ExplanationGenerator:
         """Generate adaptive explanation based on context"""
 
         expertise = context.user_expertise or context.expertise_level
+        descriptive_only = self._is_descriptive_component_result(analysis_result)
 
         # Determine optimal explanation level
         optimal_level = self._determine_explanation_level(context)
 
         # Extract key information from results
-        key_info = self._extract_key_information(analysis_result)
+        key_info = (
+            {} if descriptive_only else self._extract_key_information(analysis_result)
+        )
 
         # Calculate confidence
-        confidence_score = self._calculate_confidence(analysis_result)
+        # ExplanationResult keeps a numeric legacy field. For descriptive-only
+        # component inventories, 0.0 is a sentinel paired with
+        # metadata["confidence_applicable"] = False, not an inferential score.
+        confidence_score = (
+            0.0 if descriptive_only else self._calculate_confidence(analysis_result)
+        )
 
         # Generate appropriate explanation
         if optimal_level == ExplanationLevel.TECHNICAL:
@@ -257,7 +265,11 @@ class ExplanationGenerator:
             structured = self.generate_structured_explanation(analysis_result, context)
 
         # Add citations
-        citations = self._generate_citations(analysis_result, context)
+        citations = (
+            []
+            if descriptive_only
+            else self._generate_citations(analysis_result, context)
+        )
 
         complexity_score = self._estimate_complexity(text, expertise)
 
@@ -271,7 +283,13 @@ class ExplanationGenerator:
             metadata={
                 "analysis_type": analysis_result.get("analysis_type"),
                 "user_expertise": expertise.value,
-                "key_findings_count": len(key_info.get("significant_findings", [])),
+                "key_findings_count": (
+                    0
+                    if descriptive_only
+                    else len(key_info.get("significant_findings", []))
+                ),
+                "descriptive_only": descriptive_only,
+                "confidence_applicable": not descriptive_only,
             },
             complexity_score=complexity_score,
         )
@@ -280,6 +298,9 @@ class ExplanationGenerator:
         self, analysis_result: dict[str, Any], context: ExplanationContext
     ) -> str:
         """Generate technical explanation with statistical details"""
+        if self._is_descriptive_component_result(analysis_result):
+            return self._descriptive_component_text(analysis_result, layman=False)
+
         analysis_type = str(analysis_result.get("analysis_type", "")).lower()
         method = (
             analysis_result.get("method")
@@ -327,6 +348,9 @@ class ExplanationGenerator:
         self, analysis_result: dict[str, Any], context: ExplanationContext
     ) -> str:
         """Generate layman explanation with simplified terminology"""
+        if self._is_descriptive_component_result(analysis_result):
+            return self._descriptive_component_text(analysis_result, layman=True)
+
         n_subjects = analysis_result.get("n_subjects", "several")
         clusters = analysis_result.get("significant_clusters", [])
         region = "a brain region"
@@ -356,6 +380,8 @@ class ExplanationGenerator:
         self, analysis_result: dict[str, Any], context: ExplanationContext
     ) -> dict[str, str]:
         """Generate structured explanation with organized sections"""
+        if self._is_descriptive_component_result(analysis_result):
+            return self._descriptive_component_sections(analysis_result, context)
 
         summary = (
             self._create_summary_section(analysis_result, context)
@@ -411,6 +437,8 @@ class ExplanationGenerator:
         self, analysis_result: dict[str, Any], context: ExplanationContext
     ) -> str:
         """Generate brief summary explanation"""
+        if self._is_descriptive_component_result(analysis_result):
+            return self._descriptive_component_summary(analysis_result)
 
         key_finding = self._extract_key_finding(analysis_result)
         confidence = self._calculate_confidence(analysis_result)
@@ -531,6 +559,11 @@ class ExplanationGenerator:
         context: ExplanationContext,
         confidence_score: float,
     ) -> str:
+        # Descriptive component summaries carry no inferential or functional basis.
+        # Do not append generic statistics, confidence, or implication language.
+        if self._is_descriptive_component_result(analysis_result):
+            return text
+
         parts = [text]
 
         expertise = context.user_expertise or context.expertise_level
@@ -629,6 +662,124 @@ class ExplanationGenerator:
             )
 
         return " ".join([p for p in parts if p])
+
+    @staticmethod
+    def _is_descriptive_component_result(analysis_result: dict[str, Any]) -> bool:
+        """Treat key presence as the boundary, regardless of payload shape."""
+        return "suprathreshold_clusters" in analysis_result
+
+    def _descriptive_component_text(
+        self,
+        analysis_result: dict[str, Any],
+        *,
+        layman: bool,
+    ) -> str:
+        settings = self._descriptive_component_settings(analysis_result)
+        if layman:
+            return (
+                f"We used a chosen z-value cutoff of |z| >= {settings['threshold']} "
+                "and kept contiguous groups containing at least "
+                f"{settings['minimum_size']} voxels. The map contained "
+                f"{settings['count']} such components, with positive and negative "
+                "groups kept separate. This is a descriptive picture summary only. "
+                "No inferential test was performed, and interpretation beyond "
+                "component geometry is outside its scope."
+            )
+        return (
+            "The supplied z-map was summarized descriptively using "
+            f"|z| >= {settings['threshold']} and a minimum connected-component "
+            f"size of {settings['minimum_size']} voxels. This yielded "
+            f"{settings['count']} {settings['connectivity']}-connected components; "
+            "positive and negative values were labeled separately. No inferential "
+            "test was performed, and no multiple-comparison correction was applied. "
+            "The output is limited to image-component locations, sizes, signs, "
+            "and peak z-values and does not establish an effect or functional "
+            "interpretation."
+        )
+
+    def _descriptive_component_summary(
+        self, analysis_result: dict[str, Any]
+    ) -> str:
+        settings = self._descriptive_component_settings(analysis_result)
+        return (
+            f"Descriptive component inventory: {settings['count']} "
+            f"{settings['connectivity']}-connected components met the chosen "
+            f"|z| >= {settings['threshold']} cutoff and minimum size of "
+            f"{settings['minimum_size']} voxels; no inferential test was performed."
+        )
+
+    def _descriptive_component_sections(
+        self,
+        analysis_result: dict[str, Any],
+        context: ExplanationContext,
+    ) -> dict[str, str]:
+        settings = self._descriptive_component_settings(analysis_result)
+        sections = {
+            "summary": self._descriptive_component_summary(analysis_result),
+            "methodology": (
+                "Voxels were grouped by sign using "
+                f"{settings['connectivity']}-connectivity after applying the chosen "
+                f"|z| >= {settings['threshold']} cutoff and minimum component size "
+                f"of {settings['minimum_size']} voxels."
+            ),
+            "findings": (
+                "The component inventory records locations, sizes, signs, and peak "
+                "z-values only."
+            ),
+            "implications": (
+                "Interpretation beyond image-component geometry is outside the scope "
+                "of this output."
+            ),
+            "confidence": (
+                "Not applicable to this descriptive inventory; no inferential test "
+                "was performed."
+            ),
+            "limitations": (
+                "The inventory depends on the chosen cutoff, minimum size, and "
+                "connectivity settings."
+            ),
+            "next_steps": (
+                "No downstream conclusion is generated from this component inventory."
+            ),
+        }
+        if context.user_expertise in {
+            ExpertiseLevel.EXPERT,
+            ExpertiseLevel.RESEARCHER,
+        }:
+            sections["technical_details"] = (
+                f"Component settings: |z| cutoff {settings['threshold']}; minimum "
+                f"size {settings['minimum_size']} voxels; "
+                f"{settings['connectivity']}-connectivity; signs labeled separately."
+            )
+        return sections
+
+    @staticmethod
+    def _descriptive_component_settings(
+        analysis_result: dict[str, Any],
+    ) -> dict[str, Any]:
+        metadata = analysis_result.get("metadata", {})
+        if not isinstance(metadata, dict):
+            metadata = {}
+        clusters = analysis_result.get("suprathreshold_clusters", [])
+        if not isinstance(clusters, list):
+            clusters = []
+
+        threshold = metadata.get(
+            "cluster_threshold", analysis_result.get("cluster_threshold", 3.0)
+        )
+        minimum_size = metadata.get(
+            "minimum_cluster_size",
+            analysis_result.get("minimum_cluster_size", 5),
+        )
+        connectivity = metadata.get(
+            "cluster_connectivity", analysis_result.get("cluster_connectivity", 26)
+        )
+        return {
+            "threshold": threshold,
+            "minimum_size": minimum_size,
+            "connectivity": connectivity,
+            "count": len(clusters),
+        }
 
     def _estimate_complexity(self, text: str, expertise: ExpertiseLevel) -> float:
         word_count = len(text.split())

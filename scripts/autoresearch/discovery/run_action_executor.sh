@@ -22,7 +22,7 @@ set -euo pipefail
 # Bounds: MAX_EXECUTIONS, MAX_HOURS (mirror watchdog defaults).
 #
 # Env:
-#   DISCOVERY_PROJECT_ROOT  canonical project root (default: /data/.../project)
+#   DISCOVERY_PROJECT_ROOT  canonical external project root (required)
 #   BRAIN_RESEARCHER_ROOT   repo root for runtime imports
 #   CONDA_SH / CONDA_ENV    runtime activation (must include torch + langchain_core)
 #   WATCHDOG_STATE_ROOT     where decision_cycle_*.json live
@@ -42,10 +42,11 @@ set -euo pipefail
 #                           closed_loop_checkpoint.json
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-: "${DISCOVERY_PROJECT_ROOT:=/data/brain_researcher/research/discovery/project}"
-: "${BRAIN_RESEARCHER_ROOT:=/home/ubuntu/brain_researcher}"
-: "${CONDA_SH:=/home/ubuntu/miniconda3/etc/profile.d/conda.sh}"
+: "${DISCOVERY_PROJECT_ROOT:?Set DISCOVERY_PROJECT_ROOT to the external discovery project}"
+: "${BRAIN_RESEARCHER_ROOT:=${REPO_ROOT}}"
+: "${CONDA_SH:?Set CONDA_SH to the conda activation script}"
 : "${CONDA_ENV:=tribe}"
 : "${WATCHDOG_STATE_ROOT:=${DISCOVERY_PROJECT_ROOT}/artifacts/autoresearch/discovery_live_watchdog}"
 : "${EXECUTOR_STATE_ROOT:=${DISCOVERY_PROJECT_ROOT}/artifacts/autoresearch/discovery_live_executor}"

@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+DOWNLOAD_STATUS="experimental"
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  echo "[experimental] Download one DMCC subject from the current OpenNeuro S3 namespace."
+  echo "Usage: $0 <subject_id> <target_root>"
+  echo "The output is count-checked but has no pinned tag, checksums, license, or manifest."
+  exit 0
+fi
+
 if [[ $# -lt 2 ]]; then
-  echo "Usage: $0 <subject_id> <target_root>" >&2
+  echo "[experimental] Usage: $0 <subject_id> <target_root>" >&2
   exit 2
 fi
 

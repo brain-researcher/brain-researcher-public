@@ -2,7 +2,9 @@ name: cognitive_encoding_model
 description: Workflow to build an encoding model from contrast-level cognitive vectors to brain activation vectors.
 
 global_inputs:
-  project_root: "/home/ubuntu/mri_assistant" # Example, should be dynamically set or relative
+  # Resolve this relative path from the repository root, or override it explicitly
+  # in the caller's validated workspace contract.
+  project_root: "."
   datasets:
     - id: "ds000001"
       url: "https://github.com/OpenNeuroDatasets/ds000001.git"
@@ -75,7 +77,7 @@ steps:
       parcel_labels: "{{ global_inputs.project_root }}/data/processed/parcel_labels.json"
 
   - name: train_encoding_model
-    description: Train Ridge Regression model (X: cognitive vectors, Y: brain activation vectors).
+    description: "Train Ridge Regression model (X: cognitive vectors, Y: brain activation vectors)."
     tool: train_ridge_model
     inputs:
       cognitive_vectors_X: "{{ steps.generate_cognitive_vectors.outputs.cognitive_feature_matrix_X }}"
@@ -116,5 +118,4 @@ steps:
     outputs:
       predicted_brain_maps_nifti: "{{ global_inputs.project_root }}/results/predicted_maps/"
       visualization_images: "{{ global_inputs.project_root }}/results/visualizations/"
-
 

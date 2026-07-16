@@ -24,40 +24,55 @@ class ContrastAnalyzer:
         threshold: float = 3.0,
         min_size: int = 10,
     ) -> list[dict[str, Any]]:
-        """Return connected suprathreshold clusters from a z-map."""
+        """Return descriptive, sign-separated suprathreshold components."""
         img = nib.load(str(z_map_path))
         data = np.asarray(img.get_fdata())
-        mask = np.abs(data) >= float(threshold)
-        if not np.any(mask):
+        threshold = float(threshold)
+        positive_mask = data >= threshold
+        negative_mask = data <= -threshold
+        if not np.any(positive_mask) and not np.any(negative_mask):
             return []
 
         structure = np.ones((3, 3, 3), dtype=int)
-        labeled, n_labels = ndimage.label(mask, structure=structure)
         clusters: list[dict[str, Any]] = []
 
-        for label_idx in range(1, n_labels + 1):
-            cluster_mask = labeled == label_idx
-            size = int(cluster_mask.sum())
-            if size < int(min_size):
-                continue
+        # Label each sign independently so face-, edge-, or corner-adjacent values
+        # with opposite signs cannot be merged into one 26-connected component.
+        for sign, mask in (("positive", positive_mask), ("negative", negative_mask)):
+            labeled, n_labels = ndimage.label(mask, structure=structure)
+            for label_idx in range(1, n_labels + 1):
+                cluster_mask = labeled == label_idx
+                size = int(cluster_mask.sum())
+                if size < int(min_size):
+                    continue
 
-            cluster_values = data[cluster_mask]
-            flat_cluster = np.argwhere(cluster_mask)
-            peak_offset = int(np.argmax(np.abs(cluster_values)))
-            peak_coords = flat_cluster[peak_offset].tolist()
-            center = ndimage.center_of_mass(cluster_mask.astype(float))
+                cluster_values = data[cluster_mask]
+                flat_cluster = np.argwhere(cluster_mask)
+                peak_offset = int(np.argmax(np.abs(cluster_values)))
+                peak_coords = flat_cluster[peak_offset].tolist()
+                center = ndimage.center_of_mass(cluster_mask.astype(float))
 
-            clusters.append(
-                {
-                    "index": len(clusters) + 1,
-                    "size": size,
-                    "peak_value": float(cluster_values[peak_offset]),
-                    "peak_coords": [int(v) for v in peak_coords],
-                    "center_of_mass": [float(v) for v in center],
-                }
+                clusters.append(
+                    {
+                        "size": size,
+                        "sign": sign,
+                        "peak_value": float(cluster_values[peak_offset]),
+                        "peak_coords": [int(v) for v in peak_coords],
+                        "center_of_mass": [float(v) for v in center],
+                    }
+                )
+
+        sign_order = {"positive": 0, "negative": 1}
+        clusters.sort(
+            key=lambda item: (
+                -abs(item["peak_value"]),
+                sign_order[item["sign"]],
+                tuple(item["peak_coords"]),
             )
-
-        return sorted(clusters, key=lambda item: abs(item["peak_value"]), reverse=True)
+        )
+        for index, cluster in enumerate(clusters, start=1):
+            cluster["index"] = index
+        return clusters
 
     def _render_plot(
         self, data: np.ndarray, contrast_name: str, stem: str, slices: tuple[int, int]

@@ -96,6 +96,7 @@ For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the
 | Review layer | `src/brain_researcher/services/review/`, `configs/review_rules.yaml`, `docs/appendices/07_appendix_G_review.md` | Scientific/code review rules, review bundles, and documented review boundaries. |
 | Shared public Python namespace | `src/brain_researcher/br/` | Stable imports such as `br.retry`, `br.provenance`, `br.artifact`, `br.http`, and `br.redaction`. |
 | Reproducibility | `reproducibility/` | Public-safe packs and runnable tutorials for inspecting or generating auditable records. |
+| Dataset downloaders | [`scripts/DOWNLOADERS.md`](scripts/DOWNLOADERS.md) | Exact inventory and status boundaries for supported-public, private-input, experimental, and historical data acquisition scripts. |
 | Worked claim-record tutorial | `reproducibility/auditable_claim_record/` | Runnable tutorial that generates claim-card JSON. It is not a manifest-backed reproducibility pack. |
 | Autoresearch scripts | [`scripts/autoresearch/README.md`](scripts/autoresearch/README.md) | Status and input boundaries for runnable helpers, experimental workers, and historical campaign scripts. |
 | Local deployment and infrastructure status | [`DEPLOYMENT.md`](DEPLOYMENT.md) and [`infrastructure/deployment/README.md`](infrastructure/deployment/README.md) | Supported local Compose instructions plus the canonical status matrix for experimental and historical assets. |
@@ -284,8 +285,9 @@ helm template brain-researcher infrastructure/k8s/helm/brain-researcher/ \
   -f /tmp/brain-researcher-values.yaml > /tmp/brain-researcher-rendered.yaml
 grep -E '^[[:space:]]*image:' /tmp/brain-researcher-rendered.yaml | sort -u
 
-# The raw manifests are templates, not apply-ready deployment files.
-grep -RInE 'your-|<[^>]+>|bcrypt-hash' infrastructure/k8s/manifests/
+# Inventory the empty Secret key contracts in the raw manifest templates.
+grep -RInE '^[[:space:]]*kind:[[:space:]]*Secret|^[[:space:]]*(data|stringData):' \
+  infrastructure/k8s/manifests/
 ```
 
 Do **not** apply the current Helm output to a cluster. Although `helm template`
@@ -296,8 +298,9 @@ keys. Rendering validates the static contract only; it does not prove that the
 workloads can be pulled, started, secured, or kept healthy.
 
 Do **not** run `kubectl apply -f infrastructure/k8s/manifests/` on the public
-directory as shipped. It contains placeholder credentials, TLS material, and
-basic-auth data, and some resources require cluster CRDs such as cert-manager.
+directory as shipped. Its `Secret` resources contain key contracts with empty
+values, including TLS and basic-auth inputs, and some resources require cluster
+CRDs such as cert-manager.
 If you maintain a raw-manifest deployment, copy the templates into a private
 deployment workspace, replace secrets through your secret-management workflow,
 verify the required CRDs, review a server-side dry run or diff against the

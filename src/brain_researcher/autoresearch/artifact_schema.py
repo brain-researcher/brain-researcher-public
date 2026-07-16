@@ -9,7 +9,10 @@ from typing import Literal
 
 LineId = Literal["predictive", "discovery"]
 
-DEFAULT_DATA_ROOT = Path("/data/brain_researcher")
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_DATA_ROOT = Path(
+    os.getenv("BR_AUTORESEARCH_DATA_ROOT", str(_REPO_ROOT / "data" / "autoresearch"))
+)
 RESEARCH_ROOT_NAME = "research"
 
 
@@ -116,13 +119,9 @@ def legacy_line_root(line_id: LineId, *, data_root: Path | str | None = None) ->
 
 def remote_alias_line_roots(line_id: LineId) -> tuple[Path, ...]:
     spec = line_spec(line_id)
-    # Default: /home/ubuntu (generic cloud-VM dev convention).
-    # Override with BR_REMOTE_ALIAS_ROOTS=path1:path2:... for additional roots.
+    # Remote aliases are migration inputs and must be configured explicitly.
     alias_bases_env = os.environ.get("BR_REMOTE_ALIAS_ROOTS", "").strip()
-    if alias_bases_env:
-        alias_bases = [b.strip() for b in alias_bases_env.split(":") if b.strip()]
-    else:
-        alias_bases = ["/home/ubuntu"]
+    alias_bases = [b.strip() for b in alias_bases_env.split(":") if b.strip()]
     roots: list[Path] = []
     for base in alias_bases:
         base_path = Path(base)

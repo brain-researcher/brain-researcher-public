@@ -195,7 +195,7 @@ Thumbs.db
 /docs/BR_high_dim_SPD_matrices/
 /src/brain_researcher/services/orchestrator/cache/
 /.pytest_tmp/
-/pytest-of-zijiaochen
+/pytest-of-*/
 /tmp-loop/
 /agent_gunicorn.out
 /.test_logs

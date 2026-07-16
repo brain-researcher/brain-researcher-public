@@ -1,0 +1,6 @@
+; PgBouncer auth-file shape only. Do not place credential hashes in this file.
+; Generate a private auth file outside the repository, restrict it to mode 600,
+; and set PGBOUNCER_AUTH_FILE to its absolute path before using the Swarm overlay.
+;
+; PostgreSQL md5 example shape (not a usable credential):
+; "username" "md5<md5-of-password-plus-username>"

@@ -32,7 +32,7 @@ class NiclipEngineConfig:
     use_gpu: bool | None = None
 
     DEFAULT_DATA_PATH: str = field(
-        default="/data/ECoG-foundation-model/mnndl_temp/niclip",
+        default="/app/data/niclip",
         repr=False,
     )
 

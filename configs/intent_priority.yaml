@@ -79,8 +79,6 @@ aliases:
   registration_nonlinear: nonlinear_registration
   nonlinear_registration_to_mni: nonlinear_registration
   registration_to_template: registration_to_mni
-  registration_linear_mri: linear_registration
-  registration_nonlinear_mri: nonlinear_registration
 
   # Connectivity
   resting_state_connectivity: connectivity_analysis

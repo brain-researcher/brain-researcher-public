@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from brain_researcher.services.tools.neurosynth_tools import (
@@ -13,12 +11,14 @@ from brain_researcher.services.tools.neurosynth_tools import (
 
 
 def test_neurosynth_meta_analysis_tool():
-    """Test Neurosynth meta-analysis tool."""
+    """The compatibility-named tool discloses descriptive semantics."""
     tool = NeuroSynthMetaAnalysisTool()
 
     # Check tool properties
     assert tool.get_tool_name() == "neurosynth_meta_analysis"
     assert "Neurosynth" in tool.get_tool_description()
+    assert "descriptive" in tool.get_tool_description()
+    assert "no z-scores" in tool.get_tool_description()
     assert tool.get_args_schema() is not None
 
     # Test with a simple keyword
@@ -32,8 +32,8 @@ def test_neurosynth_meta_analysis_tool():
 
         if result.status == "success":
             assert "data" in result.__dict__
-            data = result.data
-            assert "keyword" in data
+            assert result.data is not None
+            assert "keyword" in result.data
             # Other fields may be empty if term not found
         else:
             # Dataset might not be available or term not found
@@ -50,7 +50,7 @@ def test_neurosynth_term_search_tool():
     tool = NeuroSynthTermSearchTool()
 
     # Check tool properties
-    assert tool.get_tool_name() == "neurosynth_term_search"
+    assert tool.get_tool_name() == "neurosynth_search_terms"
     assert tool.get_args_schema() is not None
 
     # Test term search functionality
@@ -66,7 +66,7 @@ def test_neurosynth_term_search_tool():
 
         if result.status == "success":
             assert "data" in result.__dict__
-            data = result.data
+            assert result.data is not None
             # Should return matching terms or empty list if not found
         else:
             assert result.error is not None
@@ -81,8 +81,8 @@ def test_neurosynth_integration_import():
     """Test that neurosynth_integration module can be imported."""
     try:
         from brain_researcher.core.analysis.neurosynth_integration import (
-            get_neurosynth_mapping,
             _get_dataset_path,
+            get_neurosynth_mapping,
         )
 
         # Check dataset path function
@@ -123,7 +123,9 @@ def test_neurosynth_real_query():
             assert "error" in result
         else:
             # Success - check structure
-            assert "term_used" in result or "activation_maps" in result
+            assert result["analysis_semantics"] == "descriptive_coordinate_density"
+            assert result["inferential_statistics"] is False
+            assert "coordinate_density_maps" in result
 
     except FileNotFoundError:
         pytest.skip("Neurosynth dataset not available")

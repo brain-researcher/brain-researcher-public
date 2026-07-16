@@ -113,6 +113,11 @@ def test_demo_persists_commitment_before_querying_evidence(
     corpus = tmp_path / "clone" / "data" / "corpus.pkl"
     corpus.parent.mkdir(parents=True)
     corpus.write_bytes(b"public corpus")
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source_manifest.json").write_text("{}", encoding="utf-8")
+    provenance_path = corpus.with_name(corpus.name + ".provenance.json")
+    provenance_path.write_text("{}", encoding="utf-8")
     output_dir = tmp_path / "output"
     engine = EvidenceEngineRefV1(
         name="nimare", version="0.6.1", adapter="NimareBackend"
@@ -124,6 +129,14 @@ def test_demo_persists_commitment_before_querying_evidence(
 
     monkeypatch.setattr(demo, "_evidence_engine_ref", lambda *args, **kwargs: engine)
     monkeypatch.setattr(demo, "_rubric_refs", lambda: refs)
+    monkeypatch.setattr(
+        demo,
+        "verify_converted_dataset",
+        lambda *args, **kwargs: {
+            "source_snapshot": "version-7",
+            "source_commit": "test-source-commit",
+        },
+    )
 
     def fake_evidence(**kwargs):
         sealed = output_dir / "commitment_card.json"
@@ -146,6 +159,7 @@ def test_demo_persists_commitment_before_querying_evidence(
     monkeypatch.setattr(demo, "run_neurolang_evidence", fake_evidence)
     bundle = demo.run_demo(
         corpus_path=corpus,
+        source_dir=source_dir,
         output_dir=output_dir,
         venv_python=None,
         backend_name="nimare",
@@ -158,3 +172,6 @@ def test_demo_persists_commitment_before_querying_evidence(
     }
     assert bundle["corpus_ref"]["kind"] == "external_basename"
     assert not Path(bundle["corpus_ref"]["path"]).is_absolute()
+    assert bundle["corpus_ref"]["verified_source"]["source_commit"] == (
+        "test-source-commit"
+    )

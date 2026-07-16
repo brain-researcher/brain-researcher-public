@@ -55,4 +55,4 @@ datasources:
       postgresVersion: 1400
       timescaledb: false
     secureJsonData:
-      password: 'grafana_pass_change_me'
+      password: "$__env{POSTGRES_PASSWORD}"

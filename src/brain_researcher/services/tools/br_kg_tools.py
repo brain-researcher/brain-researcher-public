@@ -967,7 +967,6 @@ class CoordinateToConceptTool(NeuroToolWrapper):
             ],
             "default_data_candidates": [
                 "/data/niclip",
-                "/data/ECoG-foundation-model/mnndl_temp/niclip",
                 repo_data_default,
             ],
         }

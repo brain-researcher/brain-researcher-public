@@ -212,7 +212,7 @@ services:
     environment:
       - POSTGRES_DB=brain_researcher
       - POSTGRES_USER=brain_researcher
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-brain_researcher_pass}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --locale=C
     restart: unless-stopped
     deploy:
@@ -259,7 +259,7 @@ services:
       - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./infrastructure/monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?set GRAFANA_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     restart: unless-stopped

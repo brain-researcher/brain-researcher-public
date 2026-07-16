@@ -1,14 +1,9 @@
-# CC Stack overlay — extends docker-compose.yml with the two services needed
-# for the Claude Code neuroimaging trilogy (NeuroExplore → NeuroPlan → NeuroExecute).
+# EXPERIMENTAL / NOT RUNNABLE FROM A PUBLIC CLONE.
 #
-# Usage:
-#   docker compose -f docker-compose.yml -f docker-compose.cc-stack.yml up -d
-#
-# Then start CC pointing at the stack:
-#   ANTHROPIC_BASE_URL=http://localhost:4001 \   ← stream-proxy (fixes Gemini SSE)
-#   ANTHROPIC_API_KEY=sk-br-local \
-#   BR_MCP_URL=http://localhost:7000/mcp \
-#   claude
+# This overlay references ./br-stream-proxy, whose source and build context are
+# not shipped in this repository. It is retained as an inspectable integration
+# sketch, not as a supported startup command. Do not run `docker compose up`
+# with this file until that component is published or replaced.
 #
 # To switch model provider, set in .env (or override on the docker run line):
 #   Gemini (default): BR_PRIMARY_MODEL=gemini/gemini-3-pro-preview  BR_MODEL_API_KEY=<gemini key>
@@ -27,10 +22,8 @@ services:
       context: ./br-stream-proxy
     image: br-stream-proxy:local
     container_name: br-stream-proxy
-    networks:
-      - brain-researcher
     ports:
-      - "4001:4001"
+      - "${BIND_ADDRESS:-127.0.0.1}:4001:4001"
     environment:
       - LITELLM_URL=http://br-litellm:4000
     depends_on:
@@ -44,14 +37,12 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     container_name: br-litellm
-    networks:
-      - brain-researcher
     ports:
-      - "4000:4000"
+      - "${BIND_ADDRESS:-127.0.0.1}:4000:4000"
     volumes:
       - ./litellm_config.yaml:/app/config.yaml:ro
     environment:
-      - LITELLM_MASTER_KEY=sk-br-local
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY}
       # ── Model provider switch ──────────────────────────────────────────────
       # Change these three lines to swap between Gemini / Claude / OpenAI.
       # Gemini (default):
@@ -61,7 +52,7 @@ services:
       - BR_MODEL_API_BASE=${BR_MODEL_API_BASE:-}   # empty = use provider default
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; r=urllib.request.urlopen(urllib.request.Request('http://localhost:4000/health/liveliness',headers={'Authorization':'Bearer sk-br-local'}),timeout=4); sys.exit(0 if r.status==200 else 1)\""]
+      test: ["CMD-SHELL", "python -c \"import os,urllib.request,sys; key=os.environ['LITELLM_MASTER_KEY']; r=urllib.request.urlopen(urllib.request.Request('http://localhost:4000/health/liveliness',headers={'Authorization':'Bearer '+key}),timeout=4); sys.exit(0 if r.status==200 else 1)\""]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -74,15 +65,13 @@ services:
   br-mcp:
     image: brain-researcher/mcp:latest
     container_name: br-mcp
-    networks:
-      - brain-researcher
     depends_on:
       neo4j:
         condition: service_healthy
       br-kg:
         condition: service_healthy
     ports:
-      - "7000:7000"
+      - "${BIND_ADDRESS:-127.0.0.1}:7000:7000"
     volumes:
       - ./data:/app/data
       - ./configs:/app/configs:ro
@@ -120,7 +109,3 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
-
-networks:
-  brain-researcher:
-    external: true

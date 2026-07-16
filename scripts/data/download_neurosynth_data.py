@@ -1,81 +1,62 @@
 #!/usr/bin/env python3.11
-"""Download and verify the pinned public Neurosynth v0.7 source files."""
+"""[supported-public] Download and verify pinned Neurosynth version-7 files."""
 
 from __future__ import annotations
 
 import argparse
-import hashlib
+import json
 import os
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import requests
 
-SOURCE_COMMIT = "209c33cd009d0b069398a802198b41b9c488b9b7"
-BASE_URL = (
-    "https://raw.githubusercontent.com/neurosynth/neurosynth-data/" f"{SOURCE_COMMIT}/"
-)
-REPO_ROOT = Path(__file__).resolve().parents[2]
-TARGET_DIR = REPO_ROOT / "data" / "neurosynth_nimare" / "neurosynth_v7"
-
-
-@dataclass(frozen=True)
-class SourceFile:
-    filename: str
-    size_bytes: int
-    sha256: str
-
-    @property
-    def url(self) -> str:
-        return BASE_URL + self.filename
-
-
-SOURCE_FILES = (
-    SourceFile(
-        "data-neurosynth_version-7_coordinates.tsv.gz",
-        3_587_167,
-        "17135be3e08a0ab045896c77217e8463086543a0817d52a6a88c8e32c1161616",
-    ),
-    SourceFile(
-        "data-neurosynth_version-7_metadata.tsv.gz",
-        1_175_486,
-        "8acde7de2a14ee2a12b406e50a8805e83288b0bc78924ddb36879d496dfb757b",
-    ),
-    SourceFile(
-        "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz",
-        9_896_293,
-        "1b3359eebcbc8557340583788b3855031ea21361e87c265cb8fc540d9b6c4edd",
-    ),
-    SourceFile(
-        "data-neurosynth_version-7_vocab-terms_vocabulary.txt",
-        33_799,
-        "71c1858c5eb1bcc79854198bbca234569731efdc382c6205a9e46495379614af",
-    ),
+from brain_researcher.core.datasets import neurosynth_source as source_contract
+from brain_researcher.core.datasets.neurosynth_source import (
+    DEFAULT_SOURCE_DIR,
+    LICENSE_SPDX,
+    MANIFEST_FILENAME,
+    SOURCE_COMMIT,
+    SOURCE_FILES,
+    SOURCE_SNAPSHOT,
+    SourceFile,
+    build_source_manifest,
+    sha256_file,
+    verify_file,
+    verify_source_bundle,
 )
 
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+BASE_URL = source_contract.BASE_URL
+LICENSE_URL = source_contract.LICENSE_URL
+TARGET_DIR = DEFAULT_SOURCE_DIR
+DOWNLOAD_STATUS = "supported-public"
 
 
-def verify_file(path: Path, spec: SourceFile) -> tuple[bool, str]:
-    """Verify both expected byte size and SHA-256 for one source asset."""
-    if not path.is_file():
-        return False, "missing"
-    actual_size = path.stat().st_size
-    if actual_size != spec.size_bytes:
-        return False, f"size {actual_size} != {spec.size_bytes}"
-    actual_hash = _sha256(path)
-    if actual_hash != spec.sha256:
-        return False, f"sha256 {actual_hash} != {spec.sha256}"
-    return True, "verified"
+def source_manifest() -> dict[str, Any]:
+    """Return deterministic provenance for the only supported source bundle."""
+    return build_source_manifest(SOURCE_FILES)
+
+
+def write_manifest(target_dir: Path) -> Path:
+    """Publish the source manifest atomically after every asset verifies."""
+    manifest_path = target_dir / MANIFEST_FILENAME
+    partial_path = manifest_path.with_name(manifest_path.name + ".part")
+    partial_path.unlink(missing_ok=True)
+    try:
+        partial_path.write_text(
+            json.dumps(source_manifest(), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(partial_path, manifest_path)
+    except Exception:
+        partial_path.unlink(missing_ok=True)
+        raise
+    return manifest_path
+
+
+_sha256 = sha256_file
 
 
 def download_file(
@@ -136,21 +117,55 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=TARGET_DIR,
         help="Destination for the four pinned Neurosynth files.",
     )
+    parser.add_argument(
+        "--check-only",
+        action="store_true",
+        help="Verify the pinned files without making network requests.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     target_dir = args.target_dir.expanduser().resolve()
+    manifest_path = target_dir / MANIFEST_FILENAME
+    partial_manifest_path = manifest_path.with_name(manifest_path.name + ".part")
+    if args.check_only:
+        try:
+            verify_source_bundle(target_dir, source_files=SOURCE_FILES)
+            for spec in SOURCE_FILES:
+                print(f"{spec.filename}: verified existing file")
+        except Exception as exc:
+            print(f"Neurosynth verification failed: {exc}", file=sys.stderr)
+            return 1
+        print(
+            f"Verified Neurosynth {SOURCE_SNAPSHOT} source commit {SOURCE_COMMIT} "
+            f"under {LICENSE_SPDX} in {target_dir}"
+        )
+        print(f"Source manifest: {manifest_path}")
+        return 0
+
     try:
         target_dir.mkdir(parents=True, exist_ok=True)
+        # A manifest is valid only when every current file passes both checks.
+        # Remove prior provenance before verification so a failed run cannot
+        # leave a stale success record behind.
+        manifest_path.unlink(missing_ok=True)
+        partial_manifest_path.unlink(missing_ok=True)
         for spec in SOURCE_FILES:
             outcome = ensure_file(spec, target_dir)
             print(f"{spec.filename}: {outcome}")
+        write_manifest(target_dir)
     except Exception as exc:
+        manifest_path.unlink(missing_ok=True)
+        partial_manifest_path.unlink(missing_ok=True)
         print(f"Neurosynth download failed: {exc}", file=sys.stderr)
         return 1
-    print(f"Verified Neurosynth v0.7 source commit {SOURCE_COMMIT} in {target_dir}")
+    print(
+        f"Verified Neurosynth {SOURCE_SNAPSHOT} source commit {SOURCE_COMMIT} "
+        f"under {LICENSE_SPDX} in {target_dir}"
+    )
+    print(f"Source manifest: {manifest_path}")
     return 0
 
 

@@ -24,6 +24,15 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 
+from brain_researcher.core.datasets.neurosynth_source import (
+    COORDINATES_FILENAME,
+    DEFAULT_SOURCE_DIR,
+    FEATURES_FILENAME,
+    METADATA_FILENAME,
+    VOCABULARY_FILENAME,
+    verify_source_bundle,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -63,39 +72,24 @@ class NeuroSynthUnifiedLoader:
         self.use_niclip = use_niclip_models
         self.model_name = model_name
         self.section = (section or "abstract").lower()
+        if self.section != "abstract":
+            raise ValueError(
+                "the pinned Neurosynth version-7 snapshot supports "
+                "section='abstract' only"
+            )
         self.clip_model_override = Path(clip_model_path) if clip_model_path else None
 
-        # Set data path
-        if data_path:
-            self.data_path = Path(data_path)
-        else:
-            # Try common locations
-            for path in [
-                Path("data/neurosynth_nimare/neurosynth_v7"),
-                Path("/data/neurosynth_nimare/neurosynth_v7"),
-                Path("/app/data/neurosynth_nimare/neurosynth_v7"),
-            ]:
-                if path.exists():
-                    self.data_path = path
-                    break
-            else:
-                self.data_path = Path("data/neurosynth_nimare/neurosynth_v7")
+        self.data_path = (
+            Path(data_path).expanduser().resolve()
+            if data_path
+            else DEFAULT_SOURCE_DIR
+        )
 
-        # Set NICLIP path
-        if niclip_path:
-            self.niclip_path = Path(niclip_path)
-        else:
-            # Try common locations
-            for path in [
-                Path("data/niclip"),
-                Path("/data/niclip"),
-                Path("/app/data/niclip"),
-            ]:
-                if path.exists():
-                    self.niclip_path = path
-                    break
-            else:
-                self.niclip_path = Path("data/niclip")
+        self.niclip_path = (
+            Path(niclip_path).expanduser().resolve()
+            if niclip_path
+            else DEFAULT_SOURCE_DIR.parents[1] / "niclip"
+        )
 
         # Cache for loaded data
         self._coordinates_cache = None
@@ -103,6 +97,7 @@ class NeuroSynthUnifiedLoader:
         self._vocabulary_cache = None
         self._features_cache = None
         self._topic_models_cache = {}
+        self._source_manifest = None
 
         # Statistics
         self.stats = {
@@ -137,6 +132,7 @@ class NeuroSynthUnifiedLoader:
             Dictionary with loaded data components
         """
         data = {}
+        self._verify_source()
 
         # Load base NeuroSynth data
         if include_coordinates:
@@ -151,6 +147,12 @@ class NeuroSynthUnifiedLoader:
             logger.info("Loading NeuroSynth features...")
             data["features"] = self.load_features()
             data["vocabulary"] = self.load_vocabulary()
+            if data["features"].shape[1] != len(data["vocabulary"]):
+                raise ValueError(
+                    "Neurosynth feature/vocabulary mismatch: "
+                    f"{data['features'].shape[1]} columns != "
+                    f"{len(data['vocabulary'])} terms"
+                )
 
         # Enhance with NICLIP models if available
         if include_models and self.use_niclip and self._has_niclip_models():
@@ -165,21 +167,24 @@ class NeuroSynthUnifiedLoader:
 
         return data
 
+    def _verify_source(self) -> None:
+        if self._source_manifest is None:
+            self._source_manifest = verify_source_bundle(self.data_path)
+
     def load_coordinates(self) -> pd.DataFrame:
         """Load NeuroSynth coordinate data."""
         if self._coordinates_cache is not None:
             return self._coordinates_cache
 
-        coords_file = self.data_path / "data-neurosynth_version-7_coordinates.tsv.gz"
+        self._verify_source()
 
-        if not coords_file.exists():
-            logger.error(f"Coordinates file not found: {coords_file}")
-            return pd.DataFrame()
+        coords_file = self.data_path / COORDINATES_FILENAME
 
         try:
-            # Load coordinates
             with gzip.open(coords_file, "rt") as f:
                 coords_df = pd.read_csv(f, sep="\t")
+            if coords_df.empty:
+                raise ValueError("verified Neurosynth coordinates table is empty")
 
             # Rename 'id' to 'study_id' to prevent node_id collisions
             # The 'id' column contains the study PMID, but if used as-is,
@@ -203,25 +208,24 @@ class NeuroSynthUnifiedLoader:
 
             return coords_df
 
-        except Exception as e:
-            logger.error(f"Error loading coordinates: {e}")
-            return pd.DataFrame()
+        except Exception as exc:
+            raise RuntimeError(f"failed to parse {coords_file}: {exc}") from exc
 
     def load_metadata(self) -> pd.DataFrame:
         """Load NeuroSynth study metadata."""
         if self._metadata_cache is not None:
             return self._metadata_cache
 
-        metadata_file = self.data_path / "data-neurosynth_version-7_metadata.tsv.gz"
+        self._verify_source()
 
-        if not metadata_file.exists():
-            logger.error(f"Metadata file not found: {metadata_file}")
-            return pd.DataFrame()
+        metadata_file = self.data_path / METADATA_FILENAME
 
         try:
             # Load metadata
             with gzip.open(metadata_file, "rt") as f:
                 metadata_df = pd.read_csv(f, sep="\t")
+            if metadata_df.empty:
+                raise ValueError("verified Neurosynth metadata table is empty")
 
             self._metadata_cache = metadata_df
             self.stats["studies_loaded"] = len(metadata_df)
@@ -229,69 +233,47 @@ class NeuroSynthUnifiedLoader:
 
             return metadata_df
 
-        except Exception as e:
-            logger.error(f"Error loading metadata: {e}")
-            return pd.DataFrame()
+        except Exception as exc:
+            raise RuntimeError(f"failed to parse {metadata_file}: {exc}") from exc
 
     def load_features(self) -> sparse.csr_matrix:
         """Load NeuroSynth term features (TF-IDF)."""
         if self._features_cache is not None:
             return self._features_cache
 
-        features_file = (
-            self.data_path
-            / f"data-neurosynth_version-7_vocab-terms_source-{self.section}_type-tfidf_features.npz"
-        )
+        self._verify_source()
 
-        if not features_file.exists():
-            if self.section != "abstract":
-                fallback = (
-                    self.data_path
-                    / "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
-                )
-                if fallback.exists():
-                    logger.warning(
-                        "Features file for section '%s' not found; falling back to abstract features",
-                        self.section,
-                    )
-                    features_file = fallback
-                else:
-                    logger.error(f"Features file not found: {features_file}")
-                    return sparse.csr_matrix((0, 0))
-            else:
-                logger.error(f"Features file not found: {features_file}")
-                return sparse.csr_matrix((0, 0))
+        features_file = self.data_path / FEATURES_FILENAME
 
         try:
             # Load sparse feature matrix
             features = sparse.load_npz(features_file)
+            if features.shape[0] == 0 or features.shape[1] == 0:
+                raise ValueError("verified Neurosynth feature matrix is empty")
 
             self._features_cache = features
             logger.info(f"Loaded feature matrix: {features.shape}")
 
             return features
 
-        except Exception as e:
-            logger.error(f"Error loading features: {e}")
-            return sparse.csr_matrix((0, 0))
+        except Exception as exc:
+            raise RuntimeError(f"failed to parse {features_file}: {exc}") from exc
 
     def load_vocabulary(self) -> list[str]:
         """Load NeuroSynth vocabulary."""
         if self._vocabulary_cache is not None:
             return self._vocabulary_cache
 
-        vocab_file = (
-            self.data_path / "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
-        )
+        self._verify_source()
 
-        if not vocab_file.exists():
-            logger.error(f"Vocabulary file not found: {vocab_file}")
-            return []
+        vocab_file = self.data_path / VOCABULARY_FILENAME
 
         try:
             # Load vocabulary
-            with open(vocab_file) as f:
-                vocabulary = [line.strip() for line in f]
+            with open(vocab_file, encoding="utf-8") as f:
+                vocabulary = [line.strip() for line in f if line.strip()]
+            if not vocabulary:
+                raise ValueError("verified Neurosynth vocabulary is empty")
 
             self._vocabulary_cache = vocabulary
             self.stats["terms_loaded"] = len(vocabulary)
@@ -299,9 +281,8 @@ class NeuroSynthUnifiedLoader:
 
             return vocabulary
 
-        except Exception as e:
-            logger.error(f"Error loading vocabulary: {e}")
-            return []
+        except Exception as exc:
+            raise RuntimeError(f"failed to parse {vocab_file}: {exc}") from exc
 
     def load_topic_models(self) -> dict[str, Any]:
         """Load NICLIP pre-trained topic models."""

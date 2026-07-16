@@ -11,6 +11,8 @@ REQUIRED_SUBSTRINGS = {
         "docker compose ps --all",
         "bash scripts/smoke/health_smoke.sh",
         "docker compose down",
+        "Inventory the empty Secret key contracts",
+        "Secret` resources contain key contracts with empty values",
     ),
     "DEPLOYMENT.md": (
         "Support boundary: local development only.",
@@ -68,6 +70,10 @@ REQUIRED_SUBSTRINGS = {
 }
 
 FORBIDDEN_SUBSTRINGS = {
+    "README.md": (
+        "grep -RInE 'your-|<[^>]+>|bcrypt-hash'",
+        "It contains placeholder credentials, TLS material, and basic-auth data",
+    ),
     "DEPLOYMENT.md": (
         "scripts/deployment/",
         "docker-compose -f",

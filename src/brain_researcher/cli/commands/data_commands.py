@@ -476,9 +476,20 @@ def expand(
                     "load_vocabulary": True,
                 }
                 stats = loader.load_neurosynth(config)
+                if "error" in stats:
+                    raise RuntimeError(f"NeuroSynth ingestion failed: {stats['error']}")
+                publication_count = int(stats.get("publications", 0))
+                if publication_count <= 0:
+                    raise RuntimeError(
+                        "NeuroSynth ingestion returned zero publications; no success "
+                        "status was recorded"
+                    )
                 progress.update(
                     task,
-                    description=f"[green]✓[/green] NeuroSynth: {stats.get('studies', 0):,} studies",
+                    description=(
+                        "[green]✓[/green] NeuroSynth: "
+                        f"{publication_count:,} publications"
+                    ),
                 )
 
             # PubMed
@@ -542,7 +553,7 @@ def expand(
         import traceback
 
         console.print(traceback.format_exc())
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 @app.command()
@@ -576,4 +587,3 @@ def list_sources():
 
 if __name__ == "__main__":
     app()
-3

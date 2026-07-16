@@ -18,6 +18,12 @@ from cognitiveatlas.api import get_concept
 from nimare.dataset import Dataset
 from sentence_transformers import SentenceTransformer, util
 
+from brain_researcher.core.datasets.neurosynth_source import (
+    DEFAULT_DATASET_PICKLE,
+    DEFAULT_SOURCE_DIR,
+    verify_converted_dataset,
+)
+
 # PubMed API credentials
 Entrez.email = os.getenv("NCBI_ENTREZ_EMAIL") or os.getenv(
     "ENTREZ_EMAIL", "brain-researcher@example.com"
@@ -31,11 +37,7 @@ N_TOPICS = 13
 TOPIC_THRESHOLD = 0.3
 OUTPUT_PATH = pathlib.Path("data/vocab/ca_topics_level0_bert.json")
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
-NEUROSYNTH_PATH = os.path.join(
-    PROJECT_ROOT, "data", "neurosynth_nimare", "neurosynth_dataset_v7.pkl"
-)
+NEUROSYNTH_PATH = DEFAULT_DATASET_PICKLE
 
 MAX_PUBMED = 5
 MAX_NS_ABSTRACTS = 5
@@ -48,7 +50,8 @@ print(f"Using device: {device}")
 concepts = get_concept().json
 
 # 2. Load Neurosynth dataset
-ds = Dataset.load(NEUROSYNTH_PATH)
+verify_converted_dataset(NEUROSYNTH_PATH, DEFAULT_SOURCE_DIR)
+ds = Dataset.load(str(NEUROSYNTH_PATH))
 
 # 3. Build rich corpus for each concept
 print("\nBuilding corpus...")
@@ -76,7 +79,7 @@ for i, c in enumerate(concepts, 1):
         print("  - Fetching Neurosynth abstracts...")
         labels = ds.get_labels()
         target = c["name"].lower().replace(" ", "_")
-        matches = [l for l in labels if target in l.lower()]
+        matches = [label for label in labels if target in label.lower()]
         print(matches)
         if matches:
             studies = ds.get_studies_by_label(matches[0])

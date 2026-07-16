@@ -24,14 +24,6 @@ import numpy as np
 
 
 SCHEMA_VERSION = "br.autoresearch.hcp_language_barch2013_group_alignment.v1"
-DEFAULT_EXPANDED = Path(
-    "/data/brain_researcher/research/discovery/docs/operations/figures/"
-    "remote_prediction_inputs_20260428/hcp_language_expanded20_audio_v5"
-)
-DEFAULT_HELDOUT = Path(
-    "/data/brain_researcher/research/discovery/docs/operations/figures/"
-    "remote_prediction_inputs_20260428/hcp_language_heldout21_audio_v1"
-)
 LANGUAGE_ROIS = ("STGa", "STGp", "IFGo", "IFGr", "TGd", "TGv", "PGa", "PGp")
 CONTROL_ROIS = ("A1", "V1")
 
@@ -357,7 +349,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--prediction",
         action="append",
-        default=[f"expanded20={DEFAULT_EXPANDED}", f"heldout21={DEFAULT_HELDOUT}"],
+        required=True,
         help="Named TRIBE prediction directory as name=/path. Repeat to average folds.",
     )
     parser.add_argument("--out", required=True)

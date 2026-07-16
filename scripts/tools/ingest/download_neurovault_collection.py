@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download and extract a NeuroVault collection (e.g., Neurosynth parcellations #2099)."""
+"""[experimental] Download and extract a mutable NeuroVault collection ZIP."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ import requests
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 LOGGER = logging.getLogger("download_neurovault_collection")
+DOWNLOAD_STATUS = "experimental"
 
 
 def build_download_url(collection_id: int) -> str:
