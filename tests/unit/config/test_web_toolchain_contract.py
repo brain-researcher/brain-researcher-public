@@ -52,6 +52,18 @@ def test_storybook_clean_build_inputs_are_reproducible() -> None:
     )
 
 
+def test_vitest_lock_excludes_the_critical_advisory_ranges() -> None:
+    package = _package_json()
+    lock = json.loads((WEB_ROOT / "package-lock.json").read_text(encoding="utf-8"))
+
+    declared_version = package["devDependencies"]["vitest"]
+    locked_version = lock["packages"]["node_modules/vitest"]["version"]
+    assert declared_version == "3.2.7"
+    assert locked_version == "3.2.7"
+    version = tuple(map(int, locked_version.split(".")))
+    assert (3, 2, 6) <= version < (4, 0, 0) or version >= (4, 1, 0)
+
+
 def test_web_dockerfiles_use_node_20_and_lockfile_installs() -> None:
     root_dockerfile = (REPO_ROOT / "Dockerfile").read_text(encoding="utf-8")
     web_dockerfile = (WEB_ROOT / "Dockerfile").read_text(encoding="utf-8")

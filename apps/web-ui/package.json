@@ -141,7 +141,7 @@
     "vercel": "^34.3.2",
     "vite": "^6.0.11",
     "vite-tsconfig-paths": "^5.1.0",
-    "vitest": "^1.6.0",
+    "vitest": "3.2.7",
     "whatwg-fetch": "^3.6.20"
   },
   "lint-staged": {

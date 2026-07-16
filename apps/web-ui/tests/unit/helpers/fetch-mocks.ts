@@ -1,6 +1,8 @@
 import type { Mock } from 'vitest'
 
-type MockFetchInput = Parameters<Mock<[RequestInfo | URL, RequestInit?], Promise<Response>>>
+type MockFetch = Mock<
+  (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+>
 
 export const makeJsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), {
@@ -29,7 +31,7 @@ interface QueueFetchMockOptions {
 }
 
 export const queueFetchMock = (
-  mockFetch: Mock<MockFetchInput, Promise<Response>>,
+  mockFetch: MockFetch,
   responses: FetchResponseQueue,
   options: QueueFetchMockOptions = {},
 ): void => {
