@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fetch a fresh NeuroVault metadata inventory (no NIfTI downloads).
+[experimental] Fetch a fresh NeuroVault metadata inventory (no NIfTI downloads).
 
 This hits the public NeuroVault API with pagination and writes:
   data/neurovault/cache/neurovault_images_raw.json
@@ -34,6 +34,7 @@ log = logging.getLogger("neurovault_fetch_inventory")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 BASE = "https://neurovault.org/api/images/"
+DOWNLOAD_STATUS = "experimental"
 
 
 def fetch_page(url: str, params: dict[str, Any], *, retries: int = 5, backoff: float = 2.0) -> dict[str, Any]:
@@ -133,7 +134,12 @@ def dedupe_by_id(images: List[dict]) -> List[dict]:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Fetch NeuroVault image metadata inventory")
+    ap = argparse.ArgumentParser(
+        description=(
+            "[experimental] Fetch a live NeuroVault image metadata inventory; "
+            "the output is not an immutable provenance manifest."
+        )
+    )
     ap.add_argument("--max-images", type=int, default=50000, help="Max images to fetch (0 = all)")
     ap.add_argument(
         "--page-size",

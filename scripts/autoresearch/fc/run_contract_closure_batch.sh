@@ -20,8 +20,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-: "${FC_PROJECT_ROOT:=$(pwd)}"
-: "${CONDA_SH:=/home/ubuntu/miniconda3/etc/profile.d/conda.sh}"
+: "${FC_PROJECT_ROOT:?Set FC_PROJECT_ROOT to the external FC project}"
+: "${CONDA_SH:?Set CONDA_SH to the conda activation script}"
 : "${CONDA_ENV:=brain_researcher}"
 : "${PHASE:=phase9_weak_target_term_discovery}"
 : "${STATUS:=interesting_but_unconfirmed}"

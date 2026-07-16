@@ -1991,7 +1991,10 @@ class PerformMetaAnalysisArgs(BaseModel):
     method: str = Field(default="ale", description="Meta-analysis method")
     term: str | None = Field(
         default=None,
-        description="Neurosynth keyword/term for term-based meta-analysis (e.g., 'memory')",
+        description=(
+            "Neurosynth term for a descriptive coordinate-density map; this term "
+            "path is not a statistical meta-analysis"
+        ),
     )
     keyword: str | None = Field(
         default=None,
@@ -2013,7 +2016,11 @@ class PerformMetaAnalysisTool(NeuroToolWrapper):
         return "perform_meta_analysis"
 
     def get_tool_description(self) -> str:
-        return "Run coordinate-based meta-analysis (wrapper over coordinate_meta_analysis)."
+        return (
+            "Run coordinate-based meta-analysis for explicit coordinates. The optional "
+            "Neurosynth term path instead returns a descriptive coordinate-density "
+            "count map and performs no inferential test."
+        )
 
     def get_args_schema(self):
         return PerformMetaAnalysisArgs
@@ -2029,7 +2036,7 @@ class PerformMetaAnalysisTool(NeuroToolWrapper):
         output_dir: str | None = None,
         **kwargs: Any,
     ) -> ToolResult:
-        # Term-based Neurosynth path (preferred for Grandmaster workflow_neurosynth_roi_analysis).
+        # Term-based Neurosynth path is descriptive, not a meta-analysis.
         selected_term = (term or keyword or "").strip()
         if selected_term:
             try:
@@ -2049,7 +2056,7 @@ class PerformMetaAnalysisTool(NeuroToolWrapper):
                     re.sub(r"[^a-zA-Z0-9_-]+", "_", selected_term).strip("_") or "term"
                 )
 
-                stat_map_path = out_root / f"neurosynth_{slug}.nii.gz"
+                density_map_path = out_root / f"neurosynth_{slug}_coordinate_density.nii.gz"
                 meta_json_path = out_root / f"neurosynth_{slug}_meta.json"
                 roi_summary_path = out_root / f"neurosynth_{slug}_roi_summary.json"
 
@@ -2064,27 +2071,31 @@ class PerformMetaAnalysisTool(NeuroToolWrapper):
                         data={"term": selected_term, "output_dir": str(out_root)},
                     )
 
-                activation_maps = mapping.get("activation_maps") or []
-                if not activation_maps:
+                density_maps = mapping.get("coordinate_density_maps") or []
+                if not density_maps:
                     return ToolResult(
                         status="error",
-                        error="No activation map returned from neurosynth mapping",
+                        error="No coordinate-density map returned from Neurosynth mapping",
                         data={"term": selected_term, "output_dir": str(out_root)},
                     )
 
-                img = activation_maps[0]
-                nib.save(img, str(stat_map_path))
+                img = density_maps[0]
+                nib.save(img, str(density_map_path))
 
                 serializable = {
-                    k: v for k, v in mapping.items() if k != "activation_maps"
+                    k: v
+                    for k, v in mapping.items()
+                    if k not in {"activation_maps", "coordinate_density_maps"}
                 }
-                serializable["outputs"] = {"stat_map": str(stat_map_path)}
+                serializable["outputs"] = {
+                    "coordinate_density_map": str(density_map_path)
+                }
                 meta_json_path.write_text(
                     json.dumps(serializable, indent=2), encoding="utf-8"
                 )
 
                 outputs: dict[str, Any] = {
-                    "stat_map": str(stat_map_path),
+                    "coordinate_density_map": str(density_map_path),
                     "meta_json": str(meta_json_path),
                 }
                 summary: dict[str, Any] = {
@@ -2097,35 +2108,40 @@ class PerformMetaAnalysisTool(NeuroToolWrapper):
                         serializable.get("n_coords")
                         or len(serializable.get("coordinates") or [])
                     ),
+                    "analysis_semantics": "descriptive_coordinate_density",
+                    "map_value_semantics": (
+                        "overlapping_coordinate_sphere_hit_count"
+                    ),
+                    "inferential_statistics": False,
                 }
 
                 if roi_mask:
-                    stat_img = nib.load(str(stat_map_path))
+                    density_img = nib.load(str(density_map_path))
                     mask_img = nib.load(str(roi_mask))
                     if mask_img.ndim == 4:
                         mask_img = nl_image.index_img(mask_img, 0)
-                    if mask_img.shape != stat_img.shape[:3] or not np.allclose(
-                        mask_img.affine, stat_img.affine
+                    if mask_img.shape != density_img.shape[:3] or not np.allclose(
+                        mask_img.affine, density_img.affine
                     ):
                         mask_img = nl_image.resample_to_img(
-                            mask_img, stat_img, interpolation="nearest"
+                            mask_img, density_img, interpolation="nearest"
                         )
                     mask = np.asanyarray(mask_img.dataobj) > 0
-                    stat = np.asanyarray(stat_img.dataobj)
-                    vals = stat[mask]
+                    density = np.asanyarray(density_img.dataobj)
+                    vals = density[mask]
                     if vals.size == 0:
                         roi_payload = {
                             "roi_mask": str(roi_mask),
                             "n_voxels": 0,
-                            "mean": None,
-                            "max": None,
+                            "mean_coordinate_sphere_hits": None,
+                            "max_coordinate_sphere_hits": None,
                         }
                     else:
                         roi_payload = {
                             "roi_mask": str(roi_mask),
                             "n_voxels": int(vals.size),
-                            "mean": float(np.nanmean(vals)),
-                            "max": float(np.nanmax(vals)),
+                            "mean_coordinate_sphere_hits": float(np.nanmean(vals)),
+                            "max_coordinate_sphere_hits": float(np.nanmax(vals)),
                         }
                     roi_summary_path.write_text(
                         json.dumps(roi_payload, indent=2), encoding="utf-8"

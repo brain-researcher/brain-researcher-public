@@ -33,7 +33,11 @@ from typing import Dict, Iterable, List
 
 from neuromaps.datasets import annotations, atlases
 from neuromaps.datasets.utils import _get_session
-from nilearn.datasets._utils import fetch_single_file
+
+try:
+    from nilearn.datasets._utils import fetch_single_file
+except ImportError:  # Nilearn < 0.10 compatibility
+    from nilearn.datasets.utils import _fetch_file as fetch_single_file
 
 from brain_researcher.services.shared.brkg_atlas_paths import default_atlas_output_root
 
@@ -53,7 +57,12 @@ def _configure_logging(verbosity: int) -> None:
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Download Neuromaps resources")
+    parser = argparse.ArgumentParser(
+        description=(
+            "[experimental] Download resources from the installed Neuromaps "
+            "registry; individual annotation failures can be skipped."
+        )
+    )
     parser.add_argument(
         "--output-dir",
         default=default_atlas_output_root() / "neuromaps",
@@ -166,12 +175,14 @@ def _fetch_annotations(
         dest_dir.mkdir(parents=True, exist_ok=True)
 
         try:
-            downloaded = fetch_single_file(
-                url,
-                dest_dir,
-                md5sum=entry.get("checksum"),
-                verbose=max(0, verbose - 1),
-                session=session,
+            downloaded = Path(
+                fetch_single_file(
+                    url,
+                    dest_dir,
+                    md5sum=entry.get("checksum"),
+                    verbose=max(0, verbose - 1),
+                    session=session,
+                )
             )
         except Exception as exc:  # pragma: no cover - network/OSF issues
             logger.warning(

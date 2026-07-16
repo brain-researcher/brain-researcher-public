@@ -98,11 +98,6 @@ spine_allowed_edges:
   - "MAPS_TO"
   - "HAS_PHENOTYPE"
 
-notes:
-  - "Additional information in spine mode should be JSON-stringified into 'evidence_json' field"
-  - "Or fetched through on-demand adapters"
-  - "Spine loaders must drop any field not in whitelist unless explicitly overridden"
-
 # Data Source Mode Assignments
 # Maps each data source to its ingestion mode
 # This replaces hardcoded SOURCE_DEFAULT_MODES in load_all.py
@@ -236,6 +231,9 @@ validation:
 
 # Notes
 notes:
+  - "Additional information in spine mode should be JSON-stringified into 'evidence_json' field"
+  - "Or fetched through on-demand adapters"
+  - "Spine loaders must drop any field not in whitelist unless explicitly overridden"
   - "Modes keep BR-KG lean, trustworthy, and perfect for search"
   - "Full mode builds high-confidence backbone"
   - "Spine mode provides search spine for navigation"

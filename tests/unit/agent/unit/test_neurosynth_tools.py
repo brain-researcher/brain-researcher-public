@@ -56,8 +56,11 @@ class TestNeuroSynthMetaAnalysisTool:
     def test_properties(self):
         tool = NeuroSynthMetaAnalysisTool()
         assert tool.get_tool_name() == "neurosynth_meta_analysis"
-        assert "meta-analysis" in tool.get_tool_description().lower()
-        assert "14,000" in tool.get_tool_description()  # ~14k studies
+        description = tool.get_tool_description().lower()
+        assert "descriptive" in description
+        assert "coordinate-density" in description
+        assert "no z-scores" in description
+        assert "significance test" in description
         assert tool.get_args_schema() == NeuroSynthMetaAnalysisArgs
 
     @patch("brain_researcher.core.analysis.neurosynth_integration.get_neurosynth_mapping")
@@ -68,10 +71,13 @@ class TestNeuroSynthMetaAnalysisTool:
         """Test successful meta-analysis with activation map saving."""
         mock_get.return_value = {
             "keyword": "fear",
-            "activation_maps": [mock_activation_map],
+            "coordinate_density_maps": [mock_activation_map],
             "studies": ["study1", "study2"],
             "coordinates": [[10, 20, 30], [40, 50, 60]],
             "scores": [0.8, 0.7],
+            "analysis_semantics": "descriptive_coordinate_density",
+            "map_value_semantics": "overlapping_coordinate_sphere_hit_count",
+            "inferential_statistics": False,
         }
 
         tool = NeuroSynthMetaAnalysisTool()
@@ -81,10 +87,18 @@ class TestNeuroSynthMetaAnalysisTool:
 
         assert result["status"] == "success"
         assert result["data"]["keyword"] == "fear"
-        assert "activation_map_paths" in result["data"]
-        assert len(result["data"]["activation_map_paths"]) == 1
+        assert len(result["data"]["coordinate_density_map_paths"]) == 1
+        assert (
+            result["data"]["activation_map_paths"]
+            == result["data"]["coordinate_density_map_paths"]
+        )
         assert result["metadata"]["n_studies"] == 2
         assert result["metadata"]["n_coordinates"] == 2
+        assert result["metadata"]["inferential_statistics"] is False
+        assert (
+            result["metadata"]["map_value_semantics"]
+            == "overlapping_coordinate_sphere_hit_count"
+        )
 
         # Verify nibabel.save was called
         mock_save.assert_called_once()
@@ -127,7 +141,10 @@ class TestNeuroSynthVisualizationTool:
     def test_properties(self):
         tool = NeuroSynthVisualizationTool()
         assert tool.get_tool_name() == "neurosynth_visualize"
-        assert "publication-ready" in tool.get_tool_description()
+        assert "descriptive axial-slice" in tool.get_tool_description()
+        assert "does not establish statistical significance" in (
+            tool.get_tool_description()
+        )
         assert tool.get_args_schema() == NeuroSynthVisualizationArgs
 
     @patch("brain_researcher.core.analysis.neurosynth_integration.visualize_activation_maps")
@@ -142,10 +159,11 @@ class TestNeuroSynthVisualizationTool:
             f.write("dummy")
 
         mock_load.return_value = mock_activation_map
+        rendered_path = os.path.join(temp_output_dir, "neurosynth_map_1.png")
         mock_vis.return_value = {
-            "slices_0": "base64_slice_data",
-            "glass_0": "base64_glass_data",
-            "3d_0": "base64_3d_data",
+            "plots": [rendered_path],
+            "n_plots": 1,
+            "inferential_statistics": False,
         }
 
         tool = NeuroSynthVisualizationTool()
@@ -159,12 +177,14 @@ class TestNeuroSynthVisualizationTool:
         assert "visualizations" in result["data"]
         assert "saved_files" in result["data"]
         assert result["data"]["threshold"] == 2.5
+        assert result["data"]["inferential_statistics"] is False
         assert result["metadata"]["n_maps"] == 1
 
         mock_vis.assert_called_once()
         call_args = mock_vis.call_args[0]
         assert len(call_args[0]) == 1  # One activation map
         assert mock_vis.call_args.kwargs["threshold"] == 2.5
+        assert mock_vis.call_args.kwargs["output_dir"] == temp_output_dir
 
     def test_missing_file_error(self):
         """Test error when activation map file doesn't exist."""

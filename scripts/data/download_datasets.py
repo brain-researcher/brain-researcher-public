@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Download neuroimaging datasets for Brain Researcher testing and demos.
+[historical] Download neuroimaging datasets for Brain Researcher testing and demos.
 
 This script downloads various neuroimaging datasets including:
 - OpenNeuro datasets (fMRI/MEG/EEG)
@@ -28,7 +28,14 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, DownloadColumn
 from rich.table import Table
 
-app = typer.Typer(help="Download neuroimaging datasets for testing")
+DOWNLOAD_STATUS = "historical"
+
+app = typer.Typer(
+    help=(
+        "Status: historical. Mixed legacy dataset downloader without a complete "
+        "pinned source or checksum contract. See scripts/DOWNLOADERS.md."
+    )
+)
 console = Console()
 
 # Dataset configurations
@@ -398,8 +405,13 @@ def download_sleep_edf(output_dir: Path, full_download: bool = True) -> bool:
             if download_file(url, dest_path, f"Downloading {Path(file_path).name}"):
                 success_count += 1
         
-        if success_count > 0:
-            console.print(f"[green]✓ Downloaded {success_count} Sleep-EDF sample files[/green]")
+        if success_count != len(sample_files):
+            console.print(
+                f"[red]✗ Downloaded only {success_count}/{len(sample_files)} "
+                "Sleep-EDF sample files[/red]"
+            )
+            return False
+        console.print(f"[green]✓ Downloaded {success_count} Sleep-EDF sample files[/green]")
     
     # Create README
     readme_path = dest_dir / "README.md"
@@ -514,7 +526,7 @@ def download(
     else:
         console.print(f"[red]Unknown dataset: {dataset_id}[/red]")
         console.print("Use 'list-datasets' command to see available datasets")
-        return
+        raise typer.Exit(code=2)
     
     # Download datasets
     success_count = 0
@@ -541,6 +553,8 @@ def download(
     console.print(f"\n[bold]Download Summary[/bold]")
     console.print(f"Successfully downloaded: {success_count}/{len(datasets_to_download)} datasets")
     console.print(f"Datasets location: {output_dir}")
+    if success_count != len(datasets_to_download):
+        raise typer.Exit(code=1)
 
 
 @app.command()

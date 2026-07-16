@@ -28,27 +28,28 @@ rules:
 
   # API security rules
   - id: missing-authentication-check
-    pattern-either:
-      - pattern: |
-          @app.route($PATH, ...)
+    patterns:
+      - pattern-either:
+          - pattern: |
+              @app.route($PATH, ...)
+              def $FUNC(...):
+                ...
+          - pattern: |
+              @router.$METHOD($PATH, ...)
+              def $FUNC(...):
+                ...
+      - pattern-not-inside: |
+          @requires_auth
           def $FUNC(...):
             ...
-      - pattern: |
-          @router.$METHOD($PATH, ...)
+      - pattern-not-inside: |
+          @jwt_required
           def $FUNC(...):
             ...
-    pattern-not-inside: |
-      @requires_auth
-      def $FUNC(...):
-        ...
-    pattern-not-inside: |
-      @jwt_required
-      def $FUNC(...):
-        ...
-    pattern-not-inside: |
-      @login_required
-      def $FUNC(...):
-        ...
+      - pattern-not-inside: |
+          @login_required
+          def $FUNC(...):
+            ...
     pattern-where:
       - variable: PATH
         regex: '".*/api/.*"'

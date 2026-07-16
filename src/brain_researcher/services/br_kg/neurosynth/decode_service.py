@@ -15,6 +15,14 @@ import scipy.sparse as sp
 from neo4j import GraphDatabase
 from nibabel.affines import apply_affine
 
+from brain_researcher.core.datasets.neurosynth_source import (
+    COORDINATES_FILENAME,
+    DEFAULT_SOURCE_DIR,
+    FEATURES_FILENAME,
+    METADATA_FILENAME,
+    VOCABULARY_FILENAME,
+    verify_source_bundle,
+)
 from brain_researcher.services.br_kg.etl.yeo17_features import Yeo17Feature
 from brain_researcher.services.br_kg.etl.yeo17_writer import (
     WriterConfig,
@@ -53,15 +61,20 @@ class NeurosynthDecoder:
     def __init__(
         self,
         *,
-        data_dir: Path,
+        data_dir: str | Path | None = None,
         lda_dir: Path | None = None,
         writer_config: WriterConfig,
         neuromaps_root: Path | None = None,
     ) -> None:
-        self.data_dir = Path(data_dir)
+        self.data_dir = (
+            Path(data_dir).expanduser().resolve()
+            if data_dir is not None
+            else DEFAULT_SOURCE_DIR
+        )
         self.lda_dir = Path(lda_dir) if lda_dir else None
         self.writer_config = writer_config
         self.neuromaps_root = neuromaps_root
+        self.source_manifest = verify_source_bundle(self.data_dir)
         self._load_term_matrix()
         self._load_metadata()
         self._load_coordinates()
@@ -74,13 +87,8 @@ class NeurosynthDecoder:
 
     # ------------------------------------------------------------------
     def _load_term_matrix(self) -> None:
-        features_path = (
-            self.data_dir
-            / "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
-        )
-        vocab_path = (
-            self.data_dir / "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
-        )
+        features_path = self.data_dir / FEATURES_FILENAME
+        vocab_path = self.data_dir / VOCABULARY_FILENAME
         if not features_path.exists() or not vocab_path.exists():
             raise FileNotFoundError(
                 f"Missing Neurosynth feature files under {self.data_dir}"
@@ -96,7 +104,7 @@ class NeurosynthDecoder:
         )
 
     def _load_metadata(self) -> None:
-        metadata_path = self.data_dir / "data-neurosynth_version-7_metadata.tsv.gz"
+        metadata_path = self.data_dir / METADATA_FILENAME
         if not metadata_path.exists():
             raise FileNotFoundError(metadata_path)
         logger.info("Loading Neurosynth metadata from %s", metadata_path)
@@ -105,7 +113,7 @@ class NeurosynthDecoder:
         logger.info("Loaded %d study metadata rows", len(self._study_ids))
 
     def _load_coordinates(self) -> None:
-        coords_path = self.data_dir / "data-neurosynth_version-7_coordinates.tsv.gz"
+        coords_path = self.data_dir / COORDINATES_FILENAME
         if not coords_path.exists():
             raise FileNotFoundError(coords_path)
         logger.info("Loading Neurosynth coordinates from %s", coords_path)

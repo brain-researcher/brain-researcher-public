@@ -568,20 +568,6 @@ tool_overrides:
       fmriprep: nipreps/fmriprep:23.2.3
       mriqc: nipreps/mriqc:24.0.2
     execution_story_summary: Minimal real-execution recipe for single-subject fMRIPrep + MRIQC runs with downstream QC aggregation.
-  workflow_task_glm_group:
-    recipe_depth: runnable
-    python_packages:
-      - brain_researcher
-      - nibabel>=5.0.0
-      - nilearn>=0.10.0
-      - numpy>=1.24.0
-      - pandas>=2.2.0
-      - scikit-learn>=1.3.0
-    resource_profile:
-      cpu: "4+"
-      mem: "12G+"
-      est_runtime: "minutes-to-hours"
-    execution_story_summary: Minimal execute-capable recipe for group task GLM runs that prefers bids_dir + fmriprep_dir + task inputs and can preview or execute the resolved subject-level plan.
   workflow_dwi_connectome:
     recipe_depth: runnable
     python_packages:

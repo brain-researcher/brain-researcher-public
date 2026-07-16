@@ -298,12 +298,9 @@ data:
       prometheus:
         url: "http://prometheus.brain-researcher.svc.cluster.local:9090"
       grafana:
-        enabled: true
+        # Disabled until an operator supplies an authenticated integration.
+        enabled: false
         url: "http://grafana.brain-researcher.svc.cluster.local:3000"
-        auth:
-          type: basic
-          username: admin
-          password: admin
       tracing:
         enabled: true
         in_cluster_url: "http://jaeger-query.istio-system:16686"

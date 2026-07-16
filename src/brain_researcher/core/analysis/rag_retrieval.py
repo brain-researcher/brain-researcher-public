@@ -32,6 +32,11 @@ import aiohttp
 import numpy as np
 import pandas as pd
 
+from brain_researcher.core.datasets.neurosynth_source import (
+    DEFAULT_DATASET_PICKLE,
+    DEFAULT_SOURCE_DIR,
+    verify_converted_dataset,
+)
 from brain_researcher.core.utils.cache_manager import get_cache_manager
 
 # Try to import optional dependencies
@@ -88,12 +93,7 @@ if _entrez_api_key:
     Entrez.api_key = _entrez_api_key
 
 # --- NiMARE Dataset Configuration ---
-NIMARE_DATASET_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "data",
-    "neurosynth_nimare",
-    "neurosynth_dataset_v7.pkl",
-)
+NIMARE_DATASET_PATH = str(DEFAULT_DATASET_PICKLE)
 
 # --- Vector Index Configuration ---
 FAISS_INDEX_PATH = os.path.join(
@@ -514,10 +514,12 @@ class RAGKnowledgeSystem:
         self,
         db_path: str = "data/knowledge/db",
         nimare_dataset_path: str = NIMARE_DATASET_PATH,
+        nimare_source_dir: str = str(DEFAULT_SOURCE_DIR),
     ):
         """Initialize the RAG system, load NiMARE dataset."""
         self.db_path = db_path
         self.nimare_dataset_path = nimare_dataset_path
+        self.nimare_source_dir = nimare_source_dir
         os.makedirs(self.db_path, exist_ok=True)
         self.nimare_dataset: nimare_dataset.Dataset | None = None
         self.coordinates_df: pd.DataFrame | None = None
@@ -593,12 +595,10 @@ class RAGKnowledgeSystem:
     def _load_nimare_dataset(self):
         """Loads the pre-processed NiMARE Dataset from a pickle file."""
         logger.info(f"Loading NiMARE Dataset from: {self.nimare_dataset_path}")
-        if not os.path.exists(self.nimare_dataset_path):
-            logger.error(
-                f"NiMARE Dataset file not found at {self.nimare_dataset_path}. Spatial retrieval will be unavailable."
-            )
-            return
         try:
+            verify_converted_dataset(
+                self.nimare_dataset_path, self.nimare_source_dir
+            )
             # Use nimare.dataset.Dataset.load() which handles pickle loading
             self.nimare_dataset = nimare_dataset.Dataset.load(self.nimare_dataset_path)
             # Pre-extract coordinates DataFrame for faster access
@@ -1498,7 +1498,8 @@ if __name__ == "__main__":
 if __name__ == "__main__":
     from nimare.dataset import Dataset
 
-    ds = Dataset.load("data/neurosynth_nimare/neurosynth_dataset_v7.pkl")
+    verify_converted_dataset(DEFAULT_DATASET_PICKLE, DEFAULT_SOURCE_DIR)
+    ds = Dataset.load(str(DEFAULT_DATASET_PICKLE))
     print("Dataset attributes:", dir(ds))
     print(
         "\nDataset metadata (first 3 items):",

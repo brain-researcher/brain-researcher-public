@@ -12,7 +12,7 @@ KG_INGEST_ARGS ?=
 
 help:
 	@printf '%s\n' \
-		'download-neurosynth  Download and verify the pinned Neurosynth v0.7 bundle' \
+		'download-neurosynth  Download and verify the pinned Neurosynth version-7 snapshot' \
 		'check-neurosynth     Verify the pinned bundle without network access' \
 		'kg-ingest            Ingest the tool catalog (requires NEO4J_PASSWORD)' \
 		'kg-show              Run read-only KG summaries (requires NEO4J_PASSWORD)' \

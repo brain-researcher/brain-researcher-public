@@ -26,6 +26,7 @@ def str2bool(val: str) -> bool:
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 
+from brain_researcher.core.datasets.neurosynth_source import DEFAULT_SOURCE_DIR
 from brain_researcher.services.br_kg.db.schema import setup_schema  # type: ignore
 from brain_researcher.services.br_kg.graph.neo4j_utils import require_neo4j_db
 from brain_researcher.services.br_kg.spatial.neuromaps_assets import (
@@ -78,8 +79,8 @@ NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD")
 NEO4J_DATABASE = os.environ.get("NEO4J_DATABASE")
 NEO4J_PRELOAD_CACHE = str2bool(os.environ.get("NEO4J_PRELOAD_CACHE", "true"))
 NEUROSYNTH_V7_DIR = Path(
-    os.environ.get("NEUROSYNTH_V7_DIR", "data/neurosynth_nimare/neurosynth")
-)
+    os.environ.get("NEUROSYNTH_V7_DIR", str(DEFAULT_SOURCE_DIR))
+).expanduser().resolve()
 NEUROSYNTH_LDA_DIR = Path(
     os.environ.get("NEUROSYNTH_LDA_DIR", "data/neurosynth_nimare/lda/version_7")
 )

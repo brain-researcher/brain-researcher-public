@@ -1,18 +1,23 @@
-from ctypes.wintypes import HKL
 import json
-from nimare.dataset import Dataset
-import os
+from pathlib import Path
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-PKL_PATH = os.path.join(
-    script_dir, "../data/neurosynth_nimare/neurosynth_dataset_v7.pkl"
+from nimare.dataset import Dataset
+
+from brain_researcher.core.datasets.neurosynth_source import (
+    DEFAULT_DATASET_PICKLE,
+    DEFAULT_SOURCE_DIR,
+    REPO_ROOT,
+    verify_converted_dataset,
 )
-OUT_PATH = os.path.join(script_dir, "../data/ns_counts.json")
+
+PKL_PATH = DEFAULT_DATASET_PICKLE
+OUT_PATH = REPO_ROOT / "data" / "ns_counts.json"
 
 
 def main():
     print(f"Loading NiMARE dataset from {PKL_PATH} ...")
-    dset = Dataset.load(PKL_PATH)
+    verify_converted_dataset(PKL_PATH, DEFAULT_SOURCE_DIR)
+    dset = Dataset.load(str(PKL_PATH))
     print("Counting studies for each term ...")
     term_counts = {
         t.lower(): len(dset.get_studies_by_label(t)) for t in dset.get_labels()
@@ -26,7 +31,7 @@ def main():
             new_term_counts[term] = count
 
     print(f"Writing term counts to {OUT_PATH} ...")
-    with open(OUT_PATH, "w") as f:
+    with Path(OUT_PATH).open("w", encoding="utf-8") as f:
         json.dump(new_term_counts, f, indent=2)
     print("Done.")
 

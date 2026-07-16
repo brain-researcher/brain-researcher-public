@@ -126,7 +126,11 @@ class ContrastAnalysisArgs(BaseModel):
         default=None, description="Optional description of the task"
     )
     coordinates: list[list[float]] | None = Field(
-        default=None, description="Optional specific coordinates to analyze"
+        default=None,
+        description=(
+            "Optional world coordinates in millimeters, interpreted using the input "
+            "z-map NIfTI affine; these are not voxel indices and no atlas space is assumed"
+        ),
     )
 
 
@@ -916,9 +920,11 @@ class ContrastAnalysisTool(NeuroToolWrapper):
 
             significant_clusters = [
                 {
+                    "index": cluster["index"],
                     "peak_coordinate": cluster["peak_coords"],
                     "coordinate_space": "voxel",
                     "cluster_size": cluster["size"],
+                    "sign": cluster["sign"],
                     "peak_z": cluster["peak_value"],
                     "center_of_mass_voxel": cluster["center_of_mass"],
                 }
@@ -976,6 +982,8 @@ class ContrastAnalysisTool(NeuroToolWrapper):
                     "cluster_threshold": 3.0,
                     "threshold_rule": "absolute_z_greater_than_or_equal",
                     "minimum_cluster_size": 5,
+                    "cluster_connectivity": 26,
+                    "opposite_signs_connected": False,
                     "cluster_semantics": "descriptive_suprathreshold_components",
                     "inferential_significance": False,
                     "multiple_comparisons_correction": None,
@@ -983,7 +991,9 @@ class ContrastAnalysisTool(NeuroToolWrapper):
                     "cognitive_interpretation": False,
                     "coordinate_spaces": {
                         "cluster_peaks": "voxel_index",
-                        "requested_coordinates": "world",
+                        "requested_coordinates": (
+                            "world_coordinates_mm_defined_by_input_z_map_affine"
+                        ),
                     },
                     "compatibility_fields": {
                         "significant_clusters": "alias_of_suprathreshold_clusters"
@@ -999,7 +1009,8 @@ class ContrastAnalysisTool(NeuroToolWrapper):
                 "recovery_suggestions": [
                     "Verify the z-map file path exists and is accessible",
                     "Check that the file is in NIfTI format (.nii or .nii.gz)",
-                    "Ensure coordinates are in MNI space if provided",
+                    "Ensure coordinates are world coordinates (mm) in the spatial "
+                    "reference defined by the input z-map affine",
                 ],
             }
 

@@ -7,9 +7,8 @@ module builds NiMARE ``Dataset`` objects:
 
 * :func:`build_synthetic_corpus` — a tiny in-memory corpus for tests/demos (no
   network), with coordinates clustered at named MNI centroids.
-* :func:`load_neurosynth_corpus` — load a cached Neurosynth NiMARE dataset, or (only
-  when ``download=True``) fetch + convert it. The fetch is network + hundreds of MB,
-  so it is gated off by default; the cache-load path is the normal one.
+* :func:`load_neurosynth_corpus` — load a cached Neurosynth NiMARE dataset only
+  after its pinned raw source bundle and manifest have been verified locally.
 
 NiMARE is imported lazily so importing this module is cheap and dependency-free.
 """
@@ -20,7 +19,7 @@ from typing import Any
 
 
 def _study(coords: list[tuple[float, float, float]], n: int = 25) -> dict[str, Any]:
-    xs, ys, zs = zip(*coords)
+    xs, ys, zs = zip(*coords, strict=True)
     return {
         "contrasts": {
             "1": {
@@ -124,45 +123,69 @@ def load_neurosynth_corpus(
 ) -> Any:
     """Load a real Neurosynth NiMARE ``Dataset`` (coordinates + term annotations).
 
-    Resolution order:
-      1. if ``cache_path`` points to a saved Dataset (``.pkl.gz``), load it (fast);
-      2. else build it from the raw Neurosynth files under ``data_dir`` — NiMARE's
-         ``fetch_neurosynth`` cache, default ``~/.nimare`` — and save to ``cache_path``.
-
-    Fetching *missing* raw files needs ``download=True`` (large, network); when the
-    cache already holds the raw files (the common case) no network is used. Raises
-    ``FileNotFoundError`` if neither a saved Dataset nor raw files exist and
-    ``download`` is False, so the caller can fall back to the KG backend rather than
-    block on a download. The resulting term labels are ``terms_abstract_tfidf__<term>``
-    (selected at the 0.001 TF-IDF convention by :class:`NimareBackend`).
+    ``data_dir`` must match the repository's exact pinned source manifest. A saved
+    Dataset is never accepted as authoritative by itself. Network fetching and
+    alternate release/source/vocabulary choices are intentionally unsupported;
+    use ``scripts/data/download_neurosynth_data.py`` to stage the source bundle.
     """
     from pathlib import Path
 
-    from nimare.dataset import Dataset
+    from brain_researcher.core.datasets.neurosynth_source import (
+        COORDINATES_FILENAME,
+        DATASET_VERSION,
+        DEFAULT_SOURCE_DIR,
+        FEATURES_FILENAME,
+        METADATA_FILENAME,
+        VOCABULARY_FILENAME,
+        converted_provenance_path,
+        publish_converted_dataset_provenance,
+        verify_converted_dataset,
+        verify_source_bundle,
+    )
 
-    if cache_path and Path(cache_path).expanduser().exists():
-        return Dataset.load(str(Path(cache_path).expanduser()))
-
-    ddir = Path(data_dir).expanduser() if data_dir else Path("~/.nimare").expanduser()
-    raw_coords = ddir / "neurosynth" / f"data-neurosynth_version-{version}_coordinates.tsv.gz"
-    if not raw_coords.exists() and not download:
-        raise FileNotFoundError(
-            f"no saved Dataset at {cache_path!r} and no raw Neurosynth files under "
-            f"{ddir}; pass download=True to fetch (large)"
+    if download:
+        raise ValueError(
+            "automatic Neurosynth download is disabled; run "
+            "python scripts/data/download_neurosynth_data.py"
+        )
+    if version not in {"7", DATASET_VERSION} or source != "abstract" or vocab != "terms":
+        raise ValueError(
+            "the pinned Neurosynth contract supports version 7, source='abstract', "
+            "and vocab='terms' only"
         )
 
-    from nimare.extract import fetch_neurosynth
+    ddir = (
+        Path(data_dir).expanduser().resolve()
+        if data_dir is not None
+        else DEFAULT_SOURCE_DIR
+    )
+    verify_source_bundle(ddir)
+
+    from nimare.dataset import Dataset
     from nimare.io import convert_neurosynth_to_dataset
 
-    files = fetch_neurosynth(
-        data_dir=str(ddir), version=version, source=source, vocab=vocab, overwrite=False
-    )
-    ns = files[0] if isinstance(files, (list, tuple)) else files
+    if cache_path and Path(cache_path).expanduser().exists():
+        cache = Path(cache_path).expanduser().resolve()
+        verify_converted_dataset(cache, ddir)
+        return Dataset.load(str(cache))
+
     dset = convert_neurosynth_to_dataset(
-        coordinates_file=ns["coordinates"],
-        metadata_file=ns["metadata"],
-        annotations_files=ns["features"],
+        coordinates_file=str(ddir / COORDINATES_FILENAME),
+        metadata_file=str(ddir / METADATA_FILENAME),
+        annotations_files={
+            "features": str(ddir / FEATURES_FILENAME),
+            "vocabulary": str(ddir / VOCABULARY_FILENAME),
+        },
     )
     if cache_path:
-        dset.save(str(Path(cache_path).expanduser()))
+        output = Path(cache_path).expanduser().resolve()
+        output.parent.mkdir(parents=True, exist_ok=True)
+        sidecar = converted_provenance_path(output)
+        try:
+            dset.save(str(output))
+            publish_converted_dataset_provenance(output, ddir)
+        except Exception:
+            output.unlink(missing_ok=True)
+            sidecar.unlink(missing_ok=True)
+            raise
     return dset

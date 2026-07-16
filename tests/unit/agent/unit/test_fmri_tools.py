@@ -246,12 +246,14 @@ class TestContrastAnalysisTool:
     """Test contrast analysis tool wrapper."""
 
     @staticmethod
-    def _write_z_map(tmp_path):
+    def _write_z_map(tmp_path, affine=None):
         data = np.zeros((8, 8, 8), dtype=float)
         data[2:4, 2:4, 2:4] = 5.0
         data[2, 2, 2] = 7.0
         z_map = tmp_path / "motor_zmap.nii.gz"
-        nib.save(nib.Nifti1Image(data, np.eye(4)), z_map)
+        nib.save(
+            nib.Nifti1Image(data, affine if affine is not None else np.eye(4)), z_map
+        )
         return z_map
 
     def test_tool_properties(self):
@@ -263,6 +265,13 @@ class TestContrastAnalysisTool:
             "does not perform inferential significance" in tool.get_tool_description()
         )
         assert tool.get_args_schema() == ContrastAnalysisArgs
+        coordinate_description = ContrastAnalysisArgs.model_json_schema()["properties"][
+            "coordinates"
+        ]["description"]
+        assert "world coordinates in millimeters" in coordinate_description
+        assert "input z-map NIfTI affine" in coordinate_description
+        assert "not voxel indices" in coordinate_description
+        assert "MNI" not in coordinate_description
 
     def test_successful_contrast_analysis_uses_explicit_map(self, tmp_path):
         """An existing z-map is analyzed instead of replaced with demo data."""
@@ -287,6 +296,8 @@ class TestContrastAnalysisTool:
         )
         assert result["metadata"]["inferential_significance"] is False
         assert result["metadata"]["multiple_comparisons_correction"] is None
+        assert result["metadata"]["cluster_connectivity"] == 26
+        assert result["metadata"]["opposite_signs_connected"] is False
         assert result["metadata"]["anatomical_labeling"] is False
         assert result["metadata"]["cognitive_interpretation"] is False
         assert (
@@ -299,6 +310,7 @@ class TestContrastAnalysisTool:
         assert cluster["peak_coordinate"] == [2, 2, 2]
         assert cluster["coordinate_space"] == "voxel"
         assert cluster["cluster_size"] == 8
+        assert cluster["sign"] == "positive"
         assert cluster["peak_z"] == 7.0
         assert "region" not in cluster
 
@@ -323,6 +335,38 @@ class TestContrastAnalysisTool:
         }
         assert coordinate_results[1]["in_bounds"] is False
         assert coordinate_results[1]["z_value"] is None
+
+    def test_coordinate_sampling_uses_nonidentity_input_affine(self, tmp_path):
+        """World coordinates are mapped through the supplied image affine."""
+        affine = np.array(
+            [
+                [2.0, 0.0, 0.0, 10.0],
+                [0.0, 2.0, 0.0, -10.0],
+                [0.0, 0.0, 2.0, 5.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+        z_map = self._write_z_map(tmp_path, affine=affine)
+
+        result = ContrastAnalysisTool().run(
+            z_map_path=str(z_map),
+            contrast_name="visual_vs_baseline",
+            coordinates=[[14.0, -6.0, 9.0]],
+        )
+
+        assert result["status"] == "success"
+        assert result["data"]["coordinate_analysis"] == [
+            {
+                "coordinate": [14.0, -6.0, 9.0],
+                "coordinate_space": "world",
+                "voxel_index": [2, 2, 2],
+                "in_bounds": True,
+                "z_value": 7.0,
+            }
+        ]
+        assert result["metadata"]["coordinate_spaces"]["requested_coordinates"] == (
+            "world_coordinates_mm_defined_by_input_z_map_affine"
+        )
 
     def test_missing_z_map_fails_closed_without_dataset_fallback(self, tmp_path):
         """A missing input cannot resolve to a private dataset or demo result."""

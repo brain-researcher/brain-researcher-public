@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI wrapper for downloading Neuromaps OSF resources."""
+"""[private-input] Download OSF resources selected by local metadata."""
 
 from __future__ import annotations
 
@@ -21,6 +21,8 @@ from brain_researcher.services.br_kg.spatial.download_osf_resources import (
     _resolve_section,
     main,
 )
+
+DOWNLOAD_STATUS = "private-input"
 
 __all__ = [
     "DownloadTarget",

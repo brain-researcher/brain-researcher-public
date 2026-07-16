@@ -52,6 +52,7 @@ spec:
           periodSeconds: 60
       selectPolicy: Min
 
+---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

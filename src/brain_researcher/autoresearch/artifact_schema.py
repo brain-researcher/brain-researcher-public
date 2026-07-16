@@ -9,7 +9,10 @@ from typing import Literal
 
 LineId = Literal["predictive", "discovery"]
 
-DEFAULT_DATA_ROOT = Path("/data/brain_researcher")
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_DATA_ROOT = Path(
+    os.getenv("BR_AUTORESEARCH_DATA_ROOT", str(_REPO_ROOT / "data" / "autoresearch"))
+)
 RESEARCH_ROOT_NAME = "research"
 
 

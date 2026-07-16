@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fetch NeuroVault images for a prefiltered ID list and pull Neurosynth terms via
+[private-input] Fetch NeuroVault images for a prefiltered local ID list and pull Neurosynth terms via
 nilearn.datasets.fetch_neurovault_ids.
 
 Inputs:
@@ -15,10 +15,13 @@ This script is intentionally minimal: adjust mode/MAX_IDS as needed.
 """
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
+
 from nilearn.datasets import fetch_neurovault_ids
 
-ROOT = Path(__file__).resolve().parents[2]
+DOWNLOAD_STATUS = "private-input"
+ROOT = Path(__file__).resolve().parents[3]
 IDS_TXT = ROOT / "data/neurovault/cache/neurovault_image_ids_filtered.txt"
 MAX_IDS = 100  # set to None for full run; keep small for a smoke test
 
@@ -36,6 +39,12 @@ def load_ids(path: Path, limit: int | None = None) -> list[int]:
 
 
 def main():
+    argparse.ArgumentParser(
+        description=(
+            "[private-input] Fetch live NeuroVault images selected by the "
+            "repo-local filtered ID list; no pinned output manifest is written."
+        )
+    ).parse_args()
     image_ids = load_ids(IDS_TXT, MAX_IDS)
     print(f"Loaded {len(image_ids)} image IDs from {IDS_TXT}")
 

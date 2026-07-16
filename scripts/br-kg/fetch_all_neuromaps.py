@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI wrapper for downloading Neuromaps atlases and annotations."""
+"""[experimental] Download Neuromaps atlases and annotations."""
 
 from brain_researcher.services.br_kg.spatial.fetch_all_neuromaps import (
     _configure_logging,
@@ -9,6 +9,8 @@ from brain_researcher.services.br_kg.spatial.fetch_all_neuromaps import (
     _parse_args,
     main,
 )
+
+DOWNLOAD_STATUS = "experimental"
 
 __all__ = [
     "_configure_logging",

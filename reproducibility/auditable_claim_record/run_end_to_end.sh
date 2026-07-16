@@ -59,6 +59,7 @@ echo "== [4/4] execute the claim -> sealed record (default NiMARE backend) =="
 python scripts/autoresearch/run_auditable_claim_demo.py \
   --case working_memory \
   --corpus data/neurosynth_nimare/neurosynth_dataset_v7.pkl \
+  --source-dir data/neurosynth_nimare/neurosynth_v7 \
   --output-dir "${OUT}"
 
 echo "== verify the chain actually fired =="
@@ -90,6 +91,11 @@ assert all(
     for ref in commitment["rubric_refs"].values()
 ), "rubric paths must be clone-stable repository-relative references"
 assert bundle["corpus_ref"]["sha256"], "corpus identity was not recorded"
+verified_source = bundle["corpus_ref"].get("verified_source") or {}
+assert verified_source.get("manifest_sha256"), "raw source manifest was not recorded"
+assert verified_source.get("converted_provenance_sha256"), (
+    "converted-dataset provenance sidecar was not recorded"
+)
 assert str(Path.cwd().resolve()) not in json.dumps(bundle), (
     "output bundle leaked the absolute clone path"
 )

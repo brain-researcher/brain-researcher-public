@@ -418,15 +418,21 @@ class TestEffectPlausibility:
 
         bundle = CodeReviewBundle(
             stats_metrics={
-                "meta_analytic_term": "working memory",
-                "meta_analytic_spatial_corr": 0.03,
-                "meta_analytic_voxels_compared": 2048,
+                "neurosynth_density_term": "working memory",
+                "neurosynth_density_spatial_corr": 0.03,
+                "neurosynth_density_voxels_compared": 2048,
+                "neurosynth_density_semantics": "descriptive_coordinate_density",
             }
         )
         finding = meta_analytic_spatial_plausibility_check(bundle)
         assert finding is not None
-        assert finding.rule_id == "REVIEW_META_ANALYTIC_SPATIAL_PLAUSIBILITY_LOW"
+        assert (
+            finding.rule_id
+            == "REVIEW_NEUROSYNTH_DENSITY_SPATIAL_CORRESPONDENCE_LOW"
+        )
         assert finding.severity == "warn"
+        assert "descriptive Neurosynth coordinate-density" in finding.message
+        assert "not an inferential meta-analysis" in finding.message
 
     def test_meta_analytic_spatial_plausibility_ok(self):
         from brain_researcher.services.review.checks.effect_plausibility import (
@@ -435,8 +441,22 @@ class TestEffectPlausibility:
 
         bundle = CodeReviewBundle(
             stats_metrics={
+                "neurosynth_density_term": "working memory",
+                "neurosynth_density_spatial_corr": 0.24,
+                "neurosynth_density_semantics": "descriptive_coordinate_density",
+            }
+        )
+        assert meta_analytic_spatial_plausibility_check(bundle) is None
+
+    def test_legacy_meta_analytic_fields_are_not_treated_as_density_evidence(self):
+        from brain_researcher.services.review.checks.effect_plausibility import (
+            meta_analytic_spatial_plausibility_check,
+        )
+
+        bundle = CodeReviewBundle(
+            stats_metrics={
                 "meta_analytic_term": "working memory",
-                "meta_analytic_spatial_corr": 0.24,
+                "meta_analytic_spatial_corr": 0.01,
             }
         )
         assert meta_analytic_spatial_plausibility_check(bundle) is None
@@ -1123,7 +1143,10 @@ class TestStatsExtractorEffectPlausibility:
 
         def _fake_mapping(term: str):
             assert term == "working memory"
-            return {"activation_maps": [ref_img]}
+            return {
+                "coordinate_density_maps": [ref_img],
+                "analysis_semantics": "descriptive_coordinate_density",
+            }
 
         monkeypatch.setattr(
             "brain_researcher.core.analysis.neurosynth_integration.get_neurosynth_mapping",
@@ -1131,10 +1154,16 @@ class TestStatsExtractorEffectPlausibility:
         )
 
         metrics = _extract_meta_analytic_spatial_metrics(tmp_path)
-        assert metrics["meta_analytic_term"] == "working memory"
-        assert metrics["meta_analytic_spatial_corr"] is not None
-        assert metrics["meta_analytic_spatial_corr"] > 0.99
-        assert metrics["meta_analytic_voxels_compared"] > 0
+        assert metrics["meta_analytic_term"] is None
+        assert metrics["meta_analytic_spatial_corr"] is None
+        assert metrics["neurosynth_density_term"] == "working memory"
+        assert metrics["neurosynth_density_spatial_corr"] is not None
+        assert metrics["neurosynth_density_spatial_corr"] > 0.99
+        assert metrics["neurosynth_density_voxels_compared"] > 0
+        assert (
+            metrics["neurosynth_density_semantics"]
+            == "descriptive_coordinate_density"
+        )
 
     def test_extract_meta_analytic_spatial_metrics_missing_task(self, tmp_path):
         from brain_researcher.services.review.stats_extractor import (
@@ -1145,6 +1174,8 @@ class TestStatsExtractorEffectPlausibility:
         metrics = _extract_meta_analytic_spatial_metrics(tmp_path)
         assert metrics["meta_analytic_term"] is None
         assert metrics["meta_analytic_spatial_corr"] is None
+        assert metrics["neurosynth_density_term"] is None
+        assert metrics["neurosynth_density_spatial_corr"] is None
 
     def test_epistemic_claim_policy_check_flags_overclaim(self):
         from brain_researcher.services.review.checks.epistemic_integrity import (

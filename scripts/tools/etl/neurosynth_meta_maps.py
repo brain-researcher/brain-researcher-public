@@ -25,17 +25,21 @@ import argparse
 import json
 import logging
 import os
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 from nilearn import image
-from nilearn.input_data import NiftiLabelsMasker
 from nimare.correct import FDRCorrector
 from nimare.dataset import Dataset
 from nimare.meta.cbma.mkda import MKDAChi2
-from nimare.io import convert_neurosynth_to_dataset
+
+from brain_researcher.core.datasets.neurosynth_source import (
+    DEFAULT_DATASET_PICKLE,
+    DEFAULT_SOURCE_DIR,
+    verify_converted_dataset,
+)
 
 try:
     from brain_researcher.services.br_kg.graph.neo4j_graph_database import (
@@ -63,41 +67,14 @@ class MapEntry:
 
 
 def load_dataset(data_dir: Path, dataset_file: Path | None = None) -> Dataset:
-    """
-    Load a cached Dataset if present; otherwise build it once from local Neurosynth files
-    (no re-downloading).
-    """
-    if dataset_file:
-        dataset_file = dataset_file.expanduser().resolve()
-        LOG.info("Checking cached Dataset at %s", dataset_file)
-        if dataset_file.exists():
-            try:
-                LOG.info("Loading cached Dataset: %s", dataset_file)
-                return Dataset.load(str(dataset_file))
-            except Exception as exc:
-                LOG.warning("Failed to load cached Dataset (%s); will rebuild. Error: %s", dataset_file, exc)
-        else:
-            LOG.info("Cached Dataset not found; will build and save to %s", dataset_file)
-
-    LOG.info("Converting local Neurosynth bundle -> Dataset")
-    # Locate files locally
-    root = data_dir
-    coords = next(root.glob("**/data-neurosynth_version-7_coordinates.tsv.gz"))
-    meta = next(root.glob("**/data-neurosynth_version-7_metadata.tsv.gz"))
-    features_path = next(root.glob("**/data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"))
-    vocab_path = next(root.glob("**/data-neurosynth_version-7_vocab-terms_vocabulary.txt"))
-
-    dset = convert_neurosynth_to_dataset(
-        str(coords),
-        str(meta),
-        annotations_files=[{"features": str(features_path), "vocabulary": str(vocab_path)}],
-        target="mni152_2mm",
-    )
-    if dataset_file:
-        dataset_file.parent.mkdir(parents=True, exist_ok=True)
-        dset.save(str(dataset_file))
-        LOG.info("Cached Dataset saved to %s", dataset_file)
-    return dset
+    """Load only a pickle bound to the verified pinned source bundle."""
+    if dataset_file is None:
+        raise ValueError("dataset_file is required; run scripts/data/convert_neurosynth.py")
+    dataset_file = dataset_file.expanduser().resolve()
+    data_dir = data_dir.expanduser().resolve()
+    verify_converted_dataset(dataset_file, data_dir)
+    LOG.info("Loading verified Dataset: %s", dataset_file)
+    return Dataset.load(str(dataset_file))
 
 
 def term_ids(dset: Dataset) -> Iterable[str]:
@@ -243,8 +220,8 @@ def ingest_neo4j(
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--data-dir", type=Path, default=Path("data/neurosynth_nimare/neurosynth"))
-    ap.add_argument("--dataset-file", type=Path, default=Path("data/neurosynth_nimare/neurosynth_dataset_v7.pkl.gz"))
+    ap.add_argument("--data-dir", type=Path, default=DEFAULT_SOURCE_DIR)
+    ap.add_argument("--dataset-file", type=Path, default=DEFAULT_DATASET_PICKLE)
     ap.add_argument("--output-dir", type=Path, default=Path("data/neurosynth_maps"))
     ap.add_argument("--manifest", type=Path, default=None, help="Optional existing manifest to reuse/ingest")
     ap.add_argument(

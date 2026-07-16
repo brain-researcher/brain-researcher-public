@@ -19,14 +19,14 @@ LOGDIR="${REPO_ROOT}/data/autoresearch/logs"
 
 mkdir -p "${LOGDIR}"
 
-if [[ -f /home/ubuntu/.tribe_worker_env.sh ]]; then
+if [[ -f "${HOME}/.tribe_worker_env.sh" ]]; then
   # Discovery workers export runtime env here.
   # shellcheck disable=SC1091
-  source /home/ubuntu/.tribe_worker_env.sh >/dev/null 2>&1 || true
-elif [[ -f /home/ubuntu/.bashrc ]]; then
+  source "${HOME}/.tribe_worker_env.sh" >/dev/null 2>&1 || true
+elif [[ -f "${HOME}/.bashrc" ]]; then
   # Legacy fallback.
   # shellcheck disable=SC1091
-  source /home/ubuntu/.bashrc >/dev/null 2>&1 || true
+  source "${HOME}/.bashrc" >/dev/null 2>&1 || true
 fi
 
 timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -42,12 +42,12 @@ LOGDIR="__LOGDIR__"
 MAX_RESTARTS="${AUTORESEARCH_MAX_RESTARTS:-3}"
 RESTART_DELAY_SECONDS="${AUTORESEARCH_RESTART_DELAY_SECONDS:-5}"
 
-if [[ -f /home/ubuntu/.tribe_worker_env.sh ]]; then
+if [[ -f "${HOME}/.tribe_worker_env.sh" ]]; then
   # shellcheck disable=SC1091
-  source /home/ubuntu/.tribe_worker_env.sh >/dev/null 2>&1 || true
-elif [[ -f /home/ubuntu/.bashrc ]]; then
+  source "${HOME}/.tribe_worker_env.sh" >/dev/null 2>&1 || true
+elif [[ -f "${HOME}/.bashrc" ]]; then
   # shellcheck disable=SC1091
-  source /home/ubuntu/.bashrc >/dev/null 2>&1 || true
+  source "${HOME}/.bashrc" >/dev/null 2>&1 || true
 fi
 
 export PYTHONUNBUFFERED=1

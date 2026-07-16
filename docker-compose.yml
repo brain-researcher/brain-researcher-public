@@ -19,10 +19,12 @@ services:
     image: neo4j:5.20
     container_name: ${COMPOSE_PROJECT_NAME:-brain-researcher}-neo4j
     ports:
-      - "${BR_NEO4J_BOLT_PORT:-7687}:7687"
-      - "${BR_NEO4J_HTTP_PORT:-7474}:7474"
+      - "${BIND_ADDRESS:-127.0.0.1}:${BR_NEO4J_BOLT_PORT:-7687}:7687"
+      - "${BIND_ADDRESS:-127.0.0.1}:${BR_NEO4J_HTTP_PORT:-7474}:7474"
     environment:
       - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:?set NEO4J_PASSWORD}
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:?set NEO4J_PASSWORD}
       - NEO4J_server_memory_pagecache_size=512M
       - NEO4J_server_memory_heap_initial__size=512M
       - NEO4J_server_memory_heap_max__size=1G
@@ -31,7 +33,7 @@ services:
       - ./backups/neo4j:/data/backups
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "cypher-shell -a bolt://localhost:7687 -u neo4j -p ${NEO4J_PASSWORD:?set NEO4J_PASSWORD} 'RETURN 1'" ]
+      test: ["CMD", "cypher-shell", "-a", "bolt://localhost:7687", "RETURN 1"]
       interval: 20s
       timeout: 5s
       start_period: 20s
@@ -49,7 +51,7 @@ services:
       neo4j:
         condition: service_healthy
     ports:
-      - "${BR_KG_PORT:-5000}:5000"
+      - "${BIND_ADDRESS:-127.0.0.1}:${BR_KG_PORT:-5000}:5000"
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
@@ -86,7 +88,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "${AGENT_PORT:-8000}:8000"
+      - "${BIND_ADDRESS:-127.0.0.1}:${AGENT_PORT:-8000}:8000"
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
@@ -131,7 +133,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "${ORCHESTRATOR_PORT:-3001}:3001"
+      - "${BIND_ADDRESS:-127.0.0.1}:${ORCHESTRATOR_PORT:-3001}:3001"
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
@@ -158,7 +160,7 @@ services:
       br-kg:
         condition: service_healthy
     ports:
-      - "${WEB_UI_PORT:-3000}:3000"
+      - "${BIND_ADDRESS:-127.0.0.1}:${WEB_UI_PORT:-3000}:3000"
     volumes:
       - ./configs:/app/configs:ro
     environment:
@@ -175,9 +177,9 @@ services:
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
-      - ENABLE_DEV_CREDENTIALS=1
-      - DEV_CREDENTIALS_EMAIL=demo@example.com
-      - DEV_CREDENTIALS_PASSWORD=DemoPass123!
+      - ENABLE_DEV_CREDENTIALS=${ENABLE_DEV_CREDENTIALS:-0}
+      - DEV_CREDENTIALS_EMAIL=${DEV_CREDENTIALS_EMAIL:-}
+      - DEV_CREDENTIALS_PASSWORD=${DEV_CREDENTIALS_PASSWORD:-}
       - AGENT_HOST=agent
       - BR_KG_HOST=br-kg
       - AGENT_BASE_URL=http://agent:8000

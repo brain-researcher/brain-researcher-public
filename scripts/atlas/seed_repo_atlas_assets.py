@@ -1,4 +1,4 @@
-"""Seed repo-wide atlas assets into a flat shared atlas home."""
+"""[experimental] Seed repo-wide atlas assets into a flat shared atlas home."""
 
 from __future__ import annotations
 
@@ -23,6 +23,8 @@ from brain_researcher.services.tools.atlas_utils import (
     normalize_harvard_oxford_variant,
     write_labels_sidecars,
 )
+
+DOWNLOAD_STATUS = "experimental"
 
 
 @dataclass(frozen=True)

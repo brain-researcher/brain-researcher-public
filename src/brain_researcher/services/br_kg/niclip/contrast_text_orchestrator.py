@@ -26,7 +26,7 @@ def _safe_slug(text: str) -> str:
 
 
 class ContrastTextToPredictedMapOrchestrator:
-    """Orchestrates contrast-text -> task -> construct -> activation map prediction."""
+    """Orchestrate contrast text to a descriptive coordinate-density map."""
 
     def __init__(
         self,
@@ -173,7 +173,7 @@ class ContrastTextToPredictedMapOrchestrator:
 
         for term in candidate_terms:
             payload = get_neurosynth_mapping(term, threshold=self.map_threshold)
-            maps = payload.get("activation_maps") or []
+            maps = payload.get("coordinate_density_maps") or []
             if not maps:
                 continue
 
@@ -200,6 +200,11 @@ class ContrastTextToPredictedMapOrchestrator:
                 "n_studies": int(payload.get("n_studies", 0)),
                 "n_coords": int(payload.get("n_coords", 0)),
                 "threshold_count": payload.get("threshold_count"),
+                "analysis_semantics": "descriptive_coordinate_density",
+                "map_value_semantics": (
+                    "overlapping_coordinate_sphere_hit_count"
+                ),
+                "inferential_statistics": False,
                 "coordinates": payload.get("coordinates", []),
                 "map_path": map_path,
                 "candidate_terms_tried": candidate_terms,
@@ -207,7 +212,10 @@ class ContrastTextToPredictedMapOrchestrator:
 
         return {
             "map_generated": False,
-            "error": "No activation map was produced for predicted constructs.",
+            "error": (
+                "No descriptive coordinate-density map was produced for "
+                "predicted constructs."
+            ),
             "candidate_terms_tried": candidate_terms,
         }
 

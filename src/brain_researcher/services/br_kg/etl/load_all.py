@@ -1807,6 +1807,12 @@ class MasterDataLoader:
 
                     flush_term_batch()
 
+            if study_count <= 0:
+                raise RuntimeError(
+                    "NeuroSynth ingestion produced zero publications; refusing to "
+                    "record the source as loaded"
+                )
+
             stats = {
                 "publications": study_count,
                 "coordinates": coordinate_count,

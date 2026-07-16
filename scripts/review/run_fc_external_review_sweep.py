@@ -5,10 +5,8 @@ run store, computes code review and deterministic scientific review verdicts,
 and writes a reproducible JSON summary.
 
 Usage:
-  python scripts/review/run_fc_external_review_sweep.py
-
   python scripts/review/run_fc_external_review_sweep.py \
-      --metrics-root /data/brain_researcher/research/predictive/project/artifacts/metrics \
+      --metrics-root /path/to/fc-project/artifacts/metrics \
       --source-path banghcp_phase8_rawtarget_pmat24_a_cr_graph_transformer_termiu_term014_nocov_verified_n325.json \
       --source-path banghcp_phase0_rawtarget_pmat24_a_cr_ridge_termiu_term014_nocov_verified_n325.json \
       --output-json data/exports/review/fc_external_review_sweep_custom.json
@@ -30,7 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -44,11 +42,6 @@ from brain_researcher.services.review.external_run_import import (
     stage_external_run_in_mcp_store,
 )
 
-UTC = timezone.utc
-
-DEFAULT_METRICS_ROOT = Path(
-    "/data/brain_researcher/research/predictive/project/artifacts/metrics"
-)
 DEFAULT_SOURCE_PATHS = (
     "banghcp_phase8_rawtarget_pmat24_a_cr_graph_transformer_termiu_term014_nocov_verified_n325.json",
     "banghcp_phase0_rawtarget_pmat24_a_cr_ridge_termiu_term014_nocov_verified_n325.json",
@@ -211,7 +204,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--metrics-root",
-        default=str(DEFAULT_METRICS_ROOT),
+        required=True,
         help="Root directory containing FC metrics JSON files.",
     )
     parser.add_argument(

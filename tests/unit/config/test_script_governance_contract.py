@@ -13,6 +13,15 @@ ROW_PATTERN = re.compile(
     re.MULTILINE,
 )
 ACTIVE_STATUSES = {"runnable", "governed"}
+FORBIDDEN_MACHINE_PATH = re.compile(
+    r"(?:"
+    r"/(?:home|Users)/[^/\s\"']+(?:/|$)"
+    r"|/data/(?:ECoG-foundation-model|brain_researcher)(?:/|$)"
+    r"|mnndl_temp"
+    r"|\$\{?HOME\}?/projects/brain_researcher"
+    r"|~/projects/brain_researcher"
+    r")"
+)
 
 
 def _status_rows() -> dict[str, str]:
@@ -51,16 +60,6 @@ def test_active_autoresearch_scripts_have_real_cli_contracts() -> None:
     success_marker = re.compile(
         r"(?i)(?:[\"']status[\"']\s*:\s*[\"']success[\"']|return\s+0|\bcompleted successfully\b)"
     )
-    forbidden_host_path = re.compile(
-        r"(?:"
-        r"/(?:home|Users)/(?:ubuntu|zijiaochen|[^/\s]+/projects)/"
-        r"|/data/ECoG-foundation-model"
-        r"|mnndl_temp"
-        r"|\$HOME/projects/brain_researcher"
-        r"|~/projects/brain_researcher"
-        r")"
-    )
-
     for relpath, status in rows.items():
         if status not in ACTIVE_STATUSES:
             continue
@@ -69,7 +68,7 @@ def test_active_autoresearch_scripts_have_real_cli_contracts() -> None:
         assert path.suffix == ".py", f"active shell needs a separate execution contract: {relpath}"
         assert "argparse" in text, f"active CLI does not expose --help: {relpath}"
         assert 'if __name__ == "__main__"' in text, f"active CLI lacks main guard: {relpath}"
-        assert not forbidden_host_path.search(
+        assert not FORBIDDEN_MACHINE_PATH.search(
             text
         ), f"active CLI embeds a host path: {relpath}"
         assert not (
@@ -87,7 +86,37 @@ def test_worker_shells_are_strict_and_repo_defaults_are_checkout_relative() -> N
     assert len(workers) == 6
     for path in workers:
         assert path.suffix == ".sh"
-        assert "set -euo pipefail" in path.read_text(encoding="utf-8"), path
+        text = path.read_text(encoding="utf-8")
+        assert "set -euo pipefail" in text, path
+        assert not FORBIDDEN_MACHINE_PATH.search(
+            text
+        ), f"worker embeds a host path: {path.relative_to(REPO_ROOT)}"
+
+    required_worker_inputs = {
+        AUTORESEARCH_ROOT / "discovery" / "run_action_executor.sh": (
+            "DISCOVERY_PROJECT_ROOT",
+            "CONDA_SH",
+        ),
+        AUTORESEARCH_ROOT / "discovery" / "run_live_watchdog.sh": (
+            "DISCOVERY_PROJECT_ROOT",
+            "CONDA_SH",
+        ),
+        AUTORESEARCH_ROOT / "fc" / "run_contract_closure_batch.sh": (
+            "FC_PROJECT_ROOT",
+            "CONDA_SH",
+        ),
+        AUTORESEARCH_ROOT / "fc" / "run_live_watchdog.sh": (
+            "FC_PROJECT_ROOT",
+            "CONDA_SH",
+        ),
+    }
+    for path, variable_names in required_worker_inputs.items():
+        text = path.read_text(encoding="utf-8")
+        for variable_name in variable_names:
+            assert f': "${{{variable_name}:?' in text, (
+                f"worker input {variable_name} is not explicit: "
+                f"{path.relative_to(REPO_ROOT)}"
+            )
 
     root_aware_workers = (
         AUTORESEARCH_ROOT / "discovery" / "run_action_executor.sh",
@@ -111,6 +140,11 @@ def test_neurosynth_has_one_pinned_authoritative_downloader() -> None:
     assert downloaders == {"scripts/data/download_neurosynth_data.py"}
 
     text = canonical.read_text(encoding="utf-8")
+    source_contract = (
+        REPO_ROOT
+        / "src/brain_researcher/core/datasets/neurosynth_source.py"
+    ).read_text(encoding="utf-8")
+    assert "brain_researcher.core.datasets.neurosynth_source import" in text
     for required in (
         "SOURCE_COMMIT",
         "DATASET_VERSION",
@@ -121,12 +155,13 @@ def test_neurosynth_has_one_pinned_authoritative_downloader() -> None:
         "MANIFEST_FILENAME",
         "--check-only",
     ):
-        assert required in text
-    assert "/master/" not in text
-    assert "fetch_neurosynth" not in text
+        assert required in text + source_contract
+    assert "/master/" not in text + source_contract
+    assert "fetch_neurosynth" not in text + source_contract
     assert "Skipping existing" not in text
 
     retired = (
+        scripts_root / "data" / "download_data.py",
         scripts_root / "tools" / "ingest" / "download_neurosynth_dataset.py",
         scripts_root / "tools" / "ingest" / "download_neurosynth_lda.py",
     )
@@ -191,6 +226,14 @@ def test_makefile_exposes_only_existing_root_anchored_helpers() -> None:
 
 
 def test_governed_extractor_and_group_alignment_fail_closed() -> None:
+    migration = (AUTORESEARCH_ROOT / "migrate_research_roots.py").read_text(
+        encoding="utf-8"
+    )
+    data_root_argument = migration.split('"--data-root"', maxsplit=1)[1].split(
+        ")", maxsplit=1
+    )[0]
+    assert "required=True" in data_root_argument
+
     extractor = (
         AUTORESEARCH_ROOT / "discovery" / "extract_tribe_layer_features.py"
     ).read_text(encoding="utf-8")

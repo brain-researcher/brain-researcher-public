@@ -43,7 +43,7 @@ def test_orchestrate_success(monkeypatch):
         if keyword == "working memory":
             return {
                 "term_used": "working memory",
-                "activation_maps": [object()],
+                "coordinate_density_maps": [object()],
                 "n_studies": 12,
                 "n_coords": 2,
                 "coordinates": [
@@ -52,7 +52,7 @@ def test_orchestrate_success(monkeypatch):
                 ],
                 "threshold_count": 3.0,
             }
-        return {"activation_maps": []}
+        return {"coordinate_density_maps": []}
 
     monkeypatch.setattr(
         "brain_researcher.services.br_kg.niclip.contrast_text_orchestrator.get_neurosynth_mapping",
@@ -69,6 +69,11 @@ def test_orchestrate_success(monkeypatch):
     assert result["constructs"][0]["concept"] == "working memory"
     assert result["predicted_map"]["map_generated"] is True
     assert result["predicted_map"]["selected_term"] == "working memory"
+    assert (
+        result["predicted_map"]["analysis_semantics"]
+        == "descriptive_coordinate_density"
+    )
+    assert result["predicted_map"]["inferential_statistics"] is False
     assert result["coordinate_to_concept_args"]["coordinates"][0] == [40.0, 24.0, 32.0]
 
 
@@ -80,13 +85,13 @@ def test_orchestrate_tries_next_construct_when_first_fails(monkeypatch):
         if keyword == "attention":
             return {
                 "term_used": "attention",
-                "activation_maps": [object()],
+                "coordinate_density_maps": [object()],
                 "n_studies": 5,
                 "n_coords": 1,
                 "coordinates": [{"x": 1, "y": 2, "z": 3}],
                 "threshold_count": threshold,
             }
-        return {"activation_maps": []}
+        return {"coordinate_density_maps": []}
 
     monkeypatch.setattr(
         "brain_researcher.services.br_kg.niclip.contrast_text_orchestrator.get_neurosynth_mapping",

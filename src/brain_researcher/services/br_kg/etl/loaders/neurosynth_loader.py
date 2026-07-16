@@ -2,26 +2,29 @@
 Neurosynth Data Loader
 
 Loads Neurosynth data using NiMARE Dataset for robust and standardized access.
-Supports both local pkl files and automatic downloading via NiMARE.
+Consumes only a local dataset associated with the verified pinned source bundle.
 """
+
+from __future__ import annotations
 
 import json
 import logging
-import os
-import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from nimare.dataset import Dataset
-from nimare.extract import fetch_neurosynth
+if TYPE_CHECKING:
+    from nimare.dataset import Dataset
+
+from brain_researcher.core.datasets.neurosynth_source import (
+    DEFAULT_DATASET_PICKLE,
+    DEFAULT_SOURCE_DIR,
+    verify_converted_dataset,
+)
 
 logger = logging.getLogger(__name__)
 
-# Configuration
-PROJECT_ROOT = Path(__file__).parent.parent.parent
-NEUROSYNTH_PATH = os.path.join(
-    PROJECT_ROOT, "data", "neurosynth_nimare", "neurosynth_dataset_v7.pkl"
-)
-NEUROSYNTH_DATA_DIR = os.path.join(PROJECT_ROOT, "data", "neurosynth_nimare")
+NEUROSYNTH_PATH = DEFAULT_DATASET_PICKLE
+NEUROSYNTH_DATA_DIR = DEFAULT_SOURCE_DIR
 
 
 class NeurosynthDataError(Exception):
@@ -31,7 +34,12 @@ class NeurosynthDataError(Exception):
 
 
 def load_neurosynth_data(
-    output_dir: str, sample_size: int = 10000, use_local: bool = True
+    output_dir: str,
+    sample_size: int = 10000,
+    use_local: bool = True,
+    *,
+    dataset_path: str | Path | None = None,
+    source_dir: str | Path | None = None,
 ) -> dict[str, str]:
     """
     Load Neurosynth data using NiMARE Dataset.
@@ -39,7 +47,10 @@ def load_neurosynth_data(
     Args:
         output_dir: Directory to save processed files
         sample_size: Maximum number of studies to process (for MVP)
-        use_local: Whether to use local pkl file if available
+        use_local: Legacy switch. ``False`` now fails because network fetches are
+            not an authoritative source path.
+        dataset_path: Explicit NiMARE pickle derived from the verified bundle.
+        source_dir: Directory containing the pinned raw bundle and manifest.
 
     Returns:
         Dictionary mapping data type to output file path
@@ -50,89 +61,71 @@ def load_neurosynth_data(
 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
+    coordinates_output = output_path / "neurosynth_coordinates.json"
+    features_output = output_path / "neurosynth_features.json"
+    metadata_output = output_path / "neurosynth_metadata.json"
+    published_outputs = (coordinates_output, features_output, metadata_output)
+    for path in published_outputs:
+        path.unlink(missing_ok=True)
 
-    output_files = {}
+    if not use_local:
+        raise NeurosynthDataError(
+            "automatic Neurosynth fetching is disabled; run "
+            "python scripts/data/download_neurosynth_data.py and "
+            "python scripts/data/convert_neurosynth.py"
+        )
+
+    verified_dir = Path(source_dir or NEUROSYNTH_DATA_DIR).expanduser().resolve()
+    pickle_path = Path(dataset_path or NEUROSYNTH_PATH).expanduser().resolve()
+    verify_converted_dataset(pickle_path, verified_dir)
+    from nimare.dataset import Dataset
 
     try:
-        # Try to load from local pkl file first
-        if use_local and os.path.exists(NEUROSYNTH_PATH):
-            logger.info(f"📁 Loading from local file: {NEUROSYNTH_PATH}")
-            dataset = Dataset.load(NEUROSYNTH_PATH)
-        else:
-            # Download using NiMARE
-            logger.info("⬇️ Downloading Neurosynth data via NiMARE...")
-            dataset = _download_neurosynth_via_nimare()
+        dataset = Dataset.load(str(pickle_path))
+    except Exception as exc:
+        raise NeurosynthDataError(
+            f"failed to load Neurosynth dataset pickle {pickle_path}: {exc}"
+        ) from exc
 
-        # Process the dataset
-        coordinates_output = output_path / "neurosynth_coordinates.json"
+    output_files = {}
+    try:
         studies_processed = _extract_coordinates_from_dataset(
             dataset, coordinates_output, sample_size
         )
+        if not studies_processed:
+            raise NeurosynthDataError(
+                "verified Neurosynth dataset yielded zero studies"
+            )
         output_files["coordinates"] = str(coordinates_output)
 
-        # Extract features/annotations
-        features_output = output_path / "neurosynth_features.json"
         features_processed = _extract_features_from_dataset(
             dataset, features_output, studies_processed
         )
+        if features_processed <= 0:
+            raise NeurosynthDataError(
+                "verified Neurosynth dataset yielded zero features"
+            )
         output_files["features"] = str(features_output)
 
-        # Extract metadata
-        metadata_output = output_path / "neurosynth_metadata.json"
-        _extract_metadata_from_dataset(dataset, metadata_output, studies_processed)
+        metadata_processed = _extract_metadata_from_dataset(
+            dataset, metadata_output, studies_processed
+        )
+        if metadata_processed <= 0:
+            raise NeurosynthDataError(
+                "verified Neurosynth dataset yielded zero metadata rows"
+            )
         output_files["metadata"] = str(metadata_output)
+    except Exception:
+        for path in published_outputs:
+            path.unlink(missing_ok=True)
+        raise
 
-        logger.info(
-            f"✅ Processed {len(studies_processed)} studies with {features_processed} features"
-        )
-
-    except Exception as e:
-        logger.error(f"❌ Failed to load Neurosynth data: {e}")
-        # Fallback to sample data
-        logger.info("🔄 Creating sample Neurosynth data")
-        return _create_sample_neurosynth_data(output_path)
-
+    logger.info(
+        "Processed %d verified Neurosynth studies with %d features",
+        len(studies_processed),
+        features_processed,
+    )
     return output_files
-
-
-def _download_neurosynth_via_nimare() -> Dataset:
-    """Download Neurosynth data using NiMARE's fetch function."""
-    logger.info("📦 Downloading Neurosynth via NiMARE...")
-
-    try:
-        # Create data directory
-        os.makedirs(NEUROSYNTH_DATA_DIR, exist_ok=True)
-
-        # Download using NiMARE
-        files = fetch_neurosynth(
-            data_dir=NEUROSYNTH_DATA_DIR,
-            version="7",
-            overwrite=False,
-            source="abstract",
-            vocab="terms",
-        )
-
-        logger.info(f"📁 Downloaded files: {files}")
-
-        # Convert to NiMARE dataset
-        from nimare.io import convert_neurosynth_to_dataset
-
-        neurosynth_db = files[0]
-        dataset = convert_neurosynth_to_dataset(
-            coordinates_file=neurosynth_db["coordinates"],
-            metadata_file=neurosynth_db["metadata"],
-            annotations_files=neurosynth_db["features"],
-        )
-
-        # Save for future use
-        dataset.save(NEUROSYNTH_PATH)
-        logger.info(f"💾 Saved dataset to: {NEUROSYNTH_PATH}")
-
-        return dataset
-
-    except Exception as e:
-        logger.error(f"❌ Failed to download via NiMARE: {e}")
-        raise NeurosynthDataError(f"Download failed: {e}")
 
 
 def _extract_coordinates_from_dataset(
@@ -185,7 +178,7 @@ def _extract_coordinates_from_dataset(
 
     except Exception as e:
         logger.error(f"❌ Error extracting coordinates: {e}")
-        raise NeurosynthDataError(f"Coordinate extraction failed: {e}")
+        raise NeurosynthDataError(f"Coordinate extraction failed: {e}") from e
 
     return studies_processed
 
@@ -200,44 +193,41 @@ def _extract_features_from_dataset(
 
     try:
         # Get annotations DataFrame
-        if hasattr(dataset, "annotations") and dataset.annotations is not None:
-            annotations_df = dataset.annotations
+        if not hasattr(dataset, "annotations") or dataset.annotations is None:
+            raise NeurosynthDataError("Neurosynth dataset has no annotations")
+        annotations_df = dataset.annotations
 
-            logger.info(f"📊 Found annotations for {len(annotations_df)} studies")
+        logger.info(f"📊 Found annotations for {len(annotations_df)} studies")
 
-            # Filter to processed studies
-            annotations_df = annotations_df[
-                annotations_df.index.isin(studies_processed)
-            ]
+        annotations_df = annotations_df[annotations_df.index.isin(studies_processed)]
+        if annotations_df.empty:
+            raise NeurosynthDataError(
+                "Neurosynth annotations contain no processed studies"
+            )
 
-            # Process each study
-            for study_id, row in annotations_df.iterrows():
-                try:
-                    # Get non-zero features
-                    study_features = row[row > 0].sort_values(ascending=False)
+        for study_id, row in annotations_df.iterrows():
+            try:
+                study_features = row[row > 0].sort_values(ascending=False)
 
-                    if len(study_features) > 0:
-                        feature_data = {
-                            "study_id": str(study_id),
-                            "features": [
-                                {"name": feature_name, "value": float(value)}
-                                for feature_name, value in study_features.head(
-                                    20
-                                ).items()  # Top 20 features
-                            ],
-                            "source": "neurosynth",
-                        }
+                if len(study_features) > 0:
+                    feature_data = {
+                        "study_id": str(study_id),
+                        "features": [
+                            {"name": feature_name, "value": float(value)}
+                            for feature_name, value in study_features.head(20).items()
+                        ],
+                        "source": "neurosynth",
+                    }
 
-                        features.append(feature_data)
+                    features.append(feature_data)
 
-                except Exception as e:
-                    logger.warning(
-                        f"⚠️ Error processing features for study {study_id}: {e}"
-                    )
-                    continue
+            except Exception as exc:
+                raise NeurosynthDataError(
+                    f"failed to process annotations for study {study_id}: {exc}"
+                ) from exc
 
-        else:
-            logger.warning("⚠️ No annotations found in dataset")
+        if not features:
+            raise NeurosynthDataError("Neurosynth annotations yielded zero features")
 
         # Save features
         with open(output_file, "w", encoding="utf-8") as f:
@@ -245,18 +235,19 @@ def _extract_features_from_dataset(
 
         logger.info(f"✅ Extracted features for {len(features)} studies")
 
-    except Exception as e:
-        logger.error(f"❌ Error extracting features: {e}")
-        # Create empty features file
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump([], f)
+    except NeurosynthDataError:
+        output_file.unlink(missing_ok=True)
+        raise
+    except Exception as exc:
+        output_file.unlink(missing_ok=True)
+        raise NeurosynthDataError(f"Feature extraction failed: {exc}") from exc
 
     return len(features)
 
 
 def _extract_metadata_from_dataset(
     dataset: Dataset, output_file: Path, studies_processed: set
-):
+) -> int:
     """Extract metadata from NiMARE dataset."""
     logger.info("🔄 Extracting metadata from dataset")
 
@@ -264,38 +255,38 @@ def _extract_metadata_from_dataset(
 
     try:
         # Get metadata DataFrame
-        if hasattr(dataset, "metadata") and dataset.metadata is not None:
-            metadata_df = dataset.metadata
+        if not hasattr(dataset, "metadata") or dataset.metadata is None:
+            raise NeurosynthDataError("Neurosynth dataset has no metadata")
+        metadata_df = dataset.metadata
 
-            logger.info(f"📊 Found metadata for {len(metadata_df)} studies")
+        logger.info(f"📊 Found metadata for {len(metadata_df)} studies")
 
-            # Filter to processed studies
-            metadata_df = metadata_df[metadata_df.index.isin(studies_processed)]
+        metadata_df = metadata_df[metadata_df.index.isin(studies_processed)]
+        if metadata_df.empty:
+            raise NeurosynthDataError("Neurosynth metadata contain no processed studies")
 
-            # Process each study
-            for study_id, row in metadata_df.iterrows():
-                try:
-                    study_metadata = {
-                        "study_id": str(study_id),
-                        "title": str(row.get("title", "")),
-                        "authors": str(row.get("authors", "")),
-                        "journal": str(row.get("journal", "")),
-                        "year": row.get("year"),
-                        "doi": str(row.get("doi", "")),
-                        "pmid": str(row.get("pmid", "")),
-                        "source": "neurosynth",
-                    }
+        for study_id, row in metadata_df.iterrows():
+            try:
+                study_metadata = {
+                    "study_id": str(study_id),
+                    "title": str(row.get("title", "")),
+                    "authors": str(row.get("authors", "")),
+                    "journal": str(row.get("journal", "")),
+                    "year": row.get("year"),
+                    "doi": str(row.get("doi", "")),
+                    "pmid": str(row.get("pmid", "")),
+                    "source": "neurosynth",
+                }
 
-                    metadata.append(study_metadata)
+                metadata.append(study_metadata)
 
-                except Exception as e:
-                    logger.warning(
-                        f"⚠️ Error processing metadata for study {study_id}: {e}"
-                    )
-                    continue
+            except Exception as exc:
+                raise NeurosynthDataError(
+                    f"failed to process metadata for study {study_id}: {exc}"
+                ) from exc
 
-        else:
-            logger.warning("⚠️ No metadata found in dataset")
+        if not metadata:
+            raise NeurosynthDataError("Neurosynth metadata yielded zero rows")
 
         # Save metadata
         with open(output_file, "w", encoding="utf-8") as f:
@@ -303,11 +294,14 @@ def _extract_metadata_from_dataset(
 
         logger.info(f"✅ Extracted metadata for {len(metadata)} studies")
 
-    except Exception as e:
-        logger.error(f"❌ Error extracting metadata: {e}")
-        # Create empty metadata file
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump([], f)
+    except NeurosynthDataError:
+        output_file.unlink(missing_ok=True)
+        raise
+    except Exception as exc:
+        output_file.unlink(missing_ok=True)
+        raise NeurosynthDataError(f"Metadata extraction failed: {exc}") from exc
+
+    return len(metadata)
 
 
 def _create_sample_neurosynth_data(output_path: Path) -> dict[str, str]:
@@ -430,6 +424,10 @@ def _create_sample_neurosynth_data(output_path: Path) -> dict[str, str]:
         },
     ]
 
+    for record in (*sample_coordinates, *sample_features, *sample_metadata):
+        record["source"] = "synthetic_neurosynth_demo"
+        record["synthetic"] = True
+
     output_files = {}
 
     # Save sample coordinates
@@ -480,31 +478,34 @@ def process_neurosynth_data(
 
     output_files = {}
 
-    # Process coordinates file if exists
-    coordinates_file = raw_path / "neurosynth_coordinates.json"
-    if coordinates_file.exists():
-        coordinates_output = output_path / "coordinates.csv"
-        _convert_coordinates_to_csv(
-            coordinates_file, coordinates_output, coordinate_limit
+    required = {
+        "coordinates": raw_path / "neurosynth_coordinates.json",
+        "features": raw_path / "neurosynth_features.json",
+        "metadata": raw_path / "neurosynth_metadata.json",
+    }
+    missing = [str(path) for path in required.values() if not path.is_file()]
+    if missing:
+        raise NeurosynthDataError(
+            "processed Neurosynth bundle is incomplete: " + ", ".join(missing)
         )
-        output_files["coordinates"] = str(coordinates_output)
-        logger.info("✅ Converted coordinates to CSV")
 
-    # Process features file if exists
+    coordinates_file = raw_path / "neurosynth_coordinates.json"
+    coordinates_output = output_path / "coordinates.csv"
+    _convert_coordinates_to_csv(coordinates_file, coordinates_output, coordinate_limit)
+    output_files["coordinates"] = str(coordinates_output)
+    logger.info("✅ Converted coordinates to CSV")
+
     features_file = raw_path / "neurosynth_features.json"
-    if features_file.exists():
-        features_output = output_path / "features.csv"
-        _convert_features_to_csv(features_file, features_output)
-        output_files["features"] = str(features_output)
-        logger.info("✅ Converted features to CSV")
+    features_output = output_path / "features.csv"
+    _convert_features_to_csv(features_file, features_output)
+    output_files["features"] = str(features_output)
+    logger.info("✅ Converted features to CSV")
 
-    # Process metadata file if exists
     metadata_file = raw_path / "neurosynth_metadata.json"
-    if metadata_file.exists():
-        metadata_output = output_path / "metadata.csv"
-        _convert_metadata_to_csv(metadata_file, metadata_output)
-        output_files["metadata"] = str(metadata_output)
-        logger.info("✅ Converted metadata to CSV")
+    metadata_output = output_path / "metadata.csv"
+    _convert_metadata_to_csv(metadata_file, metadata_output)
+    output_files["metadata"] = str(metadata_output)
+    logger.info("✅ Converted metadata to CSV")
 
     return output_files
 
@@ -513,12 +514,14 @@ def _convert_coordinates_to_csv(coordinates_file: Path, output_file: Path, limit
     """Convert coordinates JSON to CSV format."""
     with open(coordinates_file, encoding="utf-8") as f:
         coordinates = json.load(f)
+    if not isinstance(coordinates, list) or not coordinates:
+        raise NeurosynthDataError("coordinates JSON is empty or invalid")
 
     with open(output_file, "w", encoding="utf-8") as f:
         # Write CSV header
         f.write("study_id,x,y,z,space\n")
 
-        for i, coord in enumerate(coordinates[:limit]):
+        for coord in coordinates[:limit]:
             f.write(
                 f"{coord['study_id']},{coord['x']},{coord['y']},{coord['z']},"
                 f"{coord.get('space', 'MNI')}\n"
@@ -529,6 +532,8 @@ def _convert_features_to_csv(features_file: Path, output_file: Path):
     """Convert features JSON to CSV format."""
     with open(features_file, encoding="utf-8") as f:
         features = json.load(f)
+    if not isinstance(features, list) or not features:
+        raise NeurosynthDataError("features JSON is empty or invalid")
 
     with open(output_file, "w", encoding="utf-8") as f:
         # Write CSV header
@@ -544,6 +549,8 @@ def _convert_metadata_to_csv(metadata_file: Path, output_file: Path):
     """Convert metadata JSON to CSV format."""
     with open(metadata_file, encoding="utf-8") as f:
         metadata = json.load(f)
+    if not isinstance(metadata, list) or not metadata:
+        raise NeurosynthDataError("metadata JSON is empty or invalid")
 
     with open(output_file, "w", encoding="utf-8") as f:
         # Write CSV header
@@ -567,7 +574,7 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
-            result = load_neurosynth_data(temp_dir, sample_size=100, use_local=False)
+            result = load_neurosynth_data(temp_dir, sample_size=100, use_local=True)
             print(f"✅ Test successful: {result}")
         except Exception as e:
-            print(f"❌ Test failed: {e}")
+            raise SystemExit(f"Neurosynth loader test failed: {e}") from e

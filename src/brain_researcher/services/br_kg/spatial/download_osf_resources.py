@@ -117,7 +117,10 @@ def _parse_filters(raw_filters: Sequence[str]) -> dict[str, str]:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Download Neuromaps resources from OSF using local metadata."
+        description=(
+            "[private-input] Download Neuromaps resources from OSF using a "
+            "caller-supplied local metadata inventory."
+        )
     )
     parser.add_argument(
         "--metadata",

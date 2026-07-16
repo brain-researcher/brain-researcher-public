@@ -37,7 +37,7 @@ These script-level labels refine the repository-wide documentation statuses:
 |---|---|---|
 | [`launch_bounded_supervisor_tmux.sh`](launch_bounded_supervisor_tmux.sh) | **worker** | Creates a detached tmux supervisor and restart scripts; operator-owned runtime only. |
 | [`make_figure12_data_only_validation.py`](make_figure12_data_only_validation.py) | **historical** | Re-renders a dated manuscript figure from campaign-specific artifact roots. |
-| [`migrate_research_roots.py`](migrate_research_roots.py) | **governed** | Prints a migration plan by default; filesystem mutation requires explicit `--apply`. |
+| [`migrate_research_roots.py`](migrate_research_roots.py) | **governed** | Requires `--data-root` and prints a migration plan by default; filesystem mutation requires explicit `--apply`. |
 | [`run_auditable_claim_demo.py`](run_auditable_claim_demo.py) | **runnable** | Canonical implementation helper for the auditable-claim tutorial; requires a staged NiMARE corpus. |
 
 ## Discovery scripts

@@ -20,9 +20,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-: "${FC_PROJECT_ROOT:=/data/brain_researcher/research/predictive/project}"
+: "${FC_PROJECT_ROOT:?Set FC_PROJECT_ROOT to the external FC project}"
 : "${BRAIN_RESEARCHER_ROOT:=${REPO_ROOT}}"
-: "${CONDA_SH:=/home/ubuntu/miniconda3/etc/profile.d/conda.sh}"
+: "${CONDA_SH:?Set CONDA_SH to the conda activation script}"
 : "${CONDA_ENV:=brain_researcher}"
 : "${STATE_ROOT:=${FC_PROJECT_ROOT}/artifacts/autoresearch/fc_live_watchdog}"
 : "${LOG_DIR:=${STATE_ROOT}/logs}"

@@ -7,12 +7,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 HISTORICAL_MARKER = "<!-- docs-status: historical -->"
 
-# These two surfaces are repaired by companion PR6 branches. Keep this list exact;
-# the integration branch should remove entries as those companion changes land.
-COMPANION_OWNED_EXCLUSIONS = {
-    Path("configs/workflows/encoding_model.yaml"),
-}
-COMPANION_OWNED_PREFIXES = (Path("scripts/autoresearch"),)
+# Autoresearch has its own executable-by-executable governance matrix. Active
+# and worker entries are checked by test_script_governance_contract.py, while
+# historical entries retain machine paths only as provenance.
+GOVERNED_SEPARATELY_PREFIXES = (Path("scripts/autoresearch"),)
 
 FORBIDDEN_MARKERS = (
     "/data/ECoG-foundation-model",
@@ -23,9 +21,10 @@ FORBIDDEN_MARKERS = (
     "${HOME}/projects/brain_researcher",
     "~/projects/brain_researcher",
 )
-HOME_PATH_RE = re.compile(r"/home/(?P<username>[A-Za-z0-9_.-]+)/")
-MAC_HOME_PATH_RE = re.compile(r"/Users/(?P<username>[A-Za-z0-9_.-]+)/")
+HOME_PATH_RE = re.compile(r"/home/(?P<username>[A-Za-z0-9_.-]+)(?:/|$)")
+MAC_HOME_PATH_RE = re.compile(r"/Users/(?P<username>[A-Za-z0-9_.-]+)(?:/|$)")
 PYTEST_USER_DIR_RE = re.compile(r"/pytest-of-(?!\*/)(?P<username>[^/\s]+)")
+HOST_DATA_ROOT_RE = re.compile(r"(?<!/app)/data/brain_researcher(?:/|$)")
 ALLOWED_HOME_IDENTITIES = {
     # Stable users defined inside the shipped single-user containers.
     "br_user",
@@ -53,13 +52,13 @@ def _is_out_of_scope(relative_path: Path, text: str) -> bool:
         return True
     if relative_path.parts[:2] == ("docs", "archive"):
         return True
-    if HISTORICAL_MARKER in text:
-        return True
-    if relative_path in COMPANION_OWNED_EXCLUSIONS:
+    if relative_path.suffix.lower() in {".md", ".rst", ".txt"} and (
+        HISTORICAL_MARKER in text
+    ):
         return True
     return any(
         relative_path == prefix or prefix in relative_path.parents
-        for prefix in COMPANION_OWNED_PREFIXES
+        for prefix in GOVERNED_SEPARATELY_PREFIXES
     )
 
 
@@ -85,6 +84,11 @@ def _machine_path_findings() -> list[str]:
                 findings.append(
                     f"{relative_path}:{line_number}: pytest temp user "
                     f"{match.group('username')}"
+                )
+
+            if HOST_DATA_ROOT_RE.search(line):
+                findings.append(
+                    f"{relative_path}:{line_number}: private host data root"
                 )
 
             for pattern, home_kind in (

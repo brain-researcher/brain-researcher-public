@@ -36,9 +36,9 @@ spec:
   - match:
     - uri:
         prefix: /api/
-    headers:
-      X-Brain-Researcher-Service:
-        exact: web-ui
+      headers:
+        X-Brain-Researcher-Service:
+          exact: web-ui
     route:
     - destination:
         host: web-ui-service.brain-researcher.svc.cluster.local
@@ -151,9 +151,9 @@ spec:
   - match:
     - uri:
         prefix: /search/
-    headers:
-      X-API-Key:
-        regex: ".*"
+      headers:
+        X-API-Key:
+          regex: ".*"
     route:
     - destination:
         host: br-kg-service.brain-researcher.svc.cluster.local
@@ -319,9 +319,9 @@ spec:
   - match:
     - uri:
         prefix: /tools/
-    headers:
-      X-Experimental:
-        exact: "true"
+      headers:
+        X-Experimental:
+          exact: "true"
     route:
     - destination:
         host: agent-service.brain-researcher.svc.cluster.local
