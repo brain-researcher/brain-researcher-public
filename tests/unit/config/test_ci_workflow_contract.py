@@ -40,8 +40,8 @@ ACTION_PINS = {
         "v4.1.0",
     ),
     "azure/setup-helm": (
-        "1a275c3b69536ee54be43f2070a358922e12c8d4",
-        "v4.3.1",
+        "9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310",
+        "v5.0.1",
     ),
 }
 ACTION_COUNTS = {
