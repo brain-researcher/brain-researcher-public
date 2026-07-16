@@ -17,12 +17,12 @@ active_tracks:
     deliverables:
       - Source-of-truth graph contract covering config, docs, and snapshot counts
       - Canonical substrate contract for `Publication -> HAS_COORDINATE -> Coordinate`, `StatsMap -> IN_REGION -> BrainRegion`, and `BrainRegion -> PART_OF -> BrainRegion`
-      - `A1`/`A2` gate split with `ACTIVATES` removed from substrate blocking status
+      - "`A1`/`A2` gate split with `ACTIVATES` removed from substrate blocking status"
       - Frozen `graph_snapshot_v1` with typed path probes and coverage diagnostics
     exit_criteria:
       - The graph clears the minimum structural floor defined in the execution plan
-      - `A1 spatial backbone` passes on the canonical BrainRegion contract
-      - `A2 anatomy hierarchy` is either passed or explicitly called out as the only remaining blocker
+      - "`A1 spatial backbone` passes on the canonical BrainRegion contract"
+      - "`A2 anatomy hierarchy` is either passed or explicitly called out as the only remaining blocker"
       - Config, docs, and snapshot counts are aligned closely enough for benchmark use
       - A frozen `graph_snapshot_v1` exists with reproducible coverage and typed path probes
 

@@ -151,7 +151,7 @@ security_rules:
       - "br-kg"
       - "niclip"
     config:
-      secret: "${JWT_SECRET:-brain_researcher_secret}"
+      secret: "${JWT_SECRET}"
       algorithm: "HS256"
       required_claims:
         - "user_id"
@@ -190,7 +190,7 @@ security_rules:
       - "br-kg"
       - "niclip"
     config:
-      secret: "${INTERNAL_JWT_SECRET:-internal_secret}"
+      secret: "${INTERNAL_JWT_SECRET}"
       algorithm: "HS256"
     enabled: false  # Enable for production
 

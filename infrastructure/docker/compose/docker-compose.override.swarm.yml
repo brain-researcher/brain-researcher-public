@@ -138,7 +138,7 @@ services:
       - BR_KG_URL=http://br-kg:5000
       - NICLIP_URL=http://niclip:8001
       - REDIS_URL=redis://redis:6379
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/brain_researcher
+      - "DATABASE_URL=${DATABASE_URL:?set DATABASE_URL}"
     deploy:
       replicas: 5
       placement:

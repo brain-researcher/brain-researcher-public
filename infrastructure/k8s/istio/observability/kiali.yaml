@@ -34,13 +34,15 @@ spec:
 
     # Grafana integration
     grafana:
-      enabled: true
+      # Fail closed in the public template. Enable only after an operator has
+      # configured private Grafana authentication outside this repository.
+      enabled: false
       url: http://grafana.brain-researcher.svc.cluster.local:3000
       in_cluster_url: http://grafana.brain-researcher.svc.cluster.local:3000
       auth:
         type: basic
         username: admin
-        password: admin
+        password: ""
       dashboards:
       - name: "Istio Service Mesh Dashboard"
         variables:

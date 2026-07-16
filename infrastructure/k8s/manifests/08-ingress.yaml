@@ -259,11 +259,8 @@ metadata:
     app.kubernetes.io/name: monitoring
     app.kubernetes.io/component: auth
 type: Opaque
-stringData:
-  # Generate with: htpasswd -nb admin '<strong-password>'
-  # Replace this placeholder before applying the manifest.
-  auth: |
-    admin:<bcrypt-hash-generated-by-operator>
+# Required key: auth. Supply a reviewed bcrypt value outside this repository.
+stringData: {}
 
 ---
 # Certificate resource for automatic SSL certificate provisioning
