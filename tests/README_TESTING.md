@@ -9,13 +9,16 @@ contains `pyproject.toml` and `tests/`:
 cd "$(git rev-parse --show-toplevel)"
 python3.11 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[all]"
+python -m pip install -r requirements/locks/ci-py311.txt
+python -m pip install --no-deps --no-build-isolation -e .
 ```
 
-`all` includes the test tools plus the optional service and scientific
-dependencies imported by the broad unit shards. For a narrowly scoped test
-that does not import those surfaces, `python -m pip install -e ".[dev]"` is a
-lighter alternative.
+The `ci` lock supports the offline PR smoke, contract, reproducibility,
+documentation, Web repository-contract, and deployment-contract checks. It
+does not install the agent, BR-KG, browser, container, or large scientific
+stacks. Use `requirements/locks/ci-services-py311.txt` by itself for the
+`services` command; it inherits the CI tools without pulling the full agent ML
+stack. Use the `dev`/`all` profile for the broad legacy unit shards.
 
 The supported environment is Python 3.11. Once that environment is active,
 set `PYTHON_BIN` only when you need to select its interpreter explicitly:
@@ -33,20 +36,23 @@ If you are already inside `tests/`, invoke the same runner as
 # Show only the commands that exist in the current public tree.
 ./tests/run_tests.sh help
 
-# Run the default unit shard. pytest.ini excludes tests/unit/br_kg here.
-./tests/run_tests.sh unit
+# Run the lightweight offline Python PR shards.
+./tests/run_tests.sh unit-pr-smoke
+./tests/run_tests.sh contracts
+./tests/run_tests.sh reproducibility
 
-# Run the BR-KG unit shard explicitly.
-./tests/run_tests.sh unit-br-kg
+# In a separate venv installed from ci-services-py311.txt:
+./tests/run_tests.sh services
 
-# Run both unit shards in sequence.
+# Run Python Web contracts plus npm lint, unit tests, and production build.
+# Run `npm ci` in apps/web-ui first.
+./tests/run_tests.sh web
+
+# Run configuration, Compose, Dockerfile, and Helm static checks.
+./tests/run_tests.sh deployment-static
+
+# The broad scientific/service shards remain explicit opt-ins.
 ./tests/run_tests.sh unit-all-shards
-
-# Check the import-boundary ratchet.
-./tests/run_tests.sh architecture
-
-# Collect both unit shards without executing them.
-./tests/run_tests.sh collect-all-shards
 ```
 
 ## Supported runner commands
@@ -56,11 +62,16 @@ If you are already inside `tests/`, invoke the same runner as
 | `unit` | Runs `tests/unit/`, excluding `tests/unit/br_kg/` through `pytest.ini`. |
 | `unit-br-kg` / `br-kg` | Runs `tests/unit/br_kg/`. |
 | `unit-all-shards` | Runs the default unit shard, then the BR-KG shard. |
-| `unit-pr-smoke` | Runs the small active-contract unit smoke selection. |
+| `unit-pr-smoke` | Runs the small offline active-contract unit smoke selection. |
+| `contracts` | Runs offline source-layout, package, docs-link, runtime, and configuration contracts. |
+| `reproducibility` | Runs offline source-closure, manifest, verifier, archive, and scheduled-rerun report-builder checks. It validates report structure without importing the optional scientific stack or rerunning large analyses. |
+| `services` | Runs downloader governance plus the five top-level service utility unit files; install `ci-services-py311.txt`. It excludes nested gateway/orchestrator/BR-KG suites, does not start live services, and does not call provider APIs. |
+| `web` | Runs Python Web repository contracts, then `npm run lint:ci`, `npm test`, and `npm run build` in `apps/web-ui/`. Run `npm ci` there first. |
+| `deployment-static` | Runs the tracked static deployment script plus Python deployment contracts. It validates configuration; it does not start or deploy services. |
 | `architecture` | Runs `tests/architecture/test_import_boundaries.py`. |
-| `fast` | Runs the default discovered tests excluding `slow`, `e2e`, and `realdata`. |
+| `fast` | Runs default discovery excluding `slow`, `e2e`, `realdata`, `network`, `requires_api`, and `requires_gpu`. |
 | `coverage` | Runs the default selection and writes `htmlcov/index.html`. |
-| `specific PATH` | Runs one pytest file or node id. |
+| `specific PATH` | Runs one pytest file or node id with the normal shared pytest fixtures. |
 | `markers` | Prints marker declarations from `pytest.ini`. |
 | `collect`, `collect-unit`, `collect-br-kg`, `collect-all-shards`, `collect-architecture` | Collects the corresponding selection without running it. |
 | `all` | Runs the default pytest-discovered selection governed by `pytest.ini`. |
@@ -68,6 +79,11 @@ If you are already inside `tests/`, invoke the same runner as
 The public tree currently has no dedicated `tests/integration/` shard, so this
 runner does not advertise an `integration` command. Add a real public shard and
 its prerequisites before restoring that entry point.
+
+The six PR-focused commands use explicit test-file inventories and do not load
+the broad `tests/conftest.py`, whose shared fixtures require the full service
+and scientific environment. This keeps a clean CI install honest: passing a
+focused shard is not a claim that the full unit suite passed.
 
 ## Run a specific test
 
@@ -95,7 +111,10 @@ The full marker list lives in `pytest.ini` and is printed by
 - `requires_gpu`: tests requiring a GPU
 
 Markers describe individual tests; they do not imply that a same-named
-top-level directory or runner command exists.
+top-level directory or runner command exists. The default selection in
+`pytest.ini` excludes `slow`, `e2e`, `realdata`, `network`, `requires_api`, and
+`requires_gpu`; opt in explicitly when the required data, credentials, network,
+or hardware are available.
 
 ## Data-dependent unit tests
 
@@ -152,7 +171,8 @@ tests/
 ```
 
 Browser tests for the Next.js application live under `apps/web-ui/tests/` and
-use the scripts in `apps/web-ui/package.json`.
+use the scripts in `apps/web-ui/package.json`. The `web` PR shard runs lint,
+Vitest, and a production build, but it does not run Playwright browser tests.
 
 ## Troubleshooting
 

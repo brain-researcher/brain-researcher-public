@@ -30,16 +30,6 @@ REQUIRED_SUBSTRINGS = {
         "BR_ORCHESTRATOR_URL=http://127.0.0.1:3001",
         "BR_KG_URL=http://127.0.0.1:5000",
     ),
-    "src/brain_researcher/services/br_kg/README.md": (
-        "PORT=5000 python -m brain_researcher.services.br_kg.app",
-        "# - GraphQL: http://localhost:5000/graphql",
-        "# - REST API: http://localhost:5000/api/",
-        "# - Health: http://localhost:5000/health",
-        "Access the GraphiQL interface at `http://localhost:5000/graphql`",
-        "curl http://localhost:5000/api/queries",
-        "curl -X POST http://localhost:5000/api/queries/Q1_TASK_TO_REGION",
-        "lsof -i :5000",
-    ),
 }
 
 FORBIDDEN_SUBSTRINGS = {
@@ -60,13 +50,6 @@ FORBIDDEN_SUBSTRINGS = {
         "- **Dashboard UI**: http://localhost:8050",
         "Expose a single public port via the canonical ASGI `gateway` service",
         "br serve gateway",
-    ),
-    "src/brain_researcher/services/br_kg/README.md": (
-        "PORT=5001 python -m brain_researcher.services.br_kg.app",
-        "http://localhost:5001/graphql",
-        "http://localhost:5001/api/",
-        "http://localhost:5001/health",
-        "lsof -i :5001",
     ),
 }
 

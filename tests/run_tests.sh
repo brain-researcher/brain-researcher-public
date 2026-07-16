@@ -2,12 +2,20 @@
 # Brain Researcher Test Runner
 # Run different categories of tests based on arguments
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+NPM_BIN="${NPM_BIN:-npm}"
 cd "$PROJECT_ROOT"
+
+run_ci_pytest() {
+    PYTHONDONTWRITEBYTECODE=1 \
+        PYTHONPATH="${PROJECT_ROOT}/src${PYTHONPATH:+:${PYTHONPATH}}" \
+        "$PYTHON_BIN" -m pytest -q \
+        --noconftest -p no:cacheprovider --tb=short "$@"
+}
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -41,14 +49,84 @@ case "${1:-help}" in
 
     unit-pr-smoke)
         echo -e "${BLUE}Running PR unit smoke shard...${NC}"
-        "$PYTHON_BIN" -m pytest -q \
+        run_ci_pytest \
             tests/unit/config/test_active_import_path_contract.py \
             tests/unit/config/test_active_runtime_surface_contract.py \
             tests/unit/config/test_source_layout_contract.py \
             tests/unit/core/test_grounding_references.py \
             tests/unit/core/test_analysis_bundle.py \
-            tests/unit/agent/test_execution_runners.py \
-            --tb=short
+            tests/unit/agent/test_execution_runners.py
+        ;;
+
+    contracts)
+        echo -e "${BLUE}Running offline repository contract shard...${NC}"
+        run_ci_pytest \
+            tests/unit/config/test_active_import_path_contract.py \
+            tests/unit/config/test_active_runtime_surface_contract.py \
+            tests/unit/config/test_agent_legacy_surface_contract.py \
+            tests/unit/config/test_cli_dependency_constraints.py \
+            tests/unit/config/test_ci_workflow_contract.py \
+            tests/unit/config/test_docs_integrity.py \
+            tests/unit/config/test_execution_pack_hygiene_contract.py \
+            tests/unit/config/test_gateway_boundary_contract.py \
+            tests/unit/config/test_internal_docs_boundary_contract.py \
+            tests/unit/config/test_metadata_root_resolver.py \
+            tests/unit/config/test_operations_cli_contract.py \
+            tests/unit/config/test_orchestrator_agent_boundary_contract.py \
+            tests/unit/config/test_package_root_contract.py \
+            tests/unit/config/test_paths.py \
+            tests/unit/config/test_planner_runtime_contract.py \
+            tests/unit/config/test_python_lock_contract.py \
+            tests/unit/config/test_python_package_contract.py \
+            tests/unit/config/test_runtime_docs_contract.py \
+            tests/unit/config/test_service_docs_path_contract.py \
+            tests/unit/config/test_source_layout_contract.py \
+            tests/unit/config/test_topology_move_contract.py \
+            tests/unit/config/test_verify_environment.py
+        ;;
+
+    reproducibility)
+        echo -e "${BLUE}Running offline reproducibility verifier shard...${NC}"
+        run_ci_pytest \
+            tests/unit/reproducibility/test_a1_source_closure.py \
+            tests/unit/reproducibility/test_neurosynth_source_pipeline.py \
+            tests/unit/reproducibility/test_reproducibility_packs.py \
+            tests/unit/reproducibility/test_reviewer_archive_manifest.py \
+            tests/unit/reproducibility/test_scientific_rerun_report.py
+        ;;
+
+    services)
+        echo -e "${BLUE}Running focused service unit shard...${NC}"
+        run_ci_pytest \
+            tests/unit/config/test_downloader_governance_contract.py \
+            tests/unit/services/test_api_fee_debit.py \
+            tests/unit/services/test_cost_calculator.py \
+            tests/unit/services/test_mcp_api_fee.py \
+            tests/unit/services/test_mcp_runtime_bridge.py \
+            tests/unit/services/test_usage_aggregator.py
+        ;;
+
+    web)
+        echo -e "${BLUE}Running Web repository contracts...${NC}"
+        run_ci_pytest \
+            tests/unit/config/test_web_generated_artifacts_contract.py \
+            tests/unit/config/test_web_toolchain_contract.py \
+            tests/unit/config/test_wrapper_apps_legacy_contract.py
+        echo -e "${BLUE}Running Web lint, unit tests, and production build...${NC}"
+        "$NPM_BIN" --prefix apps/web-ui run lint:ci
+        "$NPM_BIN" --prefix apps/web-ui test
+        "$NPM_BIN" --prefix apps/web-ui run build
+        ;;
+
+    deployment-static)
+        echo -e "${BLUE}Running static deployment/configuration contracts...${NC}"
+        bash scripts/ci/validate_deployment_static.sh
+        run_ci_pytest \
+            tests/unit/config/test_helm_deployment_contract.py \
+            tests/unit/config/test_machine_specific_path_contract.py \
+            tests/unit/config/test_operator_docs_contract.py \
+            tests/unit/config/test_public_configuration_contract.py \
+            tests/unit/config/test_script_governance_contract.py
         ;;
 
     architecture)
@@ -57,8 +135,10 @@ case "${1:-help}" in
         ;;
 
     fast)
-        echo -e "${BLUE}Running fast tests (excluding slow, e2e, realdata)...${NC}"
-        "$PYTHON_BIN" -m pytest -m "not slow and not e2e and not realdata" -v --tb=short
+        echo -e "${BLUE}Running fast tests (excluding slow, e2e, realdata, network, requires_api, requires_gpu)...${NC}"
+        "$PYTHON_BIN" -m pytest \
+            -m "not slow and not e2e and not realdata and not network and not requires_api and not requires_gpu" \
+            -v --tb=short
         ;;
 
     coverage)
@@ -127,8 +207,13 @@ case "${1:-help}" in
         echo "  br-kg              - Alias for unit-br-kg"
         echo "  unit-all-shards    - Run default unit shard, then BR-KG unit shard"
         echo "  unit-pr-smoke      - Run fast PR smoke tests for active contracts"
+        echo "  contracts          - Run offline repository/config/document contracts"
+        echo "  reproducibility    - Run offline pack, manifest, and verifier contracts"
+        echo "  services           - Run service/downloader contracts (ci-services profile)"
+        echo "  web                - Run Web contracts, lint, unit tests, and build"
+        echo "  deployment-static  - Run static config/deployment contracts"
         echo "  architecture       - Run architecture boundary tests"
-        echo "  fast               - Run fast tests (default, excludes slow/e2e/realdata)"
+        echo "  fast               - Exclude slow/e2e/realdata/network/API/GPU tests"
         echo "  coverage           - Run default pytest selection with coverage report"
         echo "  specific           - Run specific test file (requires path as 2nd arg)"
         echo "  markers            - Show available test markers"
@@ -142,6 +227,8 @@ case "${1:-help}" in
         echo ""
         echo "Examples:"
         echo "  tests/run_tests.sh unit-all-shards"
+        echo "  tests/run_tests.sh contracts"
+        echo "  tests/run_tests.sh reproducibility"
         echo "  tests/run_tests.sh architecture"
         echo "  tests/run_tests.sh collect-all-shards"
         echo "  tests/run_tests.sh specific tests/unit/br_kg/test_node_matcher.py"

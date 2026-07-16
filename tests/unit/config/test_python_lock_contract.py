@@ -11,6 +11,16 @@ EXPECTED_PROFILES = {
     "mcp": {"mcp"},
     "agent": {"langgraph"},
     "br-kg": {"nilearn"},
+    "ci": {"mkdocs", "mkdocs-material", "mkdocstrings", "pytest"},
+    "ci-services": {
+        "fastapi",
+        "langchain-anthropic",
+        "langchain-openai",
+        "neuromaps",
+        "nilearn",
+        "openneuro-py",
+        "pytest",
+    },
     "dev": {"mcp", "nilearn", "pytest"},
 }
 
@@ -44,6 +54,8 @@ def test_exact_lock_export_inventory_and_profile_mapping() -> None:
         '[mcp]="mcp"',
         '[agent]="agent"',
         '[br-kg]="br-kg"',
+        '[ci]="ci"',
+        '[ci-services]="ci-services"',
         '[dev]="all"',
     ):
         assert declaration in script
@@ -58,6 +70,8 @@ def test_clean_install_smoke_uses_an_isolated_home_and_environment() -> None:
 
     assert "env -i" in script
     assert 'HOME="${venv_dir}/home"' in script
+    assert 'BR_CLEAN_INSTALL_PIP_CACHE_DIR:-${SMOKE_ROOT}/pip-cache' in script
+    assert 'PIP_CACHE_DIR="${PIP_CACHE_DIR}"' in script
     assert "PIP_CONFIG_FILE=/dev/null" in script
     assert "GIT_CONFIG_GLOBAL=/dev/null" in script
     assert 'BR_CONFIG_ROOT="${REPO_ROOT}"' in script
@@ -84,6 +98,55 @@ def test_uv_lock_matches_project_contract() -> None:
     assert root["source"] in ({"editable": "."}, {"virtual": "."})
 
 
+def test_ci_services_extra_stays_bounded_to_focused_runtime_imports() -> None:
+    pyproject = tomllib.loads(
+        (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    )
+    extras = pyproject["project"]["optional-dependencies"]
+
+    assert extras["ci-services"] == [
+        "brain_researcher[ci]",
+        "openneuro-py>=2026.3.0",
+        "neuromaps>=0.0.5",
+        "nilearn>=0.10.0",
+        "langchain-anthropic>=0.0.1",
+        "langchain-openai>=0.0.5",
+        "fastapi>=0.104.0",
+    ]
+
+    smoke = (REPO_ROOT / "scripts/setup/smoke_clean_install.sh").read_text(
+        encoding="utf-8"
+    )
+    assert 'find_spec("torch") is None' in smoke
+    assert 'find_spec("nvidia") is None' in smoke
+
+
+def test_pytest_ini_is_the_single_root_pytest_configuration() -> None:
+    pyproject = tomllib.loads(
+        (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    )
+    pytest_ini = (REPO_ROOT / "pytest.ini").read_text(encoding="utf-8")
+
+    assert "pytest" not in pyproject.get("tool", {})
+    assert pytest_ini.startswith("[pytest]\n")
+    for excluded_marker in (
+        "network",
+        "requires_api",
+        "requires_gpu",
+    ):
+        assert f"not {excluded_marker}" in pytest_ini
+
+
+def test_fast_runner_preserves_all_default_marker_exclusions() -> None:
+    runner = (REPO_ROOT / "tests/run_tests.sh").read_text(encoding="utf-8")
+    marker_expression = (
+        "not slow and not e2e and not realdata and not network and "
+        "not requires_api and not requires_gpu"
+    )
+
+    assert f'-m "{marker_expression}"' in runner
+
+
 def test_exports_are_portable_and_fully_pinned() -> None:
     for profile in EXPECTED_PROFILES:
         for line in _requirement_lines(profile):
@@ -106,6 +169,10 @@ def test_profile_sentinel_packages_are_present() -> None:
         assert "pyyaml" in names
         assert {"setuptools", "wheel"} <= names
         assert sentinels <= names
+
+    ci_services = _distribution_names(_requirement_lines("ci-services"))
+    assert "torch" not in ci_services
+    assert not any(name.startswith("nvidia-") for name in ci_services)
 
 
 def test_all_uv_git_sources_are_immutable() -> None:
