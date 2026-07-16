@@ -1,0 +1,38 @@
+{
+  "schema_version": "br.reproducibility_environment_lock.v1",
+  "status": "locked",
+  "platform": {
+    "operating_system": "Linux",
+    "architecture": "x86_64",
+    "python_implementation": "CPython",
+    "python_version": "3.11"
+  },
+  "dependency_lock": {
+    "path": "requirements-py311.lock",
+    "format": "pip-requirements",
+    "sha256": "sha256:f6df5de263197f3df4788886c5428a64e5bad28acfa44b6fe928095a0086edba"
+  },
+  "container": {
+    "status": "not_used",
+    "image": null,
+    "digest": null
+  },
+  "tool_versions": [
+    {
+      "id": "public_evaluator_port",
+      "path": "scripts/run_prediction.py",
+      "version": "sha256:dc0e2468f98ae56ed0d795a5f9385e024b50ea69d020b958027a28e4b212cc15",
+      "version_status": "recorded"
+    },
+    {
+      "id": "recorded_predictor",
+      "path": "scripts/predict.py",
+      "version": "sha256:380cbb505a2e541ca10bfbfcf2711c952e5a6b1beeaf18246af71ce6891e017a",
+      "version_status": "recorded"
+    }
+  ],
+  "notes": [
+    "The lock covers the public light rerun, not the governed HCP reconstruction environment.",
+    "System libraries and wheel build provenance are not pinned by requirements-py311.lock."
+  ]
+}

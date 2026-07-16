@@ -70,7 +70,7 @@ hub:
 singleuser:
   image:
     name: "ghcr.io/brain-researcher/jupyter-singleuser"
-    tag: "0.1.0-oss-preview"
+    tag: "0.2.0-oss-preview"
     pullPolicy: IfNotPresent
   uid: 1000
   fsGid: 100

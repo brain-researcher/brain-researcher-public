@@ -97,8 +97,12 @@ bash scripts/dev/docs_manager.sh check
 git diff --check
 ```
 
-Maintainers may run additional local checks before merge. This public
-repository does not currently ship GitHub Actions workflows.
+GitHub Actions runs the clean-install, unit, contract, reproducibility,
+documentation, service, Web, and static-deployment jobs on pull requests.
+Network downloads and larger scientific reruns run in the separate scheduled
+workflow, so a green pull request does not by itself claim that every governed
+or external-data analysis was rerun. Maintainers may also run focused local
+checks before merge.
 
 Use the [pull request template](.github/pull_request_template.md) and include:
 
@@ -106,6 +110,28 @@ Use the [pull request template](.github/pull_request_template.md) and include:
 - Linked issue or discussion, if any.
 - What you ran locally.
 - What remains out of scope.
+
+## Maintainer Release Procedure
+
+A green pull request is necessary but is not the software release gate. For a
+version declared in [`release/manifest.json`](release/manifest.json), a
+maintainer must complete this sequence from the exact intended release commit:
+
+1. Dispatch `.github/workflows/release-readiness.yml` at that commit with the
+   exact `release_version`.
+2. Require the workflow to pass, download its Actions artifact, verify
+   `release-gate-report.json` says `status: passed`, and confirm
+   `source-commit.txt` matches the intended commit.
+3. Create the annotated `v<version>` tag at that same commit only after step 2.
+4. Publish the GitHub Release and permanently attach
+   `release-gate-report.json`, `source-commit.txt`, `versions.json`,
+   `SHA256SUMS`, and `release-gate-evidence.tar.gz` from the verified artifact.
+5. Recheck the remote tag, Release target, and attached assets. The workflow
+   does not publish containers, Helm charts, deployments, or services.
+
+The temporary Actions artifact is retained for only 30 days. The GitHub Release
+attachments are therefore the durable source-commit binding required by the
+release manifest.
 
 ## Repository Conventions
 

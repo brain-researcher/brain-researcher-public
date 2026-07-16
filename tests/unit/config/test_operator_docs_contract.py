@@ -56,7 +56,7 @@ REQUIRED_SUBSTRINGS = {
     ),
     "infrastructure/jupyterhub/values.mvp.yaml": (
         "Status: experimental static input only.",
-        'tag: "0.1.0-oss-preview"',
+        'tag: "0.2.0-oss-preview"',
     ),
     "scripts/services/restart_services_with_niclip.sh": (
         'NEO4J_DATA_ROOT="$PROJECT_ROOT/data/neo4j"',

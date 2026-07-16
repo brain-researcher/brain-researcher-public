@@ -5,11 +5,17 @@ shape** for a FitLins Yeo-17 multiverse. It contains no real BIDS dataset and no
 NIfTI statmap bytes. It is useful for inspecting and testing the pack format;
 it is not a real scientific result and is not runnable end to end as shipped.
 
+**Attestation:** `inspectable`. `integrity_verified` is `partial` because two
+statmap entries are schema-only. `public_runnable`, `governed_rerun`, and
+`fully_reproduced` are not claimed. `environment.lock.json` records that the
+historical Python, FitLins, and container versions were not captured; it is not
+a runnable environment lock.
+
 ## Choose what you want to do
 
 | Goal | Use this | Result |
 |---|---|---|
-| Check the committed fixture | `python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17` | Matches seven shipped files; two unshipped statmap keys keep complete integrity indeterminate (exit 2) |
+| Check the committed fixture | `python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17` | Matches eight shipped files; two unshipped statmap keys keep complete integrity indeterminate (exit 2) |
 | Inspect the bundle shape | Open `run/run.json`, `run/analysis_bundle.json`, and `source/specs/` | Shows the historical synthetic records only |
 | Run a real FitLins multiverse | Do not start from this fixture's params | Supply a real BIDS dataset, current specs, runtime, and scientific comparison criterion |
 
@@ -31,7 +37,7 @@ cd "$(git rev-parse --show-toplevel)"
 python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
 ```
 
-The report shows seven `match` rows and two `schema_only` rows as
+The report shows eight `match` rows and two `schema_only` rows as
 `indeterminate`. Because those NIfTI bytes were intentionally never included,
 the overall result is `integrity_verified: null` and exit code 2 rather than a
 complete-integrity success. It also reports `executed: false` and
@@ -39,7 +45,7 @@ complete-integrity success. It also reports `executed: false` and
 bytes and does not execute FitLins.
 
 Exit 2 is expected for this partial synthetic fixture. It means verification is
-incomplete, not that one of the seven shipped files mismatched. A changed or
+incomplete, not that one of the eight shipped files mismatched. A changed or
 missing shipped file instead reports `integrity_verified: false` and exits 1.
 
 ## What is shipped
@@ -50,7 +56,8 @@ missing shipped file instead reports `integrity_verified: false` and exits 1.
   are path/checksum examples, not downloadable files
 - `source/specs/*.json`: synthetic multiverse spec and manifest fixtures
 - `source/fitlins/yeo17_summary.csv`: synthetic summary table
-- `manifest.json`: seven checksummed entries plus two `schema_only` paths
+- `manifest.json`: eight checksummed entries plus two `schema_only` paths
+- `environment.lock.json`: explicit `unresolved_historical` environment boundary
 - `provenance_card.md`: provenance boundary for this synthetic fixture
 
 ## Why the recorded params are not a rerun recipe

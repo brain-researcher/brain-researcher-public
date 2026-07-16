@@ -78,8 +78,10 @@ case "${1:-help}" in
             tests/unit/config/test_planner_runtime_contract.py \
             tests/unit/config/test_python_lock_contract.py \
             tests/unit/config/test_python_package_contract.py \
+            tests/unit/config/test_release_gate_contract.py \
             tests/unit/config/test_runtime_docs_contract.py \
             tests/unit/config/test_service_docs_path_contract.py \
+            tests/unit/config/test_software_release_contract.py \
             tests/unit/config/test_source_layout_contract.py \
             tests/unit/config/test_topology_move_contract.py \
             tests/unit/config/test_verify_environment.py

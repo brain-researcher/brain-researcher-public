@@ -25,10 +25,21 @@ cd "$(git rev-parse --show-toplevel)"
 
 Each pack has:
 
-- `manifest.json` with sha256 checksums for shipped artifacts
+- `manifest.json` using `br.reproducibility_pack_manifest.v2`, with sha256
+  checksums plus source, tool, input, seed, tolerance, and attestation metadata
+- `environment.lock.json` recording either the runnable environment binding or
+  an explicit `unresolved_historical` boundary
 - `provenance_card.md` describing the execution envelope
 - `README.md` with the result boundary and rerun instructions
 - optional `run/`, `source/`, `artifacts/`, and `reproduction/` files
+
+The manifest's `maturity` is a repository lifecycle label (`stable` or
+`historical`), separate from its reproduction attestation. Source metadata also
+keeps three commits distinct: `contract_authored_against_commit` is the snapshot
+used to write the v2 contract; `artifact_authoring_commit` is `null` when the
+historical producing commit is unavailable; and the release gate records the
+containing release commit externally because a manifest cannot checksum-bind
+the commit that contains itself.
 
 Run:
 
@@ -37,15 +48,34 @@ python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
 python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
 ```
 
-Exit code `0` means the shipped bytes match the manifest. It does not by itself
-prove that an LLM rerun will be byte-identical.
+For a v2 manifest, the verifier first checks the required metadata and
+attestation shape. A malformed v2 contract fails closed with exit code `1`
+before artifact hashing. Exit code `0` means the shipped bytes match the
+manifest. It does not by itself prove that an LLM rerun will be byte-identical.
+
+## Reproduction Status Vocabulary
+
+The five levels are cumulative. `partial` records useful evidence above the
+current attained level without promoting the pack to that level.
+
+| Level | Meaning |
+|---|---|
+| `inspectable` | The public files, provenance, and stated boundary can be read. No checksum or execution claim is implied. |
+| `integrity_verified` | Every required shipped artifact is present and matches its recorded sha256. This verifies bytes, not execution. |
+| `public_runnable` | A public user can execute the documented path from the public inputs and compare its output against recorded tolerances. |
+| `governed_rerun` | The governed-data or governed-runtime path has been rerun under its recorded contract. A seed subset or incomplete governed path is `partial`. |
+| `fully_reproduced` | The complete declared analysis, including all required governed work and scientific comparison criteria, has been reproduced. |
+
+`attained`, `partial`, and `not_claimed` are evidence states. The manifest's
+`attestation.current_level` is always the highest cumulative `attained` level;
+it must not skip a lower level.
 
 ## Current Packs
 
-| Pack | Status | Boundary |
-|---|---|---|
-| `bounded_autoresearch_a1` | Real recorded result | Checksum-verifiable artifacts plus a public-data headline rerun. Deeper reconstruction is governed-data-gated: HCP-YA rows, the exact 326-subject FC/behavior binding, and its subject-keyed derived component table are not redistributed. The pack includes a redacted Liu/Tian source-provenance summary with OSF node `75je2`, key checksums, component-reconstruction caveats, and the `reconstructed_not_paper_exact` boundary. |
-| `fitlins_multiverse_yeo17` | Synthetic schema exemplar | Shows the run-bundle and multiverse layout. It is a format template, not a real-data result; statmap entries are `schema_only`, and its historical params do not form a current end-to-end rerun contract. |
+| Pack | Maturity | Current level | Higher-level evidence | Boundary |
+|---|---|---|---|---|
+| `bounded_autoresearch_a1` | `stable` | `public_runnable` | `governed_rerun: partial`; `fully_reproduced: not_claimed` | Checksum-verifiable artifacts plus a public-data headline rerun. Deeper reconstruction is governed-data-gated: HCP-YA rows, the exact 326-subject FC/behavior binding, and its subject-keyed derived component table are not redistributed. The pack includes a redacted Liu/Tian source-provenance summary with OSF node `75je2`, key checksums, component-reconstruction caveats, and the `reconstructed_not_paper_exact` boundary. |
+| `fitlins_multiverse_yeo17` | `historical` | `inspectable` | `integrity_verified: partial`; all execution levels `not_claimed` | Shows the run-bundle and multiverse layout. It is a format template, not a real-data result; statmap entries are `schema_only`, and its historical params do not form a current end-to-end rerun contract. |
 
 ## Reproduce From Language (Claude Code / Codex + MCP)
 
@@ -55,10 +85,11 @@ natural language. They are not both packs, and recipe/validation calls do not by
 themselves prove that an analysis executed. Each guide states which part is a
 runnable driver and which part remains a multi-step handoff:
 
-| Case | Shape | Agentic guide |
-|---|---|---|
-| Bounded autoresearch A1 | Multi-turn feature/pipeline **search** loop (edit `predict.py` → frozen evaluator → score/compare → cheap-check → freeze → confirmatory null) | [A1 agentic guide](https://github.com/brain-researcher/brain-researcher-public/blob/main/reproducibility/bounded_autoresearch_a1/AGENTIC_REPRODUCTION.md) |
-| Auditable claim record | Single sealed **claim episode** (commit-before-observe → graded evidence → adjudicate → emit card) | [Claim-record agentic guide](https://github.com/brain-researcher/brain-researcher-public/blob/main/reproducibility/auditable_claim_record/AGENTIC_REPRODUCTION.md) |
+| Case | Status | Shape | Agentic guide |
+|---|---|---|---|
+| Bounded autoresearch A1 | `public_runnable` | Multi-turn feature/pipeline **search** loop (edit `predict.py` → frozen evaluator → score/compare → cheap-check → freeze → confirmatory null) | [A1 agentic guide](https://github.com/brain-researcher/brain-researcher-public/blob/main/reproducibility/bounded_autoresearch_a1/AGENTIC_REPRODUCTION.md) |
+| Auditable claim record, NiMARE light path | `public_runnable` tutorial path, not a manifest-backed pack | Single sealed **claim episode** (commit-before-observe → graded evidence → adjudicate → emit card) | [Claim-record agentic guide](https://github.com/brain-researcher/brain-researcher-public/blob/main/reproducibility/auditable_claim_record/AGENTIC_REPRODUCTION.md) |
+| Auditable claim record, historical NeuroLang snapshot | `inspectable` only | The committed JSON records an older NeuroLang result, but the historical environment is not currently installable from this repository | [Claim-record README](https://github.com/brain-researcher/brain-researcher-public/blob/main/reproducibility/auditable_claim_record/README.md#reference-path-neurolang-engine-behind-the-committed-card) |
 
 Honest scope: an agent's *search path* is non-deterministic, so a rerun
 reproduces the **discipline** (commit-before-observe, frozen evaluator,
