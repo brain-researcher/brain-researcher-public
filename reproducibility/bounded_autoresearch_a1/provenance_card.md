@@ -3,7 +3,8 @@
 ## F.2 Execution envelope
 - Target runtime: python (bounded-autoresearch A1)
 - Public light runtime: CPython 3.11 with exact packages in
-  `requirements-py311.lock`.
+  `requirements-py311.lock`; the machine-readable binding is
+  `environment.lock.json`.
 - Evaluator boundary: recorded governed `run.py` is bound to
   `sha256:3fe2eea1…`; the public light command runs the distinct,
   manifest-pinned `scripts/run_prediction.py` port. Formal semantic equivalence
@@ -29,6 +30,8 @@
 | rerun_20260708_null_seeds_1_30.jsonl | `reproduction/rerun_20260708_null_seeds_1_30.jsonl` | `sha256:1495777bcf75ea12…` |
 
 ## F.10 Provenance
+- Attestation current level: `public_runnable`. The governed rerun is `partial`;
+  `fully_reproduced` is not claimed.
 - Real recorded result; input data governed (not shipped). See the pack README
   for the data-gated re-run path. Checksums above are verifiable now via verify.py.
 - The Liu component target line is explicitly `reconstructed_not_paper_exact`:

@@ -2,8 +2,8 @@ apiVersion: v2
 name: brain-researcher
 description: Experimental Helm rendering scaffold for static inspection of the Brain Researcher service stack.
 type: application
-version: 0.1.0
-appVersion: "0.1.0-oss-preview"
+version: 0.2.0
+appVersion: "0.2.0-oss-preview"
 
 maintainers:
   - name: Brain Researcher Team
@@ -39,6 +39,8 @@ annotations:
     - name: redis-exporter
       image: oliver006/redis_exporter:v1.62.0
   "artifacthub.io/changes": |
+    - kind: changed
+      description: Align the preview image contract with software release v0.2.0.
     - kind: changed
       description: Mark the chart as an experimental static-rendering scaffold.
     - kind: fixed

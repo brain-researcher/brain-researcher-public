@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from flask import jsonify, request
 
+from brain_researcher import __version__ as SOFTWARE_VERSION
+
 
 def usage_summary():
     """
@@ -219,7 +221,9 @@ def cli_proxy():
             return simple_chat_internal(prompt, env_override)
 
         elif command == "version":
-            return jsonify({"version": "0.1.0", "service": "brain-researcher"}), 200
+            return jsonify(
+                {"version": SOFTWARE_VERSION, "service": "brain-researcher"}
+            ), 200
 
         elif command == "help" or command == "--help":
             help_text = """Brain Researcher CLI - Available commands:

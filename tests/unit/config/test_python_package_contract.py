@@ -35,12 +35,12 @@ def test_distribution_version_and_namespace_discovery_contract() -> None:
         encoding="utf-8"
     )
 
-    assert config["project"]["version"] == "0.1.0"
-    assert '__version__ = "0.1.0"' in init_text
+    assert config["project"]["version"] == "0.2.0"
+    assert '__version__ = "0.2.0"' in init_text
     assert config["tool"]["setuptools"]["packages"]["find"]["namespaces"] is True
-    assert (
-        REPO_ROOT / "src/brain_researcher/core/ingestion/loaders"
-    ).is_dir(), "namespace discovery sentinel is missing"
+    assert (REPO_ROOT / "src/brain_researcher/core/ingestion/loaders").is_dir(), (
+        "namespace discovery sentinel is missing"
+    )
 
 
 def test_mcp_extra_matches_current_heavy_server_composition() -> None:

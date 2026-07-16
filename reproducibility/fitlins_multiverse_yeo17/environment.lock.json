@@ -1,0 +1,32 @@
+{
+  "schema_version": "br.reproducibility_environment_lock.v1",
+  "status": "unresolved_historical",
+  "platform": {
+    "operating_system": null,
+    "architecture": null,
+    "python_implementation": null,
+    "python_version": null
+  },
+  "dependency_lock": {
+    "path": null,
+    "format": null,
+    "sha256": null
+  },
+  "container": {
+    "status": "not_recorded",
+    "image": null,
+    "digest": null
+  },
+  "tool_versions": [
+    {
+      "id": "fitlins.run_multiverse",
+      "path": null,
+      "version": null,
+      "version_status": "not_recorded"
+    }
+  ],
+  "notes": [
+    "This historical synthetic fixture did not record a Python lock, FitLins version, or container digest.",
+    "The file makes that missing environment binding explicit; it is not a runnable lock."
+  ]
+}

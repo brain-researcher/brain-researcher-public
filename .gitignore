@@ -259,6 +259,7 @@ model_weights/
 !reproducibility/**/*.csv
 !reproducibility/**/*.json
 !reproducibility/**/*.jsonl
+!release/manifest.json
 !configs/schemas/brain_researcher_case_package.schema.json
 !contracts/**/*.json
 !contracts/*.json

@@ -10,6 +10,12 @@ governed harness.
 The public checkout can reproduce the headline predictor result. It cannot, by
 itself, rebuild the subject-keyed target or rerun the full family-block null.
 
+**Attestation:** `public_runnable`. `governed_rerun` is `partial` because the
+target reconstruction, predictive check, and permutation seeds 1 through 30
+were rerun, but the remaining 970 recorded permutations were not.
+`fully_reproduced` is not claimed. The machine-readable boundary is in
+`manifest.json`.
+
 ## Choose what you want to do
 
 | Goal | Command or starting point | Boundary |
@@ -133,6 +139,7 @@ commands, comparisons, and tolerances are in
 ## What is in the pack
 
 - `manifest.json`: checksum boundary for every manifest-listed artifact
+- `environment.lock.json`: CPython 3.11 and the exact public light-path lock
 - `provenance_card.md`: recorded execution and provenance envelope
 - `requirements-py311.lock`: exact tested light-path Python environment
 - `artifacts/`: public-safe target, summaries, rerun checks, and agentic examples

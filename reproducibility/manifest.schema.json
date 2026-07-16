@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brain-researcher.com/schemas/reproducibility-pack-manifest-v2.json",
+  "title": "Brain Researcher reproducibility pack manifest v2",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "$schema",
+    "schema_version",
+    "pack_id",
+    "pack_type",
+    "maturity",
+    "source",
+    "environment_lock",
+    "tools",
+    "inputs",
+    "seeds",
+    "tolerances",
+    "attestation",
+    "artifact_count",
+    "artifacts"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "../manifest.schema.json"
+    },
+    "schema_version": {
+      "const": "br.reproducibility_pack_manifest.v2"
+    },
+    "pack_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "pack_type": {
+      "enum": ["recorded_result", "schema_exemplar"]
+    },
+    "maturity": {
+      "enum": ["stable", "historical"]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "repository_url",
+        "contract_authored_against_commit",
+        "artifact_authoring_commit",
+        "artifact_authoring_commit_status",
+        "release_containing_commit",
+        "release_containing_commit_status",
+        "pack_path",
+        "provenance"
+      ],
+      "properties": {
+        "repository_url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "contract_authored_against_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "artifact_authoring_commit": {
+          "oneOf": [
+            {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            {"type": "null"}
+          ]
+        },
+        "artifact_authoring_commit_status": {
+          "enum": ["recorded", "unavailable"]
+        },
+        "release_containing_commit": {
+          "oneOf": [
+            {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            {"type": "null"}
+          ]
+        },
+        "release_containing_commit_status": {
+          "enum": ["recorded", "resolved_by_release_gate"]
+        },
+        "pack_path": {
+          "type": "string",
+          "pattern": "^reproducibility/"
+        },
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "environment_lock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "status"],
+      "properties": {
+        "path": {"const": "environment.lock.json"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "status": {"enum": ["locked", "unresolved_historical"]}
+      }
+    },
+    "tools": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "role", "version", "version_status"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "role": {"type": "string", "minLength": 1},
+          "version": {
+            "oneOf": [
+              {"type": "string", "minLength": 1},
+              {"type": "null"}
+            ]
+          },
+          "version_status": {"enum": ["recorded", "not_recorded"]}
+        }
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "availability", "sha256"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "availability": {
+            "enum": [
+              "shipped",
+              "public_download",
+              "governed_not_shipped",
+              "schema_only",
+              "not_recorded"
+            ]
+          },
+          "sha256": {
+            "oneOf": [
+              {"$ref": "#/$defs/sha256"},
+              {"type": "null"}
+            ]
+          }
+        }
+      }
+    },
+    "seeds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "status", "scope"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["recorded", "not_recorded"]},
+          "scope": {"type": "string", "minLength": 1},
+          "values": {
+            "type": "array",
+            "items": {"type": "integer"}
+          },
+          "range": {
+            "type": "object",
+            "required": ["start", "end", "step"],
+            "properties": {
+              "start": {"type": "integer"},
+              "end": {"type": "integer"},
+              "step": {"type": "integer", "minimum": 1}
+            }
+          }
+        }
+      }
+    },
+    "tolerances": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "status", "metric"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["recorded", "not_recorded"]},
+          "metric": {"type": "string", "minLength": 1},
+          "expected": {"type": ["number", "null"]},
+          "absolute_tolerance": {"type": ["number", "null"], "minimum": 0}
+        }
+      }
+    },
+    "attestation": {
+      "$ref": "#/$defs/attestation"
+    },
+    "artifact_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["path"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"$ref": "#/$defs/sha256"},
+          "schema_only": {"type": "boolean"}
+        },
+        "oneOf": [
+          {"required": ["sha256"]},
+          {
+            "required": ["schema_only"],
+            "properties": {"schema_only": {"const": true}}
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence"],
+      "properties": {
+        "status": {"enum": ["attained", "partial", "not_claimed"]},
+        "evidence": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vocabulary_version", "current_level", "levels"],
+      "properties": {
+        "vocabulary_version": {
+          "const": "br.reproducibility_attestation.v1"
+        },
+        "current_level": {
+          "enum": [
+            "inspectable",
+            "integrity_verified",
+            "public_runnable",
+            "governed_rerun",
+            "fully_reproduced"
+          ]
+        },
+        "levels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "inspectable",
+            "integrity_verified",
+            "public_runnable",
+            "governed_rerun",
+            "fully_reproduced"
+          ],
+          "properties": {
+            "inspectable": {"$ref": "#/$defs/level"},
+            "integrity_verified": {"$ref": "#/$defs/level"},
+            "public_runnable": {"$ref": "#/$defs/level"},
+            "governed_rerun": {"$ref": "#/$defs/level"},
+            "fully_reproduced": {"$ref": "#/$defs/level"}
+          }
+        }
+      }
+    }
+  }
+}

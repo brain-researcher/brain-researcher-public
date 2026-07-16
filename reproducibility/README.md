@@ -4,19 +4,20 @@ This directory is the single home for Brain Researcher reproducibility
 materials. Manifest-backed packs and runnable teaching examples are stored
 together here by example name.
 
-Each manifest-backed pack carries a `manifest.json`, a
-`provenance_card.md`, and a pack-specific `README.md`. Optional directories such
-as `run/`, `source/`, `artifacts/`, `reproduction/`, or `execution_pack/` depend
-on the pack type.
+Each manifest-backed pack carries a v2 `manifest.json`, an
+`environment.lock.json`, a `provenance_card.md`, and a pack-specific `README.md`.
+Optional directories such as `run/`, `source/`, `artifacts/`, `reproduction/`,
+or `execution_pack/` depend on the pack type.
 
 ## Which directory should I use?
 
 | Goal | Start here | What it is |
 |---|---|---|
 | Check a recorded result or schema snapshot | `reproducibility/<id>/` with a `manifest.json` | A manifest-backed pack accepted by `reproducibility/verify.py`. |
-| Re-run the public A1 result | [`bounded_autoresearch_a1/`](bounded_autoresearch_a1/) | A real recorded-result pack with public-data scripts plus deeper HCP-gated steps. |
-| Inspect the FitLins pack format | [`fitlins_multiverse_yeo17/`](fitlins_multiverse_yeo17/) | A synthetic schema exemplar. It is verifiable but is not a shipped real-data rerun. |
-| Learn how an auditable claim record is generated | [`auditable_claim_record/`](auditable_claim_record/) | A runnable tutorial that emits claim-card JSON. It is **not** a manifest-backed pack. |
+| Re-run the public A1 result | [`bounded_autoresearch_a1/`](bounded_autoresearch_a1/) | A `public_runnable` real recorded-result pack with public-data scripts plus deeper HCP-gated steps. |
+| Inspect the FitLins pack format | [`fitlins_multiverse_yeo17/`](fitlins_multiverse_yeo17/) | An `inspectable` synthetic schema exemplar with partial integrity; it is not a shipped real-data rerun. |
+| Run the auditable-claim NiMARE light path | [`auditable_claim_record/`](auditable_claim_record/) | A `public_runnable` tutorial path that emits fresh claim-card JSON. It is **not** a manifest-backed pack. |
+| Inspect the historical NeuroLang snapshot | [`auditable_claim_record/`](auditable_claim_record/#reference-path-neurolang-engine-behind-the-committed-card) | Committed JSON that is `inspectable` only; the historical NeuroLang environment is not currently reconstructable from this repository. |
 
 The directory type is determined by its contents, not by another navigation
 level: a directory with `manifest.json` is a verifiable pack; the
@@ -55,7 +56,10 @@ python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
 ```
 
 `verify.py` uses only the Python standard library. It re-hashes each manifest
-artifact and prints three separate status fields:
+artifact and prints three separate status fields. For a v2 manifest it first
+validates the required source, environment, tool, input, seed, tolerance, and
+five-level attestation metadata; an invalid v2 contract fails closed with exit
+code 1 before hashes are accepted.
 
 - `integrity_verified`: `true` only when every manifest entry is available and
   matches its checksum; `false` for a mismatch or missing file; `null` if any
@@ -78,12 +82,17 @@ snapshot. It does **not** execute an analysis. If a pack actually contains
 success then requires the runner to record completed execution, matching
 produced artifacts, and a successful scientific comparison.
 
+The cumulative status vocabulary is `inspectable` → `integrity_verified` →
+`public_runnable` → `governed_rerun` → `fully_reproduced`. See
+[`docs/reproducibility_packs.md`](../docs/reproducibility_packs.md#reproduction-status-vocabulary)
+for the exact boundary and the meaning of `partial`.
+
 ## Current packs and their rerun boundary
 
-| id | kind | What you can do from this clone |
-|---|---|---|
-| `bounded_autoresearch_a1` | real recorded result | Verify the snapshot and reproduce the public-data headline with its shipped script. Deeper reconstruction additionally needs governed derived inputs and subject bindings that are not shipped. |
-| `fitlins_multiverse_yeo17` | synthetic schema exemplar | Check seven shipped specs/summary files; two unshipped statmap keys remain indeterminate, so complete integrity and scientific reproduction are not claimed. There is no real BIDS dataset or execution pack. |
+| id | maturity | current level | What you can do from this clone |
+|---|---|---|---|
+| `bounded_autoresearch_a1` | `stable` | `public_runnable` | Verify the snapshot and reproduce the public-data headline with its shipped script. The governed rerun is partial; deeper reconstruction additionally needs governed derived inputs and subject bindings that are not shipped. `fully_reproduced` is not claimed. |
+| `fitlins_multiverse_yeo17` | `historical` | `inspectable` | Check eight shipped files; two unshipped statmap keys keep integrity partial, so execution and scientific reproduction are not claimed. There is no real BIDS dataset or runnable historical environment. |
 
 For the public A1 rerun, first activate an isolated environment, then run this
 from the repository root:

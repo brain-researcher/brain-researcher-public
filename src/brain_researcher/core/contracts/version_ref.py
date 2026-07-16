@@ -9,6 +9,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+_PACKAGED_CONTRACTS_VERSION = "2026-05-27"
+
 
 class VersionRefV1(BaseModel):
     """Best-effort versions for reproducibility/auditing."""
@@ -66,12 +68,27 @@ def _git_commit(repo_root: Path) -> str | None:
         return None
 
 
+def _contracts_version(repo_root: Path) -> str | None:
+    """Read the source-tree epoch, falling back to the wheel-shipped constant."""
+
+    try:
+        value = (repo_root / "contracts" / "VERSION").read_text(encoding="utf-8")
+    except OSError:
+        return _PACKAGED_CONTRACTS_VERSION
+    value = value.strip()
+    return value or _PACKAGED_CONTRACTS_VERSION
+
+
 def build_version_ref_v1() -> VersionRefV1:
     repo_root = Path(__file__).resolve().parents[4]
-    return VersionRefV1(
-        brain_researcher_version=_pkg_version("brain_researcher"),
-        git_commit=_git_commit(repo_root),
-    )
+    values: dict[str, str | None] = {
+        "brain_researcher_version": _pkg_version("brain_researcher"),
+        "git_commit": _git_commit(repo_root),
+    }
+    contracts_version = _contracts_version(repo_root)
+    if contracts_version is not None:
+        values["contracts_version"] = contracts_version
+    return VersionRefV1(**values)
 
 
 def get_cached_version_ref_v1() -> VersionRefV1:

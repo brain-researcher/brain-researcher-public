@@ -1,9 +1,102 @@
 {
-  "schema_version": "br.reproducibility_pack_manifest.v1",
+  "$schema": "../manifest.schema.json",
+  "schema_version": "br.reproducibility_pack_manifest.v2",
   "pack_id": "fitlins_multiverse_yeo17",
-  "artifact_count": 9,
+  "artifact_count": 10,
   "pack_type": "schema_exemplar",
+  "maturity": "historical",
   "synthetic": true,
+  "source": {
+    "repository_url": "https://github.com/brain-researcher/brain-researcher-public",
+    "contract_authored_against_commit": "5f83b20eac304d6a561754d23ddc2cdac5b4d3ab",
+    "artifact_authoring_commit": null,
+    "artifact_authoring_commit_status": "unavailable",
+    "release_containing_commit": null,
+    "release_containing_commit_status": "resolved_by_release_gate",
+    "pack_path": "reproducibility/fitlins_multiverse_yeo17",
+    "provenance": [
+      "contract_authored_against_commit identifies only the public source snapshot used to author this v2 contract; it is not claimed as the historical artifact-producing commit.",
+      "The historical artifact-authoring commit is unavailable. The release gate records the containing release commit outside this self-referential manifest.",
+      "The fixture is synthetic and historical; it does not identify a real producing FitLins execution."
+    ]
+  },
+  "environment_lock": {
+    "path": "environment.lock.json",
+    "sha256": "sha256:4fea0aa35e8f078db0f18aef62e249074ffdb1f84a9eb7e63f6db959a370241d",
+    "status": "unresolved_historical"
+  },
+  "tools": [
+    {
+      "id": "fitlins.run_multiverse",
+      "role": "historical synthetic step record",
+      "version": null,
+      "version_status": "not_recorded"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "multiverse_manifest",
+      "availability": "shipped",
+      "path": "source/specs/multiverse_manifest.json",
+      "sha256": "sha256:547fd743372949ad2ed3bd903ce1d79947bc3238d1f588ebbcb817e01c8fe099"
+    },
+    {
+      "id": "bids_model_fixture",
+      "availability": "shipped",
+      "path": "source/specs/mv01_specs.json",
+      "sha256": "sha256:bc277a55a353659634db691804f898e2be899b71cf22c809928d87e230e5aaca"
+    },
+    {
+      "id": "ds003425_bids_dataset",
+      "availability": "schema_only",
+      "sha256": null,
+      "note": "The dataset id appears in the synthetic records, but no dataset snapshot or checksum was recorded in this pack."
+    }
+  ],
+  "seeds": [
+    {
+      "id": "historical_execution",
+      "status": "not_recorded",
+      "scope": "synthetic FitLins multiverse fixture",
+      "note": "No execution seed was recorded."
+    }
+  ],
+  "tolerances": [
+    {
+      "id": "scientific_equivalence",
+      "status": "not_recorded",
+      "metric": "real FitLins output comparison",
+      "expected": null,
+      "absolute_tolerance": null,
+      "note": "The fixture has no real produced statmaps or scientific equivalence criterion."
+    }
+  ],
+  "attestation": {
+    "vocabulary_version": "br.reproducibility_attestation.v1",
+    "current_level": "inspectable",
+    "levels": {
+      "inspectable": {
+        "status": "attained",
+        "evidence": ["README.md", "provenance_card.md", "run/run.json", "source/specs/"]
+      },
+      "integrity_verified": {
+        "status": "partial",
+        "evidence": ["Eight shipped files are checksum-verifiable; two statmap entries are schema_only"]
+      },
+      "public_runnable": {
+        "status": "not_claimed",
+        "evidence": ["No real BIDS dataset, runnable environment, or current execution contract is shipped"]
+      },
+      "governed_rerun": {
+        "status": "not_claimed",
+        "evidence": ["No governed execution is recorded"]
+      },
+      "fully_reproduced": {
+        "status": "not_claimed",
+        "evidence": ["This is a synthetic schema exemplar, not a scientific result"]
+      }
+    }
+  },
   "verification_boundary": {
     "byte_integrity": "partial_two_schema_only_entries",
     "analysis_execution": "not_executed",
@@ -16,13 +109,18 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:14037a8a5f058416be33be9c3e7b9be072f19ee49a49bd1b7b1354e3f199fd3f",
-      "size_bytes": 4375
+      "sha256": "sha256:1477328b063a3a8ee49305b7acc9c88e496dc8ed7542b7ac6b7c220db30638f6",
+      "size_bytes": 4795
     },
     {
       "path": "provenance_card.md",
-      "sha256": "sha256:a01bbe2a823ac06927caff8ca4da27520b05bd8c46655a2202817415926a946b",
-      "size_bytes": 1329
+      "sha256": "sha256:365bf4bf12f2ba7b48b4f549a4a8588b4cfc6218854498e24e6ddfa12a2bbf92",
+      "size_bytes": 1532
+    },
+    {
+      "path": "environment.lock.json",
+      "sha256": "sha256:4fea0aa35e8f078db0f18aef62e249074ffdb1f84a9eb7e63f6db959a370241d",
+      "size_bytes": 792
     },
     {
       "path": "run/run.json",

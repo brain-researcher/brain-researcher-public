@@ -1,6 +1,6 @@
 """Brain Researcher - Neuroimaging analysis platform."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # Avoid heavyweight side effects during package import. The runner helper can
 # pull in the legacy tool registry, which drags large ML stacks into unrelated

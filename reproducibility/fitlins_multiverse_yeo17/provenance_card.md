@@ -3,6 +3,7 @@
 ## F.2 Execution envelope
 - Recorded step tool: `fitlins.run_multiverse`
 - Multiverse spec: `source/specs/multiverse_manifest.json`
+- Environment status: `unresolved_historical`; see `environment.lock.json`.
 
 ## F.8 Expected vs produced artifacts
 | Artifact | Path | Checksum | Note |
@@ -16,5 +17,7 @@
 | sub-01_contrast-responseConflict_stat-z_statmap.nii.gz | `artifacts/statmaps/sub-01_contrast-responseConflict_stat-z_statmap.nii.gz` | — | schema_only (bytes not shipped) |
 
 ## F.10 Provenance
+- Attestation current level: `inspectable`. Integrity is `partial`; public,
+  governed, and full reproduction are not claimed.
 - SYNTHETIC schema exemplar. Shipped specs/summary are checksum-verifiable; statmap
   NIfTIs are provenance keys only. Not a real-data result.

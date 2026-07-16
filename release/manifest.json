@@ -1,0 +1,54 @@
+{
+  "schema_version": "brain-researcher-release-v1",
+  "software_release": {
+    "version": "0.2.0",
+    "git_tag": "v0.2.0",
+    "source_commit_binding": {
+      "mode": "release_gate",
+      "value": null,
+      "evidence": "release-gate-report.json"
+    }
+  },
+  "python": {
+    "distribution": "brain_researcher",
+    "version": "0.2.0",
+    "requires_python": ">=3.11,<3.12"
+  },
+  "mcp_contract": {
+    "version": "2026-05-27",
+    "version_file": "contracts/VERSION"
+  },
+  "containers": {
+    "tag": "0.2.0-oss-preview",
+    "status": "not_published"
+  },
+  "helm": {
+    "chart_version": "0.2.0",
+    "app_version": "0.2.0-oss-preview",
+    "status": "experimental_static_only"
+  },
+  "release_gate": {
+    "script": "scripts/ci/clean_clone_gate.sh",
+    "report": "release-gate-report.json",
+    "permanent_release_assets": [
+      "release-gate-report.json",
+      "source-commit.txt",
+      "versions.json",
+      "SHA256SUMS",
+      "release-gate-evidence.tar.gz"
+    ],
+    "required_before_tag": true
+  },
+  "historical_artifacts": {
+    "relationship": "independent_from_software_release",
+    "exact_reproducibility_archive": {
+      "status": "historical_archive",
+      "git_tag": "br-reproducibility-20260709.1",
+      "version_doi": "10.5281/zenodo.21282320"
+    },
+    "artifact_family": {
+      "concept_doi": "10.5281/zenodo.21282319",
+      "scope": "resolves_to_latest_non_semver_artifact_release"
+    }
+  }
+}

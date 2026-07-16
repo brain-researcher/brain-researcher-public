@@ -40,7 +40,9 @@ def _workload_containers(
         if document.get("kind") not in {"Deployment", "StatefulSet", "DaemonSet"}:
             continue
         pod_spec = document["spec"]["template"]["spec"]
-        containers.extend((document, container) for container in pod_spec.get("containers", []))
+        containers.extend(
+            (document, container) for container in pod_spec.get("containers", [])
+        )
     return containers
 
 
@@ -71,22 +73,22 @@ def test_chart_lints_strictly_and_renders_all_application_images() -> None:
     documents = _render("--set", "mcp.enabled=true")
 
     expected = {
-        ("-agent", "agent"): "brain-researcher/agent:0.1.0-oss-preview",
-        ("-br-kg", "br-kg"): "brain-researcher/br-kg:0.1.0-oss-preview",
-        ("-mcp", "mcp"): "brain-researcher/mcp:0.1.0-oss-preview",
+        ("-agent", "agent"): "brain-researcher/agent:0.2.0-oss-preview",
+        ("-br-kg", "br-kg"): "brain-researcher/br-kg:0.2.0-oss-preview",
+        ("-mcp", "mcp"): "brain-researcher/mcp:0.2.0-oss-preview",
         ("-orchestrator", "orchestrator"): (
-            "brain-researcher/orchestrator:0.1.0-oss-preview"
+            "brain-researcher/orchestrator:0.2.0-oss-preview"
         ),
-        ("-web-ui", "web-ui"): "brain-researcher/web-ui:0.1.0-oss-preview",
-        ("-postgres", "metrics"): (
-            "prometheuscommunity/postgres-exporter:v0.15.0"
-        ),
+        ("-web-ui", "web-ui"): "brain-researcher/web-ui:0.2.0-oss-preview",
+        ("-postgres", "metrics"): ("prometheuscommunity/postgres-exporter:v0.15.0"),
         ("-redis", "metrics"): "oliver006/redis_exporter:v1.62.0",
     }
     for (workload, container), image in expected.items():
         assert _container(documents, workload, container)["image"] == image
 
-    all_images = [container["image"] for _, container in _workload_containers(documents)]
+    all_images = [
+        container["image"] for _, container in _workload_containers(documents)
+    ]
     assert all(not image.startswith("/") for image in all_images)
     assert all(not image.endswith(":latest") for image in all_images)
 
@@ -94,11 +96,13 @@ def test_chart_lints_strictly_and_renders_all_application_images() -> None:
     env = {entry["name"]: entry.get("value") for entry in orchestrator["env"]}
     assert (
         env["BR_MARIMO_RUNTIME_IMAGE"]
-        == "brain-researcher/marimo-singleuser:0.1.0-oss-preview"
+        == "brain-researcher/marimo-singleuser:0.2.0-oss-preview"
     )
 
 
-def test_registry_repository_tag_and_pull_policy_overrides_reach_rendered_pods() -> None:
+def test_registry_repository_tag_and_pull_policy_overrides_reach_rendered_pods() -> (
+    None
+):
     documents = _render(
         "--set",
         "mcp.enabled=true",
@@ -139,10 +143,7 @@ def test_registry_repository_tag_and_pull_policy_overrides_reach_rendered_pods()
 
     orchestrator = _container(documents, "-orchestrator", "orchestrator")
     env = {entry["name"]: entry.get("value") for entry in orchestrator["env"]}
-    assert (
-        env["BR_MARIMO_RUNTIME_IMAGE"]
-        == "registry.example/team/custom/marimo:5.6.7"
-    )
+    assert env["BR_MARIMO_RUNTIME_IMAGE"] == "registry.example/team/custom/marimo:5.6.7"
     assert env["BR_MARIMO_RUNTIME_IMAGE_PULL_POLICY"] == "Always"
 
     legacy = _render("--set-string", "agent.imageTag=legacy-override")
@@ -164,9 +165,7 @@ def test_registry_repository_tag_and_pull_policy_overrides_reach_rendered_pods()
         assert _container(global_override, workload, container)["image"].endswith(
             ":global-override"
         )
-    global_orchestrator = _container(
-        global_override, "-orchestrator", "orchestrator"
-    )
+    global_orchestrator = _container(global_override, "-orchestrator", "orchestrator")
     global_env = {
         entry["name"]: entry.get("value") for entry in global_orchestrator["env"]
     }
@@ -199,7 +198,10 @@ def test_render_uses_only_explicit_pre_created_secret_contracts() -> None:
         assert "secretAccessKey" not in mapping
 
     secret_values = values["secrets"]
-    assert all("create" not in contract and "data" not in contract for contract in secret_values.values())
+    assert all(
+        "create" not in contract and "data" not in contract
+        for contract in secret_values.values()
+    )
 
     database_contract = secret_values["databaseCredentials"]
     assert database_contract == {
@@ -237,9 +239,7 @@ def test_render_uses_only_explicit_pre_created_secret_contracts() -> None:
     )
     assert hypothesis_database_ref == {
         "name": secret_values["externalServices"]["existingSecret"],
-        "key": secret_values["externalServices"]["keys"][
-            "hypothesisStorePostgresUrl"
-        ],
+        "key": secret_values["externalServices"]["keys"]["hypothesisStorePostgresUrl"],
         "optional": True,
     }
     external_contract = secret_values["externalServices"]
@@ -323,7 +323,10 @@ def test_chart_copy_states_static_only_boundary_without_mutation_recipes() -> No
 
     assert "experimental static-rendering scaffold" in combined.lower()
     assert "not a supported installation or production deployment target" in normalized
-    assert "renders no Secret resources" in combined or "emits no Secret resources" in combined
+    assert (
+        "renders no Secret resources" in combined
+        or "emits no Secret resources" in combined
+    )
     assert "${PUBLIC_HOSTNAME}" not in combined
     for forbidden in (
         "values.prod",

@@ -8,6 +8,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+RELEASE_WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "release-readiness.yml"
 DEPLOYMENT_GATE = REPO_ROOT / "scripts" / "ci" / "validate_deployment_static.sh"
 TEST_RUNNER = REPO_ROOT / "tests" / "run_tests.sh"
 
@@ -56,6 +57,10 @@ def _workflow() -> dict[str | bool, Any]:
     return yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
 
 
+def _release_workflow() -> dict[str | bool, Any]:
+    return yaml.safe_load(RELEASE_WORKFLOW_PATH.read_text(encoding="utf-8"))
+
+
 def _triggers(workflow: dict[str | bool, Any]) -> dict[str, Any]:
     # PyYAML 1.1 treats the unquoted workflow key ``on`` as boolean true.
     triggers = workflow.get("on", workflow.get(True))
@@ -93,13 +98,48 @@ def test_required_check_inventory_and_trigger_scope_are_stable() -> None:
         assert "needs" not in job
 
 
+def test_release_readiness_is_a_separate_manual_immutable_workflow() -> None:
+    workflow = _release_workflow()
+    triggers = _triggers(workflow)
+    text = RELEASE_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    assert set(triggers) == {"workflow_dispatch"}
+    assert workflow["permissions"] == {"contents": "read"}
+    assert "${{ secrets." not in text
+    assert "scripts/ci/clean_clone_gate.sh" in text
+    assert "tests/unit/config/test_release_gate_contract.py" not in text
+
+    action_pins = {
+        **ACTION_PINS,
+        "actions/upload-artifact": (
+            "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "v7.0.1",
+        ),
+    }
+    for job in workflow["jobs"].values():
+        for step in job["steps"]:
+            if "uses" not in step:
+                continue
+            match = re.fullmatch(
+                r"(?P<action>[^@\s]+)@(?P<sha>[0-9a-f]{40})", step["uses"]
+            )
+            assert match is not None, step["uses"]
+            action = match.group("action")
+            assert action in action_pins
+            sha, tag = action_pins[action]
+            assert match.group("sha") == sha
+            assert f"uses: {action}@{sha} # {tag}" in text
+
+
 def test_workflow_has_only_read_permission_and_no_secret_channel() -> None:
     workflow = _workflow()
     text = WORKFLOW_PATH.read_text(encoding="utf-8")
 
     assert workflow["permissions"] == {"contents": "read"}
     assert "${{ secrets." not in text
-    assert not re.search(r"(?m)^\s*(?:id-token|packages|pull-requests):\s*write\s*$", text)
+    assert not re.search(
+        r"(?m)^\s*(?:id-token|packages|pull-requests):\s*write\s*$", text
+    )
     assert "environment:" not in text
 
 
@@ -153,9 +193,9 @@ def test_python_jobs_use_the_verified_311_profiles_and_test_runner() -> None:
     ):
         job = jobs[job_id]
         setup_python = next(
-            step for step in job["steps"] if step.get("uses", "").startswith(
-                "actions/setup-python@"
-            )
+            step
+            for step in job["steps"]
+            if step.get("uses", "").startswith("actions/setup-python@")
         )
         assert setup_python["with"]["python-version"] == "3.11"
         runs = _job_runs(job)
@@ -247,15 +287,15 @@ def test_deployment_gate_is_static_and_preserves_experimental_boundaries() -> No
     compose_calls = (
         (
             '"supported local base file (parse only)"',
-            '${REPO_ROOT}/docker-compose.yml',
+            "${REPO_ROOT}/docker-compose.yml",
         ),
         (
             '"base plus experimental CC overlay (parse only)"',
-            '${REPO_ROOT}/docker-compose.cc-stack.yml',
+            "${REPO_ROOT}/docker-compose.cc-stack.yml",
         ),
         (
             '"standalone production file (experimental parse only)"',
-            '${REPO_ROOT}/docker-compose.prod.yml',
+            "${REPO_ROOT}/docker-compose.prod.yml",
         ),
         (
             '"standalone test file (experimental parse only)"',
@@ -294,7 +334,7 @@ def test_deployment_gate_is_static_and_preserves_experimental_boundaries() -> No
     for label, relative_path in compose_calls:
         assert label in script
         assert relative_path in script
-    assert script.count('${REPO_ROOT}/docker-compose.yml') == 2
+    assert script.count("${REPO_ROOT}/docker-compose.yml") == 2
 
     for required in (
         "config --quiet",

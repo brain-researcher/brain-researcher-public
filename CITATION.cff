@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use Brain Researcher, please cite the archived software release identified by this file."
+message: "If you use Brain Researcher, cite software release v0.2.0. The historical reproducibility archive DOI is not a DOI for this software release."
 title: "Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses"
 abstract: >-
   AI agents can now write code, run analyses, and propose hypotheses, but a
@@ -28,16 +28,8 @@ type: software
 license: MIT
 repository-code: "https://github.com/brain-researcher/brain-researcher-public"
 url: "https://github.com/brain-researcher/brain-researcher-public"
-version: "br-reproducibility-20260709.1"
-date-released: "2026-07-09"
-doi: "10.5281/zenodo.21282320"
-identifiers:
-  - type: doi
-    value: "10.5281/zenodo.21282320"
-    description: "Version DOI for br-reproducibility-20260709.1"
-  - type: doi
-    value: "10.5281/zenodo.21282319"
-    description: "Concept DOI for all Brain Researcher Zenodo versions"
+version: "0.2.0"
+date-released: "2026-07-16"
 authors:
   - family-names: "Chen"
     given-names: "Zijiao"
