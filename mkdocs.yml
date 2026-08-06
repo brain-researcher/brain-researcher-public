@@ -112,6 +112,10 @@ nav:
   - Contracts: contract-tiers.md
   - HPC: hpc.md
   - Tool Contribution: how-to-add-tool.md
+  - Audit Results:
+      - BR-KG Manual Validation: results/br_kg_manual_validation_20260805/README.md
+      - Methods and Boundaries: results/br_kg_manual_validation_20260805/METHODS.md
+      - Source Attribution: results/br_kg_manual_validation_20260805/source_attribution.md
   - Appendices:
       - Overview: appendices/00_index.md
       - Episode Control Plane: appendices/01_appendix_A_episode_control_plane.md

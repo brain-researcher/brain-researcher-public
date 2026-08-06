@@ -1,0 +1,119 @@
+{
+  "schema_version": "brkg-manual-validation-public-v1",
+  "audit_id": "brkg-manual-validation-20260805",
+  "record_type": "public_audit_export",
+  "status": "inspectable_post_hoc_human_adjudication",
+  "capture": {
+    "window_utc": "2026-08-05T11:21:12.640141Z/2026-08-05T11:23:42.935469Z",
+    "consistency": "live_read_committed_non_frozen",
+    "sampling_design": "two_independent_srswor_algorithm_r_samples",
+    "node": {
+      "frame_size": 748771,
+      "sample_size": 200,
+      "seed": 2026080501
+    },
+    "directed_edge": {
+      "frame_size": 1386496,
+      "sample_size": 200,
+      "seed": 2026080502,
+      "observed_relation_types_in_sample": 22,
+      "relation_types_in_frame": 98,
+      "sample_relation_types": [
+        "ABOUT",
+        "BELONGS_TO",
+        "COMPUTED_WITH",
+        "DERIVED_FROM",
+        "GENERATED",
+        "GENERATED_FROM",
+        "HAS_COORDINATE",
+        "HAS_METHOD_CONDITION",
+        "HAS_RESOURCE",
+        "HAS_TERM",
+        "HAS_TEXT_EMBEDDING",
+        "HAS_VERSION",
+        "IMPLEMENTS_FAMILY",
+        "IN_DOMAIN",
+        "IN_ONVOC",
+        "IN_REGION",
+        "IN_SPACE",
+        "MEASURES",
+        "REPORTS_CLAIM",
+        "SUGGESTS_MEASURES",
+        "SUPPORTS",
+        "SUPPORTS_MODALITY"
+      ]
+    }
+  },
+  "adjudication": {
+    "authority_role": "project_author",
+    "prior_completed_human_rows": 90,
+    "agent_assisted_candidates_authorized_by_project_author": 310,
+    "candidate_pass_to_fail_corrections": 13,
+    "rubric_boundary_pass_decisions": 3,
+    "completed_unassessable_rows": 21,
+    "independent_second_human_annotator": false,
+    "inter_rater_reliability_reported": false
+  },
+  "counts": {
+    "node": {
+      "n": 200,
+      "pass": 118,
+      "fail": 70,
+      "unassessable": 12
+    },
+    "directed_edge": {
+      "n": 200,
+      "pass": 162,
+      "fail": 29,
+      "unassessable": 9
+    },
+    "equal_sized_audit_set": {
+      "n": 400,
+      "pass": 280,
+      "fail": 99,
+      "unassessable": 21
+    }
+  },
+  "reported_rates": {
+    "node_adjudicated_fail_fraction": 0.35,
+    "node_adjudicated_fail_wilson_95_interval": [
+      0.287,
+      0.418
+    ],
+    "directed_edge_adjudicated_fail_fraction": 0.145,
+    "directed_edge_adjudicated_fail_wilson_95_interval": [
+      0.103,
+      0.2
+    ],
+    "equal_sized_audit_set_descriptive_adjudicated_fail_fraction": 0.2475,
+    "sensitivity_if_all_unassessable_are_defective": {
+      "node_fraction": 0.41,
+      "directed_edge_fraction": 0.19,
+      "equal_sized_audit_set_fraction": 0.3
+    }
+  },
+  "scope_boundary": [
+    "Estimates concern observed node and directed-edge instances in the two samples.",
+    "The samples are not type-balanced and are not one joint 400-row draw.",
+    "The audit does not estimate missing-edge recall or all-relation-type quality.",
+    "The audit does not validate the full KG or post-repair KG quality.",
+    "The edge sample contains 22 of the 98 relationship types present in the frame.",
+    "The combined 24.75% value is descriptive for the equal-sized audit set only.",
+    "Adjudicated-fail fractions do not resolve latent defect status for unassessable rows."
+  ],
+  "semantic_boundary": {
+    "IN_ONVOC": "task_family_or_context_classification_only_not_measurement_evidence"
+  },
+  "mutation_boundary": {
+    "etl_repair_executed": false,
+    "reingestion_executed": false,
+    "production_kg_mutated": false
+  },
+  "files": {
+    "authoritative_ledger": "adjudication_public_400.csv",
+    "issue_summary": "issue_class_summary.csv",
+    "candidate_corrections": "candidate_pass_to_fail_corrections_13.csv",
+    "rubric_boundaries": "rubric_boundary_decisions_3.csv",
+    "validator": "validate_public_bundle.py"
+  }
+}

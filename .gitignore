@@ -382,3 +382,10 @@ skills/third_party/AI-Research-SKILLs/
 # Claude Code session-local state (not portable across machines)
 .claude/scheduled_tasks.lock
 .claude/*.lock
+
+# Public BR-KG manual-validation release assets.
+!docs/results/br_kg_manual_validation_20260805/adjudication_public_400.csv
+!docs/results/br_kg_manual_validation_20260805/issue_class_summary.csv
+!docs/results/br_kg_manual_validation_20260805/candidate_pass_to_fail_corrections_13.csv
+!docs/results/br_kg_manual_validation_20260805/rubric_boundary_decisions_3.csv
+!docs/results/br_kg_manual_validation_20260805/summary.json
