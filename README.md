@@ -123,6 +123,7 @@ For a deeper dive see [`docs/contract-tiers.md`](docs/contract-tiers.md) for the
 | Reproducibility | `reproducibility/` | Public-safe packs and runnable tutorials for inspecting or generating auditable records. |
 | Dataset downloaders | [`scripts/DOWNLOADERS.md`](scripts/DOWNLOADERS.md) | Exact inventory and status boundaries for supported-public, private-input, experimental, and historical data acquisition scripts. |
 | Worked claim-record tutorial | `reproducibility/auditable_claim_record/` | Runnable tutorial that generates claim-card JSON. It is not a manifest-backed reproducibility pack. |
+| Autoresearch foundations | [`docs/autoresearch_public_foundations.md`](docs/autoresearch_public_foundations.md) | Experimental contract-only program identity and canonical episode-path derivation; no loop runtime, authority, or execution. |
 | Autoresearch scripts | [`scripts/autoresearch/README.md`](scripts/autoresearch/README.md) | Status and input boundaries for runnable helpers, experimental workers, and historical campaign scripts. |
 | Local deployment and infrastructure status | [`DEPLOYMENT.md`](DEPLOYMENT.md) and [`infrastructure/deployment/README.md`](infrastructure/deployment/README.md) | Supported local Compose instructions plus the canonical status matrix for experimental and historical assets. |
 | Docs and appendices | `docs/` | Operations, MCP docs, release notes, appendices, use cases, and public-surface explanations. |
