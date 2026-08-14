@@ -1,0 +1,36 @@
+schema_version: br.autoresearch.public-foundations-manifest.v1
+contract_version: br.autoresearch.public-foundations.v1
+tier: experimental
+implementation_status: contract_only
+authority: none
+implemented:
+  canonical_program_registry:
+    descriptor_schema_version: br.canonical_program_descriptor.v1
+    identity_fields:
+      - program_id
+      - program_version
+      - executor_id
+      - executor_version
+    default_registry: empty_injection_only
+    registered_hook_fields:
+      required:
+        - descriptor
+        - authorization_resolver
+        - launch_plan_builder
+      optional:
+        - episode_preparer
+        - goal_confirmation_adopter
+        - scientific_goal_confirmation_adopter
+    authorization_terms: deferred
+  episode_paths:
+    address_schema_version: br.autoresearch_episode_address.v1
+    layout_version: br.autoresearch_episode_layout.v1
+    default_data_root: /data/brain_researcher
+    writes_filesystem: false
+deferred_to_pr_b:
+  - outer-loop state machine
+  - goal handoff and candidate bundles
+  - society review packets and verdicts
+  - run watch events and persistence
+  - authorization terms and authority issuance
+  - dispatch, recovery, and execution

@@ -11,6 +11,7 @@ Brain Researcher is an OSS-preview neuroimaging research assistant with a recipe
 
 - [MCP tool catalog](mcp_tools.schema.json) - machine-readable tool contracts.
 - [MCP surface tiers](mcp.md#surface-tiers) - public, internal, and compatibility MCP tools.
+- [Autoresearch foundations](autoresearch_public_foundations.md) - experimental contract-only program identity and episode paths; not a lifecycle runtime.
 
 ## Release And Review
 
