@@ -39,8 +39,9 @@ and `runs/`. A run derives `execution/`, `outputs/`, `society/`, `public/`, and
 `private/` subtrees. Retrying an unchanged episode changes only `run_id`.
 
 With no explicit `data_root` and no non-empty `BR_AUTORESEARCH_DATA_ROOT`, the
-canonical fallback is `/data/brain_researcher`. An explicit root takes highest
-precedence, followed by the environment override.
+portable fallback is `~/.local/share/brain-researcher`. An explicit root takes
+highest precedence, followed by the environment override. Deployments can set
+`BR_AUTORESEARCH_DATA_ROOT` to their managed storage root.
 
 ## Deferred to PR B
 

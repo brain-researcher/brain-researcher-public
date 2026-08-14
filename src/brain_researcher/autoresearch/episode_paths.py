@@ -17,7 +17,7 @@ from brain_researcher.autoresearch.artifact_schema import RESEARCH_ROOT_NAME
 AUTORESEARCH_DATA_ROOT_ENV = "BR_AUTORESEARCH_DATA_ROOT"
 EPISODE_ADDRESS_SCHEMA_VERSION = "br.autoresearch_episode_address.v1"
 EPISODE_LAYOUT_VERSION = "br.autoresearch_episode_layout.v1"
-_DEFAULT_AUTORESEARCH_DATA_ROOT = Path("/data/brain_researcher")
+_DEFAULT_AUTORESEARCH_DATA_ROOT = Path.home() / ".local" / "share" / "brain-researcher"
 
 
 def _path_component(name: str, value: object) -> str:
@@ -34,8 +34,8 @@ def resolve_autoresearch_data_root(
     """Resolve the canonical autoresearch data root without creating it.
 
     An explicit ``data_root`` wins.  Otherwise
-    ``BR_AUTORESEARCH_DATA_ROOT`` is used when configured, with the canonical
-    ``/data/brain_researcher`` location as the final fallback.
+    ``BR_AUTORESEARCH_DATA_ROOT`` is used when configured, with the current
+    user's ``~/.local/share/brain-researcher`` data directory as the fallback.
     """
 
     if data_root is None:

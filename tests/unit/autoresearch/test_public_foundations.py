@@ -263,7 +263,10 @@ def test_episode_paths_unset_env_uses_the_canonical_default(
 ) -> None:
     monkeypatch.delenv(AUTORESEARCH_DATA_ROOT_ENV, raising=False)
 
-    assert resolve_autoresearch_data_root() == Path("/data/brain_researcher")
+    assert (
+        resolve_autoresearch_data_root()
+        == (Path.home() / ".local" / "share" / "brain-researcher").resolve()
+    )
 
 
 def test_episode_paths_empty_env_uses_the_canonical_default(
@@ -271,7 +274,10 @@ def test_episode_paths_empty_env_uses_the_canonical_default(
 ) -> None:
     monkeypatch.setenv(AUTORESEARCH_DATA_ROOT_ENV, "")
 
-    assert resolve_autoresearch_data_root() == Path("/data/brain_researcher")
+    assert (
+        resolve_autoresearch_data_root()
+        == (Path.home() / ".local" / "share" / "brain-researcher").resolve()
+    )
 
 
 def test_episode_paths_explicit_root_and_env_override_the_default(
@@ -339,6 +345,6 @@ def test_machine_readable_manifest_is_limited_to_the_public_foundations() -> Non
         == "deferred"
     )
     assert manifest["implemented"]["episode_paths"]["default_data_root"] == (
-        "/data/brain_researcher"
+        "~/.local/share/brain-researcher"
     )
     assert "goal handoff and candidate bundles" in manifest["deferred_to_pr_b"]

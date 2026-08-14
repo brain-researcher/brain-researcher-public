@@ -25,7 +25,7 @@ implemented:
   episode_paths:
     address_schema_version: br.autoresearch_episode_address.v1
     layout_version: br.autoresearch_episode_layout.v1
-    default_data_root: /data/brain_researcher
+    default_data_root: ~/.local/share/brain-researcher
     writes_filesystem: false
 deferred_to_pr_b:
   - outer-loop state machine
