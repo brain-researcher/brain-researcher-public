@@ -14,6 +14,8 @@ or `execution_pack/` depend on the pack type.
 | Goal | Start here | What it is |
 |---|---|---|
 | Check a recorded result or schema snapshot | `reproducibility/<id>/` with a `manifest.json` | A manifest-backed pack accepted by `reproducibility/verify.py`. |
+| Inspect the HCP workflow-search trajectory | [`hcp_workflow_search/`](hcp_workflow_search/) | An `integrity_verified` derived-artifact replay of Figure 5; it does not rerun governed HCP analyses. |
+| Inspect the TRIBE speech--tools trajectory | [`tribe_speech_tools/`](tribe_speech_tools/) | An `integrity_verified` derived-data replay of Figure 6; it does not rerun audio or model inference. |
 | Re-run the public A1 result | [`bounded_autoresearch_a1/`](bounded_autoresearch_a1/) | A `public_runnable` real recorded-result pack with public-data scripts plus deeper HCP-gated steps. |
 | Inspect the FitLins pack format | [`fitlins_multiverse_yeo17/`](fitlins_multiverse_yeo17/) | An `inspectable` synthetic schema exemplar with partial integrity; it is not a shipped real-data rerun. |
 | Run the auditable-claim NiMARE light path | [`auditable_claim_record/`](auditable_claim_record/) | A `public_runnable` tutorial path that emits fresh claim-card JSON. It is **not** a manifest-backed pack. |
@@ -53,6 +55,8 @@ From the repository root:
 ```bash
 python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
 python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
+python reproducibility/verify.py reproducibility/hcp_workflow_search
+python reproducibility/verify.py reproducibility/tribe_speech_tools
 ```
 
 `verify.py` uses only the Python standard library. It re-hashes each manifest
@@ -93,6 +97,8 @@ for the exact boundary and the meaning of `partial`.
 |---|---|---|---|
 | `bounded_autoresearch_a1` | `stable` | `public_runnable` | Verify the snapshot and reproduce the public-data headline with its shipped script. The governed rerun is partial; deeper reconstruction additionally needs governed derived inputs and subject bindings that are not shipped. `fully_reproduced` is not claimed. |
 | `fitlins_multiverse_yeo17` | `historical` | `inspectable` | Check eight shipped files; two unshipped statmap keys keep integrity partial, so execution and scientific reproduction are not claimed. There is no real BIDS dataset or runnable historical environment. |
+| `hcp_workflow_search` | `stable` | `integrity_verified` | Validate the 116-candidate search ledger, frozen matched comparisons, cohort counts, and redraw Figure 5 from public-safe derived tables. Restricted HCP inputs, participant-level predictions, and a governed rerun are not shipped or claimed. |
+| `tribe_speech_tools` | `stable` | `integrity_verified` | Validate the 15-pair screen, recurring and new-collection geometry tables, and redraw Figure 6. Raw audio, feature tensors, model checkpoints, and underlying inference are not shipped or rerun. |
 
 For the public A1 rerun, first activate an isolated environment, then run this
 from the repository root:
@@ -111,7 +117,7 @@ size, outputs, and the separately data-gated steps.
 
 ## MCP recipes are optional
 
-MCP is not required to verify either pack or to run the public A1 script.
+MCP is not required to verify any pack or to run the public A1 script.
 
 - `get_execution_recipe(tool_id=..., params=...)` returns a local/container/
   cluster recipe. It is a planning and handoff call; it does **not** execute the

@@ -46,6 +46,8 @@ Run:
 ```bash
 python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
 python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
+python reproducibility/verify.py reproducibility/hcp_workflow_search
+python reproducibility/verify.py reproducibility/tribe_speech_tools
 ```
 
 For a v2 manifest, the verifier first checks the required metadata and
@@ -76,6 +78,8 @@ it must not skip a lower level.
 |---|---|---|---|---|
 | `bounded_autoresearch_a1` | `stable` | `public_runnable` | `governed_rerun: partial`; `fully_reproduced: not_claimed` | Checksum-verifiable artifacts plus a public-data headline rerun. Deeper reconstruction is governed-data-gated: HCP-YA rows, the exact 326-subject FC/behavior binding, and its subject-keyed derived component table are not redistributed. The pack includes a redacted Liu/Tian source-provenance summary with OSF node `75je2`, key checksums, component-reconstruction caveats, and the `reconstructed_not_paper_exact` boundary. |
 | `fitlins_multiverse_yeo17` | `historical` | `inspectable` | `integrity_verified: partial`; all execution levels `not_claimed` | Shows the run-bundle and multiverse layout. It is a format template, not a real-data result; statmap entries are `schema_only`, and its historical params do not form a current end-to-end rerun contract. |
+| `hcp_workflow_search` | `stable` | `integrity_verified` | `public_runnable: partial`; governed and full reruns `not_claimed` | Preserves the 116-candidate ledger, frozen matched summaries, aggregate cohort counts, and a Figure 5 renderer. It excludes restricted HCP inputs, participant/family identifiers, out-of-fold predictions, and private run artifacts. |
+| `tribe_speech_tools` | `stable` | `integrity_verified` | `public_runnable: partial`; governed and full reruns `not_claimed` | Preserves the full 15-pair screen and all plotted recurring/new-collection geometry cells, with a Figure 6 renderer. It excludes audio, item-level metadata, representations, checkpoints, and the original permutation execution. |
 
 ## Reproduce From Language (Claude Code / Codex + MCP)
 
@@ -124,3 +128,9 @@ OSF route, reconstruction provenance, and redaction rules while omitting raw HCP
 rows, subject identifiers, raw FC files, credentials, and local absolute paths.
 The shipped A1 residualised-target CSV is also row-indexed; the governed output
 checksum is retained in provenance, but HCP `Subject` identifiers are not shipped.
+
+The HCP workflow-search pack follows the same privacy boundary at an aggregate
+level: it ships candidate scores and repeat-level score differences, but no HCP
+row binding or prediction vector. The TRIBE speech--tools pack ships only
+collection-level geometry summaries and open-screen aggregates, not audio,
+features, checkpoints, or item identifiers.

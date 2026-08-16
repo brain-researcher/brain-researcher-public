@@ -1,0 +1,4 @@
+panel,aggregate_delta_s,target_cell_count,cell_count,terminal_status
+1,-0.6937409133858539,4,4,bounded_support
+2,-0.44671967745113533,4,4,bounded_support
+3,-0.5471175107075629,3,4,bounded_support

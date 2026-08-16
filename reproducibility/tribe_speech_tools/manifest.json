@@ -1,0 +1,225 @@
+{
+  "$schema": "../manifest.schema.json",
+  "schema_version": "br.reproducibility_pack_manifest.v2",
+  "pack_id": "tribe_speech_tools",
+  "artifact_count": 17,
+  "pack_type": "recorded_result",
+  "maturity": "stable",
+  "source": {
+    "repository_url": "https://github.com/brain-researcher/brain-researcher-public",
+    "contract_authored_against_commit": "99fc41f4e6071a49f343ca8983ff8c661f8218c0",
+    "artifact_authoring_commit": null,
+    "artifact_authoring_commit_status": "unavailable",
+    "release_containing_commit": null,
+    "release_containing_commit_status": "resolved_by_release_gate",
+    "pack_path": "reproducibility/tribe_speech_tools",
+    "provenance": [
+      "This public pack contains a public-safe transcription of frozen derived evaluation outputs used for the manuscript Figure 6 trajectory.",
+      "The historical artifact-producing source commit is not recorded here; private execution identifiers and locations are intentionally not published.",
+      "The release gate will record the public containing commit after this pack is merged."
+    ]
+  },
+  "environment_lock": {
+    "path": "environment.lock.json",
+    "sha256": "sha256:2ca6452f8739e3021d4c71b506cb7ba4f9cdb94bd9eb84014302c541afbf41ff",
+    "status": "locked"
+  },
+  "tools": [
+    {
+      "id": "python",
+      "role": "derived-table validation and renderer runtime",
+      "version": "3.11.13",
+      "version_status": "recorded"
+    },
+    {
+      "id": "matplotlib",
+      "role": "Figure 6 PDF, SVG, and PNG renderer",
+      "version": "3.9.4",
+      "version_status": "recorded"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "discovery_pairs",
+      "availability": "shipped",
+      "path": "source/discovery_pairs.csv",
+      "sha256": "sha256:839ef7bd751eeede434ec61af773fed707ab5ecfab8843d7b819c7299182f185"
+    },
+    {
+      "id": "selection_diagnostic",
+      "availability": "shipped",
+      "path": "source/selection_diagnostic.csv",
+      "sha256": "sha256:368c7785e0d1ad55a92c731981c59d5f2b56207dcbd5cf55521196c6a9c67d43"
+    },
+    {
+      "id": "recurring_cells",
+      "availability": "shipped",
+      "path": "source/recurring_cells.csv",
+      "sha256": "sha256:b69e3da7699454b18ab6f9372f4eb23a3ac6ae6297f1e315b205e5f39d7f0411"
+    },
+    {
+      "id": "recurring_panel_summary",
+      "availability": "shipped",
+      "path": "source/recurring_panel_summary.csv",
+      "sha256": "sha256:bc10b4e801ecdc24e42f8822c86d6e739fe8419c073a158025de224678283544"
+    },
+    {
+      "id": "new_collection_cells",
+      "availability": "shipped",
+      "path": "source/new_collection_cells.csv",
+      "sha256": "sha256:e661d7b825b218eb1e755c9788f61ed10b5850859c97b6ef01bc628078144b11"
+    },
+    {
+      "id": "new_collection_summary",
+      "availability": "shipped",
+      "path": "source/new_collection_summary.json",
+      "sha256": "sha256:e232e74a0367fe9738a28f5ccd970ec0de65048ff9ad0fc105e9da0b856db625"
+    },
+    {
+      "id": "frozen_protocol",
+      "availability": "shipped",
+      "path": "source/frozen_protocol.json",
+      "sha256": "sha256:fee8eb07e01774d6989e75504dffaf1890794379f2dc9fa2fe36a002cc00680d"
+    }
+  ],
+  "seeds": [
+    {
+      "id": "derived_table_replay",
+      "status": "not_recorded",
+      "scope": "The public replay redraws frozen derived values and does not rerun stochastic model inference or permutation sampling.",
+      "note": "No raw-analysis random seed is claimed by this public derived-data pack."
+    }
+  ],
+  "tolerances": [
+    {
+      "id": "derived_numeric_replay",
+      "status": "recorded",
+      "metric": "absolute difference between shipped values and the Figure 6 golden values",
+      "expected": 0.0,
+      "absolute_tolerance": 1e-12
+    }
+  ],
+  "attestation": {
+    "vocabulary_version": "br.reproducibility_attestation.v1",
+    "current_level": "integrity_verified",
+    "levels": {
+      "inspectable": {
+        "status": "attained",
+        "evidence": [
+          "README.md",
+          "provenance_card.md",
+          "source/",
+          "figure/"
+        ]
+      },
+      "integrity_verified": {
+        "status": "attained",
+        "evidence": [
+          "manifest.json",
+          "reproducibility/verify.py",
+          "tests/unit/reproducibility/test_tribe_speech_tools.py"
+        ]
+      },
+      "public_runnable": {
+        "status": "partial",
+        "evidence": [
+          "verify.py redraws the figure from shipped derived tables",
+          "Raw audio, feature extraction, model inference, and permutation sampling are not distributed"
+        ]
+      },
+      "governed_rerun": {
+        "status": "not_claimed",
+        "evidence": [
+          "The governed raw-analysis environment is outside this public pack"
+        ]
+      },
+      "fully_reproduced": {
+        "status": "not_claimed",
+        "evidence": [
+          "A derived-data figure replay is not a full scientific reproduction"
+        ]
+      }
+    }
+  },
+  "verification_boundary": {
+    "byte_integrity": "complete_for_shipped_artifacts",
+    "derived_table_validation": "executed_by_verify_py",
+    "raw_analysis_execution": "not_executed",
+    "scientific_reproduction": "not_claimed"
+  },
+  "notes": [
+    "This is a recorded-result pack for the manuscript trajectory, not a raw-data execution pack.",
+    "The H1 primary endpoint is not_supported; the reviewed overall trajectory outcome is inconclusive_or_conflicting.",
+    "No private owner, execution, or filesystem identifier is included."
+  ],
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "sha256:d9eae9628e8e92de102f769ef6a78105c9da7c530fcc6b6cf99f33a89a28e427"
+    },
+    {
+      "path": "provenance_card.md",
+      "sha256": "sha256:32dc42f97c5d93e79abc7c44dc51dcc56083d91dd3e5ccc0c53a745e1c28a592"
+    },
+    {
+      "path": "environment.lock.json",
+      "sha256": "sha256:2ca6452f8739e3021d4c71b506cb7ba4f9cdb94bd9eb84014302c541afbf41ff"
+    },
+    {
+      "path": "requirements-py311.lock",
+      "sha256": "sha256:2535f4f75839db9d5a0e48bc3eb0bc2f78f12ab919d8758d347771343aade2d2"
+    },
+    {
+      "path": "verify.py",
+      "sha256": "sha256:f70e64b852e4233dc71a177a7556c3465e372f4668205c29ee7041cdd64521ff"
+    },
+    {
+      "path": "source/discovery_pairs.csv",
+      "sha256": "sha256:839ef7bd751eeede434ec61af773fed707ab5ecfab8843d7b819c7299182f185"
+    },
+    {
+      "path": "source/selection_diagnostic.csv",
+      "sha256": "sha256:368c7785e0d1ad55a92c731981c59d5f2b56207dcbd5cf55521196c6a9c67d43"
+    },
+    {
+      "path": "source/recurring_cells.csv",
+      "sha256": "sha256:b69e3da7699454b18ab6f9372f4eb23a3ac6ae6297f1e315b205e5f39d7f0411"
+    },
+    {
+      "path": "source/recurring_panel_summary.csv",
+      "sha256": "sha256:bc10b4e801ecdc24e42f8822c86d6e739fe8419c073a158025de224678283544"
+    },
+    {
+      "path": "source/new_collection_cells.csv",
+      "sha256": "sha256:e661d7b825b218eb1e755c9788f61ed10b5850859c97b6ef01bc628078144b11"
+    },
+    {
+      "path": "source/new_collection_summary.json",
+      "sha256": "sha256:e232e74a0367fe9738a28f5ccd970ec0de65048ff9ad0fc105e9da0b856db625"
+    },
+    {
+      "path": "source/frozen_protocol.json",
+      "sha256": "sha256:fee8eb07e01774d6989e75504dffaf1890794379f2dc9fa2fe36a002cc00680d"
+    },
+    {
+      "path": "figure/generate_figure.py",
+      "sha256": "sha256:f779abcf67fa39f818efbc44f087550cb9d97b2412d2479b136fc03d45a72c19"
+    },
+    {
+      "path": "figure/CAPTION.md",
+      "sha256": "sha256:a9b34d3b4e200cc5cf860f5731d1bdf3aa4a341b3942ddf67c90fadf3117004b"
+    },
+    {
+      "path": "figure/figure6_tribe_speech_tools.pdf",
+      "sha256": "sha256:33cb07cb9f827469d6c01be5b58fb9a83c7ecb5465030ca0919e777fa963a192"
+    },
+    {
+      "path": "figure/figure6_tribe_speech_tools.svg",
+      "sha256": "sha256:e315861970fc00797737e56d2076282331f9c00410bb13176e9388406c47bd2c"
+    },
+    {
+      "path": "figure/figure6_tribe_speech_tools.png",
+      "sha256": "sha256:80b2b3c05f22dc30b25140f07dfe1485d30d48cef81c7d36e9e9bde8b56e22de"
+    }
+  ]
+}

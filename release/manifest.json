@@ -3,6 +3,11 @@
   "software_release": {
     "version": "0.2.0",
     "git_tag": "v0.2.0",
+    "zenodo": {
+      "version_doi": "10.5281/zenodo.21392244",
+      "concept_doi": "10.5281/zenodo.21282319",
+      "publication_date": "2026-07-16"
+    },
     "source_commit_binding": {
       "mode": "release_gate",
       "value": null,
@@ -40,15 +45,12 @@
     "required_before_tag": true
   },
   "historical_artifacts": {
-    "relationship": "independent_from_software_release",
+    "relationship": "earlier_version_under_same_zenodo_concept",
     "exact_reproducibility_archive": {
       "status": "historical_archive",
       "git_tag": "br-reproducibility-20260709.1",
-      "version_doi": "10.5281/zenodo.21282320"
-    },
-    "artifact_family": {
-      "concept_doi": "10.5281/zenodo.21282319",
-      "scope": "resolves_to_latest_non_semver_artifact_release"
+      "version_doi": "10.5281/zenodo.21282320",
+      "concept_doi": "10.5281/zenodo.21282319"
     }
   }
 }

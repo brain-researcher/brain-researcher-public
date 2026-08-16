@@ -1,0 +1,31 @@
+{
+  "schema_version": "tribe_speech_tools_public_derived_data.v1",
+  "claim_scope": "Internal TRIBE sound representations only; this package does not establish a brain or fMRI effect.",
+  "open_screen": {
+    "category_count": 6,
+    "pair_count": 15,
+    "screen_metric": "source-held-out late-minus-early decoding AUC",
+    "ranking_rule": "absolute change"
+  },
+  "exploratory_selection": {
+    "adopted_contrast": "speech_vs_tools",
+    "selection_stage": "post-hoc held-out-collection geometry diagnostic",
+    "selection_reason": "more consistent lower-separation pattern and feasible acoustically matched resampling"
+  },
+  "frozen_follow_up": {
+    "contrast": "speech_vs_tools",
+    "acoustic_matching_measurement_count": 7,
+    "panels": 3,
+    "items_per_panel": 48,
+    "total_new_items": 144,
+    "recurring_collection_count": 4,
+    "target_geometry": "delta_s < 0 and late_directional_alignment_c > 0"
+  },
+  "new_collection_extension": {
+    "collection_count": 4,
+    "inference_unit": "collection",
+    "primary_endpoint_status": "not_supported",
+    "trajectory_outcome": "inconclusive_or_conflicting"
+  },
+  "replay_boundary": "The public tables are frozen derived outputs. This package redraws and validates the published summary; it does not redistribute audio, features, checkpoints, or rerun model inference."
+}

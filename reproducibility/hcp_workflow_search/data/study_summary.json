@@ -1,0 +1,100 @@
+{
+  "absolute_utility": {
+    "positive_selected_median_r2_outcomes": [
+      "Cognition",
+      "Tobacco Use"
+    ]
+  },
+  "all_outcomes": {
+    "directional_wins": 47,
+    "repeat_count": 50
+  },
+  "cognition": {
+    "conditional_one_sided_p": 0.006,
+    "directional_wins": 10,
+    "median_delta_r": 0.09827205188739016,
+    "repeat_count": 10
+  },
+  "cohort_ledger": {
+    "eligible_hcp_cohort_n": 326,
+    "matched_comparison": {
+      "family_count": 243,
+      "row_count": 244
+    },
+    "search": {
+      "family_count": 244,
+      "row_count": 245
+    },
+    "separate_internal_holdout_row_count": 81
+  },
+  "producer_closure": {
+    "complete_governed_rerun_claimed": false,
+    "historical_producing_code": {
+      "publicly_resolvable": false,
+      "shipped_in_public_pack": false,
+      "stages": [
+        "MVE100 expansion",
+        "12-slot recovery",
+        "R2 Cognition paired inference",
+        "R3 transfer"
+      ],
+      "status": "recovered_in_private_history"
+    },
+    "public_pack_claim": "derived artifact replay only"
+  },
+  "redaction": {
+    "contains_absolute_paths": false,
+    "contains_participant_or_family_identifiers": false,
+    "contains_prediction_vectors": false,
+    "contains_private_receipts": false
+  },
+  "replay_scope": "derived_artifact_replay_only",
+  "schema_version": "br.hcp_workflow_search_derived_artifacts.v1",
+  "search": {
+    "completed_candidate_count": 104,
+    "expanded_scored_candidate_count": 84,
+    "expanded_scores_above_initial_maximum": 27,
+    "expanded_search_maximum_r": 0.48710921135174756,
+    "expanded_candidate_count": 96,
+    "incomplete_candidate_count": 12,
+    "initial_candidate_count": 20,
+    "initial_search_maximum_r": 0.37263729808107476,
+    "milestones": [
+      {
+        "candidate_order": 15,
+        "label": "initial 20-candidate best covariance + SVR",
+        "r": 0.37263729808107476
+      },
+      {
+        "candidate_order": 33,
+        "label": "precision + CPM",
+        "r": 0.3857684993124818
+      },
+      {
+        "candidate_order": 41,
+        "label": "precision + ridge",
+        "r": 0.4543736067828828
+      },
+      {
+        "candidate_order": 109,
+        "label": "highest discovery score coherence + ridge",
+        "r": 0.48710921135174756
+      }
+    ],
+    "parent_candidate_count": 116,
+    "transport_recovery_parent_denominator_unchanged": true
+  },
+  "selection": {
+    "analysis_frozen_before_matched_comparison": true,
+    "automatic_champion_selected": false,
+    "matched_reference": "matched_nested_liu_procedure",
+    "selected_workflow_id": "C1_raw"
+  },
+  "transfer": {
+    "directional_wins": 37,
+    "inferential_status": "descriptive_retrospective_not_multiplicity_confirmed",
+    "outcome_count": 4,
+    "repeat_count": 40,
+    "weak_fwer_status": "unsupported"
+  }
+}

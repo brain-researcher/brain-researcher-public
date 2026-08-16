@@ -1,0 +1,37 @@
+{
+  "schema_version": "br.reproducibility_environment_lock.v1",
+  "status": "locked",
+  "platform": {
+    "operating_system": "Linux",
+    "architecture": "x86_64",
+    "python_implementation": "CPython",
+    "python_version": "3.11"
+  },
+  "dependency_lock": {
+    "path": "requirements-py311.lock",
+    "format": "pip-requirements",
+    "sha256": "sha256:2535f4f75839db9d5a0e48bc3eb0bc2f78f12ab919d8758d347771343aade2d2"
+  },
+  "container": {
+    "status": "not_used",
+    "image": null,
+    "digest": null
+  },
+  "tool_versions": [
+    {
+      "id": "python",
+      "version": "3.11.13",
+      "version_status": "recorded_in_manifest"
+    },
+    {
+      "id": "matplotlib",
+      "version": "3.9.4",
+      "version_status": "recorded_in_manifest"
+    }
+  ],
+  "notes": [
+    "This lock covers only validation and rendering of the public TRIBE derived-data replay.",
+    "It does not describe or recreate the audio, feature-extraction, or model-inference environment.",
+    "The reference lock records the Python packages used for the committed Linux x86_64 render; byte-identical rendering on other platforms is not claimed."
+  ]
+}
