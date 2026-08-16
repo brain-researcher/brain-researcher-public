@@ -37,10 +37,10 @@ def test_software_release_versions_are_traceable() -> None:
     assert manifest["software_release"]["version"] == RELEASE
     assert manifest["software_release"]["git_tag"] == f"v{RELEASE}"
     assert manifest["software_release"]["zenodo"] == {
-        "status": "pending_github_zenodo",
+        "status": "published",
         "concept_doi": "10.5281/zenodo.21282319",
-        "version_doi": None,
-        "publication_date": None,
+        "version_doi": "10.5281/zenodo.21966011",
+        "publication_date": "2026-08-16",
     }
     assert manifest["python"] == {
         "distribution": "brain_researcher",
@@ -135,8 +135,8 @@ def test_zenodo_identifiers_distinguish_release_and_historical_archive() -> None
     citation = _yaml("CITATION.cff")
 
     assert citation["version"] == RELEASE
-    assert "doi" not in citation
-    assert "date-released" not in citation
+    assert citation["doi"] == "10.5281/zenodo.21966011"
+    assert citation["date-released"] == "2026-08-16"
     assert "identifiers" not in citation
     assert manifest["historical_artifacts"] == {
         "relationship": "earlier_version_under_same_zenodo_concept",
