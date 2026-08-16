@@ -110,7 +110,7 @@ orchestrator:
 
   image:
     repository: brain-researcher/orchestrator
-    tag: "0.2.0-oss-preview"
+    tag: "0.3.0-oss-preview"
     pullPolicy: ""
 
   service:
@@ -161,7 +161,7 @@ orchestrator:
     provisioner: "noop"
     namespace: ""
     imageRepository: "brain-researcher/marimo-singleuser"
-    imageTag: "0.2.0-oss-preview"
+    imageTag: "0.3.0-oss-preview"
     imagePullPolicy: ""
     publicUrlTemplate: ""
     ingressClassName: ""
@@ -189,7 +189,7 @@ agent:
 
   image:
     repository: brain-researcher/agent
-    tag: "0.2.0-oss-preview"
+    tag: "0.3.0-oss-preview"
     pullPolicy: ""
 
   # Optional command/args override (use for ASGI/WS entrypoint)
@@ -349,7 +349,7 @@ br-kg:
 
   image:
     repository: brain-researcher/br-kg
-    tag: "0.2.0-oss-preview"
+    tag: "0.3.0-oss-preview"
     pullPolicy: ""
 
   service:
@@ -419,7 +419,7 @@ niclip:
 
   image:
     repository: brain-researcher/niclip
-    tag: "0.2.0-oss-preview"
+    tag: "0.3.0-oss-preview"
     pullPolicy: IfNotPresent
 
   service:
@@ -504,7 +504,7 @@ mcp:
 
   image:
     repository: brain-researcher/mcp
-    tag: "0.2.0-oss-preview"
+    tag: "0.3.0-oss-preview"
     pullPolicy: ""
 
   # Mount path for the HTTP MCP transport. If you route MCP behind an ingress
@@ -580,7 +580,7 @@ webUi:
 
   image:
     repository: brain-researcher/web-ui
-    tag: "0.2.0-oss-preview"
+    tag: "0.3.0-oss-preview"
     pullPolicy: ""
 
   service:

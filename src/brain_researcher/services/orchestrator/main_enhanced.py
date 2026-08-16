@@ -64,6 +64,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sse_starlette.sse import EventSourceResponse
 
+from brain_researcher import __version__ as SOFTWARE_VERSION
 from brain_researcher.config.paths import get_data_root
 from brain_researcher.services.shared.cache_store_registry import (
     set_initialized_cache_store,
@@ -1760,7 +1761,7 @@ async def chat_alias_get(
 app = create_app(
     title="Brain Researcher Orchestrator (Enhanced)",
     description="Unified API for Brain Researcher Web UI with priority UI integrations",
-    version="0.2.0",
+    version=SOFTWARE_VERSION,
     lifespan=lifespan,
     allowed_origins=ALLOWED_CORS_ORIGINS,
     optional_routers=[
@@ -2781,7 +2782,7 @@ class EnhancedJobManager:
                 ),
                 "steps": execution_steps,
                 "environment": {
-                    "orchestrator_version": "0.2.0",
+                    "orchestrator_version": SOFTWARE_VERSION,
                     "agent_version": "1.0.0",
                     "timestamp": start_time.isoformat(),
                 },
