@@ -1,0 +1,212 @@
+{
+  "$schema": "../manifest.schema.json",
+  "schema_version": "br.reproducibility_pack_manifest.v2",
+  "pack_id": "hcp_workflow_search",
+  "pack_type": "recorded_result",
+  "maturity": "stable",
+  "source": {
+    "repository_url": "https://github.com/brain-researcher/brain-researcher-public",
+    "contract_authored_against_commit": "99fc41f4e6071a49f343ca8983ff8c661f8218c0",
+    "artifact_authoring_commit": null,
+    "artifact_authoring_commit_status": "unavailable",
+    "release_containing_commit": null,
+    "release_containing_commit_status": "resolved_by_release_gate",
+    "pack_path": "reproducibility/hcp_workflow_search",
+    "provenance": [
+      "The public contract was authored against the stated public-repository snapshot.",
+      "The recorded source artifacts span multiple stages whose producing code was recovered in private history but is not shipped or publicly resolvable.",
+      "Stage-level provenance for MVE100 expansion, 12-slot recovery, R2 Cognition paired inference, and R3 transfer is recorded without private code references.",
+      "The release-containing commit is deliberately resolved only by the public release gate."
+    ]
+  },
+  "environment_lock": {
+    "path": "environment.lock.json",
+    "sha256": "sha256:ba2adc721490b89ca8b9244bf285b3a505eee551ee49493155860bb128b8f6be",
+    "status": "locked"
+  },
+  "tools": [
+    {
+      "id": "derived_artifact_replay",
+      "role": "validate recorded aggregate tables and redraw Figure 5",
+      "path": "scripts/replay_and_validate.py",
+      "version": "sha256:5ee3110c3ff8745e8bbdf2368d41fc3e9167b81be5e9fb349cb8fa911a7e0315",
+      "version_status": "recorded"
+    },
+    {
+      "id": "figure5_svg_renderer",
+      "role": "render public Figure 5 from public-safe derived tables",
+      "path": "scripts/render_figure5.py",
+      "version": "sha256:b1c31364f3bf4daa482239850ea230b0311fd77ec2b4392bda52a24a9bb00aa6",
+      "version_status": "recorded"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "search_candidate_scores",
+      "availability": "shipped",
+      "path": "data/search_candidates.csv",
+      "sha256": "sha256:a152791250d6ffdab0c89484a4e3189039721aeaf29223411a8dd92a936e5afd"
+    },
+    {
+      "id": "matched_outcome_summaries",
+      "availability": "shipped",
+      "path": "data/matched_outcomes.csv",
+      "sha256": "sha256:2d8a8068b81bab419f56bc5c53e816e2e7467438cc671511c7358d70cc095486"
+    },
+    {
+      "id": "repeat_level_delta_r",
+      "availability": "shipped",
+      "path": "data/paired_repeat_deltas.csv",
+      "sha256": "sha256:25a720eeb2c634c4449f421357650e8c370cf55b49981476dbf3cdf09ab58c75"
+    },
+    {
+      "id": "governed_hcp_execution_inputs",
+      "availability": "not_recorded",
+      "sha256": null,
+      "note": "Restricted HCP inputs and original private run artifacts are not distributed in this derived-artifact replay pack."
+    }
+  ],
+  "seeds": [
+    {
+      "id": "derived_artifact_replay",
+      "status": "not_recorded",
+      "scope": "The public replay validates committed tables and performs no resampling or model fitting."
+    }
+  ],
+  "tolerances": [
+    {
+      "id": "search_parent_denominator",
+      "status": "recorded",
+      "metric": "open search candidate count",
+      "expected": 116,
+      "absolute_tolerance": 0
+    },
+    {
+      "id": "initial_search_maximum_r",
+      "status": "recorded",
+      "metric": "initial 20-candidate maximum cross-validated Pearson r",
+      "expected": 0.37263729808107476,
+      "absolute_tolerance": 1e-12
+    },
+    {
+      "id": "expanded_search_maximum_r",
+      "status": "recorded",
+      "metric": "expanded search maximum cross-validated Pearson r",
+      "expected": 0.48710921135174756,
+      "absolute_tolerance": 1e-12
+    },
+    {
+      "id": "cognition_median_delta_r",
+      "status": "recorded",
+      "metric": "Cognition median repeat-level delta r",
+      "expected": 0.09827205188739016,
+      "absolute_tolerance": 1e-12
+    },
+    {
+      "id": "cognition_conditional_one_sided_p",
+      "status": "recorded",
+      "metric": "Cognition conditional one-sided p",
+      "expected": 0.006,
+      "absolute_tolerance": 1e-12
+    },
+    {
+      "id": "transfer_directional_wins",
+      "status": "recorded",
+      "metric": "four-outcome transfer favorable repeat count",
+      "expected": 37,
+      "absolute_tolerance": 0
+    },
+    {
+      "id": "all_outcomes_directional_wins",
+      "status": "recorded",
+      "metric": "five-outcome favorable repeat count",
+      "expected": 47,
+      "absolute_tolerance": 0
+    }
+  ],
+  "attestation": {
+    "vocabulary_version": "br.reproducibility_attestation.v1",
+    "current_level": "integrity_verified",
+    "levels": {
+      "inspectable": {
+        "status": "attained",
+        "evidence": [
+          "README.md",
+          "provenance_card.md",
+          "data/study_summary.json"
+        ]
+      },
+      "integrity_verified": {
+        "status": "attained",
+        "evidence": [
+          "python reproducibility/verify.py reproducibility/hcp_workflow_search exits 0"
+        ]
+      },
+      "public_runnable": {
+        "status": "partial",
+        "evidence": [
+          "scripts/replay_and_validate.py redraws and validates public-safe derived tables but does not run the governed HCP analysis"
+        ]
+      },
+      "governed_rerun": {
+        "status": "not_claimed",
+        "evidence": [
+          "Restricted HCP inputs and a governed execution environment are not shipped"
+        ]
+      },
+      "fully_reproduced": {
+        "status": "not_claimed",
+        "evidence": [
+          "No independent end-to-end scientific reproduction is claimed"
+        ]
+      }
+    }
+  },
+  "artifact_count": 11,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "sha256:a0aab7cfa9d2772c0ced5bbf6c0e317b7a1f2a2432c16c3dd2011520f854e5f9"
+    },
+    {
+      "path": "CAPTION.md",
+      "sha256": "sha256:72853fe322be002c95e8d133a159f7819097747bdd28468c95afe76f6418db41"
+    },
+    {
+      "path": "provenance_card.md",
+      "sha256": "sha256:22d2d932d672c865e14b623666e8ce043259a51ab87b71914ceb01bb82abf845"
+    },
+    {
+      "path": "environment.lock.json",
+      "sha256": "sha256:ba2adc721490b89ca8b9244bf285b3a505eee551ee49493155860bb128b8f6be"
+    },
+    {
+      "path": "data/search_candidates.csv",
+      "sha256": "sha256:a152791250d6ffdab0c89484a4e3189039721aeaf29223411a8dd92a936e5afd"
+    },
+    {
+      "path": "data/matched_outcomes.csv",
+      "sha256": "sha256:2d8a8068b81bab419f56bc5c53e816e2e7467438cc671511c7358d70cc095486"
+    },
+    {
+      "path": "data/paired_repeat_deltas.csv",
+      "sha256": "sha256:25a720eeb2c634c4449f421357650e8c370cf55b49981476dbf3cdf09ab58c75"
+    },
+    {
+      "path": "data/study_summary.json",
+      "sha256": "sha256:d8a45b383343f6466200e9e0eeff7efcbe148c2535a54f990ad68ccd6569ed64"
+    },
+    {
+      "path": "scripts/render_figure5.py",
+      "sha256": "sha256:b1c31364f3bf4daa482239850ea230b0311fd77ec2b4392bda52a24a9bb00aa6"
+    },
+    {
+      "path": "scripts/replay_and_validate.py",
+      "sha256": "sha256:5ee3110c3ff8745e8bbdf2368d41fc3e9167b81be5e9fb349cb8fa911a7e0315"
+    },
+    {
+      "path": "figures/figure5_hcp_workflow_search.svg",
+      "sha256": "sha256:fa8b9a0efb3daeb7fb3c95d5882423fd82194a8aea4a9ea895dce01624feba3e"
+    }
+  ]
+}

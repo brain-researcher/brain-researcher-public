@@ -36,6 +36,11 @@ def test_software_release_versions_are_traceable() -> None:
     assert manifest["schema_version"] == "brain-researcher-release-v1"
     assert manifest["software_release"]["version"] == RELEASE
     assert manifest["software_release"]["git_tag"] == f"v{RELEASE}"
+    assert manifest["software_release"]["zenodo"] == {
+        "version_doi": "10.5281/zenodo.21392244",
+        "concept_doi": "10.5281/zenodo.21282319",
+        "publication_date": "2026-07-16",
+    }
     assert manifest["python"] == {
         "distribution": "brain_researcher",
         "version": RELEASE,
@@ -118,22 +123,19 @@ def test_helm_and_container_preview_versions_are_not_publication_claims() -> Non
     assert set(preview_tags) == {PREVIEW}
 
 
-def test_historical_artifact_identifiers_are_not_software_release_dois() -> None:
+def test_zenodo_identifiers_distinguish_release_and_historical_archive() -> None:
     manifest = _json("release/manifest.json")
     citation = _yaml("CITATION.cff")
 
     assert citation["version"] == RELEASE
-    assert "doi" not in citation
+    assert citation["doi"] == "10.5281/zenodo.21392244"
     assert "identifiers" not in citation
     assert manifest["historical_artifacts"] == {
-        "relationship": "independent_from_software_release",
+        "relationship": "earlier_version_under_same_zenodo_concept",
         "exact_reproducibility_archive": {
             "status": "historical_archive",
             "git_tag": "br-reproducibility-20260709.1",
             "version_doi": "10.5281/zenodo.21282320",
-        },
-        "artifact_family": {
             "concept_doi": "10.5281/zenodo.21282319",
-            "scope": "resolves_to_latest_non_semver_artifact_release",
         },
     }

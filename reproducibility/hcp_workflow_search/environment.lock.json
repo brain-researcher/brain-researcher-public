@@ -1,0 +1,36 @@
+{
+  "schema_version": "br.reproducibility_environment_lock.v1",
+  "status": "locked",
+  "platform": {
+    "operating_system": "any",
+    "architecture": "any",
+    "python_implementation": "CPython",
+    "python_version": "3.11"
+  },
+  "dependency_lock": {
+    "path": null,
+    "format": "stdlib-only",
+    "sha256": null
+  },
+  "container": {
+    "status": "not_used",
+    "image": null,
+    "digest": null
+  },
+  "tool_versions": [
+    {
+      "id": "derived_artifact_replay",
+      "path": "scripts/replay_and_validate.py",
+      "version_status": "recorded_in_manifest"
+    },
+    {
+      "id": "figure5_svg_renderer",
+      "path": "scripts/render_figure5.py",
+      "version_status": "recorded_in_manifest"
+    }
+  ],
+  "notes": [
+    "This lock covers only standard-library derived-artifact replay and SVG rendering.",
+    "It does not describe or recreate the restricted HCP analysis environment."
+  ]
+}

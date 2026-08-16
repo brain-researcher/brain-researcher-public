@@ -1,7 +1,7 @@
 # Brain Researcher
 
-Exact historical reproducibility archive (not the v0.2.0 software release):
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21282320.svg)](https://doi.org/10.5281/zenodo.21282320)
+Software release v0.2.0:
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21392244.svg)](https://doi.org/10.5281/zenodo.21392244)
 
 **Brain Researcher is a workspace-centric infrastructure for auditable AI-assisted neuroimaging.** It turns research questions into bounded episodes that connect evidence, admissible analysis choices, tool/recipe selection, provenance, and review verdicts. This public repository ships the open code, MCP contracts, service stack, Web UI, docs, and public-safe helpers; private benchmark corpora, Neo4j graph contents, internal run artifacts, and site-specific launchers are not included.
 
@@ -349,6 +349,23 @@ templates, demos, adapters, and eval rubrics remain in the companion
 [`brain-researcher-agent-kit`](https://github.com/brain-researcher/brain-researcher-agent-kit)
 repository.
 
+The current repository includes derived-artifact replay packs for the HCP
+workflow-search and TRIBE speech--tools trajectories. They were added after the
+fixed v0.2.0 Zenodo snapshot and are not contained in that archived record; the
+pack manifests keep the release-containing commit unresolved until a later
+versioned release gate.
+
+The replay packs remain immutable, derived-data snapshots. The corresponding
+producing-code surfaces are now also public: the governed HCP MVE100,
+recovery, R2, and R3 drivers are documented in
+[`foundation_episode/README.md`](src/brain_researcher/research/predictive/foundation_episode/README.md),
+and the TRIBE speech--tools feature-to-result evaluators are documented in
+[`discovery/programs/README.md`](src/brain_researcher/research/discovery/programs/README.md).
+The HCP code still requires separately governed inputs and human authorization.
+The TRIBE public evaluator starts from precomputed feature matrices; raw audio,
+model checkpoints, and representation extraction remain external. Shipping
+these code paths does not by itself constitute an independent scientific rerun.
+
 ---
 
 ## Citation
@@ -361,18 +378,20 @@ If you use Brain Researcher in published work, please cite:
   title        = {Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses},
   year         = {2026},
   version      = {0.2.0},
+  doi          = {10.5281/zenodo.21392244},
   url          = {https://github.com/brain-researcher/brain-researcher-public/releases/tag/v0.2.0}
 }
 ```
 
-No DOI is assigned here to the v0.2.0 software release. The version DOI
+The v0.2.0 software release has version DOI
+[`10.5281/zenodo.21392244`](https://doi.org/10.5281/zenodo.21392244).
+The earlier version DOI
 [`10.5281/zenodo.21282320`](https://doi.org/10.5281/zenodo.21282320)
-identifies the historical `br-reproducibility-20260709.1` artifact archive, and
-the artifact-family concept DOI
+identifies the historical `br-reproducibility-20260709.1` artifact archive.
+Both records belong to the Zenodo concept DOI
 [`10.5281/zenodo.21282319`](https://doi.org/10.5281/zenodo.21282319)
-resolves to the latest record in that independent, non-semver artifact family;
-it is not a fixed identifier for the archive above. Neither DOI is the DOI for
-software release v0.2.0. A machine-readable software citation lives
+and the concept DOI may resolve to the latest version rather than either fixed
+record above. A machine-readable software citation lives
 in [`CITATION.cff`](CITATION.cff), and the mapping is explicit in
 [`release/manifest.json`](release/manifest.json). No paper or preprint
 identifier is claimed by this software citation.

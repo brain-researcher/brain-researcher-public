@@ -1,0 +1,11 @@
+{
+  "aggregate_delta_s": -0.19802239326408583,
+  "joint_target_collection_count": 3,
+  "collection_count": 4,
+  "raw_permutation_p_value": 0.13212,
+  "holm_adjusted_p_value": 0.39635999999999993,
+  "inference_kind": "balanced_label_permutation",
+  "inference_status": "frozen_permutation_complete",
+  "primary_endpoint_status": "not_supported",
+  "trajectory_outcome": "inconclusive_or_conflicting"
+}

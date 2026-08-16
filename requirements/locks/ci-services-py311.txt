@@ -360,6 +360,7 @@ scikit-learn==1.9.0
     #   nilearn
 scipy==1.17.1
     # via
+    #   brain-researcher
     #   neuromaps
     #   nilearn
     #   scikit-learn

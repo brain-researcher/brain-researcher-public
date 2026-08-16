@@ -1,0 +1,18 @@
+{
+  "fixture_schema_version": "br.public_hcp_synthetic_governed_form_fixture.v1",
+  "fixture_scope": "transfer_inference_prepare_and_authorization_only",
+  "subject_count": 244,
+  "family_count": 243,
+  "target_names": [
+    "ICA_TobaccoUse",
+    "ICA_PersonalityEmotion",
+    "ICA_IllicitDrugUse",
+    "ICA_MentalHealth"
+  ],
+  "repeat_count": 10,
+  "contains_governed_hcp_assets": false,
+  "contains_participant_or_family_identifiers": false,
+  "contains_target_values": false,
+  "contains_prediction_vectors": false,
+  "scientific_acceptance": false
+}

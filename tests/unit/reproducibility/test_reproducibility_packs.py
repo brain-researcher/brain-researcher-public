@@ -21,6 +21,8 @@ PACKS = sorted(
 )
 A1_PACK = REPRO_ROOT / "bounded_autoresearch_a1"
 FITLINS_PACK = REPRO_ROOT / "fitlins_multiverse_yeo17"
+HCP_PACK = REPRO_ROOT / "hcp_workflow_search"
+TRIBE_PACK = REPRO_ROOT / "tribe_speech_tools"
 CLAIM_TUTORIAL = REPRO_ROOT / "auditable_claim_record"
 VERIFY = runpy.run_path(str(REPRO_ROOT / "verify.py"))
 VERIFY_MANIFEST = VERIFY["_verify_manifest"]
@@ -52,6 +54,8 @@ def test_reproducibility_packs_exist() -> None:
     assert {path.name for path in PACKS} == {
         "bounded_autoresearch_a1",
         "fitlins_multiverse_yeo17",
+        "hcp_workflow_search",
+        "tribe_speech_tools",
     }
     assert (REPRO_ROOT / "verify.py").is_file()
     assert not (REPRO_ROOT / "packs").exists()
@@ -140,6 +144,20 @@ def test_pack_attestations_state_the_honest_boundary() -> None:
         "not_claimed",
     ]
 
+    for pack_dir in (HCP_PACK, TRIBE_PACK):
+        manifest = json.loads((pack_dir / "manifest.json").read_text(encoding="utf-8"))
+        assert manifest["maturity"] == "stable"
+        attestation = manifest["attestation"]
+        assert attestation["current_level"] == "integrity_verified"
+        assert list(attestation["levels"]) == LEVELS
+        assert [attestation["levels"][level]["status"] for level in LEVELS] == [
+            "attained",
+            "attained",
+            "partial",
+            "not_claimed",
+            "not_claimed",
+        ]
+
 
 def test_a1_records_source_tools_inputs_seeds_and_tolerances() -> None:
     manifest = json.loads((A1_PACK / "manifest.json").read_text(encoding="utf-8"))
@@ -195,6 +213,8 @@ def test_navigation_distinguishes_nimare_and_historical_neurolang() -> None:
     assert "historical NeuroLang snapshot" in root_readme
     assert "`inspectable` only" in docs
     assert "## Reproduction Status Vocabulary" in docs
+    assert "`hcp_workflow_search`" in root_readme
+    assert "`tribe_speech_tools`" in docs
 
 
 @pytest.mark.parametrize(
@@ -212,8 +232,15 @@ def test_agentic_driver_resolves_repository_root(example_dir: Path) -> None:
     [
         (A1_PACK, 0, True, 0),
         (FITLINS_PACK, 2, None, 2),
+        (HCP_PACK, 0, True, 0),
+        (TRIBE_PACK, 0, True, 0),
     ],
-    ids=["bounded_autoresearch_a1", "fitlins_multiverse_yeo17"],
+    ids=[
+        "bounded_autoresearch_a1",
+        "fitlins_multiverse_yeo17",
+        "hcp_workflow_search",
+        "tribe_speech_tools",
+    ],
 )
 def test_reproducibility_pack_reports_its_integrity_boundary(
     pack_dir: Path,

@@ -840,6 +840,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "requests" },
     { name = "rich" },
+    { name = "scipy" },
     { name = "structlog" },
     { name = "typer" },
     { name = "urllib3" },
@@ -1156,6 +1157,13 @@ genetics = [
     { name = "pyvcf3" },
     { name = "scikit-allel" },
 ]
+hcp-predictive = [
+    { name = "h5py" },
+    { name = "jsonschema" },
+    { name = "numpy" },
+    { name = "scikit-learn" },
+    { name = "torch" },
+]
 mcp = [
     { name = "aiofiles" },
     { name = "aiosqlite" },
@@ -1286,6 +1294,7 @@ requires-dist = [
     { name = "google-generativeai", marker = "extra == 'agent'", specifier = ">=0.8.0" },
     { name = "gradio", marker = "extra == 'ui'", specifier = ">=5.0.0,<6" },
     { name = "gunicorn", specifier = ">=23.0.0" },
+    { name = "h5py", marker = "extra == 'hcp-predictive'", specifier = ">=3.8" },
     { name = "h5py", marker = "extra == 'optical'", specifier = ">=3.8" },
     { name = "httpx", specifier = ">=0.25.0" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.0.0" },
@@ -1295,6 +1304,7 @@ requires-dist = [
     { name = "isort", marker = "extra == 'dev'", specifier = ">=5.12.0" },
     { name = "jinja2", specifier = ">=3.1.0" },
     { name = "joblib", marker = "extra == 'br-kg'", specifier = ">=1.3.0" },
+    { name = "jsonschema", marker = "extra == 'hcp-predictive'", specifier = ">=4.0" },
     { name = "langchain", marker = "extra == 'agent'", specifier = ">=0.1.0" },
     { name = "langchain", marker = "extra == 'br-kg'", specifier = ">=0.1.0" },
     { name = "langchain-anthropic", marker = "extra == 'agent'", specifier = ">=0.0.1" },
@@ -1348,6 +1358,7 @@ requires-dist = [
     { name = "notebook-intelligence", marker = "extra == 'notebook'", specifier = ">=4.4,<5" },
     { name = "numba", marker = "python_full_version < '3.12' and extra == 'agent'", specifier = ">=0.59.0" },
     { name = "numpy", specifier = ">=1.24.0" },
+    { name = "numpy", marker = "extra == 'hcp-predictive'", specifier = ">=1.24.0" },
     { name = "opencv-python", marker = "extra == 'optical'", specifier = ">=4.8" },
     { name = "openneuro-py", marker = "extra == 'agent'", specifier = ">=2026.3.0" },
     { name = "openneuro-py", marker = "extra == 'ci-services'", specifier = ">=2026.3.0" },
@@ -1407,6 +1418,8 @@ requires-dist = [
     { name = "scikit-allel", marker = "extra == 'genetics'", specifier = ">=1.3" },
     { name = "scikit-learn", marker = "extra == 'agent'", specifier = ">=1.3.0" },
     { name = "scikit-learn", marker = "extra == 'br-kg'", specifier = ">=1.3.0" },
+    { name = "scikit-learn", marker = "extra == 'hcp-predictive'", specifier = ">=1.6" },
+    { name = "scipy", specifier = ">=1.11.0" },
     { name = "scipy", marker = "extra == 'br-kg'", specifier = ">=1.11.0" },
     { name = "scipy", marker = "extra == 'pet'", specifier = ">=1.11" },
     { name = "seaborn", marker = "extra == 'agent'", specifier = ">=0.13.0" },
@@ -1435,6 +1448,7 @@ requires-dist = [
     { name = "tomli", marker = "python_full_version < '3.11' and extra == 'dev'", specifier = ">=2.0.0" },
     { name = "tomlkit", marker = "extra == 'ci'", specifier = ">=0.13.0" },
     { name = "tomlkit", marker = "extra == 'dev'", specifier = ">=0.13.0" },
+    { name = "torch", marker = "extra == 'hcp-predictive'", specifier = ">=2.0" },
     { name = "torch-geometric", marker = "extra == 'agent'", specifier = ">=2.6.0" },
     { name = "tqdm", marker = "extra == 'br-kg'", specifier = ">=4.60.0" },
     { name = "typer", specifier = ">=0.24.0" },
@@ -1449,7 +1463,7 @@ requires-dist = [
     { name = "xgboost", marker = "extra == 'agent'", specifier = ">=2.1.0" },
     { name = "xhtml2pdf", marker = "extra == 'reporting'", specifier = ">=0.2.17" },
 ]
-provides-extras = ["build", "mcp", "br-kg", "genetics", "pet", "optical", "optical-realtime", "behavior-task", "visualization", "ui", "reporting", "notebook", "agent", "ci", "ci-services", "dev", "all", "docs"]
+provides-extras = ["build", "hcp-predictive", "mcp", "br-kg", "genetics", "pet", "optical", "optical-realtime", "behavior-task", "visualization", "ui", "reporting", "notebook", "agent", "ci", "ci-services", "dev", "all", "docs"]
 
 [[package]]
 name = "brotli"

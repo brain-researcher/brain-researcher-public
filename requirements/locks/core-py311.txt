@@ -83,6 +83,7 @@ numpy==2.4.6
     # via
     #   brain-researcher
     #   pandas
+    #   scipy
 packaging==26.2
     # via
     #   gunicorn
@@ -121,6 +122,8 @@ rich==15.0.0
     # via
     #   brain-researcher
     #   typer
+scipy==1.17.1
+    # via brain-researcher
 setuptools==83.0.0
     # via brain-researcher
 shellingham==1.5.4
