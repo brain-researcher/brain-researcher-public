@@ -105,9 +105,12 @@ repository now ships the governed HCP producing drivers under
 [`src/brain_researcher/research/predictive/`](../src/brain_researcher/research/predictive/)
 and the TRIBE feature-to-result evaluator chain under
 [`src/brain_researcher/research/discovery/programs/`](../src/brain_researcher/research/discovery/programs/).
-The HCP drivers remain data- and authorization-gated, and the TRIBE chain does
-not ship raw audio, checkpoints, or feature extraction. Neither code surface
-changes the evidence level recorded by these derived-data packs.
+All HCP drivers remain governed-input dependent. MVE-100, recovery, R2, R3,
+and inference drivers have explicit human authorization-artifact gates;
+Nested100 and the Liu matched comparator are governed-input dependent but do
+not all have that gate. The TRIBE chain does not ship raw audio, checkpoints,
+or feature extraction. Neither code surface changes the evidence level recorded
+by these derived-data packs.
 
 For the public A1 rerun, first activate an isolated environment, then run this
 from the repository root:

@@ -1090,6 +1090,10 @@ def run_preflight(request: FoundationPreflightRequest) -> FoundationPreflightRes
 
     if not isinstance(request, FoundationPreflightRequest):
         raise FoundationEpisodeError("request must be a FoundationPreflightRequest")
+    if request.seed != PARTITION_SEED:
+        raise FoundationEpisodeError(
+            f"preflight seed must equal frozen partition seed {PARTITION_SEED}"
+        )
     output = Path(request.output_dir)
     if output.exists() or output.is_symlink():
         raise FoundationEpisodeError(

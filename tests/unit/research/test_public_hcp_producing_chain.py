@@ -18,7 +18,13 @@ from brain_researcher.research.predictive import (
 )
 from brain_researcher.research.predictive.foundation_episode import codex_cli
 from brain_researcher.research.predictive.foundation_episode.contracts import (
+    PARTITION_SEED,
+    FoundationEpisodeError,
     build_episode_contract,
+)
+from brain_researcher.research.predictive.foundation_episode.preflight import (
+    FoundationPreflightRequest,
+    run_preflight,
 )
 
 
@@ -128,8 +134,8 @@ def test_exact_mve_driver_binds_injected_runtime_to_contract_and_child_command(
     observed: dict[str, object] = {}
 
     def fake_preflight(request: object) -> object:
-        del request
-        observed["contract"] = build_episode_contract(seed=20260809)
+        observed["request"] = request
+        observed["contract"] = build_episode_contract(seed=PARTITION_SEED)
         return type("Result", (), {"phase": "AWAITING_DISCOVERY_AUTHORIZATION", "launch_ready": True})()
 
     monkeypatch.setattr(driver, "run_preflight", fake_preflight)
@@ -154,12 +160,21 @@ def test_exact_mve_driver_binds_injected_runtime_to_contract_and_child_command(
     assert driver.main(["preflight", *common]) == 0
     contract = observed["contract"]
     assert isinstance(contract, dict)
+    request = observed["request"]
+    assert isinstance(request, FoundationPreflightRequest)
+    assert request.seed == PARTITION_SEED
     assert contract["controller"]["cli_binary"] == "/opt/governed/codex"
     assert contract["controller"]["model"] == "fixture-model"
     assert contract["controller"]["reasoning_effort"] == "fixture-effort"
     assert (
         contract["resource_tool_gate"]["controller_transport"]["cli_binary"]
         == "/opt/governed/codex"
+    )
+    assert contract["resource_tool_gate"]["controller_model"] == "fixture-model"
+    assert (
+        contract["controller"]["model"]
+        == contract["resource_tool_gate"]["controller_transport"]["model"]
+        == contract["resource_tool_gate"]["controller_model"]
     )
     assert codex_cli.CODEX_CLI_TIMEOUT_SECONDS == 120.0
 
@@ -195,6 +210,31 @@ def test_exact_mve_driver_binds_injected_runtime_to_contract_and_child_command(
             ]
         )
     assert "--codex-timeout-seconds" in capsys.readouterr().err
+
+
+def test_preflight_rejects_noncanonical_partition_seed_before_writing_bundle(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "launch-ready-bundle"
+    request = FoundationPreflightRequest(
+        term_cache_dir=tmp_path / "terms",
+        subject_ids_path=tmp_path / "subjects.txt",
+        target_table_path=tmp_path / "targets.csv",
+        target_manifest_path=tmp_path / "targets.json",
+        subject_intersection_path=tmp_path / "intersection.json",
+        exchangeability_manifest_path=tmp_path / "families.json",
+        term_names_path=tmp_path / "terms.txt",
+        term_prefixes_path=tmp_path / "prefixes.txt",
+        catalog_path=tmp_path / "catalog.json",
+        output_dir=output_dir,
+        kernel_source_path=tmp_path / "engine.py",
+        seed=PARTITION_SEED + 1,
+    )
+
+    with pytest.raises(FoundationEpisodeError, match="frozen partition seed"):
+        run_preflight(request)
+
+    assert not output_dir.exists()
 
 
 def test_exact_recovery_driver_records_injected_binary_and_version_without_release_claim(

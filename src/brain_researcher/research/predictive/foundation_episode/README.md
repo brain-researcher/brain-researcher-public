@@ -41,13 +41,15 @@ independent replication, external validation, or scientific acceptance.
 ## Runtime and protocol controls
 
 MVE accepts an explicit Codex binary, version, model, and reasoning setting.
-It writes that runtime to its controller contract and forwards the same values
-to the supervised child process. Recovery records its explicit binary and
-version without asserting an unverifiable release label. The MVE Codex CLI
-timeout remains the historical fixed 120 seconds. R2 exposes repeat workers,
-but its ten repeat seeds are frozen; R3 exposes worker count; the inference
-drivers expose draws plus permutation and bootstrap seeds. Input roots and
-output directories are always explicit CLI arguments.
+Its episode `controller` contract records the binary, model, and reasoning
+setting. The separate `public/controller_transport.json` records `cli_version`
+with those same values, and the supervised child receives all four runtime
+arguments. Recovery records its explicit binary and version without asserting
+an unverifiable release label. The MVE Codex CLI timeout remains the historical
+fixed 120 seconds. R2 exposes repeat workers, but its ten repeat seeds are
+frozen; R3 exposes worker count; the inference drivers expose draws plus
+permutation and bootstrap seeds. Input roots and output directories are always
+explicit CLI arguments.
 
 Defaults preserve the historical folds, grids, estimands, and seed schedules.
 Changing an inference statistical seed changes the resulting protocol and

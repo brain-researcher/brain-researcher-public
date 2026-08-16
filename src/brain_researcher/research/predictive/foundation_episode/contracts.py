@@ -256,6 +256,7 @@ def build_episode_contract(*, seed: int) -> dict[str, object]:
     # its persisted provenance without mutating process environment variables.
     from brain_researcher.research.predictive.foundation_episode import codex_cli
 
+    controller_model = codex_cli.CODEX_CLI_MODEL
     return {
         "schema_version": EPISODE_SCHEMA,
         "episode_id": EPISODE_ID,
@@ -359,7 +360,7 @@ def build_episode_contract(*, seed: int) -> dict[str, object]:
         "controller": {
             "provider": "codex.cli",
             "cli_binary": codex_cli.CODEX_CLI_BINARY,
-            "model": codex_cli.CODEX_CLI_MODEL,
+            "model": controller_model,
             "reasoning_effort": codex_cli.CODEX_CLI_REASONING_EFFORT,
             "ephemeral": True,
             "ignore_user_config": True,
@@ -410,7 +411,7 @@ def build_episode_contract(*, seed: int) -> dict[str, object]:
             "controller_transport": {
                 "provider": "codex.cli",
                 "cli_binary": codex_cli.CODEX_CLI_BINARY,
-                "model": codex_cli.CODEX_CLI_MODEL,
+                "model": controller_model,
                 "reasoning_effort": codex_cli.CODEX_CLI_REASONING_EFFORT,
                 "ephemeral": True,
                 "ignore_user_config": True,
@@ -429,7 +430,7 @@ def build_episode_contract(*, seed: int) -> dict[str, object]:
             "controller_transport_retries": 0,
             "controller_schema_repair": "validation_failure_only_one_per_batch",
             "code_mutation": False,
-            "controller_model": "gpt-5.6-sol",
+            "controller_model": controller_model,
             "provider_weights_may_roll": True,
         },
         "selection_and_gates": {
