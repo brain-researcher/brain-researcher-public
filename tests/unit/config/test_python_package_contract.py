@@ -35,8 +35,8 @@ def test_distribution_version_and_namespace_discovery_contract() -> None:
         encoding="utf-8"
     )
 
-    assert config["project"]["version"] == "0.2.0"
-    assert '__version__ = "0.2.0"' in init_text
+    assert config["project"]["version"] == "0.3.0"
+    assert '__version__ = "0.3.0"' in init_text
     assert config["tool"]["setuptools"]["packages"]["find"]["namespaces"] is True
     assert (REPO_ROOT / "src/brain_researcher/core/ingestion/loaders").is_dir(), (
         "namespace discovery sentinel is missing"

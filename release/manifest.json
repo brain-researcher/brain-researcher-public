@@ -1,12 +1,13 @@
 {
   "schema_version": "brain-researcher-release-v1",
   "software_release": {
-    "version": "0.2.0",
-    "git_tag": "v0.2.0",
+    "version": "0.3.0",
+    "git_tag": "v0.3.0",
     "zenodo": {
-      "version_doi": "10.5281/zenodo.21392244",
+      "status": "pending_github_zenodo",
       "concept_doi": "10.5281/zenodo.21282319",
-      "publication_date": "2026-07-16"
+      "version_doi": null,
+      "publication_date": null
     },
     "source_commit_binding": {
       "mode": "release_gate",
@@ -16,7 +17,7 @@
   },
   "python": {
     "distribution": "brain_researcher",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "requires_python": ">=3.11,<3.12"
   },
   "mcp_contract": {
@@ -24,12 +25,12 @@
     "version_file": "contracts/VERSION"
   },
   "containers": {
-    "tag": "0.2.0-oss-preview",
+    "tag": "0.3.0-oss-preview",
     "status": "not_published"
   },
   "helm": {
-    "chart_version": "0.2.0",
-    "app_version": "0.2.0-oss-preview",
+    "chart_version": "0.3.0",
+    "app_version": "0.3.0-oss-preview",
     "status": "experimental_static_only"
   },
   "release_gate": {

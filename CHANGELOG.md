@@ -3,6 +3,29 @@
 All notable changes to Brain Researcher are documented in this file. The
 project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-16
+
+### Added
+
+- Public autoresearch foundations for bounded, reviewable research episodes.
+- Public-safe HCP workflow-search and TRIBE speech--tools reproducibility packs.
+- Parameterized HCP MVE100, recovery, R2/R3 drivers and TRIBE evaluator chains,
+  with controlled inputs kept outside the public repository.
+
+### Changed
+
+- Updated the Python package, runtime API, Helm chart, preview image, and release
+  contracts to v0.3.0 while retaining MCP contract epoch `2026-05-27`.
+- Updated the release archive boundary so the HCP and TRIBE code and replay
+  packs are included in the versioned GitHub and Zenodo source snapshot.
+
+### Fixed
+
+- Updated Vitest past a critical advisory and moved the Helm setup action to its
+  current Node runtime.
+- Synchronized Python dependency locks after adding the scientific evaluator
+  dependencies used by the public HCP and TRIBE code paths.
+
 ## [0.2.0] - 2026-07-16
 
 ### Added
@@ -37,5 +60,6 @@ project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Historical Python package-version baseline and public service-stack snapshot.
   No remote `v0.1.0` semantic release tag was published for this baseline.
 
+[0.3.0]: https://github.com/brain-researcher/brain-researcher-public/releases/tag/v0.3.0
 [0.2.0]: https://github.com/brain-researcher/brain-researcher-public/releases/tag/v0.2.0
 [0.1.0]: https://github.com/brain-researcher/brain-researcher-public/commit/9e86e308c3adfb5e13bc513f9ac69307cd1cd5a4

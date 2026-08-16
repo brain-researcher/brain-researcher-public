@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use Brain Researcher, cite software release v0.2.0 and its version DOI."
+message: "If you use Brain Researcher, cite software release v0.3.0. Its fixed version DOI will be added after Zenodo archives the GitHub release."
 title: "Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses"
 abstract: >-
   AI agents can now write code, run analyses, and propose hypotheses, but a
@@ -28,9 +28,7 @@ type: software
 license: MIT
 repository-code: "https://github.com/brain-researcher/brain-researcher-public"
 url: "https://github.com/brain-researcher/brain-researcher-public"
-version: "0.2.0"
-date-released: "2026-07-16"
-doi: "10.5281/zenodo.21392244"
+version: "0.3.0"
 authors:
   - family-names: "Chen"
     given-names: "Zijiao"

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: Exact Python package version to verify (for example, 0.2.0)
+        description: Exact Python package version to verify (for example, 0.3.0)
         required: true
         type: string
 

@@ -15,7 +15,7 @@ from brain_researcher.services.agent.api_routes import SOFTWARE_VERSION
 from brain_researcher.services.orchestrator import __version__ as orchestrator_version
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RELEASE = "0.2.0"
+RELEASE = "0.3.0"
 PREVIEW = f"{RELEASE}-oss-preview"
 
 
@@ -37,9 +37,10 @@ def test_software_release_versions_are_traceable() -> None:
     assert manifest["software_release"]["version"] == RELEASE
     assert manifest["software_release"]["git_tag"] == f"v{RELEASE}"
     assert manifest["software_release"]["zenodo"] == {
-        "version_doi": "10.5281/zenodo.21392244",
+        "status": "pending_github_zenodo",
         "concept_doi": "10.5281/zenodo.21282319",
-        "publication_date": "2026-07-16",
+        "version_doi": None,
+        "publication_date": None,
     }
     assert manifest["python"] == {
         "distribution": "brain_researcher",
@@ -53,6 +54,12 @@ def test_software_release_versions_are_traceable() -> None:
     ).read_text(encoding="utf-8")
     assert SOFTWARE_VERSION == RELEASE
     assert orchestrator_version == RELEASE
+    orchestrator_source = (
+        REPO_ROOT
+        / "src/brain_researcher/services/orchestrator/main_enhanced.py"
+    ).read_text(encoding="utf-8")
+    assert "version=SOFTWARE_VERSION" in orchestrator_source
+    assert '"orchestrator_version": SOFTWARE_VERSION' in orchestrator_source
 
 
 def test_contract_epoch_and_source_commit_binding_are_explicit() -> None:
@@ -128,7 +135,8 @@ def test_zenodo_identifiers_distinguish_release_and_historical_archive() -> None
     citation = _yaml("CITATION.cff")
 
     assert citation["version"] == RELEASE
-    assert citation["doi"] == "10.5281/zenodo.21392244"
+    assert "doi" not in citation
+    assert "date-released" not in citation
     assert "identifiers" not in citation
     assert manifest["historical_artifacts"] == {
         "relationship": "earlier_version_under_same_zenodo_concept",

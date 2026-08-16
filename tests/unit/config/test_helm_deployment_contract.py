@@ -73,13 +73,13 @@ def test_chart_lints_strictly_and_renders_all_application_images() -> None:
     documents = _render("--set", "mcp.enabled=true")
 
     expected = {
-        ("-agent", "agent"): "brain-researcher/agent:0.2.0-oss-preview",
-        ("-br-kg", "br-kg"): "brain-researcher/br-kg:0.2.0-oss-preview",
-        ("-mcp", "mcp"): "brain-researcher/mcp:0.2.0-oss-preview",
+        ("-agent", "agent"): "brain-researcher/agent:0.3.0-oss-preview",
+        ("-br-kg", "br-kg"): "brain-researcher/br-kg:0.3.0-oss-preview",
+        ("-mcp", "mcp"): "brain-researcher/mcp:0.3.0-oss-preview",
         ("-orchestrator", "orchestrator"): (
-            "brain-researcher/orchestrator:0.2.0-oss-preview"
+            "brain-researcher/orchestrator:0.3.0-oss-preview"
         ),
-        ("-web-ui", "web-ui"): "brain-researcher/web-ui:0.2.0-oss-preview",
+        ("-web-ui", "web-ui"): "brain-researcher/web-ui:0.3.0-oss-preview",
         ("-postgres", "metrics"): ("prometheuscommunity/postgres-exporter:v0.15.0"),
         ("-redis", "metrics"): "oliver006/redis_exporter:v1.62.0",
     }
@@ -96,7 +96,7 @@ def test_chart_lints_strictly_and_renders_all_application_images() -> None:
     env = {entry["name"]: entry.get("value") for entry in orchestrator["env"]}
     assert (
         env["BR_MARIMO_RUNTIME_IMAGE"]
-        == "brain-researcher/marimo-singleuser:0.2.0-oss-preview"
+        == "brain-researcher/marimo-singleuser:0.3.0-oss-preview"
     )
 
 
