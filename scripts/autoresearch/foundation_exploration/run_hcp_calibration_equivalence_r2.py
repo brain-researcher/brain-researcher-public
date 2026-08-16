@@ -41,7 +41,6 @@ def _parser() -> argparse.ArgumentParser:
             command.add_argument(
                 "--repeat-workers", type=int, default=r2.DEFAULT_REPEAT_WORKERS
             )
-            command.add_argument("--repeat-seed", type=int, action="append")
     return parser
 
 
@@ -136,11 +135,6 @@ def _launch(args: argparse.Namespace) -> dict[str, object]:
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
-        if args.command == "prepare":
-            r2.configure_repeat_runtime(
-                seeds=args.repeat_seed,
-                workers=args.repeat_workers,
-            )
         if args.command == "prepare":
             paths = _prepare(args)
             print(f"R2 contract: {paths['contract']}")

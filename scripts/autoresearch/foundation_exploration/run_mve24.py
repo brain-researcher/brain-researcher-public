@@ -60,7 +60,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     preflight.add_argument("--term-prefixes-file", type=Path, required=True)
     preflight.add_argument("--kernel-source", type=Path, required=True)
     preflight.add_argument("--kernel-symbol", action="append", default=[])
-    preflight.add_argument("--seed", type=int, default=PARTITION_SEED)
+    preflight.add_argument(
+        "--seed", type=int, choices=(PARTITION_SEED,), default=PARTITION_SEED
+    )
     launch = commands.add_parser("launch")
     launch.add_argument("--bundle-dir", type=Path, required=True)
     launch.add_argument("--authorization-path", type=Path, required=True)
@@ -75,7 +77,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         command.add_argument("--codex-version")
         command.add_argument("--codex-model")
         command.add_argument("--codex-reasoning-effort")
-        command.add_argument("--codex-timeout-seconds", type=float)
     return parser.parse_args(argv)
 
 
@@ -249,7 +250,6 @@ def _runtime_child_args(args: argparse.Namespace) -> list[str]:
         ("--codex-version", "codex_version"),
         ("--codex-model", "codex_model"),
         ("--codex-reasoning-effort", "codex_reasoning_effort"),
-        ("--codex-timeout-seconds", "codex_timeout_seconds"),
     ):
         value = getattr(args, attribute, None)
         if value is not None:
@@ -437,7 +437,6 @@ def main(argv: list[str] | None = None) -> int:
         version=getattr(args, "codex_version", None),
         model=getattr(args, "codex_model", None),
         reasoning_effort=getattr(args, "codex_reasoning_effort", None),
-        timeout_seconds=getattr(args, "codex_timeout_seconds", None),
     )
     if args.command == "launch":
         return _launch(args)

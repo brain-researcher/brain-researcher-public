@@ -78,6 +78,14 @@ build = [
     "wheel>=0.41,<0.48",
 ]
 
+hcp-predictive = [
+    "h5py>=3.8",
+    "jsonschema>=4.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.6",
+    "torch>=2.0",
+]
+
 mcp = [
     # The current MCP server composes agent routing and review surfaces at
     # import time, so its supported install profile must include those real

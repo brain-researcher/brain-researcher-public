@@ -67,18 +67,6 @@ LIU_ALPHA_COUNT = 4
 LIU_CANDIDATE_COUNT = 1184
 
 
-def configure_repeat_runtime(*, seeds: Sequence[int] | None = None, workers: int | None = None) -> None:
-    """Override public caller runtime choices while retaining historical defaults."""
-
-    global REPEAT_SEEDS, DEFAULT_REPEAT_WORKERS
-    if seeds is not None:
-        normalized = tuple(int(value) for value in seeds)
-        if not normalized or any(value < 0 for value in normalized):
-            raise CalibrationEquivalenceR2Error("repeat seeds must be non-negative")
-        REPEAT_SEEDS = normalized
-    if workers is not None:
-        DEFAULT_REPEAT_WORKERS = _validate_repeat_workers(int(workers))
-
 REPAIR_GATE = {
     "primary_pair": "A3b_cal_minus_A3b_raw",
     "median_delta_r2_at_least": 0.02,
@@ -2057,7 +2045,6 @@ __all__ = [
     "R2_DESIGN",
     "REPEAT_SEEDS",
     "build_authorization_template",
-    "configure_repeat_runtime",
     "prepare_calibration_equivalence_contract",
     "read_prelaunch",
     "run_calibration_equivalence",

@@ -20,6 +20,9 @@ public end-to-end HCP reruns or scientific-result claims.
 `run_mve24.py` is the historical MVE-100 command name. No duplicate
 `run_mve100.py` wrapper is shipped.
 
+Install the producing-code runtime from the repository root with
+`pip install ".[hcp-predictive]"`.
+
 ## External governed boundary
 
 Every data root, source bundle, authorization path, output directory, worker
@@ -37,18 +40,20 @@ independent replication, external validation, or scientific acceptance.
 
 ## Runtime and protocol controls
 
-MVE and recovery accept an explicit Codex binary and runtime configuration.
-MVE writes that runtime to its controller contract and forwards the same values
-to the supervised child process. R2 exposes repeat workers and optional repeat
-seeds; R3 exposes worker count; the inference drivers expose draws plus
-permutation and bootstrap seeds. Input roots and output directories are always
-explicit CLI arguments.
+MVE accepts an explicit Codex binary, version, model, and reasoning setting.
+It writes that runtime to its controller contract and forwards the same values
+to the supervised child process. Recovery records its explicit binary and
+version without asserting an unverifiable release label. The MVE Codex CLI
+timeout remains the historical fixed 120 seconds. R2 exposes repeat workers,
+but its ten repeat seeds are frozen; R3 exposes worker count; the inference
+drivers expose draws plus permutation and bootstrap seeds. Input roots and
+output directories are always explicit CLI arguments.
 
 Defaults preserve the historical folds, grids, estimands, and seed schedules.
-Changing a statistical seed changes the resulting protocol and cannot be
-described as an exact historical reproduction. Changing a Codex binary, model,
-reasoning setting, version, or timeout likewise produces a separately recorded
-runtime. Worker overrides alter resource scheduling, not the estimand.
+Changing an inference statistical seed changes the resulting protocol and
+cannot be described as an exact historical reproduction. Changing a Codex
+binary, model, reasoning setting, or version likewise produces a separately
+recorded runtime. Worker overrides alter resource scheduling, not the estimand.
 
 ## Public test boundary
 

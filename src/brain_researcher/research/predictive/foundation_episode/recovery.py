@@ -79,12 +79,9 @@ RECOVERY_JOURNAL_SCHEMA = "br.foundation_episode.recovery12.controller_call.v1"
 RECOVERY_LEDGER_SCHEMA = "br.foundation_episode.recovery12.source_ledger.v1"
 SOURCE_FIELD_SNAPSHOT_SCHEMA = "br.foundation_episode.recovery12.source_fields.v1"
 RECOVERY_LOCK_RELATIVE = "private/recovery_launch.lock"
-# The historical release/version defaults remain, but the public source never
-# assumes a workstation-local installation.  A governed caller supplies a
-# compatible binary through BR_HCP_CODEX_BINARY.
-RECOVERY_PINNED_CODEX_CLI_RELEASE = os.environ.get(
-    "BR_HCP_CODEX_RELEASE", "0.146.1-x86_64-unknown-linux-musl"
-)
+# The historical version default remains, but the public source never assumes
+# a workstation-local release label.  A governed caller supplies a compatible
+# binary through BR_HCP_CODEX_BINARY.
 RECOVERY_PINNED_CODEX_CLI_VERSION = os.environ.get(
     "BR_HCP_CODEX_VERSION", "0.146.1"
 )
@@ -304,7 +301,6 @@ def _recovery_controller_transport() -> dict[str, object]:
     return {
         "schema_version": "br.foundation_episode.recovery12.controller_transport.v1",
         "provider": "codex.cli",
-        "pinned_cli_release": RECOVERY_PINNED_CODEX_CLI_RELEASE,
         "pinned_cli_version": RECOVERY_PINNED_CODEX_CLI_VERSION,
         "pinned_cli_binary": str(RECOVERY_PINNED_CODEX_CLI_BINARY),
         "timeout_seconds": int(CONTROLLER_TIMEOUT_SECONDS),
@@ -384,7 +380,7 @@ def _exclusive_recovery_lock(root: Path):
 
 
 def _pinned_recovery_run_command(command: Sequence[str], **kwargs: object) -> object:
-    """Replace only the base adapter executable with recovery's fixed release."""
+    """Replace only the base adapter executable with recovery's configured binary."""
 
     if (
         isinstance(command, str | bytes | bytearray)
@@ -406,7 +402,7 @@ def _verify_pinned_recovery_cli() -> None:
         or not RECOVERY_PINNED_CODEX_CLI_BINARY.is_file()
         or not os.access(RECOVERY_PINNED_CODEX_CLI_BINARY, os.X_OK)
     ):
-        raise RecoveryError("pinned recovery Codex release is unavailable")
+        raise RecoveryError("pinned recovery Codex binary is unavailable")
     try:
         observed = verify_codex_cli_version(run_command=_pinned_recovery_run_command)
     except CodexCLIError as exc:
@@ -418,7 +414,7 @@ def _verify_pinned_recovery_cli() -> None:
 def invoke_pinned_recovery_codex_cli(
     *, prompt: str, output_schema_path: Path | str, timeout_seconds: float
 ) -> object:
-    """Invoke the base adapter only through the frozen 0.146.1 executable."""
+    """Invoke the base adapter only through the configured recovery binary."""
 
     return invoke_codex_cli(
         prompt=prompt,

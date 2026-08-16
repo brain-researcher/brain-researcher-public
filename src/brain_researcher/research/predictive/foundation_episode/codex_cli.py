@@ -28,8 +28,8 @@ CODEX_CLI_BINARY = os.environ.get("BR_HCP_CODEX_BINARY", "codex")
 CODEX_CLI_VERSION = os.environ.get("BR_HCP_CODEX_VERSION", "0.146.1")
 CODEX_CLI_MODEL = os.environ.get("BR_HCP_CODEX_MODEL", "gpt-5.6-sol")
 CODEX_CLI_REASONING_EFFORT = os.environ.get("BR_HCP_CODEX_REASONING", "max")
-CODEX_CLI_TIMEOUT_SECONDS = float(os.environ.get("BR_HCP_CODEX_TIMEOUT_SECONDS", "120"))
-CODEX_CLI_VERSION_TIMEOUT_SECONDS = float(os.environ.get("BR_HCP_CODEX_VERSION_TIMEOUT_SECONDS", "10"))
+CODEX_CLI_TIMEOUT_SECONDS = 120.0
+CODEX_CLI_VERSION_TIMEOUT_SECONDS = 10.0
 
 _EVENT_TYPES = frozenset(
     {
@@ -122,11 +122,10 @@ def configure_codex_runtime(
     version: str | None = None,
     model: str | None = None,
     reasoning_effort: str | None = None,
-    timeout_seconds: float | None = None,
 ) -> None:
     """Set explicit public CLI runtime overrides for this process only."""
 
-    global CODEX_CLI_BINARY, CODEX_CLI_VERSION, CODEX_CLI_MODEL, CODEX_CLI_REASONING_EFFORT, CODEX_CLI_TIMEOUT_SECONDS
+    global CODEX_CLI_BINARY, CODEX_CLI_VERSION, CODEX_CLI_MODEL, CODEX_CLI_REASONING_EFFORT
     if binary is not None:
         CODEX_CLI_BINARY = binary
     if version is not None:
@@ -135,8 +134,6 @@ def configure_codex_runtime(
         CODEX_CLI_MODEL = model
     if reasoning_effort is not None:
         CODEX_CLI_REASONING_EFFORT = reasoning_effort
-    if timeout_seconds is not None:
-        CODEX_CLI_TIMEOUT_SECONDS = timeout_seconds
 
 
 def _regular_file(path: Path | str, *, label: str) -> Path:
@@ -242,13 +239,11 @@ def _completed_returncode(completed: object, *, label: str) -> int:
 
 def verify_codex_cli_version(
     *,
-    timeout_seconds: float | None = None,
+    timeout_seconds: float = CODEX_CLI_VERSION_TIMEOUT_SECONDS,
     run_command: Callable[..., object] | None = None,
 ) -> str:
     """Return the required CLI version or refuse this controller transport."""
 
-    if timeout_seconds is None:
-        timeout_seconds = CODEX_CLI_VERSION_TIMEOUT_SECONDS
     if timeout_seconds <= 0:
         raise CodexCLIError("Codex CLI version timeout must be positive")
     runner = _command_runner(run_command)
@@ -436,15 +431,13 @@ def invoke_codex_cli(
     *,
     prompt: str,
     output_schema_path: Path | str,
-    timeout_seconds: float | None = None,
+    timeout_seconds: float = CODEX_CLI_TIMEOUT_SECONDS,
     run_command: Callable[..., object] | None = None,
 ) -> CodexCLIResult:
     """Run the fixed controller transport once and fail closed on unsafe output."""
 
     if not isinstance(prompt, str) or not prompt.strip():
         raise CodexCLIError("Codex CLI prompt must be non-empty text")
-    if timeout_seconds is None:
-        timeout_seconds = CODEX_CLI_TIMEOUT_SECONDS
     if timeout_seconds <= 0:
         raise CodexCLIError("Codex CLI timeout must be positive")
     schema_path, output_schema = _validate_strict_schema(output_schema_path)
@@ -518,7 +511,7 @@ _LIVENESS_PROMPT = (
 
 def run_score_blind_liveness_probe(
     *,
-    timeout_seconds: float | None = None,
+    timeout_seconds: float = CODEX_CLI_TIMEOUT_SECONDS,
     run_command: Callable[..., object] | None = None,
 ) -> CodexCLIResult:
     """Exercise the real CLI seam without a target, bundle, or score input."""
