@@ -1,8 +1,7 @@
 # Brain Researcher
 
-Software release v0.3.0 (fixed version DOI pending). Zenodo is identified here
-by its concept DOI until the published GitHub release is archived:
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21282319.svg)](https://doi.org/10.5281/zenodo.21282319)
+Software release v0.3.0:
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21966011.svg)](https://doi.org/10.5281/zenodo.21966011)
 
 **Brain Researcher is a workspace-centric infrastructure for auditable AI-assisted neuroimaging.** It turns research questions into bounded episodes that connect evidence, admissible analysis choices, tool/recipe selection, provenance, and review verdicts. This public repository ships the open code, MCP contracts, service stack, Web UI, docs, and public-safe helpers; private benchmark corpora, Neo4j graph contents, internal run artifacts, and site-specific launchers are not included.
 
@@ -378,21 +377,23 @@ If you use Brain Researcher in published work, please cite:
   title        = {Brain Researcher: AI-assisted research infrastructure workspace for neuroimaging analyses},
   year         = {2026},
   version      = {0.3.0},
+  doi          = {10.5281/zenodo.21966011},
   url          = {https://github.com/brain-researcher/brain-researcher-public/releases/tag/v0.3.0}
 }
 ```
 
-The fixed v0.3.0 version DOI will be added after Zenodo archives the published
-GitHub release. Until then, the Zenodo concept DOI
+The v0.3.0 software release has fixed version DOI
+[`10.5281/zenodo.21966011`](https://doi.org/10.5281/zenodo.21966011).
+The Zenodo concept DOI
 [`10.5281/zenodo.21282319`](https://doi.org/10.5281/zenodo.21282319)
-identifies the version family and may resolve to its latest record; it is not a
-fixed v0.3.0 identifier. The earlier version DOI
+identifies the version family and may resolve to its latest record; use the
+version DOI above when citing this fixed release. The earlier version DOI
 [`10.5281/zenodo.21282320`](https://doi.org/10.5281/zenodo.21282320)
 identifies the historical `br-reproducibility-20260709.1` artifact archive.
 The fixed v0.2.0 software DOI is
 [`10.5281/zenodo.21392244`](https://doi.org/10.5281/zenodo.21392244).
 A machine-readable software citation lives in [`CITATION.cff`](CITATION.cff),
-and the pending archive state is explicit in
+and the Zenodo mapping is explicit in
 [`release/manifest.json`](release/manifest.json). No paper or preprint
 identifier is claimed by this software citation.
 

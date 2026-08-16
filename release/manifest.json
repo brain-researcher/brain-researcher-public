@@ -4,10 +4,10 @@
     "version": "0.3.0",
     "git_tag": "v0.3.0",
     "zenodo": {
-      "status": "pending_github_zenodo",
+      "status": "published",
       "concept_doi": "10.5281/zenodo.21282319",
-      "version_doi": null,
-      "publication_date": null
+      "version_doi": "10.5281/zenodo.21966011",
+      "publication_date": "2026-08-16"
     },
     "source_commit_binding": {
       "mode": "release_gate",
