@@ -81,6 +81,16 @@ it must not skip a lower level.
 | `hcp_workflow_search` | `stable` | `integrity_verified` | `public_runnable: partial`; governed and full reruns `not_claimed` | Preserves the 116-candidate ledger, frozen matched summaries, aggregate cohort counts, and a Figure 5 renderer. It excludes restricted HCP inputs, participant/family identifiers, out-of-fold predictions, and private run artifacts. |
 | `tribe_speech_tools` | `stable` | `integrity_verified` | `public_runnable: partial`; governed and full reruns `not_claimed` | Preserves the full 15-pair screen and all plotted recurring/new-collection geometry cells, with a Figure 6 renderer. It excludes audio, item-level metadata, representations, checkpoints, and the original permutation execution. |
 
+The HCP and TRIBE rows above describe the immutable replay packs, not every
+source file elsewhere in the repository. Canonical HCP MVE100/recovery/R2/R3
+drivers are now shipped under `src/brain_researcher/research/predictive/`, and
+the TRIBE speech--tools feature-to-result evaluators are shipped under
+`src/brain_researcher/research/discovery/programs/`. HCP execution still
+requires governed inputs and explicit authorization. TRIBE raw-audio
+acquisition, checkpoint access, and representation extraction remain external.
+Accordingly, neither pack is promoted to `governed_rerun` or
+`fully_reproduced` by the code release alone.
+
 ## Reproduce From Language (Claude Code / Codex + MCP)
 
 The real A1 pack and the auditable-claim tutorial each include an

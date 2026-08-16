@@ -100,6 +100,15 @@ for the exact boundary and the meaning of `partial`.
 | `hcp_workflow_search` | `stable` | `integrity_verified` | Validate the 116-candidate search ledger, frozen matched comparisons, cohort counts, and redraw Figure 5 from public-safe derived tables. Restricted HCP inputs, participant-level predictions, and a governed rerun are not shipped or claimed. |
 | `tribe_speech_tools` | `stable` | `integrity_verified` | Validate the 15-pair screen, recurring and new-collection geometry tables, and redraw Figure 6. Raw audio, feature tensors, model checkpoints, and underlying inference are not shipped or rerun. |
 
+These status rows describe the frozen packs themselves. Separately, this
+repository now ships the governed HCP producing drivers under
+[`src/brain_researcher/research/predictive/`](../src/brain_researcher/research/predictive/)
+and the TRIBE feature-to-result evaluator chain under
+[`src/brain_researcher/research/discovery/programs/`](../src/brain_researcher/research/discovery/programs/).
+The HCP drivers remain data- and authorization-gated, and the TRIBE chain does
+not ship raw audio, checkpoints, or feature extraction. Neither code surface
+changes the evidence level recorded by these derived-data packs.
+
 For the public A1 rerun, first activate an isolated environment, then run this
 from the repository root:
 

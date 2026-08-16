@@ -355,6 +355,17 @@ fixed v0.2.0 Zenodo snapshot and are not contained in that archived record; the
 pack manifests keep the release-containing commit unresolved until a later
 versioned release gate.
 
+The replay packs remain immutable, derived-data snapshots. The corresponding
+producing-code surfaces are now also public: the governed HCP MVE100,
+recovery, R2, and R3 drivers are documented in
+[`foundation_episode/README.md`](src/brain_researcher/research/predictive/foundation_episode/README.md),
+and the TRIBE speech--tools feature-to-result evaluators are documented in
+[`discovery/programs/README.md`](src/brain_researcher/research/discovery/programs/README.md).
+The HCP code still requires separately governed inputs and human authorization.
+The TRIBE public evaluator starts from precomputed feature matrices; raw audio,
+model checkpoints, and representation extraction remain external. Shipping
+these code paths does not by itself constitute an independent scientific rerun.
+
 ---
 
 ## Citation
