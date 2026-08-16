@@ -14,6 +14,9 @@ from brain_researcher.research.discovery.programs.tribe_speech_tools_acoustic_ma
     ANALYSIS_CONTRACT_SCHEMA_VERSION,
     FEATURE_MANIFEST_SCHEMA_VERSION,
     INPUT_MANIFEST_SCHEMA_VERSION,
+    LEGACY_ANALYSIS_CONTRACT_SCHEMA_VERSION,
+    LEGACY_FEATURE_MANIFEST_SCHEMA_VERSION,
+    LEGACY_INPUT_MANIFEST_SCHEMA_VERSION,
     PROGRAM_ID as V1_PROGRAM_ID,
     evaluate_recurring_v1,
 )
@@ -283,6 +286,196 @@ def _write_v1_controlled_bundle(
     return bundle
 
 
+def _write_v1_legacy_shape_bundle(
+    root: Path,
+    *,
+    reference_rows: list[dict[str, str]],
+    evaluation_rows: list[dict[str, object]],
+) -> Path:
+    """Write a deidentified legacy-format fixture, not a governed replay."""
+
+    bundle = root / "legacy-shape-feature-bundle"
+    bundle.mkdir()
+    legacy_row_key = "item" + "_id"
+    legacy_row_index = "item_row_index"
+    legacy_row_indices = "item_row_indices"
+    source_sets = [f"legacy-source-{index}" for index in range(4)]
+    legacy_evaluation_rows: list[dict[str, object]] = []
+    for row_index, row in enumerate(evaluation_rows):
+        collection_index = int(str(row["collection_key"]).rsplit("-", 1)[1])
+        source_set = source_sets[collection_index]
+        relative_media_path = f"fixture-media/{row_index:02d}.wav"
+        legacy_evaluation_rows.append(
+            {
+                legacy_row_key: f"legacy-row-{row_index:02d}",
+                legacy_row_index: row_index,
+                "condition": row["condition"],
+                "status": "success",
+                "labels": {"source_set": source_set},
+                "source": {"path": relative_media_path},
+                "tribe_args": {"audio_path": relative_media_path},
+            }
+        )
+    legacy_reference_rows = [
+        {
+            legacy_row_key: f"legacy-reference-{row_index:02d}",
+            legacy_row_index: row_index,
+            "condition": row["condition"],
+            "status": "success",
+        }
+        for row_index, row in enumerate(reference_rows)
+    ]
+    extraction_contract = {
+        "checkpoint_dir": "fixture-model-directory",
+        "checkpoint_name": "fixture-model-artifact",
+        "text_model_override": "fixture-text-model",
+        "audio_model_override": "fixture-audio-model",
+        "runtime_fix_id": "neuralset.find_enclosed.one_ulp_outward_inclusive.v1",
+        "feature_ids": list(LOCKED_LAYERS),
+        "reference_and_evaluation_must_match": True,
+        "feature_aggregation": "item-level mean of each captured module tensor, matching v3",
+    }
+    analysis_contract = {
+        "schema_version": LEGACY_ANALYSIS_CONTRACT_SCHEMA_VERSION,
+        "episode_id": V1_PROGRAM_ID,
+        "scope": "prospective_discovery_validation",
+        "execution_authorized": False,
+        "confirmation_authorized": False,
+        "input_manifest_bound": True,
+        "frozen_extraction_contract": extraction_contract,
+        "layers": {
+            "early": list(LOCKED_LAYERS[:3]),
+            "late": list(LOCKED_LAYERS[3:]),
+        },
+        "reference": {
+            "required_schema_version": LEGACY_FEATURE_MANIFEST_SCHEMA_VERSION,
+            "required_success_rows": 48,
+            "required_feature_dimension": 1152,
+            "required_layer_ids": list(LOCKED_LAYERS),
+            "positive_condition": "speech",
+            "negative_condition": "tools",
+            "feature_manifest_path": "legacy-reference-features.json",
+        },
+        "primary_estimand": {
+            "aggregate": "unweighted mean delta_s across the four natural source sets",
+            "per_source_set": "delta_s = mean_late(S) - mean_early(S)",
+            "predicted_direction": "negative",
+        },
+        "decision_rule": {
+            "bounded_support": [
+                "aggregate delta_s is negative",
+                "delta_s is negative in at least three of four natural source sets",
+                "early and late family C are both positive in at least three of four paired source sets",
+                "early frozen-reference AUC is greater than 0.5 in at least three of four source sets",
+            ],
+            "no_metric_substitution": True,
+            "otherwise": "stop as inconclusive or conflicting",
+        },
+    }
+    input_manifest = {
+        "schema_version": LEGACY_INPUT_MANIFEST_SCHEMA_VERSION,
+        "episode_id": V1_PROGRAM_ID,
+        "conditions": ["speech", "tools"],
+        "source_sets": source_sets,
+        "items_per_condition_source_set": 6,
+        "items": [
+            {
+                key: value
+                for key, value in row.items()
+                if key != legacy_row_index and key != "status"
+            }
+            for row in legacy_evaluation_rows
+        ],
+    }
+    report = {
+        "schema_version": "br.autoresearch.tribe_speech_tools_acoustic_materialization.v1",
+        "episode_id": V1_PROGRAM_ID,
+        "status": "READY_AWAITING_SEPARATE_AUTHORIZATION",
+        "input_manifest_written": True,
+        "score_blind": True,
+        "cpu_only": True,
+        "tribe_inference_run": False,
+        "gpu_used": False,
+        "blockers": [],
+        "natural_source_sets": source_sets,
+        "required": {
+            "natural_source_set_count": 4,
+            "items_per_condition_source_set": 6,
+            "total_items": 48,
+            "maximum_abs_pool_standardized_mean_difference": 0.5,
+        },
+        "selection": {
+            "solver_status": "optimal",
+            "balance": {
+                "observed_max_abs_pool_standardized_mean_difference": 0.0,
+                "rows": [
+                    {
+                        "source_set": source_set,
+                        "max_abs_pool_standardized_mean_difference": 0.0,
+                    }
+                    for source_set in [*source_sets, "pooled"]
+                ],
+            },
+        },
+    }
+    state = {
+        "episode_id": V1_PROGRAM_ID,
+        "status": "READY_AWAITING_SEPARATE_AUTHORIZATION",
+        "input_manifest_bound": True,
+        "execution_authorized": False,
+        "confirmation_authorized": False,
+        "tribe_inference_run": False,
+        "gpu_used": False,
+        "blockers": [],
+    }
+
+    def feature_manifest(
+        rows: list[dict[str, object]], matrix_prefix: str
+    ) -> dict[str, object]:
+        return {
+            "schema_version": LEGACY_FEATURE_MANIFEST_SCHEMA_VERSION,
+            "runtime_fix_id": "neuralset.find_enclosed.one_ulp_outward_inclusive.v1",
+            "checkpoint_dir": "fixture-model-directory",
+            "checkpoint_name": "fixture-model-artifact",
+            "model_overrides": {
+                "data." + "text_feature.model_name": "fixture-text-model",
+                "data." + "audio_feature.model_name": "fixture-audio-model",
+            },
+            "feature_ids_requested": list(LOCKED_LAYERS),
+            "n_manifest_items": 48,
+            "n_selected_items": 48,
+            "n_success_items": 48,
+            "n_failed_items": 0,
+            "rows": rows,
+            "layers": [
+                {
+                    "layer_id": layer_id,
+                    "feature_id": layer_id,
+                    "matrix_path": f"{matrix_prefix}-{position}.npy",
+                    "path": f"{matrix_prefix}-{position}.npy",
+                    "shape": [48, 1152],
+                    legacy_row_indices: list(range(48)),
+                }
+                for position, layer_id in enumerate(LOCKED_LAYERS)
+            ],
+        }
+
+    for filename, payload in {
+        "analysis_contract.json": analysis_contract,
+        "input_manifest.json": input_manifest,
+        "materialization_report.json": report,
+        "state.json": state,
+        "legacy-reference-features.json": feature_manifest(
+            legacy_reference_rows, "reference"
+        ),
+        "legacy-evaluation-features.json": feature_manifest(
+            legacy_evaluation_rows, "evaluation"
+        ),
+    }.items():
+        (bundle / filename).write_text(json.dumps(payload), encoding="utf-8")
+    return bundle
+
+
 def _controlled_source_contract(reference_rows: list[dict[str, str]]) -> dict[str, object]:
     candidate_pool: list[dict[str, object]] = []
     collection_keys = [f"protected-collection-{index}" for index in range(4)]
@@ -469,6 +662,54 @@ def test_synthetic_v2_cli_and_v1_controlled_feature_replay(tmp_path: Path) -> No
     assert artifact["scientific_evidence"] == "synthetic_fixture_only"
     assert artifact["evaluation"]["evaluation_status"] == "valid"
     assert str(tmp_path) not in json.dumps(artifact)
+
+
+def test_v1_legacy_shape_bundle_replays_with_opaque_output(tmp_path: Path) -> None:
+    """Legacy contract fields are accepted without exposing fixture identities."""
+
+    reference, evaluation = _matrices()
+    reference_rows = _reference_rows()
+    evaluation_rows = _evaluation_rows(include_segment_count=False)
+    _write_matrix_maps(tmp_path, reference, evaluation)
+    bundle = _write_v1_legacy_shape_bundle(
+        tmp_path,
+        reference_rows=reference_rows,
+        evaluation_rows=evaluation_rows,
+    )
+    for source in tmp_path.glob("reference-*.npy"):
+        (bundle / source.name).write_bytes(source.read_bytes())
+    for source in tmp_path.glob("evaluation-*.npy"):
+        (bundle / source.name).write_bytes(source.read_bytes())
+    artifacts = {
+        "evaluation": tmp_path / "legacy-v1-evaluation.json",
+        "state": tmp_path / "legacy-v1-state.json",
+        "terminal": tmp_path / "legacy-v1-terminal.json",
+        "attempt": tmp_path / "legacy-v1-attempt.json",
+    }
+    result = execute_frozen_bundle_v1(
+        bundle_dir=bundle,
+        evaluation_features_path=bundle / "legacy-evaluation-features.json",
+        evaluation_artifact_path=artifacts["evaluation"],
+        state_artifact_path=artifacts["state"],
+        terminal_artifact_path=artifacts["terminal"],
+        attempt_artifact_path=artifacts["attempt"],
+    )
+    assert result["evaluation_status"] == "valid"
+    assert [row["collection_key"] for row in result["source_sets"]] == [
+        f"collection-{index:02d}" for index in range(4)
+    ]
+    rendered = json.dumps(result)
+    assert "legacy-row-" not in rendered
+    assert "legacy-source-" not in rendered
+    assert "fixture-media/" not in rendered
+    assert read_frozen_bundle_terminal_execution_evidence(
+        bundle_dir=bundle,
+        evaluation_features_path=bundle / "legacy-evaluation-features.json",
+        evaluation_artifact_path=artifacts["evaluation"],
+        state_artifact_path=artifacts["state"],
+        terminal_artifact_path=artifacts["terminal"],
+        attempt_artifact_path=artifacts["attempt"],
+    )["status"] == "verified"
 
 
 def test_controlled_history_rebuilds_an_opaque_binding(tmp_path: Path) -> None:

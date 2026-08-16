@@ -28,6 +28,16 @@ FEATURE_MANIFEST_SCHEMA_VERSION = "br.tribe_speech_tools_public.layer_features.v
 INPUT_MANIFEST_SCHEMA_VERSION = (
     "br.tribe_speech_tools_public.recurring_input_manifest.v1"
 )
+LEGACY_ANALYSIS_CONTRACT_SCHEMA_VERSION = (
+    "br.autoresearch.tribe_speech_tools_acoustic_analysis_contract.v1"
+)
+LEGACY_FEATURE_MANIFEST_SCHEMA_VERSION = "br.autoresearch.tribe_layer_features.v1"
+LEGACY_INPUT_MANIFEST_SCHEMA_VERSION = (
+    "br.autoresearch.tribe_speech_tools_acoustic_input_manifest.v1"
+)
+LEGACY_MATERIALIZATION_REPORT_SCHEMA_VERSION = (
+    "br.autoresearch.tribe_speech_tools_acoustic_materialization.v1"
+)
 EVALUATION_SCHEMA_VERSION = "br.tribe_speech_tools_public.recurring_evaluation.v1"
 RUNTIME_FIX_ID = "neuralset.find_enclosed.one_ulp_outward_inclusive.v1"
 
@@ -49,6 +59,9 @@ REFERENCE_ROWS_PER_CONDITION = 8
 ITEMS_PER_CONDITION_COLLECTION = 6
 SOURCE_COLLECTION_COUNT = 4
 FEATURE_DIMENSION = 1152
+_LEGACY_ROW_KEY_FIELD = "item" + "_id"
+_LEGACY_FEATURE_ROW_INDEX_FIELD = "item_row_index"
+_LEGACY_LAYER_ROW_INDICES_FIELD = "item_row_indices"
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,6 +71,7 @@ class InputRow:
     row_key: str
     condition: str
     collection_key: str
+    source_path: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +87,8 @@ class FrozenBundle:
     analysis_contract: Mapping[str, Any]
     input_rows: Mapping[str, InputRow]
     collection_keys: tuple[str, ...]
+    collection_output_keys: Mapping[str, str]
+    bundle_format: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -631,7 +647,168 @@ def _validate_public_runtime(value: Any) -> dict[str, Any]:
     return parsed
 
 
-def _validate_analysis_contract(payload: Mapping[str, Any], *, bundle_dir: Path) -> Path:
+def _legacy_source_set_from_row(row: Mapping[str, Any], *, label: str) -> str:
+    labels = row.get("labels")
+    label_value = labels.get("source_set") if isinstance(labels, Mapping) else None
+    direct_value = row.get("source_set")
+    candidates = [
+        value.strip()
+        for value in (label_value, direct_value)
+        if isinstance(value, str) and value.strip()
+    ]
+    if not candidates or len(set(candidates)) != 1:
+        _invalid("legacy_source_set", f"{label} must bind one source set")
+    return candidates[0]
+
+
+def _legacy_source_path_from_row(
+    row: Mapping[str, Any],
+    *,
+    base_dir: Path,
+    label: str,
+) -> str:
+    values: list[str] = []
+    source = row.get("source")
+    if isinstance(source, Mapping):
+        for field in ("path", "source_path"):
+            value = source.get(field)
+            if isinstance(value, str) and value.strip():
+                values.append(value)
+    arguments = row.get("tribe_args")
+    if isinstance(arguments, Mapping):
+        value = arguments.get("audio_path")
+        if isinstance(value, str) and value.strip():
+            values.append(value)
+    if not values:
+        _invalid("legacy_source_path", f"{label} must bind one source path")
+    resolved = {
+        str(_resolve_path(value, base_dir=base_dir, label=label))
+        for value in values
+    }
+    if len(resolved) != 1:
+        _invalid("legacy_source_path", f"{label} has inconsistent source paths")
+    return next(iter(resolved))
+
+
+def _validate_legacy_analysis_contract(
+    payload: Mapping[str, Any],
+    *,
+    bundle_dir: Path,
+) -> tuple[Path, str]:
+    _require_equal(
+        payload.get("schema_version"),
+        LEGACY_ANALYSIS_CONTRACT_SCHEMA_VERSION,
+        label="analysis_contract.schema_version",
+    )
+    _require_equal(payload.get("episode_id"), EPISODE_ID, label="analysis_contract.episode_id")
+    if "program_id" in payload:
+        _require_equal(
+            payload.get("program_id"),
+            PROGRAM_ID,
+            label="analysis_contract.program_id",
+        )
+    for field, expected in {
+        "scope": "prospective_discovery_validation",
+        "execution_authorized": False,
+        "confirmation_authorized": False,
+        "input_manifest_bound": True,
+    }.items():
+        _require_equal(payload.get(field), expected, label=f"analysis_contract.{field}")
+    extraction = payload.get("frozen_extraction_contract")
+    if not isinstance(extraction, Mapping):
+        _invalid("missing_frozen_extraction_contract", "analysis contract lacks frozen extraction")
+    for field in (
+        "checkpoint_dir",
+        "checkpoint_name",
+        "text_model_override",
+        "audio_model_override",
+        "feature_aggregation",
+    ):
+        _text(extraction.get(field), label=f"frozen_extraction_contract.{field}")
+    _require_equal(
+        extraction.get("runtime_fix_id"),
+        RUNTIME_FIX_ID,
+        label="frozen_extraction_contract.runtime_fix_id",
+    )
+    _require_equal(
+        extraction.get("feature_ids"),
+        list(LOCKED_LAYERS),
+        label="frozen_extraction_contract.feature_ids",
+    )
+    _require_equal(
+        extraction.get("reference_and_evaluation_must_match"),
+        True,
+        label="frozen_extraction_contract.reference_and_evaluation_must_match",
+    )
+    _require_equal(
+        extraction.get("feature_aggregation"),
+        "item-level mean of each captured module tensor, matching v3",
+        label="frozen_extraction_contract.feature_aggregation",
+    )
+    layers = payload.get("layers")
+    if not isinstance(layers, Mapping):
+        _invalid("missing_layers", "analysis contract is missing layers")
+    _require_equal(layers.get("early"), list(EARLY_LAYERS), label="analysis_contract.layers.early")
+    _require_equal(layers.get("late"), list(LATE_LAYERS), label="analysis_contract.layers.late")
+    reference = payload.get("reference")
+    if not isinstance(reference, Mapping):
+        _invalid("missing_reference", "analysis contract is missing reference")
+    for field, expected in {
+        "required_schema_version": LEGACY_FEATURE_MANIFEST_SCHEMA_VERSION,
+        "required_success_rows": REFERENCE_SUCCESS_ROWS,
+        "required_feature_dimension": FEATURE_DIMENSION,
+        "required_layer_ids": list(LOCKED_LAYERS),
+        "positive_condition": "speech",
+        "negative_condition": "tools",
+    }.items():
+        _require_equal(reference.get(field), expected, label=f"analysis_contract.reference.{field}")
+    reference_path = _resolve_path(
+        reference.get("feature_manifest_path"),
+        base_dir=bundle_dir,
+        label="analysis_contract.reference.feature_manifest_path",
+    )
+    estimand = payload.get("primary_estimand")
+    if not isinstance(estimand, Mapping):
+        _invalid("missing_primary_estimand", "analysis contract is missing primary estimand")
+    for field, expected in {
+        "aggregate": "unweighted mean delta_s across the four natural source sets",
+        "per_source_set": "delta_s = mean_late(S) - mean_early(S)",
+        "predicted_direction": "negative",
+    }.items():
+        _require_equal(estimand.get(field), expected, label=f"analysis_contract.primary_estimand.{field}")
+    decision = payload.get("decision_rule")
+    if not isinstance(decision, Mapping):
+        _invalid("missing_decision_rule", "analysis contract is missing decision rule")
+    _require_equal(
+        decision.get("bounded_support"),
+        [
+            "aggregate delta_s is negative",
+            "delta_s is negative in at least three of four natural source sets",
+            "early and late family C are both positive in at least three of four paired source sets",
+            "early frozen-reference AUC is greater than 0.5 in at least three of four source sets",
+        ],
+        label="analysis_contract.decision_rule.bounded_support",
+    )
+    _require_equal(
+        decision.get("no_metric_substitution"),
+        True,
+        label="analysis_contract.decision_rule.no_metric_substitution",
+    )
+    _require_equal(
+        decision.get("otherwise"),
+        "stop as inconclusive or conflicting",
+        label="analysis_contract.decision_rule.otherwise",
+    )
+    return reference_path, "legacy"
+
+
+def _validate_analysis_contract(
+    payload: Mapping[str, Any],
+    *,
+    bundle_dir: Path,
+) -> tuple[Path, str]:
+    if payload.get("schema_version") == LEGACY_ANALYSIS_CONTRACT_SCHEMA_VERSION:
+        return _validate_legacy_analysis_contract(payload, bundle_dir=bundle_dir)
     _require_equal(
         payload.get("schema_version"),
         ANALYSIS_CONTRACT_SCHEMA_VERSION,
@@ -743,12 +920,91 @@ def _validate_analysis_contract(payload: Mapping[str, Any], *, bundle_dir: Path)
         "stop as inconclusive or conflicting",
         label="analysis_contract.decision_rule.otherwise",
     )
-    return reference_path
+    return reference_path, "public"
+
+
+def _validate_legacy_input_manifest(
+    payload: Mapping[str, Any],
+    *,
+    base_dir: Path,
+) -> tuple[dict[str, InputRow], tuple[str, ...], dict[str, str]]:
+    _require_equal(
+        payload.get("schema_version"),
+        LEGACY_INPUT_MANIFEST_SCHEMA_VERSION,
+        label="input_manifest.schema_version",
+    )
+    _require_equal(payload.get("episode_id"), EPISODE_ID, label="input_manifest.episode_id")
+    if "program_id" in payload:
+        _require_equal(payload.get("program_id"), PROGRAM_ID, label="input_manifest.program_id")
+    _require_equal(payload.get("conditions"), list(CONDITIONS), label="input_manifest.conditions")
+    collection_values = payload.get("source_sets")
+    if not isinstance(collection_values, list) or len(collection_values) != SOURCE_COLLECTION_COUNT:
+        _invalid("invalid_collections", "legacy input manifest must contain four source sets")
+    collection_keys = tuple(
+        _text(value, label="input_manifest.source_set")
+        for value in collection_values
+    )
+    if len(set(collection_keys)) != SOURCE_COLLECTION_COUNT:
+        _invalid("duplicate_collection_key", "legacy input manifest repeats source sets")
+    _require_equal(
+        payload.get("items_per_condition_source_set"),
+        ITEMS_PER_CONDITION_COLLECTION,
+        label="input_manifest.items_per_condition_source_set",
+    )
+    values = payload.get("items")
+    if not isinstance(values, list) or len(values) != EVALUATION_SUCCESS_ROWS:
+        _invalid("invalid_input_rows", "legacy input manifest must contain 48 rows")
+    parsed: dict[str, InputRow] = {}
+    source_paths: set[str] = set()
+    counts = {
+        (collection_key, condition): 0
+        for collection_key in collection_keys
+        for condition in CONDITIONS
+    }
+    for position, raw in enumerate(values):
+        if not isinstance(raw, Mapping):
+            _invalid("invalid_input_row", f"input_manifest.items[{position}] must be an object")
+        label = f"input_manifest.items[{position}]"
+        row_key = _text(raw.get(_LEGACY_ROW_KEY_FIELD), label=f"{label}.row_key")
+        condition = raw.get("condition")
+        if condition not in CONDITIONS:
+            _invalid("invalid_condition", "legacy input manifest condition is invalid")
+        collection_key = _legacy_source_set_from_row(raw, label=label)
+        if collection_key not in collection_keys:
+            _invalid("invalid_collection_key", "legacy row has an unknown source set")
+        source_path = _legacy_source_path_from_row(raw, base_dir=base_dir, label=label)
+        if row_key in parsed:
+            _invalid("duplicate_row_key", "legacy input manifest repeats a row key")
+        if source_path in source_paths:
+            _invalid("duplicate_source_path", "legacy input manifest repeats a source path")
+        source_paths.add(source_path)
+        parsed[row_key] = InputRow(
+            row_key=row_key,
+            condition=condition,
+            collection_key=collection_key,
+            source_path=source_path,
+        )
+        counts[(collection_key, condition)] += 1
+    if any(count != ITEMS_PER_CONDITION_COLLECTION for count in counts.values()):
+        _invalid("invalid_input_balance", "legacy input manifest has wrong cell counts")
+    return (
+        parsed,
+        collection_keys,
+        {
+            collection_key: f"collection-{index:02d}"
+            for index, collection_key in enumerate(collection_keys)
+        },
+    )
 
 
 def _validate_input_manifest(
     payload: Mapping[str, Any],
-) -> tuple[dict[str, InputRow], tuple[str, ...]]:
+    *,
+    legacy: bool,
+    base_dir: Path,
+) -> tuple[dict[str, InputRow], tuple[str, ...], dict[str, str]]:
+    if legacy:
+        return _validate_legacy_input_manifest(payload, base_dir=base_dir)
     _require_equal(
         payload.get("schema_version"),
         INPUT_MANIFEST_SCHEMA_VERSION,
@@ -799,7 +1055,102 @@ def _validate_input_manifest(
         counts[(collection_key, condition)] += 1
     if any(count != ITEMS_PER_CONDITION_COLLECTION for count in counts.values()):
         _invalid("invalid_input_balance", "input manifest does not retain six rows per cell")
-    return parsed, collection_keys
+    return parsed, collection_keys, {
+        collection_key: collection_key for collection_key in collection_keys
+    }
+
+
+def _validate_legacy_bundle_state(
+    state: Mapping[str, Any],
+    report: Mapping[str, Any],
+    *,
+    collection_keys: Sequence[str],
+) -> None:
+    for field, expected in {
+        "episode_id": EPISODE_ID,
+        "status": "READY_AWAITING_SEPARATE_AUTHORIZATION",
+        "input_manifest_bound": True,
+        "execution_authorized": False,
+        "confirmation_authorized": False,
+        "tribe_inference_run": False,
+        "gpu_used": False,
+        "blockers": [],
+    }.items():
+        _require_equal(state.get(field), expected, label=f"state.{field}")
+    if "program_id" in state:
+        _require_equal(state.get("program_id"), PROGRAM_ID, label="state.program_id")
+    _require_equal(
+        report.get("schema_version"),
+        LEGACY_MATERIALIZATION_REPORT_SCHEMA_VERSION,
+        label="materialization_report.schema_version",
+    )
+    for field, expected in {
+        "episode_id": EPISODE_ID,
+        "status": "READY_AWAITING_SEPARATE_AUTHORIZATION",
+        "input_manifest_written": True,
+        "score_blind": True,
+        "cpu_only": True,
+        "tribe_inference_run": False,
+        "gpu_used": False,
+        "blockers": [],
+    }.items():
+        _require_equal(report.get(field), expected, label=f"materialization_report.{field}")
+    if "program_id" in report:
+        _require_equal(
+            report.get("program_id"),
+            PROGRAM_ID,
+            label="materialization_report.program_id",
+        )
+    _require_equal(
+        report.get("natural_source_sets"),
+        list(collection_keys),
+        label="materialization_report.natural_source_sets",
+    )
+    required = report.get("required")
+    if not isinstance(required, Mapping):
+        _invalid("missing_materialization_requirements", "legacy report is missing required")
+    for field, expected in {
+        "natural_source_set_count": SOURCE_COLLECTION_COUNT,
+        "items_per_condition_source_set": ITEMS_PER_CONDITION_COLLECTION,
+        "total_items": EVALUATION_SUCCESS_ROWS,
+        "maximum_abs_pool_standardized_mean_difference": 0.5,
+    }.items():
+        _require_equal(required.get(field), expected, label=f"materialization_report.required.{field}")
+    selection = report.get("selection")
+    if not isinstance(selection, Mapping):
+        _invalid("missing_materialization_selection", "legacy report is missing selection")
+    _require_equal(
+        selection.get("solver_status"),
+        "optimal",
+        label="materialization_report.selection.solver_status",
+    )
+    balance = selection.get("balance")
+    if not isinstance(balance, Mapping):
+        _invalid("missing_materialization_balance", "legacy selection is missing balance")
+    _finite_at_most(
+        balance.get("observed_max_abs_pool_standardized_mean_difference"),
+        maximum=0.5,
+        label="materialization_report.selection.balance.observed_max_abs_pool_standardized_mean_difference",
+    )
+    balance_rows = balance.get("rows")
+    if not isinstance(balance_rows, list):
+        _invalid("missing_materialization_balance_rows", "legacy selection is missing balance rows")
+    expected_scopes = set(collection_keys) | {"pooled"}
+    observed_scopes: set[str] = set()
+    for position, row in enumerate(balance_rows):
+        if not isinstance(row, Mapping):
+            _invalid("invalid_materialization_balance_row", "legacy balance row is invalid")
+        scope = row.get("source_set")
+        if not isinstance(scope, str) or scope not in expected_scopes or scope in observed_scopes:
+            _invalid("legacy_balance_scope", "legacy balance rows have invalid coverage")
+        observed_scopes.add(scope)
+        _finite_at_most(
+            row.get("max_abs_pool_standardized_mean_difference"),
+            maximum=0.5,
+            label=f"materialization_report.selection.balance.rows[{position}]",
+        )
+    if observed_scopes != expected_scopes:
+        _invalid("legacy_balance_coverage", "legacy balance rows do not cover all sets")
 
 
 def _validate_bundle_state(
@@ -807,7 +1158,11 @@ def _validate_bundle_state(
     report: Mapping[str, Any],
     *,
     collection_keys: Sequence[str],
+    legacy: bool,
 ) -> None:
+    if legacy:
+        _validate_legacy_bundle_state(state, report, collection_keys=collection_keys)
+        return
     for field, expected in {
         "program_id": PROGRAM_ID,
         "status": "READY_AWAITING_SEPARATE_AUTHORIZATION",
@@ -890,17 +1245,20 @@ def load_frozen_bundle(bundle_dir: str | Path) -> FrozenBundle:
     materialization_report_path = resolved_bundle_dir / "materialization_report.json"
     state_path = resolved_bundle_dir / "state.json"
     analysis_contract = _read_object(analysis_contract_path, label="analysis contract")
-    reference_feature_manifest_path = _validate_analysis_contract(
+    reference_feature_manifest_path, bundle_format = _validate_analysis_contract(
         analysis_contract,
         bundle_dir=resolved_bundle_dir,
     )
-    input_rows, collection_keys = _validate_input_manifest(
-        _read_object(input_manifest_path, label="input manifest")
+    input_rows, collection_keys, collection_output_keys = _validate_input_manifest(
+        _read_object(input_manifest_path, label="input manifest"),
+        legacy=bundle_format == "legacy",
+        base_dir=input_manifest_path.parent,
     )
     _validate_bundle_state(
         _read_object(state_path, label="bundle state"),
         _read_object(materialization_report_path, label="materialization report"),
         collection_keys=collection_keys,
+        legacy=bundle_format == "legacy",
     )
     if not reference_feature_manifest_path.is_file():
         _invalid("missing_reference_feature_manifest", "reference feature manifest does not exist")
@@ -914,6 +1272,8 @@ def load_frozen_bundle(bundle_dir: str | Path) -> FrozenBundle:
         analysis_contract=analysis_contract,
         input_rows=input_rows,
         collection_keys=collection_keys,
+        collection_output_keys=collection_output_keys,
+        bundle_format=bundle_format,
     )
 
 
@@ -934,13 +1294,146 @@ def _load_matrix(path: Path, *, label: str) -> np.ndarray:
     return matrix
 
 
+def _load_legacy_feature_manifest(
+    path: Path,
+    *,
+    role: str,
+    payload: Mapping[str, Any],
+    expected_extraction: Mapping[str, Any],
+) -> FeatureManifest:
+    _require_equal(
+        payload.get("schema_version"),
+        LEGACY_FEATURE_MANIFEST_SCHEMA_VERSION,
+        label=f"{role}.schema_version",
+    )
+    _require_equal(payload.get("runtime_fix_id"), RUNTIME_FIX_ID, label=f"{role}.runtime_fix_id")
+    for field in ("checkpoint_dir", "checkpoint_name"):
+        _require_equal(
+            payload.get(field),
+            expected_extraction.get(field),
+            label=f"{role}.{field}",
+        )
+    overrides = payload.get("model_overrides")
+    expected_overrides = {
+        "data." + "text_feature.model_name": expected_extraction.get(
+            "text_model_override"
+        ),
+        "data." + "audio_feature.model_name": expected_extraction.get(
+            "audio_model_override"
+        ),
+    }
+    _require_equal(
+        overrides,
+        expected_overrides,
+        label=f"{role}.model_overrides",
+    )
+    _require_equal(
+        payload.get("feature_ids_requested"),
+        list(LOCKED_LAYERS),
+        label=f"{role}.feature_ids_requested",
+    )
+    for field, expected in {
+        "n_manifest_items": REFERENCE_SUCCESS_ROWS,
+        "n_selected_items": REFERENCE_SUCCESS_ROWS,
+        "n_success_items": REFERENCE_SUCCESS_ROWS,
+        "n_failed_items": 0,
+    }.items():
+        _require_equal(payload.get(field), expected, label=f"{role}.{field}")
+    rows = payload.get("rows")
+    if not isinstance(rows, list) or len(rows) != REFERENCE_SUCCESS_ROWS:
+        _invalid("invalid_feature_rows", f"{role}.rows must contain exactly 48 rows")
+    rows_by_index: dict[int, Mapping[str, Any]] = {}
+    for position, row in enumerate(rows):
+        if not isinstance(row, Mapping):
+            _invalid("invalid_feature_row", f"{role}.rows[{position}] must be an object")
+        _require_equal(row.get("status"), "success", label=f"{role}.rows[{position}].status")
+        row_index = _as_exact_int(
+            row.get(_LEGACY_FEATURE_ROW_INDEX_FIELD),
+            label=f"{role}.rows[{position}].row_index",
+        )
+        if row_index in rows_by_index:
+            _invalid("duplicate_row_index", f"{role} repeats row index")
+        rows_by_index[row_index] = row
+    expected_indices = set(range(REFERENCE_SUCCESS_ROWS))
+    if set(rows_by_index) != expected_indices:
+        _invalid("invalid_row_indices", f"{role} row indices must cover 0 through 47")
+    layers = payload.get("layers")
+    if not isinstance(layers, list):
+        _invalid("missing_feature_layers", f"{role}.layers must be a list")
+    specifications: dict[str, Mapping[str, Any]] = {}
+    for position, layer in enumerate(layers):
+        if not isinstance(layer, Mapping):
+            _invalid("invalid_feature_layer", f"{role}.layers[{position}] must be an object")
+        layer_id = layer.get("layer_id") or layer.get("feature_id")
+        if not isinstance(layer_id, str) or not layer_id:
+            _invalid("missing_layer_id", f"{role}.layers[{position}] lacks layer id")
+        if layer_id in specifications:
+            _invalid("duplicate_layer_id", f"{role} repeats layer id")
+        specifications[layer_id] = layer
+    if set(specifications) != set(LOCKED_LAYERS):
+        _invalid("invalid_layer_set", f"{role}.layers must equal the six locked layers")
+    matrices: dict[str, np.ndarray] = {}
+    matrix_paths: dict[str, Path] = {}
+    for layer_id in LOCKED_LAYERS:
+        spec = specifications[layer_id]
+        matrix_path = _resolve_path(
+            spec.get("matrix_path") or spec.get("path"),
+            base_dir=path.parent,
+            label=f"{role}.{layer_id}.matrix_path",
+            require_within_base_dir=True,
+        )
+        matrix = _load_matrix(matrix_path, label=f"{role}.{layer_id}")
+        if matrix.shape != (REFERENCE_SUCCESS_ROWS, FEATURE_DIMENSION):
+            _invalid("invalid_matrix_shape", f"{role}.{layer_id} has wrong shape")
+        _require_equal(
+            spec.get("shape"),
+            [REFERENCE_SUCCESS_ROWS, FEATURE_DIMENSION],
+            label=f"{role}.{layer_id}.shape",
+        )
+        row_indices = spec.get(_LEGACY_LAYER_ROW_INDICES_FIELD)
+        if not isinstance(row_indices, list):
+            _invalid("missing_layer_row_indices", f"{role}.{layer_id} lacks row indices")
+        parsed_indices = [
+            _as_exact_int(value, label=f"{role}.{layer_id}.row_indices[{position}]")
+            for position, value in enumerate(row_indices)
+        ]
+        if len(parsed_indices) != REFERENCE_SUCCESS_ROWS or set(parsed_indices) != expected_indices:
+            _invalid("invalid_layer_row_indices", f"{role}.{layer_id} row indices are invalid")
+        position_for_index = {
+            row_index: matrix_position
+            for matrix_position, row_index in enumerate(parsed_indices)
+        }
+        matrices[layer_id] = matrix[
+            [position_for_index[row_index] for row_index in range(REFERENCE_SUCCESS_ROWS)]
+        ]
+        matrix_paths[layer_id] = matrix_path
+    return FeatureManifest(
+        path=path,
+        payload=payload,
+        rows_by_index=rows_by_index,
+        matrices=matrices,
+        matrix_paths=matrix_paths,
+    )
+
+
 def _load_feature_manifest(
     path: Path,
     *,
     role: str,
-    expected_runtime: Mapping[str, Any],
+    expected_runtime: Mapping[str, Any] | None,
+    legacy: bool,
+    expected_legacy_extraction: Mapping[str, Any] | None,
 ) -> FeatureManifest:
     payload = _read_object(path, label=f"{role} feature manifest")
+    if legacy:
+        if expected_legacy_extraction is None:
+            _invalid("missing_frozen_extraction_contract", "legacy bundle lacks extraction contract")
+        return _load_legacy_feature_manifest(
+            path,
+            role=role,
+            payload=payload,
+            expected_extraction=expected_legacy_extraction,
+        )
     _require_equal(
         payload.get("schema_version"),
         FEATURE_MANIFEST_SCHEMA_VERSION,
@@ -948,7 +1441,7 @@ def _load_feature_manifest(
     )
     _require_equal(payload.get("program_id"), PROGRAM_ID, label=f"{role}.program_id")
     _require_equal(payload.get("runtime_fix_id"), RUNTIME_FIX_ID, label=f"{role}.runtime_fix_id")
-    if _validate_public_runtime(payload.get("runtime")) != dict(expected_runtime):
+    if expected_runtime is None or _validate_public_runtime(payload.get("runtime")) != dict(expected_runtime):
         _invalid("runtime_mismatch", f"{role}.runtime does not match analysis contract")
     _require_equal(
         payload.get("feature_ids_requested"),
@@ -1065,7 +1558,10 @@ def _validate_evaluation_feature_rows(
     }
     for row_index, row in evaluation.rows_by_index.items():
         label = f"evaluation.rows[{row_index}]"
-        row_key = _text(row.get("row_key"), label=f"{label}.row_key")
+        if frozen_bundle.bundle_format == "legacy":
+            row_key = _text(row.get(_LEGACY_ROW_KEY_FIELD), label=f"{label}.row_key")
+        else:
+            row_key = _text(row.get("row_key"), label=f"{label}.row_key")
         if row_key in observed:
             _invalid("duplicate_evaluation_row_key", "evaluation repeats row_key")
         expected = frozen_bundle.input_rows.get(row_key)
@@ -1073,7 +1569,24 @@ def _validate_evaluation_feature_rows(
             _invalid("unfrozen_evaluation_row", "evaluation row is not in the frozen input")
         if row.get("condition") != expected.condition:
             _invalid("evaluation_condition_mismatch", "evaluation condition does not match frozen input")
-        if row.get("collection_key") != expected.collection_key:
+        if frozen_bundle.bundle_format == "legacy":
+            actual_collection_key = _legacy_source_set_from_row(row, label=label)
+            actual_source_path = _legacy_source_path_from_row(
+                row,
+                base_dir=evaluation.path.parent,
+                label=label,
+            )
+            if actual_collection_key != expected.collection_key:
+                _invalid(
+                    "evaluation_collection_mismatch",
+                    "evaluation collection does not match frozen input",
+                )
+            if actual_source_path != expected.source_path:
+                _invalid(
+                    "evaluation_source_path_mismatch",
+                    "evaluation source path does not match frozen input",
+                )
+        elif row.get("collection_key") != expected.collection_key:
             _invalid("evaluation_collection_mismatch", "evaluation collection does not match frozen input")
         observed[row_key] = expected
         indices_by_collection[expected.collection_key].append(row_index)
@@ -1101,16 +1614,29 @@ def _public_valid_result(
     frozen_bundle: FrozenBundle,
     evaluation_features_path: Path,
 ) -> dict[str, Any]:
-    expected_runtime = _validate_public_runtime(frozen_bundle.analysis_contract["runtime"])
+    expected_runtime = (
+        None
+        if frozen_bundle.bundle_format == "legacy"
+        else _validate_public_runtime(frozen_bundle.analysis_contract["runtime"])
+    )
+    expected_legacy_extraction = (
+        frozen_bundle.analysis_contract.get("frozen_extraction_contract")
+        if frozen_bundle.bundle_format == "legacy"
+        else None
+    )
     reference = _load_feature_manifest(
         frozen_bundle.reference_feature_manifest_path,
         role="reference",
         expected_runtime=expected_runtime,
+        legacy=frozen_bundle.bundle_format == "legacy",
+        expected_legacy_extraction=expected_legacy_extraction,
     )
     evaluation = _load_feature_manifest(
         evaluation_features_path,
         role="evaluation",
         expected_runtime=expected_runtime,
+        legacy=frozen_bundle.bundle_format == "legacy",
+        expected_legacy_extraction=expected_legacy_extraction,
     )
     reference_indices = _reference_manifest_speech_tools_indices(reference)
     collection_indices = _validate_evaluation_feature_rows(
@@ -1125,7 +1651,7 @@ def _public_valid_result(
     evaluation_rows = [evaluation.rows_by_index[index] for index in range(EVALUATION_SUCCESS_ROWS)]
     results = [
         _evaluate_collection(
-            collection_key=collection_key,
+            collection_key=frozen_bundle.collection_output_keys[collection_key],
             indices=collection_indices[collection_key],
             evaluation_rows=evaluation_rows,
             evaluation_matrices=evaluation.matrices,
@@ -1235,11 +1761,22 @@ def validate_frozen_reference(bundle_dir: str | Path) -> dict[str, Any]:
     """Validate an explicit public reference bundle without extracting features."""
 
     bundle = load_frozen_bundle(bundle_dir)
-    runtime = _validate_public_runtime(bundle.analysis_contract["runtime"])
+    runtime = (
+        None
+        if bundle.bundle_format == "legacy"
+        else _validate_public_runtime(bundle.analysis_contract["runtime"])
+    )
+    expected_legacy_extraction = (
+        bundle.analysis_contract.get("frozen_extraction_contract")
+        if bundle.bundle_format == "legacy"
+        else None
+    )
     reference = _load_feature_manifest(
         bundle.reference_feature_manifest_path,
         role="reference",
         expected_runtime=runtime,
+        legacy=bundle.bundle_format == "legacy",
+        expected_legacy_extraction=expected_legacy_extraction,
     )
     indices = _reference_manifest_speech_tools_indices(reference)
     _reference_geometry(
