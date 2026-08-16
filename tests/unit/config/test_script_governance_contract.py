@@ -44,7 +44,7 @@ def test_autoresearch_matrix_classifies_every_executable_script_once() -> None:
     rows = _status_rows()
 
     assert set(rows) == actual
-    assert len(rows) == 52
+    assert len(rows) == 60
     assert set(rows.values()) == {"runnable", "governed", "worker", "historical"}
     assert rows["run_auditable_claim_demo.py"] == "runnable"
     assert [path for path, status in rows.items() if status == "runnable"] == [

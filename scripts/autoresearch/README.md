@@ -81,6 +81,19 @@ These script-level labels refine the repository-wide documentation statuses:
 | [`discovery/validate_predicted_fmri_fold_stability.py`](discovery/validate_predicted_fmri_fold_stability.py) | **governed** | Requires explicit prediction folds and output; reports predicted-response evidence only. |
 | [`discovery/zero_score_refute_patch.py`](discovery/zero_score_refute_patch.py) | **historical** | In-place kill-policy patch for a fixed external controller. |
 
+## Foundation exploration scripts
+
+| Script | Status | Execution boundary |
+|---|---|---|
+| [`foundation_exploration/run_mve24.py`](foundation_exploration/run_mve24.py) | **governed** | Historical filename for the MVE100 search driver; requires explicit HCP inputs, a pinned controller runtime, an output bundle, and human authorization before launch. |
+| [`foundation_exploration/run_mve100_recovery12.py`](foundation_exploration/run_mve100_recovery12.py) | **governed** | Replays the fixed 12-slot recovery protocol from an explicit failed source bundle; launch requires a separate authorization artifact. |
+| [`foundation_exploration/run_hcp_nested100_replay.py`](foundation_exploration/run_hcp_nested100_replay.py) | **governed** | Runs the fixed retrospective Nested-100 replay from explicit governed HCP inputs and writes to a caller-selected output directory. |
+| [`foundation_exploration/run_hcp_liu_matched_comparator.py`](foundation_exploration/run_hcp_liu_matched_comparator.py) | **governed** | Prepares or runs the frozen Liu matched comparator from explicit governed inputs; it does not add a separate authorization artifact. |
+| [`foundation_exploration/run_hcp_calibration_equivalence_r2.py`](foundation_exploration/run_hcp_calibration_equivalence_r2.py) | **governed** | Prepares or launches the frozen ten-repeat R2 comparison from explicit upstream artifacts; launch requires human authorization. |
+| [`foundation_exploration/run_hcp_cross_component_transfer_r3.py`](foundation_exploration/run_hcp_cross_component_transfer_r3.py) | **governed** | Prepares, validates authorization for, or launches the frozen four-outcome R3 transfer analysis over governed HCP artifacts. |
+| [`foundation_exploration/run_hcp_cognition_r2_paired_inference.py`](foundation_exploration/run_hcp_cognition_r2_paired_inference.py) | **governed** | Runs the frozen conditional paired inference over persisted R2 predictions only after its explicit authorization and interpretation acknowledgements. |
+| [`foundation_exploration/run_hcp_cross_component_transfer_inference.py`](foundation_exploration/run_hcp_cross_component_transfer_inference.py) | **governed** | Runs the frozen weak-FWER transfer inference over persisted R3 predictions only after its explicit authorization and interpretation acknowledgements. |
+
 ## Functional-connectivity scripts
 
 | Script | Status | Execution boundary |
