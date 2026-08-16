@@ -816,6 +816,7 @@ scikit-learn==1.9.0
 scipy==1.17.1
     # via
     #   autoreject
+    #   brain-researcher
     #   formulaic
     #   lightgbm
     #   mne
