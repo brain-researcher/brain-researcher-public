@@ -706,9 +706,9 @@ def _validate_candidate_pool(
             candidate["acoustic_features"],
             label=f"candidate_pool[{index}].acoustic_features",
         )
-        if tuple(feature_values) != ACOUSTIC_FEATURES:
+        if set(feature_values) != set(ACOUSTIC_FEATURES):
             raise SourceFeasibilityContractError(
-                "candidate acoustic_features must use the seven frozen summaries in order"
+                "candidate acoustic_features must contain exactly the seven frozen summaries"
             )
         parsed_features = tuple(
             (feature, _finite(feature_values[feature], label=feature))

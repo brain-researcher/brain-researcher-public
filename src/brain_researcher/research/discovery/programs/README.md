@@ -37,15 +37,18 @@ start the configured command.
 
 ## Controlled-history v2 inference
 
-For a controlled v2 history check, pass one source packet and exactly eight
-historical-exposure sidecars:
+For a controlled v2 replay, first run `evaluate` with one source packet,
+exactly eight historical-exposure sidecars, and the two feature manifests that
+name the supplied matrices:
 
     PYTHONPATH=src python -m \
       brain_researcher.research.discovery.programs.tribe_speech_tools_new_source_asr_covariate_validation_v2.execution \
-      verify-controlled-history \
+      evaluate \
       --manifest manifest.json \
       --reference-matrix-map reference-matrices.json \
       --evaluation-matrix-map evaluation-matrices.json \
+      --reference-feature-manifest reference-layer-feature-manifest.json \
+      --evaluation-feature-manifest evaluation-layer-feature-manifest.json \
       --evaluation-artifact evaluation.json \
       --state-artifact state.json \
       --terminal-artifact terminal.json \
@@ -60,13 +63,19 @@ historical-exposure sidecars:
       --historical-exposure-sidecar history-07.json \
       --historical-exposure-sidecar history-08.json
 
-That driver first reconstructs the score-blind validator binding, then replaces
+Then run that exact command again with `verify-controlled-history` in place of
+`evaluate`. `verify-controlled-history` verifies the artifacts written by the
+first command; it does not create them when the output paths are empty.
+
+The driver first reconstructs the score-blind validator binding, then replaces
 its protected row and collection labels with manifest-provided opaque
 row-#### and collection-## keys. It retains condition, collection partition,
 segment count, selected-panel membership, locked layers, seeds, draw count,
 permutation type, and Holm order. In non-fixture inference, the contract
 requires the frozen 99,999 draws, PCG64, the locked seeds, and the H1/H2/H3/H5
-family order. Terminal replay rejects artifacts that re-emit a
+family order. Each matrix map must resolve to precisely the six matrix paths
+declared by its corresponding feature manifest; an arbitrary matrix of the
+right shape is rejected. Terminal replay rejects artifacts that re-emit a
 controlled-history token or an absolute path.
 
 ## Evidence boundary

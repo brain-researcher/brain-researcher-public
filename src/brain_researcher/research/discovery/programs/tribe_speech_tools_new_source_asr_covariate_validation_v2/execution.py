@@ -47,6 +47,7 @@ class TribeV2ExecutionError(RuntimeError):
 
 _OPAQUE_ROW_KEY = re.compile(r"^row-[0-9]{4}$")
 _OPAQUE_COLLECTION_KEY = re.compile(r"^collection-[0-9]{2}$")
+_ABSOLUTE_PATH_FRAGMENT = re.compile(r"(?:^|[\s:=])(?:/|[A-Za-z]:[\\/]|\\\\)")
 
 
 def _string_values(value: Any) -> list[str]:
@@ -71,11 +72,10 @@ def _assert_public_evaluation_is_opaque(
     """Reject a controlled-history artifact that re-emits protected input keys."""
 
     values = _string_values(evaluation)
-    if any(value.startswith("/") for value in values):
+    if any(_ABSOLUTE_PATH_FRAGMENT.search(value) is not None for value in values):
         raise TribeV2ExecutionError("public evaluation contains an absolute path")
-    forbidden = set(forbidden_output_tokens)
-    leaked = sorted(token for token in forbidden if token in values)
-    if leaked:
+    forbidden = tuple(token for token in forbidden_output_tokens if token)
+    if any(token in value for token in forbidden for value in values):
         raise TribeV2ExecutionError(
             "public evaluation re-emits a controlled-history token"
         )
@@ -296,6 +296,11 @@ def read_tribe_v2_terminal_execution_evidence(
             evaluation,
             forbidden_output_tokens=forbidden_output_tokens,
         )
+    if evaluation.get("outcome") not in {
+        "bounded_support",
+        "inconclusive_or_conflicting",
+    }:
+        raise TribeV2ExecutionError("terminal evaluator outcome is invalid")
     expected_artifact = {
         "schema_version": RUNTIME_STATE_SCHEMA_VERSION,
         "artifact_type": "evaluation",
@@ -332,6 +337,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--reference-matrix-map", required=True)
     parser.add_argument("--evaluation-matrix-map", required=True)
+    parser.add_argument("--reference-feature-manifest")
+    parser.add_argument("--evaluation-feature-manifest")
     parser.add_argument("--evaluation-artifact", required=True)
     parser.add_argument("--state-artifact", required=True)
     parser.add_argument("--terminal-artifact", required=True)
@@ -357,6 +364,8 @@ def main(argv: list[str] | None = None) -> int:
         manifest_path=args.manifest,
         reference_matrix_map_path=args.reference_matrix_map,
         evaluation_matrix_map_path=args.evaluation_matrix_map,
+        reference_feature_manifest_path=args.reference_feature_manifest,
+        evaluation_feature_manifest_path=args.evaluation_feature_manifest,
         evaluation_artifact_path=args.evaluation_artifact,
         state_artifact_path=args.state_artifact,
         terminal_artifact_path=args.terminal_artifact,
@@ -375,12 +384,22 @@ def main(argv: list[str] | None = None) -> int:
         raise TribeV2ExecutionError(
             "controlled history requires --source-packet and exactly eight historical sidecars"
         )
+    if has_controlled_history and (
+        not args.reference_feature_manifest or not args.evaluation_feature_manifest
+    ):
+        raise TribeV2ExecutionError(
+            "controlled history requires both canonical feature manifests"
+        )
     controlled_history = (
         rebuild_verified_feasibility_binding(
             source_packet_path=args.source_packet,
             historical_exposure_sidecar_paths=args.historical_exposure_sidecars,
             reference_rows=contract.reference_rows,
             evaluation_rows=contract.evaluation_rows,
+            reference_feature_manifest_path=contract.reference_feature_manifest_path,
+            evaluation_feature_manifest_path=contract.evaluation_feature_manifest_path,
+            reference_matrix_map_path=contract.reference_matrix_map_path,
+            evaluation_matrix_map_path=contract.evaluation_matrix_map_path,
         )
         if has_controlled_history
         else None

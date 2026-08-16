@@ -40,7 +40,6 @@ class SourceParentCandidate:
     annotation_key: str
     start_seconds: float
     end_seconds: float
-    source_token: str
 
 
 def _text(value: Any, *, label: str) -> str:
@@ -92,7 +91,6 @@ def discover_parent_candidates(
                 ),
                 start_seconds=float(start),
                 end_seconds=float(end),
-                source_token=_text(record.get("source_token"), label="source_token"),
             )
         )
     return tuple(sorted(candidates, key=lambda row: row.candidate_key))
@@ -128,7 +126,6 @@ def materialize_pre_qc_source_candidates(
             "annotation_key": row.annotation_key,
             "start_seconds": row.start_seconds,
             "end_seconds": row.end_seconds,
-            "source_token": row.source_token,
         }
         for row in ordered
     ]

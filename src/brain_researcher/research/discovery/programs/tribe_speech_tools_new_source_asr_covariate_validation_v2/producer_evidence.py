@@ -59,6 +59,12 @@ def _text(value: Any, *, label: str) -> str:
     return value.strip()
 
 
+def _mapping(value: Any, *, label: str) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping):
+        raise ProducerEvidenceError(f"{label} must be an object")
+    return value
+
+
 def _paths(value: Mapping[str, Any]) -> ProducerEvidencePathsV2:
     required = {
         "pre_qc_manifest_path",
@@ -140,18 +146,56 @@ def write_copied_producer_evidence(
     *,
     output_path: str | Path,
 ) -> dict[str, Any]:
-    """Write a caller-approved public JSON copy, excluding source paths and bytes."""
+    """Write an opaque logical projection, never a copy of producer identities."""
+
+    candidate_keys: dict[str, str] = {}
+    parent_keys: dict[str, str] = {}
+    collection_keys: dict[str, str] = {}
+    rows: list[dict[str, str]] = []
+    for index, raw_row in enumerate(evidence.candidate_rows):
+        row = _mapping(raw_row, label="candidate_row")
+        candidate_key = _text(row.get("candidate_key"), label="candidate_key")
+        parent_key = _text(row.get("parent_key"), label="parent_key")
+        collection_key = _text(row.get("collection_key"), label="collection_key")
+        condition = _text(row.get("condition"), label="condition")
+        if candidate_key in candidate_keys:
+            raise ProducerEvidenceError("candidate rows repeat candidate_key")
+        candidate_keys[candidate_key] = f"candidate-{index:04d}"
+        parent_keys.setdefault(parent_key, f"parent-{len(parent_keys):04d}")
+        collection_keys.setdefault(collection_key, f"collection-{len(collection_keys):02d}")
+        rows.append(
+            {
+                "candidate_key": candidate_keys[candidate_key],
+                "parent_key": parent_keys[parent_key],
+                "collection_key": collection_keys[collection_key],
+                "condition": condition,
+            }
+        )
+    selected = [
+        candidate_keys[key]
+        for key in evidence.selected_candidate_keys
+        if key in candidate_keys
+    ]
+    if len(selected) != len(evidence.selected_candidate_keys):
+        raise ProducerEvidenceError("selected candidates cannot be made opaque")
 
     payload = {
         "schema_version": COPIED_PRODUCER_EVIDENCE_SCHEMA_VERSION,
-        "status": "validated_public_copy",
-        "artifact_names": dict(evidence.artifact_names),
-        "candidate_rows": [dict(row) for row in evidence.candidate_rows],
-        "qc_reviews_by_candidate": copy.deepcopy(evidence.qc_reviews_by_candidate),
-        "selected_candidate_keys": list(evidence.selected_candidate_keys),
+        "status": "validated_opaque_projection",
+        "artifact_names": {
+            "pre_qc_manifest": "pre_qc_manifest.json",
+            "pre_qc_provenance": "pre_qc_provenance.json",
+            "qc_decisions": "qc_decisions.json",
+            "selected_panel": "selected_panel.json",
+        },
+        "candidate_rows": rows,
+        "qc_reviews_by_candidate": {
+            key: {"validated": True} for key in selected
+        },
+        "selected_candidate_keys": selected,
     }
     write_json_new(output_path, payload, label="copied_producer_evidence")
-    return {"artifact": Path(output_path).name, "selected_count": len(evidence.selected_candidate_keys)}
+    return {"artifact": Path(output_path).name, "selected_count": len(selected)}
 
 
 def load_copied_producer_evidence(path: str | Path) -> ValidatedProducerEvidenceV2:
@@ -160,6 +204,8 @@ def load_copied_producer_evidence(path: str | Path) -> ValidatedProducerEvidence
     payload = read_json_object(path, label="copied_producer_evidence")
     if payload.get("schema_version") != COPIED_PRODUCER_EVIDENCE_SCHEMA_VERSION:
         raise ProducerEvidenceError("copied producer evidence schema is invalid")
+    if payload.get("status") != "validated_opaque_projection":
+        raise ProducerEvidenceError("copied producer evidence is not an opaque projection")
     rows = payload.get("candidate_rows")
     reviews = payload.get("qc_reviews_by_candidate")
     selection = payload.get("selected_candidate_keys")

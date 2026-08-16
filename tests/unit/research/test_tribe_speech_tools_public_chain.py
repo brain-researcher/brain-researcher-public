@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from brain_researcher.research.discovery.programs.tribe_speech_tools_acoustic_matched_validation_v1.evaluator import (
     ANALYSIS_CONTRACT_SCHEMA_VERSION,
@@ -34,6 +35,9 @@ from brain_researcher.research.discovery.programs.tribe_speech_tools_new_source_
 from brain_researcher.research.discovery.programs.tribe_speech_tools_new_source_asr_covariate_validation_v2.execution_contract import (
     MANIFEST_SCHEMA_VERSION as V2_MANIFEST_SCHEMA_VERSION,
     rebuild_verified_feasibility_binding,
+)
+from brain_researcher.research.discovery.programs.tribe_speech_tools_new_source_asr_covariate_validation_v2 import (
+    execution as v2_execution,
 )
 from brain_researcher.research.discovery.programs.tribe_speech_tools_new_source_asr_covariate_validation_v2.evaluator import (
     PROGRAM_ID as V2_PROGRAM_ID,
@@ -558,6 +562,243 @@ def _controlled_source_contract(reference_rows: list[dict[str, str]]) -> dict[st
     }
 
 
+def _private_shape_v2_controlled_inputs(
+    reference_rows: list[dict[str, str]],
+) -> tuple[
+    dict[str, object],
+    list[dict[str, object]],
+    object,
+]:
+    """Build deidentified registration-shaped inputs without governed artifacts."""
+
+    public_contract = _controlled_source_contract(reference_rows)
+    empty_history = [
+        {
+            "candidate_keys": [],
+            "source_tokens": [],
+            "pcm_tokens": [],
+            "collection_keys": [],
+        }
+        for _ in range(8)
+    ]
+    intake = validate_source_candidate_pool_intake(public_contract, empty_history)
+    public_contract["selection"] = select_score_blind_panel(
+        intake
+    ).to_contract_selection()
+    public_binding = validate_source_feasibility_contract(
+        public_contract,
+        empty_history,
+    )
+
+    private_row_field = "item" + "_id"
+    private_collection_field = "collection" + "_id"
+    private_parent_field = "parent_recording" + "_id"
+    private_selected_field = "selected" + "_item" + "_ids"
+    checkpoint_directory = "fixture-checkpoint-directory"
+    checkpoint_artifact = "fixture-checkpoint-artifact"
+    runtime_fix = "neuralset.find_enclosed.one_ulp_outward_inclusive.v1"
+    private_candidates: list[dict[str, object]] = []
+    for raw_candidate in public_contract["candidate_pool"]:
+        candidate = dict(raw_candidate)
+        private_candidates.append(
+            {
+                private_row_field: candidate["candidate_key"],
+                private_collection_field: candidate["collection_key"],
+                private_parent_field: candidate["parent_key"],
+                "condition": candidate["condition"],
+                "canonical_source_path": candidate["source_token"],
+                "decoded_pcm_identity": candidate["decoded_pcm_identity"],
+                "whisperx_segment_count": candidate["whisperx_segment_count"],
+                "acoustic_features": {
+                    feature: candidate["acoustic_features"][feature]
+                    for feature in reversed(ACOUSTIC_FEATURES)
+                },
+                "score_blind": True,
+                "tribe_inference_run": False,
+                "gpu_used": False,
+                "auditory_qc": [
+                    {
+                        **{
+                            key: value
+                            for key, value in dict(review).items()
+                            if key != "reviewer_key"
+                        },
+                        "reviewer_id": dict(review)["reviewer_key"],
+                    }
+                    for review in candidate["auditory_qc"]
+                ],
+                "source": {"path": candidate["source_token"]},
+                "tribe_args": {"audio_path": candidate["source_token"]},
+            }
+        )
+    selection = dict(public_contract["selection"])
+    private_selection = {
+        key: value
+        for key, value in selection.items()
+        if key != "selected_candidate_keys"
+    }
+    private_selection[private_selected_field] = selection["selected_candidate_keys"]
+    packet = {
+        "schema_version": (
+            "br.autoresearch.tribe_speech_tools_new_source_asr_covariate_"
+            "analysis_contract.v2"
+        ),
+        "program_id": V2_PROGRAM_ID,
+        "episode_id": V2_PROGRAM_ID,
+        "scope": "prospective_discovery_validation",
+        "score_blind": True,
+        "authority_granted": False,
+        "launch_authorized": False,
+        "gpu_authorized": False,
+        "tribe_inference_authorized": False,
+        "manuscript_update_authorized": False,
+        "execution_authorized": False,
+        "confirmation_authorized": False,
+        "registration_authorized": False,
+        "frozen_reference": {
+            "program_id": "fixture-reference-program",
+            "feature_manifest_identity": "fixture-reference-manifest",
+            "feature_manifest_schema_version": LEGACY_FEATURE_MANIFEST_SCHEMA_VERSION,
+            "item_rows_identity": "fixture-reference-rows",
+            "contract_version": "fixture-reference-contract",
+            "runtime_fix_id": runtime_fix,
+            "allowed_argv_id": "fixture-launch-contract",
+            "checkpoint_dir": checkpoint_directory,
+            "checkpoint_name": checkpoint_artifact,
+            "locked_layer_ids": list(LOCKED_LAYERS),
+            "feature_dimensions": {layer: 1152 for layer in LOCKED_LAYERS},
+            "item_rows": [
+                {
+                    private_row_field: row["row_key"],
+                    "condition": row["condition"],
+                }
+                for row in reference_rows
+            ],
+        },
+        "runtime_closeout_interface": {
+            "run_mode": "one_shot",
+            "direct_execution_compatible": False,
+            "successor_adapter_required": True,
+            "execution_authorized": False,
+            "confirmation_authorized": False,
+        },
+        "permutation_metadata": default_inference_config(),
+        "hypothesis_families": ["H1", "H2", "H3", "H5"],
+        "asr_covariate": {
+            "producer": "WhisperX",
+            "field": "whisperx_segment_count",
+            "cpu_only": True,
+            "materialized_before_tribe": True,
+        },
+        "historical_exposure_role_ids": [
+            f"fixture-history-role-{index}" for index in range(8)
+        ],
+        "source_collections": [
+            {
+                private_collection_field: collection_key,
+                "provenance": {
+                    "provider": "fixture-provider",
+                    "collection_url": "fixture-collection-location",
+                    "release_id": "fixture-release",
+                    "license_id": "fixture-license",
+                    "license_text": "fixture-license-text",
+                    "license_url": "fixture-license-location",
+                    "license_status": "verified_for_selected_release",
+                },
+            }
+            for collection_key in public_contract["source_collections"]
+        ],
+        "candidate_pool": private_candidates,
+        "selection": private_selection,
+    }
+
+    item_counts = (60, 30, 48, 48, 48, 48, 48, 48)
+    sidecars: list[dict[str, object]] = []
+    for role_index, item_count in enumerate(item_counts):
+        historical_collection = f"fixture-history-collection-{role_index}"
+        sidecars.append(
+            {
+                "schema_version": (
+                    "br.autoresearch.tribe_speech_tools_new_source_"
+                    "historical_exposure_sidecar.v2"
+                ),
+                "status": "historical_exposure_pcm_materialized",
+                "role_id": f"fixture-history-role-{role_index}",
+                "identifier_field": "fixture_identifier",
+                "identifier": f"fixture-history-identifier-{role_index}",
+                "expected_item_count": item_count,
+                "source_manifest_path": f"fixture-source-manifest-{role_index}",
+                "collection_identities": [historical_collection],
+                "items": [
+                    {
+                        private_row_field: (
+                            f"fixture-history-row-{role_index}-{position:03d}"
+                        ),
+                        "canonical_source_path": (
+                            f"fixture-history-source-{role_index}-{position:03d}"
+                        ),
+                        "decoded_pcm_identity": (
+                            f"fixture-history-pcm-{role_index}-{position:03d}"
+                        ),
+                        private_collection_field: historical_collection,
+                    }
+                    for position in range(item_count)
+                ],
+                "pcm_identity_policy": "fixture opaque sequential grouping",
+            }
+        )
+    return packet, sidecars, public_binding
+
+
+def _write_private_v2_feature_manifest(
+    path: Path,
+    *,
+    rows: list[dict[str, object]],
+    matrix_prefix: str,
+) -> None:
+    private_row_field = "item" + "_id"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": LEGACY_FEATURE_MANIFEST_SCHEMA_VERSION,
+                "runtime_fix_id": (
+                    "neuralset.find_enclosed.one_ulp_outward_inclusive.v1"
+                ),
+                "checkpoint_dir": "fixture-checkpoint-directory",
+                "checkpoint_name": "fixture-checkpoint-artifact",
+                "model_overrides": {
+                    "data.text_feature.model_name": "fixture-text-model",
+                    "data.audio_feature.model_name": "fixture-audio-model",
+                },
+                "feature_ids_requested": list(LOCKED_LAYERS),
+                "n_manifest_items": 48,
+                "n_selected_items": 48,
+                "n_success_items": 48,
+                "n_failed_items": 0,
+                "rows": [
+                    {
+                        "item_row_index": index,
+                        private_row_field: row["row_key"],
+                        "condition": row["condition"],
+                        "status": "success",
+                    }
+                    for index, row in enumerate(rows)
+                ],
+                "layers": [
+                    {
+                        "layer_id": layer_id,
+                        "matrix_path": f"{matrix_prefix}-{position}.npy",
+                        "shape": [48, 1152],
+                        "item_row_indices": list(range(48)),
+                    }
+                    for position, layer_id in enumerate(LOCKED_LAYERS)
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_synthetic_v2_cli_and_v1_controlled_feature_replay(tmp_path: Path) -> None:
     reference, evaluation = _matrices()
     reference_rows = _reference_rows()
@@ -767,3 +1008,124 @@ def test_controlled_history_rebuilds_an_opaque_binding(tmp_path: Path) -> None:
         for index, row in enumerate(controlled.binding.evaluation_item_rows)
     )
     assert "protected-candidate-0-speech-0" in controlled.forbidden_output_tokens
+
+
+def test_private_shape_v2_controlled_history_binds_rows_and_matrices(
+    tmp_path: Path,
+) -> None:
+    """Registration-shaped inputs are adapted before opaque evaluator replay."""
+
+    reference, evaluation = _matrices()
+    reference_map, evaluation_map = _write_matrix_maps(
+        tmp_path,
+        reference,
+        evaluation,
+    )
+    protected_reference_rows = _reference_rows()
+    packet, sidecars, protected_binding = _private_shape_v2_controlled_inputs(
+        protected_reference_rows
+    )
+    source_packet_path = tmp_path / "private-shape-source-packet.json"
+    source_packet_path.write_text(json.dumps(packet), encoding="utf-8")
+    sidecar_paths: list[Path] = []
+    for index, sidecar in enumerate(sidecars):
+        sidecar_path = tmp_path / f"private-shape-history-{index}.json"
+        sidecar_path.write_text(json.dumps(sidecar), encoding="utf-8")
+        sidecar_paths.append(sidecar_path)
+
+    protected_evaluation_rows = [
+        {
+            "row_key": row.row_key,
+            "condition": row.condition,
+        }
+        for row in protected_binding.evaluation_item_rows
+    ]
+    reference_feature_manifest = tmp_path / "private-reference-features.json"
+    evaluation_feature_manifest = tmp_path / "private-evaluation-features.json"
+    _write_private_v2_feature_manifest(
+        reference_feature_manifest,
+        rows=protected_reference_rows,
+        matrix_prefix="reference",
+    )
+    _write_private_v2_feature_manifest(
+        evaluation_feature_manifest,
+        rows=protected_evaluation_rows,
+        matrix_prefix="evaluation",
+    )
+    opaque_reference_rows = [
+        {"row_key": f"row-{index:04d}", "condition": row["condition"]}
+        for index, row in enumerate(protected_reference_rows)
+    ]
+    protected_collections = sorted(
+        {row.collection_key for row in protected_binding.evaluation_item_rows}
+    )
+    collection_map = {
+        collection: f"collection-{index:02d}"
+        for index, collection in enumerate(protected_collections)
+    }
+    opaque_evaluation_rows = [
+        {
+            "row_key": f"row-{index:04d}",
+            "collection_key": collection_map[row.collection_key],
+            "condition": row.condition,
+            "whisperx_segment_count": row.whisperx_segment_count,
+        }
+        for index, row in enumerate(protected_binding.evaluation_item_rows)
+    ]
+    controlled = rebuild_verified_feasibility_binding(
+        source_packet_path=source_packet_path,
+        historical_exposure_sidecar_paths=sidecar_paths,
+        reference_rows=opaque_reference_rows,
+        evaluation_rows=opaque_evaluation_rows,
+        reference_feature_manifest_path=reference_feature_manifest,
+        evaluation_feature_manifest_path=evaluation_feature_manifest,
+        reference_matrix_map_path=reference_map,
+        evaluation_matrix_map_path=evaluation_map,
+    )
+
+    assert [row.row_key for row in controlled.binding.evaluation_item_rows] == [
+        f"row-{index:04d}" for index in range(48)
+    ]
+    assert {
+        row.collection_key for row in controlled.binding.evaluation_item_rows
+    } == {f"collection-{index:02d}" for index in range(4)}
+    assert "protected-candidate-0-speech-0" in controlled.forbidden_output_tokens
+    assert "fixture-history-source-0-000" in controlled.forbidden_output_tokens
+
+    mismatched_map_payload = json.loads(reference_map.read_text(encoding="utf-8"))
+    mismatched_map_payload[LOCKED_LAYERS[0]] = "evaluation-0.npy"
+    mismatched_map = tmp_path / "mismatched-reference-matrices.json"
+    mismatched_map.write_text(json.dumps(mismatched_map_payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="matrix map"):
+        rebuild_verified_feasibility_binding(
+            source_packet_path=source_packet_path,
+            historical_exposure_sidecar_paths=sidecar_paths,
+            reference_rows=opaque_reference_rows,
+            evaluation_rows=opaque_evaluation_rows,
+            reference_feature_manifest_path=reference_feature_manifest,
+            evaluation_feature_manifest_path=evaluation_feature_manifest,
+            reference_matrix_map_path=mismatched_map,
+            evaluation_matrix_map_path=evaluation_map,
+        )
+
+
+@pytest.mark.parametrize(
+    ("nested_value", "forbidden_tokens"),
+    [
+        ("prefix-fixture-private-token-suffix", ("fixture-private-token",)),
+        (r"Z:\fixture\private-media.wav", ()),
+    ],
+)
+def test_controlled_history_privacy_rejects_substrings_and_paths(
+    nested_value: str,
+    forbidden_tokens: tuple[str, ...],
+) -> None:
+    evaluation = {
+        "per_item_pairwise_concordance": [],
+        "nested": {"values": [nested_value]},
+    }
+    with pytest.raises(v2_execution.TribeV2ExecutionError):
+        v2_execution._assert_public_evaluation_is_opaque(  # noqa: SLF001
+            evaluation,
+            forbidden_output_tokens=forbidden_tokens,
+        )

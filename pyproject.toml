@@ -41,6 +41,7 @@ dependencies = [
     # Core data science
     "pandas>=2.2.0",
     "numpy>=1.24.0",
+    "scipy>=1.11.0",
 
     # Configuration and validation
     "pydantic>=2.0.0",
