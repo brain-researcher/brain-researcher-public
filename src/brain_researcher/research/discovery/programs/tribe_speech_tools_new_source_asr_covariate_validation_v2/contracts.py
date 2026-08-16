@@ -171,6 +171,7 @@ class SourceFeasibilityBindingV2:
     execution_authorized: bool
     confirmation_authorized: bool
     registration_authorized: bool
+    canonical_feature_binding_validated: bool
     _validator_marker: object = field(repr=False, compare=False)
 
 
@@ -350,6 +351,9 @@ def rekey_validator_issued_binding(
         execution_authorized=binding.execution_authorized,
         confirmation_authorized=binding.confirmation_authorized,
         registration_authorized=binding.registration_authorized,
+        canonical_feature_binding_validated=(
+            binding.canonical_feature_binding_validated
+        ),
         _validator_marker=_VALIDATED_BINDING_MARKER,
     )
 
@@ -937,6 +941,7 @@ def validate_source_feasibility_contract(
         execution_authorized=False,
         confirmation_authorized=False,
         registration_authorized=False,
+        canonical_feature_binding_validated=False,
         _validator_marker=_VALIDATED_BINDING_MARKER,
     )
 

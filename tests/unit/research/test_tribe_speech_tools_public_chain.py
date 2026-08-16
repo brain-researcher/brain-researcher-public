@@ -34,6 +34,7 @@ from brain_researcher.research.discovery.programs.tribe_speech_tools_new_source_
 )
 from brain_researcher.research.discovery.programs.tribe_speech_tools_new_source_asr_covariate_validation_v2.execution_contract import (
     MANIFEST_SCHEMA_VERSION as V2_MANIFEST_SCHEMA_VERSION,
+    load_public_v2_execution_contract,
     rebuild_verified_feasibility_binding,
 )
 from brain_researcher.research.discovery.programs.tribe_speech_tools_new_source_asr_covariate_validation_v2 import (
@@ -1072,6 +1073,13 @@ def test_private_shape_v2_controlled_history_binds_rows_and_matrices(
         }
         for index, row in enumerate(protected_binding.evaluation_item_rows)
     ]
+    with pytest.raises(ValueError, match="legacy controlled history requires"):
+        rebuild_verified_feasibility_binding(
+            source_packet_path=source_packet_path,
+            historical_exposure_sidecar_paths=sidecar_paths,
+            reference_rows=opaque_reference_rows,
+            evaluation_rows=opaque_evaluation_rows,
+        )
     controlled = rebuild_verified_feasibility_binding(
         source_packet_path=source_packet_path,
         historical_exposure_sidecar_paths=sidecar_paths,
@@ -1091,6 +1099,57 @@ def test_private_shape_v2_controlled_history_binds_rows_and_matrices(
     } == {f"collection-{index:02d}" for index in range(4)}
     assert "protected-candidate-0-speech-0" in controlled.forbidden_output_tokens
     assert "fixture-history-source-0-000" in controlled.forbidden_output_tokens
+    assert controlled.canonical_feature_binding_validated is True
+    assert controlled.binding.canonical_feature_binding_validated is True
+
+    provider_manifest = tmp_path / "controlled-provider-manifest.json"
+    provider_manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": V2_MANIFEST_SCHEMA_VERSION,
+                "program_id": V2_PROGRAM_ID,
+                "execution_kind": "governed_external_input",
+                "runtime": _runtime(),
+                "reference_rows": opaque_reference_rows,
+                "evaluation_rows": opaque_evaluation_rows,
+                "inference": default_inference_config(),
+                "compute_inference": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    provider_artifacts = {
+        "evaluation": tmp_path / "controlled-provider-evaluation.json",
+        "state": tmp_path / "controlled-provider-state.json",
+        "terminal": tmp_path / "controlled-provider-terminal.json",
+        "attempt": tmp_path / "controlled-provider-attempt.json",
+    }
+    provider_contract = load_public_v2_execution_contract(
+        manifest_path=provider_manifest,
+        reference_matrix_map_path=reference_map,
+        evaluation_matrix_map_path=evaluation_map,
+        evaluation_artifact_path=provider_artifacts["evaluation"],
+        state_artifact_path=provider_artifacts["state"],
+        terminal_artifact_path=provider_artifacts["terminal"],
+        attempt_artifact_path=provider_artifacts["attempt"],
+    )
+    provider_called = False
+
+    def arbitrary_provider(_: object) -> tuple[dict[str, object], dict[str, object]]:
+        nonlocal provider_called
+        provider_called = True
+        return {}, {}
+
+    with pytest.raises(v2_execution.TribeV2ExecutionError, match="canonical matrix"):
+        v2_execution.execute_public_v2_evaluation(
+            provider_contract,
+            feature_map_provider=arbitrary_provider,
+            feasibility_binding=controlled.binding,
+            reference_binding=controlled.binding.frozen_reference,
+            forbidden_output_tokens=controlled.forbidden_output_tokens,
+        )
+    assert provider_called is False
+    assert provider_artifacts["terminal"].exists() is False
 
     mismatched_map_payload = json.loads(reference_map.read_text(encoding="utf-8"))
     mismatched_map_payload[LOCKED_LAYERS[0]] = "evaluation-0.npy"
@@ -1114,6 +1173,9 @@ def test_private_shape_v2_controlled_history_binds_rows_and_matrices(
     [
         ("prefix-fixture-private-token-suffix", ("fixture-private-token",)),
         (r"Z:\fixture\private-media.wav", ()),
+        ("prefix(" + "/" + "data/x)", ()),
+        (r"prefix[C:\fixture\private-media.wav]", ()),
+        (r"prefix(\\server\share\private-media.wav)", ()),
     ],
 )
 def test_controlled_history_privacy_rejects_substrings_and_paths(

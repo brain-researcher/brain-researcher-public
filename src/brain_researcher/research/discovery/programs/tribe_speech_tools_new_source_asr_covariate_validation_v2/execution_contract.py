@@ -9,7 +9,7 @@ commands, seeds, and output locations from caller configuration.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -78,6 +78,7 @@ class ControlledHistoryBindingV2:
 
     binding: SourceFeasibilityBindingV2
     forbidden_output_tokens: tuple[str, ...]
+    canonical_feature_binding_validated: bool
 
 
 def _sequence(value: Any, *, label: str) -> Sequence[Any]:
@@ -748,10 +749,11 @@ def rebuild_verified_feasibility_binding(
         reference_matrix_map_path,
         evaluation_matrix_map_path,
     )
-    if any(path is not None for path in feature_inputs):
-        if any(path is None for path in feature_inputs) or legacy_reference is None:
+    canonical_feature_binding_validated = False
+    if legacy_reference is not None:
+        if any(path is None for path in feature_inputs):
             raise TribeV2ExecutionContractError(
-                "controlled feature binding requires both feature manifests and both matrix maps"
+                "legacy controlled history requires both feature manifests and both matrix maps"
             )
         _bind_controlled_feature_manifests(
             original=original,
@@ -760,6 +762,12 @@ def rebuild_verified_feasibility_binding(
             evaluation_feature_manifest_path=evaluation_feature_manifest_path,
             reference_matrix_map_path=reference_matrix_map_path,
             evaluation_matrix_map_path=evaluation_matrix_map_path,
+        )
+        original = replace(original, canonical_feature_binding_validated=True)
+        canonical_feature_binding_validated = True
+    elif any(path is not None for path in feature_inputs):
+        raise TribeV2ExecutionContractError(
+            "controlled feature binding requires a legacy controlled history"
         )
     opaque_binding = rekey_validator_issued_binding(
         original,
@@ -789,6 +797,7 @@ def rebuild_verified_feasibility_binding(
     return ControlledHistoryBindingV2(
         binding=opaque_binding,
         forbidden_output_tokens=tuple(sorted(token for token in tokens if token)),
+        canonical_feature_binding_validated=canonical_feature_binding_validated,
     )
 
 

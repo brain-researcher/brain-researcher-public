@@ -47,7 +47,9 @@ class TribeV2ExecutionError(RuntimeError):
 
 _OPAQUE_ROW_KEY = re.compile(r"^row-[0-9]{4}$")
 _OPAQUE_COLLECTION_KEY = re.compile(r"^collection-[0-9]{2}$")
-_ABSOLUTE_PATH_FRAGMENT = re.compile(r"(?:^|[\s:=])(?:/|[A-Za-z]:[\\/]|\\\\)")
+_ABSOLUTE_PATH_FRAGMENT = re.compile(
+    r"(?<![A-Za-z0-9._-])(?:/[^\s/]+|[A-Za-z]:[\\/]|\\\\[^\\/\s]+[\\/])"
+)
 
 
 def _string_values(value: Any) -> list[str]:
@@ -159,6 +161,21 @@ def _evaluate(
     )
 
 
+def _reject_controlled_history_feature_provider(
+    *,
+    feature_map_provider: FeatureMapProviderV2 | None,
+    feasibility_binding: SourceFeasibilityBindingV2 | None,
+) -> None:
+    if (
+        feature_map_provider is not None
+        and feasibility_binding is not None
+        and feasibility_binding.canonical_feature_binding_validated
+    ):
+        raise TribeV2ExecutionError(
+            "controlled history must use its validated canonical matrix maps"
+        )
+
+
 def execute_public_v2_evaluation(
     contract: PublicV2ExecutionContract,
     *,
@@ -169,6 +186,10 @@ def execute_public_v2_evaluation(
 ) -> dict[str, Any]:
     """Consume one explicit attempt and persist an exact v2 evaluator artifact."""
 
+    _reject_controlled_history_feature_provider(
+        feature_map_provider=feature_map_provider,
+        feasibility_binding=feasibility_binding,
+    )
     names = _artifact_names(contract)
     attempt = {
         "schema_version": ATTEMPT_CONSUMPTION_SCHEMA_VERSION,
@@ -247,6 +268,10 @@ def read_tribe_v2_terminal_execution_evidence(
 ) -> dict[str, Any]:
     """Validate attempt, state, terminal bundle, and a fresh evaluator replay."""
 
+    _reject_controlled_history_feature_provider(
+        feature_map_provider=feature_map_provider,
+        feasibility_binding=feasibility_binding,
+    )
     names = _artifact_names(contract)
     try:
         attempt = read_json_object(contract.attempt_artifact_path, label="attempt_artifact")
