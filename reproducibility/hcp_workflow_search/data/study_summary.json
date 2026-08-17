@@ -30,7 +30,8 @@
   "producer_closure": {
     "complete_governed_rerun_claimed": false,
     "historical_producing_code": {
-      "publicly_resolvable": false,
+      "publicly_resolvable": true,
+      "public_entrypoint_guide": "src/brain_researcher/research/predictive/foundation_episode/README.md",
       "shipped_in_public_pack": false,
       "stages": [
         "MVE100 expansion",
@@ -38,7 +39,7 @@
         "R2 Cognition paired inference",
         "R3 transfer"
       ],
-      "status": "recovered_in_private_history"
+      "status": "publicly_shipped_outside_replay_pack"
     },
     "public_pack_claim": "derived artifact replay only"
   },

@@ -37,6 +37,8 @@ for an analysis rerun.
 
 Exit codes: 0 requested verification succeeded · 1 mismatch/failure ·
 2 verification incomplete or unavailable.
+With ``--all``, exit 1 takes precedence over exit 2; exit 2 means that at
+least one pack is incomplete and none failed.
 Stdlib only — a pack must verify in a bare clone with no brain_researcher install.
 """
 
@@ -675,6 +677,14 @@ def _normalize_execution_report(raw: dict, exit_code: int) -> dict:
     return out
 
 
+def _verify_manifest_pack(pack_dir: Path) -> dict:
+    """Verify one pack's recorded files without invoking an execution runner."""
+
+    out = _verify_manifest(pack_dir)
+    out["mode"] = "manifest"
+    return out
+
+
 def verify_pack(pack_dir: Path) -> dict:
     run_pack = pack_dir / "execution_pack" / "run_pack.py"
     expected = pack_dir / "execution_pack" / "expected_artifacts.json"
@@ -697,23 +707,12 @@ def verify_pack(pack_dir: Path) -> dict:
         if not isinstance(raw, dict):
             raw = {}
         return _normalize_execution_report(raw, proc.returncode)
-    out = _verify_manifest(pack_dir)
-    out["mode"] = "manifest"
-    return out
+    return _verify_manifest_pack(pack_dir)
 
 
-def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Verify a reproducibility pack.")
-    ap.add_argument(
-        "pack_dir", help="Path to a manifest-backed reproducibility/<id> directory"
-    )
-    args = ap.parse_args(argv)
-    pack = Path(args.pack_dir)
-    if not pack.is_dir():
-        print(f"not a directory: {pack}", file=sys.stderr)
-        return 2
-    result = verify_pack(pack)
-    print(json.dumps(result, indent=2))
+def _verification_exit_code(result: dict) -> int:
+    """Map one pack's existing verification result to its CLI exit code."""
+
     if result.get("mode") == "run_pack":
         if result.get("scientifically_reproduced") is True:
             return 0
@@ -726,6 +725,97 @@ def main(argv: list[str] | None = None) -> int:
     if result.get("integrity_verified") is None:
         return 2
     return 1
+
+
+def _manifest_pack_dirs(reproducibility_dir: Path) -> list[Path]:
+    """Return the immediate manifest-backed packs in stable name order."""
+
+    return sorted(
+        (
+            path
+            for path in reproducibility_dir.iterdir()
+            if path.is_dir() and (path / "manifest.json").is_file()
+        ),
+        key=lambda path: path.name,
+    )
+
+
+def verify_all(reproducibility_dir: Path) -> tuple[dict, int]:
+    """Verify every manifest-backed pack and return one compact status report."""
+
+    packs = _manifest_pack_dirs(reproducibility_dir)
+    rows: list[dict] = []
+    counts = {"verified": 0, "incomplete": 0, "failed": 0}
+    exit_code = 0
+
+    for pack_dir in packs:
+        # The newcomer aggregate is deliberately integrity-only. Individual
+        # pack commands retain their existing ability to invoke a shipped
+        # execution pack when explicitly requested.
+        result = _verify_manifest_pack(pack_dir)
+        pack_exit_code = _verification_exit_code(result)
+        status = {0: "verified", 1: "failed", 2: "incomplete"}[pack_exit_code]
+        counts[status] += 1
+        # A checksum mismatch or failed execution takes precedence over an
+        # otherwise expected incomplete pack such as the FitLins exemplar.
+        if pack_exit_code == 1:
+            exit_code = 1
+        elif pack_exit_code == 2 and exit_code == 0:
+            exit_code = 2
+        rows.append(
+            {
+                "pack_id": pack_dir.name,
+                "status": status,
+                "exit_code": pack_exit_code,
+                "integrity_verified": result.get("integrity_verified"),
+                "executed": result.get("executed"),
+                "scientifically_reproduced": result.get("scientifically_reproduced"),
+            }
+        )
+
+    report = {
+        "verification_schema_version": _REPORT_SCHEMA,
+        "mode": "all_manifest_packs",
+        "n_packs": len(rows),
+        "summary": counts,
+        "packs": rows,
+    }
+    if not rows:
+        report["reason"] = "no manifest-backed packs found"
+        report["exit_code"] = 2
+        return report, 2
+    report["exit_code"] = exit_code
+    return report, exit_code
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Verify a reproducibility pack.")
+    ap.add_argument(
+        "pack_dir",
+        nargs="?",
+        help="Path to a manifest-backed reproducibility/<id> directory",
+    )
+    ap.add_argument(
+        "--all",
+        action="store_true",
+        help="Verify every immediate manifest-backed pack under reproducibility/",
+    )
+    args = ap.parse_args(argv)
+    if args.all:
+        if args.pack_dir is not None:
+            ap.error("--all cannot be combined with pack_dir")
+        report, exit_code = verify_all(Path(__file__).resolve().parent)
+        print(json.dumps(report, indent=2))
+        return exit_code
+    if args.pack_dir is None:
+        ap.error("provide pack_dir or use --all")
+    pack = Path(args.pack_dir)
+    if not pack.is_dir():
+        print(f"not a directory: {pack}", file=sys.stderr)
+        return 2
+    result = verify_pack(pack)
+    print(json.dumps(result, indent=2))
+    return _verification_exit_code(result)
 
 
 if __name__ == "__main__":

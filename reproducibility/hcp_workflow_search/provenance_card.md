@@ -35,17 +35,23 @@ The derived tables were exported from persisted, governed study artifacts and
 then redacted to aggregate scores and repeat-level score differences. The
 public pack does not include the original artifact files or a location for them.
 
-Historical producing code was recovered in private history for four stages:
+The canonical producing code for the following four stages is now publicly
+shipped elsewhere in this repository:
 
 - MVE100 expansion
 - 12-slot recovery
 - R2 Cognition paired inference
 - R3 transfer
 
-That code is not shipped in this public pack and is not publicly resolvable.
-The stage-level provenance is distinct from this public aggregate replay. The
-pack is classified as an `integrity_verified` derived-artifact snapshot because
-it does not ship governed HCP inputs or execute those stages.
+The public source and governed CLI map is in the
+[HCP predictive producing-code guide](../../src/brain_researcher/research/predictive/foundation_episode/README.md).
+The implementations were recovered from historical private work before their
+public release, but they are deliberately not part of this checksum-bound replay
+pack. The stage-level code provenance is distinct from this public aggregate
+replay. The pack is classified as an `integrity_verified` derived-artifact
+snapshot because it does not ship governed HCP inputs, participant-level
+predictions, original run artifacts, or execution authorization, and it does
+not execute those stages.
 
 ## Excluded material
 

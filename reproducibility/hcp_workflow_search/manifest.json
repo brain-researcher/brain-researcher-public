@@ -6,7 +6,7 @@
   "maturity": "stable",
   "source": {
     "repository_url": "https://github.com/brain-researcher/brain-researcher-public",
-    "contract_authored_against_commit": "99fc41f4e6071a49f343ca8983ff8c661f8218c0",
+    "contract_authored_against_commit": "0fa5a0a81da74f461295aebe4787ec8afb17a325",
     "artifact_authoring_commit": null,
     "artifact_authoring_commit_status": "unavailable",
     "release_containing_commit": null,
@@ -14,8 +14,8 @@
     "pack_path": "reproducibility/hcp_workflow_search",
     "provenance": [
       "The public contract was authored against the stated public-repository snapshot.",
-      "The recorded source artifacts span multiple stages whose producing code was recovered in private history but is not shipped or publicly resolvable.",
-      "Stage-level provenance for MVE100 expansion, 12-slot recovery, R2 Cognition paired inference, and R3 transfer is recorded without private code references.",
+      "The corresponding producing code is publicly shipped elsewhere in this repository, but is intentionally outside this checksum-bound replay pack.",
+      "Stage-level provenance for MVE100 expansion, 12-slot recovery, R2 Cognition paired inference, and R3 transfer is recorded without private code references; the public source and governed CLI map is in src/brain_researcher/research/predictive/foundation_episode/README.md.",
       "The release-containing commit is deliberately resolved only by the public release gate."
     ]
   },
@@ -29,7 +29,7 @@
       "id": "derived_artifact_replay",
       "role": "validate recorded aggregate tables and redraw Figure 5",
       "path": "scripts/replay_and_validate.py",
-      "version": "sha256:5ee3110c3ff8745e8bbdf2368d41fc3e9167b81be5e9fb349cb8fa911a7e0315",
+      "version": "sha256:87d2049ddf0d770d59cb0d4ece2e25af5ba6882f90f8e71ab3a775f539ec33d1",
       "version_status": "recorded"
     },
     {
@@ -63,7 +63,7 @@
       "id": "governed_hcp_execution_inputs",
       "availability": "not_recorded",
       "sha256": null,
-      "note": "Restricted HCP inputs and original private run artifacts are not distributed in this derived-artifact replay pack."
+      "note": "Restricted HCP inputs, original run artifacts, and execution authorization are not distributed in this derived-artifact replay pack."
     }
   ],
   "seeds": [
@@ -166,7 +166,7 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "sha256:a0aab7cfa9d2772c0ced5bbf6c0e317b7a1f2a2432c16c3dd2011520f854e5f9"
+      "sha256": "sha256:33c6e2e8e9597a773d179ccb796408eb1b546ec05b7252e8d3c239b185eb2840"
     },
     {
       "path": "CAPTION.md",
@@ -174,7 +174,7 @@
     },
     {
       "path": "provenance_card.md",
-      "sha256": "sha256:22d2d932d672c865e14b623666e8ce043259a51ab87b71914ceb01bb82abf845"
+      "sha256": "sha256:0001a84d744bbf9b8e3fc835406a59a9f1815722ab4228f98f33f3ea159ef368"
     },
     {
       "path": "environment.lock.json",
@@ -194,7 +194,7 @@
     },
     {
       "path": "data/study_summary.json",
-      "sha256": "sha256:d8a45b383343f6466200e9e0eeff7efcbe148c2535a54f990ad68ccd6569ed64"
+      "sha256": "sha256:4a3e1168bd332156de3332d86da6212aff6a94868b43a1c5e9f7f8e2daf17857"
     },
     {
       "path": "scripts/render_figure5.py",
@@ -202,7 +202,7 @@
     },
     {
       "path": "scripts/replay_and_validate.py",
-      "sha256": "sha256:5ee3110c3ff8745e8bbdf2368d41fc3e9167b81be5e9fb349cb8fa911a7e0315"
+      "sha256": "sha256:87d2049ddf0d770d59cb0d4ece2e25af5ba6882f90f8e71ab3a775f539ec33d1"
     },
     {
       "path": "figures/figure5_hcp_workflow_search.svg",
