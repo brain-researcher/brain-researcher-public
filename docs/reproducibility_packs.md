@@ -41,14 +41,27 @@ historical producing commit is unavailable; and the release gate records the
 containing release commit externally because a manifest cannot checksum-bind
 the commit that contains itself.
 
-Run:
+## Newcomer quick check
+
+From the repository root, first run:
 
 ```bash
-python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
-python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
-python reproducibility/verify.py reproducibility/hcp_workflow_search
-python reproducibility/verify.py reproducibility/tribe_speech_tools
+python reproducibility/verify.py --all
 ```
+
+This aggregate command checks recorded files only and never invokes a pack's
+execution runner.
+
+The current `main` checkout reports **3 integrity-verified, 1 incomplete, and 0
+failed**. It exits `2` because `fitlins_multiverse_yeo17` deliberately has two
+`schema_only` statmap references. This is an expected incomplete status, not a
+checksum mismatch. Exit `1` means a mismatch or failed execution and wins over
+any incomplete status in the aggregate result.
+
+Use `python reproducibility/verify.py reproducibility/<id>` for the full report
+for one pack. Then follow the pack-specific README: A1 has the public-data
+headline rerun, HCP redraws Figure 5 from derived tables, TRIBE redraws Figure
+6 from derived tables, and FitLins is an inspectable schema fixture only.
 
 For a v2 manifest, the verifier first checks the required metadata and
 attestation shape. A malformed v2 contract fails closed with exit code `1`

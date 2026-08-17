@@ -52,6 +52,27 @@ That verifier checks the committed files. It does not execute an HCP analysis.
 The conditional p-value belongs to the frozen Cognition sensitivity only. It
 does not turn the transfer panel into a multiplicity-confirmed generalization.
 
+## Short glossary
+
+- `C1_raw`: the fixed prediction pipeline selected for follow-up. `raw` means
+  its predictions were not calibration-adjusted; it does not mean raw HCP data.
+- Matched Liu reference: the Liu-style comparator run with the same target,
+  preprocessing, participants, splits, and scoring, making the comparison
+  like-for-like. It is not an independent sample or a complete reproduction of
+  the original Liu study.
+- Transport recovery: a limited retry for the 12 incomplete execution slots,
+  not a new candidate search. It cannot add or replace candidates in the
+  original 116-candidate denominator.
+- `r`, `delta r`, and `R2`: `r` is the held-out prediction--target correlation;
+  `delta r` is selected minus reference `r` for the same repeat, so a positive
+  value favors the selected workflow. `R2` asks whether predictions outperform
+  predicting the held-out mean; it can be negative and is not a pairwise metric.
+- Conditional `p`: the permutation p-value for the frozen Cognition comparison,
+  conditional on the recorded selection, fits, and repeated splits.
+- Weak-FWER: the transfer-panel family-wise correction under its conditional
+  global-null setup. It was not supported here, so the transfer panel remains
+  descriptive.
+
 ## Aggregate cohort ledger
 
 The candidate count is not the HCP sample size. To make the denominator visible
@@ -85,21 +106,26 @@ predictions, private receipts, credentials, or absolute local paths are shipped.
 
 ## Reproducibility boundary
 
-Historical producing code for the following stages was recovered in private
-history. It is not shipped in this public pack and is not publicly resolvable.
+The canonical producing code for the following stages is publicly shipped
+elsewhere in this repository. It is intentionally not included in this
+checksum-bound replay pack. The public source and governed CLI map is in the
+[HCP predictive producing-code guide](../../src/brain_researcher/research/predictive/foundation_episode/README.md).
 
 | Stage | Public provenance status |
 |---|---|
-| MVE100 expansion | Recovered in private history; not shipped or publicly resolvable |
-| 12-slot recovery | Recovered in private history; not shipped or publicly resolvable |
-| R2 Cognition paired inference | Recovered in private history; not shipped or publicly resolvable |
-| R3 transfer | Recovered in private history; not shipped or publicly resolvable |
+| MVE100 expansion | Public code, outside this replay pack |
+| 12-slot recovery | Public code, outside this replay pack |
+| R2 Cognition paired inference | Public code, outside this replay pack |
+| R3 transfer | Public code, outside this replay pack |
 
-This public package deliberately does not carry those governed HCP execution
-inputs or claim an independent scientific reproduction. It provides an
-auditable replay of the derived tables used for paper-facing Figure 5. A future
-governed rerun would stage the permitted HCP inputs, use the recovered
-historical code, and compare newly produced artifacts with this recorded
-snapshot before changing any scientific claim.
+The implementations were recovered from historical private work before their
+public release. Public source code alone does not make the original analysis
+publicly runnable: this pack deliberately excludes governed HCP inputs,
+participant-level predictions, original run artifacts, and execution
+authorization. It provides an auditable replay of the derived tables used for
+paper-facing Figure 5, not an independent scientific reproduction. A future
+governed rerun would stage permitted HCP inputs, use the public code under its
+recorded authorization controls, and compare newly produced artifacts with
+this recorded snapshot before changing any scientific claim.
 
 See `provenance_card.md` and `manifest.json` for the machine-readable boundary.

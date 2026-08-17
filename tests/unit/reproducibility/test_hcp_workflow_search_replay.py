@@ -8,12 +8,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PACK = REPO_ROOT / "reproducibility" / "hcp_workflow_search"
 
 
-def test_hcp_workflow_search_replay_preserves_recorded_accounting(tmp_path: Path) -> None:
+def test_hcp_workflow_search_replay_preserves_recorded_accounting(
+    tmp_path: Path,
+) -> None:
     output = tmp_path / "figure5.svg"
     completed = subprocess.run(
         [
@@ -58,16 +59,24 @@ def test_hcp_workflow_search_replay_preserves_recorded_accounting(tmp_path: Path
     }
     assert report["all_outcomes"] == {"directional_wins": "47/50"}
     assert report["positive_median_selected_r2"] == ["Cognition", "Tobacco Use"]
+    assert report["producer_closure"] == {
+        "publicly_resolvable": True,
+        "shipped_in_public_pack": False,
+        "complete_governed_rerun_claimed": False,
+    }
     assert output.exists()
     assert "<svg" in output.read_text(encoding="utf-8")
 
 
 def test_hcp_workflow_search_uses_stage_level_public_provenance() -> None:
-    summary = json.loads((PACK / "data" / "study_summary.json").read_text(encoding="utf-8"))
+    summary = json.loads(
+        (PACK / "data" / "study_summary.json").read_text(encoding="utf-8")
+    )
     closure = summary["producer_closure"]
 
     assert closure["historical_producing_code"] == {
-        "publicly_resolvable": False,
+        "publicly_resolvable": True,
+        "public_entrypoint_guide": "src/brain_researcher/research/predictive/foundation_episode/README.md",
         "shipped_in_public_pack": False,
         "stages": [
             "MVE100 expansion",
@@ -75,7 +84,7 @@ def test_hcp_workflow_search_uses_stage_level_public_provenance() -> None:
             "R2 Cognition paired inference",
             "R3 transfer",
         ],
-        "status": "recovered_in_private_history",
+        "status": "publicly_shipped_outside_replay_pack",
     }
     assert "historical_code_refs" not in closure
     assert "commit" not in json.dumps(closure)
@@ -92,7 +101,18 @@ def test_hcp_workflow_search_uses_stage_level_public_provenance() -> None:
         assert "codex/" not in text
         assert re.search(r"(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])", text) is None
 
+    guide = REPO_ROOT / closure["historical_producing_code"]["public_entrypoint_guide"]
+    assert guide.is_file()
+    assert "Canonical entrypoints" in guide.read_text(encoding="utf-8")
+
+    for path in (PACK / "README.md", PACK / "provenance_card.md"):
+        text = path.read_text(encoding="utf-8")
+        assert "not publicly resolvable" not in text
+        assert "foundation_episode/README.md" in text
+
     manifest = json.loads((PACK / "manifest.json").read_text(encoding="utf-8"))
     manifest_provenance = "\n".join(manifest["source"]["provenance"])
     assert "codex/" not in manifest_provenance
-    assert re.search(r"(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])", manifest_provenance) is None
+    assert (
+        re.search(r"(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])", manifest_provenance) is None
+    )

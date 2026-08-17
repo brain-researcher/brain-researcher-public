@@ -48,19 +48,32 @@ cd "$(git rev-parse --show-toplevel)"
 In the commands below, `python` means the Python interpreter from your currently
 active conda environment or virtual environment.
 
-## Verify a pack (no Brain Researcher install required)
+## Newcomer quick check (no Brain Researcher install required)
 
 From the repository root:
 
 ```bash
-python reproducibility/verify.py reproducibility/bounded_autoresearch_a1
-python reproducibility/verify.py reproducibility/fitlins_multiverse_yeo17
-python reproducibility/verify.py reproducibility/hcp_workflow_search
-python reproducibility/verify.py reproducibility/tribe_speech_tools
+python reproducibility/verify.py --all
 ```
 
-`verify.py` uses only the Python standard library. It re-hashes each manifest
-artifact and prints three separate status fields. For a v2 manifest it first
+`verify.py --all` uses only the Python standard library. It finds every
+immediate directory with a `manifest.json`, re-hashes its artifacts, and prints
+one compact aggregate JSON report. It does not invoke any pack's execution
+runner; run a pack-specific command when you intend to execute an analysis.
+The current `main` checkout reports **3
+integrity-verified, 1 incomplete, and 0 failed**. Its exit code is therefore
+**2**: `fitlins_multiverse_yeo17` intentionally contains two `schema_only`
+statmap references. That is an expected incomplete check, not a checksum
+mismatch. Exit code **1** always means a real mismatch or failed execution and
+takes precedence if any pack also remains incomplete.
+
+To inspect one pack in detail, pass its directory as before:
+
+```bash
+python reproducibility/verify.py reproducibility/hcp_workflow_search
+```
+
+For a v2 manifest the verifier first
 validates the required source, environment, tool, input, seed, tolerance, and
 five-level attestation metadata; an invalid v2 contract fails closed with exit
 code 1 before hashes are accepted.
@@ -90,6 +103,12 @@ The cumulative status vocabulary is `inspectable` → `integrity_verified` →
 `public_runnable` → `governed_rerun` → `fully_reproduced`. See
 [`docs/reproducibility_packs.md`](../docs/reproducibility_packs.md#reproduction-status-vocabulary)
 for the exact boundary and the meaning of `partial`.
+
+After this check, choose a result-specific path: run the public-data A1
+headline script below; use the [HCP pack README](hcp_workflow_search/README.md)
+to redraw Figure 5 from derived tables; or use the [TRIBE pack
+README](tribe_speech_tools/README.md) to redraw Figure 6. The FitLins pack is a
+format exemplar to inspect, not a real-data rerun.
 
 ## Current packs and their rerun boundary
 

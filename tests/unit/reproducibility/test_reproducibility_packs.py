@@ -28,6 +28,7 @@ VERIFY = runpy.run_path(str(REPRO_ROOT / "verify.py"))
 VERIFY_MANIFEST = VERIFY["_verify_manifest"]
 VERIFY_PACK = VERIFY["verify_pack"]
 VERIFY_MAIN = VERIFY["main"]
+VERIFY_ALL = VERIFY["verify_all"]
 VALIDATE_V2 = VERIFY["_validate_v2_manifest"]
 V2_SCHEMA = "br.reproducibility_pack_manifest.v2"
 LEVELS = [
@@ -270,6 +271,92 @@ def test_reproducibility_pack_reports_its_integrity_boundary(
     assert report["n_missing"] == 0
     assert report["n_matched"] > 0
     assert report["n_indeterminate"] == n_indeterminate
+
+
+def test_verify_all_reports_the_current_newcomer_boundary() -> None:
+    proc = subprocess.run(
+        [sys.executable, str(REPRO_ROOT / "verify.py"), "--all"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+
+    assert proc.returncode == 2
+    report = json.loads(proc.stdout)
+    assert report["mode"] == "all_manifest_packs"
+    assert report["n_packs"] == 4
+    assert report["exit_code"] == 2
+    assert report["summary"] == {"verified": 3, "incomplete": 1, "failed": 0}
+    assert {
+        row["pack_id"]: (row["status"], row["exit_code"]) for row in report["packs"]
+    } == {
+        "bounded_autoresearch_a1": ("verified", 0),
+        "fitlins_multiverse_yeo17": ("incomplete", 2),
+        "hcp_workflow_search": ("verified", 0),
+        "tribe_speech_tools": ("verified", 0),
+    }
+
+
+def test_verify_all_prioritizes_a_hard_failure_over_incomplete(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_verify_manifest_pack(pack_dir: Path) -> dict:
+        if pack_dir.name == "bounded_autoresearch_a1":
+            return {"mode": "manifest", "integrity_verified": False}
+        if pack_dir.name == "fitlins_multiverse_yeo17":
+            return {"mode": "manifest", "integrity_verified": None}
+        return {"mode": "manifest", "integrity_verified": True}
+
+    monkeypatch.setitem(
+        VERIFY_ALL.__globals__, "_verify_manifest_pack", fake_verify_manifest_pack
+    )
+
+    report, exit_code = VERIFY_ALL(REPRO_ROOT)
+
+    assert exit_code == 1
+    assert report["exit_code"] == 1
+    assert report["summary"] == {"verified": 2, "incomplete": 1, "failed": 1}
+
+
+def test_verify_all_never_invokes_an_execution_pack(tmp_path: Path) -> None:
+    pack_dir = tmp_path / "runnable-pack"
+    payload = b"recorded result\n"
+    (pack_dir / "result.txt").parent.mkdir(parents=True)
+    (pack_dir / "result.txt").write_bytes(payload)
+    _write_manifest(pack_dir, [{"path": "result.txt", "sha256": _checksum(payload)}])
+    execution_dir = pack_dir / "execution_pack"
+    execution_dir.mkdir()
+    marker = pack_dir / "execution-ran.txt"
+    (execution_dir / "run_pack.py").write_text(
+        f"from pathlib import Path\nPath({str(marker)!r}).write_text('ran')\n",
+        encoding="utf-8",
+    )
+    (execution_dir / "expected_artifacts.json").write_text("{}\n", encoding="utf-8")
+
+    report, exit_code = VERIFY_ALL(tmp_path)
+
+    assert exit_code == 0
+    assert report["summary"] == {"verified": 1, "incomplete": 0, "failed": 0}
+    assert not marker.exists()
+
+
+def test_single_pack_cli_keeps_its_existing_report_shape() -> None:
+    proc = subprocess.run(
+        [sys.executable, str(REPRO_ROOT / "verify.py"), str(A1_PACK)],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+
+    assert proc.returncode == 0
+    report = json.loads(proc.stdout)
+    assert report["mode"] == "manifest"
+    assert "summary" not in report
+    assert report["integrity_verified"] is True
 
 
 def test_manifest_match_only_proves_integrity(tmp_path: Path) -> None:

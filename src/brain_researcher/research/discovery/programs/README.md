@@ -4,6 +4,35 @@ This directory contains the parameterized public implementation of the TRIBE
 speech-tools scientific evaluator chain. The frozen derived-table replay stays
 at reproducibility/tribe_speech_tools and is intentionally unchanged.
 
+## Start with a synthetic evaluator fixture
+
+The public evaluator requires caller-provided matrices. To exercise its real
+`evaluate` and `verify` commands without governed inputs, run the deterministic
+synthetic fixture from the repository root:
+
+    python3.11 -m venv .venv-tribe-fixture
+    . .venv-tribe-fixture/bin/activate
+    python -m pip install "numpy>=1.24"
+    TRIBE_FIXTURE_DIR="$(mktemp -d)"
+    PYTHONPATH=src python scripts/demos/run_tribe_speech_tools_public_fixture.py \
+      --output-dir "$TRIBE_FIXTURE_DIR"
+
+Use a Python 3.11 interpreter. If your conda or `uv` environment exposes it as
+`python` rather than `python3.11`, use `python -m venv` in the first line.
+`mktemp -d` supplies a new empty output directory on each run.
+
+The helper creates 12 synthetic NumPy matrices, a v2 manifest, and the two
+matrix maps, then invokes the public CLI first with `evaluate` and then with
+`verify`. Its artifacts are intentionally labelled
+`scientific_evidence: synthetic_fixture_only`; this is an engineering check,
+not a raw-input scientific rerun. It uses seven fixture-only permutation draws,
+so any p-value or outcome is only a contract exercise, not an inferential result.
+
+The evaluator and this fixture require NumPy. The optional
+`score_blind_selector.py` candidate-panel selection path also uses
+`scipy.optimize`; install SciPy when running that selector. A regular
+`pip install .` provides both dependencies.
+
 ## Runnable public surface
 
 The public evaluator accepts a caller manifest plus six locked-layer NumPy

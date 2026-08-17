@@ -16,7 +16,6 @@ from pathlib import Path
 
 from render_figure5 import PACK_ROOT, render
 
-
 DATA_DIR = PACK_ROOT / "data"
 EXPECTED_SEARCH_HEADERS = {
     "candidate_order",
@@ -71,7 +70,9 @@ def validate() -> dict[str, object]:
     summary = json.loads((DATA_DIR / "study_summary.json").read_text(encoding="utf-8"))
 
     if summary["replay_scope"] != "derived_artifact_replay_only":
-        raise ValueError("study summary must retain the derived-artifact replay boundary")
+        raise ValueError(
+            "study summary must retain the derived-artifact replay boundary"
+        )
     if summary["redaction"] != {
         "contains_absolute_paths": False,
         "contains_participant_or_family_identifiers": False,
@@ -90,9 +91,15 @@ def validate() -> dict[str, object]:
     complete = [row for row in search if row["status"] == "succeeded"]
     incomplete = [row for row in search if row["status"] == "incomplete"]
     if len(complete) != 104 or len(incomplete) != 12:
-        raise ValueError("search accounting must remain 104 completed and 12 incomplete")
-    if any(not row["cross_validated_r"] for row in complete) or any(row["cross_validated_r"] for row in incomplete):
-        raise ValueError("search table must include scores only for completed candidates")
+        raise ValueError(
+            "search accounting must remain 104 completed and 12 incomplete"
+        )
+    if any(not row["cross_validated_r"] for row in complete) or any(
+        row["cross_validated_r"] for row in incomplete
+    ):
+        raise ValueError(
+            "search table must include scores only for completed candidates"
+        )
     if not summary["search"]["transport_recovery_parent_denominator_unchanged"]:
         raise ValueError("transport recovery must not change the parent denominator")
     initial_scores = [
@@ -167,7 +174,9 @@ def validate() -> dict[str, object]:
 
     selection = summary["selection"]
     if selection["automatic_champion_selected"]:
-        raise ValueError("selected workflow must not be represented as an automatic champion")
+        raise ValueError(
+            "selected workflow must not be represented as an automatic champion"
+        )
     if not selection["analysis_frozen_before_matched_comparison"]:
         raise ValueError("matched comparison must stay downstream of the freeze")
 
@@ -195,7 +204,9 @@ def validate() -> dict[str, object]:
             raise ValueError(f"{key}: expected 10 repeat-level score differences")
         outcome = by_key[key]
         if not _close(_median(values), float(outcome["median_delta_r"])):
-            raise ValueError(f"{key}: median score difference does not match outcome table")
+            raise ValueError(
+                f"{key}: median score difference does not match outcome table"
+            )
         if sum(value > 0 for value in values) != int(outcome["directional_wins"]):
             raise ValueError(f"{key}: directional wins do not match repeat table")
 
@@ -220,18 +231,21 @@ def validate() -> dict[str, object]:
         raise ValueError("transfer weak-FWER status must remain unsupported")
 
     positive_r2 = sorted(
-        row["outcome_label"]
-        for row in outcomes
-        if float(row["median_selected_r2"]) > 0
+        row["outcome_label"] for row in outcomes if float(row["median_selected_r2"]) > 0
     )
     if positive_r2 != ["Cognition", "Tobacco Use"]:
-        raise ValueError("only Cognition and Tobacco Use may have positive median selected R2")
+        raise ValueError(
+            "only Cognition and Tobacco Use may have positive median selected R2"
+        )
 
     closure = summary["producer_closure"]
     if closure["complete_governed_rerun_claimed"]:
-        raise ValueError("derived-artifact pack must not claim a complete governed rerun")
+        raise ValueError(
+            "derived-artifact pack must not claim a complete governed rerun"
+        )
     expected_historical_producing_code = {
-        "publicly_resolvable": False,
+        "publicly_resolvable": True,
+        "public_entrypoint_guide": "src/brain_researcher/research/predictive/foundation_episode/README.md",
         "shipped_in_public_pack": False,
         "stages": [
             "MVE100 expansion",
@@ -239,7 +253,7 @@ def validate() -> dict[str, object]:
             "R2 Cognition paired inference",
             "R3 transfer",
         ],
-        "status": "recovered_in_private_history",
+        "status": "publicly_shipped_outside_replay_pack",
     }
     if closure["historical_producing_code"] != expected_historical_producing_code:
         raise ValueError("stage-level producer provenance changed")
@@ -260,10 +274,19 @@ def validate() -> dict[str, object]:
             "automatic_champion_selected": False,
             "analysis_frozen_before_matched_comparison": True,
         },
-        "cognition": {"directional_wins": "10/10", "median_delta_r": 0.09827205188739016, "conditional_one_sided_p": 0.006},
+        "cognition": {
+            "directional_wins": "10/10",
+            "median_delta_r": 0.09827205188739016,
+            "conditional_one_sided_p": 0.006,
+        },
         "transfer": {"directional_wins": "37/40", "weak_fwer_status": "unsupported"},
         "all_outcomes": {"directional_wins": "47/50"},
         "positive_median_selected_r2": positive_r2,
+        "producer_closure": {
+            "publicly_resolvable": True,
+            "shipped_in_public_pack": False,
+            "complete_governed_rerun_claimed": False,
+        },
     }
 
 
