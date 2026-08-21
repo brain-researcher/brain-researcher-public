@@ -1,7 +1,6 @@
 # Brain Researcher
 
-Software release v0.3.0:
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21966011.svg)](https://doi.org/10.5281/zenodo.21966011)
+Software release v0.3.0: [DOI 10.5281/zenodo.21966011](https://doi.org/10.5281/zenodo.21966011)
 
 **Brain Researcher is a workspace-centric infrastructure for auditable AI-assisted neuroimaging.** It turns research questions into bounded episodes that connect evidence, admissible analysis choices, tool/recipe selection, provenance, and review verdicts. This public repository ships the open code, MCP contracts, service stack, Web UI, docs, and public-safe helpers; private benchmark corpora, Neo4j graph contents, internal run artifacts, and site-specific launchers are not included.
 
