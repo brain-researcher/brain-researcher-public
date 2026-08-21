@@ -45,6 +45,15 @@
     ],
     "required_before_tag": true
   },
+  "prior_software_releases": {
+    "v0.2.0": {
+      "status": "published",
+      "git_tag": "v0.2.0",
+      "version_doi": "10.5281/zenodo.21392244",
+      "concept_doi": "10.5281/zenodo.21282319",
+      "publication_date": "2026-07-16"
+    }
+  },
   "historical_artifacts": {
     "relationship": "earlier_version_under_same_zenodo_concept",
     "exact_reproducibility_archive": {

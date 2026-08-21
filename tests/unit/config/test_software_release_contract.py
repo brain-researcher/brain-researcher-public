@@ -138,6 +138,15 @@ def test_zenodo_identifiers_distinguish_release_and_historical_archive() -> None
     assert citation["doi"] == "10.5281/zenodo.21966011"
     assert citation["date-released"] == "2026-08-16"
     assert "identifiers" not in citation
+    assert manifest["prior_software_releases"] == {
+        "v0.2.0": {
+            "status": "published",
+            "git_tag": "v0.2.0",
+            "version_doi": "10.5281/zenodo.21392244",
+            "concept_doi": "10.5281/zenodo.21282319",
+            "publication_date": "2026-07-16",
+        }
+    }
     assert manifest["historical_artifacts"] == {
         "relationship": "earlier_version_under_same_zenodo_concept",
         "exact_reproducibility_archive": {
