@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { ArrowRight, ChevronRight, Search } from 'lucide-react'
 
 import { AgendaDirectionDetail } from '@/components/autoresearch/agenda-direction-detail'
@@ -17,7 +17,7 @@ import type {
 } from '@/content/autoresearch'
 
 interface AutoresearchExperienceProps {
-  proposalDestination?: string
+  proposalReturnUrl?: string
 }
 
 interface ProposalDraft {
@@ -36,8 +36,10 @@ const processSteps = [
   ['02', 'Refine together', 'Clarify the first exploration with the proposing researchers.'],
   ['03', 'Explore', 'BR investigates the question and returns evidence for review.'],
   ['04', 'Review', 'Check assumptions, interpretations, and unproductive directions.'],
-  ['05', 'Choose a next step', 'Close, reframe, or plan a separate validation study.'],
+  ['05', 'Choose a next step', 'Close, reframe, or plan the next study or experiment.'],
 ] as const
+
+const defaultProposalDestination = 'https://formsubmit.co/zijiao@stanford.edu'
 
 function directionsFor(program: ResearchProgram): AgendaDirection[] {
   return program.agenda_directions ?? program.directions ?? []
@@ -51,7 +53,9 @@ function hasTopic(value: string | null): value is string {
   return Boolean(value && content.neuroimaging_topics.some((topic) => topic.id === value))
 }
 
-export function AutoresearchExperience({ proposalDestination }: AutoresearchExperienceProps) {
+export function AutoresearchExperience({
+  proposalReturnUrl,
+}: AutoresearchExperienceProps) {
   const router = useRouter()
   const pathname = usePathname() || '/autoresearch'
   const searchParams = useSearchParams()
@@ -68,6 +72,10 @@ export function AutoresearchExperience({ proposalDestination }: AutoresearchExpe
   const initialTopic = hasTopic(requestedTopic)
     ? requestedTopic
     : content.neuroimaging_topics[0]?.id ?? ''
+  const formReturnUrl = proposalReturnUrl?.trim() || content.proposal_submission.default_return_url
+  const submissionStatus = searchParams.get('submitted') === '1'
+    ? content.proposal_submission.return_copy
+    : content.proposal_submission.disclosure
 
   const [activeProgram, setActiveProgram] = useState<ProgramId>(initialProgram)
   const [activeDirectionId, setActiveDirectionId] = useState(initialDirection)
@@ -177,17 +185,6 @@ export function AutoresearchExperience({ proposalDestination }: AutoresearchExpe
     proposalQuestionRef.current?.focus()
   }
 
-  const submissionUnavailable = !proposalDestination
-  const submissionStatus = submissionUnavailable
-    ? 'Submission is currently unavailable. This form does not send or store your information, and the text you enter remains in this browser view.'
-    : 'Submitting opens the configured external destination. That destination controls delivery and storage.'
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    if (!proposalDestination) {
-      event.preventDefault()
-    }
-  }
-
   return (
     <div className="min-w-0 bg-white text-gray-950">
       <section className="border-b border-gray-200 bg-gray-50">
@@ -221,6 +218,18 @@ export function AutoresearchExperience({ proposalDestination }: AutoresearchExpe
             <p className="mt-6 max-w-2xl text-sm leading-6 text-gray-600">
               The first goal is to find a lead worth following. A promising result can later move
               into a separate validation study.
+            </p>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-gray-600">
+              {content.public_record.copy}{' '}
+              <a
+                href={content.public_record.href}
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-gray-950 underline underline-offset-4 hover:text-gray-700"
+              >
+                {content.public_record.link_label}
+                <span className="sr-only">, opens an external site</span>
+              </a>
             </p>
           </div>
         </div>
@@ -317,6 +326,24 @@ export function AutoresearchExperience({ proposalDestination }: AutoresearchExpe
         </div>
       </section>
 
+      <section className="border-b border-gray-200" aria-labelledby="future-direction-title">
+        <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+              {content.future_direction.eyebrow}
+            </p>
+            <h2 id="future-direction-title" className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">
+              {content.future_direction.title}
+            </h2>
+            <div className="mt-4 space-y-4 text-sm leading-6 text-gray-700">
+              {content.future_direction.body.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section ref={proposalRef} id="proposal" className="scroll-mt-24" aria-labelledby="proposal-title">
         <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-14 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,0.75fr)_minmax(22rem,0.65fr)] lg:px-8">
           <div>
@@ -330,13 +357,23 @@ export function AutoresearchExperience({ proposalDestination }: AutoresearchExpe
           </div>
 
           <form
-            action={proposalDestination}
-            method={proposalDestination ? 'post' : undefined}
-            onSubmit={handleSubmit}
+            action={defaultProposalDestination}
+            method="post"
             className="border border-gray-200 bg-gray-50 p-5 sm:p-6"
             aria-describedby="proposal-submission-status"
           >
             <input type="hidden" name="source" value="br-autoresearch-open-call" />
+            <input type="hidden" name="_subject" value={content.proposal_submission.subject} />
+            <input type="hidden" name="_template" value="table" />
+            <input type="hidden" name="_next" value={formReturnUrl} />
+            <input
+              type="text"
+              name="_honey"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="sr-only"
+            />
             <div className="space-y-5">
               <FormField label="Scientific question" htmlFor="proposal-question">
                 <textarea
@@ -415,10 +452,9 @@ export function AutoresearchExperience({ proposalDestination }: AutoresearchExpe
 
             <button
               type="submit"
-              disabled={submissionUnavailable}
-              className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-gray-950 px-5 text-sm font-semibold text-white hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
+              className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-gray-950 px-5 text-sm font-semibold text-white hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
             >
-              {submissionUnavailable ? 'Submission unavailable' : 'Submit proposal'}
+              Submit proposal
             </button>
             <p
               id="proposal-submission-status"

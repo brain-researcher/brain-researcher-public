@@ -15,6 +15,31 @@ describe('autoresearch public content', () => {
     expect(Object.keys(autoresearchContent.programs)).toHaveLength(5)
   })
 
+  it('defines the bounded public campaign record', () => {
+    expect(autoresearchContent.public_record).toEqual({
+      copy: 'The GitHub repository is a public campaign and episode record, not a live status feed, a submission path, or a validated scientific finding.',
+      href: 'https://github.com/brain-researcher/br_autoresearch',
+      link_label: 'Open on GitHub',
+    })
+  })
+
+  it('defines the longer-term experiment direction and FormSubmit copy', () => {
+    expect(autoresearchContent.future_direction).toEqual({
+      eyebrow: 'Longer-term direction',
+      title: 'From exploration to experiment.',
+      body: [
+        'The longer-term goal is to carry a promising lead from the research landscape into a prospective real-world experiment: decide what should be tested, record the prediction before the result is known, and learn from what happens.',
+        'That experiment might be a behavioral task or game, a BCI session, an imaging study, an animal study, or wet-lab work. It would be designed and run by collaborating researchers and laboratories, with the result returning to inform the next question.',
+      ],
+    })
+    expect(autoresearchContent.proposal_submission).toEqual({
+      subject: 'BR Autoresearch proposal',
+      disclosure: 'Submitting sends your proposal to zijiao@stanford.edu through FormSubmit. FormSubmit may retain submission data for up to 30 days. Delivery to the recipient inbox is not guaranteed.',
+      return_copy: 'This return view does not verify that FormSubmit accepted the proposal or delivered it to the recipient inbox.',
+      default_return_url: 'https://brain-researcher.com/autoresearch?submitted=1',
+    })
+  })
+
   it('keeps 111 distinct neuroimaging topics', () => {
     const topicIds = autoresearchContent.neuroimaging_topics.map((topic) => topic.id)
 

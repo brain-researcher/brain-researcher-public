@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default function AutoresearchPage() {
-  const proposalDestination = process.env.AUTORESEARCH_PROPOSAL_URL?.trim() || undefined
+  const proposalReturnUrl = process.env.AUTORESEARCH_PROPOSAL_RETURN_URL?.trim() || undefined
 
   return (
     <NavigationWrapper>
@@ -24,7 +24,7 @@ export default function AutoresearchPage() {
           </section>
         }
       >
-        <AutoresearchExperience proposalDestination={proposalDestination} />
+        <AutoresearchExperience proposalReturnUrl={proposalReturnUrl} />
       </Suspense>
     </NavigationWrapper>
   )
