@@ -39,7 +39,7 @@ describe('autoresearch public content', () => {
     })
     expect(autoresearchContent.proposal_submission).toEqual({
       subject: 'BR Autoresearch proposal',
-      disclosure: 'Your proposal will be sent to the BR team at zijiao@stanford.edu through FormSubmit.',
+      disclosure: 'Your proposal will be sent to the BR team at brainresearcherinitiative@gmail.com through FormSubmit.',
       return_copy: 'Thank you. Your proposal has been passed to FormSubmit for delivery to the BR team.',
       default_return_url: 'https://brain-researcher.com/autoresearch?submitted=1',
     })

@@ -110,7 +110,7 @@ describe('<AutoresearchExperience>', () => {
     const { container } = render(<AutoresearchExperience />)
 
     const form = container.querySelector('form')
-    expect(form).toHaveAttribute('action', 'https://formsubmit.co/zijiao@stanford.edu')
+    expect(form).toHaveAttribute('action', 'https://formsubmit.co/brainresearcherinitiative@gmail.com')
     expect(form).toHaveAttribute('method', 'post')
     expect(form?.querySelector('input[name="_subject"]')).toHaveValue('BR Autoresearch proposal')
     expect(form?.querySelector('input[name="_template"]')).toHaveValue('table')
@@ -124,7 +124,7 @@ describe('<AutoresearchExperience>', () => {
     expect(honey).toHaveClass('sr-only')
     expect(screen.getByRole('button', { name: 'Submit proposal' })).toBeEnabled()
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Your proposal will be sent to the BR team at zijiao@stanford.edu through FormSubmit',
+      'Your proposal will be sent to the BR team at brainresearcherinitiative@gmail.com through FormSubmit',
     )
   })
 
@@ -165,7 +165,7 @@ describe('<AutoresearchExperience>', () => {
     )
 
     const form = container.querySelector('form')
-    expect(form).toHaveAttribute('action', 'https://formsubmit.co/zijiao@stanford.edu')
+    expect(form).toHaveAttribute('action', 'https://formsubmit.co/brainresearcherinitiative@gmail.com')
     expect(form).toHaveAttribute('method', 'post')
     expect(form?.querySelector('input[name="_next"]')).toHaveValue(
       'https://forms.example.org/autoresearch?submitted=1',

@@ -39,7 +39,7 @@ const processSteps = [
   ['05', 'Choose a next step', 'Close, reframe, or plan the next study or experiment.'],
 ] as const
 
-const defaultProposalDestination = 'https://formsubmit.co/zijiao@stanford.edu'
+const defaultProposalDestination = 'https://formsubmit.co/brainresearcherinitiative@gmail.com'
 
 function directionsFor(program: ResearchProgram): AgendaDirection[] {
   return program.agenda_directions ?? program.directions ?? []
