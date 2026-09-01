@@ -1,7 +1,12 @@
 {
   "schema_version": "br-autoresearch-public-content-v1",
+  "mission": {
+    "title": "Let's explore and define AI-assisted research together, as a community.",
+    "intro": "Brain Researcher (BR) is a collaborative research system for turning open scientific questions into shared, reviewable investigations. Researchers bring the starting point; BR helps refine the question, choose a first exploration, and bring evidence back for review.",
+    "participation": "Selected participants join the BR Autoresearch Consortium as active collaborators and co-authors on the consortium paper. Authorship reflects substantive contributions to the resulting work."
+  },
   "public_record": {
-    "copy": "The GitHub repository is a public campaign and episode record, not a live status feed, a submission path, or a validated scientific finding.",
+    "copy": "Explore the public campaign and its research episode archive on GitHub.",
     "href": "https://github.com/brain-researcher/br_autoresearch",
     "link_label": "Open on GitHub"
   },
@@ -15,8 +20,8 @@
   },
   "proposal_submission": {
     "subject": "BR Autoresearch proposal",
-    "disclosure": "Submitting sends your proposal to zijiao@stanford.edu through FormSubmit. FormSubmit may retain submission data for up to 30 days. Delivery to the recipient inbox is not guaranteed.",
-    "return_copy": "This return view does not verify that FormSubmit accepted the proposal or delivered it to the recipient inbox.",
+    "disclosure": "Your proposal will be sent to the BR team at zijiao@stanford.edu through FormSubmit.",
+    "return_copy": "Thank you. Your proposal has been passed to FormSubmit for delivery to the BR team.",
     "default_return_url": "https://brain-researcher.com/autoresearch?submitted=1"
   },
   "program_order": [

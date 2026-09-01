@@ -194,11 +194,13 @@ export function AutoresearchExperience({
               BR Autoresearch / Open call
             </p>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-gray-950 sm:text-5xl">
-              Propose a question for BR to investigate.
+              {content.mission.title}
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
-              Researchers share a starting point. The BR team refines the question with them,
-              chooses a first exploration, and brings evidence back for review.
+              {content.mission.intro}
+            </p>
+            <p className="mt-5 max-w-2xl border-l-2 border-gray-950 pl-4 text-sm font-medium leading-6 text-gray-800">
+              {content.mission.participation}
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <a
