@@ -24,7 +24,7 @@
     "test:watch": "vitest",
     "e2e": "node scripts/run-playwright.mjs test tests/e2e/chat.e2e.spec.ts --reporter=line",
     "e2e:list": "node scripts/run-playwright.mjs test --list",
-    "e2e:smoke": "node scripts/run-playwright.mjs test tests/e2e/health.endpoint.spec.ts --reporter=line",
+    "e2e:smoke": "node scripts/run-playwright.mjs test tests/e2e/health.endpoint.spec.ts tests/e2e/autoresearch.smoke.spec.ts --workers=1 --reporter=line",
     "e2e:routes": "node scripts/run-playwright.mjs test tests/e2e/routes.spec.ts --reporter=line",
     "e2e:prd": "node scripts/run-playwright.mjs test tests/e2e/prd.auth-routing.spec.ts tests/e2e/prd.keyflows.spec.ts tests/e2e/prd.tier1.core.spec.ts tests/e2e/prd.tier2.entry.spec.ts tests/e2e/prd.tier3.polish.spec.ts tests/e2e/prd.planned.workflow-execution.spec.ts --workers=1 --reporter=line",
     "e2e:real": "node scripts/run-playwright.mjs test --config=playwright.config.real-pipeline.ts --reporter=line",
