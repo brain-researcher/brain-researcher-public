@@ -29,9 +29,9 @@ test.describe('Autoresearch public page', () => {
     await expect(page.getByLabel('Research area')).toHaveValue('Neuroimaging and brain measurement')
     await expect(page.getByRole('heading', { name: 'From exploration to experiment.' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Submit proposal' })).toBeEnabled()
-    await expect(page.getByRole('status')).toContainText('Your proposal will be sent to the BR team at zijiao@stanford.edu through FormSubmit')
+    await expect(page.getByRole('status')).toContainText('Your proposal will be sent to the BR team at brainresearcherinitiative@gmail.com through FormSubmit')
     const form = page.locator('form')
-    await expect(form).toHaveAttribute('action', 'https://formsubmit.co/zijiao@stanford.edu')
+    await expect(form).toHaveAttribute('action', 'https://formsubmit.co/brainresearcherinitiative@gmail.com')
     await expect(form.locator('input[name="_subject"]')).toHaveValue('BR Autoresearch proposal')
     await expect(form.locator('input[name="_template"]')).toHaveValue('table')
     await expect(form.locator('input[name="_next"]')).toHaveValue(
