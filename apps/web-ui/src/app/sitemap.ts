@@ -8,6 +8,7 @@ const PUBLIC_ROUTES = [
   '/resources',
   '/docs',
   '/demos',
+  '/autoresearch',
   '/studio/plan-preview',
   '/auth/login',
   '/auth/signup',

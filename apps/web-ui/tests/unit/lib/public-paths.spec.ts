@@ -6,6 +6,8 @@ describe('isPublicPath', () => {
   it('treats legal pages as public', () => {
     expect(isPublicPath('/terms')).toBe(true)
     expect(isPublicPath('/privacy')).toBe(true)
+    expect(isPublicPath('/autoresearch')).toBe(true)
+    expect(isPublicPath('/autoresearch/extra')).toBe(false)
   })
 
   it('treats configured nested catalog routes as public', () => {

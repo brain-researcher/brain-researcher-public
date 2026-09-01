@@ -42,6 +42,8 @@ describe('isPublicPath', () => {
     expect(isPublicPath('/robots.txt')).toBe(true)
     expect(isPublicPath('/sitemap.xml')).toBe(true)
     expect(isPublicPath('/auth/forgot')).toBe(true)
+    expect(isPublicPath('/autoresearch')).toBe(true)
+    expect(isPublicPath('/autoresearch/extra')).toBe(false)
     expect(isPublicPath('/understand-br')).toBe(true)
     expect(isPublicPath('/understand-br/extra')).toBe(false)
     expect(isPublicPath('/api/orchestrator/auth/reset-password')).toBe(true)

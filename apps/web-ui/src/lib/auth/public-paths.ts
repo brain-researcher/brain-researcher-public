@@ -7,6 +7,7 @@ const PUBLIC_EXACT_PATHS = new Set([
   '/share',
   '/benchmarks',
   '/charts',
+  '/autoresearch',
   '/library',
   '/tools',
   '/understand-br',

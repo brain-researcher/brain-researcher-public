@@ -249,6 +249,7 @@ model_weights/
 !apps/web-ui/.eslintrc.json
 !apps/web-ui/messages/
 !apps/web-ui/messages/**/*.json
+!apps/web-ui/src/content/autoresearch/autoresearch-content.json
 !apps/web-ui/src/config/chat_scenarios.json
 !docs/mcp_tools.schema.json
 !docs/use_cases/**/*.json
