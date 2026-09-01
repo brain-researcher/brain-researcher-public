@@ -58,8 +58,30 @@ export interface NeuroimagingStartingQuestion {
   route: string
 }
 
+export interface PublicRecordLink {
+  copy: string
+  href: string
+  link_label: string
+}
+
+export interface FutureDirection {
+  eyebrow: string
+  title: string
+  body: string[]
+}
+
+export interface ProposalSubmission {
+  subject: string
+  disclosure: string
+  return_copy: string
+  default_return_url: string
+}
+
 export interface AutoresearchContent {
   schema_version: 'br-autoresearch-public-content-v1'
+  public_record: PublicRecordLink
+  future_direction: FutureDirection
+  proposal_submission: ProposalSubmission
   program_order: ProgramId[]
   programs: Record<ProgramId, ResearchProgram>
   neuroimaging_topics: NeuroimagingTopic[]

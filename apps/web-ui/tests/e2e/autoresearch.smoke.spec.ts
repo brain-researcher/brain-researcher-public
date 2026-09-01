@@ -19,7 +19,16 @@ test.describe('Autoresearch public page', () => {
 
     await expect(page.getByLabel('Scientific question')).toHaveValue(/After recomputing ALFF\/fALFF/)
     await expect(page.getByLabel('Research area')).toHaveValue('Neuroimaging and brain measurement')
-    await expect(page.getByRole('status')).toContainText('Submission is currently unavailable')
+    await expect(page.getByRole('heading', { name: 'From exploration to experiment.' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Submit proposal' })).toBeEnabled()
+    await expect(page.getByRole('status')).toContainText('Submitting sends your proposal to zijiao@stanford.edu through FormSubmit')
+    const form = page.locator('form')
+    await expect(form).toHaveAttribute('action', 'https://formsubmit.co/zijiao@stanford.edu')
+    await expect(form.locator('input[name="_subject"]')).toHaveValue('BR Autoresearch proposal')
+    await expect(form.locator('input[name="_template"]')).toHaveValue('table')
+    await expect(form.locator('input[name="_next"]')).toHaveValue(
+      'https://brain-researcher.com/autoresearch?submitted=1',
+    )
   })
 
   test('uses compact navigation and has no horizontal overflow at 320px', async ({ page }) => {
@@ -34,7 +43,8 @@ test.describe('Autoresearch public page', () => {
     await page.getByLabel('Choose a neuroimaging topic').selectOption('adhd')
     await page.getByRole('button', { name: /Use starting question: After recomputing ALFF\/fALFF/i }).click()
     await expect(page.getByLabel('Scientific question')).toHaveValue(/After recomputing ALFF\/fALFF/)
-    await expect(page.getByRole('button', { name: 'Submission unavailable' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'From exploration to experiment.' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Submit proposal' })).toBeEnabled()
 
     const widths = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,

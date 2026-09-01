@@ -90,24 +90,87 @@ describe('<AutoresearchExperience>', () => {
     expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalled()
   })
 
-  it('does not expose a fake submission state when no approved destination is configured', () => {
-    render(<AutoresearchExperience />)
+  it('submits through FormSubmit by default with the declared delivery boundary', () => {
+    const { container } = render(<AutoresearchExperience />)
 
-    expect(screen.getByRole('button', { name: 'Submission unavailable' })).toBeDisabled()
-    expect(screen.getByRole('status')).toHaveTextContent('does not send or store your information')
-    expect(screen.queryByText(/proposal submitted/i)).not.toBeInTheDocument()
+    const form = container.querySelector('form')
+    expect(form).toHaveAttribute('action', 'https://formsubmit.co/zijiao@stanford.edu')
+    expect(form).toHaveAttribute('method', 'post')
+    expect(form?.querySelector('input[name="_subject"]')).toHaveValue('BR Autoresearch proposal')
+    expect(form?.querySelector('input[name="_template"]')).toHaveValue('table')
+    expect(form?.querySelector('input[name="_next"]')).toHaveValue(
+      'https://brain-researcher.com/autoresearch?submitted=1',
+    )
+    const honey = form?.querySelector('input[name="_honey"]')
+    expect(honey).toHaveAttribute('aria-hidden', 'true')
+    expect(honey).toHaveAttribute('tabindex', '-1')
+    expect(honey).toHaveAttribute('autocomplete', 'off')
+    expect(honey).toHaveClass('sr-only')
+    expect(screen.getByRole('button', { name: 'Submit proposal' })).toBeEnabled()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Submitting sends your proposal to zijiao@stanford.edu through FormSubmit',
+    )
   })
 
-  it('exposes the configured form-encoded POST destination without inventing a success state', () => {
+  it('shows an unverified return state without claiming provider acceptance or inbox delivery', () => {
+    window.history.replaceState({}, '', '/autoresearch?submitted=1')
+
+    render(<AutoresearchExperience />)
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'This return view does not verify that FormSubmit accepted the proposal',
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('or delivered it to the recipient inbox')
+    expect(screen.getByRole('status')).not.toHaveTextContent(/submit again/i)
+  })
+
+  it('links the bounded public campaign record on GitHub', () => {
+    render(<AutoresearchExperience />)
+
+    expect(
+      screen.getByText(
+        'The GitHub repository is a public campaign and episode record, not a live status feed, a submission path, or a validated scientific finding.',
+      ),
+    ).toBeInTheDocument()
+    const publicRecordLink = screen.getByRole('link', { name: /Open on GitHub/i })
+    expect(publicRecordLink).toHaveAttribute(
+      'href',
+      'https://github.com/brain-researcher/br_autoresearch',
+    )
+    expect(publicRecordLink).toHaveAttribute('target', '_blank')
+    expect(publicRecordLink).toHaveAttribute('rel', 'noreferrer')
+  })
+
+  it('keeps the recipient fixed while allowing the return URL to be configured', () => {
     const { container } = render(
-      <AutoresearchExperience proposalDestination="https://forms.example.org/autoresearch" />,
+      <AutoresearchExperience
+        proposalReturnUrl="https://forms.example.org/autoresearch?submitted=1"
+      />,
     )
 
     const form = container.querySelector('form')
-    expect(form).toHaveAttribute('action', 'https://forms.example.org/autoresearch')
+    expect(form).toHaveAttribute('action', 'https://formsubmit.co/zijiao@stanford.edu')
     expect(form).toHaveAttribute('method', 'post')
+    expect(form?.querySelector('input[name="_next"]')).toHaveValue(
+      'https://forms.example.org/autoresearch?submitted=1',
+    )
     expect(screen.getByRole('button', { name: 'Submit proposal' })).toBeEnabled()
-    expect(screen.getByRole('status')).toHaveTextContent('configured external destination')
-    expect(screen.queryByText(/proposal submitted/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('through FormSubmit')
+  })
+
+  it('states the longer-term direction without presenting it as a current capability', () => {
+    render(<AutoresearchExperience />)
+
+    expect(screen.getByRole('heading', { name: 'From exploration to experiment.' })).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'The longer-term goal is to carry a promising lead from the research landscape into a prospective real-world experiment: decide what should be tested, record the prediction before the result is known, and learn from what happens.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'That experiment might be a behavioral task or game, a BCI session, an imaging study, an animal study, or wet-lab work. It would be designed and run by collaborating researchers and laboratories, with the result returning to inform the next question.',
+      ),
+    ).toBeInTheDocument()
   })
 })
