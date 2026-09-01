@@ -90,7 +90,23 @@ describe('<AutoresearchExperience>', () => {
     expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalled()
   })
 
-  it('submits through FormSubmit by default with the declared delivery boundary', () => {
+  it('presents the community mission and consortium co-authorship path', () => {
+    render(<AutoresearchExperience />)
+
+    expect(
+      screen.getByRole('heading', {
+        name: "Let's explore and define AI-assisted research together, as a community.",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Brain Researcher \(BR\) is a collaborative research system/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Selected participants join the BR Autoresearch Consortium/i),
+    ).toHaveTextContent('co-authors on the consortium paper')
+  })
+
+  it('submits through FormSubmit by default with a clear recipient', () => {
     const { container } = render(<AutoresearchExperience />)
 
     const form = container.querySelector('form')
@@ -108,28 +124,28 @@ describe('<AutoresearchExperience>', () => {
     expect(honey).toHaveClass('sr-only')
     expect(screen.getByRole('button', { name: 'Submit proposal' })).toBeEnabled()
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Submitting sends your proposal to zijiao@stanford.edu through FormSubmit',
+      'Your proposal will be sent to the BR team at zijiao@stanford.edu through FormSubmit',
     )
   })
 
-  it('shows an unverified return state without claiming provider acceptance or inbox delivery', () => {
+  it('thanks the participant after FormSubmit returns to the page', () => {
     window.history.replaceState({}, '', '/autoresearch?submitted=1')
 
     render(<AutoresearchExperience />)
 
     expect(screen.getByRole('status')).toHaveTextContent(
-      'This return view does not verify that FormSubmit accepted the proposal',
+      'Thank you. Your proposal has been passed to FormSubmit',
     )
-    expect(screen.getByRole('status')).toHaveTextContent('or delivered it to the recipient inbox')
-    expect(screen.getByRole('status')).not.toHaveTextContent(/submit again/i)
+    expect(screen.getByRole('status')).toHaveTextContent('for delivery to the BR team')
+    expect(screen.getByRole('status')).not.toHaveTextContent(/has been delivered/i)
   })
 
-  it('links the bounded public campaign record on GitHub', () => {
+  it('links the public campaign archive on GitHub', () => {
     render(<AutoresearchExperience />)
 
     expect(
       screen.getByText(
-        'The GitHub repository is a public campaign and episode record, not a live status feed, a submission path, or a validated scientific finding.',
+        'Explore the public campaign and its research episode archive on GitHub.',
       ),
     ).toBeInTheDocument()
     const publicRecordLink = screen.getByRole('link', { name: /Open on GitHub/i })

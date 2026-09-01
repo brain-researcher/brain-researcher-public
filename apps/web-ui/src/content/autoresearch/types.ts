@@ -64,6 +64,12 @@ export interface PublicRecordLink {
   link_label: string
 }
 
+export interface Mission {
+  title: string
+  intro: string
+  participation: string
+}
+
 export interface FutureDirection {
   eyebrow: string
   title: string
@@ -79,6 +85,7 @@ export interface ProposalSubmission {
 
 export interface AutoresearchContent {
   schema_version: 'br-autoresearch-public-content-v1'
+  mission: Mission
   public_record: PublicRecordLink
   future_direction: FutureDirection
   proposal_submission: ProposalSubmission
