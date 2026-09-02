@@ -68,6 +68,7 @@ export interface Mission {
   title: string
   intro: string
   participation: string
+  validation: string
 }
 
 export interface FutureDirection {

@@ -8,7 +8,7 @@ test.describe('Autoresearch public page', () => {
     await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible()
     await expect(
       page.getByRole('heading', {
-        name: "Let's explore and define AI-assisted research together, as a community.",
+        name: 'Autoresearch across neuroscience.',
       }),
     ).toBeVisible()
     await expect(page.getByText(/Selected participants join the BR Autoresearch Consortium/i)).toContainText(
