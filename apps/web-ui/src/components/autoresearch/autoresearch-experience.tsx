@@ -191,7 +191,7 @@ export function AutoresearchExperience({
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
-              BR Autoresearch / Open call
+              BR Autoresearch
             </p>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-gray-950 sm:text-5xl">
               {content.mission.title}
@@ -218,8 +218,7 @@ export function AutoresearchExperience({
               </a>
             </div>
             <p className="mt-6 max-w-2xl text-sm leading-6 text-gray-600">
-              The first goal is to find a lead worth following. A promising result can later move
-              into a separate validation study.
+              {content.mission.validation}
             </p>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-gray-600">
               {content.public_record.copy}{' '}

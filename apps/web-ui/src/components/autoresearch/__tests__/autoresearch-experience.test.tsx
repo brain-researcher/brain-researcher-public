@@ -90,20 +90,23 @@ describe('<AutoresearchExperience>', () => {
     expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalled()
   })
 
-  it('presents the community mission and consortium co-authorship path', () => {
+  it('presents the Autoresearch mission and consortium co-authorship path', () => {
     render(<AutoresearchExperience />)
 
     expect(
       screen.getByRole('heading', {
-        name: "Let's explore and define AI-assisted research together, as a community.",
+        name: 'Autoresearch across neuroscience.',
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/Brain Researcher \(BR\) is a collaborative research system/i),
+      screen.getByText(/We are starting BR Autoresearch projects across neuroimaging/i),
     ).toBeInTheDocument()
     expect(
       screen.getByText(/Selected participants join the BR Autoresearch Consortium/i),
     ).toHaveTextContent('co-authors on the consortium paper')
+    expect(
+      screen.getByText(/extend selected projects into real experiments/i),
+    ).toBeInTheDocument()
   })
 
   it('submits through FormSubmit by default with a clear recipient', () => {

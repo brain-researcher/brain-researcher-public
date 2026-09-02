@@ -1,9 +1,10 @@
 {
   "schema_version": "br-autoresearch-public-content-v1",
   "mission": {
-    "title": "Let's explore and define AI-assisted research together, as a community.",
-    "intro": "Brain Researcher (BR) is a collaborative research system for turning open scientific questions into shared, reviewable investigations. Researchers bring the starting point; BR helps refine the question, choose a first exploration, and bring evidence back for review.",
-    "participation": "Selected participants join the BR Autoresearch Consortium as active collaborators and co-authors on the consortium paper. Authorship reflects substantive contributions to the resulting work."
+    "title": "Autoresearch across neuroscience.",
+    "intro": "We are starting BR Autoresearch projects across neuroimaging, BCI, behavior, mechanisms, and intervention. Each project begins by identifying a phenomenon in existing data or a tension in the literature. We examine whether it persists under alternative measurements and analysis choices, whether it generalizes when comparable datasets exist, and whether plausible competing explanations can account for it. Researchers review the evidence and use it to refine the claim, redirect the question, or define a prospective experiment. Together, these projects will form a growing Autoresearch landscape across neuroscience.",
+    "participation": "Selected participants join the BR Autoresearch Consortium as collaborators and co-authors on the consortium paper. They help shape the question, review the analysis, and interpret what the evidence does and does not support.",
+    "validation": "Over time, we also want to extend selected projects into real experiments, testing prospectively whether findings from existing data hold in newly collected data."
   },
   "public_record": {
     "copy": "Explore the public campaign and its research episode archive on GitHub.",
@@ -165,7 +166,7 @@
           "open": "Reliability is often treated as a property of a score, even though it depends on design, contrast, preprocessing, state and population.",
           "anchors": [
             {
-              "title": "What is the test-retest reliability of common task-fMRI measures?",
+              "title": "What Is the Test-Retest Reliability of Common Task-Functional MRI Measures? New Empirical Evidence and a Meta-Analysis",
               "citation": "Elliott et al. (2020)",
               "venue": "Psychological Science",
               "url": "https://doi.org/10.1177/0956797620916786"
@@ -173,8 +174,8 @@
             {
               "title": "A decade of test-retest reliability of functional connectivity: a systematic review and meta-analysis",
               "citation": "Noble et al. (2019)",
-              "venue": "Network Neuroscience",
-              "url": "https://doi.org/10.1162/netn_a_00061"
+              "venue": "NeuroImage",
+              "url": "https://doi.org/10.1016/j.neuroimage.2019.116157"
             }
           ],
           "questions": [
@@ -194,7 +195,7 @@
           "open": "Removing site signal can also remove biology, and a method that works within known sites may fail on a new scanner or population.",
           "anchors": [
             {
-              "title": "Harmonization of resting-state functional MRI data across multiple imaging sites",
+              "title": "Harmonization of resting-state functional MRI data across multiple imaging sites via the separation of site differences into sampling bias and measurement bias",
               "citation": "Yamashita et al. (2019)",
               "venue": "PLOS Biology",
               "url": "https://doi.org/10.1371/journal.pbio.3000042"
@@ -310,7 +311,7 @@
           "open": "Many models still fail to improve decisions, generalize across sites, or distinguish prognosis from treatment selection.",
           "anchors": [
             {
-              "title": "A neuromarker for sustained attention from whole-brain functional connectivity",
+              "title": "A neuromarker of sustained attention from whole-brain functional connectivity",
               "citation": "Rosenberg et al. (2016)",
               "venue": "Nature Neuroscience",
               "url": "https://doi.org/10.1038/nn.4179"
@@ -369,12 +370,12 @@
           "anchors": [
             {
               "title": "Neuroadaptive Bayesian optimization and hypothesis testing",
-              "citation": "Lorenz et al. (2016)",
-              "venue": "PLOS Computational Biology",
-              "url": "https://doi.org/10.1371/journal.pcbi.1004755"
+              "citation": "Lorenz et al. (2017)",
+              "venue": "Trends in Cognitive Sciences",
+              "url": "https://doi.org/10.1016/j.tics.2017.01.006"
             },
             {
-              "title": "What is the test-retest reliability of common task-fMRI measures?",
+              "title": "What Is the Test-Retest Reliability of Common Task-Functional MRI Measures? New Empirical Evidence and a Meta-Analysis",
               "citation": "Elliott et al. (2020)",
               "venue": "Psychological Science",
               "url": "https://doi.org/10.1177/0956797620916786"
@@ -683,7 +684,7 @@
           "open": "Offline accuracy does not tell us when the machine should assist, yield, recover from error or preserve a users sense of agency.",
           "anchors": [
             {
-              "title": "Restoration of reaching and grasping movements through brain-controlled muscle stimulation in a person with tetraplegia",
+              "title": "Restoration of reaching and grasping movements through brain-controlled muscle stimulation in a person with tetraplegia: a proof-of-concept demonstration",
               "citation": "Ajiboye et al. (2017)",
               "venue": "The Lancet",
               "url": "https://doi.org/10.1016/S0140-6736(17)30601-3"
@@ -733,7 +734,7 @@
               "url": "https://doi.org/10.1038/s41586-023-06094-5"
             },
             {
-              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson disease",
+              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson’s disease",
               "citation": "Gilron et al. (2021)",
               "venue": "Nature Biotechnology",
               "url": "https://doi.org/10.1038/s41587-021-00897-5"
@@ -771,7 +772,7 @@
               "url": "https://doi.org/10.1038/s41586-023-06094-5"
             },
             {
-              "title": "Restoration of reaching and grasping movements through brain-controlled muscle stimulation in a person with tetraplegia",
+              "title": "Restoration of reaching and grasping movements through brain-controlled muscle stimulation in a person with tetraplegia: a proof-of-concept demonstration",
               "citation": "Ajiboye et al. (2017)",
               "venue": "The Lancet",
               "url": "https://doi.org/10.1016/S0140-6736(17)30601-3"
@@ -1406,7 +1407,7 @@
             },
             {
               "title": "Neuronal wiring diagram of an adult brain",
-              "citation": "Schlegel et al. (2024)",
+              "citation": "Dorkenwald et al. (2024)",
               "venue": "Nature",
               "url": "https://doi.org/10.1038/s41586-024-07558-y"
             }
@@ -1919,13 +1920,13 @@
               "url": "https://doi.org/10.1038/s41591-021-01480-w"
             },
             {
-              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson disease",
+              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson’s disease",
               "citation": "Gilron et al. (2021)",
               "venue": "Nature Biotechnology",
               "url": "https://doi.org/10.1038/s41587-021-00897-5"
             },
             {
-              "title": "Chronic adaptive deep brain stimulation versus conventional stimulation in Parkinson disease: a blinded randomized feasibility trial",
+              "title": "Chronic adaptive deep brain stimulation versus conventional stimulation in Parkinson’s disease: a blinded randomized feasibility trial",
               "citation": "Oehrn et al. (2024)",
               "venue": "Nature Medicine",
               "url": "https://doi.org/10.1038/s41591-024-03196-z"
@@ -1963,7 +1964,7 @@
               "url": "https://doi.org/10.1038/s41591-021-01480-w"
             },
             {
-              "title": "Lecanemab in early Alzheimer disease",
+              "title": "Lecanemab in Early Alzheimer’s Disease",
               "citation": "van Dyck et al. (2023)",
               "venue": "New England Journal of Medicine",
               "url": "https://doi.org/10.1056/NEJMoa2212948"
@@ -1995,7 +1996,7 @@
               "url": "https://doi.org/10.1038/ncomms13669"
             },
             {
-              "title": "A neuromarker for sustained attention from whole-brain functional connectivity",
+              "title": "A neuromarker of sustained attention from whole-brain functional connectivity",
               "citation": "Rosenberg et al. (2016)",
               "venue": "Nature Neuroscience",
               "url": "https://doi.org/10.1038/nn.4179"
@@ -2065,13 +2066,13 @@
           "open": "Adaptive benefit depends on a valid biomarker, stable sensing, interpretable control policy and evidence that adaptation beats a simpler schedule.",
           "anchors": [
             {
-              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson disease",
+              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson’s disease",
               "citation": "Gilron et al. (2021)",
               "venue": "Nature Biotechnology",
               "url": "https://doi.org/10.1038/s41587-021-00897-5"
             },
             {
-              "title": "Chronic adaptive deep brain stimulation versus conventional stimulation in Parkinson disease: a blinded randomized feasibility trial",
+              "title": "Chronic adaptive deep brain stimulation versus conventional stimulation in Parkinson’s disease: a blinded randomized feasibility trial",
               "citation": "Oehrn et al. (2024)",
               "venue": "Nature Medicine",
               "url": "https://doi.org/10.1038/s41591-024-03196-z"
@@ -2109,13 +2110,13 @@
               "url": "https://doi.org/10.1038/s41591-021-01480-w"
             },
             {
-              "title": "Chronic adaptive deep brain stimulation versus conventional stimulation in Parkinson disease: a blinded randomized feasibility trial",
+              "title": "Chronic adaptive deep brain stimulation versus conventional stimulation in Parkinson’s disease: a blinded randomized feasibility trial",
               "citation": "Oehrn et al. (2024)",
               "venue": "Nature Medicine",
               "url": "https://doi.org/10.1038/s41591-024-03196-z"
             },
             {
-              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson disease",
+              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson’s disease",
               "citation": "Gilron et al. (2021)",
               "venue": "Nature Biotechnology",
               "url": "https://doi.org/10.1038/s41587-021-00897-5"
@@ -2153,7 +2154,7 @@
               "url": "https://doi.org/10.1038/s41586-018-0649-2"
             },
             {
-              "title": "Restoration of reaching and grasping movements through brain-controlled muscle stimulation in a person with tetraplegia",
+              "title": "Restoration of reaching and grasping movements through brain-controlled muscle stimulation in a person with tetraplegia: a proof-of-concept demonstration",
               "citation": "Ajiboye et al. (2017)",
               "venue": "The Lancet",
               "url": "https://doi.org/10.1016/S0140-6736(17)30601-3"
@@ -2191,7 +2192,7 @@
               "url": "https://doi.org/10.1038/s41586-023-06094-5"
             },
             {
-              "title": "Restoration of reaching and grasping movements through brain-controlled muscle stimulation in a person with tetraplegia",
+              "title": "Restoration of reaching and grasping movements through brain-controlled muscle stimulation in a person with tetraplegia: a proof-of-concept demonstration",
               "citation": "Ajiboye et al. (2017)",
               "venue": "The Lancet",
               "url": "https://doi.org/10.1016/S0140-6736(17)30601-3"
@@ -2223,7 +2224,7 @@
               "url": "https://doi.org/10.1056/NEJMoa2032994"
             },
             {
-              "title": "Lecanemab in early Alzheimer disease",
+              "title": "Lecanemab in Early Alzheimer’s Disease",
               "citation": "van Dyck et al. (2023)",
               "venue": "New England Journal of Medicine",
               "url": "https://doi.org/10.1056/NEJMoa2212948"
@@ -2267,7 +2268,7 @@
               "url": "https://doi.org/10.1056/NEJMoa1706198"
             },
             {
-              "title": "Phase I trial of hES cell-derived dopaminergic neurons for Parkinson disease",
+              "title": "Phase I trial of hES cell-derived dopaminergic neurons for Parkinson’s disease",
               "citation": "Tabar et al. (2025)",
               "venue": "Nature",
               "url": "https://doi.org/10.1038/s41586-025-08845-y"
@@ -2299,7 +2300,7 @@
               "url": "https://doi.org/10.1176/appi.ajp.2019.19070720"
             },
             {
-              "title": "Chronic adaptive deep brain stimulation versus conventional stimulation in Parkinson disease: a blinded randomized feasibility trial",
+              "title": "Chronic adaptive deep brain stimulation versus conventional stimulation in Parkinson’s disease: a blinded randomized feasibility trial",
               "citation": "Oehrn et al. (2024)",
               "venue": "Nature Medicine",
               "url": "https://doi.org/10.1038/s41591-024-03196-z"
@@ -2331,7 +2332,7 @@
           "open": "Effects can decay, depend on continued support, or fail under real behavior, comorbidity and care constraints.",
           "anchors": [
             {
-              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson disease",
+              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson’s disease",
               "citation": "Gilron et al. (2021)",
               "venue": "Nature Biotechnology",
               "url": "https://doi.org/10.1038/s41587-021-00897-5"
@@ -2343,7 +2344,7 @@
               "url": "https://doi.org/10.1038/s41586-023-06094-5"
             },
             {
-              "title": "Lecanemab in early Alzheimer disease",
+              "title": "Lecanemab in Early Alzheimer’s Disease",
               "citation": "van Dyck et al. (2023)",
               "venue": "New England Journal of Medicine",
               "url": "https://doi.org/10.1056/NEJMoa2212948"
@@ -2407,19 +2408,19 @@
           "open": "Safety cannot be reduced to adverse-event counts when devices learn, patients adapt and some interventions are difficult to reverse.",
           "anchors": [
             {
-              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson disease",
+              "title": "Long-term wireless streaming of neural recordings for circuit discovery and adaptive stimulation in individuals with Parkinson’s disease",
               "citation": "Gilron et al. (2021)",
               "venue": "Nature Biotechnology",
               "url": "https://doi.org/10.1038/s41587-021-00897-5"
             },
             {
-              "title": "Chronic adaptive deep brain stimulation versus conventional stimulation in Parkinson disease: a blinded randomized feasibility trial",
+              "title": "Chronic adaptive deep brain stimulation versus conventional stimulation in Parkinson’s disease: a blinded randomized feasibility trial",
               "citation": "Oehrn et al. (2024)",
               "venue": "Nature Medicine",
               "url": "https://doi.org/10.1038/s41591-024-03196-z"
             },
             {
-              "title": "Phase I trial of hES cell-derived dopaminergic neurons for Parkinson disease",
+              "title": "Phase I trial of hES cell-derived dopaminergic neurons for Parkinson’s disease",
               "citation": "Tabar et al. (2025)",
               "venue": "Nature",
               "url": "https://doi.org/10.1038/s41586-025-08845-y"
@@ -2471,7 +2472,7 @@
       "anchors": [
         {
           "title": "Altered baseline brain activity in children with ADHD revealed by resting-state functional MRI",
-          "citation": "Yu-Feng et al. (2006)",
+          "citation": "Yu-Feng et al. (2007)",
           "url": "https://doi.org/10.1016/j.braindev.2006.07.002"
         },
         {
@@ -2481,7 +2482,7 @@
         },
         {
           "title": "Large-scale brain systems in ADHD: beyond the prefrontal–striatal model",
-          "citation": "Castellanos et al. (2011)",
+          "citation": "Castellanos et al. (2012)",
           "url": "https://doi.org/10.1016/j.tics.2011.11.007"
         }
       ],
@@ -2494,7 +2495,7 @@
       "anchors": [
         {
           "title": "The Adaptive Brain: Aging and Neurocognitive Scaffolding",
-          "citation": "Park et al. (2008)",
+          "citation": "Park et al. (2009)",
           "url": "https://doi.org/10.1146/annurev.psych.59.103006.093656"
         },
         {
@@ -2526,8 +2527,8 @@
           "url": "https://doi.org/10.1101/cshperspect.a006213"
         },
         {
-          "title": "Alzheimer Disease as a Vascular Disorder",
-          "citation": "Torre (2002)",
+          "title": "Alzheimer disease as a vascular disorder: nosological evidence",
+          "citation": "de la Torre (2002)",
           "url": "https://doi.org/10.1161/01.str.0000014421.15948.67"
         }
       ],
@@ -2586,7 +2587,7 @@
       "anchors": [
         {
           "title": "The autism brain imaging data exchange: towards a large-scale evaluation of the intrinsic brain architecture in autism",
-          "citation": "Martino et al. (2013)",
+          "citation": "Di Martino et al. (2014)",
           "url": "https://doi.org/10.1038/mp.2013.78"
         },
         {
@@ -2618,9 +2619,9 @@
           "url": "https://doi.org/10.1038/sdata.2018.110"
         },
         {
-          "title": "Statistical Parametric Mapping: The Analysis of Functional Brain Images",
-          "citation": "Penny et al. (2007)",
-          "url": "https://openalex.org/W1528119265"
+          "title": "PyBIDS: Python tools for BIDS datasets",
+          "citation": "Yarkoni et al. (2019)",
+          "url": "https://doi.org/10.21105/joss.01294"
         }
       ],
       "question_count": 1,
@@ -2678,7 +2679,7 @@
       "anchors": [
         {
           "title": "The Adaptive Brain: Aging and Neurocognitive Scaffolding",
-          "citation": "Park et al. (2008)",
+          "citation": "Park et al. (2009)",
           "url": "https://doi.org/10.1146/annurev.psych.59.103006.093656"
         },
         {
@@ -2706,8 +2707,8 @@
         },
         {
           "title": "Co-planar stereotaxic atlas of the human brain : 3-dimensional proportional system : an approach to cerebral imaging",
-          "citation": "Talairach et al. (1988)",
-          "url": "https://doi.org/10.1111/j.1600-0897.1993.tb00608.x"
+          "citation": "Talairach & Tournoux (1988)",
+          "url": "https://www.ncbi.nlm.nih.gov/nlmcatalog/8808660"
         },
         {
           "title": "Infant Brain Atlases from Neonates to 1- and 2-Year-Olds",
@@ -2751,9 +2752,9 @@
           "url": "https://doi.org/10.1038/s41586-022-04492-9"
         },
         {
-          "title": "Towards Reproducible Brain-Wide Association Studies",
-          "citation": "Marek et al. (2020)",
-          "url": "https://doi.org/10.1101/2020.08.21.257758"
+          "title": "Study design features increase replicability in brain-wide association studies",
+          "citation": "Kang et al. (2024)",
+          "url": "https://doi.org/10.1038/s41586-024-08260-9"
         },
         {
           "title": "Genome-wide association studies of brain imaging phenotypes in UK Biobank",
@@ -2775,7 +2776,7 @@
         },
         {
           "title": "Functional topography in the human cerebellum: A meta-analysis of neuroimaging studies",
-          "citation": "Stoodley et al. (2008)",
+          "citation": "Stoodley et al. (2009)",
           "url": "https://doi.org/10.1016/j.neuroimage.2008.08.039"
         },
         {
@@ -2802,9 +2803,9 @@
           "url": "https://doi.org/10.1093/brain/awm319"
         },
         {
-          "title": "Classification system for malformations of cortical development",
-          "citation": "Barkovich et al. (2001)",
-          "url": "https://doi.org/10.1212/wnl.57.12.2168"
+          "title": "Benchmarking functional connectome-based predictive models for resting-state fMRI",
+          "citation": "Dadi et al. (2019)",
+          "url": "https://doi.org/10.1016/j.neuroimage.2019.02.062"
         }
       ],
       "question_count": 1,
@@ -2844,12 +2845,12 @@
         },
         {
           "title": "Connectome-Based Predictive Modeling of Creativity Anxiety",
-          "citation": "Ren et al. (2020)",
+          "citation": "Ren et al. (2021)",
           "url": "https://doi.org/10.1016/j.neuroimage.2020.117469"
         },
         {
           "title": "Neurobiological substrates of the positive formal thought disorder in schizophrenia revealed by seed connectome-based predictive modeling",
-          "citation": "Ji et al. (2021)",
+          "citation": "Chen et al. (2021)",
           "url": "https://doi.org/10.1016/j.nicl.2021.102666"
         }
       ],
@@ -2862,7 +2863,7 @@
       "anchors": [
         {
           "title": "BrainNetCNN: Convolutional neural networks for brain networks; towards predicting neurodevelopment",
-          "citation": "Kawahara et al. (2016)",
+          "citation": "Kawahara et al. (2017)",
           "url": "https://doi.org/10.1016/j.neuroimage.2016.09.046"
         },
         {
@@ -2895,7 +2896,7 @@
         },
         {
           "title": "Cerebral cortical folding, parcellation, and connectivity in humans, nonhuman primates, and mice",
-          "citation": "Essen et al. (2019)",
+          "citation": "Van Essen et al. (2019)",
           "url": "https://doi.org/10.1073/pnas.1902299116"
         }
       ],
@@ -2977,7 +2978,7 @@
       "anchors": [
         {
           "title": "Functional connectivity of default mode network components: Correlation, anticorrelation, and causality",
-          "citation": "Uddin et al. (2008)",
+          "citation": "Uddin et al. (2009)",
           "url": "https://doi.org/10.1002/hbm.20531"
         },
         {
@@ -2987,7 +2988,7 @@
         },
         {
           "title": "Rumination and the default mode network: Meta-analysis of brain imaging studies and implications for depression",
-          "citation": "Zhou et al. (2019)",
+          "citation": "Zhou et al. (2020)",
           "url": "https://doi.org/10.1016/j.neuroimage.2019.116287"
         }
       ],
@@ -3005,7 +3006,7 @@
         },
         {
           "title": "Direct and fast detection of neuronal activation in the human brain with diffusion MRI",
-          "citation": "Bihan et al. (2006)",
+          "citation": "Le Bihan et al. (2006)",
           "url": "https://doi.org/10.1073/pnas.0600644103"
         },
         {
@@ -3028,12 +3029,12 @@
         },
         {
           "title": "Task-based dynamic functional connectivity: Recent findings and open questions",
-          "citation": "González-Castillo et al. (2017)",
+          "citation": "González-Castillo et al. (2018)",
           "url": "https://doi.org/10.1016/j.neuroimage.2017.08.006"
         },
         {
           "title": "Dynamic functional connectivity and brain metastability during altered states of consciousness",
-          "citation": "Cavanna et al. (2017)",
+          "citation": "Cavanna et al. (2018)",
           "url": "https://doi.org/10.1016/j.neuroimage.2017.09.065"
         }
       ],
@@ -3148,7 +3149,7 @@
         },
         {
           "title": "A Review of the Epidemiology of Temporal Lobe Epilepsy",
-          "citation": "Téllez‐Zenteno et al. (2011)",
+          "citation": "Téllez‐Zenteno et al. (2012)",
           "url": "https://doi.org/10.1155/2012/630853"
         }
       ],
@@ -3206,19 +3207,19 @@
       "name": "Explainability",
       "anchors": [
         {
-          "title": "Does Fast Dissociation From the Dopamine D<sub>2</sub>Receptor Explain the Action of Atypical Antipsychotics?: A New Hypothesis",
-          "citation": "Kapur et al. (2001)",
-          "url": "https://doi.org/10.1176/appi.ajp.158.3.360"
+          "title": "Applications of interpretable deep learning in neuroimaging: A comprehensive review",
+          "citation": "Munroe et al. (2024)",
+          "url": "https://doi.org/10.1162/imag_a_00214"
         },
         {
-          "title": "Explaining medically unexplained symptoms-models and mechanisms",
-          "citation": "Rief et al. (2007)",
-          "url": "https://doi.org/10.1016/j.cpr.2007.07.005"
+          "title": "Explainable AI: A review of applications to neuroimaging data",
+          "citation": "Farahani et al. (2022)",
+          "url": "https://doi.org/10.3389/fnins.2022.906290"
         },
         {
-          "title": "Meta-analytic methods for neuroimaging data explained",
-          "citation": "Raduà et al. (2012)",
-          "url": "https://doi.org/10.1186/2045-5380-2-6"
+          "title": "On the interpretation of weight vectors of linear models in multivariate neuroimaging",
+          "citation": "Haufe et al. (2014)",
+          "url": "https://doi.org/10.1016/j.neuroimage.2013.10.067"
         }
       ],
       "question_count": 1,
@@ -3309,7 +3310,7 @@
         },
         {
           "title": "Functions of the human frontoparietal attention network: Evidence from neuroimaging",
-          "citation": "Scolari et al. (2014)",
+          "citation": "Scolari et al. (2015)",
           "url": "https://doi.org/10.1016/j.cobeha.2014.08.003"
         }
       ],
@@ -3322,7 +3323,7 @@
       "anchors": [
         {
           "title": "Spurious but systematic correlations in functional connectivity MRI networks arise from subject motion",
-          "citation": "Power et al. (2011)",
+          "citation": "Power et al. (2012)",
           "url": "https://doi.org/10.1016/j.neuroimage.2011.10.018"
         },
         {
@@ -3332,7 +3333,7 @@
         },
         {
           "title": "Exploring the brain network: A review on resting-state fMRI functional connectivity",
-          "citation": "Heuvel et al. (2010)",
+          "citation": "van den Heuvel et al. (2010)",
           "url": "https://doi.org/10.1016/j.euroneuro.2010.03.008"
         }
       ],
@@ -3373,7 +3374,7 @@
         },
         {
           "title": "A dynamic graph convolutional neural network framework reveals new insights into connectome dysfunctions in ADHD",
-          "citation": "Zhao et al. (2021)",
+          "citation": "Zhao et al. (2022)",
           "url": "https://doi.org/10.1016/j.neuroimage.2021.118774"
         },
         {
@@ -3424,7 +3425,7 @@
         },
         {
           "title": "Head motion during MRI acquisition reduces gray matter volume and thickness estimates",
-          "citation": "Reuter et al. (2014)",
+          "citation": "Reuter et al. (2015)",
           "url": "https://doi.org/10.1016/j.neuroimage.2014.12.006"
         }
       ],
@@ -3442,7 +3443,7 @@
         },
         {
           "title": "Harmonization of large MRI datasets for the analysis of brain imaging patterns throughout the lifespan",
-          "citation": "Pomponio et al. (2019)",
+          "citation": "Pomponio et al. (2020)",
           "url": "https://doi.org/10.1016/j.neuroimage.2019.116450"
         },
         {
@@ -3465,7 +3466,7 @@
         },
         {
           "title": "Head motion during MRI acquisition reduces gray matter volume and thickness estimates",
-          "citation": "Reuter et al. (2014)",
+          "citation": "Reuter et al. (2015)",
           "url": "https://doi.org/10.1016/j.neuroimage.2014.12.006"
         },
         {
@@ -3488,7 +3489,7 @@
         },
         {
           "title": "The impact of ultra-high field MRI on cognitive and computational neuroimaging",
-          "citation": "Martino et al. (2017)",
+          "citation": "De Martino et al. (2018)",
           "url": "https://doi.org/10.1016/j.neuroimage.2017.03.060"
         },
         {
@@ -3534,7 +3535,7 @@
         },
         {
           "title": "The development of brain network hubs",
-          "citation": "Oldham et al. (2018)",
+          "citation": "Oldham et al. (2019)",
           "url": "https://doi.org/10.1016/j.dcn.2018.12.005"
         },
         {
@@ -3552,7 +3553,7 @@
       "anchors": [
         {
           "title": "The Human Connectome Project: A data acquisition perspective",
-          "citation": "Essen et al. (2012)",
+          "citation": "Van Essen et al. (2012)",
           "url": "https://doi.org/10.1016/j.neuroimage.2012.02.018"
         },
         {
@@ -3562,7 +3563,7 @@
         },
         {
           "title": "The Lifespan Human Connectome Project in Aging: An overview",
-          "citation": "Bookheimer et al. (2018)",
+          "citation": "Bookheimer et al. (2019)",
           "url": "https://doi.org/10.1016/j.neuroimage.2018.10.009"
         }
       ],
@@ -3575,12 +3576,12 @@
       "anchors": [
         {
           "title": "Cortical thickness or grey matter volume? The importance of selecting the phenotype for imaging genetics studies",
-          "citation": "Winkler et al. (2009)",
+          "citation": "Winkler et al. (2010)",
           "url": "https://doi.org/10.1016/j.neuroimage.2009.12.028"
         },
         {
           "title": "Cortical Brain Abnormalities in 4474 Individuals With Schizophrenia and 5098 Control Subjects via the Enhancing Neuro Imaging Genetics Through Meta Analysis (ENIGMA) Consortium",
-          "citation": "Erp et al. (2018)",
+          "citation": "van Erp et al. (2018)",
           "url": "https://doi.org/10.1016/j.biopsych.2018.04.023"
         },
         {
@@ -3603,12 +3604,12 @@
         },
         {
           "title": "Linked independent component analysis for multimodal data fusion",
-          "citation": "Groves et al. (2010)",
+          "citation": "Groves et al. (2011)",
           "url": "https://doi.org/10.1016/j.neuroimage.2010.09.073"
         },
         {
           "title": "Capturing inter-subject variability with group independent component analysis of fMRI data: A simulation study",
-          "citation": "Allen et al. (2011)",
+          "citation": "Allen et al. (2012)",
           "url": "https://doi.org/10.1016/j.neuroimage.2011.10.010"
         }
       ],
@@ -3672,7 +3673,7 @@
         },
         {
           "title": "Machine learning in neuroimaging: Progress and challenges",
-          "citation": "Davatzikos (2018)",
+          "citation": "Davatzikos (2019)",
           "url": "https://doi.org/10.1016/j.neuroimage.2018.10.003"
         },
         {
@@ -3740,7 +3741,7 @@
           "url": "https://doi.org/10.1111/j.1365-2796.2004.01380.x"
         },
         {
-          "title": "Mild Cognitive Impairment",
+          "title": "Mild cognitive impairment: ten years later",
           "citation": "Petersen et al. (2009)",
           "url": "https://doi.org/10.1001/archneurol.2009.266"
         },
@@ -3758,9 +3759,9 @@
       "name": "Modularity",
       "anchors": [
         {
-          "title": "Modularity of music processing",
-          "citation": "Peretz et al. (2003)",
-          "url": "https://doi.org/10.1038/nn1083"
+          "title": "Robust detection of dynamic community structure in networks",
+          "citation": "Bassett et al. (2013)",
+          "url": "https://doi.org/10.1063/1.4790830"
         },
         {
           "title": "A novel brain partition highlights the modular skeleton shared by structure and function",
@@ -3782,7 +3783,7 @@
       "anchors": [
         {
           "title": "Contribution of transcranial magnetic stimulation to the understanding of cortical mechanisms involved in motor control",
-          "citation": "Reis et al. (2007)",
+          "citation": "Reis et al. (2008)",
           "url": "https://doi.org/10.1113/jphysiol.2007.144824"
         },
         {
@@ -3833,7 +3834,7 @@
         },
         {
           "title": "Predicting brain-age from multimodal imaging data captures cognitive impairment",
-          "citation": "Liem et al. (2016)",
+          "citation": "Liem et al. (2017)",
           "url": "https://doi.org/10.1016/j.neuroimage.2016.11.005"
         },
         {
@@ -3850,19 +3851,19 @@
       "name": "Multiple Comparisons",
       "anchors": [
         {
-          "title": "A quantitative comparison of NIRS and fMRI across multiple cognitive tasks",
-          "citation": "Cui et al. (2010)",
-          "url": "https://doi.org/10.1016/j.neuroimage.2010.10.069"
+          "title": "Thresholding of statistical maps in functional neuroimaging using the false discovery rate",
+          "citation": "Genovese et al. (2002)",
+          "url": "https://doi.org/10.1006/nimg.2001.1037"
         },
         {
           "title": "Corrections for multiple comparisons in voxel-based lesion-symptom mapping",
-          "citation": "Mirman et al. (2017)",
+          "citation": "Mirman et al. (2018)",
           "url": "https://doi.org/10.1016/j.neuropsychologia.2017.08.025"
         },
         {
-          "title": "Comparison of multiple tau-PET measures as biomarkers in aging and Alzheimer's disease",
-          "citation": "Maaß et al. (2017)",
-          "url": "https://doi.org/10.1016/j.neuroimage.2017.05.058"
+          "title": "Nonparametric permutation tests for functional neuroimaging: A primer with examples",
+          "citation": "Nichols & Holmes (2002)",
+          "url": "https://doi.org/10.1002/hbm.1058"
         }
       ],
       "question_count": 1,
@@ -3902,7 +3903,7 @@
         },
         {
           "title": "Graph Neural Networks in Network Neuroscience",
-          "citation": "Bessadok et al. (2022)",
+          "citation": "Bessadok et al. (2023)",
           "url": "https://doi.org/10.1109/tpami.2022.3209686"
         },
         {
@@ -3925,7 +3926,7 @@
         },
         {
           "title": "BrainNetCNN: Convolutional neural networks for brain networks; towards predicting neurodevelopment",
-          "citation": "Kawahara et al. (2016)",
+          "citation": "Kawahara et al. (2017)",
           "url": "https://doi.org/10.1016/j.neuroimage.2016.09.046"
         },
         {
@@ -3943,7 +3944,7 @@
       "anchors": [
         {
           "title": "Sharing voxelwise neuroimaging results from rhesus monkeys and other species with Neurovault",
-          "citation": "Fox et al. (2020)",
+          "citation": "Fox et al. (2021)",
           "url": "https://doi.org/10.1016/j.neuroimage.2020.117518"
         },
         {
@@ -4012,7 +4013,7 @@
       "anchors": [
         {
           "title": "Meta-analytic evidence for common and distinct neural networks associated with directly experienced pain and empathy for pain",
-          "citation": "Lamm et al. (2010)",
+          "citation": "Lamm et al. (2011)",
           "url": "https://doi.org/10.1016/j.neuroimage.2010.10.014"
         },
         {
@@ -4132,7 +4133,7 @@
         },
         {
           "title": "Single subject prediction of brain disorders in neuroimaging: Promises and pitfalls",
-          "citation": "Arbabshirani et al. (2016)",
+          "citation": "Arbabshirani et al. (2017)",
           "url": "https://doi.org/10.1016/j.neuroimage.2016.02.079"
         },
         {
@@ -4149,9 +4150,9 @@
       "name": "Preregistration",
       "anchors": [
         {
-          "title": "Preregistration.",
-          "citation": "(22793446) et al. (2025)",
-          "url": "https://doi.org/10.1371/journal.pone.0336356.s001"
+          "title": "The case for preregistering all region of interest (ROI) analyses in neuroimaging research",
+          "citation": "Gentili et al. (2021)",
+          "url": "https://doi.org/10.1111/ejn.14954"
         },
         {
           "title": "Survey on Open Science Practices in Functional Neuroimaging",
@@ -4160,7 +4161,7 @@
         },
         {
           "title": "Opportunities for increased reproducibility and replicability of developmental neuroimaging",
-          "citation": "Klapwijk et al. (2020)",
+          "citation": "Klapwijk et al. (2021)",
           "url": "https://doi.org/10.1016/j.dcn.2020.100902"
         }
       ],
@@ -4196,7 +4197,7 @@
       "anchors": [
         {
           "title": "Image processing and Quality Control for the first 10,000 brain imaging datasets from UK Biobank",
-          "citation": "Alfaro‐Almagro et al. (2017)",
+          "citation": "Alfaro‐Almagro et al. (2018)",
           "url": "https://doi.org/10.1016/j.neuroimage.2017.10.034"
         },
         {
@@ -4242,7 +4243,7 @@
       "anchors": [
         {
           "title": "Symmetric diffeomorphic image registration with cross-correlation: Evaluating automated labeling of elderly and neurodegenerative brain",
-          "citation": "Avants et al. (2007)",
+          "citation": "Avants et al. (2008)",
           "url": "https://doi.org/10.1016/j.media.2007.06.004"
         },
         {
@@ -4288,7 +4289,7 @@
       "anchors": [
         {
           "title": "Exploring the brain network: A review on resting-state fMRI functional connectivity",
-          "citation": "Heuvel et al. (2010)",
+          "citation": "van den Heuvel et al. (2010)",
           "url": "https://doi.org/10.1016/j.euroneuro.2010.03.008"
         },
         {
@@ -4298,7 +4299,7 @@
         },
         {
           "title": "Functional Connectivity of Human Striatum: A Resting State fMRI Study",
-          "citation": "Martino et al. (2008)",
+          "citation": "Di Martino et al. (2008)",
           "url": "https://doi.org/10.1093/cercor/bhn041"
         }
       ],
@@ -4339,7 +4340,7 @@
         },
         {
           "title": "Does the salience network play a cardinal role in psychosis? An emerging hypothesis of insular dysfunction",
-          "citation": "Palaniyappan et al. (2011)",
+          "citation": "Palaniyappan et al. (2012)",
           "url": "https://doi.org/10.1503/jpn.100176"
         },
         {
@@ -4390,8 +4391,8 @@
         },
         {
           "title": "Schizophrenia: a disconnection syndrome?",
-          "citation": "Friston et al. (1995)",
-          "url": "https://openalex.org/W1509285273"
+          "citation": "Friston & Frith (1995)",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/7583624/"
         }
       ],
       "question_count": 1,
@@ -4500,7 +4501,7 @@
         },
         {
           "title": "The Neural Bases of Social Cognition and Story Comprehension",
-          "citation": "Mar (2010)",
+          "citation": "Mar (2011)",
           "url": "https://doi.org/10.1146/annurev-psych-120709-145406"
         },
         {
@@ -4518,8 +4519,8 @@
       "anchors": [
         {
           "title": "Statistical Parametric Mapping: The Analysis of Functional Brain Images",
-          "citation": "Penny et al. (2007)",
-          "url": "https://openalex.org/W1528119265"
+          "citation": "Friston et al. (2007)",
+          "url": "https://doi.org/10.1016/B978-0-12-372560-8.X5000-1"
         },
         {
           "title": "Statistical Parametric Mapping",
@@ -4527,9 +4528,9 @@
           "url": "https://doi.org/10.1007/978-1-4615-1079-6_16"
         },
         {
-          "title": "Statistical Parametric Mapping",
-          "citation": "J. (2007)",
-          "url": "https://doi.org/10.1016/b978-0-12-372560-8.x5000-1"
+          "title": "Statistical parametric maps in functional imaging: A general linear approach",
+          "citation": "Friston et al. (1994)",
+          "url": "https://doi.org/10.1002/hbm.460020402"
         }
       ],
       "question_count": 1,
@@ -4597,7 +4598,7 @@
         },
         {
           "title": "Toward defining deep brain stimulation targets in MNI space: A subcortical atlas based on multimodal MRI, histology and structural connectivity",
-          "citation": "Ewert et al. (2017)",
+          "citation": "Ewert et al. (2018)",
           "url": "https://doi.org/10.1016/j.neuroimage.2017.05.015"
         }
       ],
@@ -4656,7 +4657,7 @@
       "anchors": [
         {
           "title": "Subcortical brain volume abnormalities in 2028 individuals with schizophrenia and 2540 healthy controls via the ENIGMA consortium",
-          "citation": "Group et al. (2015)",
+          "citation": "van Erp et al. (2016)",
           "url": "https://doi.org/10.1038/mp.2015.63"
         },
         {
@@ -4666,7 +4667,7 @@
         },
         {
           "title": "Cortical and Subcortical Gray Matter Volume in Youths With Conduct Problems",
-          "citation": "Rogers et al. (2015)",
+          "citation": "Rogers et al. (2016)",
           "url": "https://doi.org/10.1001/jamapsychiatry.2015.2423"
         }
       ],
@@ -4712,7 +4713,7 @@
         },
         {
           "title": "Cortical thickness and central surface estimation",
-          "citation": "Dahnke et al. (2012)",
+          "citation": "Dahnke et al. (2013)",
           "url": "https://doi.org/10.1016/j.neuroimage.2012.09.050"
         }
       ],
@@ -4748,12 +4749,12 @@
       "anchors": [
         {
           "title": "Meta-analysis of Go/No-go tasks demonstrating that fMRI activation associated with response inhibition is task-dependent",
-          "citation": "Simmonds et al. (2007)",
+          "citation": "Simmonds et al. (2008)",
           "url": "https://doi.org/10.1016/j.neuropsychologia.2007.07.015"
         },
         {
           "title": "A quantitative comparison of NIRS and fMRI across multiple cognitive tasks",
-          "citation": "Cui et al. (2010)",
+          "citation": "Cui et al. (2011)",
           "url": "https://doi.org/10.1016/j.neuroimage.2010.10.069"
         },
         {
@@ -4868,12 +4869,12 @@
         },
         {
           "title": "Predicting Treatment Response in Social Anxiety Disorder From Functional Magnetic Resonance Imaging",
-          "citation": "Doehrmann et al. (2012)",
+          "citation": "Doehrmann et al. (2013)",
           "url": "https://doi.org/10.1001/2013.jamapsychiatry.5"
         },
         {
           "title": "Peripheral biomarkers of major depression and antidepressant treatment response: Current knowledge and future outlooks",
-          "citation": "Gadad et al. (2017)",
+          "citation": "Gadad et al. (2018)",
           "url": "https://doi.org/10.1016/j.jad.2017.07.001"
         }
       ],
@@ -4891,12 +4892,12 @@
         },
         {
           "title": "Confound modelling in UK Biobank brain imaging",
-          "citation": "Alfaro‐Almagro et al. (2020)",
+          "citation": "Alfaro‐Almagro et al. (2021)",
           "url": "https://doi.org/10.1016/j.neuroimage.2020.117002"
         },
         {
           "title": "Image processing and Quality Control for the first 10,000 brain imaging datasets from UK Biobank",
-          "citation": "Alfaro‐Almagro et al. (2017)",
+          "citation": "Alfaro‐Almagro et al. (2018)",
           "url": "https://doi.org/10.1016/j.neuroimage.2017.10.034"
         }
       ],
@@ -4942,7 +4943,7 @@
         },
         {
           "title": "Gray matter abnormalities in Major Depressive Disorder: A meta-analysis of voxel based morphometry studies",
-          "citation": "Bora et al. (2011)",
+          "citation": "Bora et al. (2012)",
           "url": "https://doi.org/10.1016/j.jad.2011.03.049"
         }
       ],
@@ -5016,7 +5017,7 @@
       "topic": "adhd",
       "question": "After recomputing ALFF/fALFF using external public pediatric ADHD rs-fMRI cohorts such as ADHD-200, do the frontal-cerebellar, ACC, SMC, and brainstem direction patterns from the original paper still receive support under larger samples and stricter motion and multiple-comparison control?",
       "data_label": "Data path needed",
-      "citation": "Yu-Feng et al. (2006)",
+      "citation": "Yu-Feng et al. (2007)",
       "paper_title": "Altered baseline brain activity in children with ADHD revealed by resting-state functional MRI",
       "paper_url": "https://doi.org/10.1016/j.braindev.2006.07.002",
       "source_question": "",
@@ -5044,8 +5045,8 @@
       "topic": "alzheimer disease",
       "question": "Does vascular risk improve prediction of cognitive decline or Alzheimer conversion beyond age, education, and APOE4?",
       "data_label": "Data path needed",
-      "citation": "Torre (2002)",
-      "paper_title": "Alzheimer Disease as a Vascular Disorder",
+      "citation": "de la Torre (2002)",
+      "paper_title": "Alzheimer disease as a vascular disorder: nosological evidence",
       "paper_url": "https://doi.org/10.1161/01.str.0000014421.15948.67",
       "source_question": "In a cohort containing vascular risk factors and longitudinal cognition/diagnosis, does vascular risk burden predict incident MCI/AD or cognitive decline after adjustment for age, sex, education, and APOE4?",
       "why": "",
@@ -5086,7 +5087,7 @@
       "topic": "autism",
       "question": "Using ABIDE I and the paper's male quality-controlled analysis cohort, can the predominance of ASD-related cortico-cortical and interhemispheric hypoconnectivity over hyperconnectivity be reproduced under the reported covariates and parcellation-level iFC framework?",
       "data_label": "Public data",
-      "citation": "Martino et al. (2013)",
+      "citation": "Di Martino et al. (2014)",
       "paper_title": "The autism brain imaging data exchange: towards a large-scale evaluation of the intrinsic brain architecture in autism",
       "paper_url": "https://doi.org/10.1038/mp.2013.78",
       "source_question": "",
@@ -5254,7 +5255,7 @@
       "topic": "convolutional neural network",
       "question": "In a regenerable synthetic connectome injury regression task, can BrainNetCNN's E2E/E2N/N2G filters consistently outperform parameter-matched fully connected networks, and does the advantage change with focal/diffuse injury pattern and noise level?",
       "data_label": "Simulation-ready",
-      "citation": "Kawahara et al. (2016)",
+      "citation": "Kawahara et al. (2017)",
       "paper_title": "BrainNetCNN: Convolutional neural networks for brain networks; towards predicting neurodevelopment",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2016.09.046",
       "source_question": "",
@@ -5324,7 +5325,7 @@
       "topic": "default mode network",
       "question": "How sensitive are the reported vmPFC/PCC antinetwork dissociations to global signal regression, seed orthogonalization, and nuisance-regressor choices?",
       "data_label": "Data path to confirm",
-      "citation": "Uddin et al. (2008)",
+      "citation": "Uddin et al. (2009)",
       "paper_title": "Functional connectivity of default mode network components: Correlation, anticorrelation, and causality",
       "paper_url": "https://doi.org/10.1002/hbm.20531",
       "source_question": "",
@@ -5462,12 +5463,12 @@
     {
       "id": "CQ2",
       "topic": "explainability",
-      "question": "Do neuroimaging model explanations remain stable across folds, seeds, sites, and equally accurate models—and do they localize reproducible signal?",
+      "question": "Do neuroimaging model explanations remain stable across folds, seeds, sites, and equally accurate models, and do they localize reproducible signal?",
       "data_label": "Data path to confirm",
-      "citation": "Raduà et al. (2012)",
-      "paper_title": "Meta-analytic methods for neuroimaging data explained",
-      "paper_url": "https://doi.org/10.1186/2045-5380-2-6",
-      "source_question": "Given a proposed voxel-based neuroimaging meta-analysis protocol, judge whether it satisfies the three guardrails proposed in this paper: include only whole-brain studies, keep the whole-brain threshold consistent within the same included study, and perform complementary robustness analyses.",
+      "citation": "Munroe et al. (2024)",
+      "paper_title": "Applications of interpretable deep learning in neuroimaging: A comprehensive review",
+      "paper_url": "https://doi.org/10.1162/imag_a_00214",
+      "source_question": "How should the robustness and biological validity of interpretable deep-learning explanations in neuroimaging be evaluated across datasets, preprocessing choices, cross-validation folds, parameter initializations, hyperparameter values, and model ensembles?",
       "why": "",
       "origin": "paper-grounded source lead",
       "score": 9.92,
@@ -5562,7 +5563,7 @@
       "topic": "graph neural network",
       "question": "Does the reported dGCN advantage over LR, SVM, MLP, GCN, and GAT persist when ADHD-200 evaluation is changed from the paper's cross-validation protocol to nested site-aware and held-out-site validation?",
       "data_label": "Public data",
-      "citation": "Zhao et al. (2021)",
+      "citation": "Zhao et al. (2022)",
       "paper_title": "A dynamic graph convolutional neural network framework reveals new insights into connectome dysfunctions in ADHD",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2021.118774",
       "source_question": "",
@@ -5590,7 +5591,7 @@
       "topic": "gray matter volume",
       "question": "How much apparent cortical gray-matter loss can be explained by head motion in structural MRI?",
       "data_label": "Public data",
-      "citation": "Reuter et al. (2014)",
+      "citation": "Reuter et al. (2015)",
       "paper_title": "Head motion during MRI acquisition reduces gray matter volume and thickness estimates",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2014.12.006",
       "source_question": "Based on the processed measures in the public supplementary tables, can the direction of increasing RMSpm and decreasing FreeSurfer/SPM cortical gray matter volume be reproduced, with an effect size close to the approximately 0.7-1.0% volume loss per 1 mm/min RMSpm reported in the paper?",
@@ -5604,7 +5605,7 @@
       "topic": "harmonization",
       "question": "Across controlled site-age overlap and site sample-size imbalance regimes, when does ComBat-GAM improve held-out structural-ROI age prediction over linear ComBat without distorting the nonlinear age trajectory?",
       "data_label": "Simulation / design",
-      "citation": "Pomponio et al. (2019)",
+      "citation": "Pomponio et al. (2020)",
       "paper_title": "Harmonization of large MRI datasets for the analysis of brain imaging patterns throughout the lifespan",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2019.116450",
       "source_question": "",
@@ -5660,7 +5661,7 @@
       "topic": "hubs",
       "question": "Are hub disruptions in schizophrenia true losses of centrality, redistributions across networks, or artifacts of the metric and threshold?",
       "data_label": "Data path to confirm",
-      "citation": "Oldham et al. (2018)",
+      "citation": "Oldham et al. (2019)",
       "paper_title": "The development of brain network hubs",
       "paper_url": "https://doi.org/10.1016/j.dcn.2018.12.005",
       "source_question": "For a fixed brain-network adjacency matrix, how much overlap is there among the hub sets defined by degree, nodal efficiency/closeness, and betweenness, and how is this conclusion affected by the hub threshold and centrality distribution?",
@@ -5674,7 +5675,7 @@
       "topic": "human connectome project",
       "question": "Which HCP-derived brain features predict behavior reliably after family structure, feature selection, and model tuning are kept inside the training data?",
       "data_label": "Controlled access",
-      "citation": "Essen et al. (2012)",
+      "citation": "Van Essen et al. (2012)",
       "paper_title": "The Human Connectome Project: A data acquisition perspective",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2012.02.018",
       "source_question": "Combined with subsequent HCP Young Adult releases, can a checkable analysis be designed to test the relationship between protocol choices and connectome reliability or behavior-connectivity associations?",
@@ -5688,7 +5689,7 @@
       "topic": "imaging genetics",
       "question": "Do cortical thickness and surface area show distinct genetic architectures and disease-specific regional effects after global adjustment?",
       "data_label": "Public data",
-      "citation": "Erp et al. (2018)",
+      "citation": "van Erp et al. (2018)",
       "paper_title": "Cortical Brain Abnormalities in 4474 Individuals With Schizophrenia and 5098 Control Subjects via the Enhancing Neuro Imaging Genetics Through Meta Analysis (ENIGMA) Consortium",
       "paper_url": "https://doi.org/10.1016/j.biopsych.2018.04.023",
       "source_question": "Using the public ENIGMA summary statistics, can an evaluator reproduce the paper's cortical thickness versus surface area case-control pattern and determine whether thickness, but not surface area, shows regional specificity after global adjustment?",
@@ -5702,7 +5703,7 @@
       "topic": "independent component analysis",
       "question": "When do ICA components merge or split as temporal similarity, spatial overlap, model order, and noise change?",
       "data_label": "Simulation-ready",
-      "citation": "Allen et al. (2011)",
+      "citation": "Allen et al. (2012)",
       "paper_title": "Capturing inter-subject variability with group independent component analysis of fMRI data: A simulation study",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2011.10.010",
       "source_question": "Given the temporal similarity, model order, CNR, number of time points, spatial size, and overlap of two simulated components, will GICA estimate them as a joint component or as separated components?",
@@ -5744,7 +5745,7 @@
       "topic": "machine learning",
       "question": "Does a neuroimaging model retain performance when feature selection, architecture choice, and hyperparameter search are fully isolated from an external test set?",
       "data_label": "Data path to confirm",
-      "citation": "Davatzikos (2018)",
+      "citation": "Davatzikos (2019)",
       "paper_title": "Machine learning in neuroimaging: Progress and challenges",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2018.10.003",
       "source_question": "Given a neuroimaging ML paper, determine whether its generalization assessment includes a held-out/external test sample that remains independent after feature, architecture, and hyperparameter search, rather than only ordinary cross-validation.",
@@ -5787,7 +5788,7 @@
       "question": "Do multimodal imaging markers improve prediction of MCI conversion beyond baseline cognition and hippocampal volume?",
       "data_label": "Data path to confirm",
       "citation": "Petersen et al. (2009)",
-      "paper_title": "Mild Cognitive Impairment",
+      "paper_title": "Mild cognitive impairment: ten years later",
       "paper_url": "https://doi.org/10.1001/archneurol.2009.266",
       "source_question": "Given a draft disease-modifying MCI trial, can the enrichment features suggested in the paper, such as aMCI degenerative pathogenesis, APOE epsilon4, amyloid imaging, and CSF markers, be selected, and can mismatch risks be identified?",
       "why": "",
@@ -5814,7 +5815,7 @@
       "topic": "motor control",
       "question": "How do premotor, parietal, cerebellar, and interhemispheric inputs change M1 excitability across task contexts?",
       "data_label": "Data path to confirm",
-      "citation": "Reis et al. (2007)",
+      "citation": "Reis et al. (2008)",
       "paper_title": "Contribution of transcranial magnetic stimulation to the understanding of cortical mechanisms involved in motor control",
       "paper_url": "https://doi.org/10.1113/jphysiol.2007.144824",
       "source_question": "Given a summary of a paired-pulse or repetitive TMS motor-control protocol, determine which type of interaction it primarily corresponds to in the Reis et al. review, such as SICI, LICI, ICF, IHI, PMd-M1, PPC-M1, CbC, or afferent inhibition, and provide the expected MEP effect direction and the key caveat.",
@@ -5842,7 +5843,7 @@
       "topic": "multimodal imaging",
       "question": "Across multiple public lifespan MRI/fMRI site pairs, do a small number of target-site calibration subjects consistently improve between-site generalization of multimodal brain-age models?",
       "data_label": "Data path to confirm",
-      "citation": "Liem et al. (2016)",
+      "citation": "Liem et al. (2017)",
       "paper_title": "Predicting brain-age from multimodal imaging data captures cognitive impairment",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2016.11.005",
       "source_question": "",
@@ -5856,7 +5857,7 @@
       "topic": "multiple comparisons",
       "question": "How do voxelwise, clusterwise, FDR, and permutation procedures trade sensitivity for false-positive control across realistic effect shapes and smoothness levels?",
       "data_label": "Data path to confirm",
-      "citation": "Mirman et al. (2017)",
+      "citation": "Mirman et al. (2018)",
       "paper_title": "Corrections for multiple comparisons in voxel-based lesion-symptom mapping",
       "paper_url": "https://doi.org/10.1016/j.neuropsychologia.2017.08.025",
       "source_question": "Given voxel-wise permutation test-statistic outputs for a VLSM analysis, compute continuous permutation-based FWER thresholds for specified v values and effective q, then compare them with FDR thresholds.",
@@ -5884,7 +5885,7 @@
       "topic": "network neuroscience",
       "question": "Which graph measures remain stable across parcellations and preprocessing choices, and which predict cognition beyond simpler connectivity summaries?",
       "data_label": "Public data",
-      "citation": "Bessadok et al. (2022)",
+      "citation": "Bessadok et al. (2023)",
       "paper_title": "Graph Neural Networks in Network Neuroscience",
       "paper_url": "https://doi.org/10.1109/tpami.2022.3209686",
       "source_question": "Given a new GNN brain-connectivity paper, can it be determined whether it addresses the gaps identified by the review: multimodal synthesis, non-isomorphic graphs/parcellations, reproducibility/explainability, or few-shot learning, while distinguishing implemented, partial, and spec-only evidence?",
@@ -5954,7 +5955,7 @@
       "topic": "pain",
       "question": "Can a coordinate-based ALE reconstruction of the empathy-for-pain literature recover the reported convergence in aMCC and bilateral anterior/fronto-insular cortex?",
       "data_label": "Data path to confirm",
-      "citation": "Lamm et al. (2010)",
+      "citation": "Lamm et al. (2011)",
       "paper_title": "Meta-analytic evidence for common and distinct neural networks associated with directly experienced pain and empathy for pain",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2010.10.014",
       "source_question": "",
@@ -6038,7 +6039,7 @@
       "topic": "preregistration",
       "question": "Which preregistration commitments actually reduce analytic flexibility in neuroimaging, and which are most often left underspecified?",
       "data_label": "Simulation / design",
-      "citation": "Klapwijk et al. (2020)",
+      "citation": "Klapwijk et al. (2021)",
       "paper_title": "Opportunities for increased reproducibility and replicability of developmental neuroimaging",
       "paper_url": "https://doi.org/10.1016/j.dcn.2020.100902",
       "source_question": "Given a developmental neuroimaging results report, can one determine which analytical flexibility risks require sensitivity/specification-curve analyses or disclosure of multiple comparisons/QC/software versions, and distinguish confirmatory from exploratory analyses?",
@@ -6094,7 +6095,7 @@
       "topic": "registration",
       "question": "In image-pair registration with the input order swapped, is the forward/inverse composition of SyN-style symmetric diffeomorphic registration closer to identity than an asymmetric or ICIR-style baseline?",
       "data_label": "Data path to confirm",
-      "citation": "Avants et al. (2007)",
+      "citation": "Avants et al. (2008)",
       "paper_title": "Symmetric diffeomorphic image registration with cross-correlation: Evaluating automated labeling of elderly and neurodegenerative brain",
       "paper_url": "https://doi.org/10.1016/j.media.2007.06.004",
       "source_question": "",
@@ -6122,7 +6123,7 @@
       "topic": "resting-state fMRI",
       "question": "How stable are striatal motor, cognitive, and affective connectivity profiles across datasets and preprocessing choices?",
       "data_label": "Data path to confirm",
-      "citation": "Martino et al. (2008)",
+      "citation": "Di Martino et al. (2008)",
       "paper_title": "Functional Connectivity of Human Striatum: A Resting State fMRI Study",
       "paper_url": "https://doi.org/10.1093/cercor/bhn041",
       "source_question": "Can the paper's abstract-level claim be reproduced on a fixed resting-state fMRI dataset using predefined striatal subregion ROIs: that different striatal subregions correspond to distinguishable motor, cognitive, and affective connectivity profiles?",
@@ -6150,7 +6151,7 @@
       "topic": "salience network",
       "question": "In an accessible psychosis resting-state fMRI cohort with symptom-domain ratings, does support for an SN-modulated DMN-CEN switching model predict specific symptom domains more strongly than alternative DCM models?",
       "data_label": "Data path needed",
-      "citation": "Palaniyappan et al. (2011)",
+      "citation": "Palaniyappan et al. (2012)",
       "paper_title": "Does the salience network play a cardinal role in psychosis? An emerging hypothesis of insular dysfunction",
       "paper_url": "https://doi.org/10.1503/jpn.100176",
       "source_question": "",
@@ -6248,7 +6249,7 @@
       "topic": "social cognition",
       "question": "Does Mar's reported core mentalizing network remain reproducible when coordinate-harmonization assumptions, ALE parameter choices, and cluster-matching tolerances are audited against the public result maps?",
       "data_label": "Public data",
-      "citation": "Mar (2010)",
+      "citation": "Mar (2011)",
       "paper_title": "The Neural Bases of Social Cognition and Story Comprehension",
       "paper_url": "https://doi.org/10.1146/annurev-psych-120709-145406",
       "source_question": "",
@@ -6304,7 +6305,7 @@
       "topic": "structural connectivity",
       "question": "For a fixed set of single-subject MRI scans with manual STN/GPi labels, does normalization plus DISTAL-atlas warping recover target masks more accurately than alternative atlases?",
       "data_label": "Public data",
-      "citation": "Ewert et al. (2017)",
+      "citation": "Ewert et al. (2018)",
       "paper_title": "Toward defining deep brain stimulation targets in MNI space: A subcortical atlas based on multimodal MRI, histology and structural connectivity",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2017.05.015",
       "source_question": "",
@@ -6346,7 +6347,7 @@
       "topic": "subcortical volume",
       "question": "Which subcortical volume differences remain stable across cohorts, medication status, and global-volume adjustment?",
       "data_label": "Data path to confirm",
-      "citation": "Group et al. (2015)",
+      "citation": "van Erp et al. (2016)",
       "paper_title": "Subcortical brain volume abnormalities in 2028 individuals with schizophrenia and 2540 healthy controls via the ENIGMA consortium",
       "paper_url": "https://doi.org/10.1038/mp.2015.63",
       "source_question": "Assess whether moderator meta-regression supports associations between duration/age and putamen/pallidum effect sizes, as well as the association between the proportion of unmedicated patients and hippocampal deficit, while distinguishing Bonferroni-corrected findings from exploratory findings.",
@@ -6374,7 +6375,7 @@
       "topic": "surface reconstruction",
       "question": "Can an algorithm recover known cortical thickness and central-surface position across the paper's spherical and brain-phantom parameter sweep, matching or improving the reported PBT versus Laplacian RMS-error patterns?",
       "data_label": "Public data",
-      "citation": "Dahnke et al. (2012)",
+      "citation": "Dahnke et al. (2013)",
       "paper_title": "Cortical thickness and central surface estimation",
       "paper_url": "https://doi.org/10.1016/j.neuroimage.2012.09.050",
       "source_question": "",
@@ -6402,7 +6403,7 @@
       "topic": "task fMRI",
       "question": "Which task-evoked effects remain stable across task complexity, contrast definitions, datasets, and analysis choices?",
       "data_label": "Data path to confirm",
-      "citation": "Simmonds et al. (2007)",
+      "citation": "Simmonds et al. (2008)",
       "paper_title": "Meta-analysis of Go/No-go tasks demonstrating that fMRI activation associated with response inhibition is task-dependent",
       "paper_url": "https://doi.org/10.1016/j.neuropsychologia.2007.07.015",
       "source_question": "Using the paper's reported included-study foci, simple/complex labels, and ALE parameters, can a reimplementation recover the reported task-dependent pattern: complex-only right DLPFC/inferior-parietal concurrence and shared pre-SMA overlap?",
@@ -6472,7 +6473,7 @@
       "topic": "treatment response",
       "question": "Can pretreatment rACC activity or connectivity predict treatment response across interventions and independent cohorts?",
       "data_label": "Data path needed",
-      "citation": "Doehrmann et al. (2012)",
+      "citation": "Doehrmann et al. (2013)",
       "paper_title": "Predicting Treatment Response in Social Anxiety Disorder From Functional Magnetic Resonance Imaging",
       "paper_url": "https://doi.org/10.1001/2013.jamapsychiatry.5",
       "source_question": "Can pretreatment angry-vs-neutral face fMRI features plus baseline LSAS and treatment group predict post-CBT LSAS change better than baseline clinical predictors alone?",
